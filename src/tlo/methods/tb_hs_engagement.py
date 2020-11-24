@@ -16,6 +16,9 @@ class health_system_tb(Module):
         super().__init__(name)
         self.store = {'Time': [], 'Number_tested_tb': []}
 
+    # Declare Metadata
+    METADATA = {}
+
     PARAMETERS = {
         'tb_testing_coverage': Parameter(Types.REAL, 'proportion of population tested'),
         'prop_smear_positive': Parameter(Types.REAL, 'proportion of TB cases smear positive'),

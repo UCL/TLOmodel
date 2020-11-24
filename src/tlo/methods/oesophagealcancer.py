@@ -34,7 +34,13 @@ class OesophagealCancer(Module):
         self.lm_onset_dysphagia = None
         self.daly_wts = dict()
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         "init_prop_oes_cancer_stage": Parameter(
@@ -190,9 +196,6 @@ class OesophagealCancer(Module):
             pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx",
                           sheet_name="parameter_values")
         )
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
@@ -668,7 +671,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OesophagealCancer_StartTreatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 3
+        self.ACCEPTED_FACILITY_LEVEL = 2
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -717,7 +720,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OesophagealCancer_MonitorTreatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 3
+        self.ACCEPTED_FACILITY_LEVEL = 2
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -777,7 +780,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OesophagealCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 3
+        self.ACCEPTED_FACILITY_LEVEL = 2
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

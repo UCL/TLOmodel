@@ -8,6 +8,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.methods import Metadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -26,6 +27,11 @@ class HealthBurden(Module):
         self.multi_index = None
         self.YearsLifeLost = None
         self.YearsLivedWithDisability = None
+
+        self.recognised_modules_names = None
+
+    # Declare Metadata
+    METADATA = {}
 
     PARAMETERS = {
         'DALY_Weight_Database': Property(Types.DATA_FRAME, 'DALY Weight Database from GBD'),
@@ -60,11 +66,15 @@ class HealthBurden(Module):
         self.YearsLifeLost = pd.DataFrame(index=multi_index)
         self.YearsLivedWithDisability = pd.DataFrame(index=multi_index)
 
-        # Check that all registered disease modules have the report_daly_values() function
-        assert 'HealthSystem' in self.sim.modules.keys(), "HealthBurden module is dependent on HealthSystem module."
+        # Store the name of all disease modules
+        self.recognised_modules_names = [
+            m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHBURDEN in m.METADATA
+        ]
 
-        for module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
-            assert 'report_daly_values' in dir(self.sim.modules['HealthSystem'].registered_disease_modules[module_name])
+        # Check that all registered disease modules have the report_daly_values() function
+        for module_name in self.recognised_modules_names:
+            assert getattr(self.sim.modules[module_name], 'report_daly_values', None) and \
+                   callable(self.sim.modules[module_name].report_daly_values)
 
         # Launch the DALY Logger to run every month, starting with the end of month 1
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
@@ -73,7 +83,10 @@ class HealthBurden(Module):
         pass
 
     def on_simulation_end(self):
-        logger.debug('This is being called at the end of the simulation. Time to output to the logs....')
+        logger.debug(
+            key="message",
+            data="This is being called at the end of the simulation. Time to output to the logs...."
+        )
 
         # Label and concantenate YLL and YLD dataframes
         assert self.YearsLifeLost.index.equals(self.multi_index)
@@ -90,11 +103,12 @@ class HealthBurden(Module):
         dalys = dalys.reset_index()
 
         # 2) Go line-by-line and dump to the log
-        for line_num in range(len(dalys)):
-            line_as_dict = dalys.loc[line_num].to_dict()
-            year = line_as_dict.pop('year')
-            year_as_date = pd.Timestamp(year=year, month=12, day=31)  # log output for the year on 31st December
-            logger.info('%s|DALYS|%s', year_as_date, line_as_dict)
+        for index, row in dalys.iterrows():
+            logger.info(
+                key='dalys',
+                data=row.to_dict(),
+                description='dataframe of dalys, broken down by year, sex, age-group'
+            )
 
     def get_daly_weight(self, sequlae_code):
         """
@@ -192,7 +206,10 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         # Running the DALY Logger
-        logger.debug('The DALY Logger is occuring now! %s', self.sim.date)
+        logger.debug(
+            key="message",
+            data="The DALY Logger is occuring now!"
+        )
 
         # Get the population dataframe
         df = self.sim.population.props
@@ -203,9 +220,9 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         # 1) Ask each disease module to log the DALYS for the previous month
 
-        for disease_module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
+        for disease_module_name in self.module.recognised_modules_names:
 
-            disease_module = self.sim.modules['HealthSystem'].registered_disease_modules[disease_module_name]
+            disease_module = self.sim.modules[disease_module_name]
 
             dalys_from_disease_module = disease_module.report_daly_values()
 

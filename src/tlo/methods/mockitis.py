@@ -22,7 +22,13 @@ class Mockitis(Module):
         - Restrictive requirements on the facility_level for the HSI_event
         - Use of the SymptomManager
     """
-    METADATA = {Metadata.DISEASE_MODULE}
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         'p_infection': Parameter(
@@ -61,6 +67,7 @@ class Mockitis(Module):
 
     def read_parameters(self, data_folder):
         """Read in parameters and do the registration of this module and its symptoms"""
+
         p = self.parameters
 
         p['p_infection'] = 0.001
@@ -84,10 +91,6 @@ class Mockitis(Module):
                 'coughing_and_irritable': self.sim.modules['HealthBurden'].get_daly_weight(49),
                 'extreme_pain_in_the_nose': self.sim.modules['HealthBurden'].get_daly_weight(50)
             }
-
-        # ---- Register this module ----
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # ---- Register the Symptoms ----
         self.sim.modules['SymptomManager'].register_symptom(

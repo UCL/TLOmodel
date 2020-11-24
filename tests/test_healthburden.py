@@ -41,45 +41,40 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir):
     # There should be no events run or scheduled
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': tmpdir})
 
     # Define the service availability as null
     service_availability = []
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
-                                           mode_appt_constraints=0))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(mockitis.Mockitis())
-    sim.register(chronicsyndrome.ChronicSyndrome())
-
-    sim.seed_rngs(0)
+                                           mode_appt_constraints=0),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 mockitis.Mockitis(),
+                 chronicsyndrome.ChronicSyndrome())
 
     # Run the simulation
-    f = sim.configure_logging("test_log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
 
     # Do the checks
     # correctly configured index (outputs on 31st december in each year of simulation for each age/sex group)
-    dalys = output['tlo.methods.healthburden']['DALYS']
+    dalys = output['tlo.methods.healthburden']['dalys']
+    dalys = dalys.drop(columns=['date'])
     age_index = sim.modules['Demography'].AGE_RANGE_CATEGORIES
     sex_index = ['M', 'F']
     year_index = list(range(start_date.year, end_date.year + 1))
     correct_multi_index = pd.MultiIndex.from_product([sex_index, age_index, year_index],
                                                      names=['sex', 'age_range', 'year'])
-    dalys['year'] = pd.to_datetime(dalys['date']).dt.year
-    assert (pd.to_datetime(dalys['date']).dt.month == 12).all()
-    assert (pd.to_datetime(dalys['date']).dt.day == 31).all()
     output_multi_index = dalys.set_index(['sex', 'age_range', 'year']).index
     assert output_multi_index.equals(correct_multi_index)
 

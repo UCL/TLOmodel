@@ -41,6 +41,9 @@ class Demography(Module):
     # We should have 21 age range categories
     assert len(AGE_RANGE_CATEGORIES) == 21
 
+    # Declare Metadata
+    METADATA = {}
+
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
@@ -171,25 +174,25 @@ class Demography(Module):
         :param child_id: the new child
         """
         df = self.sim.population.props
+        rng = self.rng
 
-        df.at[child_id, 'is_alive'] = True
-        df.at[child_id, 'date_of_birth'] = self.sim.date
+        fraction_of_births_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
 
-        df.at[child_id, 'date_of_death'] = pd.NaT
-        df.at[child_id, 'cause_of_death'] = ''
+        child = {
+            'is_alive': True,
+            'date_of_birth': self.sim.date,
+            'date_of_death': pd.NaT,
+            'cause_of_death': '',
+            'sex': 'M' if rng.random_sample() < fraction_of_births_male else 'F',
+            'mother_id': mother_id,
+            'age_exact_years': 0.0,
+            'age_years': 0,
+            'age_range': self.AGE_RANGE_LOOKUP[0],
+            'region_of_residence': df.at[mother_id, 'region_of_residence'],
+            'district_of_residence': df.at[mother_id, 'district_of_residence']
+        }
 
-        p_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
-        df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[p_male, 1 - p_male])
-
-        df.at[child_id, 'mother_id'] = mother_id
-
-        df.at[child_id, 'age_exact_years'] = 0.0
-        df.at[child_id, 'age_years'] = 0
-        df.at[child_id, 'age_range'] = self.AGE_RANGE_LOOKUP[0]
-
-        # Child's residence is inherited from the mother
-        df.at[child_id, 'region_of_residence'] = df.at[mother_id, 'region_of_residence']
-        df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
+        df.loc[child_id, child.keys()] = child.values()
 
         # Log the birth:
         logger.info(
