@@ -861,8 +861,8 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'death_breast_cancer_since_last_log': df.brc_date_death.between(date_lastlog, date_now).sum()
         })
 
-#       logger.info('%s|summary_stats|%s', self.sim.date, out)
+        logger.info('%s|summary_stats|%s', self.sim.date, out)
 
-        logger.info('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[10].to_dict())
+#       logger.info('%s|person_one|%s',
+#                    self.sim.date,
+#                    df.loc[10].to_dict())

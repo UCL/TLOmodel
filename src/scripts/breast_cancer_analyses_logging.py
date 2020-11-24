@@ -32,7 +32,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2040,  1, 1)
-popsize = 100
+popsize = 190000
 
 # Establish the simulation object
 log_config = {
