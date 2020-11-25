@@ -1,7 +1,6 @@
 """Produce comparisons between model and GBD of deaths by cause in a particular year."""
 
-# todo - look to see why diarrhoea causes so many deaths
-# todo - update the processing of GBD file in the demography (formatting and plotting) using new data and new helper fns
+# todo - unify the labelling of causes in the HealthBurden module to simplify processing
 
 import pickle
 from datetime import datetime
@@ -23,14 +22,14 @@ from scripts.utils.helper_funcs_for_processing_data_files import (
 # Define the particular year for the focus of this analysis
 from tlo.methods.demography import get_scaling_factor
 
-year = 2010
+year = 2019
 
 # Resource file path
 rfp = Path("./resources")
 
 # Where will outputs be found
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-results_filename = outputpath / 'long_run.pickle'
+results_filename = outputpath / '2020_11_25_long_run.pickle'
 
 with open(results_filename, 'rb') as f:
     output = pickle.load(f)['output']
@@ -83,6 +82,7 @@ dalys = dalys.drop(columns=['date'])
 dalys_melt = dalys.melt(id_vars=['sex', 'age_range', 'year'], var_name='cause', value_name='value')
 dalys_melt['cause'] = dalys_melt.cause\
     .replace({'YLL_Demography_Other': '_Other'})\
+    .replace({'YLL_Demography_intrapartum stillbirth': 'YLL_Labour'})\
     .str.split('_').apply(lambda x: x[1]).map(mapper_from_tlo_strings)
 assert not dalys_melt['cause'].isna().any()
 
@@ -109,7 +109,6 @@ dalys_pt = dalys_melt.groupby(by=['sex', 'age_range', 'cause'])['value'].sum().u
 deaths_pt.sum().plot.bar()
 plt.xlabel('Cause')
 plt.ylabel(f"Total deaths in {year}")
-
 plt.savefig(make_file_name("Deaths by cause"))
 plt.show()
 

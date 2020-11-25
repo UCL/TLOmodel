@@ -69,6 +69,9 @@ plt.title(f"HSI by Module")
 plt.savefig(make_file_name('HSI_per_module'))
 plt.show()
 
+
+# %% todo - plot these breakdown by individual HSI
+
 # %% todo - plot these breakdown by facility_level
 
 # %% todo - Breakdown by the time of health-care workers (rather than the number of HSI events)

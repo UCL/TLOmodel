@@ -1,8 +1,7 @@
 """
 Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths.
 """
-
-# %% Import Statements and initial declarations
+import pickle
 from datetime import datetime
 from pathlib import Path
 
@@ -10,7 +9,6 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from tlo import Date, Simulation
 from tlo.analysis.utils import (
     make_age_grp_types,
     make_calendar_period_lookup,
@@ -18,78 +16,27 @@ from tlo.analysis.utils import (
     parse_log_file,
 )
 from tlo.methods import (
-    contraception,
     demography,
-    enhanced_lifestyle,
-    healthburden,
-    healthseekingbehaviour,
-    healthsystem,
-    labour,
-    pregnancy_supervisor,
-    symptommanager,
 )
 from tlo.util import create_age_range_lookup
 
 
-def run():
-    # To reproduce the results, you need to set the seed for the Simulation instance. The Simulation
-    # will seed the random number generators for each module when they are registered.
-    # If a seed argument is not given, one is generated. It is output in the log and can be
-    # used to reproduce results of a run
-    seed = 0
+# %% Filename etc
 
-    # By default, all output is recorded at the "INFO" level (and up) to standard out. You can
-    # configure the behaviour by passing options to the `log_config` argument of
-    # Simulation.
-    log_config = {
-        "filename": "demography_calibrations",  # The prefix for the output file. A timestamp will be added to this.
-    }
-    # For default configuration, uncomment the next line
-    # log_config = dict()
+# Resource file path
+rfp = Path("./resources")
 
-    # Basic arguments required for the simulation
-    start_date = Date(2010, 1, 1)
-    end_date = Date(2018, 1, 2)
-    pop_size = 200
+# Where will outputs be found
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
+results_filename = outputpath / '2020_11_25_long_run.pickle'
 
-    # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
-    # `log_config` arguments, these will override the default behaviour.
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+with open(results_filename, 'rb') as f:
+    output = pickle.load(f)['output']
 
-    # Path to the resource files used by the disease and intervention methods
-    resources = "./resources"
-
-    # We register all modules in a single call to the register method, calling once with multiple
-    # objects. This is preferred to registering each module in multiple calls because we will be
-    # able to handle dependencies if modules are registered together
-    sim.register(
-        demography.Demography(resourcefilepath=resources),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-        healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
-        symptommanager.SymptomManager(resourcefilepath=resources),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-        healthburden.HealthBurden(resourcefilepath=resources),
-        contraception.Contraception(resourcefilepath=resources),
-        labour.Labour(resourcefilepath=resources),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources)
-    )
-
-    sim.make_initial_population(n=pop_size)
-    sim.simulate(end_date=end_date)
-    return sim
-
-
-# date-stamp to label log files and any other outputs
-resourcefilepath = Path("./resources")
-outputpath = Path("./outputs")
 make_file_name = lambda stub: outputpath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
 
-
-# %% Run the Simulation
-sim = run()
-
 # %% read the results and do the scaling:
-scaled_output = demography.scale_to_population(parse_log_file(sim.log_filepath), resourcefilepath)
+scaled_output = demography.scale_to_population(output, rfp)
 
 # %% Population Size
 # Trend in Number Over Time
@@ -100,11 +47,11 @@ model_df = scaled_output["tlo.methods.demography"]["population"]
 model_df['year'] = pd.to_datetime(model_df.date).dt.year
 
 # Load Data: WPP_Annual
-wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
+wpp_ann = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
 wpp_ann_total = wpp_ann.groupby(['Year']).sum().sum(axis=1)
 
 # Load Data: Census
-cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
+cens = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
 cens_2018 = cens.groupby('Sex')['Count'].sum()
 
 # Plot population size over time
@@ -157,7 +104,7 @@ for year in [2018, 2030]:
     model_f = model_f.loc[model_f.index.dropna(), 'Model']
 
     # Import and format WPP data:
-    wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
+    wpp_ann = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
     wpp_ann = wpp_ann.loc[wpp_ann['Year'] == year]
     wpp_m = wpp_ann.loc[wpp_ann['Sex'] == 'M', ['Count', 'Age_Grp']].groupby('Age_Grp')['Count'].sum()
     wpp_m.index = wpp_m.index.astype(make_age_grp_types())
@@ -176,7 +123,7 @@ for year in [2018, 2030]:
 
     if year == 2018:
         # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
-        cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
+        cens = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
         cens_m = cens.loc[cens['Sex'] == 'M'].groupby(by='Age_Grp')['Count'].sum()
         cens_m.index = cens_m.index.astype(make_age_grp_types())
         cens_m = cens_m.loc[cens_m.index.dropna()]
@@ -209,13 +156,13 @@ births_model = births_model.groupby(by='Period')['count'].sum()
 births_model.index = births_model.index.astype(make_calendar_period_type())
 
 # Births over time (WPP)
-wpp = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP.csv")
+wpp = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_TotalBirths_WPP.csv")
 wpp = wpp.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
 wpp.index = wpp.index.astype(make_calendar_period_type())
 wpp.columns = 'WPP_' + wpp.columns
 
 # Births in 2018 Census
-cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Births_2018Census.csv")
+cens = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_Births_2018Census.csv")
 cens_per_5y_per = cens['Count'].sum() * 5
 
 # Merge in model results
@@ -254,10 +201,10 @@ deaths_model = pd.DataFrame(deaths_model.groupby(['Period', 'Sex', 'Age_Grp'])['
 deaths_model['Variant'] = 'Model'
 
 # Load WPP data
-wpp = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")
+wpp = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")
 
 # Load GBD
-gbd = pd.read_csv(resourcefilepath / "demography" / "ResourceFile_TotalDeaths_GBD.csv")
+gbd = pd.read_csv(rfp / "demography" / "ResourceFile_TotalDeaths_GBD.csv")
 gbd = pd.DataFrame(gbd.drop(columns=['Year']).groupby(by=['Period', 'Sex', 'Age_Grp', 'Variant']).sum()).reset_index()
 
 # Combine into one large dataframe
