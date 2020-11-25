@@ -31,8 +31,9 @@ deaths = pd.Series(deaths)
 # compute the excess deaths compared to the No Treatments
 excess_deaths = deaths['Nothing'] - deaths[~(deaths.index == 'Nothing')]
 
-excess_deaths.plot.bar()
-plt.savefig(make_file_name('Impact_of_each_treatment_id'))
+excess_deaths.plot.barh()
 plt.title('The Impact of Each set of Treatment_IDs')
 plt.ylabel('Deaths Averted by treatment_id, 2010-2014')
+plt.savefig(make_file_name('Impact_of_each_treatment_id'))
+plt.tight_layout()
 plt.show()
