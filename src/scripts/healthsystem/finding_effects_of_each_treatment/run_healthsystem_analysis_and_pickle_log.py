@@ -30,7 +30,7 @@ from tlo.methods import (
     symptommanager, hiv,
 )
 
-# Define output path
+# Define path and filenames
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.today().strftime("%Y_%m_%d")
 results_filename_stub = 'health_system_systematic_run'

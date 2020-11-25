@@ -9,20 +9,18 @@ import pandas as pd
 import numpy as np
 
 
-# Resource file path
+# Define paths and filenames
 rfp = Path("./resources")
-
-# Where will outputs be found
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-results_filename = outputpath / 'health_system_systematic_run.pickle'
+results_filename = outputpath / '2020_11_23_health_system_systematic_run.pickle'
+make_file_name = lambda stub: outputpath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
+
 
 with open(results_filename, 'rb') as f:
     results = pickle.load(f)['results']
 
-datestamp = datetime.today().strftime("__%Y_%m_%d")
 
-# %%
-
+# %% Make summary plots:
 # Get total deaths in the duration of each simulation:
 deaths = dict()
 for key in results.keys():
@@ -30,8 +28,11 @@ for key in results.keys():
 
 deaths = pd.Series(deaths)
 
-# compute the excess deaths compared to the all Treatments
-excess_deaths = deaths[~(deaths.index == 'Everything')] - deaths['Everything']
+# compute the excess deaths compared to the No Treatments
+excess_deaths = deaths['Nothing'] - deaths[~(deaths.index == 'Nothing')]
 
 excess_deaths.plot.bar()
+plt.savefig(make_file_name('Impact_of_each_treatment_id'))
+plt.title('The Impact of Each set of Treatment_IDs')
+plt.ylabel('Deaths Averted by treatment_id, 2010-2014')
 plt.show()
