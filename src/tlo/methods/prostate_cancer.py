@@ -228,58 +228,58 @@ class ProstateCancer(Module):
 
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have pelvic pain:
-#       lm_init_pelvic_pain = LinearModel.multiplicative(
-#       Predictor('pc_status').when("none", 0.0)
-#                           .when("prostate_confined", p['init_prop_urinary_symptoms_by_stage'][0])
-#                           .when("local_ln", p['init_prop_urinary_symptoms_by_stage'][1])
-#                           .when("metastatic", p['init_prop_urinary_symptoms_by_stage'][2])
-#       )
+        lm_init_pelvic_pain = LinearModel.multiplicative(
+        Predictor('pc_status').when("none", 0.0)
+                            .when("prostate_confined", p['init_prop_urinary_symptoms_by_stage'][0])
+                            .when("local_ln", p['init_prop_urinary_symptoms_by_stage'][1])
+                            .when("metastatic", p['init_prop_urinary_symptoms_by_stage'][2])
+        )
 
-#       has_pelvic_pain_symptoms_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
+        has_pelvic_pain_symptoms_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=has_pelvic_pain_symptoms_at_init.index[has_pelvic_pain_symptoms_at_init].tolist(),
+            symptom_string='pelvic_pain',
+            add_or_remove='+',
+            disease_module=self
+        )
+
+#       above code replaced with below when running for n=1 -
+
 #       self.sim.modules['SymptomManager'].change_symptom(
-#           person_id=has_pelvic_pain_symptoms_at_init.index[has_pelvic_pain_symptoms_at_init].tolist(),
+#           person_id=1,
 #           symptom_string='pelvic_pain',
 #           add_or_remove='+',
 #           disease_module=self
 #       )
 
-#       this code replaced with below when running for n=1 - was not running otherwise
 
+        # ----- Impose the symptom of random sample of those in each cancer stage to have urinary symptoms:
+        lm_init_urinary = LinearModel.multiplicative(
+            Predictor('pc_status')  .when("none", 0.0)
+                                    .when("prostate_confined",
+                                          p['init_prop_urinary_symptoms_by_stage'][0])
+                                    .when("local_ln",
+                                          p['init_prop_urinary_symptoms_by_stage'][1])
+                                    .when("metastatic",
+                                          p['init_prop_urinary_symptoms_by_stage'][2])
+
+        )
+        has_urinary_symptoms_at_init = lm_init_urinary.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=1,
-            symptom_string='pelvic_pain',
+            person_id=has_urinary_symptoms_at_init.index[has_urinary_symptoms_at_init].tolist(),
+            symptom_string='urinary',
             add_or_remove='+',
             disease_module=self
         )
 
+#       above code replaced with below when running for n=1 -
 
-        # ----- Impose the symptom of random sample of those in each cancer stage to have urinary symptoms:
-#       lm_init_urinary = LinearModel.multiplicative(
-#           Predictor('pc_status')  .when("none", 0.0)
-#                                   .when("prostate_confined",
-#                                         p['init_prop_urinary_symptoms_by_stage'][0])
-#                                   .when("local_ln",
-#                                         p['init_prop_urinary_symptoms_by_stage'][1])
-#                                   .when("metastatic",
-#                                         p['init_prop_urinary_symptoms_by_stage'][2])
-
-#       )
-#       has_urinary_symptoms_at_init = lm_init_urinary.predict(df.loc[df.is_alive], self.rng)
 #       self.sim.modules['SymptomManager'].change_symptom(
-#           person_id=has_urinary_symptoms_at_init.index[has_urinary_symptoms_at_init].tolist(),
-#           symptom_string='urinary',
+#           person_id=1,
+#           symptom_string='pelvic_pain',
 #           add_or_remove='+',
 #           disease_module=self
 #       )
-
-#       this code replaced with below when running for n=1 - was not running otherwise
-
-        self.sim.modules['SymptomManager'].change_symptom(
-            person_id=1,
-            symptom_string='pelvic_pain',
-            add_or_remove='+',
-            disease_module=self
-        )
 
 
 # -------------------- pc_date_diagnosis -----------
