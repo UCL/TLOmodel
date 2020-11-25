@@ -181,7 +181,8 @@ class ProstateCancer(Module):
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='pelvic_pain',
-                    odds_ratio_health_seeking_in_adults=4.00)
+                    odds_ratio_health_seeking_in_adults=4.00,
+                    no_healthcareseeking_in_children=True)
         )
 
     def initialise_population(self, population):
