@@ -69,8 +69,8 @@ def make_simulation_nohsi():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 oesophagealancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 breastcancer.breastCancer(resourcefilepath=resourcefilepath)
+                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
+                 breast_cancer.BreastCancer(resourcefilepath=resourcefilepath)
                  )
     sim.seed_rngs(0)
     return sim
@@ -79,15 +79,13 @@ def make_simulation_nohsi():
 # %% Manipulation of parameters:
 def zero_out_init_prev(sim):
     # Set initial prevalence to zero:
-    sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'] = [0.0] * 5
+    sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'] = [0.0, 0.0, 0.0, 0.0]
     return sim
 
 
 def seed_init_prev_in_first_stage_only(sim):
     # Set initial prevalence to zero:
-    sim.modules['breastCancer'].parameters['init_prop_breast_cancer_stage'] = [1.0, 0.0, 0.00, 0.0, 0.0]
-    # Put everyone in first stage
-    sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'][0] = 1.0
+    sim.modules['breastCancer'].parameters['init_prop_breast_cancer_stage'] = [1.0, 0.0, 0.00, 0.0]
     return sim
 
 
