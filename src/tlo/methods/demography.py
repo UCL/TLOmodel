@@ -422,36 +422,42 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='person_years', data=py.to_dict())
 
 
-def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False):
+def get_scaling_factor(parsed_output, resourcefilepath):
+    """Find the factor that the model results should be multiplied by to be comparable to data"""
+
+    # Get information about the real population size (Malawi Census in 2018)
+    cens_tot = pd.read_csv(
+        resourcefilepath / 'demography' / "ResourceFile_PopulationSize_2018Census.csv"
+    )['Count'].sum()
+    cens_yr = 2018
+
+    # Get information about the model population size in 2018 (and fail if no 2018)
+    model_res = parsed_output['tlo.methods.demography']['population']
+    model_yr = pd.to_datetime(model_res.date).dt.year
+
+    if cens_yr in model_yr.values:
+        model_tot = model_res.loc[model_yr == cens_yr, 'total'].values[0]
+    else:
+        print("WARNING: Model results do not contain the year of the census, so cannot scale accurately")
+        model_tot = model_res.at[abs(model_yr - cens_yr).idxmin(), 'total']
+
+    # Calculate ratio for scaling
+    return cens_tot / model_tot
+
+
+def scale_to_population(parsed_output, resourcefilepath):
     """
     This helper function scales certain outputs so that they can create statistics for the whole population.
     e.g. Population Size, Number of deaths are scaled by the factor of {Model Pop Size at Start of Simulation} to {
     {Real Population at the same time}.
-
-    NB. This file gives precedence to the Malawi Population Census
 
     :param parsed_outoput: The outputs from parse_output
     :param resourcefilepath: The path_for_saved_files
     :return: a new version of parsed_output that includes certain variables scaled
     """
 
-    # Get information about the real population size (Malawi Census in 2018)
-    cens_tot = pd.read_csv(
-        Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
-    cens_yr = 2018
-
-    # Get information about the model population size in 2018 (and fail if no 2018)
-    model_res = parsed_output['tlo.methods.demography']['population']
-    model_res['year'] = pd.to_datetime(model_res.date).dt.year
-
-    assert cens_yr in model_res.year.values, "Model results do not contain the year of the census, so cannot scale"
-    model_tot = model_res.loc[model_res['year'] == cens_yr, 'total'].values[0]
-
     # Calculate ratio for scaling
-    ratio_data_to_model = cens_tot / model_tot
-
-    if rtn_scaling_ratio:
-        return ratio_data_to_model
+    ratio_data_to_model = get_scaling_factor(parsed_output, resourcefilepath)
 
     # Do the scaling on selected columns in the parsed outputs:
     o = parsed_output.copy()
@@ -488,3 +494,6 @@ def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False
     # TODO: Do this kind of manipulation for all things in the log that are /
     #  flagged are being subject to scaling - issue raised.
     return o
+
+
+

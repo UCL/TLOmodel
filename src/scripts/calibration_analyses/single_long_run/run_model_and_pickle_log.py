@@ -1,7 +1,10 @@
 """
-A run of the model with logging so as to allow for descriptions of overall Health Burden and usage of the Health System.
+A run of the model with logging so as to allow for descriptions of overall Demography and Health Burden.
+
+NB. HealthSystem is disabled and there are no spurious symptoms
 """
 import pickle
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -30,11 +33,13 @@ from tlo.methods import (
 
 # Define output path
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-results_filename = outputpath / 'long_run.pickle'
+datestamp = datetime.today().strftime("%Y_%m_%d")
+results_filename_stub = 'long_run'
+results_filename = outputpath / f"{datestamp}_{results_filename_stub}.pickle"
 
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
-end_date = start_date + pd.DateOffset(years=1)
+end_date = Date(2030, 12, 31)
 pop_size = 20_000
 
 # The resource files
@@ -45,7 +50,6 @@ log_config = {
     "directory": "./outputs",
     "custom_levels": {
         "*": logging.WARNING,
-        "tlo.methods.healthsystem": logging.INFO,
         "tlo.methods.healthburden": logging.INFO,
         "tlo.methods.demography": logging.INFO
     }
@@ -58,8 +62,8 @@ sim.register(
     # Standard modules:
     demography.Demography(resourcefilepath=rfp),
     enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
-    healthsystem.HealthSystem(resourcefilepath=rfp),
-    symptommanager.SymptomManager(resourcefilepath=rfp, spurious_symptoms=True),
+    healthsystem.HealthSystem(resourcefilepath=rfp, disable=True),
+    symptommanager.SymptomManager(resourcefilepath=rfp, spurious_symptoms=False),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=rfp),
     healthburden.HealthBurden(resourcefilepath=rfp),
     contraception.Contraception(resourcefilepath=rfp),

@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from scripts.utils.helper_funcs_for_processing_data_files import (
-    get_scaling_factor,
     get_causes_mappers,
     age_cats,
     get_age_range_categories,
@@ -22,6 +21,8 @@ from scripts.utils.helper_funcs_for_processing_data_files import (
 # %% Set file paths etc
 
 # Define the particular year for the focus of this analysis
+from tlo.methods.demography import get_scaling_factor
+
 year = 2010
 
 # Resource file path
@@ -34,7 +35,7 @@ results_filename = outputpath / 'long_run.pickle'
 with open(results_filename, 'rb') as f:
     output = pickle.load(f)['output']
 
-datestamp = datetime.today().strftime("__%Y_%m_%d")
+make_file_name = lambda stub: outputpath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
 
 # %% Load and process the GBD data
 
@@ -51,7 +52,7 @@ gbd_dalys_pt = gbd.loc[(gbd.year == year) & (gbd.measure_name == 'DALYs (Disabil
 
 # %% Get the scaling so that the population size matches that of the real population of Malawi
 
-scaling_factor = get_scaling_factor(output)
+scaling_factor = get_scaling_factor(output, rfp)
 
 # %% Get deaths from Model into a pivot-table (index=sex/age, columns=unified_cause) (in the particular year)
 
@@ -108,13 +109,14 @@ dalys_pt = dalys_melt.groupby(by=['sex', 'age_range', 'cause'])['value'].sum().u
 deaths_pt.sum().plot.bar()
 plt.xlabel('Cause')
 plt.ylabel(f"Total deaths in {year}")
-plt.savefig(outputpath / f"Deaths by cause {datestamp}.png")
+
+plt.savefig(make_file_name("Deaths by cause"))
 plt.show()
 
 dalys_pt.sum().plot.bar()
 plt.xlabel('Cause')
 plt.ylabel(f"Total DALYS in {year}")
-plt.savefig(outputpath / f"DALYS by cause {datestamp}.png")
+plt.savefig(make_file_name("DALY by cause"))
 plt.show()
 
 
@@ -151,7 +153,7 @@ def make_scatter_graph(gbd_totals, model_totals, title, show_labels=None):
     ax.set_xlabel('GBD')
     ax.set_ylabel('Model')
     ax.set_title(f'{title} in {year}')
-    plt.savefig(outputpath / f"ScatterPlot_{title}.png")
+    plt.savefig(make_file_name("Deaths_Scatter_Plot"))
     plt.show()
 
 # - Make scatter graph for deaths
