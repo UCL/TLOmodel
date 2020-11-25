@@ -23,7 +23,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     oesophagealcancer,
-    breastcancer,
+    breast_cancer,
     symptommanager,
 )
 
@@ -55,8 +55,8 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              # labour.Labour(resourcefilepath=resourcefilepath),
              # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
-             breastcancer.BreastCancer(resourcefilepath=resourcefilepath)
+             oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
+             breast_cancer.BreastCancer(resourcefilepath=resourcefilepath)
              )
 
 sim.seed_rngs(0)
@@ -64,10 +64,10 @@ sim.seed_rngs(0)
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to
 # begin with:
 sim.modules['BreastCancer'].parameters['r_stage1_none'] = 0.00
-sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'] = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-sim.modules['BreastCancer'].parameters["init_prop_breast_lump_discernible_breast_cancer_by_stage"] = [0.0] * 5
-sim.modules['BreastCancer'].parameters["init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage"] = [0.0] * 5
-sim.modules['BreastCancer'].parameters["init_prop_treatment_status_breast_cancer"] = [0.0] * 5
+sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'] = [1.0, 0.0, 0.0, 0.0]
+sim.modules['BreastCancer'].parameters["init_prop_breast_lump_discernible_breast_cancer_by_stage"] = [0.0] * 4
+sim.modules['BreastCancer'].parameters["init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage"] = [0.0] * 4
+sim.modules['BreastCancer'].parameters["init_prop_treatment_status_breast_cancer"] = [0.0] * 4
 sim.modules['BreastCancer'].parameters["init_prob_palliative_care"] = 0.0
 
 # Establish the logger and look at only demography
@@ -109,7 +109,7 @@ cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_tre
 1 - (
     len(cohort_treated.loc[cohort_treated['days_treatment_to_death'] < (5*365.25)]) /
     len(cohort_treated)
-)  # 0.77
+)
 
 # calc % of those that had not died of breast cancer 5 years after starting treatment (could have died of another
 # cause):
@@ -117,4 +117,5 @@ cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_tre
     len(cohort_treated.loc[(cohort_treated['cause'] == 'BreastCancer') & (cohort_treated['days_treatment_to_death']
                                                                                < (5*365.25))]) /
     len(cohort_treated)
-)   # 0.87
+)
+
