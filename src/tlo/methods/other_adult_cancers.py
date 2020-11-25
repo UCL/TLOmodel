@@ -167,13 +167,11 @@ class OtherAdultCancer(Module):
                           sheet_name="parameter_values")
         )
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='early_other_adult_ca_symptom',
-                    odds_ratio_health_seeking_in_adults=4.00)
+                    odds_ratio_health_seeking_in_adults=4.00,
+                    no_healthcareseeking_in_children=True)
         )
 
 
