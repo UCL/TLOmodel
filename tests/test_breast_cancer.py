@@ -87,8 +87,6 @@ def seed_init_prev_in_first_stage_only(sim):
     sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'] = \
         [0.0] \
         * len(sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'])
-    # Put everyone in first stage
-    sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'][0] = 1.0
     return sim
 
 
