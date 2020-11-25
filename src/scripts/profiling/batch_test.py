@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 import shared
+import os
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -46,7 +47,9 @@ resourcefilepath = Path("./resources")
 
 log_config = {
     "filename": f"batch_test_{seed_arg}",
-    "directory": "./outputs",
+    # Write log to ${AZ_BATCH_TASK_WORKING_DIR} if the variable exists,
+    # otherwise to current directory
+    "directory": os.getenv("AZ_BATCH_TASK_WORKING_DIR", ".") + "/outputs",
     "custom_levels": {"*": logging.INFO}
 }
 
