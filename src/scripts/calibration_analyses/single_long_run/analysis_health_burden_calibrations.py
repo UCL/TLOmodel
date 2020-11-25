@@ -22,7 +22,7 @@ from scripts.utils.helper_funcs_for_processing_data_files import (
 # Define the particular year for the focus of this analysis
 from tlo.methods.demography import get_scaling_factor
 
-year = 2019
+year = 2010
 
 # Resource file path
 rfp = Path("./resources")
@@ -207,9 +207,9 @@ make_stacked_bar_comparison(
     gbd_pt=gbd_dalys_pt,
     ylabel='DALYS')
 
-# %% make figure for Malaria:
-plt.bar(
-    ['GBD', 'TLO'],
-    [gbd_deaths_pt['Malaria'].sum(), deaths_pt['Malaria'].sum()]
-)
-plt.show()
+# # %% make figure for Malaria:
+# plt.bar(
+#     ['GBD', 'TLO'],
+#     [gbd_deaths_pt['Malaria'].sum(), deaths_pt['Malaria'].sum()]
+# )
+# plt.show()

@@ -252,8 +252,9 @@ death_rate = deaths.div(py)
 # produce plot comparison in 2010 (<5s):
 death_rate_comparison = pd.Series(
     data={
-        'data': calibration_death_rate_per_year_under_5s['2010'],
-        'model': death_rate.loc[2010].sum()
+        'data (2010)': calibration_death_rate_per_year_under_5s['2010'],
+        'data (2017)': calibration_death_rate_per_year_under_5s['2017'],
+        'model': death_rate.loc[2010].mean()
     }
 )
 
@@ -264,9 +265,10 @@ plt.show()
 
 
 # %% Plot total numbers of death against comparable estimate from GBD
-from scripts.utils.helper_funcs_for_processing_data_files import get_scaling_factor, load_gbd_deaths_and_dalys_data
+from scripts.utils.helper_funcs_for_processing_data_files import load_gbd_deaths_and_dalys_data
 
-scaling_factor = get_scaling_factor(output)
+scaling_factor = demography.get_scaling_factor(output, resourcefilepath)
+
 gbd = load_gbd_deaths_and_dalys_data(output)
 
 diarrhoea_deaths_gbd = (gbd.loc[
@@ -294,7 +296,7 @@ plt.show()
 cfr = dict()
 for age_grp in ['0y', '1y', '2-4y']:
     cfr[age_grp] = deaths[age_grp] / counts[age_grp].apply(pd.Series).sum(axis=1)
-cfr = pd.DataFrame(cfr).drop(index=2010).mean() * 100_000
+cfr = pd.DataFrame(cfr).drop(index=2015).mean() * 100_000
 
 cfr.plot.bar()
 plt.title('Case Fatality Rate for Diarrhoea')

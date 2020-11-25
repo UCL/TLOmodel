@@ -152,7 +152,7 @@ births_model = scaled_output['tlo.methods.demography']['birth_groupby_scaled'].r
 # Aggregate the model outputs into five year periods:
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
 births_model["Period"] = births_model["year"].map(calendar_period_lookup)
-births_model = births_model.groupby(by='Period')['count'].sum()
+births_model = births_model.loc[births_model.year < 2030].groupby(by='Period')['count'].sum()
 births_model.index = births_model.index.astype(make_calendar_period_type())
 
 # Births over time (WPP)
@@ -197,7 +197,7 @@ deaths_model["Period"] = deaths_model["year"].map(calendar_period_lookup)
 deaths_model["Age_Grp"] = deaths_model["age"].map(age_grp_lookup)
 
 deaths_model = deaths_model.rename(columns={'count': 'Count', 'sex': 'Sex'})
-deaths_model = pd.DataFrame(deaths_model.groupby(['Period', 'Sex', 'Age_Grp'])['Count'].sum()).reset_index()
+deaths_model = pd.DataFrame(deaths_model.loc[deaths_model.year < 2030].groupby(['Period', 'Sex', 'Age_Grp'])['Count'].sum()).reset_index()
 deaths_model['Variant'] = 'Model'
 
 # Load WPP data
