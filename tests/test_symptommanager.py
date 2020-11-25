@@ -90,6 +90,7 @@ def test_register_duplicate_symptoms():
     assert 2 == len(sm.all_registered_symptoms)
     assert 2 == len(sm.symptom_names)
 
+
 def test_no_symptoms_if_no_diseases():
     sim = Simulation(start_date=start_date, seed=0)
 
