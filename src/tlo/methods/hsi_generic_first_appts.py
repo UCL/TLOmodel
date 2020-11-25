@@ -8,6 +8,9 @@ from tlo.methods.bladder_cancer import (
     HSI_BladderCancer_Investigation_Following_Blood_Urine,
     HSI_BladderCancer_Investigation_Following_pelvic_pain,
 )
+from tlo.methods.other_adult_cancers import (
+    HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom
+)
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.labour import (
@@ -204,6 +207,20 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         topen=self.sim.date,
                         tclose=None
                     )
+
+            # If the symptoms include OtherAdultCancer_Investigation_Following_other_adult_ca_symptom,
+            # then begin investigation for other adult cancer:
+            if 'OtherAdultCancer_Investigation_Following_other_adult_ca_symptom' in symptoms:
+                hsi_event = HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
+                    module=self.sim.modules['OtherAdultCancer'],
+                    person_id=person_id,
+                )
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
 
             # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
             if 'Depression' in self.sim.modules:

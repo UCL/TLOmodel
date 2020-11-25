@@ -32,7 +32,12 @@ class OtherAdultCancer(Module):
         self.lm_onset_early_other_adult_ca_symptom = None
         self.daly_wts = dict()
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         "init_prop_other_adult_cancer_stage": Parameter(
