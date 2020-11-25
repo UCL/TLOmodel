@@ -1,6 +1,8 @@
 '''The functions used by tlo_methods_rst.py.'''
 
 import inspect
+from inspect import (isfunction, ismodule, isclass, ismethod, istraceback,
+                     isframe, iscode)
 from os import walk
 
 
@@ -64,7 +66,7 @@ def get_classes_in_module(fqn, module_obj):
     the required module (file), in the order in which they
     appear in the module file. Note that this excludes
     any other classes in the module, such as those brought
-    in by inheritance, or imported..
+    in by inheritance, or imported.
 
     Each entry in the list returned is itself a list of:
     [class name, class object, line number]
@@ -155,19 +157,17 @@ def write_rst_file(rst_dir, fqn, mobj):
 
 
 def get_class_output_string(classinfo):
-    '''Generate output string for a class to be written to an rst file
+    '''Generate output string for a single class to be written to an rst file.
 
     :param classinfo: a list with [class name, class object, line number]
     :return: the string to output
-
     '''
     class_name, class_obj, _ = classinfo
-    #mystr = f"\n\n\n" \
+    # mystr = f"\n\n\n" \
     #        f".. autoclass:: {class_name}\n" \
     #        f"   :members:\n\n" \
     #        f"   ..automethod:: __init__\n\n"
     mystr = f"\n\n\n.. autoclass:: {class_name}\n\n"
-
 
     # This is needed to keep information neatly aligned
     # with each class.
@@ -183,10 +183,10 @@ def get_class_output_string(classinfo):
 
     # Asif says we should probably not exclude __init__ in the following,
     # because some disease classes have custom arguments:
-    general_exclusions = ["__class__", "__dict__", "__module__",
-                          "__slots__", "__weakref__", ]
+    # general_exclusions = ["__class__", "__dict__", "__module__",
+    #                      "__slots__", "__weakref__", ]
 
-    #inherited_exclusions = ["initialise_population", "initialise_simulation",
+    # inherited_exclusions = ["initialise_population", "initialise_simulation",
     #                        "on_birth", "read_parameters", "apply",
     #                        "post_apply_hook", "on_hsi_alert",
     #                        "report_daly_values", "run", "did_not_run",
@@ -196,18 +196,33 @@ def get_class_output_string(classinfo):
     # sorted by name:
     classdat = inspect.getmembers(class_obj)  # Gets everything
 
+    # We want to sort classdat by line number, so that functions
+    # defined in, or overridden in, this class will be
+    # documented in source file order.
+
+    # 25/11 This is the order Asif would like:
+    # For subclasses of Module, PARAMETERS & PROPERTIES first as tables
+    # (in that order). Then for each of the subclass classes (Module, Event,
+    # HSI_Event) attributes of the class (in source-code order if possible,
+    # otherwise default) and then functions of the class
+    # (in source-code order).
+    # Like we did for functions, for attributes, if we can have the same logic
+    # (i.e. only show if defined in the subclass), that'd be great. This might
+    # be useful: https://stackoverflow.com/a/5253424
+
+    # TODO we only want to do this for descendants of classes
+    # Module, Event, and HSI_Event:
     func_objects_to_document = which_functions_to_print(class_obj)
+    # attributes_to_document = which_attributes_to_print(class_obj)
+
+    name_func_lines = []  # List of tuples to sort later
 
     for name, obj in classdat:
-        # We only want to document things defined in this class itself,
-        # rather than anything inherited from parent classes (including
-        # the basic "object" class).
-        # e.g. we don't want:
-        # __delattr__ = <slot wrapper '__delattr__' of 'object' objects>
-        # Skip over things inherited from object class or Module class
-
-        # We want nice tables for PARAMETERS and PROPERTIES
-        if name in ("PARAMETERS", "PROPERTIES"):
+        # First loop. Get PARAMETERS and PROPERTIES dictionary objects only.
+        # These are in subclasses of Module only.
+        # We want nice tables for PARAMETERS and PROPERTIES.
+        # In this case, obj is a dictionary
+        if name in ("PARAMETERS", "PROPERTIES"):  # TODO enforce this order.
             table_list = create_table(obj)
             if table_list == []:
                 continue
@@ -215,32 +230,45 @@ def get_class_output_string(classinfo):
             for t in table_list:
                 mystr += f"{spacer}{t}\n"
             mystr += "\n\n"
+
+        # Get source-code line numbering where possible.
+        elif isfunction(obj) and func_objects_to_document \
+                and obj in func_objects_to_document:
+            _, start_line_num = inspect.getsourcelines(obj)
+            name_func_lines.append((name, obj, start_line_num))
+
+        # Get source-code line numbering where possible.
+        # inspect.getsourcelines() only works for module, class, method,
+        # function, traceback, frame, or code objects
+        elif ismodule(obj) or isclass(obj) or ismethod(obj) \
+                or istraceback(obj) or isframe(obj) or iscode(obj):
+            pass  # _, start_line_num = inspect.getsourcelines(obj)
+
+        else:
+            # We want class attributes but I don't think we can get code order
             continue
 
-        # Interrogate the object. It's something else, maybe a
-        # function which hasn't been filtered out.
-        #
-        if inspect.isfunction(obj):
+    # Sort the functions we wish to document into source-file order:
+    name_func_lines.sort(key=lambda x: x[2])
 
-            if not func_objects_to_document:
-                print(f"**DEBUG: no func_objects_to_document in class"
-                      f"{class_name}")
-                continue
+    # Output attributes other than functions
+    for name, obj in classdat:
+        pass
 
-            if obj not in func_objects_to_document:
-                print(f"**DEBUG: skipping {obj} of class {class_name}")
-                continue
+    # New or overridden functions only.
+    if func_objects_to_document:
+        for name, obj, _ in name_func_lines:  # Now in source code order
 
-            mystr += f"{spacer}.. automethod:: {name}\n\n"
-            continue
-        #    if "population" in class_name:
-        #        import pdb; pdb.set_trace()
+            if obj in func_objects_to_document:  # Should be always True!
+                mystr += f"{spacer}.. automethod:: {name}\n\n"
+    else:
+        print(f"**DEBUG: no func_objects_to_document in class {class_name}")
 
-        # Anything else?
-        # mystr += f"{name} : {obj}\n\n"
-        # print(f"DEBUG: something else... {name}, {obj}")
+    # Anything else?
+    # mystr += f"{name} : {obj}\n\n"
+    # print(f"DEBUG: something else... {name}, {obj}")
 
-        # getdoc, getcomments,
+    # getdoc, getcomments,
 
     mystr += "\n\n\n"
 
@@ -264,6 +292,9 @@ def which_functions_to_print(clazz):
 
     # for each function in this class
     for func_name, func_obj in class_functions.items():
+        # for func in func_list:
+        # func_name, func_obj, _ = func
+        # import pdb; pdb.set_trace()
         should_i_print = True
 
         # for each base class of this class
