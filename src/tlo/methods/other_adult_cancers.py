@@ -89,9 +89,6 @@ class OtherAdultCancer(Module):
             "rate ratio for metastatic Other_adult cancer for people with local_ln"
             "Other_adult cancer if had curative treatment at local_ln",
         ),
-        "rate_palliative_care_metastatic": Parameter(
-            Types.REAL, "prob palliative care this 3 month period if metastatic"
-        ),
         "r_death_other_adult_cancer": Parameter(
             Types.REAL,
             "probabilty per 3 months of death from other adult cancer mongst people with metastatic other_adult cancer",
@@ -151,11 +148,14 @@ class OtherAdultCancer(Module):
             "at which it is given.",
             categories=["none", "site_confined", "local_ln", "metastatic"],
         ),
-
         "oac_date_palliative_care": Property(
             Types.DATE,
             "date of first receiving palliative care (pd.NaT is never had palliative care)"
         ),
+        "oac_date_death": Property(
+            Types.DATE,
+            "date of oac death"
+        )
     }
 
     def read_parameters(self, data_folder):
@@ -479,7 +479,7 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
+        super().__init__(module, frequency=DateOffset(months=1))
         # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
@@ -522,6 +522,7 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.schedule_event(
                     InstantaneousDeath(self.module, person_id, "OtherAdultCancer"), self.sim.date
             )
+        df.loc[selected_to_die, 'occ_date_death'] = self.sim.date
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -645,7 +646,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 module=self.module,
                 person_id=person_id,
             ),
-            topen=self.sim.date + DateOffset(years=12),
+            topen=self.sim.date + DateOffset(months=3),
             tclose=None,
             priority=0
         )
@@ -705,7 +706,7 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=1),
+                topen=self.sim.date + DateOffset(months=3),
                 tclose=None,
                 priority=0
             )
@@ -774,9 +775,9 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
 
     def __init__(self, module):
-        """schedule logging to repeat every 3 months
+        """schedule logging to repeat every 1 month
         """
-        self.repeat = 3
+        self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
@@ -817,7 +818,8 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({
             'diagnosed_since_last_log': df.oac_date_diagnosis.between(date_lastlog, date_now).sum(),
             'treated_since_last_log': df.oac_date_treatment.between(date_lastlog, date_now).sum(),
-            'palliative_since_last_log': df.oac_date_palliative_care.between(date_lastlog, date_now).sum()
+            'palliative_since_last_log': df.oac_date_palliative_care.between(date_lastlog, date_now).sum(),
+            'death_other_adult_cancer_since_last_log': df.oac_date_death.between(date_lastlog, date_now).sum()
         })
 
         logger.info('%s|summary_stats|%s', self.sim.date, out)
