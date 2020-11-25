@@ -62,6 +62,7 @@ def test_make_a_symptom():
 def test_register_duplicate_symptoms():
     symp = Symptom(name='symptom')
     symp_with_different_properties = Symptom(name='symptom', emergency_in_children=True)
+    symp_with_different_name = Symptom(name='symptom_a')
 
     sm = symptommanager.SymptomManager(resourcefilepath=resourcefilepath)
 
@@ -84,6 +85,10 @@ def test_register_duplicate_symptoms():
 
     assert created_error
 
+    # register a second, which is different: should accept it:
+    sm.register_symptom(symp_with_different_name)
+    assert 2 == len(sm.all_registered_symptoms)
+    assert 2 == len(sm.symptom_names)
 
 def test_no_symptoms_if_no_diseases():
     sim = Simulation(start_date=start_date, seed=0)
