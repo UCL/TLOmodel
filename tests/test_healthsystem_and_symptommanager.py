@@ -740,7 +740,7 @@ def test_speeding_up_request_consumables():
 
 
 def test_bed_days():
-    """Check all the basic functionality about bed-days footprints and capacity management by the healthcare-system"""
+    """Check all the basic functionality about bed-days footprints and capacity management by the health-system"""
 
     class DummyModule(Module):
         METADATA = {Metadata.USES_HEALTHSYSTEM}
@@ -871,4 +871,4 @@ def test_bed_days():
                 assert this_bed_type_starts_on > last_bed_type_ends_on
 
     # todo - logging
-    # todo - gating
+    # todo - gating through the imposition of the constraints
