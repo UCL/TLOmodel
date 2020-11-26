@@ -830,7 +830,6 @@ def test_bed_days():
     assert hsi_bd_a.bed_days_allocated_to_this_event == hsi_bd_a.BEDDAYS_FOOTPRINT
     assert hsi_bd_a.is_all_beddays_allocated()
 
-
     # 4) Check that footprint can be correctly recorded in the tracker:
     hs.initialise_beddays_tracker()
 

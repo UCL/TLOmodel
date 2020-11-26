@@ -654,15 +654,10 @@ class HealthSystem(Module):
         """
 
         # Gather useful information
-        df = self.sim.population.props
-        mfl = self.parameters['Master_Facilities_List']
-        fac_per_district = self.parameters['Facilities_For_Each_District']
         appt_types = self.parameters['Appt_Types_Table']['Appt_Type_Code'].values
         appt_times = self.parameters['Appt_Time_Table']
 
         # Gather information about the HSI event
-        the_person_id = hsi_event.target
-        the_district = df.at[the_person_id, 'district_of_residence']
         the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
 
         # Get the appt_footprint
@@ -1465,15 +1460,5 @@ class HSIEventWrapper(Event):
         if isinstance(self.hsi_event.target, tlo.population.Population) \
                 or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
 
-            # Create the arguments for the HSI Event that are consistent with no resource constraints:
-
-            # Appt squeeze-factor: value of 0.0 means no squeezing
-            squeeze_factor = 0.0
-
-            # Beds available: 1.0 for each type of bed-type means that whatever was specified in the footprint is
-            # provided
-            bed_types = self.sim.modules['HealthSystem'].bed_types
-            beddays_frac_available = dict(zip(bed_types, [1] * len(bed_types)))
-
-            # Run the event and ignore the output
-            _ = self.hsi_event.run(squeeze_factor=squeeze_factor)
+            # Run the event (with 0 squeeze_factor) and ignore the output
+            _ = self.hsi_event.run(squeeze_factor=0.0)
