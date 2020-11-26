@@ -1026,7 +1026,6 @@ class HealthSystem(Module):
             assert not df.isna().any().any()
             self.bed_tracker[bed_type] = df
 
-
     def impose_beddays_footprint(self, hsi_event):
         """Cause to be reflected in the bed_tracker that an hsi_event is being run that will cause bed to be
          occupied.

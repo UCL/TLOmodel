@@ -856,6 +856,5 @@ def test_bed_days():
             if not (pd.isnull(last_bed_type_ends_on) or pd.isnull(this_bed_type_starts_on)):
                 assert this_bed_type_starts_on > last_bed_type_ends_on
 
-
     # todo - logging
     # todo - gating
