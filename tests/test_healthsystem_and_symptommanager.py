@@ -740,7 +740,7 @@ def test_speeding_up_request_consumables():
 
 
 def test_bed_days():
-    """Check all the basic functionality about bed-days footprints and capacity management by the healthsystem"""
+    """Check all the basic functionality about bed-days footprints and capacity management by the healthcare-system"""
 
     class DummyModule(Module):
         METADATA = {Metadata.USES_HEALTHSYSTEM}
@@ -764,7 +764,8 @@ def test_bed_days():
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
-            pass
+            print(f'squeeze-factor is {squeeze_factor}')
+            print(f'Fraction of bed-days in footprint that is available is {self.bed_days_allocated_to_this_event}')
 
     # Create a dummy HSI with both-types of Bed Day specified
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
@@ -774,10 +775,14 @@ def test_bed_days():
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
             self.ACCEPTED_FACILITY_LEVEL = 1
             self.ALERT_OTHER_DISEASES = []
-            self.BEDDAYS_FOOTPRINT = {'ICU': 5, 'NICU': 10}
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
+                'high_dependency_bed': 10,
+                'general_bed': 5,
+                'non_bed_space': 2})
 
         def apply(self, person_id, squeeze_factor):
-            pass
+            print(f'squeeze-factor is {squeeze_factor}')
+            print(f'Fraction of bed-days in footprint that is available is {self.bed_days_allocated_to_this_event}')
 
     # Create simulation with the healthsystem and DummyModule
     sim = Simulation(start_date=start_date, seed=0)
@@ -790,29 +795,67 @@ def test_bed_days():
     sim.end_date = start_date + pd.DateOffset(days=100)
     hs = sim.modules['HealthSystem']
 
-    # Check that defaulting worked and that the format checking works
+    # 1) Check that HSI_Event come with correctly formatted bed-days footprints, whether explicitly defined or not.
+    #  No bed-days specified
     hsi_nobd = HSI_Dummy_NoBedDaysSpec(module=sim.modules['DummyModule'], person_id=0)
     hs.check_beddays_footrpint_format(hsi_nobd.BEDDAYS_FOOTPRINT)
-    hs.schedule_hsi_event(hsi_event=hsi_nobd, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=0)
 
-    # Check that function to make footprints works as expected:
-    assert {'ICU': 0, 'NICU': 0} == hsi_nobd.make_beddays_footprint({})
-    assert {'ICU': 2, 'NICU': 0} == hsi_nobd.make_beddays_footprint({'ICU': 2})
-    assert {'ICU': 0, 'NICU': 2} == hsi_nobd.make_beddays_footprint({'NICU': 2})
-
-    # Check that can schedule an HSI with a bed-day footprint
+    # Bed-days specified
     hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
     hs.check_beddays_footrpint_format(hsi_bd.BEDDAYS_FOOTPRINT)
+
+    # 2) Check that helper-function to make footprints works as expected:
+    assert {'non_bed_space': 0, 'general_bed': 0, 'high_dependency_bed': 0} \
+        == hsi_nobd.make_beddays_footprint({})
+    assert {'non_bed_space': 2, 'general_bed': 0, 'high_dependency_bed': 0} \
+        == hsi_nobd.make_beddays_footprint({'non_bed_space': 2})
+    assert {'non_bed_space': 0, 'general_bed': 4, 'high_dependency_bed': 1} \
+        == hsi_nobd.make_beddays_footprint({'non_bed_space': 0, 'general_bed': 4, 'high_dependency_bed': 1})
+
+    # 2) Check that can schedule an HSI with a bed-day footprint
+    hs.schedule_hsi_event(hsi_event=hsi_nobd, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=0)
     hs.schedule_hsi_event(hsi_event=hsi_bd, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=0)
 
-    # Check that footprint can be correctly recorded
-    # - store copy of the original tracker
+    # 3) Check that HSI can be run by the health system and correctly report the number of bed-days provided:
+    # do not update the '_received_info_about_bed_days' property:
+    hsi_nobd.apply(person_id=0, squeeze_factor=0.0)
+
+    # do update the '_received_info_about_bed_days' property:
+    hsi_bd._received_info_about_bed_days = hsi_bd.BEDDAYS_FOOTPRINT
+    hsi_bd.apply(person_id=0, squeeze_factor=0.0)
+
+    # 4) Check that footprint can be correctly recorded in the tracker:
     hs.initialise_beddays_tracker()
+
+    # - store copy of the original tracker
     import copy
     orig = copy.deepcopy(hs.bed_tracker)
 
+    # - impose the footprint:
+    sim.date += pd.DateOffset(days=5)
     hs.impose_beddays_footprint(hsi_bd)
 
-    # todo - check imposition works
+    # Check imposition works
+    footprint = hsi_bd.BEDDAYS_FOOTPRINT
+    diff = pd.DataFrame()
+    for bed_type in hsi_bd.BEDDAYS_FOOTPRINT:
+        diff[bed_type] = - (hs.bed_tracker[bed_type].loc['National Hospital'] - orig[bed_type].loc['National Hospital'])
 
-    # todo - check gating works
+    assert diff.sum().sum() == sum(footprint.values())
+    assert (diff.sum(axis=1) <= 1).all()
+    assert diff[diff.sum(axis=1) > 0].index.min() == sim.date
+    assert diff[diff.sum(axis=1) > 0].index.max() == sim.date + pd.DateOffset(days=sum(footprint.values()) - 1)
+
+    # check that beds timed to be used in the order specified (descending order of intensiveness)
+    for i, bed_type in enumerate(sim.modules['HealthSystem'].bed_types):
+        d = diff[diff.columns[i]]
+        this_bed_type_starts_on = d.loc[d > 0].index.min()
+        if i > 0:
+            d_last_bed_type = diff[diff.columns[i-1]]
+            last_bed_type_ends_on = d_last_bed_type.loc[d_last_bed_type > 0].index.max()
+            if not (pd.isnull(last_bed_type_ends_on) or pd.isnull(this_bed_type_starts_on)):
+                assert this_bed_type_starts_on > last_bed_type_ends_on
+
+
+    # todo - logging
+    # todo - gating

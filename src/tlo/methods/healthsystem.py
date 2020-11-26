@@ -108,8 +108,12 @@ class HealthSystem(Module):
         self.capabilities_coefficient = capabilities_coefficient
 
         # Define the types of bed that exist. The order give the sequences of bed that are used
-        # (e.g. ICU days occur first and then NICU days)
-        self.bed_types = ['ICU', 'NICU']
+        # (i.e. in descending order of intensiveness)
+        self.bed_types = [
+            "high_dependency_bed",
+            "general_bed",
+            "non_bed_space",
+        ]
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
@@ -173,7 +177,7 @@ class HealthSystem(Module):
         self.parameters['BedCapacity'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Bed_Capacity.csv'
         ).iloc[:, 1:].set_index('Facility_Name')
-        assert all([f"Beds_{bed_type}" in self.parameters['BedCapacity'].columns for bed_type in self.bed_types])
+        assert all([bed_type in self.parameters['BedCapacity'].columns for bed_type in self.bed_types])
 
     def process_consumables_file(self):
         """Helper function for processing the consumables data (stored as self.parameters['Consumables'])
@@ -888,11 +892,7 @@ class HealthSystem(Module):
         Helper function to generate a blank footprint for the bed-days required by an HSI
         :return: a footprint of the correct format, specifying no bed days
         """
-        # todo - make this generic and use self.bed_types
-        return {
-            'ICU': 0,
-            'NICU': 0
-        }
+        return dict(zip(self.bed_types, [0] * len(self.bed_types)))
 
     def check_beddays_footrpint_format(self, beddays_footprint):
         """Check that the format of the beddays footprint is correct"""
@@ -1021,13 +1021,14 @@ class HealthSystem(Module):
         for bed_type in self.bed_types:
             df = pd.DataFrame(index=self.parameters['BedCapacity'].index,
                               columns=pd.date_range(self.sim.start_date, self.sim.end_date, freq='D'),
-                              data=1.0)
-            df = df.mul(self.parameters['BedCapacity'][f'Beds_{bed_type}'], axis=0)
+                              data=1)
+            df = df.mul(self.parameters['BedCapacity'][bed_type], axis=0)
             assert not df.isna().any().any()
             self.bed_tracker[bed_type] = df
 
+
     def impose_beddays_footprint(self, hsi_event):
-        """Cause to be reflected in the bed_tracker than an hsi_event is being run that will cause bed to be
+        """Cause to be reflected in the bed_tracker that an hsi_event is being run that will cause bed to be
          occupied.
          If multiple bed types are required, then it is assumed that these run in the sequence given in ```bed_types```.
          """
@@ -1036,6 +1037,7 @@ class HealthSystem(Module):
         start_allbeds = self.sim.date
         end_allbeds = self.sim.date + pd.DateOffset(days=sum(footprint.values()) - 1)
 
+        # todo - determine the facility
         fac = 'National Hospital'
 
         start_this_bed = start_allbeds
@@ -1198,8 +1200,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 if ok_to_run:
 
+                    # Compute the fraction of the bed-days in the footprint that is available
+                    # todo - this provides exactly the beddays that were requested,
+                    #  ... but this will be where the check on availability is gated
+                    event._received_info_about_bed_days = event.BEDDAYS_FOOTPRINT
+
                     # Run the HSI event (allowing it to return an updated appt_footprint)
-                    actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
+                    actual_appt_footprint = event.run(
+                        squeeze_factor=squeeze_factor
+                    )
 
                     # Check if the HSI event returned updated appt_footprint
                     if actual_appt_footprint is not None:
@@ -1288,11 +1297,17 @@ class HSI_Event:
         self.ACCEPTED_FACILITY_LEVEL = None
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
+        self._received_info_about_bed_days = self.BEDDAYS_FOOTPRINT
 
-    def apply(self, *args, **kwargs):
+    @property
+    def bed_days_allocated_to_this_event(self):
+        return self._received_info_about_bed_days
+
+    def apply(self, squeeze_factor=0.0, *args, **kwargs):
         """Apply this event to the population.
 
         Must be implemented by subclasses.
+
         """
         raise NotImplementedError
 
@@ -1419,4 +1434,16 @@ class HSIEventWrapper(Event):
 
         if isinstance(self.hsi_event.target, tlo.population.Population) \
                 or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
-            _ = self.hsi_event.run(squeeze_factor=0.0)
+
+            # Create the arguments for the HSI Event that are consistent with no resource constraints:
+
+            # Appt squeeze-factor: value of 0.0 means no squeezing
+            squeeze_factor = 0.0
+
+            # Beds available: 1.0 for each type of bed-type means that whatever was specified in the footprint is
+            # provided
+            bed_types = self.sim.modules['HealthSystem'].bed_types
+            beddays_frac_available = dict(zip(bed_types, [1] * len(bed_types)))
+
+            # Run the event and ignore the output
+            _ = self.hsi_event.run(squeeze_factor=squeeze_factor, beddays_frac_available=beddays_frac_available)
