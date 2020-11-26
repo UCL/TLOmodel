@@ -765,7 +765,7 @@ def test_bed_days():
 
         def apply(self, person_id, squeeze_factor):
             print(f'squeeze-factor is {squeeze_factor}')
-            print(f'Fraction of bed-days in footprint that is available is {self.bed_days_allocated_to_this_event}')
+            print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
 
     # Create a dummy HSI with both-types of Bed Day specified
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
@@ -773,7 +773,7 @@ def test_bed_days():
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 1
+            self.ACCEPTED_FACILITY_LEVEL = 2
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
                 'high_dependency_bed': 10,
@@ -782,7 +782,7 @@ def test_bed_days():
 
         def apply(self, person_id, squeeze_factor):
             print(f'squeeze-factor is {squeeze_factor}')
-            print(f'Fraction of bed-days in footprint that is available is {self.bed_days_allocated_to_this_event}')
+            print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
 
     # Create simulation with the healthsystem and DummyModule
     sim = Simulation(start_date=start_date, seed=0)
@@ -817,12 +817,19 @@ def test_bed_days():
     hs.schedule_hsi_event(hsi_event=hsi_bd, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=0)
 
     # 3) Check that HSI can be run by the health system and correctly report the number of bed-days provided:
-    # do not update the '_received_info_about_bed_days' property:
-    hsi_nobd.apply(person_id=0, squeeze_factor=0.0)
-
-    # do update the '_received_info_about_bed_days' property:
-    hsi_bd._received_info_about_bed_days = hsi_bd.BEDDAYS_FOOTPRINT
+    #  - if the health-system does update the '_received_info_about_bed_days' property:
+    info_sent_to_hsi = {k: int(hsi_bd.BEDDAYS_FOOTPRINT[k] * 0.5) for k in hsi_bd.BEDDAYS_FOOTPRINT}
+    hsi_bd._received_info_about_bed_days = info_sent_to_hsi
     hsi_bd.apply(person_id=0, squeeze_factor=0.0)
+    assert info_sent_to_hsi == hsi_bd.bed_days_allocated_to_this_event
+
+    #  - confirm that if the `_received_info_about_bed_days` is not written to, it defaults to the full footprint
+    # (this it what happens when the event is from inside the HSIEventWrapper)
+    hsi_bd_a = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
+    hsi_bd_a.apply(person_id=0, squeeze_factor=0.0)
+    assert hsi_bd_a.bed_days_allocated_to_this_event == hsi_bd_a.BEDDAYS_FOOTPRINT
+    assert hsi_bd_a.is_all_beddays_allocated()
+
 
     # 4) Check that footprint can be correctly recorded in the tracker:
     hs.initialise_beddays_tracker()
@@ -837,14 +844,22 @@ def test_bed_days():
 
     # Check imposition works
     footprint = hsi_bd.BEDDAYS_FOOTPRINT
+    the_facility_id, the_facility_name = sim.modules['HealthSystem'].get_facility_id(hsi_event=hsi_bd)
+
     diff = pd.DataFrame()
     for bed_type in hsi_bd.BEDDAYS_FOOTPRINT:
-        diff[bed_type] = - (hs.bed_tracker[bed_type].loc['National Hospital'] - orig[bed_type].loc['National Hospital'])
+        diff[bed_type] = - (hs.bed_tracker[bed_type].loc[the_facility_name] - orig[bed_type].loc[the_facility_name])
+
+    first_day = diff[diff.sum(axis=1) > 0].index.min()
+    last_day = diff[diff.sum(axis=1) > 0].index.max()
 
     assert diff.sum().sum() == sum(footprint.values())
     assert (diff.sum(axis=1) <= 1).all()
-    assert diff[diff.sum(axis=1) > 0].index.min() == sim.date
-    assert diff[diff.sum(axis=1) > 0].index.max() == sim.date + pd.DateOffset(days=sum(footprint.values()) - 1)
+    assert first_day == sim.date
+    assert last_day == sim.date + pd.DateOffset(days=sum(footprint.values()) - 1)
+    assert (1 == diff.loc[
+           (diff.index >= first_day) &
+           (diff.index <= last_day)].sum(axis=1)).all()
 
     # check that beds timed to be used in the order specified (descending order of intensiveness)
     for i, bed_type in enumerate(sim.modules['HealthSystem'].bed_types):

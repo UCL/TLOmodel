@@ -1,6 +1,7 @@
 """
 Todo:   - speed up
-        - re-organised resource files
+        - phase-out use of facility_name and replace with facility_id
+        - re-organised resource files: bring in one united file, and then decompose following read_parameters
         - bed days parameterisation
         - let the level of the appointment be in the log
         - move things to the hsi base class
@@ -616,6 +617,30 @@ class HealthSystem(Module):
         """
         raise Exception('Do not use get_prob_seek_care().')
 
+    def get_facility_id(self, hsi_event):
+        """Helper function to find the facility_id (the integer value) at which an HSI event will take place"""
+        # Gather useful information
+
+        df = self.sim.population.props
+        fac_per_district = self.parameters['Facilities_For_Each_District']
+
+        # Gather information about the HSI event
+        the_person_id = hsi_event.target
+        the_district = df.at[the_person_id, 'district_of_residence']
+
+        # Get the (one) health_facility available to this person (based on their district), which is accepted by the
+        # hsi_event.ACCEPTED_FACILITY_LEVEL:
+        the_facility_info = fac_per_district.loc[
+            (fac_per_district['District'] == the_district)
+            & (fac_per_district['Facility_Level'] == hsi_event.ACCEPTED_FACILITY_LEVEL),
+            ['Facility_ID', 'Facility_Name'],
+        ].iloc[0]
+
+        the_facility_id = the_facility_info.Facility_ID
+        the_facility_name = the_facility_info.Facility_Name
+
+        return the_facility_id, the_facility_name
+
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
         This will take an HSI event and return the required appointments in terms of the time required of each
@@ -638,6 +663,7 @@ class HealthSystem(Module):
         # Gather information about the HSI event
         the_person_id = hsi_event.target
         the_district = df.at[the_person_id, 'district_of_residence']
+        the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
 
         # Get the appt_footprint
         if actual_appt_footprint is None:
@@ -649,13 +675,7 @@ class HealthSystem(Module):
 
         # Get the (one) health_facility available to this person (based on their district), which is accepted by the
         # hsi_event.ACCEPTED_FACILITY_LEVEL:
-        the_facility_id = fac_per_district.loc[
-            (fac_per_district['District'] == the_district)
-            & (fac_per_district['Facility_Level'] == hsi_event.ACCEPTED_FACILITY_LEVEL),
-            'Facility_ID',
-        ].values[0]
-
-        the_facility_level = mfl.loc[mfl['Facility_ID'] == the_facility_id, 'Facility_Level'].values[0]
+        the_facility_id, the_facility_name = self.get_facility_id(hsi_event)
 
         # Transform the treatment footprint into a demand for time for officers of each type, for this
         # facility level (it varies by facility level)
@@ -1036,8 +1056,8 @@ class HealthSystem(Module):
         start_allbeds = self.sim.date
         end_allbeds = self.sim.date + pd.DateOffset(days=sum(footprint.values()) - 1)
 
-        # todo - determine the facility
-        fac = 'National Hospital'
+        # todo - determine the facility_id
+        the_facility_id, the_facility_name = self.get_facility_id(hsi_event)
 
         start_this_bed = start_allbeds
         for bed_type in self.bed_types:
@@ -1045,7 +1065,7 @@ class HealthSystem(Module):
             # print(f"{bed_type}: {start_this_bed}-{end_this_bed}")
 
             # Remove one available bed from the tracker:
-            tracker[bed_type].loc[fac, start_this_bed:end_this_bed] -= 1
+            tracker[bed_type].loc[the_facility_name, start_this_bed:end_this_bed] -= 1
 
             # get ready for next bed:
             start_this_bed = end_this_bed + pd.DateOffset(days=1)
@@ -1199,10 +1219,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 if ok_to_run:
 
-                    # Compute the fraction of the bed-days in the footprint that is available
+                    # Compute the fraction of the bed-days in the footprint that is available and log the usage:
                     # todo - this provides exactly the beddays that were requested,
                     #  ... but this will be where the check on availability is gated
                     event._received_info_about_bed_days = event.BEDDAYS_FOOTPRINT
+                    self.impose_beddays_footprint(event)
 
                     # Run the HSI event (allowing it to return an updated appt_footprint)
                     actual_appt_footprint = event.run(
@@ -1296,11 +1317,15 @@ class HSI_Event:
         self.ACCEPTED_FACILITY_LEVEL = None
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
-        self._received_info_about_bed_days = self.BEDDAYS_FOOTPRINT
+        self._received_info_about_bed_days = None
 
     @property
     def bed_days_allocated_to_this_event(self):
-        return self._received_info_about_bed_days
+        if self._received_info_about_bed_days is None:
+            # default to the footprint if no information about bed-days is received
+            return self.BEDDAYS_FOOTPRINT
+        else:
+            return self._received_info_about_bed_days
 
     def apply(self, squeeze_factor=0.0, *args, **kwargs):
         """Apply this event to the population.
@@ -1396,6 +1421,12 @@ class HSI_Event:
 
         return footprint
 
+    def is_all_beddays_allocated(self):
+        """Check if the entire footprint requested is allocated"""
+        return all(
+            [self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT]
+        )
+
     def make_appt_footprint(self, dict_of_appts):
         """Helper function to make an appt_footprint. Create the full appt_footprint that is expected from a dictionary
         only giving the types of appointments needed."""
@@ -1445,4 +1476,4 @@ class HSIEventWrapper(Event):
             beddays_frac_available = dict(zip(bed_types, [1] * len(bed_types)))
 
             # Run the event and ignore the output
-            _ = self.hsi_event.run(squeeze_factor=squeeze_factor, beddays_frac_available=beddays_frac_available)
+            _ = self.hsi_event.run(squeeze_factor=squeeze_factor)
