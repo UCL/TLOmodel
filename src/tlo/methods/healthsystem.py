@@ -170,10 +170,10 @@ class HealthSystem(Module):
         self.process_consumables_file()
 
         # Read in in-patient capacity
-        self.parameters['BedCapacity'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Bed_Capacity.csv'
-                                                      ).iloc[:, 1:].set_index('Facility_Name')
+        self.parameters['BedCapacity'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Bed_Capacity.csv'
+        ).iloc[:, 1:].set_index('Facility_Name')
         assert all([f"Beds_{bed_type}" in self.parameters['BedCapacity'].columns for bed_type in self.bed_types])
-
 
     def process_consumables_file(self):
         """Helper function for processing the consumables data (stored as self.parameters['Consumables'])
@@ -301,7 +301,7 @@ class HealthSystem(Module):
         if isinstance(hsi_event.target, tlo.population.Population):  # check if hsi_event is population-scoped
             # This is a population-scoped HSI event...
             # ... So it only needs TREATMENT_ID (the other items are ignored)
-            assert ('TREATMENT_ID' in dir(hsi_event)) and (hsi_event.TREATMENT_ID is not '')
+            assert ('TREATMENT_ID' in dir(hsi_event)) and (hsi_event.TREATMENT_ID != '')
 
         else:
             # This is an individual-scoped HSI event.
@@ -309,7 +309,7 @@ class HealthSystem(Module):
             # ALERT_OTHER_DISEASES defined
 
             # Correctly formatted footprint
-            assert ('TREATMENT_ID' in dir(hsi_event)) and (hsi_event.TREATMENT_ID is not '')
+            assert ('TREATMENT_ID' in dir(hsi_event)) and (hsi_event.TREATMENT_ID != '')
 
             # Correct formated EXPECTED_APPT_FOOTPRINT
             assert 'EXPECTED_APPT_FOOTPRINT' in dir(hsi_event)
@@ -894,14 +894,12 @@ class HealthSystem(Module):
             'NICU': 0
         }
 
-
     def check_beddays_footrpint_format(self, beddays_footprint):
         """Check that the format of the beddays footprint is correct"""
         assert type(beddays_footprint) is dict
         assert len(self.bed_types) == len(beddays_footprint)
         assert all([(bed_type in beddays_footprint) for bed_type in self.bed_types])
         assert all([((v >= 0) and (type(v) is int)) for v in beddays_footprint.values()])
-
 
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
@@ -1008,26 +1006,25 @@ class HealthSystem(Module):
         return list_of_events
 
     def initialise_beddays_tracker(self):
-         """Initialise the bed days tracker.
-         Create a dataframe for each type of beds that give the total number of beds available in each facility (rows)
-         by the date during the simulation (columns).
+        """Initialise the bed days tracker.
+        Create a dataframe for each type of beds that give the total number of beds available in each facility (rows)
+        by the date during the simulation (columns).
 
-         The bed_tracker gives the number of beds available in each facility on each day. It is decremented by 1 for each
+        The bed_tracker gives the number of beds available in each facility on each day. It is decremented by 1 for each
          person occupying a bed for one day.
 
-         This assumes that bed capacity is held constant throughout the simulation; but it could be changed through
-         modifications here.
+        This assumes that bed capacity is held constant throughout the simulation; but it could be changed through
+        modifications here.
+        """
+        self.bed_tracker = dict()
 
-         """
-         self.bed_tracker = dict()
-
-         for bed_type in self.bed_types:
-             df = pd.DataFrame(index=self.parameters['BedCapacity'].index,
-                               columns=pd.date_range(self.sim.start_date, self.sim.end_date, freq='D'),
-                               data=1.0)
-             df = df.mul(self.parameters['BedCapacity'][f'Beds_{bed_type}'], axis=0)
-             assert not df.isna().any().any()
-             self.bed_tracker[bed_type] = df
+        for bed_type in self.bed_types:
+            df = pd.DataFrame(index=self.parameters['BedCapacity'].index,
+                              columns=pd.date_range(self.sim.start_date, self.sim.end_date, freq='D'),
+                              data=1.0)
+            df = df.mul(self.parameters['BedCapacity'][f'Beds_{bed_type}'], axis=0)
+            assert not df.isna().any().any()
+            self.bed_tracker[bed_type] = df
 
     def impose_beddays_footprint(self, hsi_event):
         """Cause to be reflected in the bed_tracker than an hsi_event is being run that will cause bed to be
@@ -1052,7 +1049,7 @@ class HealthSystem(Module):
             # get ready for next bed:
             start_this_bed = end_this_bed + pd.DateOffset(days=1)
 
-         # check that dates work
+        # check that dates work
         assert (start_this_bed - pd.DateOffset(days=1)) == end_allbeds
 
 
@@ -1370,20 +1367,20 @@ class HSI_Event:
         return all_available
 
     def make_beddays_footprint(self, dict_of_beddays):
-         """Helper function to make a correctly-formed 'bed-days footprint'"""
-         # get blank footprint
-         footprint = self.sim.modules['HealthSystem'].get_blank_beddays_footprint()
+        """Helper function to make a correctly-formed 'bed-days footprint'"""
+        # get blank footprint
+        footprint = self.sim.modules['HealthSystem'].get_blank_beddays_footprint()
 
-         # do checks
-         assert type(dict_of_beddays) is dict
-         assert all([(k in footprint.keys()) for k in dict_of_beddays.keys()])
-         assert all([type(v) in (float, int) for v in dict_of_beddays.values()])
+        # do checks
+        assert type(dict_of_beddays) is dict
+        assert all([(k in footprint.keys()) for k in dict_of_beddays.keys()])
+        assert all([type(v) in (float, int) for v in dict_of_beddays.values()])
 
-         # make footprint (defaulting to zero where a type of bed-days is not specified)
-         for k, v in dict_of_beddays.items():
-             footprint[k] = v
+        # make footprint (defaulting to zero where a type of bed-days is not specified)
+        for k, v in dict_of_beddays.items():
+            footprint[k] = v
 
-         return footprint
+        return footprint
 
     def make_appt_footprint(self, dict_of_appts):
         """Helper function to make an appt_footprint. Create the full appt_footprint that is expected from a dictionary
