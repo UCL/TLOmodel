@@ -831,17 +831,18 @@ def test_bed_days():
     assert hsi_bd_a.is_all_beddays_allocated()
 
     # 4) Check that footprint can be correctly recorded in the tracker:
+    # - if the days fall safely inside the period of the simulation
     hs.initialise_beddays_tracker()
 
-    # - store copy of the original tracker
+    # store copy of the original tracker
     import copy
     orig = copy.deepcopy(hs.bed_tracker)
 
-    # - impose the footprint:
+    # impose the footprint:
     sim.date += pd.DateOffset(days=5)
     hs.impose_beddays_footprint(hsi_bd)
 
-    # Check imposition works
+    # check imposition works:
     footprint = hsi_bd.BEDDAYS_FOOTPRINT
     the_facility_id, the_facility_name = sim.modules['HealthSystem'].get_facility_id(hsi_event=hsi_bd)
 
@@ -860,7 +861,7 @@ def test_bed_days():
            (diff.index >= first_day) &
            (diff.index <= last_day)].sum(axis=1)).all()
 
-    # check that beds timed to be used in the order specified (descending order of intensiveness)
+    # check that beds timed to be used in the order specified (descending order of intensiveness):
     for i, bed_type in enumerate(sim.modules['HealthSystem'].bed_types):
         d = diff[diff.columns[i]]
         this_bed_type_starts_on = d.loc[d > 0].index.min()
@@ -870,5 +871,28 @@ def test_bed_days():
             if not (pd.isnull(last_bed_type_ends_on) or pd.isnull(this_bed_type_starts_on)):
                 assert this_bed_type_starts_on > last_bed_type_ends_on
 
-    # todo - logging
+    # - if the days extend beyond the period of the simulation:
+    hs.initialise_beddays_tracker()
+
+    # store copy of the original tracker
+    orig = copy.deepcopy(hs.bed_tracker)
+
+    # impose the footprint (that will extend past end of the simulation): should not error and should not extend df
+    sim.date = sim.end_date - pd.DateOffset(days=1)
+    hs.impose_beddays_footprint(hsi_bd)
+
+    # check that additional columns have not been added
+    for bed_type in hs.bed_tracker:
+        assert all(orig[bed_type].columns == hs.bed_tracker[bed_type].columns)
+
+    # tracker should show only the 2 days in the high-dependency bed that occur before end of simulation
+    assert orig['general_bed'].equals(hs.bed_tracker['general_bed'])
+    assert orig['non_bed_space'].equals(hs.bed_tracker['non_bed_space'])
+    assert all(
+        [0] * 99 + [1] * 2 == (
+            orig['high_dependency_bed'].loc[the_facility_name] -
+            hs.bed_tracker['high_dependency_bed'].loc[the_facility_name]
+        ).values
+    )
+
     # todo - gating through the imposition of the constraints

@@ -1051,7 +1051,7 @@ class HealthSystem(Module):
         start_allbeds = self.sim.date
         end_allbeds = self.sim.date + pd.DateOffset(days=sum(footprint.values()) - 1)
 
-        # todo - determine the facility_id
+        # determine the facility_id
         the_facility_id, the_facility_name = self.get_facility_id(hsi_event)
 
         start_this_bed = start_allbeds
@@ -1060,6 +1060,7 @@ class HealthSystem(Module):
             # print(f"{bed_type}: {start_this_bed}-{end_this_bed}")
 
             # Remove one available bed from the tracker:
+            # NB. if start_this_bed or end_this_bed are not in range, this will not error
             tracker[bed_type].loc[the_facility_name, start_this_bed:end_this_bed] -= 1
 
             # get ready for next bed:
