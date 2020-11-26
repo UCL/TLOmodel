@@ -1,4 +1,5 @@
-"""Helper functions for processing GBD Data and aligning it with TLO model outputs"""
+"""Helper functions for processing GBD Data and aligning it with TLO model outputs
+NB. This will need to be updated with each new module that is added."""
 
 import pandas as pd
 from pathlib import Path
