@@ -1068,6 +1068,19 @@ class HealthSystem(Module):
         # check that dates work
         assert (start_this_bed - pd.DateOffset(days=1)) == end_allbeds
 
+    def on_simulation_end(self):
+        """Dump the record of the bed_tracker to the log"""
+        for bed_type in self.bed_tracker:
+            for index, row in self.bed_tracker[bed_type].iterrows():
+                row.index = row.index.astype(str)
+                row['Facility_Name'] = index
+
+                logger.info(
+                    key=f'bed_tracker_{bed_type}',
+                    data=row,
+                    description=f'dataframe of bed_tracker of type {bed_type}, broken down by day and facility'
+                )
+
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
