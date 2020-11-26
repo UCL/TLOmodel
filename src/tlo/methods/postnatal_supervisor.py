@@ -249,7 +249,9 @@ class PostnatalSupervisor(Module):
                            sim.date + DateOffset(years=1))
 
         # Define the conditions we want to track
-        self.postnatal_tracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0,
+        self.postnatal_tracker = {'endometritis': 0, 'urinary_tract_inf': 0, 'skin_soft_tissue_inf': 0,
+                                  'other_maternal_infection': 0,'secondary_pph': 0, 'postnatal_death': 0,
+                                  'secondary_pph_death': 0,
                                   'postnatal_sepsis': 0, 'sepsis_death': 0, 'fistula': 0, 'postnatal_anaemia': 0,
                                   'late_neonatal_sepsis': 0, 'neonatal_death': 0, 'neonatal_sepsis_death': 0}
 
@@ -330,11 +332,12 @@ class PostnatalSupervisor(Module):
         df = self.sim.population.props
         params = self.parameters
 
-        risk_endometritis = params['pn_linear_equations'][f'{infection}'].predict(df.loc[[
+        risk_infection = params['pn_linear_equations'][f'{infection}'].predict(df.loc[[
             individual_id]])[individual_id]
 
-        if risk_endometritis < self.rng.random_sample():
+        if risk_infection < self.rng.random_sample():
             self.postpartum_infections_late.set([individual_id], f'{infection}')
+            self.postnatal_tracker[f'{infection}'] +=1
 
     def set_postnatal_complications_mothers(self, week):
         """This function is called by the PostnatalSupervisor event. It applies risk of key complication of women
@@ -1030,17 +1033,32 @@ class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         total_pph_death = self.module.postnatal_tracker['secondary_pph_death']
         total_sepsis = self.module.postnatal_tracker['postnatal_sepsis']
         total_sepsis_death = self.module.postnatal_tracker['sepsis_death']
+        total_fistula = self.module.postnatal_tracker['fistula']
+        total_endo = self.module.postnatal_tracker['endometritis']
+        total_uti = self.module.postnatal_tracker['urinary_tract_inf']
+        total_ssti = self.module.postnatal_tracker['skin_soft_tissue_inf']
+        total_other_inf = self.module.postnatal_tracker['other_maternal_infection']
+        total_anaemia = self.module.postnatal_tracker['postnatal_anaemia']
 
-        dict_for_output = {'total_pph': total_pph,
-                           'total_deaths': total_pn_death,
+        dict_for_output = {'total_fistula': total_fistula,
+                           'total_endo': total_endo,
+                           'total_uti': total_uti,
+                           'total_ssti': total_ssti,
+                           'total_other_inf': total_other_inf,
+                           'total_anaemia': total_anaemia,
+                           'total_pph': total_pph,
                            'total_pph_death': total_pph_death,
                            'total_sepsis': total_sepsis,
-                           'total_sepsis_death': total_sepsis_death}
+                           'total_sepsis_death': total_sepsis_death,
+                           'total_deaths': total_pn_death,
+                           'pn_mmr': (total_pn_death/total_births_last_year) * 100000}
 
         logger.info(key='postnatal_summary_stats', data=dict_for_output, description= 'Yearly summary statistics '
                                                                                       'output from the postnatal '
                                                                                       'supervisor module')
 
-        self.module.postnatal_tracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0,
-                                        'postnatal_sepsis': 0, 'sepsis_death': 0, 'fistula': 0, 'postnatal_anaemia': 0,
-                                        'late_neonatal_sepsis': 0, 'neonatal_death': 0, 'neonatal_sepsis_death': 0}
+        self.module.postnatal_tracker = {'endometritis': 0, 'urinary_tract_inf': 0, 'skin_soft_tissue_inf': 0,
+                                         'other_maternal_infection': 0,'secondary_pph': 0, 'postnatal_death': 0,
+                                         'secondary_pph_death': 0,'postnatal_sepsis': 0, 'sepsis_death': 0,
+                                         'fistula': 0, 'postnatal_anaemia': 0, 'late_neonatal_sepsis': 0,
+                                         'neonatal_death': 0, 'neonatal_sepsis_death': 0}

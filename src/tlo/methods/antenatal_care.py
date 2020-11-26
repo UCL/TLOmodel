@@ -2417,7 +2417,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
                     # Some anaemia causing deficiencies (folate, B12)  are detected through MCV reading on the
                     # FBC, and therefore can be treated
-                    # TODO: run test for ferratin
+                    # TODO: run test for ferratin & other deficiencies
                     self.module.treatment_of_anaemia_causing_deficiencies(person_id, self)
 
                     # She is scheduled to return for a repeat point of care test in four weeks time to assess if she
@@ -2451,6 +2451,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 # TODO: reset df.at[person_id, 'ac_inpatient'] after the correct number of days
 
         #  ----------------------------- Treatment of Premature Rupture of Membranes-----------------------------------
+            # TODO: this is too over complicated
             # Here we manage treatment for women who have sought care for PROM but are not yet septic
             if mother.ps_premature_rupture_of_membranes and ~mother.ps_chorioamnionitis:
 

@@ -48,7 +48,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 10000
 
 # add file handler for the purpose of logging
@@ -116,5 +116,14 @@ stats_nb['year'] = stats_nb['date'].dt.year
 stats_md = log_df['tlo.methods.labour']['labour_summary_stats_death']
 stats_md['date'] = pd.to_datetime(stats_md['date'])
 stats_md['year'] = stats_md['date'].dt.year
+
+stats_preg = log_df['tlo.methods.pregnancy_supervisor']['ps_summary_statistics']
+stats_preg['date'] = pd.to_datetime(stats_preg['date'])
+stats_preg['year'] = stats_preg['date'].dt.year
+
+stats_postnatal = log_df['tlo.methods.postnatal_supervisor']['postnatal_summary_stats']
+stats_postnatal['date'] = pd.to_datetime(stats_postnatal['date'])
+stats_postnatal['year'] = stats_postnatal['date'].dt.year
+
 
 x='y'

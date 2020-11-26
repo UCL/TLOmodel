@@ -394,7 +394,6 @@ class PregnancySupervisor(Module):
 
         # Create bitset handler for these two columns so they can be used as lists later on
 
-
     def initialise_population(self, population):
 
         df = population.props
@@ -435,12 +434,15 @@ class PregnancySupervisor(Module):
                            sim.date + DateOffset(years=1))
 
         # Define the conditions we want to track
-        self.pregnancy_disease_tracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0,
+        self.pregnancy_disease_tracker = {'ectopic_pregnancy': 0, 'multiples': 0, 'placenta_praevia': 0,
+                                          'placental_abruption': 0,'induced_abortion': 0, 'spontaneous_abortion': 0,
                                           'ectopic_pregnancy_death': 0, 'induced_abortion_death': 0,
-                                          'spontaneous_abortion_death': 0, 'maternal_anaemia': 0, 'antenatal_death': 0,
-                                          'antenatal_stillbirth': 0, 'new_onset_pre_eclampsia': 0,
-                                          'new_onset_gest_htn': 0, 'antepartum_haem': 0, 'antepartum_haem_death': 0,
-                                          'women_at_6_months' :0}
+                                          'spontaneous_abortion_death': 0, 'iron_def': 0, 'folate_def': 0, 'b12_def': 0,
+                                          'maternal_anaemia': 0, 'antenatal_death': 0, 'antenatal_stillbirth': 0,
+                                          'new_onset_pre_eclampsia': 0, 'new_onset_gest_diab': 0,
+                                          'new_onset_gest_htn': 0, 'new_onset_severe_pe': 0, 'new_onset_eclampsia': 0,
+                                          'antepartum_haem': 0, 'antepartum_haem_death': 0, 'prom': 0, 'pre_term': 0,
+                                          'women_at_6_months': 0}
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -553,6 +555,7 @@ class PregnancySupervisor(Module):
 
         # And change their property accordingly
         self.deficiencies_in_pregnancy.set(new_iron_def.loc[new_iron_def].index, 'iron')
+        self.pregnancy_disease_tracker['iron_def'] += len(new_iron_def.loc[new_iron_def])
 
         # Next we select women who aren't iron deficient but are receiving iron supplementation
         iron_def_ifa = ~self.deficiencies_in_pregnancy.has_all(
@@ -566,6 +569,7 @@ class PregnancySupervisor(Module):
                                  index=iron_def_ifa.index)
 
         self.deficiencies_in_pregnancy.set(new_iron_def.loc[new_iron_def].index, 'iron')
+        self.pregnancy_disease_tracker['iron_def'] += len(new_iron_def.loc[new_iron_def])
 
         # ------------------------------------- FOLATE DEFICIENCY ------------------------------------------------------
         # This process is then repeated for folate and B12...
@@ -577,6 +581,7 @@ class PregnancySupervisor(Module):
                                    index=folate_def_no_ifa.index)
 
         self.deficiencies_in_pregnancy.set(new_folate_def.loc[new_folate_def].index, 'folate')
+        self.pregnancy_disease_tracker['folate_def'] += len(new_folate_def.loc[new_folate_def])
 
         folate_def_ifa = ~self.deficiencies_in_pregnancy.has_all(
             df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == ga_in_weeks) & ~df.ac_inpatient &
@@ -588,6 +593,7 @@ class PregnancySupervisor(Module):
                                    index=folate_def_ifa.index)
 
         self.deficiencies_in_pregnancy.set(new_folate_def.loc[new_folate_def].index, 'folate')
+        self.pregnancy_disease_tracker['folate_def'] += len(new_folate_def.loc[new_folate_def])
 
         # ------------------------------------- B12 DEFICIENCY ------------------------------------------------------
         b12_def = ~self.deficiencies_in_pregnancy.has_all(
@@ -598,6 +604,7 @@ class PregnancySupervisor(Module):
                                 index=b12_def.index)
 
         self.deficiencies_in_pregnancy.set(new_b12_def.loc[new_b12_def].index, 'b12')
+        self.pregnancy_disease_tracker['b12_def'] += len(new_b12_def.loc[new_b12_def])
 
         # ------------------------------------------ ANAEMIA ---------------------------------------------------------
         # Now we determine if a subset of pregnant women will become anaemic using a linear model, in which the
@@ -652,6 +659,8 @@ class PregnancySupervisor(Module):
                        ~df['ps_ectopic_pregnancy']])
 
             df.loc[multiples.loc[multiples].index, 'ps_multiple_pregnancy'] = True
+            self.pregnancy_disease_tracker['multiples'] += len(multiples.loc[multiples])
+
             if not multiples.loc[multiples].empty:
                 logger.debug(key='message', data=f'The following women are pregnant with multiples, '
                                                  f'{multiples.loc[multiples].index}')
@@ -663,6 +672,8 @@ class PregnancySupervisor(Module):
                            ~df['ps_ectopic_pregnancy']])
 
             df.loc[placenta_praevia.loc[placenta_praevia].index, 'ps_placenta_praevia'] = True
+            self.pregnancy_disease_tracker['placenta_praevia'] += len(placenta_praevia.loc[placenta_praevia])
+
             if not placenta_praevia.loc[multiples].empty:
                 logger.debug(key='message',
                              data=f'The following womens pregnancy is complicated by placenta praevia '
@@ -815,7 +826,7 @@ class PregnancySupervisor(Module):
 
             df.loc[gest_diab.loc[gest_diab].index, 'ps_gest_diab'] = True
             df.loc[gest_diab.loc[gest_diab].index, 'ps_prev_gest_diab'] = True
-            # self.pregnancy_disease_tracker['new_onset_gest_htn'] += len(gest_diab.loc[gest_diab])
+            self.pregnancy_disease_tracker['new_onset_gest_diab'] += len(gest_diab.loc[gest_diab])
 
             if not gest_diab.loc[gest_diab].empty:
                 logger.debug(key='message', data=f'The following women have developed gestational diabetes,'
@@ -859,6 +870,7 @@ class PregnancySupervisor(Module):
                     logger.debug(key='message',
                                  data='The following women have developed severe pre-eclampsia during their '
                                  f'pregnancy {new_onset_severe_pre_eclampsia.index} on {self.sim.date}')
+                    self.pregnancy_disease_tracker['new_onset_severe_pe'] += len(new_onset_severe_pre_eclampsia)
 
                     for person in new_onset_severe_pre_eclampsia.index:
                         df.at[person, 'ps_emergency_event'] = True
@@ -870,6 +882,7 @@ class PregnancySupervisor(Module):
                 if not new_onset_eclampsia.empty:
                     logger.debug(key='message', data='The following women have developed eclampsia during their '
                                                      f'pregnancy {new_onset_eclampsia.index} on {self.sim.date}')
+                    self.pregnancy_disease_tracker['new_onset_eclampsia'] += len(new_onset_eclampsia)
 
                     for person in new_onset_eclampsia.index:
                         df.at[person, 'ps_emergency_event'] = True
@@ -882,6 +895,8 @@ class PregnancySupervisor(Module):
                        ~df['la_currently_in_labour']])
 
             df.loc[placenta_abruption.loc[placenta_abruption].index, 'ps_placental_abruption'] = True
+            self.pregnancy_disease_tracker['placental_abruption'] += len(placenta_abruption.loc[placenta_abruption])
+
             if not placenta_abruption.loc[placenta_abruption].empty:
                 logger.debug(key='message', data=f'The following women have developed placental abruption,'
                                                  f'{placenta_abruption.loc[placenta_abruption].index}')
@@ -917,10 +932,13 @@ class PregnancySupervisor(Module):
 
             df.loc[prom.loc[prom].index, 'ps_premature_rupture_of_membranes'] = True
             df.loc[prom.loc[prom].index, 'ps_emergency_event'] = True
+            self.pregnancy_disease_tracker['prom'] += len(prom.loc[prom])
+
             if not prom.loc[prom].empty:
                 logger.debug(key='message', data=f'The following women have experience premature rupture of membranes'
                                                  f'{prom.loc[prom].index}')
 
+            # TODO: apply risk of chorioamnionitis
             # -------------------------------------- RISK OF PRE TERM LABOUR ------------------------------------------
             if ga_in_weeks != 40:
                 preterm_labour = self.apply_linear_model(
@@ -932,6 +950,7 @@ class PregnancySupervisor(Module):
                     logger.debug(key='message',
                                  data=f'The following women will go into preterm labour at some point before the '
                                  f'next month of their pregnancy: {preterm_labour.loc[preterm_labour].index}')
+                self.pregnancy_disease_tracker['pre_term'] += len(preterm_labour.loc[preterm_labour])
 
                 for person in preterm_labour.loc[preterm_labour].index:
                     if df.at[person, 'ps_gestational_age_in_weeks'] == 22:
@@ -948,8 +967,6 @@ class PregnancySupervisor(Module):
                         poss_day_onset = (37 - 35) * 7
                         onset_day = self.rng.randint(0, poss_day_onset)
 
-                    print(person)
-                    print(df.at[person, 'ps_gestational_age_in_weeks'])
                     df.at[person, 'la_due_date_current_pregnancy'] = self.sim.date + DateOffset(days=onset_day)
                     due_date = df.at[person, 'la_due_date_current_pregnancy']
 
@@ -1296,19 +1313,29 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             antepartum_stillbirths = 1
 
         total_ectopics = self.module.pregnancy_disease_tracker['ectopic_pregnancy']
+        total_multiples = self.module.pregnancy_disease_tracker['multiples']
         total_abortions_t = self.module.pregnancy_disease_tracker['induced_abortion']
         total_spontaneous_abortions_t = self.module.pregnancy_disease_tracker['spontaneous_abortion']
+        total_iron_def = self.module.pregnancy_disease_tracker['iron_def']
+        total_folate_def = self.module.pregnancy_disease_tracker['folate_def']
+        total_b12_def = self.module.pregnancy_disease_tracker['b12_def']
         total_anaemia_cases = self.module.pregnancy_disease_tracker['maternal_anaemia']
-        total_ectopic_deaths = self.module.pregnancy_disease_tracker['ectopic_pregnancy_death']
         total_ia_deaths = self.module.pregnancy_disease_tracker['induced_abortion_death']
         total_sa_deaths = self.module.pregnancy_disease_tracker['spontaneous_abortion_death']
         crude_new_onset_pe = self.module.pregnancy_disease_tracker['new_onset_pre_eclampsia']
         crude_new_gh = self.module.pregnancy_disease_tracker['new_onset_gest_htn']
+        crude_new_gd = self.module.pregnancy_disease_tracker['new_onset_gest_diab']
+        crude_new_spe = self.module.pregnancy_disease_tracker['new_onset_severe_pe']
+        crude_new_ec = self.module.pregnancy_disease_tracker['new_onset_eclampsia']
+        placenta_praevia = self.module.pregnancy_disease_tracker['placenta_praevia']
+        placental_abruption = self.module.pregnancy_disease_tracker['placental_abruption']
         crude_aph = self.module.pregnancy_disease_tracker['antepartum_haem']
+        prom = self.module.pregnancy_disease_tracker['prom']
+        preterm = self.module.pregnancy_disease_tracker['pre_term']
+
         crude_aph_death = self.module.pregnancy_disease_tracker['antepartum_haem_death']
-
+        total_ectopic_deaths = self.module.pregnancy_disease_tracker['ectopic_pregnancy_death']
         women_month_6 = self.module.pregnancy_disease_tracker['women_at_6_months']
-
 
         dict_for_output = {'repro_women': total_women_reproductive_age,
                            'antenatal_mmr': (antenatal_maternal_deaths/total_births_last_year) * 100000,
@@ -1321,23 +1348,40 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'total_induced_abortions': total_abortions_t,
                            'induced_abortion_rate': (total_abortions_t / total_women_reproductive_age) * 1000,
                            'induced_abortion_death_rate': (total_ia_deaths / total_women_reproductive_age) * 1000,
+                           'crude_multiples': total_multiples,
+                           'multiples_rate': (total_multiples / total_women_reproductive_age) * 1000,
                            'crude_ectopics': total_ectopics,
                            'ectopic_rate': (total_ectopics / total_women_reproductive_age) * 1000,
-                           'ectopic_death_rate': (total_ectopic_deaths / total_women_reproductive_age) * 1000,
+                           'crude_iron_def': total_iron_def,
+                           'crude_folate_def': total_folate_def,
+                           'crude_b12_def': total_b12_def,
                            'crude_anaemia': total_anaemia_cases,
                            'anaemia_rate': (total_anaemia_cases/total_women_reproductive_age) * 1000,
                            'crude_pe': crude_new_onset_pe,
                            'crude_gest_htn': crude_new_gh,
-                           'crude_aph':crude_aph,
-                           'crude_aph_death':crude_aph_death,
-                           'women_month_6': women_month_6}
+                           'crude_gd': crude_new_gd,
+                           'crude_spe': crude_new_spe,
+                           'crude_ec': crude_new_ec,
+                           'crude_p_p': placenta_praevia,
+                           'crude_p_a': placental_abruption,
+                           'crude_aph': crude_aph,
+                           'crude_prom': prom,
+                           'crude_pre_term': preterm}
 
         logger.info(key='ps_summary_statistics', data=dict_for_output,
                     description='Yearly summary statistics output from the pregnancy supervisor module')
 
-        self.module.pregnancy_disease_tracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0,
-                                               'ectopic_pregnancy_death': 0, 'induced_abortion_death': 0,
-                                               'spontaneous_abortion_death': 0, 'maternal_anaemia': 0,
-                                               'antenatal_death': 0, 'antenatal_stillbirth': 0,
-                                               'new_onset_pre_eclampsia': 0, 'new_onset_gest_htn': 0,
-                                               'antepartum_haem': 0, 'antepartum_haem_death': 0, 'women_at_6_months':0}
+        self.module.pregnancy_disease_tracker = {'ectopic_pregnancy': 0, 'multiples': 0, 'placenta_praevia': 0,
+                                                 'placental_abruption': 0,'induced_abortion': 0,
+                                                 'spontaneous_abortion': 0,
+                                                 'ectopic_pregnancy_death': 0, 'induced_abortion_death': 0,
+                                                 'spontaneous_abortion_death': 0, 'iron_def': 0, 'folate_def': 0,
+                                                 'b12_def': 0,
+                                                 'maternal_anaemia': 0, 'antenatal_death': 0,
+                                                 'antenatal_stillbirth': 0,
+                                                 'new_onset_pre_eclampsia': 0, 'new_onset_gest_diab': 0,
+                                                 'new_onset_gest_htn': 0, 'new_onset_severe_pe': 0,
+                                                 'new_onset_eclampsia': 0,
+                                                 'antepartum_haem': 0, 'antepartum_haem_death': 0, 'prom': 0,
+                                                 'pre_term': 0,
+                                                 'women_at_6_months':0}
