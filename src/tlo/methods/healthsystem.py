@@ -1232,7 +1232,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # todo - this provides exactly the beddays that were requested,
                     #  ... but this will be where the check on availability is gated
                     event._received_info_about_bed_days = event.BEDDAYS_FOOTPRINT
-                    self.impose_beddays_footprint(event)
+                    self.module.impose_beddays_footprint(event)
 
                     # Run the HSI event (allowing it to return an updated appt_footprint)
                     actual_appt_footprint = event.run(
