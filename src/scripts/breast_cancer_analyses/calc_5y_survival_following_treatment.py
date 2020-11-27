@@ -39,7 +39,7 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2080, 1, 1)
-popsize = 1000
+popsize = 10000
 
 # Establish the simulation object and set the seed
 sim = Simulation(start_date=start_date)

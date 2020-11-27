@@ -560,8 +560,7 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             )
             df.loc[selected_to_die, 'brc_date_death'] = self.sim.date
 
-
-# ---------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
@@ -851,11 +850,35 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_now = self.sim.date
         date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
 
+        n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
+
+        n_newly_diagnosed_stage1 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage1')).sum()
+        n_newly_diagnosed_stage2 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage2')).sum()
+        n_newly_diagnosed_stage3 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage3')).sum()
+        n_newly_diagnosed_stage4 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage4')).sum()
+
+        n_diagnosed_age_15_29 = (df.is_alive & (df.age_years >= 15) & (df.age_years < 30)
+                                 & ~pd.isnull(df.brc_date_diagnosis)).sum()
+        n_diagnosed_age_30_49 = (df.is_alive & (df.age_years >= 30) & (df.age_years < 50)
+                                 & ~pd.isnull(df.brc_date_diagnosis)).sum()
+        n_diagnosed_age_50p = (df.is_alive & (df.age_years >= 50) & ~pd.isnull(df.brc_date_diagnosis)).sum()
+
+        n_diagnosed = (df.is_alive & ~pd.isnull(df.brc_date_diagnosis)).sum()
+
         out.update({
             'diagnosed_since_last_log': df.brc_date_diagnosis.between(date_lastlog, date_now).sum(),
             'treated_since_last_log': df.brc_date_treatment.between(date_lastlog, date_now).sum(),
             'palliative_since_last_log': df.brc_date_palliative_care.between(date_lastlog, date_now).sum(),
-            'death_breast_cancer_since_last_log': df.brc_date_death.between(date_lastlog, date_now).sum()
+            'death_breast_cancer_since_last_log': df.brc_date_death.between(date_lastlog, date_now).sum(),
+            'n women age 15+': n_ge15_f,
+            'n_newly_diagnosed_stage1': n_newly_diagnosed_stage1,
+            'n_newly_diagnosed_stage2': n_newly_diagnosed_stage2,
+            'n_newly_diagnosed_stage3': n_newly_diagnosed_stage3,
+            'n_newly_diagnosed_stage4': n_newly_diagnosed_stage4,
+            'n_diagnosed_age_15_29': n_diagnosed_age_15_29,
+            'n_diagnosed_age_30_49':  n_diagnosed_age_30_49,
+            'n_diagnosed_age_50p': n_diagnosed_age_50p,
+            'n_diagnosed': n_diagnosed
         })
 
         logger.info('%s|summary_stats|%s', self.sim.date, out)
