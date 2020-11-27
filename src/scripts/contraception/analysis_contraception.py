@@ -7,7 +7,7 @@ import pandas as pd
 from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import contraception, demography
 
@@ -24,22 +24,54 @@ resourcefilepath = Path("./resources")
 
 # %% Run the Simulation
 
+# To reproduce the results, you must set the seed for the Simulation instance. The Simulation
+# will seed the random number generators for each module when they are registered.
+# If a seed argument is not given, one is generated. It is output in the log and can be
+# used to reproduce results of a run
+seed = 123
+
+log_config = {
+    "filename": "contraception_analysis",   # The name of the output file (a timestamp will be appended).
+    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
+        "tlo.methods.contraception": logging.INFO
+    }
+}
+
+# Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2070, 1, 2)
-popsize = 1000
+end_date = Date(2020, 1, 1)
+pop_size = 1000
 
-sim = Simulation(start_date=start_date, seed=1, log_config={'filename': 'LogFile', 'directory': outputpath})
+# This creates the Simulation instance for this run. Because we've passed the `seed` and
+# `log_config` arguments, these will override the default behaviour.
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
-# run the simulation
+# Path to the resource files used by the disease and intervention methods
+resources = "./resources"
+
+# Used to configure health system behaviour
+service_availability = ["*"]
+
+# We register all modules in a single call to the register method, calling once with multiple
+# objects. This is preferred to registering each module in multiple calls because we will be
+# able to handle dependencies if modules are registered together
 sim.register(
-    demography.Demography(resourcefilepath=resourcefilepath),
-    contraception.Contraception(resourcefilepath=resourcefilepath),
+    demography.Demography(resourcefilepath=resources),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+    healthsystem.HealthSystem(resourcefilepath=resources, service_availability=service_availability),
+    symptommanager.SymptomManager(resourcefilepath=resources),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+    contraception.Contraception(resourcefilepath=resources),
 )
-sim.make_initial_population(n=popsize)
+# create and run the simulation
+sim.make_initial_population(n=pop_size)
 sim.simulate(end_date=end_date)
 
-# %% read the results
-output = parse_log_file(sim.log_filepath)
+# parse the simulation logfile to get the output dataframes
+log_df = parse_log_file(sim.log_filepath)
+
 
 # %% Plot Contraception Use Over time:
 years = mdates.YearLocator()   # every year

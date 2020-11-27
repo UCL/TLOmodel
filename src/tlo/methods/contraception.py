@@ -248,13 +248,14 @@ class Contraception(Module):
 
         # the index of the row is the contraception type
         df.at[mother_id, 'co_contraception'] = chosen_co.index[0]
-        logger.info('%s|post_birth_contraception|%s',
-                    self.sim.date,
-                    {
-                        'woman_index': mother_id,
-                        'co_contraception': df.at[mother_id, 'co_contraception']
-                    })
+        post_birth_contraception_summary = {
+            'woman_index': mother_id,
+            'co_contraception': df.at[mother_id, 'co_contraception']
+        }
 
+        logger.info(key='post_birth_contraception',
+                    data=post_birth_contraception_summary,
+                    description='post birth_contraception')
 
 class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
     """
