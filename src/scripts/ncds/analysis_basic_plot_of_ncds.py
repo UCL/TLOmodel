@@ -37,8 +37,8 @@ output_files = dict()
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 2)
-popsize = 100
+end_date = Date(2011, 1, 2)
+popsize = 200
 
 for label, service_avail in scenarios.items():
     log_config = {'filename': 'LogFile'}
@@ -79,22 +79,22 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
         drop=True,
         inplace=True
     )
-    counts_ldl = [counts.get('nc_ldl_hdl') for d in counts['0-4']]
 
     # get person-years of time lived without condition
     # conditions hard-coded in for now
-    conditions = ['nc_ldl_hdl', 'nc_chronic_inflammation', 'nc_diabetes', 'nc_hypertension', 'nc_depression',
+    conditions = ['nc_diabetes', 'nc_hypertension', 'nc_depression',
                   'nc_chronic_lower_back_pain', 'nc_chronic_kidney_disease', 'nc_chronic_ischemic_hd', 'nc_cancers']
 
     py_ = output['tlo.methods.demography']['person_years']
 
-    condition = 'nc_ldl_hdl'
-    py_ = output['tlo.methods.ncds'][f'person_years_{condition}']
+    # condition = 'nc_ldl_hdl'
+    # py_ = output['tlo.methods.ncds'][f'person_years_{condition}']
     years = pd.to_datetime(py_['date']).dt.year
     py = pd.DataFrame(index=years, columns=['0-4', '5-9', '10-14', '15-19', '20-24', '25-29',
                                             '30-34', '35-39', '40-44', '45-49', '50-54',
                                             '55-59', '60-64', '65-69', '70-74', '75-79',
                                             '80-84', '85-89', '90-94', '95-99', '100+'])
+    py_adults = pd.DataFrame(index=years, columns=['15+'])
     for year in years:
         tot_py = (
             (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
@@ -123,13 +123,16 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
         py.loc[year, '95-99'] = tot_py.loc[95:99].sum().values[0]
         py.loc[year, '100+'] = tot_py.loc[100:120].sum().values[0]
 
+        py_adults.loc[year, '15+'] = tot_py.loc[15:120].sum().values[0]
+
     # Incidence rate among 0, 1, 2-4 year-olds
     inc_rate = dict()
     for age_grp in ['0-4', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49',
                     '50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80-84', '85-89', '90-94',
                     '95-99', '100+']:
-        for condition in conditions:
-            inc_rate[age_grp][condition] = counts[age_grp].apply(pd.Series).div(f'py_{condition}'[age_grp], axis=0).dropna()
+        # inc_rate[age_grp][condition] = counts[age_grp].apply(pd.Series).div(f'py_{condition}'[age_grp], axis=0).dropna()
+        inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp],
+                                                                 axis=0).dropna()
 
     # Produce mean incidence rates of incidence rate during the simulation:
     inc_mean = pd.DataFrame()
@@ -157,9 +160,11 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
 
     return inc_mean
 
+
 inc_by_condition = dict()
 for label, file in output_files.items():
     inc_by_condition[label] = get_incidence_rate_and_death_numbers_from_logfile(file)
+
 
 def plot_for_column_of_interest(results, column_of_interest):
     summary_table = dict()
@@ -171,8 +176,8 @@ def plot_for_column_of_interest(results, column_of_interest):
     plt.savefig(outputpath / ("NCDs_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
     plt.show()
 
+
 # Plot incidence by condition
 
 for column_of_interest in inc_by_condition[list(inc_by_condition.keys())[0]].columns:
     plot_for_column_of_interest(inc_by_condition, column_of_interest)
-
