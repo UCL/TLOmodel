@@ -38,8 +38,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2020, 1, 2)
-    popsize = 5000
+    end_date = Date(2090, 1, 2)
+    popsize = 20000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -86,12 +86,6 @@ def restore_multi_index(dat):
     dat.columns = pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
     return dat
 
-# Plot prevalence by age and sex
-prev_ldl_hdl = restore_multi_index(
-    transform_output(
-        output['tlo.methods.ncds']['ldl_hdl_prevalence_by_age_and_sex']
-    )
-)
 
 # Plot prevalence by age and sex
 prev_diabetes = restore_multi_index(
@@ -112,38 +106,179 @@ prev_depression = restore_multi_index(
     )
 )
 
+prev_clbp = restore_multi_index(
+    transform_output(
+        output['tlo.methods.ncds']['chronic_lower_back_pain_prevalence_by_age_and_sex']
+    )
+)
+
+prev_ckd = restore_multi_index(
+    transform_output(
+        output['tlo.methods.ncds']['chronic_kidney_disease_prevalence_by_age_and_sex']
+    )
+)
+
 prev_cihd = restore_multi_index(
     transform_output(
         output['tlo.methods.ncds']['cihd_prevalence_by_age_and_sex']
     )
 )
 
-prev_ldl_hdl.iloc[-1].transpose().plot.bar()
-plt.ylabel('Proportion With LDL/HDL')
-plt.title('Prevalence of LDL/HDL by Age')
-plt.savefig(outputpath / 'prevalence_ldl_hdl_by_age.pdf')
-plt.show()
+prev_diabetes_all = output['tlo.methods.ncds']['diabetes_prevalence']
+prev_hypertension_all = output['tlo.methods.ncds']['hypertension_prevalence']
+prev_depression_all = output['tlo.methods.ncds']['depression_prevalence']
+prev_clbp_all = output['tlo.methods.ncds']['chronic_lower_back_pain_prevalence']
+prev_ckd_all = output['tlo.methods.ncds']['chronic_kidney_disease_prevalence']
+prev_cihd_all = output['tlo.methods.ncds']['cihd_prevalence']
+
+mm_prevalence = output['tlo.methods.ncds']['mm_prevalence']
+
+# plot prevalence of conditions by age and sex
 
 prev_diabetes.iloc[-1].transpose().plot.bar()
 plt.ylabel('Proportion With Diabetes')
 plt.title('Prevalence of Diabetes by Age')
 plt.savefig(outputpath / 'prevalence_diabetes_by_age.pdf')
+#plt.ylim([0, 1])
 plt.show()
 
 prev_hypertension.iloc[-1].transpose().plot.bar()
 plt.ylabel('Proportion With Hypertension')
 plt.title('Prevalence of Hypertension by Age')
 plt.savefig(outputpath / 'prevalence_hypertension_by_age.pdf')
+#plt.ylim([0, 1])
 plt.show()
 
 prev_depression.iloc[-1].transpose().plot.bar()
 plt.ylabel('Proportion With Depression')
 plt.title('Prevalence of Depression by Age')
 plt.savefig(outputpath / 'prevalence_depression_by_age.pdf')
+#plt.ylim([0, 1])
+plt.show()
+
+prev_cihd.iloc[-1].transpose().plot.bar()
+plt.ylabel('Proportion With Chronic Lower Back Pain')
+plt.title('Prevalence of Chronic Lower Back Pain by Age')
+plt.savefig(outputpath / 'prevalence_clbp_by_age.pdf')
+#plt.ylim([0, 1])
+plt.show()
+
+prev_cihd.iloc[-1].transpose().plot.bar()
+plt.ylabel('Proportion With Chronic Kidney Disease')
+plt.title('Prevalence of Chronic Kidney Disease by Age')
+plt.savefig(outputpath / 'prevalence_ckd_by_age.pdf')
+#plt.ylim([0, 1])
 plt.show()
 
 prev_cihd.iloc[-1].transpose().plot.bar()
 plt.ylabel('Proportion With Chronic Ischemic Heart Disease')
 plt.title('Prevalence of Chronic Ischemic Heart Disease by Age')
 plt.savefig(outputpath / 'prevalence_cihd_by_age.pdf')
+#plt.ylim([0, 1])
 plt.show()
+
+# plot prevalence among all adults for each condition
+
+prev_diabetes_all['year'] = pd.to_datetime(prev_diabetes_all['date']).dt.year
+prev_diabetes_all.drop(columns='date', inplace=True)
+prev_diabetes_all.set_index('year', drop=True, inplace=True)
+
+plt.plot(prev_diabetes_all)
+plt.ylabel('Prevalence of Diabetes Over Time')
+plt.xlabel('Year')
+plt.show()
+
+prev_hypertension_all['year'] = pd.to_datetime(prev_hypertension_all['date']).dt.year
+prev_hypertension_all.drop(columns='date', inplace=True)
+prev_hypertension_all.set_index('year', drop=True, inplace=True)
+
+plt.plot(prev_hypertension_all)
+plt.ylabel('Prevalence of Hypertension Over Time')
+plt.xlabel('Year')
+plt.show()
+
+prev_depression_all['year'] = pd.to_datetime(prev_depression_all['date']).dt.year
+prev_depression_all.drop(columns='date', inplace=True)
+prev_depression_all.set_index('year', drop=True, inplace=True)
+
+plt.plot(prev_depression_all)
+plt.ylabel('Prevalence of Depression Over Time')
+plt.xlabel('Year')
+plt.show()
+
+prev_clbp_all['year'] = pd.to_datetime(prev_clbp_all['date']).dt.year
+prev_clbp_all.drop(columns='date', inplace=True)
+prev_clbp_all.set_index('year', drop=True, inplace=True)
+
+plt.plot(prev_clbp_all)
+plt.ylabel('Prevalence of Chronic Lower Back Pain Over Time')
+plt.xlabel('Year')
+plt.show()
+
+prev_ckd_all['year'] = pd.to_datetime(prev_ckd_all['date']).dt.year
+prev_ckd_all.drop(columns='date', inplace=True)
+prev_ckd_all.set_index('year', drop=True, inplace=True)
+
+plt.plot(prev_ckd_all)
+plt.ylabel('Prevalence of CKD Over Time')
+plt.xlabel('Year')
+plt.show()
+
+prev_cihd_all['year'] = pd.to_datetime(prev_cihd_all['date']).dt.year
+prev_cihd_all.drop(columns='date', inplace=True)
+prev_cihd_all.set_index('year', drop=True, inplace=True)
+
+plt.plot(prev_cihd_all)
+plt.ylabel('Prevalence of CIHD Over Time')
+plt.xlabel('Year')
+plt.show()
+
+prev_diabetes_all['hypertension'] = prev_hypertension_all['prevalence']
+prev_diabetes_all['depression'] = prev_depression_all['prevalence']
+prev_diabetes_all['chronic lower back pain'] = prev_clbp_all['prevalence']
+prev_diabetes_all['chronic kidney disease'] = prev_ckd_all['prevalence']
+prev_diabetes_all['chronic ischemic heart disease'] = prev_cihd_all['prevalence']
+prev_diabetes_all.rename(columns={'prevalence': 'diabetes'}, inplace=True)
+
+prev_diabetes_all.iloc[-1].transpose().plot.bar()
+plt.ylabel('Proportion of Adults 15+ with Condition')
+plt.title('Prevalence of Adults with Conditions')
+plt.savefig(outputpath / 'prevalence_conditions_adults.pdf')
+#plt.ylim([0, 1])
+plt.show()
+
+# Plot prevalence of multi-morbidities (no salt vs. high salt):
+plotdata = pd.DataFrame({
+    "0 co-morbidities":[mm_prevalence["mm_prev_0"].iloc[-1]],
+    "1 co-morbidity":[mm_prevalence["mm_prev_1"].iloc[-1]],
+    "2 co-morbidities":[mm_prevalence["mm_prev_2"].iloc[-1]],
+    "3 co-morbidities":[mm_prevalence["mm_prev_3"].iloc[-1]]
+    },
+    index=[""]
+)
+plotdata.plot(kind="bar", stacked=True, width=0.2)
+plt.title("Prevalence of number of co-morbidities in 2020")
+plt.ylabel("Prevalence of number of co-morbidities")
+plt.xticks(rotation=0)
+plt.legend(loc='center', bbox_to_anchor=(0.5, -0.15), shadow=False, ncol=2)
+
+plt.show()
+
+# multi-morbidity prevalence
+
+mm_prevalence = output['tlo.methods.ncds']['mm_prevalence']
+mm_prevalence['year'] = pd.to_datetime(mm_prevalence['date']).dt.year
+mm_prevalence.drop(columns='date', inplace=True)
+mm_prevalence.set_index('year', drop=True, inplace=True)
+mm_prevalence.rename(columns={'mm_prev_0': '0  co-morbidities', 'mm_prev_1': '1 co-morbidity', 'mm_prev_2':
+    '2 co-morbidities', 'mm_prev_3': '3+ co-morbidities'}, inplace=True)
+
+mm_prevalence.iloc[-1].transpose().plot.bar()
+plt.ylabel('Proportion of Adults 15+ with Co-Morbidities')
+plt.title('Prevalence of Adults with Co-Morbidities')
+plt.savefig(outputpath / 'prevalence_comorbidities_adults.pdf')
+#plt.ylim([0, 1])
+plt.show()
+
+
+
