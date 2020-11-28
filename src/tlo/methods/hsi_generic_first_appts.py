@@ -210,7 +210,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
             if 'BreastCancer' in self.sim.modules:
                 # If the symptoms include breast lump discernible:
-                if 'breast_lump_discernible' in symptoms:
+                if ('breast_lump_discernible' in symptoms):
                     hsi_event = HSI_BreastCancer_Investigation_Following_breast_lump_discernible(
                         module=self.sim.modules['BreastCancer'],
                         person_id=person_id,

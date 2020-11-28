@@ -143,7 +143,10 @@ class BreastCancer(Module):
             Types.DATE,
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
         ),
-
+        "breast_lump_discernible_investigated": Property(
+            Types.BOOL,
+            "whether a breast_lump_discernible has been investigated, and cancer missed"
+        ),
         "brc_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
             "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
@@ -634,6 +637,10 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
                     topen=self.sim.date,
                     tclose=None
                 )
+
+#   todo: we would like to note that the symptom has been investigated in a diagnostic test and the diagnosis was
+#   todo: was missed, so the same test will not likely be repeated, at least not in the short term, so we even
+#   todo: though the symptom remains we don't want to keep repeating the HSI which triggers the diagnostic test
 
     def did_not_run(self):
         pass
