@@ -857,6 +857,7 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_newly_diagnosed_stage3 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage3')).sum()
         n_newly_diagnosed_stage4 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage4')).sum()
 
+
         n_diagnosed_age_15_29 = (df.is_alive & (df.age_years >= 15) & (df.age_years < 30)
                                  & ~pd.isnull(df.brc_date_diagnosis)).sum()
         n_diagnosed_age_30_49 = (df.is_alive & (df.age_years >= 30) & (df.age_years < 50)
