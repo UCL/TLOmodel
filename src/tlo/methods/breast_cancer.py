@@ -882,8 +882,8 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'n_diagnosed': n_diagnosed
         })
 
-        logger.info('%s|summary_stats|%s', self.sim.date, out)
+#       logger.info('%s|summary_stats|%s', self.sim.date, out)
 
-#       logger.info('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[10].to_dict())
+        logger.info('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[0].to_dict())
