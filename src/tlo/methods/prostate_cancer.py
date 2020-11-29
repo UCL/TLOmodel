@@ -985,11 +985,11 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: the .between function I think includes the two dates so events on these dates counted twice
         # todo:_ I think we need to replace with date_lastlog <= x < date_now
         n_newly_diagnosed_prostate_confined = (
-                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.bp_status == 'prostate_confined')).sum()
+                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'prostate_confined')).sum()
         n_newly_diagnosed_local_ln = (
-                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.bp_status == 'local_ln')).sum()
+                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'local_ln')).sum()
         n_newly_diagnosed_metastatic = (
-                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'metastatic')).sum()
+                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'metastatic')).sum()
 
         n_diagnosed = (df.is_alive & ~pd.isnull(df.pc_date_diagnosis)).sum()
 
