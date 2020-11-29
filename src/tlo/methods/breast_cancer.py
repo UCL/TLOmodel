@@ -859,6 +859,8 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
 
+# todo: the .between function I think includes the two dates so events on these dates counted twice
+# todo:_ I think we need to replace with date_lastlog <= x < date_now
         n_newly_diagnosed_stage1 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage1')).sum()
         n_newly_diagnosed_stage2 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage2')).sum()
         n_newly_diagnosed_stage3 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage3')).sum()

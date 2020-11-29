@@ -72,7 +72,6 @@ def make_simulation_nohsi():
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
                  breast_cancer.BreastCancer(resourcefilepath=resourcefilepath)
                  )
-    sim.seed_rngs(0)
     return sim
 
 
@@ -84,9 +83,7 @@ def zero_out_init_prev(sim):
 
 def seed_init_prev_in_first_stage_only(sim):
     # Set initial prevalence to zero:
-    sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'] = \
-        [0.0] \
-        * len(sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'])
+    sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'] = [0.0, 0.0, 0.0, 0.0]
     return sim
 
 
