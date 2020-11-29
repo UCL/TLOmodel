@@ -980,11 +980,29 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_now = self.sim.date
         date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
 
+        n_ge35_m = (df.is_alive & (df.age_years >= 35) & (df.sex == 'M')).sum()
+
+        # todo: the .between function I think includes the two dates so events on these dates counted twice
+        # todo:_ I think we need to replace with date_lastlog <= x < date_now
+        n_newly_diagnosed_prostate_confined = (
+                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.bp_status == 'prostate_confined')).sum()
+        n_newly_diagnosed_local_ln = (
+                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.bp_status == 'local_ln')).sum()
+        n_newly_diagnosed_metastatic = (
+                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'metastatic')).sum()
+
+        n_diagnosed = (df.is_alive & ~pd.isnull(df.pc_date_diagnosis)).sum()
+
         out.update({
             'diagnosed_since_last_log': df.pc_date_diagnosis.between(date_lastlog, date_now).sum(),
             'treated_since_last_log': df.pc_date_treatment.between(date_lastlog, date_now).sum(),
             'palliative_since_last_log': df.pc_date_palliative_care.between(date_lastlog, date_now).sum(),
-            'death_prostate_cancer_since_last_log': df.pc_date_death.between(date_lastlog, date_now).sum()
+            'death_prostate_cancer_since_last_log': df.pc_date_death.between(date_lastlog, date_now).sum(),
+            'n_men age 35+': n_ge35_m,
+            'n_newly_diagnosed_prostate_confined1': n_newly_diagnosed_prostate_confined,
+            'n_newly_diagnosed_local_ln': n_newly_diagnosed_local_ln,
+            'n_newly_diagnosed_metastatic': n_newly_diagnosed_metastatic,
+            'n_diagnosed': n_diagnosed
         })
 
         logger.info('%s|summary_stats|%s', self.sim.date, out)
