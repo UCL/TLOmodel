@@ -819,8 +819,8 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """schedule logging to repeat every 1 month
         """
-        self.repeat = 1
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        self.repeat = 30.4375
+        super().__init__(module, frequency=DateOffset(days=self.repeat))
 
     def apply(self, population):
         """Compute statistics regarding the current status of persons and output to the logger
@@ -855,7 +855,7 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
         date_now = self.sim.date
-        date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
+        date_lastlog = self.sim.date - pd.DateOffset(days=self.repeat)
 
         n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
 
