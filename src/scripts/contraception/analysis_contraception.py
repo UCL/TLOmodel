@@ -9,17 +9,18 @@ from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import contraception, demography
+from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager, \
+    healthseekingbehaviour
 
 # Where will outputs go - by default, wherever this script is run
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
+#outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+#datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource directory for modules
 # by default, this script runs in the same directory as this file
-resourcefilepath = Path("./resources")
+#resourcefilepath = Path("./resources")
 
 
 # %% Run the Simulation
