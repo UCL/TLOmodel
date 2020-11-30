@@ -134,7 +134,14 @@ class ProstateCancer(Module):
             "Current status of the health condition, prostate cancer",
             categories=["none", "prostate_confined", "local_ln", "metastatic"],
         ),
-
+        "pc_date_psa_test": Property(
+            Types.DATE,
+            "the date of psa test in response to symptoms"
+        ),
+        "pc_date_biopsy": Property(
+            Types.DATE,
+            "the date of biopsy in response to symptoms and positive psa test"
+        ),
         "pc_date_diagnosis": Property(
             Types.DATE,
             "the date of diagnosis of the prostate cancer (pd.NaT if never diagnosed)"
@@ -197,6 +204,8 @@ class ProstateCancer(Module):
         df.loc[df.is_alive, "pc_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "pc_date_palliative_care"] = pd.NaT
         df.loc[df.is_alive, "pc_date_death"] = pd.NaT
+        df.loc[df.is_alive, "pc_date_psa_test"] = pd.NaT
+        df.loc[df.is_alive, "pc_date_biopsy"] = pd.NaT
 
         # -------------------- pc_status -----------
         # Determine who has cancer at ANY cancer stage:
@@ -643,52 +652,30 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
         if not pd.isnull(df.at[person_id, "pc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
+        df.at[person_id, 'pc_date_psa_test'] = self.sim.date
+
         # todo: stratify by pc_status
         # Use a psa test to assess whether the person has prostate cancer:
         dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='psa_for_prostate_cancer',
-            hsi_event=self
-        )
-
-        # todo: here we want to do the biopsy if the psa test suggests possible prostate cancer and that gives the
-        # todo: diagnosis
-
-        # todo: later (and sensitivity of 1st part (psa test) dependent on underlying disease stage)
+                dx_tests_to_run='psa_for_prostate_cancer',
+                hsi_event=self
+            )
 
         if dx_result:
-            # record date of diagnosis:
-            df.at[person_id, 'pc_date_diagnosis'] = self.sim.date
-
-            # Check if is in metastatic stage:
-            in_metastatic = df.at[person_id, 'pc_status'] == 'metastatic'
-            # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made accurately.
-
-            if not in_metastatic:
-                # start treatment:
+                # send for biopsy
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_ProstateCancer_StartTreatment(
+                    hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
                         module=self.module,
                         person_id=person_id
                     ),
                     priority=0,
                     topen=self.sim.date,
                     tclose=None
-                )
+        )
 
-            else :
-                # start palliative care:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_ProstateCancer_PalliativeCare(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+        def did_not_run(self):
+            pass
 
-    def did_not_run(self):
-        pass
 
 class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
@@ -709,12 +696,14 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that this event has been called for someone with the urinary symptoms
+        # Check that this event has been called for someone with the pelvic pain
         assert 'pelvic_pain' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "pc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
+
+        df.at[person_id, 'pc_date_psa_test'] = self.sim.date
 
         # todo: stratify by pc_status
         # Use a psa test to assess whether the person has prostate cancer:
@@ -723,8 +712,55 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
             hsi_event=self
         )
 
-        # todo: positive psa triggers biopsy hsi and use of biopsy to diagnose prostate cancer (2 parts to diagnose)
-        # todo: and sensitivity of 1st part (psa test) dependent on underlying disease stage
+        if dx_result:
+            # send for biopsy
+            hs.schedule_hsi_event(
+                    hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
+                        module=self.module,
+                        person_id=person_id
+                    ),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+            )
+
+    def did_not_run(self):
+        pass
+
+
+
+
+class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Define the necessary information for an HSI
+
+        self.TREATMENT_ID = "ProstateCancer_Investigation_Following_psa_positive"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
+        # Ignore this event if the person is no longer alive:
+        if not df.at[person_id, 'is_alive']:
+            return hs.get_blank_appt_footprint()
+
+        # If the person is already diagnosed, then take no action:
+        if not pd.isnull(df.at[person_id, "pc_date_diagnosis"]):
+            return hs.get_blank_appt_footprint()
+
+        df.at[person_id, 'pc_date_biopsy'] = self.sim.date
+
+        # todo: stratify by pc_status
+        # Use a psa test to assess whether the person has prostate cancer:
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='biopsy_for_prostate_cancer',
+            hsi_event=self
+        )
 
         if dx_result:
             # record date of diagnosis:
@@ -761,7 +797,6 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
 
     def did_not_run(self):
         pass
-
 
 
 
