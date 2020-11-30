@@ -99,7 +99,8 @@ autodoc_default_options = {
 }
 
 # The checker can't see private repos
-linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*']
+linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*',
+                    'https://www.who.int/bulletin/volumes/88/8/09-068213/en/nn']
 
 # Stop displaying fully-qualified domain names of classes.
 # e.g. rather than "class A.B.C", just say "class C".

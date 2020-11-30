@@ -181,6 +181,12 @@ def get_class_output_string(classinfo):
     mystr += base_str
     mystr += "\n\n"
 
+    #if class_name == 'Matt':  #Mockitis' or class_name == "Matt":
+        #import pdb; pdb.set_trace()
+        # class_obj.__dict__ is
+        # mappingproxy({'__module__': 'tlo.methods.mockitis',
+        #   'another_random_boolean': False, '__doc__': None})
+
     # Asif says we should probably not exclude __init__ in the following,
     # because some disease classes have custom arguments:
     # general_exclusions = ["__class__", "__dict__", "__module__",
@@ -195,6 +201,9 @@ def get_class_output_string(classinfo):
     # Return all the members of an object in a list of (name, value) pairs
     # sorted by name:
     classdat = inspect.getmembers(class_obj)  # Gets everything
+
+    # if class_name == 'Matt':  #Mockitis' or class_name == "Matt":
+    #    import pdb; pdb.set_trace()
 
     # We want to sort classdat by line number, so that functions
     # defined in, or overridden in, this class will be
@@ -217,12 +226,21 @@ def get_class_output_string(classinfo):
 
     name_func_lines = []  # List of tuples to sort later
 
+    my_attributes = []  # (name, value) pairs of class attributes.
+
+    ignored_attributes = ['__doc__', '__module__', '__weakref__']
+
+    misc = []
+
     for name, obj in classdat:
         # First loop. Get PARAMETERS and PROPERTIES dictionary objects only.
         # These are in subclasses of Module only.
         # We want nice tables for PARAMETERS and PROPERTIES.
-        # In this case, obj is a dictionary
-        if name in ("PARAMETERS", "PROPERTIES"):  # TODO enforce this order.
+        # In this case, obj is a dictionary.
+        # We want to display PARAMETERS before PROPERTIES. We should get that
+        # for free as inspect.getmembers() returns results sorted by name.
+        if name in ("PARAMETERS", "PROPERTIES") and \
+            name in class_obj.__dict__:  # only include if defined/overridden
             table_list = create_table(obj)
             if table_list == []:
                 continue
@@ -233,30 +251,55 @@ def get_class_output_string(classinfo):
 
         # Get source-code line numbering where possible.
         elif isfunction(obj) and func_objects_to_document \
-                and obj in func_objects_to_document:
+                and obj in func_objects_to_document and \
+                name in class_obj.__dict__:
             _, start_line_num = inspect.getsourcelines(obj)
             name_func_lines.append((name, obj, start_line_num))
 
         # Get source-code line numbering where possible.
         # inspect.getsourcelines() only works for module, class, method,
         # function, traceback, frame, or code objects
-        elif ismodule(obj) or isclass(obj) or ismethod(obj) \
-                or istraceback(obj) or isframe(obj) or iscode(obj):
-            pass  # _, start_line_num = inspect.getsourcelines(obj)
+        elif (ismodule(obj) or isclass(obj) or ismethod(obj) \
+                or istraceback(obj) or isframe(obj) or iscode(obj)) \
+                and (name in class_obj.__dict__):
+            #pass  # _, start_line_num = inspect.getsourcelines(obj)
+            misc.append(name, obj, start_line_num)
+
+        elif name == "__dict__":  # Skip over mappingproxy dict.
+            continue
 
         else:
-            # We want class attributes but I don't think we can get code order
-            continue
+            # We want class attributes but we can't get source code order
+            # We want only those which are defined or overridden in this class
+            #continue  #attributes.append()
+            if name in class_obj.__dict__ and name not in ignored_attributes:
+                my_attributes.append((name, obj))
+
+    # Output attributes other than functions
+    # for name, obj in classdat:
+    #    pass
+    if my_attributes:
+        mystr += f"\n{spacer}**Class attributes:**\n\n"
+        for att in my_attributes:
+            mystr += f"{spacer}{att[0]} : {att[1]}\n\n"
+
+    # Sort miscellaneous items:
+    if misc:
+        misc.sort(key=lambda x: x[2])
+        mystr += f"\n{spacer}**Miscellaneous:**\n\n"
+        for m in misc:
+            mystr += f"{spacer}{m[0]} : {m[1]}\n\n"
 
     # Sort the functions we wish to document into source-file order:
     name_func_lines.sort(key=lambda x: x[2])
 
-    # Output attributes other than functions
-    for name, obj in classdat:
-        pass
+    #if class_name == "Mockitis":
+    #    import pdb; pdb.set_trace()
 
     # New or overridden functions only.
     if func_objects_to_document:
+        mystr += f"{spacer}**Functions (defined or overridden in " \
+                 f"class {class_name}):**\n\n"
         for name, obj, _ in name_func_lines:  # Now in source code order
 
             if obj in func_objects_to_document:  # Should be always True!
