@@ -134,7 +134,7 @@ class OtherAdultCancer(Module):
 
         "oac_date_diagnosis": Property(
             Types.DATE,
-            "the date of diagnsosis of the other_adult_cancer (pd.NaT if never diagnosed)"
+            "the date of diagnosis of the other_adult_cancer (pd.NaT if never diagnosed)"
         ),
 
         "oac_date_treatment": Property(
@@ -811,7 +811,7 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
         date_now = self.sim.date
-        date_lastlog = self.sim.date - pd.DateOffset(days=self.repeat)
+        date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
 
         n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
 
@@ -823,6 +823,8 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'local_ln')).sum()
         n_newly_diagnosed_metastatic = (
                 df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'metastatic')).sum()
+
+        n_sy_early_other_adult_ca_symptom = (df.is_alive & (df.sy_early_other_adult_ca_symptom >= 1)).sum()
 
         n_diagnosed_age_15_29 = (df.is_alive & (df.age_years >= 15) & (df.age_years < 30)
                                  & ~pd.isnull(df.oac_date_diagnosis)).sum()
@@ -844,11 +846,12 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'n_diagnosed_age_15_29': n_diagnosed_age_15_29,
             'n_diagnosed_age_30_49': n_diagnosed_age_30_49,
             'n_diagnosed_age_50p': n_diagnosed_age_50p,
+            'n_sy_early_other_adult_ca_symptom': n_sy_early_other_adult_ca_symptom,
             'n_diagnosed': n_diagnosed
         })
 
-#       logger.info('%s|summary_stats|%s', self.sim.date, out)
+        logger.info('%s|summary_stats|%s', self.sim.date, out)
 
-        logger.info('%s|person_one|%s',
-                         self.sim.date,
-                         df.loc[13].to_dict())
+#       logger.info('%s|person_one|%s',
+#                        self.sim.date,
+#                       df.loc[1].to_dict())
