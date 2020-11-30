@@ -4,6 +4,7 @@
 #
 #    pip-compile --output-file=base.txt base.in
 #
+click==7.1.2              # via -r base.in
 jinja2==2.11.2            # via -r base.in
 markupsafe==1.1.1         # via jinja2
 numpy==1.19.4             # via -r base.in, pandas, scipy
