@@ -1,5 +1,6 @@
 # Base requirements file - common packages we use directly
 
+click
 numpy
 pandas
 scipy
