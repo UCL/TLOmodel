@@ -135,8 +135,7 @@ def test_get_class_output_string():
     spacer = numspaces * ' '
 
     expected += f"{spacer}**Functions (defined or overridden in " \
-    f"class Person):**\n\n"
-
+                f"class Person):**\n\n"
 
     # These functions should be listed in source-file order.
     expected += f"{spacer}.. automethod:: __init__\n\n"

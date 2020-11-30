@@ -181,11 +181,11 @@ def get_class_output_string(classinfo):
     mystr += base_str
     mystr += "\n\n"
 
-    #if class_name == 'Matt':  #Mockitis' or class_name == "Matt":
-        #import pdb; pdb.set_trace()
-        # class_obj.__dict__ is
-        # mappingproxy({'__module__': 'tlo.methods.mockitis',
-        #   'another_random_boolean': False, '__doc__': None})
+    # if class_name == 'Matt':  #Mockitis' or class_name == "Matt":
+    #     import pdb; pdb.set_trace()
+    # class_obj.__dict__ is
+    # mappingproxy({'__module__': 'tlo.methods.mockitis',
+    #   'another_random_boolean': False, '__doc__': None})
 
     # Asif says we should probably not exclude __init__ in the following,
     # because some disease classes have custom arguments:
@@ -240,7 +240,8 @@ def get_class_output_string(classinfo):
         # We want to display PARAMETERS before PROPERTIES. We should get that
         # for free as inspect.getmembers() returns results sorted by name.
         if name in ("PARAMETERS", "PROPERTIES") and \
-            name in class_obj.__dict__:  # only include if defined/overridden
+                name in class_obj.__dict__:
+            # (only included if defined/overridden in this class)
             table_list = create_table(obj)
             if table_list == []:
                 continue
@@ -259,10 +260,10 @@ def get_class_output_string(classinfo):
         # Get source-code line numbering where possible.
         # inspect.getsourcelines() only works for module, class, method,
         # function, traceback, frame, or code objects
-        elif (ismodule(obj) or isclass(obj) or ismethod(obj) \
+        elif (ismodule(obj) or isclass(obj) or ismethod(obj)
                 or istraceback(obj) or isframe(obj) or iscode(obj)) \
                 and (name in class_obj.__dict__):
-            #pass  # _, start_line_num = inspect.getsourcelines(obj)
+            # pass  # _, start_line_num = inspect.getsourcelines(obj)
             misc.append(name, obj, start_line_num)
 
         elif name == "__dict__":  # Skip over mappingproxy dict.
@@ -271,7 +272,7 @@ def get_class_output_string(classinfo):
         else:
             # We want class attributes but we can't get source code order
             # We want only those which are defined or overridden in this class
-            #continue  #attributes.append()
+            # continue  #attributes.append()
             if name in class_obj.__dict__ and name not in ignored_attributes:
                 my_attributes.append((name, obj))
 
@@ -293,8 +294,8 @@ def get_class_output_string(classinfo):
     # Sort the functions we wish to document into source-file order:
     name_func_lines.sort(key=lambda x: x[2])
 
-    #if class_name == "Mockitis":
-    #    import pdb; pdb.set_trace()
+    # if class_name == "Mockitis":
+    #     import pdb; pdb.set_trace()
 
     # New or overridden functions only.
     if func_objects_to_document:
