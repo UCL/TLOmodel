@@ -27,7 +27,7 @@ except NameError:
 
 # parameters for whole suite of tests:
 start_date = Date(2010, 1, 1)
-popsize = 1000
+popsize = 145000
 
 
 # %% Construction of simulation objects:

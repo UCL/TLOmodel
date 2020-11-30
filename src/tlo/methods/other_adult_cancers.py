@@ -358,7 +358,7 @@ class OtherAdultCancer(Module):
         # This properties of conditional on the test being done only to persons with the Symptom, 'early_other_adult_ca_symptom'.
         # todo: note dependent on underlying status not symptoms + add for other stages
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            diagnostic_device_for_other_adult_cancer_given_site_confined=DxTest(
+             diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom=DxTest(
                 property='oac_status',
                 sensitivity=self.parameters['sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_'
                                             'adult_ca_site_confined'],
@@ -520,7 +520,7 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.schedule_event(
                     InstantaneousDeath(self.module, person_id, "OtherAdultCancer"), self.sim.date
             )
-        df.loc[selected_to_die, 'occ_date_death'] = self.sim.date
+        df.loc[selected_to_die, 'oac_date_death'] = self.sim.date
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -811,13 +811,44 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
         date_now = self.sim.date
-        date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
+        date_lastlog = self.sim.date - pd.DateOffset(days=self.repeat)
+
+        n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
+
+        # todo: the .between function I think includes the two dates so events on these dates counted twice
+        # todo:_ I think we need to replace with date_lastlog <= x < date_now
+        n_newly_diagnosed_site_confined = (
+                df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'site_confined1')).sum()
+        n_newly_diagnosed_local_ln = (
+                df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'local_ln')).sum()
+        n_newly_diagnosed_metastatic = (
+                df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'metastatic')).sum()
+
+        n_diagnosed_age_15_29 = (df.is_alive & (df.age_years >= 15) & (df.age_years < 30)
+                                 & ~pd.isnull(df.oac_date_diagnosis)).sum()
+        n_diagnosed_age_30_49 = (df.is_alive & (df.age_years >= 30) & (df.age_years < 50)
+                                 & ~pd.isnull(df.oac_date_diagnosis)).sum()
+        n_diagnosed_age_50p = (df.is_alive & (df.age_years >= 50) & ~pd.isnull(df.oac_date_diagnosis)).sum()
+
+        n_diagnosed = (df.is_alive & ~pd.isnull(df.oac_date_diagnosis)).sum()
 
         out.update({
             'diagnosed_since_last_log': df.oac_date_diagnosis.between(date_lastlog, date_now).sum(),
             'treated_since_last_log': df.oac_date_treatment.between(date_lastlog, date_now).sum(),
             'palliative_since_last_log': df.oac_date_palliative_care.between(date_lastlog, date_now).sum(),
-            'death_other_adult_cancer_since_last_log': df.oac_date_death.between(date_lastlog, date_now).sum()
+            'death_other_adult_cancer_since_last_log': df.oac_date_death.between(date_lastlog, date_now).sum(),
+            'n age 15+': n_ge15,
+            'n_newly_diagnosed_site_confined': n_newly_diagnosed_site_confined,
+            'n_newly_diagnosed_local_ln': n_newly_diagnosed_local_ln,
+            'n_newly_diagnosed_metastatic': n_newly_diagnosed_metastatic,
+            'n_diagnosed_age_15_29': n_diagnosed_age_15_29,
+            'n_diagnosed_age_30_49': n_diagnosed_age_30_49,
+            'n_diagnosed_age_50p': n_diagnosed_age_50p,
+            'n_diagnosed': n_diagnosed
         })
 
-        logger.info('%s|summary_stats|%s', self.sim.date, out)
+#       logger.info('%s|summary_stats|%s', self.sim.date, out)
+
+        logger.info('%s|person_one|%s',
+                         self.sim.date,
+                         df.loc[13].to_dict())
