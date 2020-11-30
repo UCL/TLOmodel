@@ -134,11 +134,14 @@ def test_get_class_output_string():
     numspaces = 5
     spacer = numspaces * ' '
 
-    # NB we expect the following to be in name order
-    # i.e. alphabetical rather than source code order.
+    expected += f"{spacer}**Functions (defined or overridden in " \
+    f"class Person):**\n\n"
+
+
+    # These functions should be listed in source-file order.
     expected += f"{spacer}.. automethod:: __init__\n\n"
-    expected += f"{spacer}.. automethod:: get_name\n\n"
     expected += f"{spacer}.. automethod:: set_name\n\n"
+    expected += f"{spacer}.. automethod:: get_name\n\n"
 
     expected += "\n\n\n"
     assert result == expected
