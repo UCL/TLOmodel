@@ -1,8 +1,7 @@
 '''The functions used by tlo_methods_rst.py.'''
 
 import inspect
-from inspect import (isfunction, ismodule, isclass, ismethod, istraceback,
-                     isframe, iscode)
+from inspect import isclass, iscode, isframe, isfunction, ismethod, ismodule, istraceback
 from os import walk
 
 
