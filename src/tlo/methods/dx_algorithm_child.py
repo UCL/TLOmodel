@@ -120,12 +120,15 @@ class DxAlgorithmChild(Module):
         p = self.parameters
 
         p['sensitivity_of_classification_of_pneumonia_level_0'] = 0.4
-        p['sensitivity_of_classification_of_pneumonia_level_1'] = [0.512, 0.5, 0.55]  # [0.812, 0.327, 0.305]
+        p['sensitivity_of_classification_of_pneumonia_level_1'] = [0.812, 0.387, 0.095]
         p['sensitivity_of_classification_of_pneumonia_level_2'] = 0.6
-        p['prob_no_pneumonia_classified_as_non_severe'] = 0.18
-        p['prob_nonsev_pneumonia_classified_as_no_pneumonia'] = 0.655
-        p['prob_severe_pneumonia_classified_as_no_pneumonia'] = 0.524
-        p['prob_no_pneumonia_classified_as_severe'] = 0.02
+        p['prob_no_pneumonia_classified_as_non_severe'] = 0.1876
+        p['prob_nonsev_pneumonia_classified_as_no_pneumonia'] = 0.6126
+        p['prob_severe_pneumonia_classified_as_no_pneumonia'] = 0.619
+        p['prob_no_pneumonia_classified_as_nonsev_pneumonia'] = 0.1876
+        p['prob_no_pneumonia_classified_as_severe_pneumonia'] = 0.001
+        p['prob_nonsev_pneumonia_classified_as_severe_pneumonia'] = 0.001
+        p['prob_severe_pneumonia_classified_as_nonsev_pneumonia'] = 0.286
         p['sensitivity_of_pneumonia_care_plan_level_0'] = 0.45
         p['sensitivity_of_pneumonia_care_plan_level_1'] = 0.56
         p['sensitivity_of_pneumonia_care_plan_level_2'] = 0.7
@@ -1066,7 +1069,5 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                      data=individual_child,
                      description='following an individual child through simulation')
 
-        logger.info('%s|person_id|%s',
-                    self.sim.date)
 
 
