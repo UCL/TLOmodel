@@ -5,12 +5,12 @@ A run of the model at scale using all disease modules currently included in Mast
 
 For use in profiling.
 """
+import os
 import sys
 from pathlib import Path
 
 import pandas as pd
 import shared
-import os
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
