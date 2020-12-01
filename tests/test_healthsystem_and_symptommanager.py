@@ -164,12 +164,10 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
     # Check that at least some consumables requests fail due to lack of availability
-    all_req_granted = list()
-    for line in (output['tlo.methods.healthsystem']['Consumables']['Available']):
-        all_req_granted.append(all([response for response in line.values()]))
-    assert not all(all_req_granted)
+    assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_NotAvailable'] if v != '{}'])
+    assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Package_NotAvailable'] if v != '{}'])
 
-    # Check that some mockitis cured occured (though health system)
+    # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
@@ -436,9 +434,11 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     # read the results
     output = parse_log_file(sim.log_filepath)
 
-    # Do the checks for the consumables: all requests granted
-    for line in (output['tlo.methods.healthsystem']['Consumables']['Available']):
-        assert all([response for response in line.values()])
+    # Do the checks for the consumables: all requests granted and nothing in NotAvailable
+    assert 0 == len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_NotAvailable'] if v != '{}'])
+    assert 0 == len([v for v in output['tlo.methods.healthsystem']['Consumables']['Package_NotAvailable'] if v != '{}'])
+    assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_Available'] if v != '{}'])
+    assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Package_Available'] if v != '{}'])
 
     # Check that some mockitis cured occured (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
@@ -547,7 +547,7 @@ def test_use_of_helper_function_get_all_consumables():
         def initialise_population(self, population):
             pass
 
-        def initialie_simulation(self, sim):
+        def initialise_simulation(self, sim):
             pass
 
     # Create simulation with the healthsystem and DummyModule
@@ -565,7 +565,7 @@ def test_use_of_helper_function_get_all_consumables():
     pkg_code_not_available = [3, 4, 5]
 
     sim.modules['HealthSystem'].cons_item_code_availability_today = \
-        sim.modules['HealthSystem'].prob_unique_item_codes_available > 0.0
+        sim.modules['HealthSystem'].prob_item_codes_available > 0.0
     cons = sim.modules['HealthSystem'].cons_item_code_availability_today
     cons.loc[item_code_is_available, cons.columns] = True
     cons.loc[item_code_not_available, cons.columns] = False
@@ -580,6 +580,11 @@ def test_use_of_helper_function_get_all_consumables():
     lookup.loc[item_code_not_available[1:3], 'Intervention_Pkg_Code'] = pkg_code_not_available[1]
     lookup.loc[[item_code_is_available[3], item_code_not_available[3]], 'Intervention_Pkg_Code'] = \
         pkg_code_not_available[2]
+
+    # Process consumables file (after the edits made above) and update availability ready for calling:
+    hs = sim.modules['HealthSystem']
+    hs.process_consumables_file()
+    hs.determine_availability_of_consumables_today()
 
     # Create a dummy HSI event:
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
@@ -620,3 +625,115 @@ def test_use_of_helper_function_get_all_consumables():
     assert True is hsi_event.get_all_consumables(item_codes=item_code_is_available, pkg_codes=pkg_code_is_available)
     assert False is hsi_event.get_all_consumables(item_codes=item_code_not_available, pkg_codes=pkg_code_is_available)
     assert False is hsi_event.get_all_consumables(item_codes=item_code_is_available, pkg_codes=pkg_code_not_available)
+
+
+def test_speeding_up_request_consumables():
+
+    class DummyModule(Module):
+        METADATA = {Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ALERT_OTHER_DISEASES = []
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    # Create simulation with the healthsystem and DummyModule
+    sim = Simulation(start_date=start_date, seed=0)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule()
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date)
+
+    hs = sim.modules['HealthSystem']
+    hsi_event = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
+
+    # refresh availabilities of consumables to all available:
+    hs.determine_availability_of_consumables_today()
+
+    # create a very complicated footprint:
+    consumables = hs.parameters['Consumables']
+    pkg_code = \
+        pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'ORS',
+                            'Intervention_Pkg_Code'])[0]
+
+    cons_req_as_footprint = {
+        'Intervention_Package_Code': {pkg_code: 2, 3: 1, 5: 1},
+        'Item_Code': {99: 2, 98: 4, 97: 6}
+    }
+
+    # test running request_consumables
+    _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event)
+
+    # Check it all works with footprints with different configurations
+    _ = hs.request_consumables(cons_req_as_footprint={
+        'Intervention_Package_Code': {},
+        'Item_Code': {}},
+        hsi_event=hsi_event
+    )
+
+    _ = hs.request_consumables(cons_req_as_footprint={
+        'Intervention_Package_Code': {1: 10},
+        'Item_Code': {}},
+        hsi_event=hsi_event
+    )
+
+    _ = hs.request_consumables(cons_req_as_footprint={
+        'Intervention_Package_Code': {},
+        'Item_Code': {1: 10}},
+        hsi_event=hsi_event
+    )
+
+    # Time it!
+    import time
+    start = time.time()
+    # do a one-time update (as would happen each day in the simulation)
+    hs.determine_availability_of_consumables_today()
+
+    # run the whole "request_consumables" routine many times to capture a time that it takes:
+    # - no logging
+    for i in range(1000):
+        _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event, to_log=False)
+    end = time.time()
+    print(f"Elapsed time for 1000 X request_consumables (no logging): {end - start}")
+    # with original code: elapsed time = 13.770344972610474
+    # first version edit: elapsed time = 5.978830099105835
+    # second version edit: elapsed time = 5.255127191543579
+    # third version edit: elapsed time = 20.793461084365845
+    # fourth version (with pre-computing): 1.0886831283569336
+    # fifth version (allowing asserts): 1.1119129657745361
+
+    # - with logging
+    for i in range(1000):
+        _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event, to_log=True)
+    end = time.time()
+    print(f"Elapsed time for 1000 X request_consumables (with logging): {end - start}")
+    # with original code: elapsed time = 13.770344972610474
+    # fifth version (allowing asserts): 2.5592801570892334
+
+    # check functionality of helper function getting consumables as individual items
+    start = time.time()
+    for i in range(1000):
+        _ = hs.get_consumables_as_individual_items(cons_req_as_footprint=cons_req_as_footprint)
+    end = time.time()
+    print(f"Elapsed time for 1000 X get_consumables_as_individual_items: {end - start}")
+    # with looping through dict: elapsed time = 2.2378311157226562
+    # with pandas manipulations: 16.766106843948364
