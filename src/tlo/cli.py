@@ -21,7 +21,8 @@ def scenario_create():
 
 @cli.command()
 @click.argument('file', type=click.Path(exists=True))
-def scenario_run(file):
+@click.option('--draw-only', is_flag=True, help='Only generate draws; do not run the simulation')
+def scenario_run(file, draw_only):
     """Run locally the scenario defined in FILE
 
     FILE is path to file containing a scenario class
@@ -31,8 +32,9 @@ def scenario_run(file):
     logger.info(key="message", data=f"Loaded {scenario_class.__class__.__name__} from {scenario_path}")
     draws_json_path = scenario_class.save_draws()
     logger.info(key="message", data=f"Saved draws configuration to {draws_json_path}")
-    runner = SampleRunner(draws_json_path)
-    runner.run()
+    if not draw_only:
+        runner = SampleRunner(draws_json_path)
+        runner.run()
 
 
 @cli.command()
