@@ -5,6 +5,8 @@
 #    pip-compile --output-file=base.txt base.in
 #
 click==7.1.2              # via -r base.in
+gitdb==4.0.5              # via gitpython
+gitpython==3.1.11         # via -r base.in
 jinja2==2.11.2            # via -r base.in
 markupsafe==1.1.1         # via jinja2
 numpy==1.19.4             # via -r base.in, pandas, scipy
@@ -13,4 +15,5 @@ python-dateutil==2.8.1    # via pandas
 pytz==2020.4              # via pandas
 scipy==1.5.4              # via -r base.in
 six==1.15.0               # via python-dateutil
+smmap==3.0.4              # via gitdb
 xlrd==1.2.0               # via -r base.in

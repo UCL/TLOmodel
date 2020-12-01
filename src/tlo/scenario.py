@@ -32,7 +32,7 @@ from tlo import logging, Simulation
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-MAX_INT = 2**32 - 1
+MAX_INT = 2**31 - 1
 
 
 class BaseScenario:
@@ -51,12 +51,12 @@ class BaseScenario:
         """
         self.seed = None
         self.rng = None
-        self.resources = Path('./resources')
+        self.resources = Path("./resources")
         self.number_of_draws = 1
         self.samples_per_draw = 1
         self.scenario_path = None
 
-    def log_configuration(self):
+    def log_configuration(self, **kwargs):
         """Implementations return a dictionary configuring logging. Example:
 
         return {
@@ -68,7 +68,7 @@ class BaseScenario:
             }
         }
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def modules(self):
         """Implementations return a list of instances of module to register in the simulation. Example:
@@ -80,7 +80,7 @@ class BaseScenario:
             ...
         ]
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def draw_parameters(self, draw_number, rng):
         """Implementations return a dictionary of parameters to override for each draw.
@@ -128,7 +128,7 @@ class ScenarioLoader:
     @staticmethod
     def _load_scenario_script(path):
         import importlib.util
-        spec = importlib.util.spec_from_file_location("scenario_definition", path)
+        spec = importlib.util.spec_from_file_location(Path(path).stem, path)
         foo = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(foo)
         return foo
@@ -138,7 +138,7 @@ class ScenarioLoader:
         import inspect
         classes = inspect.getmembers(scenario_module, inspect.isclass)
         classes = [c for (n, c) in classes if BaseScenario == c.__base__]
-        assert len(classes) == 1, 'Exactly one subclass of BaseScenario should be defined in the scenario script'
+        assert len(classes) == 1, "Exactly one subclass of BaseScenario should be defined in the scenario script"
         return classes[0]
 
     def get_scenario(self):
@@ -150,7 +150,7 @@ class DrawGenerator:
     def __init__(self, scenario_class, number_of_draws, samples_per_draw):
         self.scenario = scenario_class
 
-        assert self.scenario.seed is not None, 'Must set a seed for the scenario. Add `self.seed = <integer>`'
+        assert self.scenario.seed is not None, "Must set a seed for the scenario. Add `self.seed = <integer>`"
         self.scenario.rng = np.random.RandomState(seed=self.scenario.seed)
         self.number_of_draws = number_of_draws
         self.samples_per_draw = samples_per_draw
@@ -165,86 +165,87 @@ class DrawGenerator:
 
     def get_draw(self, draw_number):
         return {
-            'draw_number': draw_number,
-            'draw_seed': self.scenario.rng.randint(MAX_INT),
-            'parameters': self.scenario.draw_parameters(draw_number, self.scenario.rng),
+            "draw_number": draw_number,
+            "draw_seed": self.scenario.rng.randint(MAX_INT),
+            "parameters": self.scenario.draw_parameters(draw_number, self.scenario.rng),
         }
 
     def get_run_config(self, scenario_path):
         return {
-            'scenario_script_path': scenario_path,
-            'scenario_seed': self.scenario.seed,
-            'samples_per_draw': self.samples_per_draw,
-            'draws': self.draws,
+            "scenario_script_path": scenario_path,
+            "scenario_seed": self.scenario.seed,
+            "samples_per_draw": self.samples_per_draw,
+            "draws": self.draws,
         }
 
     def save_config(self, scenario_path, output_path):
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             f.write(json.dumps(self.get_run_config(scenario_path), indent=2))
 
 
 class SampleRunner:
     """Reads scenario draws from a JSON configuration and handles running of samples"""
     def __init__(self, run_configuration_path):
-        with open(run_configuration_path, 'r') as f:
+        with open(run_configuration_path, "r") as f:
             self.run_config = json.load(f)
-        self.scenario = ScenarioLoader(self.run_config['scenario_script_path']).get_scenario()
+        self.scenario = ScenarioLoader(self.run_config["scenario_script_path"]).get_scenario()
         logger.info(key="message", data=f"Loaded scenario using {run_configuration_path}")
         logger.info(key="message", data=f"Found {self.number_of_draws} draws; {self.samples_per_draw} samples/draw")
 
     @property
     def number_of_draws(self):
-        return len(self.run_config['draws'])
+        return len(self.run_config["draws"])
 
     @property
     def samples_per_draw(self):
-        return self.run_config['samples_per_draw']
+        return self.run_config["samples_per_draw"]
 
     def get_draw(self, draw_number):
         total = self.number_of_draws
         assert draw_number < total, f"Cannot get draw {draw_number}; only {total} defined."
-        return self.run_config['draws'][draw_number]
+        return self.run_config["draws"][draw_number]
 
     def get_samples_for_draw(self, draw):
-        for sample_number in range(0, self.run_config['samples_per_draw']):
+        for sample_number in range(0, self.run_config["samples_per_draw"]):
             yield self.get_sample(draw, sample_number)
 
     def get_sample(self, draw, sample_number):
         assert sample_number < self.scenario.samples_per_draw, \
             f"Cannot get sample {sample_number}; samples/draw={self.scenario.samples_per_draw}"
         sample = draw.copy()
-        sample['sample_number'] = sample_number
+        sample["sample_number"] = sample_number
 
         # Instead of using the random number generator to create a seed for the simulation, we use an integer hash
         # function to create an integer based on the sum of the draw_number and sample_number. This means the
         # seed can be created independently and out-of-order (i.e. instead of sampling a seed for each sample in order)
-        sample['simulation_seed'] = SampleRunner.low_bias_32(sample['draw_seed'] + sample_number)
+        sample["simulation_seed"] = SampleRunner.low_bias_32(sample["draw_seed"] + sample_number)
         return sample
 
-    def run_sample_by_number(self, draw_number, sample_number):
+    def run_sample_by_number(self, output_directory, draw_number, sample_number):
         draw = self.get_draw(draw_number)
         sample = self.get_sample(draw, sample_number)
-        self.run_sample(sample)
+        self.run_sample(sample, output_directory)
 
-    def run_sample(self, sample):
+    def run_sample(self, sample, output_directory=None):
         log_config = self.scenario.log_configuration()
-        log_config['filename'] = f"{log_config['filename']}_draw{sample['draw_number']}_sample{sample['sample_number']}"
+        if output_directory is not None:
+            log_config["directory"] = output_directory
 
         sim = Simulation(
             start_date=self.scenario.start_date,
-            seed=sample['simulation_seed'],
+            seed=sample["simulation_seed"],
             log_config=log_config
         )
         sim.register(*self.scenario.modules())
 
-        if sample['parameters'] is not None:
-            self.override_parameters(sim, sample['parameters'])
+        if sample["parameters"] is not None:
+            self.override_parameters(sim, sample["parameters"])
 
         sim.make_initial_population(n=self.scenario.pop_size)
         sim.simulate(end_date=self.scenario.end_date)
 
     def run(self):
-        for draw in self.run_config['draws']:
+        for draw in self.run_config["draws"]:
             for sample in self.get_samples_for_draw(draw):
                 self.run_sample(sample)
 
@@ -264,10 +265,10 @@ class SampleRunner:
                     logger.info(
                         key="override_parameter",
                         data={
-                            'module': module_name,
-                            'name': param_name,
-                            'old_value': old_value,
-                            'new_value': module.parameters[param_name]
+                            "module": module_name,
+                            "name": param_name,
+                            "old_value": old_value,
+                            "new_value": module.parameters[param_name]
                         }
                     )
 
