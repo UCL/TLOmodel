@@ -111,9 +111,10 @@ class BaseScenario:
 
     def save_draws(self):
         generator = DrawGenerator(self, self.number_of_draws, self.samples_per_draw)
-        output_path = self.scenario_path.parent / 'run.json'
+        output_path = self.scenario_path.parent / f"{self.scenario_path.stem}_draws.json"
         # assert not os.path.exists(output_path), f'Cannot save run config to {output_path} - file already exists'
         generator.save_config(str(self.scenario_path), output_path)
+        return output_path
 
 
 class ScenarioLoader:
@@ -158,7 +159,7 @@ class DrawGenerator:
     def setup_draws(self):
         assert self.scenario.number_of_draws > 0, "Number of draws must be greater than one"
         assert self.scenario.samples_per_draw > 0, "Number of samples/draw must be greater than 0"
-        if self.scenario.draw_parameters(1) is None:
+        if self.scenario.draw_parameters(1, self.scenario.rng) is None:
             assert self.scenario.number_of_draws == 1, "Number of draws should equal one if no variable parameters"
         return [self.get_draw(d) for d in range(0, self.scenario.number_of_draws)]
 
@@ -188,6 +189,8 @@ class SampleRunner:
         with open(run_configuration_path, 'r') as f:
             self.run_config = json.load(f)
         self.scenario = ScenarioLoader(self.run_config['scenario_script_path']).get_scenario()
+        logger.info(key="message", data=f"Loaded scenario using {run_configuration_path}")
+        logger.info(key="message", data=f"Found {self.number_of_draws} draws; {self.samples_per_draw} samples/draw")
 
     @property
     def number_of_draws(self):
@@ -239,6 +242,11 @@ class SampleRunner:
 
         sim.make_initial_population(n=self.scenario.pop_size)
         sim.simulate(end_date=self.scenario.end_date)
+
+    def run(self):
+        for draw in self.run_config['draws']:
+            for sample in self.get_samples_for_draw(draw):
+                self.run_sample(sample)
 
     @staticmethod
     def override_parameters(sim, overridden_params):
