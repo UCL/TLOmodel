@@ -67,7 +67,7 @@ class HealthSystem(Module):
         'hs_dist_to_facility': Property(
             Types.REAL, 'The distance for each person to their nearest clinic (of any type)'
         ),
-        'hs_is_in_patient': Property(
+        'hs_is_inpatient': Property(
             Types.BOOL, 'Whether or not the person is currently an in-patient at any medical facility'
         ),
     }
@@ -248,7 +248,7 @@ class HealthSystem(Module):
         #  population density distribitions)
         # Note that this characteritic is inherited from mother to child.
         df.loc[df.is_alive, 'hs_dist_to_facility'] = self.rng.uniform(0.01, 5.00, df.is_alive.sum())
-        df.loc[df.is_alive, 'hs_is_in_patient'] = False
+        df.loc[df.is_alive, 'hs_is_inpatient'] = False
 
         # Put pd.NaT for all the properties concerned with entry/exit of different types of bed.
         df.loc[df.is_alive, self.list_of_cols_with_internal_dates['all']] = pd.NaT
@@ -283,12 +283,15 @@ class HealthSystem(Module):
         # Initialise the bed-days-tracker:
         self.initialise_beddays_tracker()
 
+        # Schedule the first (repeating) event to update status of hs_is_in_patient
+        sim.schedule_event(RefreshInPatient(self), sim.date)
+
     def on_birth(self, mother_id, child_id):
 
         # New child inherits the hs_dist_to_facility of the mother
         df = self.sim.population.props
         df.at[child_id, 'hs_dist_to_facility'] = df.at[mother_id, 'hs_dist_to_facility']
-        df.at[child_id, 'hs_is_in_patient'] = False
+        df.at[child_id, 'hs_is_inpatient'] = False
         df.loc[child_id, self.list_of_cols_with_internal_dates['all']] = pd.NaT
 
     def register_disease_module(self, new_disease_module):
@@ -1069,7 +1072,7 @@ class HealthSystem(Module):
         """This is called to reflect that a new occupany of bed-days should be recorded:
         * Cause to be reflected in the bed_tracker that an hsi_event is being run that will cause bed to be
          occupied.
-        * Update the property ```hs_is_in_patient``` to show that this person is now an in-patient
+        * Update the property ```hs_is_inpatient``` to show that this person is now an in-patient
 
          NB. If multiple bed types are required, then it is assumed that these run in the sequence given in
          ```bed_types```.
@@ -1096,11 +1099,11 @@ class HealthSystem(Module):
                 add_footprint=True
             )
 
-        if not df.at[person_id, 'hs_is_in_patient']:
+        if not df.at[person_id, 'hs_is_inpatient']:
             # apply the new footprint if the person is not already an in-patient
             apply_footprint(new_footprint)
             # label person as an in-patient
-            df.at[person_id, 'hs_is_in_patient'] = True
+            df.at[person_id, 'hs_is_inpatient'] = True
 
         else:
             # if person is already an in-patient:
@@ -1194,15 +1197,6 @@ class HealthSystem(Module):
             add_footprint=False
         )
 
-    def refresh_is_in_patient(self):
-        """Helper function to refresh the property hs_is_in_patient"""
-        df = self.sim.population.props
-
-        exit_cols = self.list_of_cols_with_internal_dates['exits']
-        # if any "date of last day in bed" in not null and in the future, then the person is an in-patient:
-        df.loc[df.is_alive, "hs_is_in_patient"] = \
-            ((~df.loc[df.is_alive, exit_cols].isnull()) & ~(df.loc[df.is_alive, exit_cols] < self.sim.date)).any(axis=1)
-
     def on_simulation_end(self):
         """Dump the record of the bed_tracker to the log"""
         for bed_type in self.bed_tracker:
@@ -1215,6 +1209,20 @@ class HealthSystem(Module):
                     data=row,
                     description=f'dataframe of bed_tracker of type {bed_type}, broken down by day and facility'
                 )
+
+
+class RefreshInPatient(RegularEvent, PopulationScopeEventMixin):
+    """Refresh the hs_in_patient status. This event runs every day"""
+    def __init__(self, module: HealthSystem):
+        super().__init__(module, frequency=DateOffset(days=1))
+
+    def apply(self, population):
+        df = self.sim.population.props
+        exit_cols = self.module.list_of_cols_with_internal_dates['exits']
+
+        # if any "date of last day in bed" in not null and in the future, then the person is an in-patient:
+        df.loc[df.is_alive, "hs_is_inpatient"] = \
+            ((~df.loc[df.is_alive, exit_cols].isnull()) & ~(df.loc[df.is_alive, exit_cols] < self.sim.date)).any(axis=1)
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
@@ -1242,9 +1250,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(days=1))
 
     def apply(self, population):
-
-        # 0) Update in-patient status:
-        self.module.refresh_is_in_patient()
 
         # 0) Determine the availability of consumables today based on their probabilities
         self.module.determine_availability_of_consumables_today()
@@ -1370,7 +1375,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # todo - this provides exactly the beddays that were requested,
                     #  ... but this will be where the check on availability is gated
                     event._received_info_about_bed_days = event.BEDDAYS_FOOTPRINT
-                    self.module.impose_beddays_footprint(event)
 
                     # Run the HSI event (allowing it to return an updated appt_footprint)
                     actual_appt_footprint = event.run(
@@ -1504,7 +1508,8 @@ class HSI_Event:
 
     def post_apply_hook(self):
         """Do any required processing after apply() completes."""
-        pass
+        # Impose the bed-days footprint:
+        self.module.sim.modules['HealthSystem'].impose_beddays_footprint(self)
 
     def run(self, squeeze_factor):
         """Make the event happen."""
