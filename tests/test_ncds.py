@@ -52,6 +52,8 @@ def routine_checks(sim):
 
     assert df.nc_ever_stroke.any()
 
+    # check that someone dies of each condition
+
     pass
 
 
@@ -76,6 +78,9 @@ def test_basic_run():
     sim.make_initial_population(n=5000)
     sim.simulate(end_date=Date(year=2015, month=1, day=1))
 
+
     routine_checks(sim)
+
+
 
 

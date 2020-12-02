@@ -1,4 +1,6 @@
 """The Person and Population classes."""
+import math
+
 import pandas as pd
 
 from tlo import logging
@@ -19,9 +21,9 @@ class Population:
         A pandas DataFrame with the properties of all individuals as columns.
     """
 
-    __slots__ = ('props', 'sim', 'initial_size', 'new_row')
+    __slots__ = ('props', 'sim', 'initial_size', 'new_row', 'next_person_id', 'new_rows')
 
-    def __init__(self, sim, initial_size):
+    def __init__(self, sim, initial_size: int, append_size: int = None):
         """Create a new population.
 
         This will create the required Person objects and initialise their
@@ -30,6 +32,7 @@ class Population:
 
         :param sim: the Simulation containing this population
         :param initial_size: the initial population size
+        :param append_size: how many rows to append when growing the population dataframe (optional)
         """
         self.sim = sim
         self.initial_size = initial_size
@@ -38,8 +41,21 @@ class Population:
         self.props = self._create_props(initial_size)
         self.props.index.name = 'person'
 
-        # keep a copy of a new row, so we can quickly append as population grows
+        if append_size is None:
+            # approximation based on runs to increase capacity of dataframe ~twice a year
+            # TODO: profile adjustment of this and more clever calculation
+            append_size = math.ceil(initial_size * 0.02)
+
+        assert append_size > 0, "Number of rows to append when growing must be greater than 0"
+
+        logger.info(key="info", data=f"Dataframe capacity append size: {append_size}")
+
+        # keep a copy of a new rows to quickly append as population grows
         self.new_row = self.props[self.props.index == 0].copy()
+        self.new_rows = [self.new_row] * append_size
+
+        # use the person_id of the next person to be added to the dataframe to increase capacity
+        self.next_person_id = initial_size
 
     def _create_props(self, size):
         """Internal helper function to create a properties dataframe.
@@ -59,11 +75,18 @@ class Population:
 
         :return: id of the new person
         """
-        new_index = len(self.props)
-        logger.debug(key='do_birth', data=str(new_index))
+        # get index of the last row
+        index_of_last_row = self.props.index[-1]
 
-        self.props = self.props.append(self.new_row.copy(), ignore_index=True, sort=False)
-        self.props.index.name = 'person'
+        # the index of the next person
+        if self.next_person_id > index_of_last_row:
+            # we need to add some rows
+            self.props = self.props.append(self.new_rows, ignore_index=True, sort=False)
+            self.props.index.name = 'person'
+            logger.info(key="info", data=f"Increased capacity of population dataframe to {len(self.props)}")
+
+        new_index = self.next_person_id
+        self.next_person_id += 1
 
         return new_index
 

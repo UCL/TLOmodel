@@ -215,7 +215,7 @@ def test_hsi_functions_no_medication_available(tmpdir):
 
     # zero-out the availability of the consumable that is required for the treatment of antidepressants
     item_code = sim.modules['Depression'].parameters['anti_depressant_medication_item_code']
-    sim.modules['HealthSystem'].prob_unique_item_codes_available.loc[item_code] = 0.0
+    sim.modules['HealthSystem'].prob_item_codes_available.loc[item_code] = 0.0
 
     sim.simulate(end_date=Date(year=2012, month=1, day=1))
     # --------------------------------------------------------------------------
@@ -234,8 +234,10 @@ def test_hsi_functions_no_medication_available(tmpdir):
     assert 'Depression_Antidepressant_Refill' not in hsi['TREATMENT_ID'].values
 
     # Check no anti-depressants used
-    cons = output['tlo.methods.healthsystem']['Consumables']
-    assert not (cons['Available'].apply(pd.Series)[item_code]).any()
+    assert all(
+        [item_code not in x.keys() for x in output[
+            'tlo.methods.healthsystem']['Consumables']['Item_Available'].apply(eval)]
+    )
 
 
 def test_hsi_functions_no_healthsystem_capability(tmpdir):
