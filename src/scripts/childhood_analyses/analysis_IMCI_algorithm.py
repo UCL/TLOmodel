@@ -45,7 +45,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 2)
-pop_size = 500
+pop_size = 50000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
 # `log_config` arguments, these will override the default behaviour.
@@ -122,7 +122,7 @@ plt.style.use('ggplot')
 # Pneumonia IMCI classification by health workers -------
 names = list(final_df.columns)
 ax1 = final_df.plot.bar(rot=0)
-plt.ylabel('number of cases')
+plt.ylabel('average number of cases per year')
 # plt.figure(figsize=(9, 3))
 plt.title('Mean of health worker classifications vs IMCI gold standard of IMCI pneumonia ')
 plt.savefig(outputpath / ("total_health_worker_vs_IMCI_gold_classifications_mean_of_years" + datestamp + ".pdf"), format='pdf')
@@ -192,7 +192,7 @@ plt.style.use('ggplot')
 # Pneumonia IMCI classification by health workers -------
 names1 = list(joined_df.columns)
 ax2 = joined_df.T.plot.bar(rot=0)
-plt.ylabel('number of cases')
+plt.ylabel('average number of cases per year')
 # plt.figure(figsize=(9, 3))
 plt.title('Mean of health worker classifications vs IMCI gold standard of IMCI pneumonia')
 plt.savefig(outputpath / ("health_worker_vs_IMCI_classifications_mean_of_years" + datestamp + ".pdf"), format='pdf')
