@@ -271,11 +271,11 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 prob_hsb = odds / (1 + odds)
 
                 # if person is an in-patient, there will definitely be an HSI:
-                is_in_patient = df.loc[person_id, 'hs_is_in_patient']
+                is_inpatient = df.loc[person_id, 'hs_is_inpatient']
                 if (
                     (m.rng.rand() < prob_hsb) or
                     m.force_any_symptom_to_lead_to_healthcareseeking or
-                    is_in_patient
+                    is_inpatient
                 ):
                     # Schedule a generic non-emergency appointment. Occurs after a delay of 0-4 days, or immediately
                     # if using 'force_any_symptom_to_lead_to_healthcareseeking'.
