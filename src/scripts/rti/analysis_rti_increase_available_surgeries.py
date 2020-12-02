@@ -76,7 +76,7 @@ for i in range(0, nsim):
                     females_data['YLD_RTI_rt_disability']
 
     tot_dalys = males_dalys.tolist() + females_dalys.tolist()
-    list_tot_dalys_no_extra.append(tot_dalys)
+    list_tot_dalys_no_extra.append(sum(tot_dalys))
 
 # Create lists to store the outputs of the simulations when thoroscopy and spinal cord surgery is included
 list_deaths_with_extra_surg = []
@@ -115,7 +115,7 @@ for i in range(0, nsim):
     females_dalys = females_data[YLL_females_data].sum(axis=1) + \
                     females_data['YLD_RTI_rt_disability']
     tot_dalys = males_dalys.tolist() + females_dalys.tolist()
-    list_tot_dalys_with_extra_surg.append(tot_dalys)
+    list_tot_dalys_with_extra_surg.append(sum(tot_dalys))
 
 # Create lists to store the outputs of the simulations where we only include spinal cord surgery
 list_deaths_with_spinal_surg = []
@@ -154,7 +154,7 @@ for i in range(0, nsim):
     females_dalys = females_data[YLL_females_data].sum(axis=1) + \
                     females_data['YLD_RTI_rt_disability']
     tot_dalys = males_dalys.tolist() + females_dalys.tolist()
-    list_tot_dalys_with_spinal_surg.append(tot_dalys)
+    list_tot_dalys_with_spinal_surg.append(sum(tot_dalys))
 
 # Create lists to store the outputs for simulations with thoroscopy
 list_deaths_with_thoroscopy = []
@@ -193,40 +193,30 @@ for i in range(0, nsim):
     females_dalys = females_data[YLL_females_data].sum(axis=1) + \
                     females_data['YLD_RTI_rt_disability']
     tot_dalys = males_dalys.tolist() + females_dalys.tolist()
-    list_tot_dalys_with_thoroscopy.append(tot_dalys)
+    list_tot_dalys_with_thoroscopy.append(sum(tot_dalys))
 
 # Get outputs from simulations in a usable form start with DALYs///
 # Get average dalys per sim for the simulation with the original health system
-average_dalys_per_sims_orig = []
-for list in list_tot_dalys_no_extra:
-    average_dalys_per_sims_orig.append(np.mean(list))
-average_dalys_per_sim_with_both = []
+average_dalys_per_sims_orig = np.mean(list_tot_dalys_no_extra)
 # Get average dalys per sim for the simulation with the health system with spinal cord surgery and thoroscopy
-for list in list_tot_dalys_with_extra_surg:
-    average_dalys_per_sim_with_both.append(np.mean(list))
+average_dalys_per_sim_with_both = np.mean(list_tot_dalys_with_extra_surg)
 # Calculate the average reduction in dalys for including spinal cord surgery and thoroscopy
-average_daly_reduction_both = np.round(
-    ((np.mean(average_dalys_per_sims_orig) - np.mean(average_dalys_per_sim_with_both)) /
-     np.mean(average_dalys_per_sims_orig)) * 100, 2)
+average_daly_change_both = np.round(
+    ((average_dalys_per_sim_with_both - average_dalys_per_sims_orig) /
+     average_dalys_per_sims_orig) * 100, 2)
 # Get the average dalys per sim for the simulation with the health system with spinal cord surgery
-average_dalys_with_spinal_surg = []
-for list in list_tot_dalys_with_spinal_surg:
-    average_dalys_with_spinal_surg.append(np.mean(list))
+average_dalys_with_spinal_surg = np.mean(list_tot_dalys_with_spinal_surg)
 # Calculate the average reduction in dalys for including spinal cord surgery
-average_daly_reduction_spinal = np.round(
-    ((np.mean(average_dalys_per_sims_orig) - np.mean(average_dalys_with_spinal_surg)) /
-     np.mean(average_dalys_per_sims_orig)) * 100, 2)
+average_daly_change_spinal = np.round(((average_dalys_with_spinal_surg - average_dalys_per_sims_orig) /
+                                      average_dalys_per_sims_orig) * 100, 2)
 # Get the average dalys per sim for the simulation with the health system with thoroscopy
-average_dalys_with_thoroscopy = []
-for list in list_tot_dalys_with_thoroscopy:
-    average_dalys_with_thoroscopy.append(np.mean(list))
+average_dalys_with_thoroscopy = np.mean(list_tot_dalys_with_thoroscopy)
 # Calculate the average reduction in dalys for including spinal cord surgery
-average_daly_reduction_thoro = np.round(
-    ((np.mean(average_dalys_per_sims_orig) - np.mean(average_dalys_with_thoroscopy)) /
-     np.mean(average_dalys_per_sims_orig)) * 100, 2)
-plt.bar(np.arange(2), [np.mean(average_dalys_per_sims_orig),
-                       np.mean(average_dalys_per_sim_with_both)],
+average_daly_reduction_thoro = np.round(((average_dalys_with_thoroscopy - average_dalys_per_sims_orig) /
+                                         average_dalys_per_sims_orig) * 100, 2)
+plt.bar(np.arange(2), [average_dalys_per_sims_orig,average_dalys_per_sim_with_both],
         color=['lightsteelblue', 'lightsalmon'])
+plt.ylabel('Average DALYs')
 plt.xticks(np.arange(2), ['Average DALYs'
                           '\n'
                           'without additional surgery',
@@ -235,34 +225,38 @@ plt.xticks(np.arange(2), ['Average DALYs'
                           'with additional surgery'])
 plt.title(f"Average DALYS in simulations with and without additional available surgeries"
           f"\n"
-          f"including spinal cord surgery and thoroscopy decreased average DALYs by "
-          f"{np.round(average_daly_reduction_both, 2)}%"
+          f"including spinal cord surgery and thoroscopy altered average DALYs by "
+          f"{np.round(average_daly_change_both, 2)}%"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.savefig('outputs/IncreasingSurgicalCapacity/compare_mean_total_DALYS_with_without_extra_surg.png',
             bbox_inches='tight')
 plt.clf()
-plt.bar(np.arange(3), [np.mean(average_dalys_per_sims_orig),
-                       np.mean(average_dalys_with_spinal_surg),
-                       np.mean(average_dalys_with_thoroscopy)],
+plt.bar(np.arange(3), [average_dalys_per_sims_orig,
+                       average_dalys_with_spinal_surg,
+                       average_dalys_with_thoroscopy],
         color=['lightsteelblue', 'lightsalmon', 'lemonchiffon'])
 plt.xticks(np.arange(3), ['Average DALYs,'
                           '\n'
-                          'original health system',
+                          'original'
+                          '\n'
+                          'health system',
                           'Average DALYs,'
                           '\n'
-                          'with spinal cord surgery',
+                          'with spinal'
+                          '\ncord surgery',
                           'Average DALYs,'
                           '\n'
                           'with thoroscopy'
                           ])
-plt.title(f"Average DALYS in simulations with and additional available surgeries."
+plt.ylabel('Average DALYs')
+plt.title(f"Average DALYs in simulations with and additional available surgeries."
           f"\n"
-          f"Including spinal cord surgery decreased average DALYs by "
-          f"{np.round(average_daly_reduction_spinal, 2)}%."
+          f"Including spinal cord surgery altered average DALYs by "
+          f"{average_daly_change_spinal}%."
           f"\n"
-          f"Including thoroscopy decreased average DALYs by "
-          f"{np.round(average_dalys_with_thoroscopy, 2)}%."
+          f"Including thoroscopy altered average DALYs by "
+          f"{average_daly_reduction_thoro}%."
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.savefig('outputs/IncreasingSurgicalCapacity/compare_mean_total_DALYS_with_extra_surg_split.png',
@@ -271,30 +265,35 @@ plt.clf()
 # Work on the effect of including each type of surgery on deaths
 mean_deaths_no_surg = np.mean(list_deaths_without_extra_surg)
 mean_deaths_with_surg = np.mean(list_deaths_with_extra_surg)
-average_death_reduction_both = np.round(
-    ((mean_deaths_no_surg - mean_deaths_with_surg) / mean_deaths_no_surg) * 100, 2)
+average_death_change_both = np.round(
+    ((mean_deaths_with_surg - mean_deaths_no_surg) / mean_deaths_no_surg) * 100, 2)
 mean_deaths_with_spine = np.mean(list_deaths_with_spinal_surg)
 mean_deaths_with_thoro = np.mean(list_deaths_with_thoroscopy)
-average_death_reduction_spine = np.round(
-    ((mean_deaths_no_surg - mean_deaths_with_spine) / mean_deaths_no_surg) * 100, 2)
-average_death_reduction_thoro = np.round(
-    ((mean_deaths_no_surg - mean_deaths_with_thoro) / mean_deaths_no_surg) * 100, 2)
+average_death_change_spine = np.round(
+    ((mean_deaths_with_spine - mean_deaths_no_surg) / mean_deaths_no_surg) * 100, 2)
+average_death_change_thoro = np.round(
+    ((mean_deaths_with_thoro - mean_deaths_no_surg) / mean_deaths_no_surg) * 100, 2)
 
 plt.bar(np.arange(2), [mean_deaths_no_surg, mean_deaths_with_surg], color=['lightsteelblue', 'lightsalmon'])
-plt.xticks(np.arange(2), ['Average deaths due to RTI'
+plt.xticks(np.arange(2), ['Average deaths '
+                          '\n'
+                          'due to RTI'
                           '\n'
                           'without additional '
                           '\n'
                           'available surgeries',
-                          'Average deaths due to RTI'
+                          'Average deaths '
+                          '\n'
+                          'due to RTI'
                           '\n'
                           'with additional '
                           '\n'
                           'available surgeries'])
+plt.ylabel('Average deaths')
 plt.title(f"Average deaths in simulations with and without additional available surgeries"
           f"\n"
-          f"including spinal cord surgery and thoroscopy decreased average deaths by "
-          f"{np.round(average_death_reduction_both, 2)}%"
+          f"including spinal cord surgery and thoroscopy changed average deaths by "
+          f"{average_death_change_both}%"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.savefig('outputs/IncreasingSurgicalCapacity/compare_mean_total_deaths_with_without_extra_surg.png',
@@ -302,25 +301,32 @@ plt.savefig('outputs/IncreasingSurgicalCapacity/compare_mean_total_deaths_with_w
 plt.clf()
 plt.bar(np.arange(3), [mean_deaths_no_surg, mean_deaths_with_spine, mean_deaths_with_thoro],
         color=['lightsteelblue', 'lightsalmon', 'lemonchiffon'])
-plt.xticks(np.arange(3), ['Average deaths due to RTI'
+plt.xticks(np.arange(3), ['Average deaths '
+                          '\n'
+                          'due to RTI'
                           '\n'
                           'without additional '
                           '\n'
                           'available surgeries',
-                          'Average deaths due to RTI'
+                          'Average deaths '
+                          '\n'
+                          'due to RTI'
                           '\n'
                           'with spinal cord surgery',
-                          'Average deaths due to RTI'
+                          'Average deaths '
+                          '\n'
+                          'due to RTI'
                           '\n'
                           'with thoroscopy'
                           ])
+plt.ylabel('Average deaths')
 plt.title(f"Average deaths in simulations with and without additional available surgeries."
           f"\n"
-          f"Including spinal cord surgery decreased average deaths by "
-          f"{np.round(average_death_reduction_spine, 2)}%."
+          f"Including spinal cord surgery changed average deaths by "
+          f"{average_death_change_spine}%."
           f"\n"
-          f"Including thoroscopy decreased average deaths by "
-          f"{np.round(average_death_reduction_thoro, 2)}%."
+          f"Including thoroscopy changed average deaths by "
+          f"{average_death_change_thoro}%."
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.savefig('outputs/IncreasingSurgicalCapacity/compare_mean_total_deaths_with_extra_surg_split.png',

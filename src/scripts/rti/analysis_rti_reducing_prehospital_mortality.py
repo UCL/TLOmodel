@@ -95,12 +95,13 @@ average_deaths = [float(sum(col)) / len(col) for col in zip(*list_deaths_average
 # Get the average DALYs per reduction of pre-hospital mortality
 average_tot_dalys = [float(sum(col)) / len(col) for col in zip(*list_tot_dalys_average)]
 # Create the xtick labels
-xtick_labels = [f"{np.round(1 - reduction, 2)}%" for reduction in prehosital_mortality_reduction]
+xtick_labels = [f"{np.round(1 - reduction, 2) * 100}%" for reduction in prehosital_mortality_reduction]
 # Create a dataframe of the results
 plt.bar(np.arange(len(average_deaths)), average_deaths, color='lightsteelblue', width=0.25, label='Deaths')
 plt.bar(np.arange(len(average_deaths)) + 0.25, average_tot_dalys, color='lightsalmon', width=0.25, label='DALYs')
 plt.ylabel('Deaths/DALYs')
 plt.xticks(np.arange(len(average_deaths)), xtick_labels, rotation=45)
+plt.legend()
 plt.title(f"The effect of reducing pre-hospital mortality on average Deaths/DALYS"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")

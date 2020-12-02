@@ -37,8 +37,8 @@ resourcefilepath = Path('./resources')
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 5000
-nsim = 4
+pop_size = 25000
+nsim = 5
 # create empty lists to store the number of deaths with a health system an without a health system and a dictionary
 # to store the log files in
 list_deaths_with_med = []
@@ -152,8 +152,8 @@ tot_dalys_in_sims_without_med = []
 for list in list_tot_dalys_no_med:
     tot_dalys_in_sims_without_med.append(sum(list))
 # Percent reduction in DALYs
-percent_reduction_dalys = \
-    np.round(((np.mean(tot_dalys_in_sims_without_med) - np.mean(tot_dalys_in_sims_with_med)) /
+percent_change_dalys = \
+    np.round(((np.mean(tot_dalys_in_sims_with_med) - np.mean(tot_dalys_in_sims_without_med)) /
               np.mean(tot_dalys_in_sims_without_med)) * 100, 2)
 # Plot the output in a bar chart
 plt.bar(np.arange(2), [np.mean(tot_dalys_in_sims_without_med), np.mean(tot_dalys_in_sims_with_med)],
@@ -161,7 +161,7 @@ plt.bar(np.arange(2), [np.mean(tot_dalys_in_sims_without_med), np.mean(tot_dalys
 plt.xticks(np.arange(2), ['Total DALYs \nwithout health system', 'Total DALYs \nwith health system'])
 plt.title(f"Average total DALYS in simulations with and without health system."
           f"\n"
-          f"Health system resulted in a {percent_reduction_dalys}% reduction in DALYs"
+          f"Health system resulted in a {percent_change_dalys}% change in DALYs"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.savefig('outputs/HealthSystemComparison/compare_mean_total_DALYS_with_without_health_sys.png')
@@ -171,8 +171,8 @@ plt.clf()
 mean_deaths_no_med = np.mean(list_deaths_no_med)
 mean_deaths_with_med = np.mean(list_deaths_with_med)
 # Percent reduction in deaths
-percent_reduction_deaths = \
-    np.round(((np.mean(list_deaths_no_med) - np.mean(list_deaths_with_med)) /
+percent_change_deaths = \
+    np.round(((np.mean(list_deaths_with_med) - np.mean(list_deaths_no_med)) /
               np.mean(list_deaths_no_med)) * 100, 2)
 # Plot this in a bar chart
 plt.bar(np.arange(2), [mean_deaths_no_med, mean_deaths_with_med],
@@ -185,7 +185,7 @@ plt.xticks(np.arange(2), ['Total deaths due to RTI'
                           'with Health system'])
 plt.title(f"Average deaths in simulations with and without health system"
           f"\n"
-          f"Health system resulted in a {percent_reduction_deaths}% reduction in deaths"
+          f"Health system resulted in a {percent_change_deaths}% change in deaths"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.savefig('outputs/HealthSystemComparison/compare_mean_total_deaths_with_without_health_sys.png')

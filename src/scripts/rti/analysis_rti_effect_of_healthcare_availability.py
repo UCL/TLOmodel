@@ -13,6 +13,8 @@ from tlo.methods import (
 )
 import numpy as np
 from matplotlib import pyplot as plt
+# todo: this analysis file doesn't really behave as it ought to, because I haven't included any consequences for it
+#  not running through hsi_event.not_available(). I need to fix this.
 
 # =============================== Analysis description ========================================================
 # What I am doing here is to see what happens when we run the model with different capability coefficients, i.e
@@ -32,11 +34,11 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 5
+yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 5000
-nsim = 2
+pop_size = 10000
+nsim = 3
 service_availability = ["*"]
 # Create a range of capability coefficients
 capabilities_reduction = np.linspace(1, 0, 3)
@@ -56,7 +58,7 @@ for i in range(0, nsim):
             demography.Demography(resourcefilepath=resourcefilepath),
             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability,
-                                      capabilities_coefficient=float(capability)),
+                                      capabilities_coefficient=float(1 - capability)),
             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -98,19 +100,27 @@ std_tot_dalys = [np.std(col) for col in zip(*all_sim_dalys)]
 # Create labels for the x axis
 labels = []
 for capability in capabilities_reduction:
-    labels.append(str(capability))
+    labels.append(str(capability * 100) + '%')
 width = 0.3
 # create the bar plots
 plt.bar(np.arange(len(avg_tot_deaths)), avg_tot_deaths,
         width=width, color='lightsalmon', label='deaths', yerr=std_tot_deaths)
-plt.bar(np.arange(len(avg_tot_dalys)) + width, avg_tot_dalys,
+plt.xlabel('Capability reduction')
+plt.title(f"Average deaths in simulations for different capability coefficients"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+plt.xticks(np.arange(len(avg_tot_deaths)), labels, rotation=45)
+
+plt.savefig('outputs/CapabilityAnalysis/compare_mean_total_deaths_per_capability_coefficient.png',
+            bbox_inches='tight')
+plt.clf()
+plt.bar(np.arange(len(avg_tot_dalys)), avg_tot_dalys,
         width=width, color='lightsteelblue', label='DALYs', yerr=std_tot_dalys)
 plt.xticks(np.arange(len(avg_tot_deaths)), labels, rotation=45)
-plt.xlabel('Capability coefficients')
-plt.ylabel('Deaths/DALYs')
-plt.legend()
+plt.ylabel('DALYs')
+plt.xlabel('Capability reduction')
 plt.title(f"Average deaths and DALYs in simulations for different capability coefficients"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/CapabilityAnalysis/compare_mean_total_deaths_and_dalys_per_capability_coefficient.png',
+plt.savefig('outputs/CapabilityAnalysis/compare_mean_total_dalys_per_capability_coefficient.png',
             bbox_inches='tight')

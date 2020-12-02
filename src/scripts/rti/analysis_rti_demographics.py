@@ -14,12 +14,11 @@ from tlo.methods import (
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
-from scipy import stats
 
 # =============================== Analysis description ========================================================
 # This analysis file has essentially become the model fitting analysis, seeing what happens when we run the model
-# and whether an ordinary model run will behave how we would expect it to
-
+# and whether an ordinary model run will behave how we would expect it to, hitting the right demographics, producing
+# the right injuries, measuring the percent of crashes involving alcohol
 
 # ============================================== Model run ============================================================
 log_config = {
@@ -34,13 +33,13 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 5
+yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 5000
-nsim = 2
-# Just a variable whether to save figures or not
+pop_size = 100000
+nsim = 10
+# Create a variable whether to save figures or not
 save_figures = True
 # Create lists to store information from each simulation in
 # Age demographics
@@ -97,8 +96,9 @@ rti_model_flow_summary = []
 # Health seeking behaviour
 percent_sought_healthcare = []
 # Inpatient days
-# todo: create output on inpatient days
 all_sim_inpatient_days = []
+# Deaths in 2010
+deaths_2010 = []
 for i in range(0, nsim):
     sim = Simulation(start_date=start_date)
     # We register all modules in a single call to the register method, calling once with multiple
@@ -118,7 +118,6 @@ for i in range(0, nsim):
     sim.make_initial_population(n=pop_size)
     params = sim.modules['RTI'].parameters
     params['allowed_interventions'] = []
-
     sim.simulate(end_date=end_date)
     log_df = parse_log_file(logfile)
     # Get the relevant information from the rti_demography logging
@@ -167,13 +166,6 @@ for i in range(0, nsim):
         log_df['tlo.methods.rti']['summary_1m']['number deaths post med'].sum() /
         log_df['tlo.methods.rti']['model_progression']['total_sought_medical_care'].iloc[-1]
     )
-    # Get the per injury fatality ratio
-    per_injury_fatal.append(
-        len(log_df['tlo.methods.demography']['death'].loc[
-                log_df['tlo.methods.demography']['death']['cause'].isin(['RTI_death_without_med', 'RTI_death_with_med',
-                                                                         'RTI_unavailable_med'])]) /
-        np.multiply(log_df['tlo.methods.rti']['number_of_injuries'].drop('date', axis=1).iloc[-1].tolist(),
-                    [1, 2, 3, 4, 5, 6, 7, 8]).sum())
     # Get the incidence of RTI per 100,000 person years
     incidences_of_rti.append(log_df['tlo.methods.rti']['summary_1m']['incidence of rti per 100,000'].tolist())
     # Get the incidence of death due to RTI per 100,000 person years and the sub categories
@@ -196,6 +188,10 @@ for i in range(0, nsim):
     # Get information on the deaths that occurred in the sim
     deaths_df = log_df['tlo.methods.demography']['death']
     rti_deaths = len(deaths_df.loc[deaths_df['cause'] != 'Other'])
+    # Get the number of deaths in 2010
+    first_year_deaths = deaths_df.loc[deaths_df['date'] < pd.datetime(2011, 1, 1)]
+    first_year_rti_deaths = len(first_year_deaths.loc[first_year_deaths['cause'] != 'Other'])
+    deaths_2010.append(first_year_rti_deaths)
     try:
         # Get the breakdown of road traffic injuries deaths by context by percentage
         ps_of_imm_death.append(len(deaths_df.loc[deaths_df['cause'] == 'RTI_imm_death']) / rti_deaths)
@@ -210,24 +206,48 @@ for i in range(0, nsim):
     # Get a rough estimate for the percentage road traffic injury deaths for those involved in RTI
     number_of_crashes = sum(log_df['tlo.methods.rti']['summary_1m']['number involved in a rti'])
     percent_of_fatal_crashes.append(rti_deaths / number_of_crashes)
+    injury_info = log_df['tlo.methods.rti']['Injury_information']
     # Get information on injury severity
-    mild_injuries_in_run = log_df['tlo.methods.rti']['injury_severity']['total_mild_injuries'].iloc[-1]
-    severe_injuries_in_run = log_df['tlo.methods.rti']['injury_severity']['total_severe_injuries'].iloc[-1]
-    perc_mild.append(mild_injuries_in_run / (mild_injuries_in_run + severe_injuries_in_run))
-    perc_severe.append(severe_injuries_in_run / (mild_injuries_in_run + severe_injuries_in_run))
+    mild_inj = [1 for sublist in injury_info['Per_person_severity_category'].tolist() for item in sublist if
+                'mild' in item]
+    severe_inj = [1 for sublist in injury_info['Per_person_severity_category'].tolist() for item in
+                  sublist if 'severe' in item]
+
+    perc_mild.append(sum(mild_inj) / (sum(mild_inj) + sum(severe_inj)))
+    perc_severe.append(sum(severe_inj) / (sum(mild_inj) + sum(severe_inj)))
     # Get information on the distribution of ISS scores in the simulation
-    severity_distibution = log_df['tlo.methods.rti']['injury_severity']['ISS_score'].iloc[-1]
+    severity_distibution = injury_info['Per_person_injury_severity'].tolist()
+    # severity_distibution = log_df['tlo.methods.rti']['injury_severity']['ISS_score'].iloc[-1]
     for score in severity_distibution:
         iss_scores.append(score)
     # Get information on the number of injuries each person was given
+    ninj_list = injury_info['Number_of_injuries'].tolist()
+    ninj_list = [int(item) for sublist in ninj_list for item in sublist]
     injury_number_distribution = log_df['tlo.methods.rti']['number_of_injuries'].drop('date', axis=1).iloc[-1].tolist()
-    number_of_injured_body_locations.append(injury_number_distribution)
+    ninj_list_sorted = [ninj_list.count(i) for i in [1, 2, 3, 4, 5, 6, 7, 8]]
+    number_of_injured_body_locations.append(ninj_list_sorted)
+    # Get the per injury fatality ratio
+    per_injury_fatal.append(
+        len(log_df['tlo.methods.demography']['death'].loc[
+                log_df['tlo.methods.demography']['death']['cause'].isin(['RTI_death_without_med', 'RTI_death_with_med',
+                                                                         'RTI_unavailable_med'])]) /
+        np.multiply(ninj_list_sorted,
+                    [1, 2, 3, 4, 5, 6, 7, 8]).sum())
     # Get information on where these injuries occured on each person
-    injury_location_this_sim = log_df['tlo.methods.rti']['injury_location_data'].drop('date', axis=1).iloc[-1].tolist()
-    inj_loc_data.append(injury_location_this_sim)
+    injury_loc_list = injury_info['Location_of_injuries'].tolist()
+    injury_loc_list = [int(item) for sublist in injury_loc_list for item in sublist]
+    binned_loc_dist = []
+    for loc in [1, 2, 3, 4, 5, 6, 7, 8]:
+        binned_loc_dist.append(injury_loc_list.count(loc))
+    inj_loc_data.append(binned_loc_dist)
     # Get information on the injury category distribution this run
-    injury_category_data = log_df['tlo.methods.rti']['injury_characteristics'].drop('date', axis=1).iloc[-1].tolist()
-    inj_cat_data.append(injury_category_data)
+    inj_cat_list = injury_info['Injury_category'].tolist()
+    inj_cat_list = [int(item) for sublist in inj_cat_list for item in sublist]
+    binned_cat_dist = []
+    for cat in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
+        binned_cat_dist.append(inj_cat_list.count(cat))
+    assert len(inj_cat_list) == len(injury_loc_list)
+    inj_cat_data.append(binned_cat_dist)
     # Get information on the flows between each model state this run
     rti_model_flow_summary.append(log_df['tlo.methods.rti']['model_progression'].drop('date', axis=1).iloc[-1].tolist())
     # Get information on the total incidence of injuries and the breakdown of injury by type
@@ -240,6 +260,17 @@ for i in range(0, nsim):
     inc_minor.append(injury_category_incidence['inc_minor'].tolist())
     inc_other.append(injury_category_incidence['inc_other'].tolist())
     tot_inc_injuries.append(injury_category_incidence['tot_inc_injuries'].tolist())
+    inpatient_day_df = log_df['tlo.methods.healthsystem']['HSI_Event'].loc[
+        log_df['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'] == 'RTI_MedicalIntervention']
+    for person in inpatient_day_df.index:
+        # Get the number of inpatient days per person, if there is a key error when trying to access inpatient days it
+        # means that this patient didn't require any so append (0)
+        try:
+            all_sim_inpatient_days.append(inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
+        except KeyError:
+            all_sim_inpatient_days.append(0)
+
+print(all_sim_inpatient_days)
 
 
 def age_breakdown(age_array):
@@ -321,6 +352,24 @@ plt.title(f"Average percent survival outcome of those with road traffic injuries
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig('outputs/Demographics_of_RTI/Percent_Survival_Healthcare.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot the percent of death post med compared to Kamuzu central see https://doi.org/10.1016/j.jsurg.2014.09.010
+percent_mortality_kamuzu = (182 + 38) / (3840 + 1227 + 182 + 38)
+plt.bar(np.arange(2), [percent_mortality_kamuzu, 1 - percent_mortality_kamuzu], width=0.3,
+        color='lightsalmon', label='In-hospital mortality, \nKamuzu central hospital')
+plt.bar(np.arange(2) + 0.5, [overall_average_post_med_death, 1 - overall_average_post_med_death], width=0.3,
+        color='lightsteelblue', label='Model in-hospital mortality')
+plt.xticks(np.arange(2) + 0.25, ['Fatal', 'Non-fatal'])
+plt.legend()
+plt.title(f"In-hospital fatality due to injury percentage \n "
+          f"model prediction: {np.round(overall_average_post_med_death, 2)} \n"
+          f"Kamuzu central hospital: {np.round(percent_mortality_kamuzu, 2)} \n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+plt.savefig('outputs/Demographics_of_RTI/Percent_Survival_Healthcare_compare_Kamuzu.png', bbox_inches='tight')
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Percent_Survival_Healthcare_compare_Kamuzu.png', bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -476,6 +525,7 @@ if save_figures is True:
 else:
     plt.clf()
 plt.bar(np.arange(2), [mean_of_means, mean_of_means_non_alcohol], yerr=[std_of_means, std_of_means_non_alcohol])
+plt.xticks(np.arange(2), ['Attributable to alcohol', 'Not attributable to alcohol'])
 plt.title(f"Average percentage of RTIs attributable to Alcohol"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
@@ -606,7 +656,76 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
-# Plot the overall percent fatality of those involved in road traffic injuries
+# Plot the number of deaths predicted by the model compared to the GBD data
+GBD_death_data = pd.read_csv('resources/ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv')
+road_data = GBD_death_data.loc[GBD_death_data['cause_name'] == 'Road injuries']
+road_data_2010 = road_data.loc[road_data['year'] == 2010]
+Malawi_Pop_2010 = pd.read_csv('resources/ResourceFile_Population_2010.csv')
+Malawi_pop_size_2010 = sum(Malawi_Pop_2010['Count'])
+scaler_to_pop_size = Malawi_pop_size_2010 / pop_size
+scaled_2010_deaths = np.mean(deaths_2010) * scaler_to_pop_size
+plt.bar(np.arange(2), [scaled_2010_deaths, sum(road_data_2010['val'])], color='lightsteelblue')
+plt.ylabel('Number of deaths')
+plt.xticks(np.arange(2), ['Scaled model deaths', 'GBD estimated'
+                                                 '\n'
+                                                 'number of deaths'
+                                                 '\n'
+                                                 'for 2010'])
+plt.title(f"The model's predicted Number of RTI related death "
+          f"\n"
+          f"compared to the GBD 2010 estimate"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Number_of_deaths_comp_to_GBD_2010.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Compare model deaths over popsize for model and Malawi GBD data
+deaths_over_pop_size = [np.mean(deaths_2010) / pop_size,
+                        sum(road_data_2010['val']) / Malawi_pop_size_2010]
+plt.bar(np.arange(2), deaths_over_pop_size, color='lightsalmon')
+plt.ylabel('Deaths/Population')
+plt.xticks(np.arange(2), ['Model deaths'
+                          '\n'
+                          'divided by \n'
+                          'simulation population',
+                          'GBD estimated'
+                          '\n'
+                          'number of deaths'
+                          '\n'
+                          'divided by population'
+                          '\n'
+                          '2010'])
+plt.title(f"The model's predicted Number of RTI related death divided by population size"
+          f"\n"
+          f"compared to the GBD 2010 estimate"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")  # Plot the overall percent fatality of those involved in road traffic injuries
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Number_of_deaths_over_pop_comp_to_GBD_2010.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# compare incidence of death in the model and the GBD 2010 estimate
+GBD_incidence_of_death_2010 = 13.20
+plt.bar(np.arange(2), [np.mean(average_deaths), GBD_incidence_of_death_2010], color='wheat')
+plt.ylabel('Incidence of deaths')
+plt.xticks(np.arange(2), ['Model incidence of death', 'GBD estimated'
+                                                      '\n'
+                                                      'incidence of deaths'
+                                                      '\n'
+                                                      'for 2010'])
+plt.title(f"The model's predicted incidence of RTI related death "
+          f"\n"
+          f"compared to the GBD 2010 estimate"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Incidence_of_deaths_comp_to_GBD_2010.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 mean_fatal_crashes_of_all_sim = np.mean(percent_of_fatal_crashes)
 std_fatal_crashes = np.std(percent_of_fatal_crashes)
 non_fatal_crashes_of_all_sim = [i - j for i, j in zip(np.ones(len(percent_of_fatal_crashes)), percent_of_fatal_crashes)]
@@ -621,6 +740,7 @@ plt.xticks(np.arange(2), ['fatal', 'non-fatal'])
 plt.title(f"Average percentage of those with RTI who perished"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+plt.savefig('outputs/Demographics_of_RTI/Percentage_of_deaths.png', bbox_inches='tight')
 if save_figures is True:
     plt.savefig('outputs/Demographics_of_RTI/Percentage_of_deaths.png', bbox_inches='tight')
     plt.clf()
@@ -657,7 +777,8 @@ if save_figures is True:
 else:
     plt.clf()
 # Plot the distribution of the ISS scores
-scores, counts = np.unique(iss_scores, return_counts=True)
+flattened_scores = [score for sublist in iss_scores for score in sublist]
+scores, counts = np.unique(flattened_scores, return_counts=True)
 plt.bar(scores, counts / sum(counts), width=0.8, color='lightsteelblue')
 plt.xlabel('ISS scores')
 plt.ylabel('Percentage')
@@ -686,6 +807,7 @@ if save_figures is True:
 else:
     plt.clf()
 # plot the injury location data
+
 average_inj_loc = [float(sum(col)) / len(col) for col in zip(*inj_loc_data)]
 plt.bar(np.arange(8), np.divide(average_inj_loc, sum(average_inj_loc)), color='lightsteelblue')
 plt.xticks(np.arange(8), ['Head', 'Face', 'Neck', 'Thorax', 'Abdomen', 'Spine', 'UpperX', 'LowerX'], rotation=45)
@@ -747,6 +869,26 @@ average_inc_total = [float(sum(col)) / len(col) for col in zip(*tot_inc_injuries
 mean_inc_total = np.mean(average_inc_total)
 std_total = np.std(average_inc_total)
 gbd_total = gbd_inc_amp + gbd_inc_burns + gbd_inc_fractures + gbd_inc_minor + gbd_inc_other + gbd_inc_sci + gbd_inc_tbi
+incidence_dict = {'amputations': [gbd_inc_amp, mean_inc_amp],
+                  'burns': [gbd_inc_burns, mean_inc_burns],
+                  'fractures': [gbd_inc_fractures, mean_inc_fractures],
+                  'tbi': [gbd_inc_tbi, mean_inc_tbi],
+                  'sci': [gbd_inc_sci, mean_inc_sci],
+                  'minor': [gbd_inc_minor, mean_inc_minor],
+                  'other': [gbd_inc_other, mean_inc_other],
+                  'total': [gbd_total, mean_inc_total]}
+incidence_dict_perc = {'amputations': [gbd_inc_amp / gbd_total, mean_inc_amp / mean_inc_total],
+                       'burns': [gbd_inc_burns / gbd_total, mean_inc_burns / mean_inc_total],
+                       'fractures': [gbd_inc_fractures / gbd_total, mean_inc_fractures / mean_inc_total],
+                       'tbi': [gbd_inc_tbi / gbd_total, mean_inc_tbi / mean_inc_total],
+                       'sci': [gbd_inc_sci / gbd_total, mean_inc_sci / mean_inc_total],
+                       'minor': [gbd_inc_minor / gbd_total, mean_inc_minor / mean_inc_total],
+                       'other': [gbd_inc_other / gbd_total, mean_inc_other / mean_inc_total],
+                       'total': [gbd_total / gbd_total, mean_inc_total / mean_inc_total]}
+print('incidence of categories, GBD then Model:')
+
+print(incidence_dict)
+print(incidence_dict_perc)
 model_category_incidences = [mean_inc_amp, mean_inc_burns, mean_inc_fractures, mean_inc_tbi, mean_inc_sci,
                              mean_inc_minor, mean_inc_other, mean_inc_total]
 model_inc_errors = [std_amp, std_burns, std_fractures, std_tbi, std_sci, std_minor, std_other, std_total]
@@ -805,7 +947,40 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
+# ================================== Plot inpatient day distribution ==================================================
+# Malawi injury inpatient days data from https://doi.org/10.1016/j.jsurg.2014.09.010
+labels = ['< 1', '1', '2', '3', '4-7', '8-14', '15-30', '> 30']
+inpatient_days_Tyson_et_al = [107 + 40, 854 + 56, 531 + 19, 365 + 22, 924 + 40, 705 + 23, 840 + 8, 555 + 11]
+inpatient_days_Tyson_et_al_dist = np.divide(inpatient_days_Tyson_et_al, sum(inpatient_days_Tyson_et_al))
+# Sort model data to fit the above boundaries
+zero_days = [1 if inpatient_day == 0 else 0 for inpatient_day in all_sim_inpatient_days]
+one_day = [1 if inpatient_day == 1 else 0 for inpatient_day in all_sim_inpatient_days]
+two_days = [1 if inpatient_day == 2 else 0 for inpatient_day in all_sim_inpatient_days]
+three_days = [1 if inpatient_day == 3 else 0 for inpatient_day in all_sim_inpatient_days]
+four_to_seven_days = [1 if 4 <= inpatient_day < 7 else 0 for inpatient_day in all_sim_inpatient_days]
+eight_to_fourteen = [1 if 8 <= inpatient_day < 14 else 0 for inpatient_day in all_sim_inpatient_days]
+fifteen_to_thirty = [1 if 15 <= inpatient_day < 30 else 0 for inpatient_day in all_sim_inpatient_days]
+thiry_plus = [1 if 30 <= inpatient_day else 0 for inpatient_day in all_sim_inpatient_days]
+model_inpatient_days = [sum(zero_days), sum(one_day), sum(two_days), sum(three_days), sum(four_to_seven_days),
+                        sum(eight_to_fourteen), sum(fifteen_to_thirty), sum(thiry_plus)]
+model_inpatient_days_dist = np.divide(model_inpatient_days, sum(model_inpatient_days))
+plt.bar(np.arange(len(inpatient_days_Tyson_et_al_dist)), inpatient_days_Tyson_et_al_dist, width=0.3,
+        color='lightsalmon', label='Inpatient day data\nfrom Kamuza central hospital')
+plt.bar(np.arange(len(model_inpatient_days_dist)) + 0.5, model_inpatient_days_dist, width=0.3,
+        color='lightsteelblue', label='Model inpatient days')
+plt.xticks(np.arange(len(model_inpatient_days_dist)) + 0.25, labels)
+plt.xlabel('Inpatient days')
+plt.ylabel('Percentage')
+plt.legend()
+plt.title(f"Model injury inpatient days compared to Kamuzu central hospital data"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Inpatient_day_distribution.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 params_dict = dict()
 params_dict.update({'base_rate_injrti': params['base_rate_injrti'],
                     'rr_injrti_male': params['rr_injrti_male'],
