@@ -116,8 +116,8 @@ class Symptom:
 
 
 class DuplicateSymptomWithNonIdenticalPropertiesError(Exception):
-    print("A symptom with this name has been registered already but with different properties")
-    pass
+    def __init__(self):
+        super().__init__("A symptom with this name has been registered already but with different properties")
 
 
 class SymptomManager(Module):

@@ -1,5 +1,7 @@
+import datetime
 import hashlib
 import random
+import time
 
 import pandas as pd
 
@@ -13,10 +15,19 @@ logger.setLevel(logging.INFO)
 class LogProgress(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=3))
+        self.time = time.time()
 
     def apply(self, population):
         df = population.props
-        logger.info(key="stats", data={"alive": df.is_alive.sum(), "total": len(df)})
+        now = time.time()
+        duration = (now - self.time) / 60  # minutes
+        self.time = now
+        logger.info(key="stats", data={
+            "time": datetime.datetime.now().isoformat(),
+            "duration": duration,
+            "alive": df.is_alive.sum(),
+            "total": len(df)
+        })
 
 
 def schedule_profile_log(sim: Simulation) -> None:

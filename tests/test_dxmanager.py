@@ -86,17 +86,16 @@ def bundle():
     hsi_event = HSI_Dummy(module=sim.modules['Mockitis'], person_id=-99)
 
     # Create consumable codes that are always and never available
-    cons = sim.modules['HealthSystem'].cons_item_code_availability_today
+    cons_items = sim.modules['HealthSystem'].cons_available_today['Item_Code']
+
     item_code_for_consumable_that_is_not_available = 0
     item_code_for_consumable_that_is_available = 1
 
-    cons.loc[item_code_for_consumable_that_is_not_available, cons.columns] = False
-    cons.loc[item_code_for_consumable_that_is_available, cons.columns] = True
+    cons_items.loc[item_code_for_consumable_that_is_not_available, cons_items.columns] = False
+    cons_items.loc[item_code_for_consumable_that_is_available, cons_items.columns] = True
 
-    assert sim.modules['HealthSystem'].cons_item_code_availability_today.loc[
-        item_code_for_consumable_that_is_available].all()
-    assert not sim.modules['HealthSystem'].cons_item_code_availability_today.loc[
-        item_code_for_consumable_that_is_not_available].any()
+    assert hsi_event.get_all_consumables(item_codes=item_code_for_consumable_that_is_available)
+    assert not hsi_event.get_all_consumables(item_codes=item_code_for_consumable_that_is_not_available)
 
     cons_req_as_footprint_for_consumable_that_is_not_available = {
         'Intervention_Package_Code': {},
