@@ -1069,5 +1069,36 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                      data=individual_child,
                      description='following an individual child through simulation')
 
+        # ------------- Cross tabulation ---------------
+        # health worker classification -----
+        health_worker_classification_for_imci_no_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_IMCI_classification_as_gold == 'common_cold')].groupby(
+                'ri_health_worker_IMCI_classification').size()
+        health_worker_classification_for_imci_nonsev_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_IMCI_classification_as_gold == 'non-severe_pneumonia'
+                                                           )].groupby('ri_health_worker_IMCI_classification').size()
+        health_worker_classification_for_imci_severe_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_IMCI_classification_as_gold == 'severe_pneumonia'
+                                                           )].groupby('ri_health_worker_IMCI_classification').size()
 
+        # convert into a dataframe
+        hw_class_for_imci_no_pneumo_df = pd.DataFrame(health_worker_classification_for_imci_no_pneumonia)
+        hw_class_for_imci_nonsev_pneumo_df = pd.DataFrame(health_worker_classification_for_imci_nonsev_pneumonia)
+        hw_class_for_imci_severe_pneumo_df = pd.DataFrame(health_worker_classification_for_imci_severe_pneumonia)
+
+        hw_class_for_imci_no_pneumo_df_transposed = hw_class_for_imci_no_pneumo_df.T
+        hw_class_for_imci_nonsev_pneumo_df_tranposed = hw_class_for_imci_nonsev_pneumo_df.T
+        hw_class_for_imci_severe_pneumo_df_transposed = hw_class_for_imci_severe_pneumo_df.T
+
+        logger.info(key='hw_classification_for_common_cold_by_IMCI',
+                    data=hw_class_for_imci_no_pneumo_df_transposed,
+                    description='Health worker classification given for IMCI no pneumonia')
+
+        logger.info(key='hw_classification_for_non-sev_pneumonia_by_IMCI',
+                    data=hw_class_for_imci_nonsev_pneumo_df_tranposed,
+                    description='Health worker classification given for IMCI pneumonia')
+
+        logger.info(key='hw_classification_for_severe_pneumonia_by_IMCI',
+                    data=hw_class_for_imci_severe_pneumo_df_transposed,
+                    description='Health worker classification given for IMCI severe pneumonia')
 

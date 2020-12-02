@@ -22,7 +22,7 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 2)
+end_date = Date(2014, 1, 2)
 popsize = 500
 
 # add file handler for the purpose of logging
