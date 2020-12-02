@@ -10,7 +10,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography, postnatal_supervisor
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.hiv import HSI_Hiv_InfantScreening
+# from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -404,6 +404,7 @@ class NewbornOutcomes(Module):
                 Predictor('nb_inj_abx_neonatal_sepsis').when(True, params['treatment_effect_inj_abx_sep']),
                 Predictor('nb_supp_care_neonatal_sepsis').when(True, params['treatment_effect_supp_care_sep']),
                 Predictor('clean_birth', external=True).when('True', params['treatment_effect_clean_birth']),
+                Predictor('cord_care', external=True).when('True', params['treatment_effect_cord_care']),
                 Predictor('nb_early_init_of_breastfeeding').when('True', params['treatment_effect_early_init_bf']),
                 # TODO: i think this treatment effect should only be applied a little later
 
@@ -976,18 +977,22 @@ class NewbornOutcomes(Module):
 
     def hiv_prophylaxis_and_referral(self, child_id):
         df = self.sim.population.props
+        # TODO: link up future screening with PNC visit
 
-        if 'Hiv' in self.sim.modules:
-            if df.at[child_id, 'hv_mother_inf_by_birth'] and not df.at[child_id, 'hv_diagnosed']:
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Hiv_InfantScreening(person_id=child_id, module=self.sim.modules['Hiv']),
-                    topen=self.sim.date,
-                    tclose=None,
-                    priority=0)
+    #    if 'Hiv' in self.sim.modules:
+    #        self.sim.modules['HealthSystem'].schedule_hsi_event(
+    #            HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
+    #            topen=self.sim.date,
+    #            tclose=None,
+    #            priority=0
+    #        )
 
-        # Early infant testing
-
-        # TODO: Discuss with Tara SEE MASTER NOTES (arvs, scheduling testing etc etc)
+    #        self.sim.modules['HealthSystem'].schedule_hsi_event(
+    #            HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
+    #                topen=self.sim.date + DateOffset(weeks=4),
+    #                tclose=None,
+    #                priority=0
+    #                )
 
     def assessment_and_initiation_of_neonatal_resus(self, hsi_event, facility_type):
         """
