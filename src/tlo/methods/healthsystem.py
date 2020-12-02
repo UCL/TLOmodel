@@ -1079,6 +1079,11 @@ class HealthSystem(Module):
          """
         df = self.sim.population.props
         new_footprint = hsi_event.BEDDAYS_FOOTPRINT
+
+        if not type(hsi_event.target) is int:
+            # If this is a population level event, do nothing
+            return
+
         person_id = hsi_event.target
 
         def apply_footprint(footprint):

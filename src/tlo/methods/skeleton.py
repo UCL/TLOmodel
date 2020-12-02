@@ -230,7 +230,7 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
         healthcare system
             * squeeze_factor (an argument provided to the event) indicates the extent to which this HSI_Event is being
              run in the context of an over-burdened healthcare facility.
-            * bed_days_provided_to_this_event (a property of the event) indicates the number and types of bed-days
+            * bed_days_allocated_to_this_event (a property of the event) indicates the number and types of bed-days
              that have been allocated to this event.
 
         Can return an updated APPT_FOOTPRINT if this differs from the declaration in self.EXPECTED_APPT_FOOTPRINT
