@@ -764,6 +764,7 @@ class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
                     df.at[individual_id, 'pn_sepsis_late_neonatal'] = False"""
 
 
+
 class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScopeEventMixin):
     """This is HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal. It is scheduled by
     HSI_Labour_ReceivesCareForPostpartumPeriod or PostpartumLabourAtHomeEvent. This event is the first PNC visit women

@@ -1141,7 +1141,7 @@ class Labour (Module):
         # We define specific external variables used as predictors in the equations defined below
         has_rbt = mni[person_id]['received_blood_transfusion']
         mode_of_delivery = mni[person_id]['mode_of_delivery']
-        received_clean_delivery = mni[person_id]['clean_delivery_kit_used']
+        received_clean_delivery = mni[person_id]['clean_birth_practices']
         received_abx_for_prom = mni[person_id]['abx_for_prom_given']
         received_abx_for_pprom = mni[person_id]['abx_for_pprom_given']
         received_amtsl = mni[person_id]['amtsl_given']
@@ -1622,7 +1622,7 @@ class Labour (Module):
 
             # Availability of consumables determines if the intervention is delivered...
             if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_uncomplicated_delivery]:
-                mni[person_id]['clean_delivery_kit_used'] = True
+                mni[person_id]['clean_birth_practices'] = True
                 logger.debug(key='message', data='This facility has delivery kits available and have been used for '
                                                  f'mother {person_id} delivery.')
             else:
@@ -2078,7 +2078,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                   'obstructed_labour_cause': ['none'],
                                   'onset_of_delayed_inf': 0,
                                   'corticosteroids_given': False,
-                                  'clean_delivery_kit_used': False,
+                                  'clean_birth_practices': False,
                                   'abx_for_prom_given': False,
                                   'abx_for_pprom_given': False,
                                   'abx_for_preterm_given': False,
