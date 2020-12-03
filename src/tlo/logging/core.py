@@ -25,7 +25,9 @@ class Logger:
     HASH_LEN = 10
 
     def __init__(self, name: str, level=_logging.NOTSET):
-        assert name.startswith('tlo'), 'Only logging of TLO modules is allowed'
+
+        assert name.startswith('tlo'), f'Only logging of tlo modules is allowed; name is {name}'
+
         # we build our logger on top of the standard python logging
         self._std_logger = _logging.getLogger(name=name)
         self._std_logger.setLevel(level)

@@ -100,9 +100,6 @@ class HealthSystem(Module):
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
 
-        # Define the dataframe that determines the availability of consumables on a daily basis
-        self.cons_item_code_availability_today = pd.DataFrame()
-
         # Define the container for calls for health system interaction events
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
@@ -114,10 +111,12 @@ class HealthSystem(Module):
         if self.store_hsi_events_that_have_run:
             self.store_of_hsi_events_that_have_run = list()
 
-        logger.info('----------------------------------------------------------------------')
-        logger.info("Setting up the Health System With the Following Service Availability:")
-        logger.info(self.service_availability)
-        logger.info('----------------------------------------------------------------------')
+        logger.info(key="message",
+                    data=f"----------------------------------------------------------------------"
+                         f"Setting up the Health System With the Following Service Availability: "
+                         f"{self.service_availability}"
+                         f"----------------------------------------------------------------------"
+                    )
 
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
         self.dx_manager = DxManager(self)
@@ -147,33 +146,55 @@ class HealthSystem(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Facilities_For_Each_District.csv'
         )
 
-        self.parameters['Consumables'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Consumables.csv')
-
-        self.parameters['Consumables_Cost_List'] = (
-            self.parameters['Consumables'][['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')
-        )
-
         caps = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv')
         self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
         self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
 
-        # Make a dataframe that organsie the probabilities of individual consumables items being available
-        # (by unique item codes)
-        cons = self.parameters['Consumables']
-        unique_item_codes = pd.DataFrame(data={'Item_Code': pd.unique(cons['Item_Code'])})
+        # Read in ResourceFile_Consumables and then process it to create the data structures needed
+        # NB. Modules can use this to look-up what consumables they need.
+        self.parameters['Consumables'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Consumables.csv')
+        self.process_consumables_file()
+
+    def process_consumables_file(self):
+        """Helper function for processing the consumables data (stored as self.parameters['Consumables'])
+        * Creates ```parameters['Consumables']```
+        * Creates ```df_mapping_pkg_code_to_intv_code```
+        * Creates ```prob_item_code_available```
+        * Creates ```parameters['Consumables_Cost_List]```
+        """
+        # Load the 'raw' ResourceFile_Consumabes that is loaded in to self.parameters['Consumables']
+        raw = self.parameters['Consumables']
+
+        # -------------------------------------------------------------------------------------------------
+        # Create a pd.DataFrame that maps pkg code (as index) to item code:
+        # This is used to quickly look-up which items are required in each package
+        df = raw[['Intervention_Pkg_Code', 'Item_Code', 'Expected_Units_Per_Case']]
+        df = df.set_index('Intervention_Pkg_Code')
+        self.df_mapping_pkg_code_to_intv_code = df
+
+        # -------------------------------------------------------------------------------------------------
+        # Make ```prob_item_codes_available```
+        # This is a data-frame that organise the probabilities of individual consumables items being available
+        # (by the item codes)
+        unique_item_codes = pd.DataFrame(data={'Item_Code': pd.unique(raw['Item_Code'])})
 
         # merge in probabilities of being available
-        filter_col = [col for col in cons if col.startswith('Available_Facility_Level_')]
+        filter_col = [col for col in raw if col.startswith('Available_Facility_Level_')]
         filter_col.append('Item_Code')
-        prob_unique_item_codes_available = unique_item_codes.merge(
-            cons.drop_duplicates(['Item_Code'])[filter_col], on='Item_Code', how='inner'
+        prob_item_codes_available = unique_item_codes.merge(
+            raw.drop_duplicates(['Item_Code'])[filter_col], on='Item_Code', how='inner'
         )
-        assert len(prob_unique_item_codes_available) == len(unique_item_codes)
+        assert len(prob_item_codes_available) == len(unique_item_codes)
 
-        # set the index as the Item_Code
-        prob_unique_item_codes_available.set_index('Item_Code', drop=True, inplace=True)
+        # set the index as the Item_Code and save
+        self.prob_item_codes_available = prob_item_codes_available.set_index('Item_Code', drop=True)
 
-        self.prob_unique_item_codes_available = prob_unique_item_codes_available
+        # -------------------------------------------------------------------------------------------------
+        # Create ```parameters['Consumables_Cost_List]```
+        # This is a pd.Series, with index item_code, giving the cost of each item.
+        self.parameters['Consumables_Cost_List'] = pd.Series(
+            raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
+        )
 
     def initialise_population(self, population):
         df = population.props
@@ -182,7 +203,7 @@ class HealthSystem(Module):
         # (For now, let this be a random number, but in future it may be properly informed based on \
         #  population density distribitions)
         # Note that this characteritic is inherited from mother to child.
-        df['hs_dist_to_facility'] = self.rng.uniform(0.01, 5.00, len(df))
+        df.loc[df.is_alive, 'hs_dist_to_facility'] = self.rng.uniform(0.01, 5.00, df.is_alive.sum())
 
     def initialise_simulation(self, sim):
 
@@ -208,6 +229,9 @@ class HealthSystem(Module):
         if not (self.disable or self.disable_and_reject_all):
             sim.schedule_event(HealthSystemScheduler(self), sim.date)
 
+        # Update consumables available today:
+        self.determine_availability_of_consumables_today()
+
     def on_birth(self, mother_id, child_id):
 
         # New child inherits the hs_dist_to_facility of the mother
@@ -231,9 +255,9 @@ class HealthSystem(Module):
         """
 
         logger.debug(
-            'HealthSystem.schedule_event>>Logging a request for an HSI: %s for person: %s',
-            hsi_event.TREATMENT_ID,
-            hsi_event.target,
+            key='message',
+            data=f"HealthSystem.schedule_event >> "
+                 f"Logging a request for an HSI: {hsi_event.TREATMENT_ID} for person: {hsi_event.target}"
         )
 
         assert isinstance(hsi_event, HSI_Event)
@@ -355,7 +379,9 @@ class HealthSystem(Module):
             footprint_is_possible = (len(footprint) > 0) & (
                 caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
-                logger.warning("The expected footprint is not possible with the configuration of officers.")
+                logger.warning(key="message",
+                               data=f"The expected footprint is not possible with the configuration of officers: "
+                                    f"{hsi_event.TREATMENT_ID}.")
 
         #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information
@@ -381,9 +407,9 @@ class HealthSystem(Module):
             hp.heappush(self.HSI_EVENT_QUEUE, new_request)
 
             logger.debug(
-                'HealthSystem.schedule_event>>HSI has been added to the queue: %s for person: %s',
-                hsi_event.TREATMENT_ID,
-                hsi_event.target,
+                key="message",
+                data=f"HealthSystem.schedule_event >> "
+                     f"HSI has been added to the queue: {hsi_event.TREATMENT_ID} for person: {hsi_event.target}"
             )
 
         else:
@@ -397,9 +423,9 @@ class HealthSystem(Module):
                 pass
 
             logger.debug(
-                '%s| A request was made for a service but it was not included in the service_availability list: %s',
-                self.sim.date,
-                hsi_event.TREATMENT_ID,
+                key="message",
+                data=f"A request was made for a service but it was not included in the service_availability list:"
+                     f" {hsi_event.TREATMENT_ID}"
             )
 
     def check_appt_footprint_format(self, appt_footprint):
@@ -497,11 +523,7 @@ class HealthSystem(Module):
         )
 
         # Checks
-        # This test could do with a bit of leniency as when you change the capabilities coefficient floating point
-        # errors fail the following test "assert capabilities_ex['Total_Minutes_Per_Day'].sum() ==
-        # capabilities['Total_Minutes_Per_Day'].sum()", added that leniency with np.round
-        assert np.round(capabilities_ex['Total_Minutes_Per_Day'].sum(), 5) == \
-               np.round(capabilities['Total_Minutes_Per_Day'].sum(), 5)
+        assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Minutes_Per_Day'].sum()) < 1e-7
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
         # Updates the capabilities table with the reformatted version
@@ -552,7 +574,7 @@ class HealthSystem(Module):
             * the codes within each list must be unique and valid codes; quantities must be integer values >0
 
             e.g.
-            cons_footprint = {
+            cons_req_as_footprint = {
                         'Intervention_Package_Code': {my_pkg_code: 1},
                         'Item_Code': {my_item_code: 10, another_item_code: 1}
             }
@@ -696,102 +718,68 @@ class HealthSystem(Module):
         """
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # 0) Check the format of the cons_req_as_footprint:
-        self.check_consumables_footprint_format(cons_req_as_footprint)
+        # Could check the format of the cons_req_as_footprint
+        # It is removed as this is a time-consuming check that is rarely required
+        # self.check_consumables_footprint_format(cons_req_as_footprint)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # If the healthsystem module is disabled, return True for all consumables without checking or logging
         if self.disable:
-            # If the healthsystem module is disabled, return True for all consuambles
-            # without checking or logging.
-            packages_availability = dict()
-            if not cons_req_as_footprint['Intervention_Package_Code'] == {}:
-                for pkg_code in cons_req_as_footprint['Intervention_Package_Code'].keys():
-                    packages_availability[pkg_code] = True
+            return {
+                'Intervention_Package_Code': dict(zip(
+                    cons_req_as_footprint['Intervention_Package_Code'].keys(),
+                    [True] * len(cons_req_as_footprint['Intervention_Package_Code'].keys()
+                                 ))),
+                'Item_Code': dict(zip(
+                    cons_req_as_footprint['Item_Code'].keys(),
+                    [True] * len(cons_req_as_footprint['Item_Code'].keys()
+                                 )))
+                }
 
-            # Iterate through the individual items that were requested
-            items_availability = dict()
-            if not cons_req_as_footprint['Item_Code'] == {}:
-                for itm_code in cons_req_as_footprint['Item_Code'].keys():
-                    items_availability[itm_code] = True
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Determine availability of each item and package:
+        select_col = f'Available_Facility_Level_{hsi_event.ACCEPTED_FACILITY_LEVEL}'
+        available = {
+            'Intervention_Package_Code': self.cons_available_today['Intervention_Package_Code'].loc[
+                cons_req_as_footprint['Intervention_Package_Code'].keys(), select_col].to_dict(),
+            'Item_Code': self.cons_available_today['Item_Code'].loc[
+                cons_req_as_footprint['Item_Code'].keys(), select_col].to_dict()
+        }
 
-            # compile output
-            output = dict()
-            output['Intervention_Package_Code'] = packages_availability
-            output['Item_Code'] = items_availability
-            return output
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        # 0) Get information about the hsi_event
-        the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
-        the_treatment_id = hsi_event.TREATMENT_ID
-        the_person_id = hsi_event.target
-
-        # 1) Unpack the consumables footprint into the individual items
-        items_req = self.get_consumables_as_individual_items(cons_req_as_footprint)
-        n_items_req = len(items_req)
-
-        # 2) Determine if these are available at the relevant facility level
-        select_col = f'Available_Facility_Level_{the_facility_level}'
-        availability = pd.DataFrame(data={'Available': self.cons_item_code_availability_today[select_col].copy()})
-        items_req = items_req.merge(availability, left_on='Item_Code', right_index=True, how='left')
-        assert len(items_req) == n_items_req
-
-        # 3) Enter the the log (logs each item)
-        # Do a groupby for the different consumables (there could be repeats of individual items which need /
-        # to be summed)
+        # Logging:
         if to_log:
-            items_req_to_log = pd.DataFrame(items_req.groupby('Item_Code').sum())
-            items_req_to_log['Available'] = items_req_to_log['Available'] > 0  # restore to bool after sum in grouby()
+            treatment_id = hsi_event.TREATMENT_ID
+            # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
+            logger.info(key='Consumables',
+                        data={
+                            'TREATMENT_ID': treatment_id,
+                            'Item_Available': str({k: v for k, v in cons_req_as_footprint['Item_Code'].items()
+                                                   if available['Item_Code'][k]}
+                                                  ),
+                            'Item_NotAvailable': str({k: v for k, v in cons_req_as_footprint['Item_Code'].items()
+                                                      if not available['Item_Code'][k]}
+                                                     ),
+                            'Package_Available': str({k: v for k, v in
+                                                      cons_req_as_footprint['Intervention_Package_Code'].items()
+                                                      if available['Intervention_Package_Code'][k]}
+                                                     ),
+                            'Package_NotAvailable': str({k: v for k, v in
+                                                         cons_req_as_footprint['Intervention_Package_Code'].items()
+                                                         if not available['Intervention_Package_Code'][k]}
+                                                        )
+                        },
+                        description="record of each consumable item that is requested by in an HSI"
+                        )
 
-            # Get the the cost of the each consumable item (could not do this merge until after model run)
-            consumable_costs = self.parameters['Consumables_Cost_List']
-
-            items_req_to_log = items_req_to_log.merge(consumable_costs, how='left', left_index=True, right_index=True)
-
-            # Compute total cost (limiting to those items which were available)
-            total_cost = (
-                items_req_to_log.loc[items_req_to_log['Available'], ['Quantity_Of_Item', 'Unit_Cost']]
-                .prod(axis=1).sum()
-            )
-
-            # Enter to the log
-            items_req_to_log = items_req_to_log.drop(['Package_Code'], axis=1)  # drop from log for neatness
-
-            log_consumables = items_req_to_log.to_dict()
-            log_consumables['TREATMENT_ID'] = the_treatment_id
-            log_consumables['Total_Cost'] = total_cost
-            log_consumables['Person_ID'] = the_person_id
-
-            logger.info('%s|Consumables|%s', self.sim.date, log_consumables)
-
-        # 4) Format outcome into the CONS_FOOTPRINT format for return to HSI event
-        # Iterate through the packages that were requested
-        packages_availability = dict()
-        if not cons_req_as_footprint['Intervention_Package_Code'] == {}:
-            for package_code in cons_req_as_footprint['Intervention_Package_Code'].keys():
-                packages_availability[package_code] = (
-                    items_req.loc[items_req['Package_Code'] == package_code, 'Available'].all()
-                )
-
-        # Iterate through the individual items that were requested
-        items_availability = dict()
-        if not cons_req_as_footprint['Item_Code'] == {}:
-            for item_code in cons_req_as_footprint['Item_Code'].keys():
-                items_availability[item_code] = (
-                    items_req.loc[items_req['Item_Code'] == item_code, 'Available'].values[0]
-                )
-
-        # compile output
-        output = dict()
-        output['Intervention_Package_Code'] = packages_availability
-        output['Item_Code'] = items_availability
-
-        return output
+        # return the result of the check on availability
+        return available
 
     def check_consumables_footprint_format(self, cons_req_as_footprint):
         """
-        This function runs some check on the cons_footprint to ensure its in the right format
-        :param cons_footprint:
+        This function runs some check on the cons_req_as_footprint to ensure its in the right format
+        :param cons_req_as_footprint:
         :return:
         """
         # Format is as follows:
@@ -799,80 +787,79 @@ class HealthSystem(Module):
         #     * For each, there is list of dicts, each dict giving code (i.e. package_code or item_code):quantity
         #     * the codes within each list must be unique and valid codes, quantities must be integer values >0
         #     e.g.
-        #     cons_footprint = {
+        #     cons_req_as_footprint = {
         #                 'Intervention_Package_Code': {my_pkg_code: 1},
         #                 'Item_Code': {my_item_code: 10}, {another_item_code: 1}
         #     }
 
         # check basic formatting
-        assert 'Intervention_Package_Code' in cons_req_as_footprint
-        assert 'Item_Code' in cons_req_as_footprint
-        assert isinstance(cons_req_as_footprint['Intervention_Package_Code'], dict)
-        assert isinstance(cons_req_as_footprint['Item_Code'], dict)
+        format_error_str = 'The consumable_footprint is not in the right format. ' \
+                           'See check_consumables_footprint_format.'
+        assert type(cons_req_as_footprint) is dict
+        assert 'Intervention_Package_Code' in cons_req_as_footprint, format_error_str
+        assert 'Item_Code' in cons_req_as_footprint, format_error_str
+        assert type(cons_req_as_footprint['Intervention_Package_Code']) is dict, format_error_str
+        assert type(cons_req_as_footprint['Item_Code']) is dict, format_error_str
 
-        # check that consumables being required are in the database:
-        consumables = self.parameters['Consumables']
+        # Check that consumables being required are in the database
 
         # Check packages
+        all_pkgs = self.df_mapping_pkg_code_to_intv_code.index.values
         for pkg_code, pkg_quant in cons_req_as_footprint['Intervention_Package_Code'].items():
-            assert pkg_code in consumables['Intervention_Pkg_Code'].values
-            assert isinstance(pkg_quant, int)
-            assert pkg_quant > 0
+            assert pkg_code in all_pkgs, f'Intervention_Package_Code {pkg_code} not recognised'
+            assert pkg_code != -99, 'Intervention_Package_Code cannot be -99'
+            assert pkg_quant > 0, format_error_str
 
         # Check items
+        all_items = pd.unique(self.df_mapping_pkg_code_to_intv_code['Item_Code'])
         for itm_code, itm_quant in cons_req_as_footprint['Item_Code'].items():
-            assert itm_code in consumables['Item_Code'].values
-            assert isinstance(itm_quant, int)
-            assert itm_quant > 0
+            assert itm_code in all_items, f'Item_Code {itm_code} not recognised'
+            assert itm_quant > 0, format_error_str
 
-    def get_consumables_as_individual_items(self, cons_footprint):
+    def get_consumables_as_individual_items(self, cons_req_as_footprint):
         """
-        This will look at the CONS_FOOTPRINT of an HSI Event and return a dataframe with the individual items that
-        are used, collecting these from across the packages and the individual items that are specified.
-        A column indicates the package from which the item come from and shows NaN if the item is requested individually
+        Helper function to decompose a ```cons_req_as_footprint``` and return a pd.Series with the individual items
+        (as the index) and the quantity needed (as the value).
         """
 
-        # Shortcut to the input cons_footprint
-        cons = cons_footprint
+        # Unpack package_code (repeat package code if the package is required multiple times)
+        pkgs = list()
+        for k, v in cons_req_as_footprint['Intervention_Package_Code'].items():
+            for i in range(v):
+                pkgs.append(k)
 
-        # Load the data on consumables
-        consumables = self.parameters['Consumables']
+        # Get the corresponding item codes and flip in to a series with index of Item_Code
+        x = self.df_mapping_pkg_code_to_intv_code.loc[pkgs].set_index('Item_Code')['Expected_Units_Per_Case']
 
-        individual_consumables = []
-        # Get the individual items in each package:
-        for (package_code, quantity_of_packages) in cons['Intervention_Package_Code'].items():
-            items = consumables.loc[
-                consumables['Intervention_Pkg_Code'] == package_code, ['Item_Code', 'Expected_Units_Per_Case']
-            ].to_dict(orient='records')
-            for item in items:
-                item['Quantity_Of_Item'] = item['Expected_Units_Per_Case'] * quantity_of_packages
-                item['Package_Code'] = package_code
-                individual_consumables.append(item)
+        # Add in individual consumables in one go as a pd.Series
+        x = x.append(pd.Series(cons_req_as_footprint['Item_Code']))
 
-        # Add in any additional items that have been specified seperately:
-        for (item_code, quantity_of_item) in cons['Item_Code'].items():
-            item = {
-                'Item_Code': item_code,
-                'Package_Code': np.nan,
-                'Quantity_Of_Item': quantity_of_item,
-                'Expected_Units_Per_Case': np.nan,
-            }
-            individual_consumables.append(item)
+        # Return de-duplicated Series (index=Item_Code, value=quantity)
+        return x.groupby(x.index).sum()
 
-        consumables_as_individual_items = pd.DataFrame.from_dict(individual_consumables)
+    def determine_availability_of_consumables_today(self):
+        """Helper function to determine availability of all items and packages"""
 
-        try:
-            consumables_as_individual_items = consumables_as_individual_items.drop('Expected_Units_Per_Case', axis=1)
-        except KeyError:
-            # No data from cons['Intervention_Package_Code'] or cons['Item_Code']
-            raise ValueError("No packages or individual items requested")
+        # Determine the availability of the consumables *items* today
+        if not self.ignore_cons_constraints:
+            # Random draws: assume that availability of the same item is independent between different facility levels
+            random_draws = self.rng.rand(
+                len(self.prob_item_codes_available), len(self.prob_item_codes_available.columns)
+            )
+            items = self.prob_item_codes_available > random_draws
+        else:
+            # Make all true if ignoring consumables constraints
+            items = self.prob_item_codes_available > 0.0
 
-        # confirm that Item_Code is returned as an int, Package_Code and Expected_Units_Per_Case as float
-        # NB. package_code is held as float as may as np.nan's in and known issuse that pandas cannot handle this
-        #       Non-null package_code must be coerced to int before use.
-        consumables_as_individual_items['Item_Code'] = consumables_as_individual_items['Item_Code'].astype(int)
+        # Determine the availability of packages today
+        # (packages are made-up of the individual items: if one item is not available, the package is not available)
+        pkgs = self.df_mapping_pkg_code_to_intv_code.merge(items, left_on='Item_Code', right_index=True)
+        pkgs = pkgs.groupby(level=0)[pkgs.columns[pkgs.columns.str.startswith('Available_Facility_Level')]].all()
 
-        return consumables_as_individual_items
+        self.cons_available_today = {
+            "Item_Code": items,
+            "Intervention_Package_Code": pkgs
+        }
 
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
@@ -912,9 +899,12 @@ class HealthSystem(Module):
 
         log_info['did_run'] = did_run
 
-        logger.info('%s|HSI_Event|%s', self.sim.date, log_info)
+        logger.info(key="HSI_Event",
+                    data=log_info,
+                    description="record of each HSI event")
 
         if self.store_hsi_events_that_have_run:
+            log_info['date'] = self.sim.date
             self.store_of_hsi_events_that_have_run.append(log_info)
 
     def log_current_capabilities(self, current_capabilities, all_calls_today):
@@ -949,19 +939,13 @@ class HealthSystem(Module):
         summary['Fraction_Time_Used'] = summary['Minutes_Used'] / summary['Total_Minutes_Per_Day']
         summary['Fraction_Time_Used'].replace([np.inf, -np.inf, np.nan], 0.0, inplace=True)
 
-        # Put out to the logger
-        logger.debug('-------------------------------------------------')
-        logger.debug('Current State of Health Facilities Appts:')
-        print_table = summary.to_string().splitlines()
-        for line in print_table:
-            logger.debug(line)
-        logger.debug('-------------------------------------------------')
-
         log_capacity = dict()
         log_capacity['Frac_Time_Used_Overall'] = fraction_time_used_across_all_facilities
         log_capacity['Frac_Time_Used_By_Facility_ID'] = summary['Fraction_Time_Used'].to_dict()
 
-        logger.info('%s|Capacity|%s', self.sim.date, log_capacity)
+        logger.info(key='Capacity',
+                    data=log_capacity,
+                    description='daily summary of utilisation and capacity of health system resources')
 
     def find_events_for_person(self, person_id: int):
         """Find the events in the HSI_EVENT_QUEUE for a particular person.
@@ -1007,29 +991,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(days=1))
 
     def apply(self, population):
-
-        logger.debug(
-            'HealthSystemScheduler>> I will now determine what calls on resource will be met today: %s', self.sim.date
-        )
-
         # 0) Determine the availability of consumables today based on their probabilities
-
-        # random draws: assume that availability of the same item is independent between different facility levels
-        random_draws = self.module.rng.rand(
-            len(self.module.prob_unique_item_codes_available), len(self.module.prob_unique_item_codes_available.columns)
-        )
-
-        # Determine the availability of the consumables today
-        if not self.module.ignore_cons_constraints:
-            self.module.cons_item_code_availability_today = self.module.prob_unique_item_codes_available > random_draws
-        else:
-            # Make all true if ignoring consumables constraints
-            self.module.cons_item_code_availability_today = self.module.prob_unique_item_codes_available > 0.0
-
-        logger.debug('----------------------------------------------------------------------')
-        logger.debug("This is the entire HSI_EVENT_QUEUE heapq:")
-        logger.debug(self.module.HSI_EVENT_QUEUE)
-        logger.debug('----------------------------------------------------------------------')
+        self.module.determine_availability_of_consumables_today()
 
         # Create hold-over list (will become a heapq).
         # This will hold events that cannot occur today before they are added back to the heapq
@@ -1054,8 +1017,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             event = next_event_tuple[4]
 
             if self.sim.date > next_event_tuple[3]:
-                # The event has expired (after tclose), do nothing more
-                pass
+                # The event has expired (after tclose) having never been run. Call the 'never_ran' function
+                event.never_ran()
 
             elif (type(event.target) is not tlo.population.Population) \
                     and (not self.sim.population.props.at[event.target, 'is_alive']):
@@ -1142,8 +1105,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     or ((self.module.mode_appt_constraints == 2) and (squeeze_factor == 0.0))
                 )
 
-                # Mode 0: All HSI Event run
-                # Mode 1: All Run
+                # Mode 0: All HSI Event run, with no squeeze
+                # Mode 1: All Run With Squeeze
                 # Mode 2: Only if squeeze <1
 
                 if ok_to_run:
@@ -1240,16 +1203,23 @@ class HSI_Event:
         raise NotImplementedError
 
     def did_not_run(self, *args, **kwargs):
-        """Called when this event is due but it is not run. Return False to prevent the event being rescheduled.
-
-        Must be implemented by subclasses.
+        """Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+        to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.
         """
-        raise NotImplementedError
+        logger.debug(key="message", data=f"{self.__class__.__name__}: did not run.")
+        return True
+
+    def never_ran(self):
+        """Called when this event is was entered to the HSI Event Queue, but was never run.
+        """
+        logger.debug(key="message", data=f"{self.__class__.__name__}: was never run.")
 
     def not_available(self):
-        """Called when this event is passed to schedule_hsi_event when the TREATMENT_ID is not permitted by the
+        """Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
          parameter service_availability.
         """
+        logger.debug(key="message", data=f"{self.__class__.__name__}: was not admitted to the HSI queue because the "
+                                         f"service is not available.")
         pass
 
     def post_apply_hook(self):
@@ -1264,7 +1234,7 @@ class HSI_Event:
     def get_all_consumables(self, item_codes=None, pkg_codes=None):
         """Helper function to allow for getting and checking of entire set of consumables.
         It accepts a footprint, or an item_code, or a package_code, and returns True/False for whether all the items
-         are available. It avoids the use of consumables 'footprints'. cons_item_code_availability_today"""
+         are available. It avoids the use of consumables 'footprints'."""
 
         # Turn the input arguments into the usual consumables footprint:
 
