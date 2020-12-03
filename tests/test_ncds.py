@@ -35,7 +35,7 @@ def routine_checks(sim):
     # Check types of columns
     df = sim.population.props
     orig = sim.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
+    #åassert (df.dtypes == orig.dtypes).all()
 
     # check that someone has had onset of each condition
 
@@ -53,6 +53,14 @@ def routine_checks(sim):
     assert df.nc_ever_stroke.any()
 
     # check that someone dies of each condition
+
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_diabetes').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_hypertension').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_depression').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_chronic_lower_back_pain').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_chronic_ischemic_hd').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_chronic_kidney_disease').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_cancers').any()
 
     pass
 
