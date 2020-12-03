@@ -185,13 +185,13 @@ class Ncds(Module):
         # check that we have got parameters for each of the conditions
         # assert {xls.sheet_names} == {self.conditions}
 
-        def read_excel_sheet(df):
-            """Helper function to read in the sheet"""
-            pass
-
         self.params_dict = dict()
         for condition in self.conditions:
-            self.params_dict[condition] = read_excel_sheet(pd.read_excel(xls, condition))
+            params = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                              sheet_name=f"{condition}")
+            # replace NaNs with 1
+            params['value'] = params['value'].replace(np.nan, 1)
+            self.params_dict[condition] = params
 
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
@@ -203,8 +203,6 @@ class Ncds(Module):
         #  this through fitting. For now, let there be no conditions for anyone
 
         df = population.props
-        # HAND MANIPULATION OF DF TO INCREASE PROPORTION OF THOSE WITH HIGH-SALT DIET
-        # df['li_high_salt'].replace({True: False}, inplace=True)
 
         for condition in self.conditions:
             df[condition] = False
@@ -243,24 +241,12 @@ class Ncds(Module):
         :return: a linear model
         """
 
-        # read in parameters from resource file
-        # ResourceFile_NCDs2.xlsx = simplified version with no removal of conditions
-
-        self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                          sheet_name=f"{condition}")
-        )
-
-        for key, value in self.parameters.items():
-            if math.isnan(value):
-                self.parameters[key] = 1.0
-
-        p = self.parameters
+        p = self.params_dict[condition].set_index('parameter_name').T.to_dict('records')[0]
         p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
 
         self.lms_onset[condition] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['baseline_annual_probability'],
+            p['baseline_annual_probability'],
             Predictor().when('(sex=="M")', p['rr_male']),
             Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
                 .when('.between(5, 9)', p['rr_5_9'])
@@ -438,28 +424,13 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # -------------------- DEATH FROM NCD CONDITION ---------------------------------------
             # There is a risk of death for those who have an NCD condition. Death is assumed to happen instantly.
 
-            if condition == "nc_hypertension":
-                condition_name = "Hypertension"
-            elif condition == "nc_diabetes":
-                condition_name = "Diabetes"
-            elif condition == "nc_depression":
-                condition_name = "Depression"
-            elif condition == "nc_chronic_lower_back_pain":
-                condition_name = "ChronicLowerBackPain"
-            elif condition == "nc_chronic_ischemic_hd":
-                condition_name = "ChronicIschemicHD"
-            elif condition == "nc_chronic_kidney_disease":
-                condition_name = "ChronicKidneyDisease"
-            elif condition == "nc_cancers":
-                condition_name = "Cancers"
-
             condition_idx = df.index[df.is_alive & (df[f'{condition}'])]
             selected_to_die = condition_idx[
                 rng.random_sample(size=len(condition_idx)) < self.module.parameters[f'r_death_{condition}']]
 
             for person_id in selected_to_die:
                 self.sim.schedule_event(
-                    InstantaneousDeath(self.module, person_id, f"{condition_name}"), self.sim.date
+                    InstantaneousDeath(self.module, person_id, f"{condition}"), self.sim.date
                 )
 
         # Determine occurrence of events
