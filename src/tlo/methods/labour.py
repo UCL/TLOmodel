@@ -1493,9 +1493,27 @@ class Labour (Module):
 
             # todo: CALCULATE PERSONS DAYS POSTPARTUM AND USE THAT TO SCHEDULE BELOW (ENSURING AS EARLY AS
             #  POSSIBLE FOR ALL BUT >DAY1)
+
+            # For women who have survived first 24 hours after birth we scheduled them to attend the first event in the
+            # PostnatalSupervisorModule
+
+            # This event determines if women/newborns will develop complications in week one. We stagger when women
+            # arrive at this event to simulate bunching of complications in the first few days after birth
+
+            days_post_birth_td = self.sim.date - df.at[individual_id, 'la_date_most_recent_delivery']
+            days_post_birth_int = int(days_post_birth_td / np.timedelta64(1, 'D'))
+
+            assert days_post_birth_int < 6
+
+            day_for_event = int(self.rng.choice([0, 1, 2, 3, 4, 5], p=[0.3, 0.3, 0.2, 0.1, 0.05, 0.05]))
+
+            # Ensure no women go to this event after week 1
+            if day_for_event + days_post_birth_int > 5:
+                day_for_event = 0
+
             self.sim.schedule_event(postnatal_supervisor.PostnatalWeekOneEvent(self.sim.modules['PostnatalSupervisor'],
-                                                                               individual_id, mother_or_child='mother'),
-                                    self.sim.date + DateOffset(days=1))
+                                                                               individual_id),
+                                    self.sim.date + DateOffset(days=day_for_event))
 
         # Here we remove all women (dead and alive) who have passed through the labour events
         self.women_in_labour.remove(individual_id)
@@ -2478,33 +2496,6 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
                 # For women who dont seek care for complications following birth we immediately apply risk of death
                 self.module.apply_risk_of_early_postpartum_death(individual_id)
 
-                if ~mni[individual_id]['death_postpartum']:
-
-                    # If the woman survives her complication we then determine if they will present for their first PNC
-                    # visit 1-2 days postnatal
-                    if self.module.rng.random_sample() < params['prob_attend_pnc1']:
-                        maternal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne(
-                                        self.sim.modules['PostnatalSupervisor'], person_id=individual_id)
-
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                maternal_pnc1,
-                                priority=0,
-                                topen=self.sim.date + DateOffset(days=1),
-                                tclose=self.sim.date + DateOffset(days=2))
-
-        # If a woman doesnt experience any complications, we then determine if she will seek care for PNC1
-        elif ~df.at[individual_id, 'la_sepsis_pp'] or df.at[individual_id, 'ps_htn_disorders'] == 'none' or \
-                df.at[individual_id, 'ps_htn_disorders'] == 'gest_htn' or ~df.at[individual_id, 'la_postpartum_haem']:
-
-            if self.module.rng.random_sample() < params['prob_attend_pnc1']:
-                maternal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne(
-                    self.sim.modules['PostnatalSupervisor'], person_id=individual_id)
-
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    maternal_pnc1,
-                    priority=0,
-                    topen=self.sim.date + DateOffset(days=1),
-                    tclose=self.sim.date + DateOffset(days=2))
 
 
 class LabourDeathEvent (Event, IndividualScopeEventMixin):
@@ -2522,6 +2513,8 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         # TODO: match causes of GBD nomenclature- see slack chat with TH
 
         # Check the correct amount of time has passed between labour onset and postpartum event
+        print(individual_id)
+        print(self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy'])
         assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(4, unit='D')
         self.module.labour_characteristics_checker(individual_id)
 
@@ -2973,22 +2966,6 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(HSI_Event, Indivi
         # ------------------------------- Postnatal immunisations ----------------------------------------------------
         # TODO: link up with Tara and EPI module
 
-        # ========================================== SCHEDULE PNC1 ===================================================
-        # For women who survived the immediate postpartum period in facility, we determine if they will return in 1-2
-        # days for PNC1
-
-        # todo: currently ALL women have prob of PNC applied (although may have died) because of delay between death and
-        #  instantaneous death event)
-
-        if self.module.rng.random_sample() < params['prob_attend_pnc1']:
-            maternal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne(
-                    self.sim.modules['PostnatalSupervisor'], person_id=person_id)
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                maternal_pnc1,
-                priority=0,
-                topen=self.sim.date + DateOffset(days=1),
-                tclose=self.sim.date + DateOffset(days=2))
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # TODO: modify based on complications?
         return actual_appt_footprint
@@ -3249,16 +3226,7 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
             # ------------------------------- Postnatal immunisations -------------------------------------------------
             # TODO: link up with Tara and EPI module
 
-            # ================================== SCHEDULING PNC =======================================================
-            if self.module.rng.random_sample() < params['prob_attend_pnc1']:
-                maternal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne(
-                    self.sim.modules['PostnatalSupervisor'], person_id=person_id)
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    maternal_pnc1,
-                    priority=0,
-                    topen=self.sim.date + DateOffset(days=2),
-                    tclose=self.sim.date + DateOffset(days=3))
 
 
 class HSI_Labour_ElectiveCaesareanSection(HSI_Event, IndividualScopeEventMixin):
