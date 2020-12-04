@@ -188,6 +188,7 @@ class BreastCancer(Module):
         df.loc[df.is_alive, "brc_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "brc_date_palliative_care"] = pd.NaT
         df.loc[df.is_alive, "brc_date_death"] = pd.NaT
+        df.loc[df.is_alive, "breast_lump_discernible_investigated"] = False
 
         # -------------------- brc_status -----------
         # Determine who has cancer at ANY cancer stage:
@@ -599,6 +600,8 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "brc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
+
+        df.breast_lump_discernible_investigated = True
 
         # Use a biopsy to diagnose whether the person has breast Cancer:
         dx_result = hs.dx_manager.run_dx_test(
