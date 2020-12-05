@@ -143,7 +143,7 @@ class BreastCancer(Module):
             Types.DATE,
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
         ),
-        "breast_lump_discernible_investigated": Property(
+        "brc_breast_lump_discernible_investigated": Property(
             Types.BOOL,
             "whether a breast_lump_discernible has been investigated, and cancer missed"
         ),
@@ -153,11 +153,18 @@ class BreastCancer(Module):
             "at which it is given).",
             categories=["none", "stage1", "stage2", "stage3", "stage4"],
         ),
-
         "brc_date_palliative_care": Property(
             Types.DATE,
             "date of first receiving palliative care (pd.NaT is never had palliative care)"
         ),
+        "brc_date_death": Property(
+            Types.DATE,
+            "date of brc death"
+        ),
+        "brc_new_stage_this_month": Property(
+            Types.BOOL,
+            "new_stage_this month"
+        )
     }
 
 
@@ -188,7 +195,8 @@ class BreastCancer(Module):
         df.loc[df.is_alive, "brc_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "brc_date_palliative_care"] = pd.NaT
         df.loc[df.is_alive, "brc_date_death"] = pd.NaT
-        df.loc[df.is_alive, "breast_lump_discernible_investigated"] = False
+        df.loc[df.is_alive, "brc_breast_lump_discernible_investigated"] = False
+        df.loc[df.is_alive, "brc_new_stage_this_month"] = False
 
         # -------------------- brc_status -----------
         # Determine who has cancer at ANY cancer stage:
@@ -335,8 +343,8 @@ class BreastCancer(Module):
             p['r_stage2_stage1'],
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage2_undergone_curative_treatment']),
-            Predictor('brc_status').when('stage1', 1.0)
-                                  .otherwise(0.0)
+            Predictor('brc_status').when('stage1', 1.0).otherwise(0.0),
+            Predictor('brc_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['stage3'] = LinearModel(
@@ -344,8 +352,8 @@ class BreastCancer(Module):
             p['r_stage3_stage2'],
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage3_undergone_curative_treatment']),
-            Predictor('brc_status').when('stage2', 1.0)
-                                  .otherwise(0.0)
+            Predictor('brc_status').when('stage2', 1.0).otherwise(0.0),
+            Predictor('brc_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['stage4'] = LinearModel(
@@ -353,8 +361,8 @@ class BreastCancer(Module):
             p['r_stage4_stage3'],
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage4_undergone_curative_treatment']),
-            Predictor('brc_status').when('stage3', 1.0)
-                                  .otherwise(0.0)
+            Predictor('brc_status').when('stage3', 1.0).otherwise(0.0),
+            Predictor('brc_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         # Check that the dict labels are correct as these are used to set the value of brc_status
@@ -457,6 +465,8 @@ class BreastCancer(Module):
         df.at[child_id, "brc_date_treatment"] = pd.NaT
         df.at[child_id, "brc_stage_at_which_treatment_given"] = "none"
         df.at[child_id, "brc_date_palliative_care"] = pd.NaT
+        df.at[child_id, "brc_new_stage_this_month"] = False
+        df.at[child_id, "brc_breast_lump_discernible_investigated"] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
         pass
@@ -529,6 +539,8 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (brc_status) -----------------------------------
 
+        df.brc_new_stage_this_month = False
+
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
         #  reducing progression risk during the stage at which is received.
         had_treatment_during_this_stage = \
@@ -540,6 +552,9 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
             df.loc[idx_gets_new_stage, 'brc_status'] = stage
+            df.loc[idx_gets_new_stage, 'brc_new_stage_this_month'] = True
+
+        # todo: people seem to be moving to the next stage at a higher rate than specified by the parameter
 
         # -------------------- UPDATING OF SYMPTOM OF breast_lump_discernible OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of breast_lump_discernible.
@@ -601,7 +616,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         if not pd.isnull(df.at[person_id, "brc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        df.breast_lump_discernible_investigated = True
+        df.brc_breast_lump_discernible_investigated = True
 
         # Use a biopsy to diagnose whether the person has breast Cancer:
         dx_result = hs.dx_manager.run_dx_test(
