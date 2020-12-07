@@ -35,7 +35,7 @@ def make_simulation_healthsystemdisabled():
     """Make the simulation with:
     * the demography module with the OtherDeathsPoll not running
     """
-    sim = Simulation(start_date=start_date, seed=1)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -57,7 +57,7 @@ def make_simulation_nohsi():
     """Make the simulation with:
     * the healthsystem enable but with no service availabilty (so no HSI run)
     """
-    sim = Simulation(start_date=start_date, seed=1)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),

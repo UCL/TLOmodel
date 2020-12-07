@@ -180,6 +180,9 @@ class OtherAdultCancer(Module):
         df = population.props  # a shortcut to the data-frame
         p = self.parameters
 
+#       p['init_prop_other_adult_cancer_stage'] = [0.1, 0.1, 0.1]
+        x = p['init_prop_other_adult_cancer_stage']
+
         # defaults
         df.loc[df.is_alive, "oac_status"] = "none"
         df.loc[df.is_alive, "oac_date_diagnosis"] = pd.NaT
