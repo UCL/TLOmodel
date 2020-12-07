@@ -40,13 +40,13 @@ class OtherAdultCancer(Module):
     }
 
     PARAMETERS = {
-        "init_prop_other_adult_cancer_stage": Parameter(
-            Types.LIST,
-            "initial proportions in other adult cancer stages for person aged 15-29"
-        ),
         "init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage": Parameter(
             Types.LIST, "initial proportions of those with other adult cancer categories that have other_"
                         "adult_ca_symptom"
+        ),
+        "init_prop_other_adult_cancer_stage": Parameter(
+            Types.LIST,
+            "initial proportions in other adult cancer stages for person aged 15-29"
         ),
         "init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage": Parameter(
             Types.LIST, "initial proportions of people that have symptom of other_adult_ca_symptom that "
