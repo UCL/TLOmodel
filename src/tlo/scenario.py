@@ -110,11 +110,16 @@ class BaseScenario:
         """
         return None
 
-    def save_draws(self):
+    def save_draws(self, **kwargs):
         generator = DrawGenerator(self, self.number_of_draws, self.samples_per_draw)
         output_path = self.scenario_path.parent / f"{self.scenario_path.stem}_draws.json"
         # assert not os.path.exists(output_path), f'Cannot save run config to {output_path} - file already exists'
-        generator.save_config(str(self.scenario_path), output_path)
+        config = generator.get_run_config(self.scenario_path)
+        if len(kwargs) > 0:
+            for k, v in kwargs.items():
+                config[k] = v
+        print(config)
+        generator.save_config(config, output_path)
         return output_path
 
 
@@ -173,15 +178,15 @@ class DrawGenerator:
 
     def get_run_config(self, scenario_path):
         return {
-            "scenario_script_path": scenario_path,
+            "scenario_script_path": str(scenario_path),
             "scenario_seed": self.scenario.seed,
             "samples_per_draw": self.samples_per_draw,
             "draws": self.draws,
         }
 
-    def save_config(self, scenario_path, output_path):
+    def save_config(self, config, output_path):
         with open(output_path, "w") as f:
-            f.write(json.dumps(self.get_run_config(scenario_path), indent=2))
+            f.write(json.dumps(config, indent=2))
 
 
 class SampleRunner:
