@@ -37,7 +37,6 @@ class CareOfWomenDuringPregnancy(Module):
 
     METADATA = {
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN,
         Metadata.USES_SYMPTOMMANAGER
     }
 

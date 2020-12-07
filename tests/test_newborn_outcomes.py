@@ -16,6 +16,7 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
+    postnatal_supervisor,
     symptommanager
 )
 seed = 567
@@ -42,8 +43,8 @@ except NameError:
     resourcefilepath = 'resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 1000
+end_date = Date(2020, 1, 1)
+popsize = 5000
 
 def check_dtypes(simulation):
     # check types of columns
@@ -51,7 +52,6 @@ def check_dtypes(simulation):
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
-@pytest.fixture(scope='module')
 def test_run():
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -59,12 +59,13 @@ def test_run():
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=[]),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                                           service_availability=['*']),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
     sim.make_initial_population(n=popsize)

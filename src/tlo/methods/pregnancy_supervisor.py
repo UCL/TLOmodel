@@ -30,7 +30,8 @@ class PregnancySupervisor(Module):
         # Here we define the pregnancy_disease_tracker dictionary used by the logger to calculate summary stats
         self.pregnancy_disease_tracker = dict()
 
-    METADATA = {Metadata.DISEASE_MODULE}  # declare that this is a disease module (leave as empty set otherwise)
+    METADATA = {Metadata.DISEASE_MODULE,
+                Metadata.USES_HEALTHBURDEN}  # declare that this is a disease module (leave as empty set otherwise)
 
     PARAMETERS = {
         'prob_ectopic_pregnancy': Parameter(

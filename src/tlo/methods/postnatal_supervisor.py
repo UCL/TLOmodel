@@ -18,7 +18,17 @@ logger.setLevel(logging.DEBUG)
 
 
 class PostnatalSupervisor(Module):
-    """"""
+    """ This module is responsible for the key conditions/complications experienced by a mother and by a neonate
+    following labour and the immediate postpartum period (24/48 hour postpartum). The time period of interest for this
+     model varies between  mothers and neonates. For mothers this module applies risk of complications across the
+    postnatal period, which is  defined as birth until day 42, and for neonates risk is applied for the length of the
+    neonatal period, from birth until day 28. The primary complications mothers can experience in this time are
+    infection/sepsis and secondary postpartum haemorrhage. Neonates are at risk of early onset sepsis, in week one of
+     life, and late onset sepsis in the remainder of the neonatal period.
+
+
+
+    """
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -29,7 +39,8 @@ class PostnatalSupervisor(Module):
         self.postnatal_tracker = dict()
 
     METADATA = {Metadata.DISEASE_MODULE,
-                Metadata.USES_HEALTHSYSTEM}  # declare that this is a disease module (leave as empty set otherwise)
+                Metadata.USES_HEALTHSYSTEM,
+                Metadata.USES_HEALTHBURDEN}  # declare that this is a disease module (leave as empty set otherwise)
 
     PARAMETERS = {
         'prob_htn_resolves': Parameter(
@@ -238,12 +249,12 @@ class PostnatalSupervisor(Module):
             # (sepsis onsetting prior to day 7) in the first week of life
             'early_onset_neonatal_sepsis_week_1': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['prob_early_onset_neonatal_sepsis_week_1']),
+                params['prob_early_onset_neonatal_sepsis_week_1'],
                 #  TODO: will these need to be properties of the newborn to apply here too
                 #    Predictor('clean_birth', external=True).when('True', params['treatment_effect_clean_birth']),
                 #    Predictor('cord_care_given', external=True).when('True', params['treatment_effect_cord_care']),
 
-                # Predictor('nb_early_init_of_breastfeeding').when(True, params['treatment_effect_early_init_bf'])),
+                Predictor('nb_early_init_breastfeeding').when(True, params['treatment_effect_early_init_bf'])),
 
 
             # This equation is used to determine a neonates risk of dying following early onset sepsis in week one
@@ -258,8 +269,8 @@ class PostnatalSupervisor(Module):
             # (sepsis onsetting between 7 and day 28) after  the first week of life
             'late_onset_neonatal_sepsis': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['prob_late_onset_neonatal_sepsis'],),
-                # Predictor('nb_early_init_of_breastfeeding').when(True, params['treatment_effect_early_init_bf'])),
+                params['prob_late_onset_neonatal_sepsis'],
+                Predictor('nb_early_init_breastfeeding').when(True, params['treatment_effect_early_init_bf'])),
 
             # This equation is used to determine a neonates risk of dying following late onset neonatal sepsis
             # (sepsis onsetting between 7 and day 28) after the first week of life
@@ -319,12 +330,19 @@ class PostnatalSupervisor(Module):
                            sim.date + DateOffset(years=1))
 
         # Define the events we want to track in the postnatal_tracker...
-        self.postnatal_tracker = {'endometritis': 0, 'urinary_tract_inf': 0, 'skin_soft_tissue_inf': 0,
-                                  'other_maternal_infection': 0, 'secondary_pph': 0, 'postnatal_death': 0,
-                                  'secondary_pph_death': 0,
-                                  'postnatal_sepsis': 0, 'sepsis_death': 0, 'fistula': 0, 'postnatal_anaemia': 0,
-                                  'early_neonatal_sepsis' : 0,
-                                  'late_neonatal_sepsis': 0, 'neonatal_death': 0, 'neonatal_sepsis_death': 0}
+        self.postnatal_tracker = {'endometritis': 0,
+                                  'urinary_tract_inf': 0,
+                                  'skin_soft_tissue_inf': 0,
+                                  'other_maternal_infection': 0,
+                                  'secondary_pph': 0,
+                                  'postnatal_death': 0,
+                                  'postnatal_sepsis': 0,
+                                  'fistula': 0,
+                                  'postnatal_anaemia': 0,
+                                  'early_neonatal_sepsis': 0,
+                                  'late_neonatal_sepsis': 0,
+                                  'neonatal_death': 0,
+                                  'neonatal_sepsis_death': 0}
 
         # Register dx_tests used as assessment for postnatal conditions during PNC visits
 
@@ -392,6 +410,15 @@ class PostnatalSupervisor(Module):
     def report_daly_values(self):
 
         logger.debug(key='message', data='This is PostnatalSupervisor reporting my health values')
+        df = self.sim.population.props
+
+        # TODO: Dummy code, waiting for new DALY set up
+
+        health_values_1 = df.loc[df.is_alive, 'pn_postpartum_haem_secondary'].map(
+            {False: 0, True: 0.2})
+        health_values_1.name = 'Secondary PPH'
+        health_values_df = health_values_1
+        return health_values_df
 
     def apply_linear_model(self, lm, df):
         """
@@ -567,6 +594,7 @@ class PostnatalSupervisor(Module):
                    (df['age_days'] < upper_and_lower_day_limits[1])])
 
         df.loc[onset_sepsis.loc[onset_sepsis].index, 'pn_sepsis_late_neonatal'] = False
+        self.postnatal_tracker['late_neonatal_sepsis'] += 1
 
         # Then we determine if care will be sought for newly septic newborns
         care_seeking = self.apply_linear_model(
@@ -1341,6 +1369,8 @@ class HSI_PostnatalSupervisor_NeonatalWardInpatientCare(HSI_Event, IndividualSco
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         child = df.loc[person_id]
 
+        # TODO: manage patients admitted post birth
+
         if not child.is_alive:
             return
 
@@ -1397,9 +1427,7 @@ class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         total_pph = self.module.postnatal_tracker['secondary_pph']
         total_pn_death = self.module.postnatal_tracker['postnatal_death']
-        total_pph_death = self.module.postnatal_tracker['secondary_pph_death']
         total_sepsis = self.module.postnatal_tracker['postnatal_sepsis']
-        total_sepsis_death = self.module.postnatal_tracker['sepsis_death']
         total_fistula = self.module.postnatal_tracker['fistula']
         total_endo = self.module.postnatal_tracker['endometritis']
         total_uti = self.module.postnatal_tracker['urinary_tract_inf']
@@ -1407,26 +1435,42 @@ class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         total_other_inf = self.module.postnatal_tracker['other_maternal_infection']
         total_anaemia = self.module.postnatal_tracker['postnatal_anaemia']
 
-        dict_for_output = {'total_fistula': total_fistula,
-                           'total_endo': total_endo,
-                           'total_uti': total_uti,
-                           'total_ssti': total_ssti,
-                           'total_other_inf': total_other_inf,
-                           'total_anaemia': total_anaemia,
-                           'total_pph': total_pph,
-                           'total_pph_death': total_pph_death,
-                           'total_sepsis': total_sepsis,
-                           'total_sepsis_death': total_sepsis_death,
-                           'total_deaths': total_pn_death,
-                           'pn_mmr': (total_pn_death/total_births_last_year) * 100000}
+        maternal_dict_for_output = {'total_fistula': total_fistula,
+                                    'total_endo': total_endo,
+                                    'total_uti': total_uti,
+                                    'total_ssti': total_ssti,
+                                    'total_other_inf': total_other_inf,
+                                    'total_anaemia': total_anaemia,
+                                    'total_pph': total_pph,
+                                    'total_sepsis': total_sepsis,
+                                    'total_deaths': total_pn_death,
+                                    'pn_mmr': (total_pn_death/total_births_last_year) * 100000}
 
-        logger.info(key='postnatal_summary_stats', data=dict_for_output, description= 'Yearly summary statistics '
-                                                                                      'output from the postnatal '
-                                                                                      'supervisor module')
+        logger.info(key='postnatal_maternal_summary_stats', data=maternal_dict_for_output,
+                    description='Yearly maternal summary statistics output from the postnatal supervisor module')
 
-        self.module.postnatal_tracker = {'endometritis': 0, 'urinary_tract_inf': 0, 'skin_soft_tissue_inf': 0,
-                                          'other_maternal_infection': 0, 'secondary_pph': 0, 'postnatal_death': 0,
-                                          'secondary_pph_death': 0, 'postnatal_sepsis': 0, 'sepsis_death': 0,
-                                          'fistula': 0, 'postnatal_anaemia': 0, 'early_neonatal_sepsis' : 0,
-                                          'late_neonatal_sepsis': 0, 'neonatal_death': 0, 'neonatal_sepsis_death': 0}
+        total_early_sepsis = self.module.postnatal_tracker['early_neonatal_sepsis']
+        total_late_sepsis = self.module.postnatal_tracker['late_neonatal_sepsis']
+        total_pn_neonatal_deaths = self.module.postnatal_tracker['neonatal_death']
 
+        neonatal_dict_for_output = {'eons': total_early_sepsis,
+                                    'lons': total_late_sepsis,
+                                    'total_deaths': total_pn_neonatal_deaths,
+                                    'pn_nmr': (total_pn_neonatal_deaths/total_births_last_year) * 1000}
+
+        logger.info(key='postnatal_neonatal_summary_stats', data=neonatal_dict_for_output,
+                    description='Yearly neonatal summary statistics output from the postnatal supervisor module')
+
+        self.module.postnatal_tracker = {'endometritis': 0,
+                                         'urinary_tract_inf': 0,
+                                         'skin_soft_tissue_inf': 0,
+                                         'other_maternal_infection': 0,
+                                         'secondary_pph': 0,
+                                         'postnatal_death': 0,
+                                         'postnatal_sepsis': 0,
+                                         'fistula': 0,
+                                         'postnatal_anaemia': 0,
+                                         'early_neonatal_sepsis': 0,
+                                         'late_neonatal_sepsis': 0,
+                                         'neonatal_death': 0,
+                                         'neonatal_sepsis_death': 0}

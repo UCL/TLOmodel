@@ -48,8 +48,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 10000
+end_date = Date(2020, 1, 1)
+popsize = 5000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -78,9 +78,9 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 hiv.hiv(resourcefilepath=resourcefilepath),
-                 tb.tb(resourcefilepath=resourcefilepath),
+                 # male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 #hiv.hiv(resourcefilepath=resourcefilepath),
+                 #tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
@@ -121,9 +121,13 @@ stats_preg = log_df['tlo.methods.pregnancy_supervisor']['ps_summary_statistics']
 stats_preg['date'] = pd.to_datetime(stats_preg['date'])
 stats_preg['year'] = stats_preg['date'].dt.year
 
-stats_postnatal = log_df['tlo.methods.postnatal_supervisor']['postnatal_summary_stats']
+stats_postnatal = log_df['tlo.methods.postnatal_supervisor']['postnatal_maternal_summary_stats']
 stats_postnatal['date'] = pd.to_datetime(stats_postnatal['date'])
 stats_postnatal['year'] = stats_postnatal['date'].dt.year
+
+stats_postnatal_n = log_df['tlo.methods.postnatal_supervisor']['postnatal_neonatal_summary_stats']
+stats_postnatal_n['date'] = pd.to_datetime(stats_postnatal_n['date'])
+stats_postnatal_n['year'] = stats_postnatal_n['date'].dt.year
 
 
 x='y'

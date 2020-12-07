@@ -1,4 +1,18 @@
-""" TODO: ADD SOME DEFINITIONS AND AN INTRO HERE"""
+"""
+The Newborn Outcomes Module
+
+Overview:
+Represents a neonates first 24-48 hours of life.
+
+Key Definitions
+
+
+# Things to note:
+    * The model is not accurately paremeterised as per 06/12/2020
+    * Calibration has not been completed- deaths have been calibrated to GBD estimates
+
+# todo: finish
+"""
 
 from pathlib import Path
 
@@ -9,9 +23,10 @@ import scipy.stats
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, demography, postnatal_supervisor
+from tlo.methods import Metadata, demography
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.postnatal_supervisor import HSI_PostnatalSupervisor_NeonatalWardInpatientCare
 # from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 
 logger = logging.getLogger(__name__)
@@ -173,8 +188,6 @@ class NewbornOutcomes(Module):
         'nb_congenital_anomaly': Property(Types.BOOL, 'Whether this newborn has been born with a congenital anomaly'),
         'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether his neonate has developed neonatal sepsis'
                                                                ' following birth'),
-        'nb_treatment_for_neonatal_sepsis': Property(Types.BOOL, 'If this neonate has received treatment for '
-                                                                 'neonatal sepsis'),
         'nb_inj_abx_neonatal_sepsis': Property(Types.BOOL, 'If this neonate has injectable antibiotics as treatment '
                                                            'for neonatal sepsis'),
         'nb_supp_care_neonatal_sepsis': Property(Types.BOOL, 'If this neonate has received full supportive care for '
@@ -202,7 +215,6 @@ class NewbornOutcomes(Module):
                                                                   'normal birth weight (>2500g)',
                                                categories=['extremely_low_birth_weight', 'very_low_birth_weight',
                                                            'low_birth_weight', 'normal_birth_weight']),
-        'nb_low_birth_weight': Property(Types.BOOL, 'whether this neonates weight is less than 2500g'),
         'nb_size_for_gestational_age': Property(Types.CATEGORICAL, 'size for gestational age categories',
                                                 categories=['small_for_gestational_age', 'average_for_gestational_age',
                                                             'large_for_gestational_age']),
@@ -264,7 +276,7 @@ class NewbornOutcomes(Module):
                 params['prob_early_onset_neonatal_sepsis_day_0'],
                 Predictor('clean_birth', external=True).when('True', params['treatment_effect_clean_birth']),
                 Predictor('cord_care_given', external=True).when('True', params['treatment_effect_cord_care']),
-                Predictor('nb_early_init_of_breastfeeding').when(True, params['treatment_effect_early_init_bf'])),
+                Predictor('nb_early_init_breastfeeding').when(True, params['treatment_effect_early_init_bf'])),
 
 
             # This equation is used to determine a newborns risk of encephalopathy
@@ -349,7 +361,6 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_preterm_birth_disab'] = 'none'
         df.loc[df.is_alive, 'nb_congenital_anomaly'] = False
         df.loc[df.is_alive, 'nb_early_onset_neonatal_sepsis'] = False
-        df.loc[df.is_alive, 'nb_treatment_for_neonatal_sepsis'] = False
         df.loc[df.is_alive, 'nb_inj_abx_neonatal_sepsis'] = False
         df.loc[df.is_alive, 'nb_supp_care_neonatal_sepsis'] = False
         df.loc[df.is_alive, 'nb_neonatal_sepsis_disab'] = 'none'
@@ -360,7 +371,6 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_encephalopathy_disab'] = 'none'
         df.loc[df.is_alive, 'nb_retinopathy_prem'] = 'none'
         df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
-        df.loc[df.is_alive, 'nb_low_birth_weight'] = False
         df.loc[df.is_alive, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
         df.loc[df.is_alive, 'nb_early_init_breastfeeding'] = False
         df.loc[df.is_alive, 'nb_breastfeeding_type'] = 'none'
@@ -374,11 +384,26 @@ class NewbornOutcomes(Module):
 
         # Set the values of the complication tracker used by the logging event (and described above)
         self.newborn_complication_tracker = {
-            'early_onset_sepsis': 0, 'neonatal_sepsis_death': 0, 'mild_enceph': 0, 'mild_enceph_death': 0,
-            'moderate_enceph': 0, 'moderate_enceph_death': 0, 'severe_enceph': 0, 'severe_enceph_death': 0,
-            'preterm_rds': 0, 'respiratory_distress_death': 0, 'congenital_anomaly_death': 0,
-            'not_breathing_at_birth': 0, 'not_breathing_at_birth_death': 0, 'preterm_birth_other_death': 0, 't_e_d': 0,
-            'resus': 0, 'sep_treatment': 0, 'vit_k': 0, 'death': 0}
+            'early_init_bf': 0,
+            'early_onset_sepsis': 0,
+            'neonatal_sepsis_death': 0,
+            'mild_enceph': 0,
+            'mild_enceph_death': 0,
+            'moderate_enceph': 0,
+            'moderate_enceph_death': 0,
+            'severe_enceph': 0,
+            'severe_enceph_death': 0,
+            'preterm_rds': 0,
+            'respiratory_distress_death': 0,
+            'congenital_anomaly_death': 0,
+            'not_breathing_at_birth': 0,
+            'not_breathing_at_birth_death': 0,
+            'preterm_birth_other_death': 0,
+            't_e_d': 0,
+            'resus': 0,
+            'sep_treatment': 0,
+            'vit_k': 0,
+            'death': 0}
 
         # =======================Register dx_tests for complications during labour/postpartum=======================
         # As with the labour module these dx_tests represent a probability that one of the following clinical outcomes
@@ -406,10 +431,14 @@ class NewbornOutcomes(Module):
 
         # Low birth weight...
         dx_manager.register_dx_test(assess_low_birth_weight_hc=DxTest(
-            property='nb_low_birth_weight',
-            sensitivity=self.parameters['sensitivity_of_assessment_of_lbw_hc']))
+            property='nb_low_birth_weight_status', target_categories=['extremely_low_birth_weight',
+                                                                      'very_low_birth_weight',
+                                                                      'low_birth_weight'],
+            sensitivity=self.parameters['sensitivity_of_assessment_of_lbw_hc'])),
         dx_manager.register_dx_test(assess_low_birth_weight_hp=DxTest(
-            property='nb_low_birth_weight',
+            property='nb_low_birth_weight_status', target_categories=['extremely_low_birth_weight',
+                                                                      'very_low_birth_weight',
+                                                                      'low_birth_weight'],
             sensitivity=self.parameters['sensitivity_of_assessment_of_lbw_hp']))
 
     # ===================================== HELPER AND TESTING FUNCTIONS ===========================
@@ -432,7 +461,7 @@ class NewbornOutcomes(Module):
         cord_care_given = nci[person_id]['cord_care']
         clean_birth = nci[person_id]['clean_birth']
         steroid_status = mni[mother_id]['corticosteroids_given']
-      
+
         # We return a BOOLEAN
         return self.rng.random_sample(size=1) < eq.predict(person,
                                                            cord_care_given=cord_care_given,
@@ -491,9 +520,6 @@ class NewbornOutcomes(Module):
         elif birth_weight < 1000:
             df.at[child_id, 'nb_low_birth_weight_status'] = 'extremely_low_birth_weight'
             logger.debug(key='message', data=f'Child {child_id} has been born extremely low birth weight')
-
-        if birth_weight < 2500:
-            df.at[child_id, 'nb_low_birth_weight'] = True
 
         if birth_weight < small_for_gestational_age_cutoff:
             df.at[child_id, 'nb_size_for_gestational_age'] = 'small_for_gestational_age'
@@ -565,8 +591,10 @@ class NewbornOutcomes(Module):
         params = self.parameters
         child = df.loc[child_id]
 
+        # Ensure only preterm infants have risk of RDS applied
         assert child.nb_early_preterm or child.nb_late_preterm
 
+        # Use the linear model to calculate individual risk and make changes
         if self.eval(params['nb_newborn_equations']['rds_preterm'], child_id):
             df.at[child_id, 'nb_preterm_respiratory_distress'] = True
             self.newborn_complication_tracker['preterm_rds'] += 1
@@ -578,18 +606,19 @@ class NewbornOutcomes(Module):
         This function uses the linear model to determines if a neonate will not sufficiently initiate breathing at birth
          and makes the appropriate changes to the data frame. It is called during the on_birth function or
         during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant dependent on delivery setting.
-        :param child_id: child_id"""
+        :param child_id: child_id
+        """
         params = self.parameters
         df = self.sim.population.props
 
-        # We assume all encephalopathic children will experience respiratory difficulty and will therefore
-        # need some form of neonatal resuscitation
+        # We assume all newborns with encephalopathy and respiratory distress syndrome will require some form of
+        # resuscitation and will not be effectively breathing at birth
         if df.at[child_id, 'nb_encephalopathy'] != 'none' or df.at[child_id, 'nb_preterm_respiratory_distress']:
             df.at[child_id, 'nb_not_breathing_at_birth'] = True
             self.newborn_complication_tracker['not_breathing_at_birth'] += 1
             logger.debug(key='message', data=f'Neonate {child_id} is not breathing following delivery')
 
-        # Otherwise we use the linear model to calculate risk of insufficient breathing due to other causes not
+        # Otherwise we use the linear model to calculate risk of inadequete breathing due to other causes not
         # explicitly modelled
         elif self.eval(params['nb_newborn_equations']['not_breathing_at_birth'], child_id):
             df.at[child_id, 'nb_not_breathing_at_birth'] = True
@@ -663,9 +692,9 @@ class NewbornOutcomes(Module):
             self.apply_risk_of_death_from_complication(individual_id, complication='preterm_birth_other')
 
         # Death due to breathing difficulties is implicitly captured in the CFR for encephalopathy and pretmaturity/RDS,
-        # therefore only neonates without those complications face a seperate CFR for 'not breathing at birth'
-        if child.nb_not_breathing_at_birth and child.nb_encephalopathy == 'none' and (~child.nb_early_preterm or
-                                                                                      ~child.nb_late_preterm):
+        # therefore only neonates without those complications face a separate CFR for 'not breathing at birth'
+        if child.nb_not_breathing_at_birth and child.nb_encephalopathy == 'none' and \
+            (~child.nb_preterm_respiratory_distress):
             self.apply_risk_of_death_from_complication(individual_id, complication='not_breathing_at_birth')
 
         if child.nb_congenital_anomaly:
@@ -734,18 +763,15 @@ class NewbornOutcomes(Module):
 
                 # TODO: should complication variables be reset? A newborn will never be newborn again so...
 
-                # Then we schedule PostnatalWeekOneEvent- this event manages the associated risk of complications and
-                # outcomes in first week of newborn life
-           #     self.sim.schedule_event(
-           #         postnatal_supervisor.PostnatalWeekOneEvent(
-           #             self.sim.modules['PostnatalSupervisor'], individual_id, mother_or_child='child'),
-           #         self.sim.date)
+                # TODO: disability for congenital anomaly
 
         # We now delete the MNI dictionary for mothers who have died in labour but their children have survived, this
         # is done here as we use variables from the mni as predictors in some of the above equations
         mother_id = df.loc[individual_id, 'mother_id']
         if df.at[mother_id, 'la_maternal_death_in_labour']:
             del mni[mother_id]
+
+        del nci[individual_id]
 
     # ======================================== HSI INTERVENTION FUNCTIONS =============================================
     # These functions are called by HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant and broadly represent
@@ -840,7 +866,9 @@ class NewbornOutcomes(Module):
         # varies between home births and facility deliveries
         if df.at[person_id, 'nb_breastfeeding_type'] != 'none':
             if self.rng.random_sample() < params[f'prob_early_breastfeeding_{birth_setting}']:
-                df.at[person_id, 'nb_early_init_of_breastfeeding'] = True
+                df.at[person_id, 'nb_early_init_breastfeeding'] = True
+                self.newborn_complication_tracker['early_init_bf'] += 1
+
                 logger.debug(key='message', data=f'Neonate {person_id} has started breastfeeding within 1 hour of '
                                                  f'birth')
             else:
@@ -848,7 +876,7 @@ class NewbornOutcomes(Module):
                                                  f'birth')
 
             # For breastfed neonates we schedule a future event where breastfeeding status is updated
-            self.sim.schedule_event(BreastfeedingStatusUpdateEvent(self, person_id),
+            self.sim.schedule_event(BreastfeedingStatusUpdateEventSixMonths(self, person_id),
                                     self.sim.date + DateOffset(months=6))
 
     def kangaroo_mother_care(self, hsi_event, facility_type):
@@ -887,7 +915,9 @@ class NewbornOutcomes(Module):
         :param child_id: child_id
         """
         pass
+
         # TODO: link up future screening with PNC visit
+
     #    if 'Hiv' in self.sim.modules:
     #        self.sim.modules['HealthSystem'].schedule_hsi_event(
     #            HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
@@ -1012,6 +1042,7 @@ class NewbornOutcomes(Module):
         :param individual_id: individual_id
         """
         nci = self.newborn_care_info
+        df = self.sim.population.props
 
         # We apply risk of complication onset and death within HSI_NewbornOutcomes_ ReceivesSkilledAttendanceFollowing
         # Birth for those who are born in facility (this allows risk to be modified to prophylaxis administered in
@@ -1019,10 +1050,12 @@ class NewbornOutcomes(Module):
 
         # Therefore if this event cannot run we need to apply risk of complication developing, as done below
         if ~nci[individual_id]['sought_care_for_complication']:
+
             self.module.apply_risk_of_neonatal_infection_and_sepsis(individual_id)
             self.module.apply_risk_of_encephalopathy(individual_id)
+            if df.at[individual_id, 'nb_early_preterm'] or df.at[individual_id, 'nb_late_preterm']:
+                self.module.apply_risk_of_preterm_respiratory_distress_syndrome(individual_id)
             self.module.apply_risk_of_not_breathing_at_birth(individual_id)
-
             self.module.set_death_and_disability_status(individual_id)
 
     def on_birth(self, mother_id, child_id):
@@ -1051,7 +1084,6 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_preterm_birth_disab'] = 'none'
         df.at[child_id, 'nb_congenital_anomaly'] = False
         df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = False
-        df.at[child_id, 'nb_treatment_for_neonatal_sepsis'] = False
         df.at[child_id, 'nb_neonatal_sepsis_disab'] = 'none'
         df.at[child_id, 'nb_preterm_respiratory_distress'] = False
         df.at[child_id, 'nb_not_breathing_at_birth'] = False
@@ -1060,7 +1092,6 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_encephalopathy_disab'] = 'none'
         df.at[child_id, 'nb_retinopathy_prem'] = 'none'
         df.at[child_id, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
-        df.at[child_id, 'nb_low_birth_weight'] = False
         df.at[child_id, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
         df.at[child_id, 'nb_early_init_breastfeeding'] = False
         df.at[child_id, 'nb_breastfeeding_type'] = 'none'
@@ -1144,6 +1175,9 @@ class NewbornOutcomes(Module):
                 # breathe at birth
                 self.apply_risk_of_not_breathing_at_birth(child_id)
 
+                # And we see if this newborn will start breastfeeding
+                self.breast_feeding(child_id, birth_setting='hb')  # hb = home birth
+
             # Neonates who were delivered in a facility are automatically scheduled to receive care after birth at the
             # same level of facility that they were delivered in
             if m['delivery_setting'] == 'health_centre':
@@ -1175,8 +1209,6 @@ class NewbornOutcomes(Module):
             # probability that their mother will seek care and bring them to
             # HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant
 
-            # TODO: This should be replaced by a more realistic pathway (a&e?)
-
             if (m['delivery_setting'] == 'home_birth') and (child.nb_not_breathing_at_birth or
                                                             child.nb_early_onset_neonatal_sepsis or
                                                             child.nb_encephalopathy != 'none'):
@@ -1197,17 +1229,7 @@ class NewbornOutcomes(Module):
                 else:
                     # If care will not be sought for this newborn we immediately apply risk of death and make changes to
                     # the data frame accordingly
-
                     self.set_death_and_disability_status(child_id)
-                    # todo: APPLY RISK OF ENCEPH TO NOT BREATHERS WHO SURVIVED?
-
-            # We apply a probability that women who deliver at home will initiate breastfeeding within one hour of birth
-            # We assume that neonates with complications will not start breastfeeding within one hour
-            if (m['delivery_setting'] == 'home_birth') and (~child.nb_not_breathing_at_birth and
-                                                            ~child.nb_early_onset_neonatal_sepsis and
-                                                            (child.nb_encephalopathy == 'none')):
-
-                self.breast_feeding(child_id, birth_setting='hb')  # hb = home birth
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.info(key='message', data=f'This is NewbornOutcomes, being alerted about a health system interaction '
@@ -1239,14 +1261,10 @@ class NewbornOutcomes(Module):
              'moderate_motor': p['moderate_motor_sepsis'], 'severe_motor': p['severe_motor_sepsis']})
         health_values_3.name = 'Neonatal Sepsis Long term Disability'
 
-        health_values_4 = df.loc[df.is_alive, 'nb_early_onset_neonatal_sepsis'].map(
-            {False: 0, True: p['severe_infection_sepsis']})
-        health_values_4.name = 'Neonatal Sepsis Acute Disability'
-
-        health_values_5 = df.loc[df.is_alive, 'nb_preterm_birth_disab'].map(
+        health_values_4 = df.loc[df.is_alive, 'nb_preterm_birth_disab'].map(
             {'none': 0, 'mild_motor': p['mild_motor_preterm'], 'mild_motor_and_cog': p['mild_motor_cognitive_preterm'],
              'moderate_motor': p['moderate_motor_preterm'], 'severe_motor': p['severe_motor_preterm']})
-        health_values_5.name = 'Preterm Birth Disability'
+        health_values_4.name = 'Preterm Birth Disability'
 
         health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive],
                                       health_values_3.loc[df.is_alive], health_values_4.loc[df.is_alive]], axis=1)
@@ -1345,12 +1363,13 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(HSI_Event, Individu
             self.module.immunisations(person_id)
             self.module.hiv_prophylaxis_and_referral(person_id)
 
-            # Surviving neonates with complications on day 1 are admitted
+            # Surviving neonates with complications on day 1 are admitted to the inpatient event which lives in the
+            # Postnatal Supervisor module
             # TODO : guidelines not very clear
             if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or df.at[person_id, 'nb_encephalopathy'] != 'none' \
                 or df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm']:
-                event = HSI_NewbornOutcomes_NewbornInpatientCare(
-                    self.module, person_id=person_id, facility_level_of_this_hsi=1)
+                event = HSI_PostnatalSupervisor_NeonatalWardInpatientCare(
+                    self.sim.modules['PostnatalSupervisor'], person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=None)
@@ -1373,37 +1392,17 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(HSI_Event, Individu
         # ------------------------------ (To go here- referral for further care) --------------------
 
 
-class HSI_NewbornOutcomes_NewbornInpatientCare(HSI_Event, IndividualScopeEventMixin):
-    """This is HSI_NewbornOutcomes_NeonateInpatientDay. This HSI will act to record inpatient treatment
-    days required by neonates who need care after birth. It has not been completed awaiting discussion
-    around referral of neonates to NICU"""
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, NewbornOutcomes)
-
-        self.TREATMENT_ID = 'NewbornOutcomes_NeonateInpatientDay'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        logger.debug(key='message', data=f'Newborn {person_id} has been admitted for inpatient care via '
-                                         f'HSI_NewbornOutcomes_NewbornInpatientCare following complications '
-                                         f'after birth ')
-
-        df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = False
-
-
-class BreastfeedingStatusUpdateEvent(Event, IndividualScopeEventMixin):
-    """  """
+class BreastfeedingStatusUpdateEventSixMonths(Event, IndividualScopeEventMixin):
+    """ This is BreastfeedingStatusUpdateEventSixMonths. It is scheduled via the breastfeeding function.
+    Children who are alive and still breastfeeding by six months have their breastfeeding status updated. Those who will
+    continue to breastfeed are scheduled BreastfeedingStatusUpdateEventTwoYears
+    """
 
     def __init__(self, module, individual_id):
         super().__init__(module, person_id=individual_id)
 
     def apply(self, individual_id):
         df = self.sim.population.props
-        params = self.module.parameters
         child = df.loc[individual_id]
 
         if not child.is_alive:
@@ -1416,6 +1415,27 @@ class BreastfeedingStatusUpdateEvent(Event, IndividualScopeEventMixin):
         if child.nb_breastfeeding_type == 'non_exclusive':
             random_draw = self.module.rng.choice(('non_exclusive', 'none'), p=[0.5, 0.5])
             df.at[individual_id, 'nb_breastfeeding_type'] = random_draw
+
+        if child.nb_breastfeeding_type != 'none':
+            self.sim.schedule_event(BreastfeedingStatusUpdateEventTwoYears(self.module, individual_id),
+                                    self.sim.date + DateOffset(months=18))
+
+
+class BreastfeedingStatusUpdateEventTwoYears(Event, IndividualScopeEventMixin):
+    """ This is BreastfeedingStatusUpdateEventTwoYears. It is scheduled via the breastfeeding function.
+    Children who are alive and still breastfeeding by six months have their breastfeeding status updated. Those who will
+    continue to breastfeed are scheduled BreastfeedingStatusUpdateEventTwoYears """
+
+    def __init__(self, module, individual_id):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+
+        if not df.at[individual_id, 'is_alive']:
+            return
+
+        df.at[individual_id, 'nb_breastfeeding_type'] = 'none'
 
 
 class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1511,8 +1531,23 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Reset the EventTracker
         self.module.newborn_complication_tracker = {
-            'early_onset_sepsis': 0, 'neonatal_sepsis_death': 0, 'mild_enceph': 0, 'mild_enceph_death': 0,
-            'moderate_enceph': 0, 'moderate_enceph_death': 0, 'severe_enceph': 0, 'severe_enceph_death': 0,
-            'preterm_rds': 0, 'respiratory_distress_death': 0, 'congenital_anomaly_death': 0,
-            'not_breathing_at_birth': 0, 'not_breathing_at_birth_death': 0, 'preterm_birth_other_death': 0, 't_e_d': 0,
-            'resus': 0, 'sep_treatment': 0, 'vit_k': 0, 'death': 0}
+            'early_init_bf': 0,
+            'early_onset_sepsis': 0,
+            'neonatal_sepsis_death': 0,
+            'mild_enceph': 0,
+            'mild_enceph_death': 0,
+            'moderate_enceph': 0,
+            'moderate_enceph_death': 0,
+            'severe_enceph': 0,
+            'severe_enceph_death': 0,
+            'preterm_rds': 0,
+            'respiratory_distress_death': 0,
+            'congenital_anomaly_death': 0,
+            'not_breathing_at_birth': 0,
+            'not_breathing_at_birth_death': 0,
+            'preterm_birth_other_death': 0,
+            't_e_d': 0,
+            'resus': 0,
+            'sep_treatment': 0,
+            'vit_k': 0,
+            'death': 0}
