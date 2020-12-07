@@ -35,7 +35,7 @@ def make_simulation_healthsystemdisabled():
     """Make the simulation with:
     * the demography module with the OtherDeathsPoll not running
     """
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=1)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -50,7 +50,6 @@ def make_simulation_healthsystemdisabled():
                  other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
-    sim.seed_rngs(0)
     return sim
 
 
@@ -58,7 +57,7 @@ def make_simulation_nohsi():
     """Make the simulation with:
     * the healthsystem enable but with no service availabilty (so no HSI run)
     """
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=1)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -70,10 +69,9 @@ def make_simulation_nohsi():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 OtherAdultCancer.OtherAdultCancer(resourcefilepath=resourcefilepath),
+                 other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
-    sim.seed_rngs(0)
     return sim
 
 
@@ -87,8 +85,6 @@ def zero_out_init_prev(sim):
 def seed_init_prev_in_first_stage_only(sim):
     # Set initial prevalence to zero:
     sim.modules['OtherAdultCancer'].parameters['init_prop_other_adult_cancer_stage'] = [1.0, 0.0, 0.0, 0.0]
-    # Put everyone in first stage
-    sim.modules['OtherAdultCancer'].parameters['init_prop_other_adult_cancer_stage'][0] = [0.0, 1.0, 0.0, 0.0]
     return sim
 
 
@@ -146,6 +142,9 @@ def check_configuration_of_population(sim):
     # for convenience, define a bool for any stage of cancer
     df['oac_status_any_stage'] = df.oac_status != 'none'
 
+    # get df for alive persons:
+    df = df.loc[df.is_alive]
+
     # check that no one under twenty has cancer
     assert not df.loc[df.age_years < 15].oac_status_any_stage.any()
 
@@ -200,7 +199,8 @@ def test_initial_config_of_pop_zero_prevalence():
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
-
+    df = sim.population.props
+    assert (df.loc[df.is_alive].oac_status == 'none').all()
 
 def test_initial_config_of_pop_usual_prevalence():
     """Tests of the the way the population is configured: with usual initial prevalence values"""
