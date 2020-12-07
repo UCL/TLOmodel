@@ -146,7 +146,7 @@ class OtherAdultCancer(Module):
             Types.CATEGORICAL,
             "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
             "at which it is given.",
-            categories=["none", "site_confined", "local_ln", "metastatic"],
+            categories=["none", "site_confined", "local_ln"],
         ),
         "oac_date_palliative_care": Property(
             Types.DATE,
@@ -269,7 +269,8 @@ class OtherAdultCancer(Module):
         treatment_initiated.loc[pd.isnull(df.oac_date_diagnosis)] = False
 
         # assume that the stage at which treatment is begun is site_confined;
-        df.loc[treatment_initiated, "oac_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "site_confined"]
+    #   df.loc[treatment_initiated, "oac_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "site_confined"]
+        df.loc[treatment_initiated, "oac_stage_at_which_treatment_given"] = "site_confined"
 
         # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
         df.loc[treatment_initiated, "oac_date_treatment"] = df.loc[treatment_initiated, "oac_date_diagnosis"]
@@ -490,8 +491,9 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
         #  reducing progression risk during the stage at which is received.
         had_treatment_during_this_stage = \
-            df.is_alive & ~pd.isnull(df.oac_date_treatment) & \
-            (df.oac_status == df.oac_stage_at_which_treatment_given)
+            df.is_alive & ~pd.isnull(df.oac_date_treatment) & (((df.oac_status == "site_confined") &
+                                    (df.oac_stage_at_which_treatment_given == "site_confined"))
+                        or ((df.oac_status == "local_ln") & (df.oac_stage_at_which_treatment_given == "local_ln")))
 
         for stage, lm in self.module.linear_models_for_progession_of_oac_status.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,

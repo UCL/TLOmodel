@@ -27,7 +27,7 @@ except NameError:
 
 # parameters for whole suite of tests:
 start_date = Date(2010, 1, 1)
-popsize = 100000
+popsize = 10000
 
 
 # %% Construction of simulation objects:
@@ -78,19 +78,19 @@ def make_simulation_nohsi():
 # %% Manipulation of parameters:
 def zero_out_init_prev(sim):
     # Set initial prevalence to zero:
-    sim.modules['OtherAdultCancer'].parameters['init_prop_other_adult_cancer_stage'] = [1.0, 0.0, 0.0, 0.0]
+    sim.modules['OtherAdultCancer'].parameters['in_prop_other_adult_cancer_stage'] = [0.0, 0.0, 0.0]
     return sim
 
 
 def seed_init_prev_in_first_stage_only(sim):
     # Set initial prevalence to zero:
-    sim.modules['OtherAdultCancer'].parameters['init_prop_other_adult_cancer_stage'] = [1.0, 0.0, 0.0, 0.0]
+    sim.modules['OtherAdultCancer'].parameters['in_prop_other_adult_cancer_stage'] = [1.0, 0.0, 0.0]
     return sim
 
 
 def make_high_init_prev(sim):
     # Set initial prevalence to a high value:
-    sim.modules['OtherAdultCancer'].parameters['init_prop_other_adult_cancer_stage'] = [0.6, 0.1, 0.1, 0.1]
+    sim.modules['OtherAdultCancer'].parameters['in_prop_other_adult_cancer_stage'] = [0.1, 0.1, 0.1]
     return sim
 
 
@@ -108,7 +108,7 @@ def zero_rate_of_onset_lgd(sim):
 
 def incr_rates_of_progression(sim):
     # Rates of cancer progression per 3 months:
-    sim.modules['OtherAdultCancer'].parameters['r_local_ln_site_confined'] *= 5
+    sim.modules['OtherAdultCancer'].parameters['r_local_ln_site_confined_other_adult_ca'] *= 5
     sim.modules['OtherAdultCancer'].parameters['r_metastatic_local_ln'] *= 5
     return sim
 
@@ -159,11 +159,11 @@ def check_configuration_of_population(sim):
     assert 0 == (df.loc[~pd.isnull(df.oac_date_treatment)].oac_stage_at_which_treatment_given == 'none').sum()
 
     # check that those with symptom are a subset of those with cancer:
-    assert set(sim.modules['SymptomManager'].who_has('early_other_adult_cancer_symptom')).issubset(df.index[df.oac_status != 'none'])
+    assert set(sim.modules['SymptomManager'].who_has('early_other_adult_ca_symptom')).issubset(df.index[df.oac_status != 'none'])
 
     # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
     assert set(df.index[~pd.isnull(df.oac_date_diagnosis)]).issubset(df.index[df.oac_status_any_stage])
-    assert set(df.index[~pd.isnull(df.oac_date_diagnosis)]).issubset(sim.modules['SymptomManager'].who_has('early_other_adult_cancer_symptom'))
+    assert set(df.index[~pd.isnull(df.oac_date_diagnosis)]).issubset(sim.modules['SymptomManager'].who_has('early_other_adult_ca_symptom'))
     assert (df.loc[~pd.isnull(df.oac_date_diagnosis)].oac_date_diagnosis <= sim.date).all()
 
     # check that date diagnosed is consistent with the age of the person (ie. not before they were 15.0
@@ -350,7 +350,7 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     # force that they are all symptomatic, diagnosed and already on treatment:
     sim.modules['SymptomManager'].change_symptom(
         person_id=has_lgd.index[has_lgd].tolist(),
-        symptom_string='early_other_adult_cancer_symptom',
+        symptom_string='early_other_adult_ca_symptom',
         add_or_remove='+',
         disease_module=sim.modules['OtherAdultCancer']
     )
