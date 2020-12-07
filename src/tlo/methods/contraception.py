@@ -334,9 +334,9 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
                 'co_contraception': df.at[woman, 'co_contraception']
                 }
 
-        logger.info(key='start_contraception',
-                    data=start_contraception_summary,
-                    description='start_contraception')
+                logger.info(key='start_contraception',
+                            data=start_contraception_summary,
+                            description='start_contraception')
 
     def switch(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception Switches
@@ -370,9 +370,9 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
                 'co_to': new_co[woman]
             }
 
-        logger.info(key='switch_contraception',
-                    data=switch_contraception_summary,
-                    description='switch_contraception')
+            logger.info(key='switch_contraception',
+                        data=switch_contraception_summary,
+                        description='switch_contraception')
 
         # update contraception for all who switched
         df.loc[switch_co, 'co_contraception'] = new_co
@@ -406,9 +406,9 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
                     'woman_index': woman,
                 }
 
-        logger.info(key='stop_contraception',
-                    data=stop_contraception_summary,
-                    description='stop_contraception')
+                logger.info(key='stop_contraception',
+                            data=stop_contraception_summary,
+                            description='stop_contraception')
 
 class Fail(RegularEvent, PopulationScopeEventMixin):
     """
@@ -468,9 +468,9 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                 'birth_booked': str(df.at[woman, 'co_date_of_childbirth'])
             }
 
-        logger.info(key='fail_contraception',
-                    data=fail_contraception_summary,
-                    description='fail_contraception')
+            logger.info(key='fail_contraception',
+                        data=fail_contraception_summary,
+                        description='fail_contraception')
 
 
 class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
@@ -539,9 +539,9 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
                 'age_years': females.at[female_id, 'age_years']
             }
 
-        logger.info(key='pregnant_at_age_',
-                    data=pregnant_at_age_summary,
-                    description='pregnant_at_age_')
+            logger.info(key='pregnant_at_age_',
+                        data=pregnant_at_age_summary,
+                        description='pregnant_at_age_')
 
 
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):

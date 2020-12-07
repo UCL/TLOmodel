@@ -82,7 +82,7 @@ months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-co_df = output['tlo.methods.contraception']['contraception']
+co_df = log_df['tlo.methods.contraception']['contraception']
 Model_Years = pd.to_datetime(co_df.date)
 Model_total = co_df.total
 Model_not_using = co_df.not_using
