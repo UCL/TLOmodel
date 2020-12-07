@@ -22,12 +22,13 @@ unless you are overriding parameters. If you do not override any model parameter
 samples. Each sample for the same draw would have identical configuration except the simulation seed.
 """
 import json
+import pickle
 from pathlib import Path
 
 import numpy as np
 
 from tlo import logging, Simulation
-
+from tlo.analysis.utils import parse_log_file
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -243,6 +244,11 @@ class SampleRunner:
 
         sim.make_initial_population(n=self.scenario.pop_size)
         sim.simulate(end_date=self.scenario.end_date)
+        outputs = parse_log_file(sim.log_filepath)
+        for key, output in outputs.items():
+            if key.startswith("tlo."):
+                with open(Path(log_config["directory"]) / f"{key}.pickle", "wb") as f:
+                    pickle.dump(output, f)
 
     def run(self):
         for draw in self.run_config["draws"]:
