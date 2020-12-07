@@ -42,7 +42,7 @@ log_config = {
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2012, 1, 1)
 pop_size = 1000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -114,7 +114,7 @@ months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-com_df = output['tlo.methods.contraception']['contraception']
+com_df = log_df['tlo.methods.contraception']['contraception']
 Model_Years = pd.to_datetime(com_df.date)
 Model_pill = com_df.pill
 Model_IUD = com_df.IUD
@@ -160,7 +160,7 @@ months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-preg_df = output['tlo.methods.contraception']['pregnancy']
+preg_df = log_df['tlo.methods.contraception']['pregnancy']
 Model_Years = pd.to_datetime(preg_df.date)
 Model_pregnancy = preg_df.total
 Model_pregnant = preg_df.pregnant
