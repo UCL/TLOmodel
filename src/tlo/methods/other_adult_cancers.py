@@ -44,7 +44,7 @@ class OtherAdultCancer(Module):
             Types.LIST, "initial proportions of those with other adult cancer categories that have other_"
                         "adult_ca_symptom"
         ),
-        "init_prop_other_adult_cancer_stage": Parameter(
+        "in_prop_other_adult_cancer_stage": Parameter(
             Types.LIST,
             "initial proportions in other adult cancer stages for person aged 15-29"
         ),
@@ -190,11 +190,11 @@ class OtherAdultCancer(Module):
         # -------------------- oac_status -----------
         # Determine who has cancer at ANY cancer stage:
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
-        assert sum(p['init_prop_other_adult_cancer_stage']) <= 1.0
+        assert sum(p['in_prop_other_adult_cancer_stage']) <= 1.0
 
         lm_init_oac_status_any_stage = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            sum(p['init_prop_other_adult_cancer_stage']),
+            sum(p['in_prop_other_adult_cancer_stage']),
             Predictor('age_years').when('.between(30,49)', p['rp_other_adult_cancer_age3049'])
                                   .when('.between(50,69)', p['rp_other_adult_cancer_age5069'])
                                   .when('.between(70,120)', p['rp_other_adult_cancer_agege70'])
@@ -206,9 +206,9 @@ class OtherAdultCancer(Module):
 
         # Determine the stage of the cancer for those who do have a cancer:
         if oac_status_.sum():
-            sum_probs = sum(p['init_prop_other_adult_cancer_stage'])
+            sum_probs = sum(p['in_prop_other_adult_cancer_stage'])
             if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_other_adult_cancer_stage']]
+                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['in_prop_other_adult_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
                 df.loc[oac_status_, "oac_status"] = self.rng.choice(
                     [val for val in df.oac_status.cat.categories if val != 'none'],
@@ -219,12 +219,12 @@ class OtherAdultCancer(Module):
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of other_adult_ca_symptom:
         lm_init_early_other_adult_ca_symptom = LinearModel.multiplicative(
-            Predictor('oac_status')  .when("none", 0.0)
-                                    .when("site_confined",
+              Predictor('oac_status').when("none", 0.0)
+                                     .when("site_confined",
                                           p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][0])
-                                    .when("local_ln",
+                                     .when("local_ln",
                                           p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][1])
-                                    .when("metastatic",
+                                     .when("metastatic",
                                           p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][2])
         )
         has_early_other_adult_ca_symptom_at_init = lm_init_early_other_adult_ca_symptom.predict(df.loc[df.is_alive], self.rng)
@@ -268,8 +268,8 @@ class OtherAdultCancer(Module):
         # prevent treatment having been initiated for anyone who is not yet diagnosed
         treatment_initiated.loc[pd.isnull(df.oac_date_diagnosis)] = False
 
-        # assume that the stage at which treatment is begun is the stage the person is in now;
-        df.loc[treatment_initiated, "oac_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "oac_status"]
+        # assume that the stage at which treatment is begun is site_confined;
+        df.loc[treatment_initiated, "oac_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "site_confined"]
 
         # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
         df.loc[treatment_initiated, "oac_date_treatment"] = df.loc[treatment_initiated, "oac_date_diagnosis"]
