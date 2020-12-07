@@ -13,16 +13,15 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2010, 6, 1)
         self.pop_size = 100
-        self.number_of_draws = 1
-        self.samples_per_draw = 2
+        self.number_of_draws = 10
+        self.samples_per_draw = 10
 
     def log_configuration(self):
         return {
             'filename': 'test_scenario',
             'directory': './outputs',
             'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO
+                '*': logging.INFO,
             }
         }
 
