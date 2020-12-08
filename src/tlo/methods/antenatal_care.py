@@ -277,18 +277,18 @@ class CareOfWomenDuringPregnancy(Module):
             #        specificity=0.9),
 
             point_of_care_hb_test=DxTest(
-                property='ps_anaemia_in_pregnancy', target_categories=['non_severe', 'severe'],
+                property='ps_anaemia_in_pregnancy', target_categories=['mild', 'moderate', 'severe'],
                 sensitivity=params['sensitivity_poc_hb_test'],
                 specificity=params['specificity_poc_hb_test']),
 
             full_blood_count_hb=DxTest(
-                property='ps_anaemia_in_pregnancy', target_categories=['non_severe', 'severe'],
+                property='ps_anaemia_in_pregnancy', target_categories=['mild', 'moderate', 'severe'],
                 sensitivity=params['sensitivity_fbc_hb_test'],
                 specificity=params['specificity_fbc_hb_test']),
 
 
             blood_test_haemoglobin=DxTest(
-                property='ps_anaemia_in_pregnancy',
+                property='ps_anaemia_in_pregnancy', target_categories=['mild', 'moderate', 'severe'],
                 sensitivity=params['sensitivity_fbc_hb_test'],
                 specificity=params['specificity_poc_hb_test']),
 
@@ -2393,7 +2393,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 # Women who are referred from ANC or an outpatient appointment following point of care Hb testing are
                 # admitted for a full blood count
                 fbc_result = self.module.full_blood_count_testing(self)
-                assert fbc_result == 'no_test' or 'none' or 'non_severe' or 'severe'
+                assert fbc_result == 'no_test' or 'none' or 'mild' or 'moderate' or 'severe'
 
                 # If the test is not carried out, no treatment is provided and the woman is discharged
                 if fbc_result == 'no_test':
@@ -2540,7 +2540,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientFollowUp(HSI_Event, Indi
                     logger.debug(key='message', data=f'No FBC given due to resource constraints')
                 elif fbc_result == 'none':
                     logger.debug(key='message', data=f'Mother {person_id} has not had anaemia detected via an FBC')
-                elif fbc_result == 'non_severe' or fbc_result == 'severe':
+                elif fbc_result == 'mild' or fbc_result == 'moderate' or fbc_result == 'severe':
 
                     admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                         self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)

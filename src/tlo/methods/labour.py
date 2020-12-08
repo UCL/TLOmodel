@@ -1332,6 +1332,8 @@ class Labour (Module):
         df = self.sim.population.props
         params = self.parameters
 
+        # todo differentiation between ps_htn and pn_htn
+
         # TODO: property conventions
         # TODO: replace with fixed probabilities (unlikely to find data on risk factors for progression)
 

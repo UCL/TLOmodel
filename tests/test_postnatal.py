@@ -45,7 +45,7 @@ except NameError:
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 100
+popsize = 1000
 
 def check_dtypes(simulation):
     # check types of columns
@@ -60,7 +60,7 @@ def test_run():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*']),
                  labour.Labour(resourcefilepath=resourcefilepath),

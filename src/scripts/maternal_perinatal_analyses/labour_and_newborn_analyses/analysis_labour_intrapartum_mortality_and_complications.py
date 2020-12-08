@@ -48,8 +48,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 5000
+end_date = Date(2012, 1, 1)
+popsize = 100
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -129,5 +129,6 @@ stats_postnatal_n = log_df['tlo.methods.postnatal_supervisor']['postnatal_neonat
 stats_postnatal_n['date'] = pd.to_datetime(stats_postnatal_n['date'])
 stats_postnatal_n['year'] = stats_postnatal_n['date'].dt.year
 
+deaths = log_df['tlo.methods.demography']['death']
 
 x='y'

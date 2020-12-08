@@ -163,7 +163,7 @@ class PregnancySupervisor(Module):
                                                             'deficiencies in pregnancy'),
         'ps_anaemia_in_pregnancy': Property(Types.CATEGORICAL, 'whether a woman has anaemia in pregnancy and its '
                                                                'severity',
-                                            categories=['none', 'non_severe', 'severe']),
+                                            categories=['none','mild', 'moderate', 'severe']),
         'ps_will_attend_four_or_more_anc': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more '
                                                                 'antenatal care visits during her pregnancy'),
         'ps_will_attend_eight_or_more_anc': Property(Types.BOOL, 'DUMMY'),  # todo: remove? 
@@ -480,29 +480,6 @@ class PregnancySupervisor(Module):
         df.at[mother_id, 'ps_gest_diab'] = False
         # TODO: link with future T2DM
 
-        # ========================== RISK OF ONGOING HTN /RESETTING STATUS AFTER BIRTH ================================
-        # Here we apply a one of probability that women who have experienced a hypertensive disorder during pregnancy
-        # will remain hypertensive after birth into the postnatal period
-        if df.at[mother_id, 'ps_htn_disorders'] == 'gest_htn' or 'severe_gest_htn' or 'mild_pre_eclamp' or \
-                                                   'severe_pre_eclamp':
-            if self.rng.random_sample() < params['probability_htn_persists']:
-                logger.debug(key='message', data=f'mother {mother_id} will remain hypertensive despite successfully '
-                                                 f'delivering')
-            else:
-                df.at[mother_id, 'ps_htn_disorders'] = 'none'
-
-        # ================================= RISK OF DE NOVO HTN =======================================================
-        # Finally we apply a risk of de novo hypertension in women who have been normatensive during pregnancy
-
-        risk_of_gest_htn = params['ps_linear_equations']['gest_htn'].predict(df.loc[[mother_id]])[mother_id]
-        risk_of_mild_pre_eclampsia = params['ps_linear_equations']['pre_eclampsia'].predict(df.loc[[mother_id]])[
-            mother_id]
-
-        if self.rng.random_sample() < risk_of_gest_htn:
-            df.at[mother_id, 'ps_htn_disorders'] = 'gest_htn'
-        else:
-            if self.rng.random_sample() < risk_of_mild_pre_eclampsia:
-                df.at[mother_id, 'ps_htn_disorders'] = 'mild_pre_eclamp'
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug(key='message', data='This is PregnancySupervisor, being alerted about a health system interaction '
@@ -619,7 +596,7 @@ class PregnancySupervisor(Module):
         # TODO: parameterise and repalce
         # TODO: should a second linear equation determine severity (or use some kind of multinomal regression)
 
-        random_choice_severity = pd.Series(self.rng.choice(['non_severe', 'severe'], p=[0.5, 0.5],
+        random_choice_severity = pd.Series(self.rng.choice(['mild', 'moderate', 'severe'], p=[0.33, 0.33, 0.34],
                                                            size=len(anaemia.loc[anaemia])),
                                            index=anaemia.loc[anaemia].index)
 
@@ -1152,6 +1129,12 @@ class PregnancySupervisor(Module):
 
         else:
             logger.debug(key='message', data=f'Mother {individual_id} will not seek care following pregnancy loss')
+
+    def property_reset(self, individual_id):
+        df = self.sim.population.props
+
+        df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
+        df.at[individual_id, 'ps_htn_disorders'] = 'none'
 
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
