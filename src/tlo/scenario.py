@@ -26,7 +26,7 @@ from pathlib import Path
 
 import numpy as np
 
-from tlo import logging, Simulation
+from tlo import Simulation, logging
 from tlo.analysis.utils import parse_log_file
 
 logger = logging.getLogger(__name__)

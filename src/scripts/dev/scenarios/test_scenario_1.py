@@ -1,8 +1,16 @@
 import numpy as np
 
 from tlo import Date, logging
-from tlo.methods import demography, enhanced_lifestyle, healthsystem, symptommanager, healthseekingbehaviour, \
-    contraception, labour, pregnancy_supervisor
+from tlo.methods import (
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthseekingbehaviour,
+    healthsystem,
+    labour,
+    pregnancy_supervisor,
+    symptommanager,
+)
 from tlo.scenario import BaseScenario
 
 
