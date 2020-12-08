@@ -5,12 +5,11 @@ by subclassing BaseScenario and specifying the scenario options therein. You can
 in various ways in the scenario. See the BaseScenario class for more information.
 
 The subclass of BaseScenario is then used to create "draws", which can be considered a fully-specified configuration
-of the scenario.
+of the scenario, or a parameter draw.
 
-Each "draw" is run one or more times, and each run is called a "sample". A sample runs the TLOmodule simulation once.
-Each sample of draw has a different seed but is otherwise identical. Because each sample has its own simulation seed,
-introducing randomness into each sample's run. A collection of samples run for a given draw describes the random
-variation in the simulation.
+Each "draw" is "run" one or more times - run is a single execution of the TLOmodule simulation. Each run of a draw has
+a different seed but is otherwise identical. Each run has its own simulation seed, introducing randomness into each
+simulation. A collection of runs for a given draw describes the random variation in the simulation.
 
 In summary:
 
@@ -18,8 +17,8 @@ In summary:
 population size, logging setup and registered modules. Optionally, you can also override parameters of modules.
 * A _draw_ is a realisation of a scenario configuration. A scenario can have one or more draws. Draws are uninteresting
 unless you are overriding parameters. If you do not override any model parameters, you would only have one draw.
-* A _sample_ is the result of running the simulation using a specific configuration. Each draw would run one or more
-samples. Each sample for the same draw would have identical configuration except the simulation seed.
+* A _run_ is the result of running the simulation using a specific configuration. Each draw would run one or more
+times. Each run for the same draw would have identical configuration except the simulation seed.
 """
 import json
 import pickle
@@ -54,7 +53,7 @@ class BaseScenario:
         self.rng = None
         self.resources = Path("./resources")
         self.number_of_draws = 1
-        self.samples_per_draw = 1
+        self.runs_per_draw = 1
         self.scenario_path = None
 
     def log_configuration(self, **kwargs):
@@ -111,14 +110,13 @@ class BaseScenario:
         return None
 
     def save_draws(self, **kwargs):
-        generator = DrawGenerator(self, self.number_of_draws, self.samples_per_draw)
+        generator = DrawGenerator(self, self.number_of_draws, self.runs_per_draw)
         output_path = self.scenario_path.parent / f"{self.scenario_path.stem}_draws.json"
         # assert not os.path.exists(output_path), f'Cannot save run config to {output_path} - file already exists'
         config = generator.get_run_config(self.scenario_path)
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 config[k] = v
-        print(config)
         generator.save_config(config, output_path)
         return output_path
 
@@ -153,18 +151,18 @@ class ScenarioLoader:
 
 class DrawGenerator:
     """Creates and saves a JSON representation of draws from a scenario."""
-    def __init__(self, scenario_class, number_of_draws, samples_per_draw):
+    def __init__(self, scenario_class, number_of_draws, runs_per_draw):
         self.scenario = scenario_class
 
         assert self.scenario.seed is not None, "Must set a seed for the scenario. Add `self.seed = <integer>`"
         self.scenario.rng = np.random.RandomState(seed=self.scenario.seed)
         self.number_of_draws = number_of_draws
-        self.samples_per_draw = samples_per_draw
+        self.runs_per_draw = runs_per_draw
         self.draws = self.setup_draws()
 
     def setup_draws(self):
         assert self.scenario.number_of_draws > 0, "Number of draws must be greater than one"
-        assert self.scenario.samples_per_draw > 0, "Number of samples/draw must be greater than 0"
+        assert self.scenario.runs_per_draw > 0, "Number of samples/draw must be greater than 0"
         if self.scenario.draw_parameters(1, self.scenario.rng) is None:
             assert self.scenario.number_of_draws == 1, "Number of draws should equal one if no variable parameters"
         return [self.get_draw(d) for d in range(0, self.scenario.number_of_draws)]
@@ -180,7 +178,7 @@ class DrawGenerator:
         return {
             "scenario_script_path": str(scenario_path),
             "scenario_seed": self.scenario.seed,
-            "samples_per_draw": self.samples_per_draw,
+            "runs_per_draw": self.runs_per_draw,
             "draws": self.draws,
         }
 
@@ -196,15 +194,15 @@ class SampleRunner:
             self.run_config = json.load(f)
         self.scenario = ScenarioLoader(self.run_config["scenario_script_path"]).get_scenario()
         logger.info(key="message", data=f"Loaded scenario using {run_configuration_path}")
-        logger.info(key="message", data=f"Found {self.number_of_draws} draws; {self.samples_per_draw} samples/draw")
+        logger.info(key="message", data=f"Found {self.number_of_draws} draws; {self.runs_per_draw} runs/draw")
 
     @property
     def number_of_draws(self):
         return len(self.run_config["draws"])
 
     @property
-    def samples_per_draw(self):
-        return self.run_config["samples_per_draw"]
+    def runs_per_draw(self):
+        return self.run_config["runs_per_draw"]
 
     def get_draw(self, draw_number):
         total = self.number_of_draws
@@ -212,12 +210,12 @@ class SampleRunner:
         return self.run_config["draws"][draw_number]
 
     def get_samples_for_draw(self, draw):
-        for sample_number in range(0, self.run_config["samples_per_draw"]):
+        for sample_number in range(0, self.run_config["runs_per_draw"]):
             yield self.get_sample(draw, sample_number)
 
     def get_sample(self, draw, sample_number):
-        assert sample_number < self.scenario.samples_per_draw, \
-            f"Cannot get sample {sample_number}; samples/draw={self.scenario.samples_per_draw}"
+        assert sample_number < self.scenario.runs_per_draw, \
+            f"Cannot get sample {sample_number}; samples/draw={self.scenario.runs_per_draw}"
         sample = draw.copy()
         sample["sample_number"] = sample_number
 
