@@ -1,6 +1,6 @@
 """
 Contraception module covering baseline fertility, contraception methods use, failure (pregnancy),
-Switching contraceptive methods, and discontiuation rates by age
+Switching contraceptive methods, and discontinuation rates by age
 please see Dropbox/Thanzi la Onse/05 - Resources/Model design/Contraception-Pregnancy.pdf
 for conceptual diagram
 """
@@ -9,8 +9,10 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, IndividualScopeEventMixin, RegularEvent
 from tlo.util import transition_states
+from tlo.methods.healthsystem import HSI_Event
+from tlo.methods import Metadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -19,7 +21,7 @@ logger.setLevel(logging.INFO)
 class Contraception(Module):
     """
     Contraception module covering baseline contraception methods use, failure (pregnancy),
-    Switching contraceptive methods, and discontiuation rates by age
+    Switching contraceptive methods, and discontinuation rates by age
     please see Dropbox/Thanzi la Onse/05 - Resources/Programming Notes/Contraception-Pregnancy.pdf
     for conceptual diagram (lucid chart)
     """
@@ -29,7 +31,8 @@ class Contraception(Module):
         self.resourcefilepath = resourcefilepath
 
     # Declare Metadata
-    METADATA = {}
+    METADATA = {Metadata.DISEASE_MODULE,
+                Metadata.USES_HEALTHSYSTEM}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -257,6 +260,7 @@ class Contraception(Module):
                     data=post_birth_contraception_summary,
                     description='post birth_contraception')
 
+
 class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
     """
     Switching contraception status for population
@@ -326,12 +330,19 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
 
             # only update entries for all those now using a contraceptive
             df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
+            # TODO: health system resource use will come in here - HSI at end of code below
+            contraception_event = HSI_Contraception(
+                self, person_id=now_using_co)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(contraception_event,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
 
             for woman in now_using_co:
                 start_contraception_summary = {
-                'woman_index': woman,
-                'age': df.at[woman, 'age_years'],
-                'co_contraception': df.at[woman, 'co_contraception']
+                    'woman_index': woman,
+                    'age': df.at[woman, 'age_years'],
+                    'co_contraception': df.at[woman, 'co_contraception']
                 }
 
                 logger.info(key='start_contraception',
@@ -409,6 +420,7 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
                 logger.info(key='stop_contraception',
                             data=stop_contraception_summary,
                             description='stop_contraception')
+
 
 class Fail(RegularEvent, PopulationScopeEventMixin):
     """
@@ -593,3 +605,70 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='pregnancy',
                     data=pregnancy_summary,
                     description='pregnancy')
+
+
+class HSI_Contraception(HSI_Event, IndividualScopeEventMixin):  # or do as PopulationScopeEventMixin ?
+    """"""
+###
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        # assert isinstance(module, contraception)  this is in Joe's code but I have no reference to contraception
+
+        self.TREATMENT_ID = 'Contraception'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        woman = df.loc[person_id]
+
+        if not woman.is_alive:
+            return
+
+        if ~df.co_contraception.isin(['not_using']):
+            pkg_code_contraception = pd.unique(consumables.loc[
+                                         consumables['Intervention_Pkg']
+                                         == 'Other contraceptives drugs/supplies to service a client',
+                                         'Intervention_Pkg_Code'])[0]
+
+            consumables_needed = {'Intervention_Package_Code': {pkg_code_contraception: 1}, 'Item_Code': {}}
+
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint=consumables_needed)
+
+            if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_contraception]:
+                df.at[person_id, 'contraception_received'] = True
+            #    contraception_received needs to be a Property of the module and set at
+            #    initiation and on_birth if used - though how is this different to the co_contraception
+            #      property i.e. is it really needed? it would only be useful to keep track of HSI use,
+            #      which could be kept track of directly
+
+            # else:
+            #    logger.debug(key='message', data=f'woman {person_id} was unable to receive contraception '
+            #                                     f'due to limited resources')
+
+            # self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child',
+            #                                                               individual_id=person_id)
+
+        # repeat for each contraceptive
+        if df.co_contraception.isin(['male_condom']):
+            pkg_code_contraception = pd.unique(consumables.loc[
+                                         consumables['Intervention_Pkg']
+                                         == 'Male condom',
+                                         'Intervention_Pkg_Code'])[0]
+
+            consumables_needed = {'Intervention_Package_Code': {pkg_code_contraception: 1}, 'Item_Code': {}}
+
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint=consumables_needed)
+
+            if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_contraception]:
+                df.at[person_id, 'male_condom_received'] = True
+            #    male_condom_received needs to be a Property of the module and set at
+            #    initiation and on_birth if used - though how is this different to the co_contraception
+            #      property i.e. is it really needed? it would only be useful to keep track of HSI use,
+            #      which could be kept track of directly
