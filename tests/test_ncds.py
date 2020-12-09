@@ -39,7 +39,7 @@ def routine_checks(sim):
     # Check types of columns
     df = sim.population.props
     orig = sim.population.new_row
-    # assert (df.dtypes == orig.dtypes).all()
+    assert (df.dtypes == orig.dtypes).all()
 
     # check that someone has had onset of each condition
 
@@ -58,13 +58,13 @@ def routine_checks(sim):
 
     # check that someone dies of each condition
 
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_diabetes').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_hypertension').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_depression').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_chronic_lower_back_pain').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_chronic_ischemic_hd').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_chronic_kidney_disease').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('nc_cancers').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('diabetes').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('hypertension').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('depression').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_lower_back_pain').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_ischemic_hd').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_kidney_disease').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('cancers').any()
 
 
 def test_basic_run():
