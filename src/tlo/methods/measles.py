@@ -197,9 +197,11 @@ class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
         # children under 6 months protected by maternal immunity
         # get individual levels of protection due to vaccine
         protected_by_vaccine = pd.Series(1, index=df.index)  # all fully susceptible
-        protected_by_vaccine.loc[~df.is_alive] = 0  # not susceptible
-        protected_by_vaccine.loc[(df.va_measles == 1)] *= (1 - p["vaccine_efficacy_1"])  # partially susceptible
-        protected_by_vaccine.loc[(df.va_measles > 1)] *= (1 - p["vaccine_efficacy_2"])  # partially susceptible
+
+        if "Epi" in self.sim.modules:
+            protected_by_vaccine.loc[~df.is_alive] = 0  # not susceptible
+            protected_by_vaccine.loc[(df.va_measles == 1)] *= (1 - p["vaccine_efficacy_1"])  # partially susceptible
+            protected_by_vaccine.loc[(df.va_measles > 1)] *= (1 - p["vaccine_efficacy_2"])  # partially susceptible
 
         new_inf = df.index[~df.me_has_measles & (df.age_exact_years >= 0.5) &
                            (rng.random_sample(size=len(df)) < (trans_prob * protected_by_vaccine))]
@@ -328,7 +330,7 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
 
         # reduction in risk of death if being treated for measles complications
         # check still infected (symptoms not resolved)
-        if df.at[person_id, "me_has_measles"] & (self.module.rand() < reduction_in_death_risk):
+        if df.at[person_id, "me_has_measles"] & (self.module.rng.rand() < reduction_in_death_risk):
 
             logger.debug(key="MeaslesDeathEvent",
                          data=f"MeaslesDeathEvent: scheduling death for {person_id} on {self.sim.date}")

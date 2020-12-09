@@ -34,16 +34,17 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
-popsize = 100
+end_date = Date(2011, 12, 31)
+popsize = 50000
 
 
+# don't register epi as want population with no vaccination
 def run_sim(service_availability=[]):
     # Establish the simulation object and set the seed
     # seed is not set - each simulation run gets a random seed
     sim = Simulation(start_date=start_date, seed=32,
                      log_config={"filename": "LogFile",
-                                 'custom_levels': {"*": logging.WARNING, "tlo.methods.measles": logging.INFO,
+                                 'custom_levels': {"*": logging.WARNING, "tlo.methods.measles": logging.DEBUG,
                                                    "tlo.methods.demography": logging.INFO}
                                  }
                      )
@@ -58,7 +59,7 @@ def run_sim(service_availability=[]):
             ignore_cons_constraints=True,
             ignore_priority=True,
             capabilities_coefficient=1.0,
-            disable=True,
+            disable=False,
         ),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -70,73 +71,56 @@ def run_sim(service_availability=[]):
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        epi.Epi(resourcefilepath=resourcefilepath),
+        # epi.Epi(resourcefilepath=resourcefilepath),
         measles.Measles(resourcefilepath=resourcefilepath),
     )
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
 
-    # change seeding event prob to ensure outbreak can spread
-    sim.modules['Covid'].parameters['prob_initial_infection'] = 0.001
-    sim.modules['Covid'].parameters['beta'] = 0.008
-
     sim.simulate(end_date=end_date)
 
     return sim.log_filepath
-
-
 
 
 def get_summary_stats(logfile):
     output = parse_log_file(logfile)
 
     # incidence
-    prev_and_inc_over_time = output['tlo.methods.covid']['summary']
-    prev_and_inc_over_time = prev_and_inc_over_time.set_index('date')
-    incidence = prev_and_inc_over_time['NumberInfectedMonth']
-    inc_age = output['tlo.methods.covid']['inc_by_age']
+    measles_output = output["tlo.methods.measles"]["incidence"]
+    measles_output = measles_output.set_index('date')
+    measles_inc = measles_output["inc_1000py"]
 
     # deaths
-    # deaths = output['tlo.methods.demography']['death'].copy()
-    # deaths = deaths.set_index('date')
-    # # limit to deaths due to covid
-    # to_drop = (deaths.cause != 'Covid')
-    # deaths = deaths.drop(index=to_drop[to_drop].index)
-    # # count by year:
-    # deaths['year'] = deaths.index.year
-    # tot_covid_deaths = deaths.groupby(by=['year']).size()
-
-    # count by week:
-    # deaths['week'] = deaths.index.week
-    # tot_covid_deaths = deaths.groupby(by=['week']).size()
-
     deaths = output['tlo.methods.demography']['death'].copy()
-    to_drop = (deaths.cause != 'Covid')
+    deaths = deaths.set_index('date')
+    # limit to deaths due to measles
+    to_drop = (deaths.cause != 'measles')
     deaths = deaths.drop(index=to_drop[to_drop].index)
-    # work out time since outbreak began
-    deaths['days'] = (deaths['date'] - Date(2010, 1, 1)).dt.days
-    # count by days since outbreak start
-    tot_covid_deaths = deaths.groupby(by=['days']).size()
+    # count by month:
+    deaths['month'] = deaths.index.month
+    measles_deaths = deaths.groupby(by=['month']).size()
 
     return {
-        'incidence': incidence,
-        'deaths': tot_covid_deaths,
+        'incidence': measles_inc,
+        'deaths': measles_deaths,
     }
 
 
-
+# ------------------------------------- MODEL OUTPUTS  ------------------------------------- #
 # run 1
 # run baseline with no vaccination to allow cases to occur
 # disable all hsi to prevent any measles treatment
+logfile_no_hs = run_sim(service_availability=[])
 
 # run 2
 # no vaccination
 # allow hsi for measles treatment
+logfile_hs = run_sim(service_availability=['*'])
 
-# ------------------------------------- MODEL OUTPUTS  ------------------------------------- #
+results_no_hs = get_summary_stats(logfile_no_hs)
+results_hs = get_summary_stats(logfile_hs)
 
-model_measles = log_df["tlo.methods.measles"]["incidence"]["inc_1000py"]
-model_date = log_df["tlo.methods.measles"]["incidence"]["date"]
 # ------------------------------------- PLOTS  ------------------------------------- #
-
+results_no_hs['deaths'].sum()
+results_hs['deaths'].sum()
