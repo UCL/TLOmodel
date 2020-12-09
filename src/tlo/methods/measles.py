@@ -254,7 +254,6 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
 
             # random sample whether person will have symptom
             if rng.random_sample(size=1) < specific_symptom_prob:
-
                 # schedule symptom onset
                 self.sim.modules["SymptomManager"].change_symptom(
                     person_id=person_id,
@@ -325,13 +324,15 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
         reduction_in_death_risk = 1
 
         if df.at[person_id, "me_on_treatment"]:
-            reduction_in_death_risk = self.module.parameters["risk_death_on_treatment"]
+            reduction_in_death_risk = self.module.rng.uniform(low=0.4, high=0.8, size=1)
 
         # reduction in risk of death if being treated for measles complications
-        if self.module.rng.rand() < reduction_in_death_risk:
+        # check still infected (symptoms not resolved)
+        if df.at[person_id, "me_has_measles"] & (self.module.rand() < reduction_in_death_risk):
 
             logger.debug(key="MeaslesDeathEvent",
                          data=f"MeaslesDeathEvent: scheduling death for {person_id} on {self.sim.date}")
+
             self.sim.schedule_event(
                 InstantaneousDeath(
                     self.module, person_id, cause=self.cause), self.sim.date)
@@ -420,7 +421,7 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
     def did_not_run(self):
         logger.debug(key="HSI_Measles_Treatment",
                      data="HSI_Measles_Treatment: did not run"
-        )
+                     )
         pass
 
 
@@ -524,7 +525,8 @@ class MeaslesLoggingAnnualEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='pop_age_range', data=age_count.to_dict(), description="population sizes by age range")
 
         # get the numbers infected by age group
-        infected_age_counts = df[(df.me_date_measles > (now - DateOffset(months=self.repeat)))].groupby('age_range').size()
+        infected_age_counts = df[(df.me_date_measles > (now - DateOffset(months=self.repeat)))].groupby(
+            'age_range').size()
         total_infected = len(
             df.loc[(df.me_date_measles > (now - DateOffset(months=self.repeat)))]
         )
@@ -533,4 +535,5 @@ class MeaslesLoggingAnnualEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             prop_infected_by_age = infected_age_counts  # just output the series of zeros by age group
 
-        logger.info(key='measles_incidence_age_range', data=prop_infected_by_age.to_dict(), description="measles incidence by age group")
+        logger.info(key='measles_incidence_age_range', data=prop_infected_by_age.to_dict(),
+                    description="measles incidence by age group")
