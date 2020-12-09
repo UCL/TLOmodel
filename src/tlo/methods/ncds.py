@@ -402,8 +402,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # onset:
             eligible_population = df.is_alive & ~df[condition]
-            acquires_condition = self.module.lms_onset[condition].predict(df.loc[df.is_alive], rng,
-                                                                          eligible_population=eligible_population)
+            acquires_condition = self.module.lms_onset[condition].predict(df.loc[eligible_population], rng)
             idx_acquires_condition = acquires_condition[acquires_condition].index
             df.loc[idx_acquires_condition, condition] = True
 
@@ -424,21 +423,23 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # -------------------- DEATH FROM NCD CONDITION ---------------------------------------
             # There is a risk of death for those who have an NCD condition. Death is assumed to happen instantly.
 
+            # Strip leading 'nc_' from condition name
+            condition_name = condition.replace('nc_', '')
+
             condition_idx = df.index[df.is_alive & (df[f'{condition}'])]
             selected_to_die = condition_idx[
                 rng.random_sample(size=len(condition_idx)) < self.module.parameters[f'r_death_{condition}']]
 
             for person_id in selected_to_die:
                 self.sim.schedule_event(
-                    InstantaneousDeath(self.module, person_id, f"{condition}"), self.sim.date
+                    InstantaneousDeath(self.module, person_id, f"{condition_name}"), self.sim.date
                 )
 
         # Determine occurrence of events
         for event in self.module.events:
 
             eligible_population_for_event = df.is_alive
-            has_event = self.module.event_occurrence[event].predict(df.loc[df.is_alive], rng,
-                                                                    eligible_population_for_event=eligible_population_for_event)
+            has_event = self.module.event_occurrence[event].predict(df.loc[eligible_population], rng)
             idx_has_event = has_event[has_event].index
 
             for person_id in idx_has_event:
@@ -541,152 +542,43 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Prevalence of conditions broken down by sex and age
 
-        logger.info(
-            key='diabetes_prevalence_by_age_and_sex',
-            description='current fraction of the population that are classified as having diabetes, broken down by sex and age',
-            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_diabetes',
-                                                                                 ['sex', 'age_range'])}
-        )
+        for condition in self.module.conditions:
 
-        logger.info(
-            key='hypertension_prevalence_by_age_and_sex',
-            description='current fraction of the population that are classified as having hypertension, broken down by sex and age',
-            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_hypertension',
-                                                                                 ['sex', 'age_range'])}
-        )
+            # Strip leading 'nc_' from condition name
+            condition_name = condition.replace('nc_', '')
 
-        logger.info(
-            key='depression_prevalence_by_age_and_sex',
-            description='current fraction of the population that are classified as having depression, broken down by sex and age',
-            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_depression',
-                                                                                 ['sex', 'age_range'])}
-        )
+            # Prevalence of conditions broken down by sex and age
+            logger.info(
+                key=f'{condition_name}_prevalence_by_age_and_sex',
+                description='current fraction of the population classified as having condition, by sex and age',
+                data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, f'{condition}',
+                                                                                     ['sex', 'age_range'])}
+            )
 
-        logger.info(
-            key='chronic_lower_back_pain_prevalence_by_age_and_sex',
-            description='current fraction of the population that are classified as having chronic lower back pain, broken down by sex and age',
-            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_chronic_lower_back_pain',
-                                                                                 ['sex', 'age_range'])}
-        )
+            # Prevalence of conditions by adults aged 20 or older
+            adult_prevalence = {
+                'prevalence': len(df[df[f'{condition}'] & df.is_alive & (df.age_years >= 20)]) / len(
+                    df[df.is_alive & (df.age_years >= 20)])}
 
-        logger.info(
-            key='chronic_kidney_disease_prevalence_by_age_and_sex',
-            description='current fraction of the population that are classified as having chronic kidney disease, broken down by sex and age',
-            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_chronic_kidney_disease',
-                                                                                 ['sex', 'age_range'])}
-        )
+            logger.info(
+                key=f'{condition_name}_prevalence',
+                description='current fraction of the adult population classified as having condition',
+                data=adult_prevalence
+            )
 
-        logger.info(
-            key='cihd_prevalence_by_age_and_sex',
-            description='current fraction of the population that are classified as having CIHD, broken down by sex and age',
-            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_chronic_ischemic_hd',
-                                                                                 ['sex', 'age_range'])}
-        )
-
-        diabetes_prev = {
-            'prevalence': len(df[df.nc_diabetes & df.is_alive & (df.age_years.between(15, 120))]) / len(
-                df[df.is_alive & (df.age_years.between(15, 120))])}
-
-        logger.info(
-            key='diabetes_prevalence',
-            description='current fraction of the population that are classified as having diabetes',
-            data=diabetes_prev
-        )
-
-        hypertension_prev = {
-            'prevalence': len(df[df.nc_hypertension & df.is_alive & (df.age_years.between(15, 120))]) / len(
-                df[df.is_alive & (df.age_years.between(15, 120))])}
-
-        logger.info(
-            key='hypertension_prevalence',
-            description='current fraction of the population that are classified as having hypertension',
-            data=hypertension_prev
-        )
-
-        depression_prev = {
-            'prevalence': len(df[df.nc_depression & df.is_alive & (df.age_years.between(15, 120))]) / len(
-                df[df.is_alive & (df.age_years.between(15, 120))])}
-
-        logger.info(
-            key='depression_prevalence',
-            description='current fraction of the population that are classified as having depression',
-            data=depression_prev
-        )
-
-        chronic_lower_back_pain_prev = {
-            'prevalence': len(df[df.nc_chronic_lower_back_pain & df.is_alive & (df.age_years.between(15, 120))]) / len(
-                df[df.is_alive & (df.age_years.between(15, 120))])}
-
-        logger.info(
-            key='chronic_lower_back_pain_prevalence',
-            description='current fraction of the population that are classified as having chronic lower back pain',
-            data=chronic_lower_back_pain_prev
-        )
-
-        chronic_kidney_disease_prev = {
-            'prevalence': len(df[df.nc_chronic_kidney_disease & df.is_alive & (df.age_years.between(15, 120))]) / len(
-                df[df.is_alive & (df.age_years.between(15, 120))])}
-
-        logger.info(
-            key='chronic_kidney_disease_prevalence',
-            description='current fraction of the population that are classified as having chronic lower back pain',
-            data=chronic_kidney_disease_prev
-        )
-
-        cihd_prev = {
-            'prevalence': len(df[df.nc_chronic_ischemic_hd & df.is_alive & (df.age_years.between(15, 120))]) / len(
-                df[df.is_alive & (df.age_years.between(15, 120))])}
-
-        logger.info(
-            key='cihd_prevalence',
-            description='current fraction of the population that are classified as having CIHD',
-            data=cihd_prev
-        )
-
-        # prevalence of multi-morbidities
-
-        n_conditions_0 = (df.is_alive & (df.age_years.between(15, 120)) & (~df.nc_hypertension & ~df.nc_depression &
-                                                                          ~df.nc_chronic_ischemic_hd))
-        n_conditions_1a = (df.is_alive & (df.age_years.between(15, 120)) & (df.nc_hypertension & ~df.nc_depression &
-                                                                          ~df.nc_chronic_ischemic_hd))
-        n_conditions_1b = (df.is_alive & (df.age_years.between(15, 120)) & (~df.nc_hypertension & df.nc_depression & ~df.nc_chronic_ischemic_hd))
-        n_conditions_1c = (df.is_alive & (df.age_years.between(15, 120)) & (~df.nc_hypertension & ~df.nc_depression & df.nc_chronic_ischemic_hd)
-                          )
-        n_conditions_2a = (df.is_alive & (df.age_years.between(15, 120)) & (df.nc_hypertension & df.nc_depression &
-                                                                           ~df.nc_chronic_ischemic_hd))
-        n_conditions_2b = (df.is_alive & (df.age_years.between(15, 120)) & (df.nc_hypertension & ~df.nc_depression & df.nc_chronic_ischemic_hd))
-        n_conditions_2c = (df.is_alive & (df.age_years.between(15, 120)) & (~df.nc_hypertension & df.nc_depression & df.nc_chronic_ischemic_hd)
-                          )
-        n_conditions_3 = (df.is_alive & (df.age_years.between(15, 120)) & (df.nc_hypertension & df.nc_depression &
-                                                                           df.nc_chronic_ischemic_hd))
-
-        mm_0 = len(
-                df[n_conditions_0])
-        mm_1a = len(
-                df[n_conditions_1a])
-        mm_1b = len(
-            df[n_conditions_1b])
-        mm_1c = len(
-            df[n_conditions_1c])
-        mm_2a = len(
-            df[n_conditions_2a])
-        mm_2b = len(
-            df[n_conditions_2b])
-        mm_2c = len(
-            df[n_conditions_2c])
-        mm_3 = len(
-            df[n_conditions_3])
-        denom = len(df[(df.is_alive & (df.age_years.between(15, 120)))])
-
-        multi_morbidity_summary = {
-            'mm_prev_0': mm_0 / denom,
-            'mm_prev_1': (mm_1a + mm_1b + mm_1c) / denom,
-            'mm_prev_2': (mm_2a + mm_2b + mm_2c) / denom,
-            'mm_prev_3': mm_3 / denom
-        }
+        # Counter for number of co-morbidities
+        df = population.props
+        # restrict df to alive and aged >=20
+        df_comorbidities = df[df.is_alive & (df.age_years >= 20)]
+        # restrict df to list of conditions
+        df_comorbidities = df_comorbidities[df_comorbidities.columns[df_comorbidities.columns.isin(self.module.conditions)]]
+        # calculate number of conditions by row
+        df_comorbidities['n_conditions'] = df_comorbidities.sum(axis=1)
+        n_comorbidities = df_comorbidities['n_conditions'].value_counts()
+        prop_comorbidities = n_comorbidities / len(df[(df.is_alive & (df.age_years >=20))])
 
         logger.info(key='mm_prevalence',
-                    data=multi_morbidity_summary,
+                    data=prop_comorbidities,
                     description='annual summary of multi-morbidities')
 
         # NB. logging like this as cannot do directly as a dict [logger requires key in a dict to be strings]
