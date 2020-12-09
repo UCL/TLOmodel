@@ -224,6 +224,8 @@ class NewbornOutcomes(Module):
                                           categories=['none', 'non_exclusive', 'exclusive']),
         'nb_kangaroo_mother_care': Property(Types.BOOL, 'whether this neonate received kangaroo mother care following '
                                                         'birth'),
+        'nb_clean_birth': Property(Types.BOOL, 'whether this neonate received clean birth practices at deliver'),
+        'nb_received_cord_care': Property(Types.BOOL, 'whether this neonate received chlorhexidine cord care'),
         'nb_death_after_birth': Property(Types.BOOL, 'whether this child has died following complications after birth'),
         'nb_death_after_birth_date': Property(Types.DATE, 'date on which the child died after birth'),
     }
@@ -274,8 +276,8 @@ class NewbornOutcomes(Module):
             'early_onset_neonatal_sepsis': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_early_onset_neonatal_sepsis_day_0'],
-                Predictor('clean_birth', external=True).when('True', params['treatment_effect_clean_birth']),
-                Predictor('cord_care_given', external=True).when('True', params['treatment_effect_cord_care']),
+                Predictor('nb_clean_birth').when('True', params['treatment_effect_clean_birth']),
+                Predictor('nb_received_cord_care').when('True', params['treatment_effect_cord_care']),
                 Predictor('nb_early_init_breastfeeding').when(True, params['treatment_effect_early_init_bf'])),
 
 
@@ -375,6 +377,8 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_early_init_breastfeeding'] = False
         df.loc[df.is_alive, 'nb_breastfeeding_type'] = 'none'
         df.loc[df.is_alive, 'nb_kangaroo_mother_care'] = False
+        df.loc[df.is_alive, 'nb_clean_birth'] = False
+        df.loc[df.is_alive, 'nb_received_cord_care'] = False
         df.loc[df.is_alive, 'nb_death_after_birth'] = False
         df.loc[df.is_alive, 'nb_death_after_birth_date'] = pd.NaT
 
@@ -458,15 +462,10 @@ class NewbornOutcomes(Module):
         person = df.loc[[person_id]]
 
         # Here we define all the possible external variables used in the linear model
-        cord_care_given = nci[person_id]['cord_care']
-        clean_birth = nci[person_id]['clean_birth']
         steroid_status = mni[mother_id]['corticosteroids_given']
 
         # We return a BOOLEAN
-        return self.rng.random_sample(size=1) < eq.predict(person,
-                                                           cord_care_given=cord_care_given,
-                                                           clean_birth=clean_birth,
-                                                           received_corticosteroids=steroid_status,
+        return self.rng.random_sample(size=1) < eq.predict(person, received_corticosteroids=steroid_status,
                                                            )[person_id]
 
     # ========================================= OUTCOME FUNCTIONS  ===================================================
@@ -795,11 +794,11 @@ class NewbornOutcomes(Module):
         # First we check if clean practices were observed during this babies birth, if so we store as a property within
         # the nci dictionary. It is used to reduce incidence of sepsis (consumables counted in labour)
         if mni[mother_id]['clean_birth_practices']:
-            nci[person_id]['clean_birth'] = True
+            df.at[person_id, 'nb_clean_birth'] = True
 
         # -------------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------
         # Next we determine if cord care with chlorhexidine is applied (consumables are counted during labour)
-        nci[person_id]['cord_care'] = True
+        df.at[person_id, 'nb_cord_care_received'] = True
 
         # ---------------------------------- VITAMIN D AND EYE CARE -----------------------------------------------
         # TODO: Currently, these interventions do not effect incidence or outcomes. To be reviewed.
@@ -1096,6 +1095,8 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_early_init_breastfeeding'] = False
         df.at[child_id, 'nb_breastfeeding_type'] = 'none'
         df.at[child_id, 'nb_kangaroo_mother_care'] = False
+        df.at[child_id, 'nb_clean_birth'] = False
+        df.at[child_id, 'nb_received_cord_care'] = False
         df.at[child_id, 'nb_death_after_birth'] = False
         df.at[child_id, 'nb_death_after_birth_date'] = pd.NaT
 
@@ -1123,8 +1124,6 @@ class NewbornOutcomes(Module):
 
             #  Next we populate the newborn info dictionary with relevant parameters
             nci[child_id] = {'ga_at_birth': df.at[mother_id, 'ps_gestational_age_in_weeks'],
-                             'cord_care': False,
-                             'clean_birth': False,
                              'vit_k': False,
                              'tetra_eye_d': False,
                              'proph_abx': False,
