@@ -121,6 +121,32 @@ logfile_hs = run_sim(service_availability=['*'])
 results_no_hs = get_summary_stats(logfile_no_hs)
 results_hs = get_summary_stats(logfile_hs)
 
-# ------------------------------------- PLOTS  ------------------------------------- #
 results_no_hs['deaths'].sum()
 results_hs['deaths'].sum()
+# %%  PLOTS
+
+# incidence
+plt.plot(results_no_hs['incidence'])
+plt.plot(results_hs['incidence'])
+title_str = "Monthly measles incidence"
+plt.title(title_str)
+plt.xlabel("Date")
+plt.xticks(rotation=90)
+plt.ylabel("Case numbers")
+plt.legend(['no health system', 'health system'])
+plt.tight_layout()
+plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
+plt.show()
+
+# mortality
+plt.plot(results_no_hs['deaths'])
+plt.plot(results_hs['deaths'])
+title_str = "Monthly number of measles deaths"
+plt.title(title_str)
+plt.xlabel("Date")
+plt.xticks(rotation=90)
+plt.ylabel("Number of deaths")
+plt.legend(['no health system', 'health system'])
+plt.tight_layout()
+plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
+plt.show()
