@@ -1322,6 +1322,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         women_month_6 = self.module.pregnancy_disease_tracker['women_at_6_months']
 
         dict_for_output = {'repro_women': total_women_reproductive_age,
+                           'crude_deaths': antenatal_maternal_deaths,
                            'antenatal_mmr': (antenatal_maternal_deaths/total_births_last_year) * 100000,
                            'crude_antenatal_sb': antepartum_stillbirths,
                            'antenatal_sbr': (antepartum_stillbirths/total_births_last_year) * 100,

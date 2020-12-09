@@ -839,8 +839,7 @@ class PostnatalSupervisor(Module):
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
         for person in care_seeking.loc[~care_seeking].index:
-            self.sim.schedule_event(LatePostpartumDeathEvent(self, person, mother_or_child='mother'),
-                                    self.sim.date)
+            self.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother', individual_id=person)
 
     def set_postnatal_complications_neonates(self, upper_and_lower_day_limits):
         """
@@ -875,8 +874,7 @@ class PostnatalSupervisor(Module):
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
         for person in care_seeking.loc[~care_seeking].index:
-            self.sim.schedule_event(LatePostpartumDeathEvent(self, person, mother_or_child='child'),
-                                    self.sim.date)
+            self.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child', individual_id=person)
 
     def assessment_for_maternal_complication_during_pnc(self, individual_id, hsi_event):
         """
@@ -975,8 +973,116 @@ class PostnatalSupervisor(Module):
 
         # ANAEMIA TREATMENT?
 
+    def apply_risk_of_maternal_or_neonatal_death_postnatal(self, mother_or_child, individual_id):
+        """
+
+        :param mother_or_child: Person of interest for the effect of this function - pass 'mother' or 'child' to
+         apply risk of death correctly
+        :param individual_id: individual_id
+        """
+        df = self.sim.population.props
+
+        if mother_or_child == 'mother':
+            mother = df.loc[individual_id]
+        if mother_or_child == 'child':
+            child = df.loc[individual_id]
+        params = self.parameters
+
+        # ================================== MATERNAL DEATH EQUATIONS ==============================================
+        if mother_or_child == 'mother':
+            # Create a variable signifying death, in case of multiple complications contributing to death
+            postnatal_death = False
+
+            # If the mother has had a hemorrhage and hasn't sought care, we calculate her risk of death
+            if mother.pn_postpartum_haem_secondary:
+                risk_of_death = params['pn_linear_equations']['secondary_postpartum_haem_death'].predict(df.loc[[
+                    individual_id]])[individual_id]
+
+                if self.rng.random_sample() < risk_of_death:
+                    postnatal_death = True
+
+                # If she will survive we reset the relevant variable in the data frame
+                else:
+                    df.at[individual_id, 'pn_postpartum_haem_secondary'] = False
+
+            # If the mother is septic and hasn't sought care, we calculate her risk of death
+            if mother.pn_sepsis_late_postpartum:
+                assert (self.postpartum_infections_late.has_any(
+                        [individual_id], 'endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
+                        'other_maternal_infection', first=True))
+
+                risk_of_death = params['pn_linear_equations']['postnatal_sepsis_death'].predict(df.loc[[
+                    individual_id]])[individual_id]
+
+                if self.rng.random_sample() < risk_of_death:
+                    postnatal_death = True
+
+                # If she will survive we reset the relevant variable in the data frame
+                else:
+                    df.at[individual_id, 'pn_sepsis_late_postpartum'] = False
+                    self.postpartum_infections_late.unset(
+                        [individual_id], 'endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
+                        'other_maternal_infection')
+
+            if mother.pn_htn_disorders == 'eclampsia':
+                risk_of_death = params['ps_linear_equations']['eclampsia_death_pn'].predict(
+                            df.loc[[individual_id]])[individual_id]
+
+                if self.rng.random_sample() < risk_of_death:
+                    postnatal_death = True
+                else:
+                    df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
+
+            # If she has died due to either (or both) of these causes, we schedule the DeathEvent
+            if postnatal_death:
+                logger.debug(key='message', data=f'mother {individual_id} has died due to complications of the '
+                                                 f'postnatal period')
+
+                self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
+                                                                      cause='postnatal_week_one'), self.sim.date)
+                self.postnatal_tracker['postnatal_death'] += 1
+
+        # ================================== NEONATAL DEATH EQUATIONS ==============================================
+        if mother_or_child == 'child':
+
+            # Neonates can have either early or late onset sepsis, not both at once- so we use either equation
+            # depending on this neonates current condition
+            if child.pn_sepsis_early_neonatal:
+                risk_of_death = params['pn_linear_equations']['early_onset_neonatal_sepsis_week_1_death'].predict(
+                    df.loc[[individual_id]])[individual_id]
+            elif child.pn_sepsis_late_neonatal:
+                    risk_of_death = params['pn_linear_equations']['late_neonatal_sepsis_death'].predict(df.loc[[
+                        individual_id]])[individual_id]
+
+            if child.pn_sepsis_late_neonatal or child.pn_sepsis_early_neonatal:
+
+                # If this neonate will die then we make the appropriate changes
+                if self.rng.random_sample() < risk_of_death:
+                    logger.debug(key='message', data=f'person {individual_id} has died due to late neonatal sepsis on '
+                                                     f'date {self.sim.date}')
+
+                    self.sim.schedule_event(demography.InstantaneousDeath(
+                        self, individual_id, cause='neonatal_sepsis'), self.sim.date)
+
+                    self.postnatal_tracker['neonatal_death'] += 1
+                    self.postnatal_tracker['neonatal_sepsis_death'] += 1
+
+                # Otherwise we reset the variables in the data frame
+                else:
+                    df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
+                    df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
+
+                    disability_categories = ['none',
+                                             'mild_motor_and_cog',  # Mild motor plus cognitive impairments due to...
+                                             'mild_motor',  # Mild motor impairment due to...
+                                             'moderate_motor',  # Moderate motor impairment due to...
+                                             'severe_motor']  # Severe motor impairment due to...
+                    choice = self.rng.choice
+                    df.at[individual_id, 'pn_neonatal_sepsis_disab'] = choice(disability_categories,
+                                                                              p=params['prob_sepsis_disabilities'])
+
     def maternal_postnatal_care_care_seeking(self, individual_id, recommended_day_next_pnc, next_pnc_visit,
-                                             maternal_pnc):
+                                                 maternal_pnc):
         """
         This function is called by HSI_PostnatalSupervisor_PostnatalCareContact. It determines if a mother
         will return to attend her next PNC visit in the schedule
@@ -1002,133 +1108,6 @@ class PostnatalSupervisor(Module):
                                                                 priority=0,
                                                                 topen=date_next_pnc,
                                                                 tclose=date_next_pnc + DateOffset(days=3))
-
-    def apply_risk_of_postnatal_death_week_one(self, mother_id, child_id):
-        """
-        This function is called by PostnatalWeekOneEvent to calculate risk of death in women and newborns that
-        experience any complications in that week
-        :param mother_id: mother_id
-        :param child_id: child_id
-        """
-        df = self.sim.population.props
-        mother = df.loc[mother_id]
-        child = df.loc[child_id]
-        params = self.parameters
-
-        # ================================== MATERNAL DEATH EQUATIONS ==============================================
-        # Create a variable signifying death, in case of multiple complications contributing to death
-        postnatal_death = False
-
-        # If the mother has had a hemorrhage and hasn't sought care, we calculate her risk of death
-        if mother.pn_postpartum_haem_secondary:
-            risk_of_death = params['pn_linear_equations']['secondary_postpartum_haem_death'].predict(df.loc[[
-                mother_id]])[mother_id]
-
-            if self.rng.random_sample() < risk_of_death:
-                postnatal_death = True
-
-            # If she will survive we reset the relevant variable in the data frame
-            else:
-                df.at[mother_id, 'pn_postpartum_haem_secondary'] = False
-
-        # If the mother is septic and hasn't sought care, we calculate her risk of death
-        if mother.pn_sepsis_late_postpartum:
-            assert (self.postpartum_infections_late.has_any(
-                    [mother_id], 'endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                    'other_maternal_infection', first=True))
-
-            risk_of_death = params['pn_linear_equations']['postnatal_sepsis_death'].predict(df.loc[[
-                mother_id]])[mother_id]
-
-            if self.rng.random_sample() < risk_of_death:
-                postnatal_death = True
-
-            # If she will survive we reset the relevant variable in the data frame
-            else:
-                df.at[mother_id, 'pn_sepsis_late_postpartum'] = False
-                self.postpartum_infections_late.unset(
-                    [mother_id], 'endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                    'other_maternal_infection')
-
-        # If she has died due to either (or both) of these causes, we schedule the DeathEvent
-        if postnatal_death:
-            logger.debug(key='message', data=f'mother {mother_id} has died due to complications of the postnatal '
-                                             f'period')
-
-            self.sim.schedule_event(demography.InstantaneousDeath(self, mother_id,
-                                                                  cause='postnatal_week_one'), self.sim.date)
-            self.postnatal_tracker['postnatal_death'] += 1
-
-        # ================================== NEONATAL DEATH EQUATIONS ==============================================
-        # Neonates can have either early or late onset sepsis, not both at once- so we use either equation depending on
-        # this neonates current condition
-        if child.pn_sepsis_early_neonatal:
-            risk_of_death = params['pn_linear_equations']['early_onset_neonatal_sepsis_week_1_death'].predict(df.loc[[
-                    child_id]])[child_id]
-        elif child.pn_sepsis_late_neonatal:
-                risk_of_death = params['pn_linear_equations']['late_neonatal_sepsis_death'].predict(df.loc[[
-                    child_id]])[child_id]
-
-        if child.pn_sepsis_late_neonatal or child.pn_sepsis_early_neonatal:
-
-            # If this neonate will die then we make the appropriate changes
-            if self.rng.random_sample() < risk_of_death:
-                logger.debug(key='message', data=f'person {child_id} has died due to late neonatal sepsis on '
-                                                 f'date {self.sim.date}')
-
-                self.sim.schedule_event(demography.InstantaneousDeath(
-                    self, child_id, cause='neonatal_sepsis'), self.sim.date)
-
-                self.postnatal_tracker['neonatal_death'] += 1
-                self.postnatal_tracker['neonatal_sepsis_death'] += 1
-
-            # Otherwise we reset the variables in the data frame
-            else:
-                df.at[child_id, 'pn_sepsis_late_neonatal'] = False
-                df.at[child_id, 'pn_sepsis_early_neonatal'] = False
-
-                disability_categories = ['none',
-                                         'mild_motor_and_cog',  # Mild motor plus cognitive impairments due to...
-                                         'mild_motor',  # Mild motor impairment due to...
-                                         'moderate_motor',  # Moderate motor impairment due to...
-                                         'severe_motor']  # Severe motor impairment due to...
-                choice = self.rng.choice
-                df.at[child_id, 'pn_neonatal_sepsis_disab'] = choice(disability_categories,
-                                                                          p=params['prob_sepsis_disabilities'])
-
-    def apply_risk_of_neonatal_death_post_week_one(self, child_id):
-        """
-
-        """
-        df = self.sim.population.props
-        child = df.loc[child_id]
-        params = self.parameters
-
-        if child.pn_sepsis_early_neonatal:
-            risk_of_death = params['pn_linear_equations']['early_onset_neonatal_sepsis_week_1_death'].predict(df.loc[[
-                    child_id]])[child_id]
-        elif child.pn_sepsis_late_neonatal:
-                risk_of_death = params['pn_linear_equations']['late_neonatal_sepsis_death'].predict(df.loc[[
-                    child_id]])[child_id]
-
-        if child.pn_sepsis_late_neonatal or child.pn_sepsis_early_neonatal:
-
-            # If this neonate will die then we make the appropriate changes
-            if self.rng.random_sample() < risk_of_death:
-                logger.debug(key='message', data=f'person {child_id} has died due to late neonatal sepsis on '
-                                                 f'date {self.sim.date}')
-
-                self.sim.schedule_event(demography.InstantaneousDeath(
-                    self, child_id, cause='neonatal_sepsis'), self.sim.date)
-
-                self.postnatal_tracker['neonatal_death'] += 1
-                self.postnatal_tracker['neonatal_sepsis_death'] += 1
-
-            # Otherwise we reset the variables in the data frame
-            else:
-                df.at[child_id, 'pn_sepsis_late_neonatal'] = False
-                df.at[child_id, 'pn_sepsis_early_neonatal'] = False
-
 
 class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PostnatalSupervisorEvent. It runs every week and applies risk of disease onset/resolution to women
@@ -1247,6 +1226,8 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         # died prior to this event- hence repeat checks on is_alive throughout)
         if ~mother.is_alive and ~child.is_alive:
             return
+
+        x='y'
         # ===============================  MATERNAL COMPLICATIONS IN WEEK ONE  =======================================
         #  ------------------------------------- INFECTIONS AND SEPSIS ----------------------------------------------
         # TODO condition on having not already had the same type of infection immediately after birth
@@ -1333,34 +1314,9 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                     prob_matrix['severe_pre_eclamp'] = [0.0, 0.0, 0.0, 0.6, 0.4]
                     prob_matrix['eclampsia'] = [0.0, 0.0, 0.0, 0.0, 1]
 
-                    current_status = df.at[individual_id, 'pn_htn_disorders']
-                    new_status = util.transition_states(current_status, prob_matrix, self.module.rng)
-                    df.at[individual_id, "pn_htn_disorders"] = new_status
-
-                    """
-                    assess_status_change_for_severe_pre_eclampsia = (current_status != "severe_pre_eclamp") & \
-                                                            (new_status == "severe_pre_eclamp")
-
-                    new_onset_severe_pre_eclampsia = assess_status_change_for_severe_pre_eclampsia[
-                        assess_status_change_for_severe_pre_eclampsia]
-
-            # For these women we schedule them to an onset event where they may seek care
-            if not new_onset_severe_pre_eclampsia.empty:
-                logger.debug(key='message',
-                             data='The following women have developed severe pre-eclampsia following their '
-                             f'pregnancy {new_onset_severe_pre_eclampsia.index}')
-
-                for person in new_onset_severe_pre_eclampsia.index:
-                    df.at[person, 'pn_emergency_event_mother'] = True
-
-            assess_status_change_for_eclampsia = (current_status != "eclampsia") & (new_status == "eclampsia")
-            new_onset_eclampsia = assess_status_change_for_eclampsia[assess_status_change_for_eclampsia]
-
-            if not new_onset_eclampsia.empty:
-                logger.debug(key='message', data='The following women have developed eclampsia following their '
-                f'pregnancy {new_onset_eclampsia.index}')
-                for person in new_onset_eclampsia.index:
-                    df.at[person, 'pn_emergency_event_mother'] = True """
+                #    current_status = df.loc[individual_id, 'pn_htn_disorders']
+                #    new_status = util.transition_states(current_status, prob_matrix, self.module.rng)
+                #    df.at[individual_id, "pn_htn_disorders"] = new_status
 
         #  ---------------------------- RISK OF POSTPARTUM PRE-ECLAMPSIA/HYPERTENSION --------------------------------
             if mother.pn_htn_disorders == 'none':
@@ -1443,84 +1399,12 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
 
             # For 'non-care seekers' risk of death is applied immediately 
             else:
-                self.module.apply_risk_of_postnatal_death_week_one(mother_id=individual_id, child_id=child_id)
-                
-
-class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
-    """This is LatePostpartumDeathEvent. It is scheduled from SecondaryPostpartumHaemorrhageOnsetEvent,
-    LatePostpartumSepsisOnsetEvent or LateNeonatalSepsisOnsetEvent for women and newborns who have developed
-    complications in the postpartum period. It uses the linear model to calculte risk of death and schedules death in
-    that instance"""
-
-    def __init__(self, module, individual_id, mother_or_child):
-        super().__init__(module, person_id=individual_id)
-
-        self.mother_or_child = mother_or_child
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        params = self.module.parameters
-        mother = df.loc[individual_id]
-
-        if not df.at[individual_id, 'is_alive']:
-            return
-
-        if self.mother_or_child == 'mother':
-
-            logger.debug(key='message', data=f'mother {individual_id} has reached late postpartum death event')
-
-            postnatal_death = False
-
-            if mother.pn_postpartum_haem_secondary:
-                risk_of_death = params['pn_linear_equations']['secondary_postpartum_haem_death'].predict(df.loc[[
-                    individual_id]])[individual_id]
-
-                if self.module.rng.random_sample() < risk_of_death:
-                    postnatal_death = True
-                else:
-                    df.at[individual_id, 'pn_postpartum_haem_secondary'] = False
-
-            if mother.pn_sepsis_late_postpartum:
-                assert (self.module.postpartum_infections_late.has_any(
-                    [individual_id], 'endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                    'other_maternal_infection', first=True))
-
-                risk_of_death = params['pn_linear_equations']['postnatal_sepsis_death'].predict(df.loc[[
-                                individual_id]])[individual_id]
-
-                if self.module.rng.random_sample() < risk_of_death:
-                    postnatal_death = True
-                else:
-                    df.at[individual_id, 'pn_sepsis_late_postpartum'] = False
-                    self.module.postpartum_infections_late.unset([individual_id], 'endometritis',
-                                                                 'urinary_tract_inf','skin_soft_tissue_inf',
-                                                                 'other_maternal_infection')
-
-            if postnatal_death:
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='secondary_pph'), self.sim.date)
-                self.module.postnatal_tracker['postnatal_death'] += 1
-
-        if self.mother_or_child == 'child':
-                if df.at[individual_id, 'pn_sepsis_late_neonatal']:
-                    risk_of_death = params['pn_linear_equations']['late_neonatal_sepsis_death'].predict(df.loc[[
-                        individual_id]])[individual_id]
-                elif df.at[individual_id, 'pn_sepsis_early_neonatal']:
-                    risk_of_death = params['pn_linear_equations']['early_onset_neonatal_sepsis_week_1_death'].predict(
-                        df.loc[[individual_id]])[individual_id]
-
-                if df.at[individual_id, 'pn_sepsis_late_neonatal'] or df.at[individual_id, 'pn_sepsis_early_neonatal']:
-                    if self.module.rng.random_sample() < risk_of_death:
-                        logger.debug(key='message', data=f'person {individual_id} has died due to late neonatal sepsis')
-
-                        self.sim.schedule_event(demography.InstantaneousDeath(
-                            self.module, individual_id, cause='neonatal_sepsis'), self.sim.date)
-
-                        self.module.postnatal_tracker['neonatal_death'] += 1
-                        self.module.postnatal_tracker['neonatal_sepsis_death'] += 1
-                    else:
-                        df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
-                        df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
+                if mother_has_complications:
+                    self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother',
+                                                                                   individual_id=individual_id)
+                if child_has_complications:
+                    self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child',
+                                                                                   individual_id=child_id)
 
 
 class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScopeEventMixin):
@@ -1658,8 +1542,6 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
         mother = df.loc[person_id]
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        # TREATMENT FOR ANAEMIA
-        # TREATMENT FOR HYPERTENSION
 
         if not mother.is_alive:
             return
@@ -1726,6 +1608,17 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
                              data=f'mother {person_id} was unable to receive treatment for secondary pph due '
                              f'to limited resources')
 
+        # ------------------------------------- HYPERTENSION TREATMENT -----------------------------------------------
+
+
+
+
+        # ------------------------------------- ANAEMIA TREATMENT -----------------------------------------------
+
+
+        self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother',
+                                                                       individual_id=person_id)
+
 
 class HSI_PostnatalSupervisor_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
     """"""
@@ -1758,22 +1651,17 @@ class HSI_PostnatalSupervisor_NeonatalWardInpatientCare(HSI_Event, IndividualSco
 
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self,
-                cons_req_as_footprint=consumables_needed,
-                to_log=False)
+                cons_req_as_footprint=consumables_needed)
 
             if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sep]:
-                self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=self,
-                    cons_req_as_footprint=consumables_needed,
-                    to_log=True)
-
                 df.at[person_id, 'pn_sepsis_neonatal_full_supp_care'] = True
 
             else:
                 logger.debug(key='message', data=f'neonate {person_id} was unable to receive treatment for sepsis '
                                                  f'due to limited resources')
 
-            self.module.apply_risk_of_neonatal_death_post_week_one(person_id)
+            self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child',
+                                                                           individual_id=person_id)
 
 
 class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
