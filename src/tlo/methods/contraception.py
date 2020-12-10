@@ -80,7 +80,8 @@ class Contraception(Module):
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
         'date_of_last_pregnancy': Property(Types.DATE,
                                            'Date of the last pregnancy of this individual'),
-        'co_unintended_preg': Property(Types.BOOL, 'Unintended pregnancies following contraception failure')
+        'co_unintended_preg': Property(Types.BOOL, 'Unintended pregnancies following contraception failure'),
+        'male_condom_received': Property(Types.BOOL, 'Male condom consumable received')
     }
 
     def read_parameters(self, data_folder):
@@ -175,6 +176,7 @@ class Contraception(Module):
         df.loc[df.is_alive, 'is_pregnant'] = False
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'co_unintended_preg'] = False
+        df.loc[df.is_alive, 'male_condom_received'] = False
 
         # Assign contraception method
         # 1. select females aged 15-49 from population, for current year
@@ -230,6 +232,7 @@ class Contraception(Module):
         df.at[child_id, 'is_pregnant'] = False
         df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
         df.at[child_id, 'co_unintended_preg'] = False
+        df.at[child_id, 'male_condom_received'] = False
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         df.at[mother_id, 'is_pregnant'] = False
@@ -331,11 +334,11 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
             # only update entries for all those now using a contraceptive
             df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
             # TODO: health system resource use will come in here - HSI at end of code below
-            contraception_event = HSI_Contraception(self)
+            contraception_event = HSI_Contraception(self.module)
             self.sim.modules['HealthSystem'].schedule_hsi_event(contraception_event,
                                                                 priority=1,
                                                                 topen=self.sim.date,
-                                                                tclose=None)
+                                                                tclose=self.sim.date + DateOffset(days=1))
             logger.debug(key='debug', data='The population wide HSI event has been scheduled successfully!')
 
             for woman in now_using_co:
@@ -615,56 +618,27 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
 
         # Define the necessary information for a Population level HSI
         self.TREATMENT_ID = 'Contraception'
+        # self.ACCEPTED_FACILITY_LEVEL = 1
 
-    def apply(self, population):
+    def apply(self, population, squeeze_factor):
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        if ~df.co_contraception.isin(['not_using']):
-            pkg_code_contraception = pd.unique(consumables.loc[
-                                         consumables['Intervention_Pkg']
-                                         == 'Other contraceptives drugs/supplies to service a client',
-                                         'Intervention_Pkg_Code'])[0]
-
-            consumables_needed = {'Intervention_Package_Code': {pkg_code_contraception: 1}, 'Item_Code': {}}
-
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_needed)
-
-            if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_contraception]:
-                df.at['contraception_received'] = True
-            #    contraception_received needs to be a Property of the module and set at
-            #    initiation and on_birth if used - though how is this different to the co_contraception
-            #      property i.e. is it really needed? it would only be useful to keep track of HSI use,
-            #      which could be kept track of directly
-
-            # else:
-            #    logger.debug(key='message', data=f'woman {person_id} was unable to receive contraception '
-            #                                     f'due to limited resources')
-
-            # self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child',
-            #                                                               individual_id=person_id)
-
-        # repeat for each contraceptive
-        if df.co_contraception.isin(['male_condom']):
-            pkg_code_contraception = pd.unique(consumables.loc[
+        # repeat the following for each contraceptive
+        male_condom_users = df.loc[df.co_contraception == 'male_condom']
+        pkg_code_male_condom = pd.unique(consumables.loc[
                                          consumables['Intervention_Pkg']
                                          == 'Male condom',
                                          'Intervention_Pkg_Code'])[0]
 
-            consumables_needed = {'Intervention_Package_Code': {pkg_code_contraception: 1}, 'Item_Code': {}}
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_male_condom: 1}, 'Item_Code': {}}
 
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_needed)
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_needed)
 
-            if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_contraception]:
-                df.at['male_condom_received'] = True
-            #    male_condom_received needs to be a Property of the module and set at
-            #    initiation and on_birth if used - though how is this different to the co_contraception
-            #      property i.e. is it really needed? it would only be useful to keep track of HSI use,
-            #      which could be kept track of directly
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_male_condom]:
+            df.loc[male_condom_users.index, 'male_condom_received'] = True
 
     def did_not_run(self):
         logger.debug(key='debug', data='HSI__Contraception: did not run')
