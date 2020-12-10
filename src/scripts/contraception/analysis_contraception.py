@@ -61,7 +61,8 @@ service_availability = ["*"]
 sim.register(
     demography.Demography(resourcefilepath=resources),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-    healthsystem.HealthSystem(resourcefilepath=resources, service_availability=service_availability),
+    healthsystem.HealthSystem(resourcefilepath=resources, service_availability=service_availability,
+                              ignore_cons_constraints=True),  # ignore constraints allows everyone to get contraception
     symptommanager.SymptomManager(resourcefilepath=resources),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
     contraception.Contraception(resourcefilepath=resources),

@@ -331,8 +331,7 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
             # only update entries for all those now using a contraceptive
             df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
             # TODO: health system resource use will come in here - HSI at end of code below
-            contraception_event = HSI_Contraception(
-                self, person_id=now_using_co)
+            contraception_event = HSI_Contraception(self, population=now_using_co)
             self.sim.modules['HealthSystem'].schedule_hsi_event(contraception_event,
                                                                 priority=0,
                                                                 topen=self.sim.date,
@@ -607,25 +606,20 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     description='pregnancy')
 
 
-class HSI_Contraception(HSI_Event, IndividualScopeEventMixin):  # or do as PopulationScopeEventMixin ?
+class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole population at once
     """"""
-###
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
         # assert isinstance(module, contraception)  this is in Joe's code but I have no reference to contraception
 
-        self.TREATMENT_ID = 'Contraception'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
+        # self.TREATMENT_ID = 'Contraception'
+        # self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
+        # self.ACCEPTED_FACILITY_LEVEL = 1
+        # self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id, squeeze_factor):
+    def apply(self, population):
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        woman = df.loc[person_id]
-
-        if not woman.is_alive:
-            return
 
         if ~df.co_contraception.isin(['not_using']):
             pkg_code_contraception = pd.unique(consumables.loc[
@@ -640,7 +634,7 @@ class HSI_Contraception(HSI_Event, IndividualScopeEventMixin):  # or do as Popul
                 cons_req_as_footprint=consumables_needed)
 
             if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_contraception]:
-                df.at[person_id, 'contraception_received'] = True
+                df.at['contraception_received'] = True
             #    contraception_received needs to be a Property of the module and set at
             #    initiation and on_birth if used - though how is this different to the co_contraception
             #      property i.e. is it really needed? it would only be useful to keep track of HSI use,
@@ -667,7 +661,7 @@ class HSI_Contraception(HSI_Event, IndividualScopeEventMixin):  # or do as Popul
                 cons_req_as_footprint=consumables_needed)
 
             if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_contraception]:
-                df.at[person_id, 'male_condom_received'] = True
+                df.at['male_condom_received'] = True
             #    male_condom_received needs to be a Property of the module and set at
             #    initiation and on_birth if used - though how is this different to the co_contraception
             #      property i.e. is it really needed? it would only be useful to keep track of HSI use,
