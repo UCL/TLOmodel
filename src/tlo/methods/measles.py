@@ -108,7 +108,9 @@ class Measles(Module):
         for symptom_name in self.symptoms:
             if symptom_name not in generic_symptoms:
                 self.sim.modules['SymptomManager'].register_symptom(
-                    Symptom(name=symptom_name)  # rash and pneumonia both non-emergencies
+                    Symptom(name=symptom_name,
+                            odds_ratio_health_seeking_in_children=2.5,
+                            odds_ratio_health_seeking_in_adults=2.5)  # rash and pneumonia both non-emergencies
                 )
 
     def initialise_population(self, population):
@@ -229,6 +231,9 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         p = self.module.parameters
         rng = self.module.rng
 
+        if not df.at[person_id, "is_alive"]:
+            return
+
         symptom_prob = p["symptom_prob"]
 
         logger.debug(key="MeaslesOnsetEvent",
@@ -265,6 +270,9 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
                     date_of_onset=self.sim.date,
                     duration_in_days=14,  # same duration for all symptoms
                 )
+
+        assert 'rash' in self.sim.modules["SymptomManager"].has_what(person_id)
+        assert 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
 
         # schedule symptom resolution without treatment - this only occurs if death doesn't happen first
         self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id),
@@ -323,21 +331,29 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return
 
-        reduction_in_death_risk = 1
-
-        if df.at[person_id, "me_on_treatment"]:
-            reduction_in_death_risk = self.module.rng.uniform(low=0.4, high=0.8, size=1)
-
         # reduction in risk of death if being treated for measles complications
         # check still infected (symptoms not resolved)
-        if df.at[person_id, "me_has_measles"] & (self.module.rng.rand() < reduction_in_death_risk):
+        if df.at[person_id, "me_has_measles"]:
 
-            logger.debug(key="MeaslesDeathEvent",
-                         data=f"MeaslesDeathEvent: scheduling death for {person_id} on {self.sim.date}")
+            if df.at[person_id, "me_on_treatment"]:
+                reduction_in_death_risk = self.module.rng.uniform(low=0.2, high=0.6, size=1)
 
-            self.sim.schedule_event(
-                InstantaneousDeath(
-                    self.module, person_id, cause=self.cause), self.sim.date)
+                if self.module.rng.rand() < reduction_in_death_risk:
+
+                    logger.debug(key="MeaslesDeathEvent",
+                                 data=f"MeaslesDeathEvent: scheduling death for treated {person_id} on {self.sim.date}")
+
+                    self.sim.schedule_event(
+                        InstantaneousDeath(
+                            self.module, person_id, cause=self.cause), self.sim.date)
+
+            else:
+                logger.debug(key="MeaslesDeathEvent",
+                             data=f"MeaslesDeathEvent: scheduling death for untreated {person_id} on {self.sim.date}")
+
+                self.sim.schedule_event(
+                    InstantaneousDeath(
+                        self.module, person_id, cause=self.cause), self.sim.date)
 
 
 # ---------------------------------------------------------------------------------

@@ -34,8 +34,8 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 12, 31)
-popsize = 50000
+end_date = Date(2018, 12, 31)
+popsize = 10000
 
 
 # don't register epi as want population with no vaccination
@@ -97,9 +97,9 @@ def get_summary_stats(logfile):
     # limit to deaths due to measles
     to_drop = (deaths.cause != 'measles')
     deaths = deaths.drop(index=to_drop[to_drop].index)
-    # count by month:
-    deaths['month'] = deaths.index.month
-    measles_deaths = deaths.groupby(by=['month']).size()
+    # count by year:
+    deaths['year'] = deaths.index.year
+    measles_deaths = deaths.groupby(by=['year']).size()
 
     return {
         'incidence': measles_inc,
@@ -123,6 +123,7 @@ results_hs = get_summary_stats(logfile_hs)
 
 results_no_hs['deaths'].sum()
 results_hs['deaths'].sum()
+
 # %%  PLOTS
 
 # incidence
@@ -141,7 +142,7 @@ plt.show()
 # mortality
 plt.plot(results_no_hs['deaths'])
 plt.plot(results_hs['deaths'])
-title_str = "Monthly number of measles deaths"
+title_str = "Annual number of measles deaths"
 plt.title(title_str)
 plt.xlabel("Date")
 plt.xticks(rotation=90)
