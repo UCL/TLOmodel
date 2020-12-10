@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import PopulationScopeEventMixin, IndividualScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import transition_states
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods import Metadata
@@ -331,11 +331,12 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
             # only update entries for all those now using a contraceptive
             df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
             # TODO: health system resource use will come in here - HSI at end of code below
-            contraception_event = HSI_Contraception(self, population=now_using_co)
+            contraception_event = HSI_Contraception(self)
             self.sim.modules['HealthSystem'].schedule_hsi_event(contraception_event,
-                                                                priority=0,
+                                                                priority=1,
                                                                 topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
+                                                                tclose=None)
+            logger.debug(key='debug', data='The population wide HSI event has been scheduled successfully!')
 
             for woman in now_using_co:
                 start_contraception_summary = {
@@ -609,13 +610,11 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole population at once
     """"""
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
-        # assert isinstance(module, contraception)  this is in Joe's code but I have no reference to contraception
+        super().__init__(module)
+        assert isinstance(module, Contraception)
 
-        # self.TREATMENT_ID = 'Contraception'
-        # self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
-        # self.ACCEPTED_FACILITY_LEVEL = 1
-        # self.ALERT_OTHER_DISEASES = []
+        # Define the necessary information for a Population level HSI
+        self.TREATMENT_ID = 'Contraception'
 
     def apply(self, population):
         df = self.sim.population.props
@@ -666,3 +665,8 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
             #    initiation and on_birth if used - though how is this different to the co_contraception
             #      property i.e. is it really needed? it would only be useful to keep track of HSI use,
             #      which could be kept track of directly
+
+    def did_not_run(self):
+        logger.debug(key='debug', data='HSI__Contraception: did not run')
+        # return False to prevent this event from being rescheduled if it did not run.
+        return False
