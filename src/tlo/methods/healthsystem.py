@@ -281,9 +281,9 @@ class HealthSystem(Module):
             # ... But it does not need APPT, CONS, ACCEPTED_FACILITY_LEVEL and ALERT_OTHER_DISEASES, or did_not_run().
 
             assert 'TREATMENT_ID' in dir(hsi_event)
-            assert 'EXPECTED_APPT_FOOTPRINT_FOOTPRINT' not in dir(hsi_event)
-            assert 'ACCEPTED_FACILITY_LEVEL' not in dir(hsi_event)
-            assert 'ALERT_OTHER_DISEASES' not in dir(hsi_event)
+            # assert 'EXPECTED_APPT_FOOTPRINT_FOOTPRINT' not in dir(hsi_event)
+            # assert 'ACCEPTED_FACILITY_LEVEL' not in dir(hsi_event)
+            # assert 'ALERT_OTHER_DISEASES' not in dir(hsi_event)
 
         else:
             # This is an individual-scoped HSI event.

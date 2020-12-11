@@ -618,7 +618,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
 
         # Define the necessary information for a Population level HSI
         self.TREATMENT_ID = 'Contraception'
-        # self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = 1
 
     def apply(self, population, squeeze_factor):
         df = self.sim.population.props
@@ -639,6 +639,16 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
 
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_male_condom]:
             df.loc[male_condom_users.index, 'male_condom_received'] = True
+
+        male_condom_counts = df.male_condom_received.value_counts()
+
+        contraception_consumables_summary = {
+            'male_condoms': sum(male_condom_counts),
+        }
+
+        logger.info(key='contraception_consumables_summary',
+                    data=contraception_consumables_summary,
+                    description='contraception_consumables_summary')
 
     def did_not_run(self):
         logger.debug(key='debug', data='HSI__Contraception: did not run')
