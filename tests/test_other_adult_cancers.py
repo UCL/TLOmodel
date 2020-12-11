@@ -142,6 +142,7 @@ def check_configuration_of_population(sim):
     # for convenience, define a bool for any stage of cancer
     df['oac_status_any_stage'] = df.oac_status != 'none'
 
+
     # get df for alive persons:
     df = df.loc[df.is_alive]
 
@@ -253,7 +254,7 @@ def test_check_progression_through_stages_is_happening():
     check_configuration_of_population(sim)
 
     # Simulate
-    sim.simulate(end_date=Date(2015, 1, 1))
+    sim.simulate(end_date=Date(2010, 6, 1))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
@@ -302,7 +303,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     check_configuration_of_population(sim)
 
     # Simulate
-    sim.simulate(end_date=Date(2015, 1, 1))
+    sim.simulate(end_date=Date(2010, 6, 1))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
@@ -363,7 +364,7 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     check_configuration_of_population(sim)
 
     # Simulate
-    sim.simulate(end_date=Date(2015, 1, 1))
+    sim.simulate(end_date=Date(2010, 6, 1))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 

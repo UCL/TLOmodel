@@ -146,7 +146,7 @@ class OtherAdultCancer(Module):
             Types.CATEGORICAL,
             "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
             "at which it is given.",
-            categories=["none", "site_confined", "local_ln"],
+            categories=["none", "site_confined", "local_ln", "metastatic"],
         ),
         "oac_date_palliative_care": Property(
             Types.DATE,
@@ -491,9 +491,8 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
         #  reducing progression risk during the stage at which is received.
         had_treatment_during_this_stage = \
-            df.is_alive & ~pd.isnull(df.oac_date_treatment) & (((df.oac_status == "site_confined") &
-                                    (df.oac_stage_at_which_treatment_given == "site_confined"))
-                        or ((df.oac_status == "local_ln") & (df.oac_stage_at_which_treatment_given == "local_ln")))
+            df.is_alive & ~pd.isnull(df.oac_date_treatment) & \
+            (df.oac_status == df.oac_stage_at_which_treatment_given)
 
         for stage, lm in self.module.linear_models_for_progession_of_oac_status.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
