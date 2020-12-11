@@ -22,7 +22,7 @@ logger.setLevel(logging.INFO)
 
 
 class Malaria(Module):
-    def __init__(self, name=None, resourcefilepath=None, testing=None, itn=None):
+    def __init__(self, name=None, resourcefilepath=None, testing=None, itn=0):
         """Create instance of Malaria module
 
         :param name: Name of this module (optional, defaults to name of class)
@@ -41,9 +41,8 @@ class Malaria(Module):
 
         self.itn = itn  # projected ITN values from 2020
         # check itn projected values are <=0.7 and rounded to 1dp for matching to incidence tables
-        if self.itn is not None:
-            self.itn = round(self.itn, 1)
-            assert (self.itn <= 0.7)
+        self.itn = round(self.itn, 1)
+        assert (self.itn <= 0.7)
 
         logger.info(key='message', data=f'Malaria infection event running with projected ITN {self.itn}')
 
@@ -273,7 +272,7 @@ class Malaria(Module):
         itn_irs_curr.insert(0, "month", now.month)  # add current month for the incidence index lookup
 
         # replace itn coverage with projected coverage levels from 2019 onwards
-        if self.itn is not None and (now.year > p["data_end"]):
+        if now.year > p["data_end"]:
             itn_irs_curr['itn_rate'] = self.itn
 
         month_admin_itn_irs_lookup = [tuple(r) for r in itn_irs_curr.values]  # every row is a key in incidence table
