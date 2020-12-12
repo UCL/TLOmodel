@@ -45,7 +45,8 @@ class BreastCancer(Module):
             "initial proportions in cancer categories for woman aged 15-29"
         ),
         "init_prop_breast_lump_discernible_breast_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of those with cancer categories that have the symptom breast_lump_discernible"
+            Types.LIST, "initial proportions of those with cancer categories that have the symptom breast_lump"
+                        "_discernible"
         ),
         "init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage": Parameter(
             Types.LIST, "initial proportions of people that have breast_lump_discernible that have been diagnosed"
@@ -228,7 +229,8 @@ class BreastCancer(Module):
                 )
 
         # -------------------- SYMPTOMS -----------
-        # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of breast_lump_discernible:
+        # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of breast_
+        # lump_discernible:
         # todo: note dysphagia was mis-spelled here in oesophageal cancer module in master so may not be working
         lm_init_breast_lump_discernible = LinearModel.multiplicative(
             Predictor('brc_status')  .when("none", 0.0)
@@ -371,15 +373,19 @@ class BreastCancer(Module):
         # Linear Model for the onset of breast_lump_discernible, in each 3 month period
         self.lm_onset_breast_lump_discernible = LinearModel.multiplicative(
             Predictor('brc_status').when('stage1', p['r_breast_lump_discernible_stage1'])
-                                  .when('stage2', p['rr_breast_lump_discernible_stage2'] * p['r_breast_lump_discernible_stage1'])
-                                  .when('stage3', p['rr_breast_lump_discernible_stage3'] * p['r_breast_lump_discernible_stage1'])
-                                  .when('stage4', p['rr_breast_lump_discernible_stage4'] * p['r_breast_lump_discernible_stage1'])
+                                  .when('stage2', p['rr_breast_lump_discernible_stage2'] * p['r_breast_lump_'
+                                                                                             'discernible_stage1'])
+                                  .when('stage3', p['rr_breast_lump_discernible_stage3'] * p['r_breast_lump_'
+                                                                                             'discernible_stage1'])
+                                  .when('stage4', p['rr_breast_lump_discernible_stage4'] * p['r_breast_lump_'
+                                                                                             'discernible_stage1'])
                                   .otherwise(0.0)
         )
 
         # ----- DX TESTS -----
         # Create the diagnostic test representing the use of a biopsy to brc_status
-        # This properties of conditional on the test being done only to persons with the Symptom, 'breast_lump_discernible'.
+        # This properties of conditional on the test being done only to persons with the Symptom, 'breast_lump_
+        # discernible'.
         # todo: depends on underlying stage not symptoms
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             biopsy_for_breast_cancer_given_breast_lump_discernible=DxTest(
@@ -472,8 +478,8 @@ class BreastCancer(Module):
         pass
 
     def report_daly_values(self):
-        # This must send back a dataframe that reports on the HealthStates for all individuals over
-        # the past month
+
+    # This must send back a dataframe that reports on the HealthStates for all individuals over the past month
 
         df = self.sim.population.props  # shortcut to population properties dataframe for alive persons
 
@@ -554,10 +560,13 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[idx_gets_new_stage, 'brc_status'] = stage
             df.loc[idx_gets_new_stage, 'brc_new_stage_this_month'] = True
 
-        # todo: people seem to be moving to the next stage at a higher rate than specified by the parameter
+        # todo: people can move through more than one stage per month (this event runs every month)
+        # todo: I am guessing this is somehow a consequence of this way of looping through the stages
+        # todo: I imagine this issue is the same for bladder cancer and oesophageal cancer
 
         # -------------------- UPDATING OF SYMPTOM OF breast_lump_discernible OVER TIME --------------------------------
-        # Each time this event is called (event 3 months) individuals may develop the symptom of breast_lump_discernible.
+        # Each time this event is called (event 3 months) individuals may develop the symptom of breast_lump_
+        # discernible.
         # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
         onset_breast_lump_discernible = self.module.lm_onset_breast_lump_discernible.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
@@ -619,6 +628,8 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         df.brc_breast_lump_discernible_investigated = True
 
         # Use a biopsy to diagnose whether the person has breast Cancer:
+        # todo: request consumables needed for this
+
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
             hsi_event=self
@@ -686,6 +697,8 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+
+        # todo: request consumables needed for this
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -802,6 +815,8 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
+# todo: request consumables needed for this
+
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
@@ -837,7 +852,7 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """schedule logging to repeat every 1 month
         """
-        self.repeat = 30.4375
+        self.repeat = 30
         super().__init__(module, frequency=DateOffset(days=self.repeat))
 
     def apply(self, population):
@@ -873,7 +888,7 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
         date_now = self.sim.date
-        date_lastlog = self.sim.date - pd.DateOffset(days=self.repeat)
+        date_lastlog = self.sim.date - pd.DateOffset(days=29)
 
         n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
 

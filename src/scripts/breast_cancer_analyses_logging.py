@@ -32,7 +32,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2021,  1, 1)
-popsize = 1450
+popsize = 14500
 # 1450000
 
 # Establish the simulation object
