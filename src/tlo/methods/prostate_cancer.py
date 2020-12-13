@@ -293,23 +293,15 @@ class ProstateCancer(Module):
 
 
 # -------------------- pc_date_diagnosis -----------
-        # todo: should depend also on baseline pelvic pain symptoms
-        lm_init_diagnosed = LinearModel.multiplicative(
-            Predictor('pc_status')  .when("none", 0.0)
-                                    .when("prostate_confined",
-                                          p['init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage'][0])
-                                    .when("local_ln",
-                                          p['init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage'][1])
-                                    .when("metastatic",
-                                          p['init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage'][2])
-        )
-        ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
-        # ensure that persons who have not ever had urinary or pelvic pain symptoms are not diagnosed:
-#       ever_diagnosed.loc[~has_urinary_symptoms_at_init] = False
-
+        # for those with symptoms set to initially diagnosed
         # For those that have been diagnosed, set data of diagnosis to today's date
-        df.loc[ever_diagnosed, "pc_date_diagnosis"] = self.sim.date
+        df.loc[has_urinary_symptoms_at_init, "pc_date_diagnosis"] = self.sim.date
+        df.loc[has_pelvic_pain_symptoms_at_init, "pc_date_diagnosis"] = self.sim.date
+        df.loc[has_urinary_symptoms_at_init, "pc_date_psa_test"] = self.sim.date
+        df.loc[has_pelvic_pain_symptoms_at_init, "pc_date_psa_test"] = self.sim.date
+        df.loc[has_urinary_symptoms_at_init, "pc_date_biopsy"] = self.sim.date
+        df.loc[has_pelvic_pain_symptoms_at_init, "pc_date_biopsy"] = self.sim.date
 
         # -------------------- pc_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
@@ -319,7 +311,7 @@ class ProstateCancer(Module):
                                     .when("local_ln",
                                           p['init_prop_treatment_status_prostate_ca'][1])
                                     .when("metastatic",
-                                          p['init_prop_treatment_status_prostate_ca'][2])
+                                          0.0)
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
