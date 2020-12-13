@@ -826,7 +826,7 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if df.at[person_id, "pc_status"] == 'metastatic':
             logger.warning(key="warning", data="Cancer is metastatic - aborting HSI_ProstateCancer_StartTreatment")
             return hs.get_blank_appt_footprint()
-"""
+
         # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
         assert not df.at[person_id, "pc_status"] == 'none'
         assert not df.at[person_id, "pc_status"] == 'metastatic'
@@ -851,7 +851,7 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         pass
-"""
+
 
 class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
