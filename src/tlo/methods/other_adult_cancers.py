@@ -490,6 +490,11 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
         #  reducing progression risk during the stage at which is received.
+
+        # todo: people can move through more than one stage per month (this event runs every month)
+        # todo: I am guessing this is somehow a consequence of this way of looping through the stages
+        # todo: I imagine this issue is the same for bladder cancer and oesophageal cancer
+
         had_treatment_during_this_stage = \
             df.is_alive & ~pd.isnull(df.oac_date_treatment) & \
             (df.oac_status == df.oac_stage_at_which_treatment_given)
@@ -776,8 +781,8 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """schedule logging to repeat every 1 month
         """
-        self.repeat = 1
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        self.repeat = 30
+        super().__init__(module, frequency=DateOffset(days=self.repeat))
 
     def apply(self, population):
         """Compute statistics regarding the current status of persons and output to the logger
@@ -812,7 +817,7 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
         date_now = self.sim.date
-        date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
+        date_lastlog = self.sim.date - pd.DateOffset(days=29)
 
         n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
 
