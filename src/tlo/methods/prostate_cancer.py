@@ -565,6 +565,9 @@ class ProstateCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.is_alive & ~pd.isnull(df.pc_date_treatment) & \
             (df.pc_status == df.pc_stage_at_which_treatment_given)
 
+        # todo: people can move through more than one stage per month (this event runs every month)
+        # todo: I am guessing this is somehow a consequence of this way of looping through the stages
+        # todo: I imagine this issue is the same for bladder cancer and oesophageal cancer
         for stage, lm in self.module.linear_models_for_progression_of_pc_status.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
@@ -823,7 +826,7 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if df.at[person_id, "pc_status"] == 'metastatic':
             logger.warning(key="warning", data="Cancer is metastatic - aborting HSI_ProstateCancer_StartTreatment")
             return hs.get_blank_appt_footprint()
-
+"""
         # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
         assert not df.at[person_id, "pc_status"] == 'none'
         assert not df.at[person_id, "pc_status"] == 'metastatic'
@@ -848,7 +851,7 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         pass
-
+"""
 
 class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
@@ -969,8 +972,8 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """schedule logging to repeat every 1 months
         """
-        self.repeat = 1
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        self.repeat = 30
+        super().__init__(module, frequency=DateOffset(days=self.repeat))
 
     def apply(self, population):
         """Compute statistics regarding the current status of persons and output to the logger
@@ -1005,7 +1008,7 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
         date_now = self.sim.date
-        date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
+        date_lastlog = self.sim.date - pd.DateOffset(days=29)
 
         n_ge35_m = (df.is_alive & (df.age_years >= 35) & (df.sex == 'M')).sum()
 
@@ -1036,5 +1039,5 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 #       logger.info('%s|person_one|%s',
 #                    self.sim.date,
-#                    df.loc[11].to_dict())
+#                    df.loc[ 8].to_dict())
 
