@@ -44,7 +44,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2013, 1, 1)
 pop_size = 100
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -103,8 +103,7 @@ print(complicat_per_year_df)
 plt.style.use("ggplot")
 
 # ALRI complications
-plt.subplot(271)  # numrows, numcols, fignum
-plt.plot(complicat_per_year_df)
+plt.plot.bar(complicat_per_year_df)
 plt.title("Complications per year")
 plt.xlabel("Year")
 plt.ylabel("Number of ALRI complications")

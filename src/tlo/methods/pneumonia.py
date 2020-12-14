@@ -2,19 +2,20 @@
 Childhood Acute Lower Respiratory Infection Module
 Documentation:
 04 - Methods Repository/ALRI module - Description.docx
-04 - Methods Repository/ResourceFile_ALRI.xlsx
+04 - Methods Repository/ResourceFile_ALRI2.xlsx
 
 Overview
 --------
 Individuals are exposed to the risk of onset of ALRI. They can have pneumonia or bronchiolitis caused by one primary
 agent at a time, which can also have a co-infection or secondary bacterial superinfection.
-During an episode (prior ro recovery - either natural or cured), the symptom of cough or difficult breathing is present
-in addition to other possible symptoms. ALRI may cause associated complications, including severe complications,
-such as, sepsis, meningitis and respiratory failure, leading to death.
+During an episode (prior to recovery - either natural or cured), the symptom of cough or difficult breathing is present
+in addition to other possible symptoms. ALRI may cause associated complications, such as,
+pleural effusuion, empyema, lung abscess, pneumothorax, including severe complications,
+such as, sepsis, meningitis and respiratory failure, leading to multi-organ dysfunction and death.
 The individual may recover naturally or die.
 
 Health care seeking is prompted by the onset of the symptom cough or respiratory symptoms.
-The individual can be treated; if successful the risk of death is removed
+The individual can be treated; if successful the risk of death is lowered
 and they are cured (symptom resolved) some days later.
 
 Outstanding issues
@@ -90,7 +91,7 @@ class ALRI(Module):
 
     # Declare the disease types:
     disease_type = {
-        'bacterial_pneumonia', 'viral_pneumonia', 'co-infection_pneumonia', 'fungal_pneumonia', 'bronchiolitis'
+        'bacterial_pneumonia', 'viral_pneumonia', 'fungal_pneumonia', 'bronchiolitis'
     }
 
     PARAMETERS = {
@@ -219,7 +220,7 @@ class ALRI(Module):
             Parameter(Types.LIST,
                       'proportions of bacterial pathogens in a co-infection pneumonia'
                       ),
-        'prob_secondary_bacterial_superinfection_in_viral_pneumonia':
+        'prob_secondary_bacterial_infection_in_viral_pneumonia':
             Parameter(Types.REAL,
                       'probability of primary viral pneumonia having a bacterial superinfection'
                       ),
@@ -413,26 +414,7 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of loss of appetite from empyema'
                       ),
-        'prob_chest_pain_adding_from_lung_abscess':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from lung abscess'
-                      ),
-        'prob_chest_pain_adding_from_pneumothorax':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from pneumothorax'
-                      ),
-        'prob_chest_pain_adding_from_sepsis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from sepsis'
-                      ),
-        'prob_chest_pain_adding_from_respiratory_failure':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from respiratory failure'
-                      ),
-        'prob_chest_pain_adding_from_meningitis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from meningitis'
-                      ),
+
         'prob_severe_respiratory_distress_adding_from_respiratory_failure':
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of severe respiratory distress from respiratory failure'
@@ -441,6 +423,188 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of severe respiratory distress from sepsis'
                       ),
+        # second round of signs/symptoms added from each complication
+        # Pneumothorax ------------
+        'prob_chest_pain_adding_from_pneumothorax':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of chest pain / pleurisy from pneumothorax'
+                      ),
+        'prob_cyanosis_adding_from_pneumothorax':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of cyanosis from pneumothorax'
+                      ),
+        'prob_tachycardia_adding_from_pneumothorax':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of tachycardia from pneumothorax'
+                      ),
+        'prob_difficult_breathing_adding_from_pneumothorax':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of difficult breathing from pneumothorax'
+                      ),
+        'prob_fatigue_adding_from_pneumothorax':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of fatigue from pneumothorax'
+                      ),
+        'prob_decreased_chest_movement_adding_from_pneumothorax':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of decreased chest wall movement from pneumothorax'
+                      ),
+        # pleural effusion -----------
+        'prob_chest_pain_adding_from_pleural_effusion':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of chest pain / pleurisy from pleural effusion'
+                      ),
+        'prob_fever_adding_from_pleural_effusion':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of fever from pleural effusion'
+                      ),
+        'prob_difficult_breathing_adding_from_pleural_effusion':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of dyspnoea/ difficult breathing from pleural effusion'
+                      ),
+        'prob_cough_sputum_adding_from_pleural_effusion':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of cough with sputum from pleural effusion'
+                      ),
+        # Empyema ------------
+        'prob_chest_pain_adding_from_empyema':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of chest pain / pleurisy from empyema'
+                      ),
+        'prob_fever_adding_from_empyema':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of fever from empyema'
+                      ),
+        'prob_cough_sputum_adding_from_empyema':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of cough with sputum from empyema'
+                      ),
+        'prob_respiratory_distress_adding_from_empyema':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of cough with sputum from respiratory distress'
+                      ),
+        # Lung abscess --------------
+        'prob_chest_pain_adding_from_lung_abscess':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of chest pain / pleurisy from lung abscess'
+                      ),
+        'prob_tachypnoea_adding_from_lung_abscess':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of tachypnoea/ fast breathing from lung abscess'
+                      ),
+        'prob_cough_sputum_adding_from_lung_abscess':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of cough with sputum from lung abscess'
+                      ),
+        'prob_fever_adding_from_lung_abscess':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of fever from lung abscess'
+                      ),
+        'prob_hemoptysis_adding_from_lung_abscess':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of hemoptysis from lung abscess'
+                      ),
+        'prob_tachycardia_adding_from_lung_abscess':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of tachycardia from lung abscess'
+                      ),
+        'prob_weight_loss_adding_from_lung_abscess':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of weight loss from lung abscess'
+                      ),
+        # Hypoxaemic Respiratory failure
+        'prob_difficult_breathing_adding_from_respiratory_failure':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of difficult breathing from respiratory failure'
+                      ),
+        'prob_cyanosis_adding_from_respiratory_failure':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of cyanosis from respiratory failure'
+                      ),
+        'prob_tachypnoea_adding_from_respiratory_failure':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of tachypnoea/ fast breathing from respiratory failure'
+                      ),
+        'prob_tachycardia_adding_from_respiratory_failure':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of tachycardia from respiratory failure'
+                      ),
+        'prob_lethargy_adding_from_respiratory_failure':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of lethargy from respiratory failure'
+                      ),
+        'prob_restlessness_adding_from_respiratory_failure':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of restlessness from respiratory failure'
+                      ),
+        # meningitis ------------
+        'prob_headache_adding_from_meningitis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of headache from meningitis'
+                      ),
+        'prob_fever_adding_from_meningitis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of fever from meningitis'
+                      ),
+        'prob_bulging_fontanel_adding_from_meningitis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of bulging fontanel from meningitis'
+                      ),
+        'prob_convulsions_adding_from_meningitis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of convulsions from meningitis'
+                      ),
+        'prob_nausea_adding_from_meningitis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of nausea from meningitis'
+                      ),
+        'prob_vomiting_adding_from_meningitis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of vomiting from meningitis'
+                      ),
+        'prob_photophobia_adding_from_meningitis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of photophobia from meningitis'
+                      ),
+        'prob_nuchal_rigidity_adding_from_meningitis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of nuchal rigidity from meningitis'
+                      ),
+        # Sepsis ----------------
+        'prob_lethargy_adding_from_sepsis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of lethargy from sepsis'
+                      ),
+        'prob_fatigue_adding_from_sepsis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of fatigue from sepsis'
+                      ),
+        'prob_tachypnoea_adding_from_sepsis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of tachypnoea from sepsis'
+                      ),
+        'prob_convulsions_adding_from_sepsis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of convulsions from sepsis'
+                      ),
+        'prob_not_eating_adding_from_sepsis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of not eating from sepsis'
+                      ),
+        'prob_fever_adding_from_sepsis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of fever from sepsis'
+                      ),
+        'prob_vomiting_adding_from_sepsis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of vomiting from sepsis'
+                      ),
+        'prob_no_urination_in_last_12h_adding_from_sepsis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of no urination for 12h from sepsis'
+                      ),
+
+        # other properties
         'days_between_treatment_and_cure':
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'
                       ),
@@ -461,9 +625,9 @@ class ALRI(Module):
 
     PROPERTIES = {
         # ---- The pathogen which is the attributed cause of ALRI ----
-        'ri_ALRI_status':
+        'ri_current_ALRI_status':
             Property(Types.BOOL,
-                     'ALRI status (current)'
+                     'ALRI status (current or last episode)'
                      ),
         # ---- The pathogen which is the attributed cause of ALRI ----
         'ri_primary_ALRI_pathogen':
@@ -480,7 +644,7 @@ class ALRI(Module):
         # ---- The underlying ALRI condition ----
         'ri_ALRI_disease_type':
             Property(Types.CATEGORICAL, 'underlying ALRI condition',
-                     categories=['viral_pneumonia', 'co-infection_pneumonia', 'bacterial_pneumonia', 'fungal_pneumonia',
+                     categories=['viral_pneumonia', 'bacterial_pneumonia', 'fungal_pneumonia',
                                  'bronchiolitis'] + ['not_applicable']
                      ),
         # ---- Complications associated with ALRI ----
@@ -495,9 +659,10 @@ class ALRI(Module):
         'ri_current_ALRI_symptoms':
             Property(Types.LIST,
                      'symptoms of current ALRI event',
-                     categories=['fever', 'cough', 'difficult_breathing',
+                     categories=['fever', 'cough', 'difficult_breathing', 'convulsions', 'lethargy', 'not_eating', 'restlessness',
                                  'fast_breathing', 'chest_indrawing', 'grunting', 'chest_pain', 'loss_of_appetite',
-                                 'cyanosis', 'severe_respiratory_distress', 'hypoxia',
+                                 'cyanosis', 'respiratory_distress', 'hypoxia', 'tachypnoea', 'cough_with_sputum',
+                                 'hemoptysis', 'tachycardia', 'decreased_chest_movement', 'fatigue', 'no_urination_in_last_12h',
                                  'danger_signs']
                      ),
 
@@ -506,10 +671,11 @@ class ALRI(Module):
         'ri_ALRI_event_recovered_date': Property(Types.DATE, 'date of recovery from current ALRI event'),
         'ri_ALRI_event_death_date': Property(Types.DATE, 'date of death caused by current ALRI event'),
         'ri_end_of_last_alri_episode':
-            Property(Types.DATE, 'date on which the last episode of diarrhoea is resolved, (including '
+            Property(Types.DATE, 'date on which the last episode of ALRI is resolved, (including '
                                  'allowing for the possibility that a cure is scheduled following onset). '
                                  'This is used to determine when a new episode can begin. '
                                  'This stops successive episodes interfering with one another.'),
+
         'ri_secondary_bacterial_infection_date': Property(Types.DATE, 'date of onset of secondary bacterial infection'),
 
         # ---- Temporary Variables: To be replaced with the properties of other modules ----
@@ -522,10 +688,20 @@ class ALRI(Module):
         'tmp_haemophilus_vaccination': Property(Types.BOOL, 'temporary property - H. influenzae type b vaccine'),
         'tmp_influenza_vaccination': Property(Types.BOOL, 'temporary property - flu vaccine'),
 
-        # ---- Treatment properties ----
-        # TODO; Ines -- you;ve introduced these but not initialised them and don;t use them. do you need them?
-        'ri_ALRI_treatment': Property(Types.BOOL, 'currently on ALRI treatment'),
+        # ---- HS interventions / Treatment properties ----
         'ri_ALRI_tx_start_date': Property(Types.DATE, 'start date of ALRI treatment for current event'),
+        'ri_ALRI_antibiotic_treatment_administered':
+            Property(Types.CATEGORICAL,
+                     'Antibiotic treatment given for the ALRI',
+                     categories=['benzyl penicillin injection', 'amoxicillin', 'cotrimoxazole', 'other_antibiotic',
+                                 'chlorampheniciol', 'prednisolone']),
+        'ri_peripheral_oxygen_saturation':
+            Property(Types.CATEGORICAL,
+                     'Level of peripheral oxygen saturation to be read by a pulse oximetry',
+                     categories=['SpO2<90%', 'SpO2_90-92%', 'SpO2>92%']),
+        'oxygen_therapy_given':
+            Property(Types.BOOL,
+                     'Oxygen therapy received at the hospital (for severe cases)'),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -542,7 +718,7 @@ class ALRI(Module):
         self.viral_pneumonia_with_bacterial_coinfection = dict()
 
         # equations for the probabilities of secondary bacterial superinfection:
-        self.prob_secondary_bacterial_superinfection = None
+        self.prob_secondary_bacterial_infection = None
 
         # equations for the development of ALRI-associated complications:
         self.risk_of_developing_ALRI_complications = dict()
@@ -582,14 +758,11 @@ class ALRI(Module):
 
         # Store the symptoms that this module will use:
         self.symptoms = {
-            'cough',
-            'fever',
-            'difficult_breathing',
-            'fast_breathing',
-            'chest_indrawing',
-            'danger_signs',
-            'chest_pain',
-            'loss_of_appetite',
+            'fever', 'cough', 'difficult_breathing', 'convulsions', 'lethargy', 'not_eating', 'restlessness', 'bulging_fontanel',
+            'fast_breathing', 'chest_indrawing', 'grunting', 'chest_pain', 'loss_of_appetite', 'photophobia', 'nuchal_rigidity',
+            'cyanosis', 'respiratory_distress', 'hypoxia', 'tachypnoea', 'cough_with_sputum', 'weight_loss', 'nausea',
+            'hemoptysis', 'tachycardia', 'decreased_chest_movement', 'fatigue', 'no_urination_in_last_12h', 'hemoptysis',
+            'danger_signs'
         }
 
     def read_parameters(self, data_folder):
@@ -733,16 +906,15 @@ class ALRI(Module):
         # Linear models for determining the underlying condition as viral or bacterial pneumonia, and bronchiolitis
         # caused by each primary pathogen
         def determine_ALRI_type(patho):
+            df = self.sim.population.props
             if patho in ALRI.bacterial_patho:
                 return 'bacterial_pneumonia'
             if patho in ALRI.viral_patho:
-                random_choice = self.rng.choice(['viral_pneumonia', 'bronchiolitis'],
-                                                p=[p[f'proportion_viral_pneumonia_by_{patho}'],
-                                                   1 - p[f'proportion_viral_pneumonia_by_{patho}']])
-                if random_choice == 'viral_pneumonia':
-                    return 'viral_pneumonia'
+                under_2_yo = df['is_alive'] & (df['age_years'] < 2)
+                for child in under_2_yo:  # bronchiolitis only for those under 2
+                    return 'viral_pneumonia' if self.rng.rand() < p[f'proportion_viral_pneumonia_by_{patho}'] else 'bronchiolitis'
                 else:
-                    return 'bronchiolitis'
+                    return 'viral_pneumonia'
             if patho in ALRI.fungal_patho:
                 return 'fungal_pneumonia'
 
@@ -756,7 +928,7 @@ class ALRI(Module):
         # APPLY PROBABILITY OF CO- / SECONDARY BACTERIAL INFECTION
         # -----------------------------------------------------------------------------------------------------
         # Create a linear model equation for the probability of a secondary bacterial superinfection
-        self.prob_secondary_bacterial_superinfection = \
+        self.prob_secondary_bacterial_infection = \
             LinearModel(LinearModelType.MULTIPLICATIVE,
                         1.0,
                         Predictor()
@@ -764,14 +936,14 @@ class ALRI(Module):
                             "ri_primary_ALRI_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
                             "'parainfluenza', 'influenza']) & "
                             "ri_ALRI_disease_type == 'viral_pneumonia'"
-                            "& ri_secondary_bacterial_pathogen =='none'",
-                            p['prob_secondary_bacterial_superinfection_in_viral_pneumonia']),
+                            "& ri_secondary_bacterial_pathogen =='not_applicable'",
+                            p['prob_secondary_bacterial_infection_in_viral_pneumonia']),
                         Predictor()
                         .when(
                             "ri_primary_ALRI_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
                             "'parainfluenza', 'influenza']) & "
                             "ri_ALRI_disease_type == 'bronchiolitis' & "
-                            "ri_secondary_bacterial_pathogen =='none' ",
+                            "ri_secondary_bacterial_pathogen =='not_applicable' ",
                             p['prob_secondary_bacterial_infection_in_bronchiolitis'])
                         )
 
@@ -882,7 +1054,7 @@ class ALRI(Module):
         # Make a dict containing the probability of symptoms given acquisition of (uncomplicated) ALRI,
         # by disease type
         def make_symptom_probs(disease_type):
-            if (disease_type == 'bacterial_pneumonia') | (disease_type == 'co-infection_pneumonia'):
+            if disease_type == 'bacterial_pneumonia':
                 return {
                     'fever': p['prob_fever_uncomplicated_ALRI_by_disease_type'][0],
                     'cough': p['prob_cough_uncomplicated_ALRI_by_disease_type'][0],
@@ -929,18 +1101,69 @@ class ALRI(Module):
         # Make a dict containing the probability of additional symptoms given acquisition of complications
         # probability by complication
         def add_complication_symptom_probs(complicat):
-            if complicat in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax',
-                             'sepsis', 'respiratory_failure', 'meningitis']:
+            if complicat == 'pneumothorax':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
+                    'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
+                    'cyanosis': p[f'prob_cyanosis_adding_from_{complicat}'],
+                    'fatigue': p[f'prob_fatigue_adding_from_{complicat}'],
+                    'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complicat}'],
+                    'decreased_chest_movement': p[f'prob_decreased_chest_movement_adding_from_{complicat}'],
                 }
-            if complicat in ['pleural_effusion', 'empyema']:
+            if complicat == 'pleural_effusion':
                 return {
-                    'loss_of_appetite': p[f'prob_loss_of_appetite_adding_from_{complicat}']
+                    'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
+                    'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
+                    'fever': p[f'prob_fever_adding_from_{complicat}'],
+                    'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complicat}'],
                 }
-            if complicat in ['respiratory_failure', 'sepsis']:
+            if complicat == 'empyema':
                 return {
-                    'severe_respiratory_distress': p[f'prob_severe_respiratory_distress_adding_from_{complicat}'],
+                    'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
+                    'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
+                    'fever': p[f'prob_fever_adding_from_{complicat}'],
+                    'respiratory_distress': p[f'prob_respiratory_distress_adding_from_{complicat}'],
+                }
+            if complicat == 'lung_abscess':
+                return {
+                    'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
+                    'tachypnoea': p[f'prob_tachypnoea_adding_from_{complicat}'],
+                    'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
+                    'hemoptysis': p[f'prob_hemoptysis_adding_from_{complicat}'],
+                    'fever': p[f'prob_fever_adding_from_{complicat}'],
+                    'weight_loss': p[f'prob_weight_loss_adding_from_{complicat}'],
+                    'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
+                }
+            if complicat == 'respiratory_failure':
+                return {
+                    'cyanosis': p[f'prob_cyanosis_adding_from_{complicat}'],
+                    'tachypnoea': p[f'prob_tachypnoea_adding_from_{complicat}'],
+                    'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
+                    'lethargy': p[f'prob_lethargy_adding_from_{complicat}'],
+                    'restlessness': p[f'prob_restlessness_adding_from_{complicat}'],
+                    'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complicat}'],
+                }
+            if complicat == 'sepsis':
+                return {
+                    'fever': p[f'prob_fever_adding_from_{complicat}'],
+                    'fatigue': p[f'prob_fatigue_adding_from_{complicat}'],
+                    'tachypnoea': p[f'prob_tachypnoea_adding_from_{complicat}'],
+                    'lethargy': p[f'prob_lethargy_adding_from_{complicat}'],
+                    'convulsions': p[f'prob_convulsions_adding_from_{complicat}'],
+                    'not_eating': p[f'prob_not_eating_adding_from_{complicat}'],
+                    'vomiting': p[f'prob_vomiting_adding_from_{complicat}'],
+                    'no_urination_in_last_12h': p[f'prob_no_urination_in_last_12h_adding_from_{complicat}'],
+                }
+            if complicat == 'meningitis':
+                return {
+                    'fever': p[f'prob_fever_adding_from_{complicat}'],
+                    'headache': p[f'prob_headache_adding_from_{complicat}'],
+                    'bulging_fontanel': p[f'prob_bulging_fontanel_adding_from_{complicat}'],
+                    'convulsions': p[f'prob_convulsions_adding_from_{complicat}'],
+                    'nausea': p[f'prob_nausea_adding_from_{complicat}'],
+                    'vomiting': p[f'prob_vomiting_adding_from_{complicat}'],
+                    'photophobia': p[f'prob_photophobia_adding_from_{complicat}'],
+                    'nuchal_rigidity': p[f'prob_nuchal_rigidity_adding_from_{complicat}'],
                 }
 
         for complication in ALRI.complications:
@@ -1120,21 +1343,27 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
             print(alri_disease_type_for_this_person)
 
             # ------- Allocate a secondary bacterial pathogen in co-infection with primary viral pneumonia -------
-            bacterial_patho_in_viral_pneumonia_coinfection = 'none'
+            bacterial_patho_in_viral_pneumonia_coinfection = 'not_applicable'
             if pathogen in self.module.viral_patho:
-                pneumonia_will_have_bacterial_coinfection = rng.rand() < p['prob_viral_pneumonia_bacterial_coinfection']
-                print(pneumonia_will_have_bacterial_coinfection)
-                if pneumonia_will_have_bacterial_coinfection:
-                    bacterial_coinfection_pathogen = rng.choice(list(self.module.bacterial_patho),
-                                                                p=p['porportion_bacterial_coinfection_pathogen'])
-                    bacterial_patho_in_viral_pneumonia_coinfection = bacterial_coinfection_pathogen
-                    # update to co-infection property
-                    alri_disease_type_for_this_person = 'co-infection_pneumonia'
-            else:
+                if alri_disease_type_for_this_person == 'viral_pneumonia':
+                    pneumonia_will_have_bacterial_coinfection = rng.rand() < p['prob_viral_pneumonia_bacterial_coinfection']
+                    print(pneumonia_will_have_bacterial_coinfection)
+                    if pneumonia_will_have_bacterial_coinfection:
+                        bacterial_coinfection_pathogen = rng.choice(list(self.module.bacterial_patho),
+                                                                    p=p['porportion_bacterial_coinfection_pathogen'])
+                        bacterial_patho_in_viral_pneumonia_coinfection = bacterial_coinfection_pathogen
+                        # update to co-infection property
+                        alri_disease_type_for_this_person = 'bacterial_pneumonia'
+                    else:
+                        bacterial_patho_in_viral_pneumonia_coinfection = 'none'
+                if alri_disease_type_for_this_person == 'bronchiolitis':
+                    bacterial_patho_in_viral_pneumonia_coinfection = 'none'
+            if pathogen in self.module.bacterial_patho:
+                bacterial_patho_in_viral_pneumonia_coinfection = 'not_applicable'
+            if pathogen in self.module.fungal_patho:
                 bacterial_patho_in_viral_pneumonia_coinfection = 'none'
 
-            print(bacterial_patho_in_viral_pneumonia_coinfection)
-            print(alri_disease_type_for_this_person)
+            print(alri_disease_type_for_this_person, bacterial_patho_in_viral_pneumonia_coinfection)
 
             # ----------------------- Allocate a date of onset of ALRI ----------------------
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
@@ -1180,12 +1409,10 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
             return
 
         # Update the properties in the dataframe:
-        df.at[person_id, 'ri_ALRI_status'] = True
+        df.at[person_id, 'ri_current_ALRI_status'] = True
         df.at[person_id, 'ri_primary_ALRI_pathogen'] = self.pathogen
         if self.bacterial_pathogen != 'not_applicable':
             df.at[person_id, 'ri_secondary_bacterial_pathogen'] = self.bacterial_pathogen
-        else:
-            df.at[person_id, 'ri_secondary_bacterial_pathogen'] = 'none'
         df.at[person_id, 'ri_ALRI_disease_type'] = self.disease
         df.at[person_id, 'ri_ALRI_event_date_of_onset'] = self.sim.date
         df.at[person_id, 'ri_current_ALRI_complications'] = 'none'  # all disease start as non-severe
@@ -1216,20 +1443,20 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         # date for recovery with uncomplicated ALRI
         date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
 
-        # ------ Add the event of a SECONDARY BACTERIAL SUPERINFECTION - in viral pneumonia and bronchiolitis ------
-        prob_bacterial_superinfection = m.prob_secondary_bacterial_superinfection.predict(df.loc[[person_id]]).values[0]
-        if rng.rand() < prob_bacterial_superinfection:
-            # choose a secondary bacterial pathogen
-            secondary_bacterial_pathogen = rng.choice(list(self.module.bacterial_patho),
-                                                      p=p['porportion_bacterial_coinfection_pathogen'])
-            # date of onset of secondary bacterial infection
-            date_onset_secondary_bacterial = self.module.sim.date + DateOffset(
-                days=np.random.randint(1, high=self.duration_in_days))  # todo: has to be less than full duration
-
-            self.sim.schedule_event(BacterialSuperinfectionEvent(
-                self.module, person_id,
-                symptoms=symptoms_for_this_person, duration_in_days=self.duration_in_days,
-                bacterial_pathogen=secondary_bacterial_pathogen), date=date_onset_secondary_bacterial)
+        # # ------ Add the event of a SECONDARY BACTERIAL SUPERINFECTION - in viral pneumonia and bronchiolitis ------
+        # prob_bacterial_superinfection = m.prob_secondary_bacterial_infection.predict(df.loc[[person_id]]).values[0]
+        # if rng.rand() < prob_bacterial_superinfection:
+        #     # choose a secondary bacterial pathogen
+        #     secondary_bacterial_pathogen = rng.choice(list(self.module.bacterial_patho),
+        #                                               p=p['porportion_bacterial_coinfection_pathogen'])
+        #     # date of onset of secondary bacterial infection
+        #     date_onset_secondary_bacterial = self.module.sim.date + DateOffset(
+        #         days=np.random.randint(1, high=self.duration_in_days))  # todo: has to be less than full duration
+        #
+        #     self.sim.schedule_event(BacterialSuperinfectionEvent(
+        #         self.module, person_id,
+        #         symptoms=symptoms_for_this_person, duration_in_days=self.duration_in_days,
+        #         bacterial_pathogen=secondary_bacterial_pathogen), date=date_onset_secondary_bacterial)
 
         # COMPLICATIONS ------------------------------------------------------------------------------------------
         complications_for_this_person = list()
@@ -1270,56 +1497,56 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
 
 
-class BacterialSuperinfectionEvent(Event, IndividualScopeEventMixin):
-    """
-        This Event is for the onset of a secondary bacterial superinfection
-         in children with primary viral pneumonia or bronchiolitis
-        """
-
-    def __init__(self, module, person_id, symptoms, duration_in_days, bacterial_pathogen):
-        super().__init__(module, person_id=person_id)
-        self.bacterial_pathogen = bacterial_pathogen
-        self.symptoms = symptoms
-        self.duration_in_days = duration_in_days
-
-    def apply(self, person_id):
-        df = self.sim.population.props
-        m = self.module
-        rng = self.module.rng
-
-        # The event should not run if the person is not currently alive
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        # Update the properties in the dataframe:
-        df.at[person_id, 'ri_secondary_bacterial_pathogen'] = self.bacterial_pathogen
-        df.at[person_id, 'ri_ALRI_disease_type'] = 'bacterial_pneumonia'
-        df.at[person_id, 'ri_secondary_bacterial_infection_date'] = self.sim.date
-
-        all_symptoms_for_this_person = list(self.symptoms)
-
-        # Update the symptoms from bacterial cause
-        added_bacterial_cause_symptoms = list()
-        bacterial_pneumonia_add_symptoms = m.prob_symptoms_uncomplicated_ALRI['bacterial_pneumonia']
-        for symptom, prob in bacterial_pneumonia_add_symptoms.items():
-            if rng.rand() < prob:
-                added_bacterial_cause_symptoms.append(symptom)
-                for i in added_bacterial_cause_symptoms:
-                    # add symptoms from complications to the list
-                    all_symptoms_for_this_person.append(
-                        i) if i not in all_symptoms_for_this_person \
-                        else all_symptoms_for_this_person
-
-        # Onset symptoms:
-        for symptom in added_bacterial_cause_symptoms:
-            self.module.sim.modules['SymptomManager'].change_symptom(
-                person_id=person_id,
-                symptom_string=symptom,
-                add_or_remove='+',
-                disease_module=self.module,
-                duration_in_days=self.duration_in_days
-            )
-        df.at[person_id, 'ri_current_ALRI_symptoms'] = added_bacterial_cause_symptoms
+# class BacterialSuperinfectionEvent(Event, IndividualScopeEventMixin):
+#     """
+#         This Event is for the onset of a secondary bacterial superinfection
+#          in children with primary viral pneumonia or bronchiolitis
+#         """
+#
+#     def __init__(self, module, person_id, symptoms, duration_in_days, bacterial_pathogen):
+#         super().__init__(module, person_id=person_id)
+#         self.bacterial_pathogen = bacterial_pathogen
+#         self.symptoms = symptoms
+#         self.duration_in_days = duration_in_days
+#
+#     def apply(self, person_id):
+#         df = self.sim.population.props
+#         m = self.module
+#         rng = self.module.rng
+#
+#         # The event should not run if the person is not currently alive
+#         if not df.at[person_id, 'is_alive']:
+#             return
+#
+#         # Update the properties in the dataframe:
+#         df.at[person_id, 'ri_secondary_bacterial_pathogen'] = self.bacterial_pathogen
+#         df.at[person_id, 'ri_ALRI_disease_type'] = 'bacterial_pneumonia'
+#         df.at[person_id, 'ri_secondary_bacterial_infection_date'] = self.sim.date
+#
+#         all_symptoms_for_this_person = list(self.symptoms)
+#
+#         # Update the symptoms from bacterial cause
+#         added_bacterial_cause_symptoms = list()
+#         bacterial_pneumonia_add_symptoms = m.prob_symptoms_uncomplicated_ALRI['bacterial_pneumonia']
+#         for symptom, prob in bacterial_pneumonia_add_symptoms.items():
+#             if rng.rand() < prob:
+#                 added_bacterial_cause_symptoms.append(symptom)
+#                 for i in added_bacterial_cause_symptoms:
+#                     # add symptoms from complications to the list
+#                     all_symptoms_for_this_person.append(
+#                         i) if i not in all_symptoms_for_this_person \
+#                         else all_symptoms_for_this_person
+#
+#         # Onset symptoms:
+#         for symptom in added_bacterial_cause_symptoms:
+#             self.module.sim.modules['SymptomManager'].change_symptom(
+#                 person_id=person_id,
+#                 symptom_string=symptom,
+#                 add_or_remove='+',
+#                 disease_module=self.module,
+#                 duration_in_days=self.duration_in_days
+#             )
+#         df.at[person_id, 'ri_current_ALRI_symptoms'] = added_bacterial_cause_symptoms
 
 
 class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
@@ -1425,7 +1652,13 @@ class PneumoniaCureEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
 
         # clear other properties
-        df.at[person_id, 'ri_ALRI_status'] = False
+        df.at[person_id, 'ri_current_ALRI_status'] = False
+        # ---- Key Current Status Classification Properties ----
+        df.at[person_id, 'ri_primary_ALRI_pathogen'] = 'not_applicable'
+        df.at[person_id, 'ri_current_ALRI_symptoms'] = 'not_applicable'
+        df.at[person_id, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
+        df.at[person_id, 'ri_ALRI_disease_type'] = 'not_applicable'
+        df.at[person_id, 'ri_ALRI_complications'] = 'not_applicable'
 
         # clear the treatment prperties
         df.at[person_id, 'ri_ALRI_treatment'] = False
@@ -1506,7 +1739,7 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
         logger.info(key='incidence_count_by_pathogen', data=counts)
 
         # get single row of dataframe (but not a series) ----------------
-        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
+        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
         individual_child = df.loc[[index_children_with_alri[0]]]
 
         logger.debug(key='individual_check',
@@ -1514,7 +1747,7 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
                      description='following an individual through simulation')
 
         # log the information on complications ----------------
-        index_alri_with_complications = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status &
+        index_alri_with_complications = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status &
                                                  (df.ri_ALRI_complications != 'none')]
         # make a df with children with alri complications as the columns
         df_alri_complications = pd.DataFrame(index=index_alri_with_complications,
@@ -1558,6 +1791,11 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
         logger.info(key='alri_complications',
                     data=complications_summary,
                     description='Summary of complications in a year')
+
+        alri_count = df.groupby(df.ri_ALRI_disease_type).size()
+        alri_check = df.loc[index_children_with_alri]
+
+        print(alri_count)
 
         # Reset the counters and the date_last_run --------------------
         self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)

@@ -742,7 +742,7 @@ class HSI_iCCM_Pneumonia_Treatment_level_0(HSI_Event, IndividualScopeEventMixin)
 
         # Currently we do not stop the event from running if consumables are unavailble
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
-            if df.at[person_id, 'ri_ALRI_status']:
+            if df.at[person_id, 'ri_current_ALRI_status']:
                 df.at[person_id, 'ri_pneumonia_treatment'] = True
                 df.at[person_id, 'ri_pneumonia_tx_start_date'] = self.sim.date
             if df.at[person_id, 'ri_last_bronchiolitis_status']:
@@ -830,7 +830,7 @@ class HSI_IMCI_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEventMixin)
 
         # Currently we do not stop the event from running if consumables are unavailble
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
-            if df.at[person_id, 'ri_ALRI_status']:
+            if df.at[person_id, 'ri_current_ALRI_status']:
                 df.at[person_id, 'ri_pneumonia_treatment'] = True
                 df.at[person_id, 'ri_pneumonia_tx_start_date'] = self.sim.date
             # if df.at[person_id, 'ri_last_bronchiolitis_status']:
@@ -915,7 +915,7 @@ class HSI_IMCI_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin)
 
         # Currently we do not stop the event from running if consumables are unavailble
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
-            if df.at[person_id, 'ri_ALRI_status']:
+            if df.at[person_id, 'ri_current_ALRI_status']:
                 df.at[person_id, 'ri_ALRI_treatment'] = True
                 df.at[person_id, 'ri_ALRI_tx_start_date'] = self.sim.date
 
@@ -1029,14 +1029,14 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # management_info_flattened_df.drop(columns='dict_key', inplace=True)
         #
         # # make a df with children with alri status as the columns -----
-        # index_alri_status_true = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
+        # index_alri_status_true = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
 
         # df_alri_management_info = pd.DataFrame(data=management_info_flattened_df,
         #                                        index=index_alri_status_true)
                                                # columns=list(management_info_flattened_df.keys()))
 
         # Check on one child dataframe
-        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
+        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
         individual_child = df.loc[[index_children_with_alri[0]]]
         print(individual_child)
 
@@ -1062,7 +1062,7 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     description='IMCI pneumonia classification')
 
         # get single row of dataframe (but not a series) ----------------
-        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
+        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
         individual_child = df.loc[[index_children_with_alri[0]]]
 
         logger.debug(key='individual_check',
@@ -1102,3 +1102,90 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=hw_class_for_imci_severe_pneumo_df_transposed,
                     description='Health worker classification given for IMCI severe pneumonia')
 
+        # -----------------------------------------------------------------------------------------------
+        # underlying condition vs IMCI pneumonia classification -----------------------------------------
+        imci_classification_for_underlying_viral_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'viral_pneumonia')].groupby(
+                'ri_IMCI_classification_as_gold').size()
+        imci_classification_for_underlying_bacterial_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bacterial_pneumonia')
+            ].groupby('ri_IMCI_classification_as_gold').size()
+        imci_classification_for_underlying_fungal_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'fungal_pneumonia')
+            ].groupby('ri_IMCI_classification_as_gold').size()
+        imci_classification_for_underlying_bronchiolitis = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bronchiolitis')
+               ].groupby('ri_IMCI_classification_as_gold').size()
+
+        # convert into a dataframe
+        imci_classification_for_underlying_viral_pneumonia_df = \
+            pd.DataFrame(imci_classification_for_underlying_viral_pneumonia)
+        imci_classification_for_underlying_bacterial_pneumonia_df = \
+            pd.DataFrame(imci_classification_for_underlying_bacterial_pneumonia)
+        imci_classification_for_underlying_fungal_pneumonia_df = \
+            pd.DataFrame(imci_classification_for_underlying_fungal_pneumonia)
+        imci_classification_for_underlying_bronchiolitis_df = \
+            pd.DataFrame(imci_classification_for_underlying_bronchiolitis)
+
+        # swap rows to columns
+        imci_class_for_underlying_viral_pneumonia_df_T = imci_classification_for_underlying_viral_pneumonia_df.T
+        imci_class_for_underlying_bacterial_pneumonia_df_T = imci_classification_for_underlying_bacterial_pneumonia_df.T
+        imci_class_for_underlying_fungal_pneumonia_df_T = imci_classification_for_underlying_fungal_pneumonia_df.T
+        imci_class_for_underlying_bronchiolitis_df_T = imci_classification_for_underlying_bronchiolitis_df.T
+
+        logger.info(key='IMCI_classification_for_underlying_viral_pneumonia',
+                    data=imci_class_for_underlying_viral_pneumonia_df_T,
+                    description='IMCI classification for underlying true condition - viral pneumonia')
+        logger.info(key='IMCI_classification_for_underlying_bacterial_pneumonia',
+                    data=imci_class_for_underlying_bacterial_pneumonia_df_T,
+                    description='IMCI classification for underlying true condition - bacterial pneumonia')
+        logger.info(key='IMCI_classification_for_underlying_fungal_pneumonia',
+                    data=imci_class_for_underlying_fungal_pneumonia_df_T,
+                    description='IMCI classification for underlying true condition - fungal pneumonia')
+        logger.info(key='IMCI_classification_for_underlying_bronchiolitis',
+                    data=imci_class_for_underlying_bronchiolitis_df_T,
+                    description='IMCI classification for underlying true condition - bronchiolitis')
+
+        # -----------------------------------------------------------------------------------------------
+        # underlying condition vs health workers' classification -----------------------------------------
+        hw_classification_for_underlying_viral_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'viral_pneumonia')].groupby(
+                'ri_health_worker_IMCI_classification').size()
+        hw_classification_for_underlying_bacterial_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bacterial_pneumonia')
+            ].groupby('ri_health_worker_IMCI_classification').size()
+        hw_classification_for_underlying_fungal_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'fungal_pneumonia')
+            ].groupby('ri_health_worker_IMCI_classification').size()
+        hw_classification_for_underlying_bronchiolitis = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bronchiolitis')
+               ].groupby('ri_health_worker_IMCI_classification').size()
+
+        # convert into a dataframe
+        hw_classification_for_underlying_viral_pneumonia_df = \
+            pd.DataFrame(hw_classification_for_underlying_viral_pneumonia)
+        hw_classification_for_underlying_bacterial_pneumonia_df = \
+            pd.DataFrame(hw_classification_for_underlying_bacterial_pneumonia)
+        hw_classification_for_underlying_fungal_pneumonia_df = \
+            pd.DataFrame(hw_classification_for_underlying_fungal_pneumonia)
+        hw_classification_for_underlying_bronchiolitis_df = \
+            pd.DataFrame(hw_classification_for_underlying_bronchiolitis)
+
+        # swap rows to columns
+        hw_class_for_underlying_viral_pneumonia_df_T = hw_classification_for_underlying_viral_pneumonia_df.T
+        hw_class_for_underlying_bacterial_pneumonia_df_T = hw_classification_for_underlying_bacterial_pneumonia_df.T
+        hw_class_for_underlying_fungal_pneumonia_df_T = hw_classification_for_underlying_fungal_pneumonia_df.T
+        hw_class_for_underlying_bronchiolitis_df_T = hw_classification_for_underlying_bronchiolitis_df.T
+
+        logger.info(key='hw_classification_for_underlying_viral_pneumonia',
+                    data=hw_class_for_underlying_viral_pneumonia_df_T,
+                    description='hw classification for underlying true condition - viral pneumonia')
+        logger.info(key='hw_classification_for_underlying_bacterial_pneumonia',
+                    data=hw_class_for_underlying_bacterial_pneumonia_df_T,
+                    description='hw classification for underlying true condition - bacterial pneumonia')
+        logger.info(key='hw_classification_for_underlying_fungal_pneumonia',
+                    data=hw_class_for_underlying_fungal_pneumonia_df_T,
+                    description='hw classification for underlying true condition - fungal pneumonia')
+        logger.info(key='hw_classification_for_underlying_bronchiolitis',
+                    data=hw_class_for_underlying_bronchiolitis_df_T,
+                    description='hw classification for underlying true condition - bronchiolitis')

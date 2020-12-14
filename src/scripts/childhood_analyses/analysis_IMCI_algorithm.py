@@ -44,8 +44,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 2)
-pop_size = 500
+end_date = Date(2013, 1, 2)
+pop_size = 50000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
 # `log_config` arguments, these will override the default behaviour.
@@ -197,3 +197,222 @@ plt.title('Mean of health worker classifications vs IMCI gold standard of IMCI p
 plt.savefig(outputpath / ("health_worker_vs_IMCI_classifications_mean_of_years" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
+# -------------------------------------------------------------------------------------------------------------------
+# plot IMCI classification vs underlying true condition
+# ----- Model outputs -----
+# output of true underlying condition vs IMCI classification
+# --- for viral pneumonia
+underlying_viral_pneumonia_vs_imci_classification = \
+    output['tlo.methods.dx_algorithm_child']['IMCI_classification_for_underlying_viral_pneumonia']
+underlying_viral_pneumonia_vs_imci_classification['date'] = \
+    pd.to_datetime(underlying_viral_pneumonia_vs_imci_classification['date']).dt.year
+underlying_viral_pneumonia_vs_imci_classification = underlying_viral_pneumonia_vs_imci_classification.set_index('date')
+
+# --- for bacterial pneumonia
+underlying_bacterial_pneumonia_vs_imci_classification = \
+    output['tlo.methods.dx_algorithm_child']['IMCI_classification_for_underlying_bacterial_pneumonia']
+underlying_bacterial_pneumonia_vs_imci_classification['date'] = \
+    pd.to_datetime(underlying_bacterial_pneumonia_vs_imci_classification['date']).dt.year
+underlying_bacterial_pneumonia_vs_imci_classification = underlying_bacterial_pneumonia_vs_imci_classification.set_index('date')
+
+# --- for fungal pneumonia
+underlying_fungal_pneumonia_vs_imci_classification = \
+    output['tlo.methods.dx_algorithm_child']['IMCI_classification_for_underlying_fungal_pneumonia']
+underlying_fungal_pneumonia_vs_imci_classification['date'] = \
+    pd.to_datetime(underlying_fungal_pneumonia_vs_imci_classification['date']).dt.year
+underlying_fungal_pneumonia_vs_imci_classification = underlying_fungal_pneumonia_vs_imci_classification.set_index('date')
+
+# --- for bronchiolitis
+underlying_bronchiolitis_vs_imci_classification = \
+    output['tlo.methods.dx_algorithm_child']['IMCI_classification_for_underlying_bronchiolitis']
+underlying_bronchiolitis_vs_imci_classification['date'] = \
+    pd.to_datetime(underlying_bronchiolitis_vs_imci_classification['date']).dt.year
+underlying_bronchiolitis_vs_imci_classification = underlying_bronchiolitis_vs_imci_classification.set_index('date')
+
+# ----- Format the data -----
+# --- for viral pneumonia
+get_mean_imci_classifications_for_underlying_viral_pneumonia = underlying_viral_pneumonia_vs_imci_classification[
+    ['common_cold', 'non-severe_pneumonia', 'severe_pneumonia']].mean(axis=0)
+get_mean_imci_classifications_for_underlying_viral_pneumonia.rename(
+    index={'common_cold': 'IMCI_no_pneumonia',
+           'non-severe_pneumonia': 'IMCI_pneumonia',
+           'severe_pneumonia': 'IMCI_severe_pneumonia'}, inplace=True)
+mean_imci_class_for_viral_pneumonia = pd.DataFrame(get_mean_imci_classifications_for_underlying_viral_pneumonia).T
+mean_imci_class_for_viral_pneumonia['label'] = 'viral_pneumonia'
+mean_imci_class_for_viral_pneumonia.set_index(
+        'label',
+        drop=True,
+        inplace=True
+    )
+
+# --- for bacterial pneumonia
+get_mean_imci_classifications_for_underlying_bacterial_pneumonia = underlying_bacterial_pneumonia_vs_imci_classification[
+    ['common_cold', 'non-severe_pneumonia', 'severe_pneumonia']].mean(axis=0)
+get_mean_imci_classifications_for_underlying_bacterial_pneumonia.rename(
+    index={'common_cold': 'IMCI_no_pneumonia',
+           'non-severe_pneumonia': 'IMCI_pneumonia',
+           'severe_pneumonia': 'IMCI_severe_pneumonia'}, inplace=True)
+mean_imci_class_for_bacterial_pneumonia = pd.DataFrame(get_mean_imci_classifications_for_underlying_bacterial_pneumonia).T
+mean_imci_class_for_bacterial_pneumonia['label'] = 'bacterial_pneumonia'
+mean_imci_class_for_bacterial_pneumonia.set_index(
+        'label',
+        drop=True,
+        inplace=True
+    )
+
+# --- for fungal pneumonia
+get_mean_imci_classifications_for_underlying_fungal_pneumonia = underlying_fungal_pneumonia_vs_imci_classification[
+    ['common_cold', 'non-severe_pneumonia', 'severe_pneumonia']].mean(axis=0)
+get_mean_imci_classifications_for_underlying_fungal_pneumonia.rename(
+    index={'common_cold': 'IMCI_no_pneumonia',
+           'non-severe_pneumonia': 'IMCI_pneumonia',
+           'severe_pneumonia': 'IMCI_severe_pneumonia'}, inplace=True)
+mean_imci_class_for_fungal_pneumonia = pd.DataFrame(get_mean_imci_classifications_for_underlying_fungal_pneumonia).T
+mean_imci_class_for_fungal_pneumonia['label'] = 'fungal_pneumonia'
+mean_imci_class_for_fungal_pneumonia.set_index(
+        'label',
+        drop=True,
+        inplace=True
+    )
+
+# --- for bronchiolitis
+get_mean_imci_classifications_for_underlying_bronchiolitis = underlying_bronchiolitis_vs_imci_classification[
+    ['common_cold', 'non-severe_pneumonia', 'severe_pneumonia']].mean(axis=0)
+get_mean_imci_classifications_for_underlying_bronchiolitis.rename(
+    index={'common_cold': 'IMCI_no_pneumonia',
+           'non-severe_pneumonia': 'IMCI_pneumonia',
+           'severe_pneumonia': 'IMCI_severe_pneumonia'}, inplace=True)
+mean_imci_class_for_bronchiolitis = pd.DataFrame(get_mean_imci_classifications_for_underlying_bronchiolitis).T
+mean_imci_class_for_bronchiolitis['label'] = 'bronchiolitis'
+mean_imci_class_for_bronchiolitis.set_index(
+        'label',
+        drop=True,
+        inplace=True
+    )
+
+
+# join all dataframes
+joined_underlying_condition_df = pd.concat([mean_imci_class_for_viral_pneumonia.T,
+                                            mean_imci_class_for_bacterial_pneumonia.T,
+                                            mean_imci_class_for_fungal_pneumonia.T,
+                                            mean_imci_class_for_bronchiolitis.T], axis=1)  # rotated index is now columns
+
+# ----- Plotting -----
+plt.style.use('ggplot')
+
+# Pneumonia IMCI classification by health workers -------
+ax3 = joined_underlying_condition_df.T.plot.bar(rot=0)
+plt.ylabel('average number of cases per year')
+plt.title('IMCI classifications for the underlying true ALRI conditions')
+plt.savefig(outputpath / ("IMCI_classifications_for_underlying_true_conditions_mean_of_years" + datestamp + ".pdf"), format='pdf')
+plt.show()
+
+# -------------------------------------------------------------------------------------------------------------------
+# plot underlying true condition and health workers IMCI classification given
+# ----- Model outputs -----
+# output of true underlying condition vs IMCI classification
+# --- for viral pneumonia
+underlying_viral_pneumonia_vs_hw_classification = \
+    output['tlo.methods.dx_algorithm_child']['hw_classification_for_underlying_viral_pneumonia']
+underlying_viral_pneumonia_vs_hw_classification['date'] = \
+    pd.to_datetime(underlying_viral_pneumonia_vs_hw_classification['date']).dt.year
+underlying_viral_pneumonia_vs_hw_classification = underlying_viral_pneumonia_vs_hw_classification.set_index('date')
+
+# --- for bacterial pneumonia
+underlying_bacterial_pneumonia_vs_hw_classification = \
+    output['tlo.methods.dx_algorithm_child']['hw_classification_for_underlying_bacterial_pneumonia']
+underlying_bacterial_pneumonia_vs_hw_classification['date'] = \
+    pd.to_datetime(underlying_bacterial_pneumonia_vs_hw_classification['date']).dt.year
+underlying_bacterial_pneumonia_vs_hw_classification = underlying_bacterial_pneumonia_vs_hw_classification.set_index('date')
+
+# --- for fungal pneumonia
+underlying_fungal_pneumonia_vs_hw_classification = \
+    output['tlo.methods.dx_algorithm_child']['hw_classification_for_underlying_fungal_pneumonia']
+underlying_fungal_pneumonia_vs_hw_classification['date'] = \
+    pd.to_datetime(underlying_fungal_pneumonia_vs_hw_classification['date']).dt.year
+underlying_fungal_pneumonia_vs_hw_classification = underlying_fungal_pneumonia_vs_hw_classification.set_index('date')
+
+# --- for bronchiolitis
+underlying_bronchiolitis_vs_hw_classification = \
+    output['tlo.methods.dx_algorithm_child']['hw_classification_for_underlying_bronchiolitis']
+underlying_bronchiolitis_vs_hw_classification['date'] = \
+    pd.to_datetime(underlying_bronchiolitis_vs_hw_classification['date']).dt.year
+underlying_bronchiolitis_vs_hw_classification = underlying_bronchiolitis_vs_hw_classification.set_index('date')
+
+# ----- Format the data -----
+# --- for viral pneumonia
+get_mean_hw_classifications_for_underlying_viral_pneumonia = underlying_viral_pneumonia_vs_hw_classification[
+    ['common_cold', 'non-severe_pneumonia', 'severe_pneumonia']].mean(axis=0)
+get_mean_hw_classifications_for_underlying_viral_pneumonia.rename(
+    index={'common_cold': 'hw_no_pneumonia',
+           'non-severe_pneumonia': 'hw_pneumonia',
+           'severe_pneumonia': 'hw_severe_pneumonia'}, inplace=True)
+mean_hw_class_for_viral_pneumonia = pd.DataFrame(get_mean_hw_classifications_for_underlying_viral_pneumonia).T
+mean_hw_class_for_viral_pneumonia['label'] = 'viral_pneumonia'
+mean_hw_class_for_viral_pneumonia.set_index(
+        'label',
+        drop=True,
+        inplace=True
+    )
+
+# --- for bacterial pneumonia
+get_mean_hw_classifications_for_underlying_bacterial_pneumonia = underlying_bacterial_pneumonia_vs_hw_classification[
+    ['common_cold', 'non-severe_pneumonia', 'severe_pneumonia']].mean(axis=0)
+get_mean_hw_classifications_for_underlying_bacterial_pneumonia.rename(
+    index={'common_cold': 'hw_no_pneumonia',
+           'non-severe_pneumonia': 'hw_pneumonia',
+           'severe_pneumonia': 'hw_severe_pneumonia'}, inplace=True)
+mean_hw_class_for_bacterial_pneumonia = pd.DataFrame(get_mean_hw_classifications_for_underlying_bacterial_pneumonia).T
+mean_hw_class_for_bacterial_pneumonia['label'] = 'bacterial_pneumonia'
+mean_hw_class_for_bacterial_pneumonia.set_index(
+        'label',
+        drop=True,
+        inplace=True
+    )
+
+# --- for fungal pneumonia
+get_mean_hw_classifications_for_underlying_fungal_pneumonia = underlying_fungal_pneumonia_vs_hw_classification[
+    ['common_cold', 'non-severe_pneumonia', 'severe_pneumonia']].mean(axis=0)
+get_mean_hw_classifications_for_underlying_fungal_pneumonia.rename(
+    index={'common_cold': 'hw_no_pneumonia',
+           'non-severe_pneumonia': 'hw_pneumonia',
+           'severe_pneumonia': 'hw_severe_pneumonia'}, inplace=True)
+mean_hw_class_for_fungal_pneumonia = pd.DataFrame(get_mean_hw_classifications_for_underlying_fungal_pneumonia).T
+mean_hw_class_for_fungal_pneumonia['label'] = 'fungal_pneumonia'
+mean_hw_class_for_fungal_pneumonia.set_index(
+        'label',
+        drop=True,
+        inplace=True
+    )
+
+# --- for bronchiolitis
+get_mean_hw_classifications_for_underlying_bronchiolitis = underlying_bronchiolitis_vs_hw_classification[
+    ['common_cold', 'non-severe_pneumonia', 'severe_pneumonia']].mean(axis=0)
+get_mean_hw_classifications_for_underlying_bronchiolitis.rename(
+    index={'common_cold': 'hw_no_pneumonia',
+           'non-severe_pneumonia': 'hw_pneumonia',
+           'severe_pneumonia': 'hw_severe_pneumonia'}, inplace=True)
+mean_hw_class_for_bronchiolitis = pd.DataFrame(get_mean_hw_classifications_for_underlying_bronchiolitis).T
+mean_hw_class_for_bronchiolitis['label'] = 'bronchiolitis'
+mean_hw_class_for_bronchiolitis.set_index(
+        'label',
+        drop=True,
+        inplace=True
+    )
+
+
+# join all dataframes
+joined_underlying_condition_hw_df = pd.concat([mean_hw_class_for_viral_pneumonia.T,
+                                               mean_hw_class_for_bacterial_pneumonia.T,
+                                               mean_hw_class_for_fungal_pneumonia.T,
+                                               mean_hw_class_for_bronchiolitis.T], axis=1)  # rotated index is now columns
+
+# ----- Plotting -----
+plt.style.use('ggplot')
+
+# Pneumonia IMCI classification by health workers -------
+ax4 = joined_underlying_condition_hw_df.T.plot.bar(rot=0)
+plt.ylabel('average number of cases per year')
+plt.title('health worker classifications for the underlying true ALRI conditions')
+plt.savefig(outputpath / ("hw_classifications_for_underlying_true_conditions_mean_of_years" + datestamp + ".pdf"), format='pdf')
+plt.show()
