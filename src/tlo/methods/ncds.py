@@ -98,19 +98,21 @@ class Ncds(Module):
         'rr_chronic_lower_back_pain': Parameter(Types.REAL, 'rr if currently has chronic lower back pain'),
         'rr_chronic_ischemic_heart_disease': Parameter(Types.REAL,
                                                        'rr if currently has chronic ischemic heart disease'),
-        'rr_ever_stroke': Parameter(Types.REAL, 'rr if has ever had stroke'),
         'rr_cancers': Parameter(Types.REAL, 'rr if currently has cancers'),
-        'rr_stroke_if_cihd': Parameter(Types.REAL,
-                                       'rr of having stroke if currently has chronic ischemic heart disease'),
-        'baseline_annual_probability_stroke': Parameter(Types.REAL, 'baseline annual probability of having a stroke'),
+        'rr_ever_stroke': Parameter(Types.REAL, 'rr if has ever had stroke'),
+        'rr_ever_heart_attack': Parameter(Types.REAL,
+                                       'rr of has ever had heart attack'),
         'r_death_nc_hypertension': Parameter(Types.REAL, 'baseline annual probability of dying if has hypertension'),
         'r_death_nc_diabetes': Parameter(Types.REAL, 'baseline annual probability of dying if has diabetes'),
         'r_death_nc_depression': Parameter(Types.REAL, 'baseline annual probability of dying if has depression'),
-        'r_death_nc_chronic_lower_back_pain': Parameter(Types.REAL, 'baseline annual probability of dying if has chronic lower back pain'),
+        'r_death_nc_chronic_lower_back_pain': Parameter(Types.REAL,
+                                                        'baseline annual probability of dying if has chronic lower back pain'),
         'r_death_nc_chronic_kidney_disease': Parameter(Types.REAL, 'baseline annual probability of dying if has CKD'),
         'r_death_nc_chronic_ischemic_hd': Parameter(Types.REAL, 'baseline annual probability of dying if has CIHD'),
         'r_death_nc_cancers': Parameter(Types.REAL, 'baseline annual probability of dying if has cancers'),
-        'r_death_stroke': Parameter(Types.REAL, 'baseline annual probability of dying if has ever had a stroke')
+        'r_death_nc_stroke': Parameter(Types.REAL, 'baseline annual probability of dying if has ever had a stroke'),
+        'r_death_nc_heart_attack': Parameter(Types.REAL,
+                                             'baseline annual probability of dying if has ever had a heart attack')
     }
 
     # Note that all properties must have a two letter prefix that identifies them to this module.
@@ -141,6 +143,7 @@ class Ncds(Module):
         # 'nc_chronic_respiratory_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic respiratory disease'),
         # 'nc_other_infections': Property(Types.BOOL, 'Whether or not someone currently has other infections'),
         'nc_ever_stroke': Property(Types.BOOL, 'Whether or not someone has ever had a stroke'),
+        'nc_ever_heart_attack': Property(Types.BOOL, 'Whether or not someone has ever had a heart attack')
     }
 
     # TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank
@@ -155,9 +158,10 @@ class Ncds(Module):
         # save a list of the conditions that covered in this module (extracted from PROPERTIES)
         self.conditions = list(self.PROPERTIES.keys())
         self.conditions.remove('nc_ever_stroke')
+        self.conditions.remove('nc_ever_heart_attack')
 
         # save a list of the events that are covered in this module (created manually for now)
-        self.events = ['nc_ever_stroke']
+        self.events = ['nc_ever_stroke', 'nc_ever_heart_attack']
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -178,23 +182,36 @@ class Ncds(Module):
         for age_range in self.age_index:
             self.incident_case_tracker_zeros[f'{age_range}'] = copy.deepcopy(zeros_counter)
 
-        xls = pd.ExcelFile(
-            Path(self.resourcefilepath / 'ResourceFile_NCDs2.xlsx')
-        )
+        self.params_dict_onset = dict()
+        self.params_dict_removal = dict()
+        self.params_dict_events = dict()
 
-        # check that we have got parameters for each of the conditions
-        # assert {xls.sheet_names} == {self.conditions}
-
-        self.params_dict = dict()
         for condition in self.conditions:
-            params = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                              sheet_name=f"{condition}")
+            params_onset = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_condition_onset.xlsx",
+                                         sheet_name=f"{condition}")
             # replace NaNs with 1
-            params['value'] = params['value'].replace(np.nan, 1)
-            self.params_dict[condition] = params
+            params_onset['value'] = params_onset['value'].replace(np.nan, 1)
+            self.params_dict_onset[condition] = params_onset
+
+            # Get the death rates from a params_dict
+            self.parameters[f'r_death_{condition}'] = params_onset.loc[params_onset['parameter_name'] == f'r_death_{condition}', 'value'].values[0]
+
+            params_removal = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_condition_onset.xlsx",
+                                           sheet_name=f"{condition}")
+            # replace NaNs with 1
+            params_removal['value'] = params_removal['value'].replace(np.nan, 1)
+            self.params_dict_removal[condition] = params_removal
+
+        for event in self.events:
+            params_events = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_events.xlsx",
+                                          sheet_name=f"{event}")
+            # replace NaNs with 1
+            params_events['value'] = params_events['value'].replace(np.nan, 1)
+            self.params_dict_events[event] = params_events
 
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -216,23 +233,23 @@ class Ncds(Module):
         sim.schedule_event(Ncds_MainPollingEvent(self, self.parameters['interval_between_polls']), sim.date)
         sim.schedule_event(Ncds_LoggingEvent(self), sim.date)
 
-        # Create Tracker for the number of Stroke events
-        self.eventsTracker = {'StrokeEvents': 0}
+        # Create Tracker for the number of different types of events
+        self.eventsTracker = {'StrokeEvents': 0, 'HeartAttackEvents': 0}
 
         # Build the LinearModel for onset/removal of each condition
         self.lms_onset = dict()
         self.lms_removal = dict()
 
         # Build the LinearModel for occurrence of events
-        self.event_occurrence = dict()
+        self.lms_event_occurrence = dict()
 
         for condition in self.conditions:
             self.lms_onset[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'])
-            # self.lms_removal[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'])
+            self.lms_removal[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'])
 
         for event in self.events:
-            self.event_occurrence[event] = self.build_linear_model_events(event,
-                                                                          self.parameters['interval_between_polls'])
+            self.lms_event_occurrence[event] = self.build_linear_model_events(event,
+                                                                              self.parameters['interval_between_polls'])
 
     def build_linear_model(self, condition, interval_between_polls):
         """
@@ -241,7 +258,7 @@ class Ncds(Module):
         :return: a linear model
         """
 
-        p = self.params_dict[condition].set_index('parameter_name').T.to_dict('records')[0]
+        p = self.params_dict_onset[condition].set_index('parameter_name').T.to_dict('records')[0]
         p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
 
         self.lms_onset[condition] = LinearModel(
@@ -296,35 +313,150 @@ class Ncds(Module):
             Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
             Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
             Predictor('li_wood_burn_stove').when(True, p['rr_wood_burning_stove']),
-            Predictor('nc_hypertension').when(True, p['rr_hypertension'])
+            Predictor('nc_diabetes').when(True, p['rr_diabetes']),
+            Predictor('nc_hypertension').when(True, p['rr_hypertension']),
+            Predictor('nc_depression').when(True, p['rr_depression']),
+            Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
+            Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
+            Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease']),
+            Predictor('nc_cancers').when(True, p['rr_cancers'])
         )
 
-        # self.lms_removal[condition] = LinearModel(
-        # LinearModelType.MULTIPLICATIVE,
-        # self.parameters['baseline_prob_ldl_hdl'],
-        # Predictor().when('(sex=="M")', p['rr_male'])
-        # )
+        p = self.params_dict_removal[condition].set_index('parameter_name').T.to_dict('records')[0]
+        p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
 
-        return self.lms_onset[condition]
+        self.lms_removal[condition] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['baseline_annual_probability'],
+            Predictor().when('(sex=="M")', p['rr_male']),
+            Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
+                .when('.between(5, 9)', p['rr_5_9'])
+                .when('.between(10, 14)', p['rr_10_14'])
+                .when('.between(15, 19)', p['rr_15_19'])
+                .when('.between(20, 24)', p['rr_20_24'])
+                .when('.between(25, 29)', p['rr_25_29'])
+                .when('.between(30, 34)', p['rr_30_34'])
+                .when('.between(35, 39)', p['rr_35_39'])
+                .when('.between(40, 44)', p['rr_40_44'])
+                .when('.between(45, 49)', p['rr_45_49'])
+                .when('.between(50, 54)', p['rr_50_54'])
+                .when('.between(55, 59)', p['rr_55_59'])
+                .when('.between(60, 64)', p['rr_60_64'])
+                .when('.between(65, 69)', p['rr_65_69'])
+                .when('.between(70, 74)', p['rr_70_74'])
+                .when('.between(75, 79)', p['rr_75_79'])
+                .when('.between(80, 84)', p['rr_80_84'])
+                .when('.between(85, 89)', p['rr_85_89'])
+                .when('.between(90, 94)', p['rr_90_94'])
+                .when('.between(95, 99)', p['rr_95_99'])
+                .otherwise(p['rr_100']),
+            Predictor('li_urban').when(True, p['rr_urban']),
+            Predictor('li_wealth').when('==1', p['rr_wealth_1'])
+                .when('2', p['rr_wealth_2'])
+                .when('3', p['rr_wealth_3'])
+                .when('4', p['rr_wealth_4'])
+                .when('5', p['rr_wealth_5']),
+            Predictor('li_bmi').when('==1', p['rr_bmi_1'])
+                .when('2', p['rr_bmi_2'])
+                .when('3', p['rr_bmi_3'])
+                .when('4', p['rr_bmi_4'])
+                .when('5', p['rr_bmi_5']),
+            Predictor('li_low_ex').when(True, p['rr_low_exercise']),
+            Predictor('li_high_salt').when(True, p['rr_high_salt']),
+            Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
+            Predictor('li_tob').when(True, p['rr_tobacco']),
+            Predictor('li_ex_alc').when(True, p['rr_alcohol']),
+            Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
+                .when('2', p['rr_marital_status_2'])
+                .when('3', p['rr_marital_status_3']),
+            Predictor('li_in_ed').when(True, p['rr_in_education']),
+            Predictor('li_ed_lev').when('==1', p['rr_current_education_level_1'])
+                .when('2', p['rr_current_education_level_2'])
+                .when('3', p['rr_current_education_level_3']),
+            Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
+            Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
+            Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
+            Predictor('li_wood_burn_stove').when(True, p['rr_wood_burning_stove']),
+            Predictor('nc_diabetes').when(True, p['rr_diabetes']),
+            Predictor('nc_hypertension').when(True, p['rr_hypertension']),
+            Predictor('nc_depression').when(True, p['rr_depression']),
+            Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
+            Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
+            Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease']),
+            Predictor('nc_cancers').when(True, p['rr_cancers'])
+        )
+
+        return self.lms_onset[condition], self.lms_removal[condition]
 
     def build_linear_model_events(self, event, interval_between_polls):
 
-        self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                          sheet_name="nc_stroke")
-        )
+        p = self.params_dict_events[event].set_index('parameter_name').T.to_dict('records')[0]
+        p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
 
-        p = self.parameters
-        p['baseline_annual_probability_stroke'] = p['baseline_annual_probability_stroke'] * (
-            interval_between_polls / 12)
-
-        self.event_occurrence[event] = LinearModel(
+        self.lms_event_occurrence[event] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['baseline_annual_probability_stroke'],
-            Predictor('nc_chronic_ischemic_hd').when(True, p['rr_stroke_if_cihd'])
+            p['baseline_annual_probability'],
+            Predictor().when('(sex=="M")', p['rr_male']),
+            Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
+                .when('.between(5, 9)', p['rr_5_9'])
+                .when('.between(10, 14)', p['rr_10_14'])
+                .when('.between(15, 19)', p['rr_15_19'])
+                .when('.between(20, 24)', p['rr_20_24'])
+                .when('.between(25, 29)', p['rr_25_29'])
+                .when('.between(30, 34)', p['rr_30_34'])
+                .when('.between(35, 39)', p['rr_35_39'])
+                .when('.between(40, 44)', p['rr_40_44'])
+                .when('.between(45, 49)', p['rr_45_49'])
+                .when('.between(50, 54)', p['rr_50_54'])
+                .when('.between(55, 59)', p['rr_55_59'])
+                .when('.between(60, 64)', p['rr_60_64'])
+                .when('.between(65, 69)', p['rr_65_69'])
+                .when('.between(70, 74)', p['rr_70_74'])
+                .when('.between(75, 79)', p['rr_75_79'])
+                .when('.between(80, 84)', p['rr_80_84'])
+                .when('.between(85, 89)', p['rr_85_89'])
+                .when('.between(90, 94)', p['rr_90_94'])
+                .when('.between(95, 99)', p['rr_95_99'])
+                .otherwise(p['rr_100']),
+            Predictor('li_urban').when(True, p['rr_urban']),
+            Predictor('li_wealth').when('==1', p['rr_wealth_1'])
+                .when('2', p['rr_wealth_2'])
+                .when('3', p['rr_wealth_3'])
+                .when('4', p['rr_wealth_4'])
+                .when('5', p['rr_wealth_5']),
+            Predictor('li_bmi').when('==1', p['rr_bmi_1'])
+                .when('2', p['rr_bmi_2'])
+                .when('3', p['rr_bmi_3'])
+                .when('4', p['rr_bmi_4'])
+                .when('5', p['rr_bmi_5']),
+            Predictor('li_low_ex').when(True, p['rr_low_exercise']),
+            Predictor('li_high_salt').when(True, p['rr_high_salt']),
+            Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
+            Predictor('li_tob').when(True, p['rr_tobacco']),
+            Predictor('li_ex_alc').when(True, p['rr_alcohol']),
+            Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
+                .when('2', p['rr_marital_status_2'])
+                .when('3', p['rr_marital_status_3']),
+            Predictor('li_in_ed').when(True, p['rr_in_education']),
+            Predictor('li_ed_lev').when('==1', p['rr_current_education_level_1'])
+                .when('2', p['rr_current_education_level_2'])
+                .when('3', p['rr_current_education_level_3']),
+            Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
+            Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
+            Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
+            Predictor('li_wood_burn_stove').when(True, p['rr_wood_burning_stove']),
+            Predictor('nc_diabetes').when(True, p['rr_diabetes']),
+            Predictor('nc_hypertension').when(True, p['rr_hypertension']),
+            Predictor('nc_depression').when(True, p['rr_depression']),
+            Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
+            Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
+            Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease']),
+            Predictor('nc_cancers').when(True, p['rr_cancers']),
+            Predictor('nc_ever_stroke').when(True, p['rr_ever_stroke']),
+            Predictor('nc_ever_heart_attack').when(True, p['rr_ever_heart_attack'])
         )
 
-        return self.event_occurrence[event]
+        return self.lms_event_occurrence[event]
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -439,14 +571,17 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         for event in self.module.events:
 
             eligible_population_for_event = df.is_alive
-            has_event = self.module.event_occurrence[event].predict(df.loc[eligible_population], rng)
+            has_event = self.module.lms_event_occurrence[event].predict(df.loc[eligible_population_for_event], rng)
             idx_has_event = has_event[has_event].index
 
-            for person_id in idx_has_event:
-                self.sim.schedule_event(NcdStrokeEvent(self.module, person_id),
-                                        self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
-
-
+            if event == 'nc_ever_stroke':
+                for person_id in idx_has_event:
+                    self.sim.schedule_event(NcdStrokeEvent(self.module, person_id),
+                                            self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
+            elif event == 'nc_ever_heart_attack':
+                for person_id in idx_has_event:
+                    self.sim.schedule_event(NcdHeartAttackEvent(self.module, person_id),
+                                            self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
 
 
 class NcdStrokeEvent(Event, IndividualScopeEventMixin):
@@ -470,6 +605,29 @@ class NcdStrokeEvent(Event, IndividualScopeEventMixin):
         #    disease_module=self.module,
         #    add_or_remove='+',
         #    symptom_string='Damage_From_Stroke'
+        # )
+
+class NcdHeartAttackEvent(Event, IndividualScopeEventMixin):
+    """
+    This is a Stroke event. It has been scheduled to occur by the Ncds_MainPollingEvent.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        if not self.sim.population.props.at[person_id, 'is_alive']:
+            return
+
+        self.module.eventsTracker['HeartAttackEvents'] += 1
+        self.sim.population.props.at[person_id, 'nc_ever_heart_attack'] = True
+
+        ## Add the outward symptom to the SymptomManager. This will result in emergency care being sought
+        # self.sim.modules['SymptomManager'].change_symptom(
+        #    person_id=person_id,
+        #    disease_module=self.module,
+        #    add_or_remove='+',
+        #    symptom_string='Damage_From_Heart_Attack'
         # )
 
 
@@ -543,7 +701,6 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Prevalence of conditions broken down by sex and age
 
         for condition in self.module.conditions:
-
             # Strip leading 'nc_' from condition name
             condition_name = condition.replace('nc_', '')
 
@@ -571,11 +728,12 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # restrict df to alive and aged >=20
         df_comorbidities = df[df.is_alive & (df.age_years >= 20)]
         # restrict df to list of conditions
-        df_comorbidities = df_comorbidities[df_comorbidities.columns[df_comorbidities.columns.isin(self.module.conditions)]]
+        df_comorbidities = df_comorbidities[
+            df_comorbidities.columns[df_comorbidities.columns.isin(self.module.conditions)]]
         # calculate number of conditions by row
         df_comorbidities['n_conditions'] = df_comorbidities.sum(axis=1)
         n_comorbidities = df_comorbidities['n_conditions'].value_counts()
-        prop_comorbidities = n_comorbidities / len(df[(df.is_alive & (df.age_years >=20))])
+        prop_comorbidities = n_comorbidities / len(df[(df.is_alive & (df.age_years >= 20))])
 
         logger.info(key='mm_prevalence',
                     data=prop_comorbidities,
