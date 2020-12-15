@@ -1059,12 +1059,13 @@ class HealthSystem(Module):
          changed through modifications here.
         """
         self.bed_tracker = dict()
-
         for bed_type in self.bed_types:
-            df = pd.DataFrame(index=self.parameters['BedCapacity'].index,
-                              columns=pd.date_range(self.sim.start_date, self.sim.end_date, freq='D'),
-                              data=1)
-            df = df.mul(self.parameters['BedCapacity'][bed_type], axis=0)
+            df = pd.DataFrame(
+                index=pd.date_range(self.sim.start_date, self.sim.end_date, freq='D'),
+                columns=self.parameters['BedCapacity'].index,
+                data=1
+            )
+            df = df.mul(self.parameters['BedCapacity'][bed_type], axis=1)
             assert not df.isna().any().any()
             self.bed_tracker[bed_type] = df
 
@@ -1139,7 +1140,7 @@ class HealthSystem(Module):
         for bed_type in self.bed_types:
             date_start_this_bed = dates_of_bed_use[f"hs_next_first_day_in_bed_{bed_type}"]
             date_end_this_bed = dates_of_bed_use[f"hs_next_last_day_in_bed_{bed_type}"]
-            self.bed_tracker[bed_type].loc[the_facility_name, date_start_this_bed: date_end_this_bed] += operation
+            self.bed_tracker[bed_type].loc[date_start_this_bed: date_end_this_bed, the_facility_name] += operation
 
     def compute_dates_of_bed_use(self, footprint):
         """Helper function to compute the dates of entry/exit from beds of each type according to a bed-days footprint
