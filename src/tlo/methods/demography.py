@@ -213,7 +213,8 @@ class Demography(Module):
         """
         df = self.sim.population.props
 
-        # if a mask is passed to the function, restricts the PY calculation to conditions specified by the mask
+        # if a mask is passed to the function, restricts the PY calculation to individuals who don't have the condition
+        # specified by the mask
         if mask is not None:
             df = df[mask]
 
