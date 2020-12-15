@@ -101,7 +101,7 @@ class Ncds(Module):
         'rr_cancers': Parameter(Types.REAL, 'rr if currently has cancers'),
         'rr_ever_stroke': Parameter(Types.REAL, 'rr if has ever had stroke'),
         'rr_ever_heart_attack': Parameter(Types.REAL,
-                                       'rr of has ever had heart attack'),
+                                          'rr of has ever had heart attack'),
         'r_death_nc_hypertension': Parameter(Types.REAL, 'baseline annual probability of dying if has hypertension'),
         'r_death_nc_diabetes': Parameter(Types.REAL, 'baseline annual probability of dying if has diabetes'),
         'r_death_nc_depression': Parameter(Types.REAL, 'baseline annual probability of dying if has depression'),
@@ -194,7 +194,8 @@ class Ncds(Module):
             self.params_dict_onset[condition] = params_onset
 
             # Get the death rates from a params_dict
-            self.parameters[f'r_death_{condition}'] = params_onset.loc[params_onset['parameter_name'] == f'r_death_{condition}', 'value'].values[0]
+            self.parameters[f'r_death_{condition}'] = \
+            params_onset.loc[params_onset['parameter_name'] == f'r_death_{condition}', 'value'].values[0]
 
             params_removal = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_condition_removal.xlsx",
                                            sheet_name=f"{condition}")
@@ -209,9 +210,12 @@ class Ncds(Module):
             params_events['value'] = params_events['value'].replace(np.nan, 1)
             self.params_dict_events[event] = params_events
 
+            # Get the death rates from a params_dict
+            self.parameters[f'r_death_{event}'] = \
+                params_events.loc[params_events['parameter_name'] == f'r_death_{event}', 'value'].values[0]
+
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -244,8 +248,10 @@ class Ncds(Module):
         self.lms_event_occurrence = dict()
 
         for condition in self.conditions:
-            self.lms_onset[condition] = self.build_linear_model_onset(condition, self.parameters['interval_between_polls'])
-            self.lms_removal[condition] = self.build_linear_model_removal(condition, self.parameters['interval_between_polls'])
+            self.lms_onset[condition] = self.build_linear_model_onset(condition,
+                                                                      self.parameters['interval_between_polls'])
+            self.lms_removal[condition] = self.build_linear_model_removal(condition,
+                                                                          self.parameters['interval_between_polls'])
 
         for event in self.events:
             self.lms_event_occurrence[event] = self.build_linear_model_events(event,
@@ -325,77 +331,77 @@ class Ncds(Module):
         return self.lms_onset[condition]
 
     def build_linear_model_removal(self, condition, interval_between_polls):
-            """
+        """
             :param_dict: the dict read in from the resourcefile
             :param interval_between_polls: the duration (in months) between the polls
             :return: a linear model
             """
 
-            p = self.params_dict_removal[condition].set_index('parameter_name').T.to_dict('records')[0]
-            p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
+        p = self.params_dict_removal[condition].set_index('parameter_name').T.to_dict('records')[0]
+        p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
 
-            self.lms_removal[condition] = LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                p['baseline_annual_probability'],
-                Predictor().when('(sex=="M")', p['rr_male']),
-                Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
-                    .when('.between(5, 9)', p['rr_5_9'])
-                    .when('.between(10, 14)', p['rr_10_14'])
-                    .when('.between(15, 19)', p['rr_15_19'])
-                    .when('.between(20, 24)', p['rr_20_24'])
-                    .when('.between(25, 29)', p['rr_25_29'])
-                    .when('.between(30, 34)', p['rr_30_34'])
-                    .when('.between(35, 39)', p['rr_35_39'])
-                    .when('.between(40, 44)', p['rr_40_44'])
-                    .when('.between(45, 49)', p['rr_45_49'])
-                    .when('.between(50, 54)', p['rr_50_54'])
-                    .when('.between(55, 59)', p['rr_55_59'])
-                    .when('.between(60, 64)', p['rr_60_64'])
-                    .when('.between(65, 69)', p['rr_65_69'])
-                    .when('.between(70, 74)', p['rr_70_74'])
-                    .when('.between(75, 79)', p['rr_75_79'])
-                    .when('.between(80, 84)', p['rr_80_84'])
-                    .when('.between(85, 89)', p['rr_85_89'])
-                    .when('.between(90, 94)', p['rr_90_94'])
-                    .when('.between(95, 99)', p['rr_95_99'])
-                    .otherwise(p['rr_100']),
-                Predictor('li_urban').when(True, p['rr_urban']),
-                Predictor('li_wealth').when('==1', p['rr_wealth_1'])
-                    .when('2', p['rr_wealth_2'])
-                    .when('3', p['rr_wealth_3'])
-                    .when('4', p['rr_wealth_4'])
-                    .when('5', p['rr_wealth_5']),
-                Predictor('li_bmi').when('==1', p['rr_bmi_1'])
-                    .when('2', p['rr_bmi_2'])
-                    .when('3', p['rr_bmi_3'])
-                    .when('4', p['rr_bmi_4'])
-                    .when('5', p['rr_bmi_5']),
-                Predictor('li_low_ex').when(True, p['rr_low_exercise']),
-                Predictor('li_high_salt').when(True, p['rr_high_salt']),
-                Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
-                Predictor('li_tob').when(True, p['rr_tobacco']),
-                Predictor('li_ex_alc').when(True, p['rr_alcohol']),
-                Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
-                    .when('2', p['rr_marital_status_2'])
-                    .when('3', p['rr_marital_status_3']),
-                Predictor('li_in_ed').when(True, p['rr_in_education']),
-                Predictor('li_ed_lev').when('==1', p['rr_current_education_level_1'])
-                    .when('2', p['rr_current_education_level_2'])
-                    .when('3', p['rr_current_education_level_3']),
-                Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
-                Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
-                Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
-                Predictor('li_wood_burn_stove').when(True, p['rr_wood_burning_stove']),
-                Predictor('nc_diabetes').when(True, p['rr_diabetes']),
-                Predictor('nc_hypertension').when(True, p['rr_hypertension']),
-                Predictor('nc_depression').when(True, p['rr_depression']),
-                Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
-                Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
-                Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease']),
-                Predictor('nc_cancers').when(True, p['rr_cancers'])
-            )
+        self.lms_removal[condition] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['baseline_annual_probability'],
+            Predictor().when('(sex=="M")', p['rr_male']),
+            Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
+                .when('.between(5, 9)', p['rr_5_9'])
+                .when('.between(10, 14)', p['rr_10_14'])
+                .when('.between(15, 19)', p['rr_15_19'])
+                .when('.between(20, 24)', p['rr_20_24'])
+                .when('.between(25, 29)', p['rr_25_29'])
+                .when('.between(30, 34)', p['rr_30_34'])
+                .when('.between(35, 39)', p['rr_35_39'])
+                .when('.between(40, 44)', p['rr_40_44'])
+                .when('.between(45, 49)', p['rr_45_49'])
+                .when('.between(50, 54)', p['rr_50_54'])
+                .when('.between(55, 59)', p['rr_55_59'])
+                .when('.between(60, 64)', p['rr_60_64'])
+                .when('.between(65, 69)', p['rr_65_69'])
+                .when('.between(70, 74)', p['rr_70_74'])
+                .when('.between(75, 79)', p['rr_75_79'])
+                .when('.between(80, 84)', p['rr_80_84'])
+                .when('.between(85, 89)', p['rr_85_89'])
+                .when('.between(90, 94)', p['rr_90_94'])
+                .when('.between(95, 99)', p['rr_95_99'])
+                .otherwise(p['rr_100']),
+            Predictor('li_urban').when(True, p['rr_urban']),
+            Predictor('li_wealth').when('==1', p['rr_wealth_1'])
+                .when('2', p['rr_wealth_2'])
+                .when('3', p['rr_wealth_3'])
+                .when('4', p['rr_wealth_4'])
+                .when('5', p['rr_wealth_5']),
+            Predictor('li_bmi').when('==1', p['rr_bmi_1'])
+                .when('2', p['rr_bmi_2'])
+                .when('3', p['rr_bmi_3'])
+                .when('4', p['rr_bmi_4'])
+                .when('5', p['rr_bmi_5']),
+            Predictor('li_low_ex').when(True, p['rr_low_exercise']),
+            Predictor('li_high_salt').when(True, p['rr_high_salt']),
+            Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
+            Predictor('li_tob').when(True, p['rr_tobacco']),
+            Predictor('li_ex_alc').when(True, p['rr_alcohol']),
+            Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
+                .when('2', p['rr_marital_status_2'])
+                .when('3', p['rr_marital_status_3']),
+            Predictor('li_in_ed').when(True, p['rr_in_education']),
+            Predictor('li_ed_lev').when('==1', p['rr_current_education_level_1'])
+                .when('2', p['rr_current_education_level_2'])
+                .when('3', p['rr_current_education_level_3']),
+            Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
+            Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
+            Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
+            Predictor('li_wood_burn_stove').when(True, p['rr_wood_burning_stove']),
+            Predictor('nc_diabetes').when(True, p['rr_diabetes']),
+            Predictor('nc_hypertension').when(True, p['rr_hypertension']),
+            Predictor('nc_depression').when(True, p['rr_depression']),
+            Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
+            Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
+            Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease']),
+            Predictor('nc_cancers').when(True, p['rr_cancers'])
+        )
 
-            return self.lms_removal[condition]
+        return self.lms_removal[condition]
 
     def build_linear_model_events(self, event, interval_between_polls):
 
@@ -558,8 +564,9 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # removal:
             eligible_population = df.is_alive & df[condition]
             loses_condition = self.module.lms_removal[condition].predict(df.loc[eligible_population], rng)
-            idx_acquires_condition = loses_condition[loses_condition].index
-            df.loc[idx_acquires_condition, condition] = False
+            if loses_condition.any():  # catch in case no one loses condition
+                idx_loses_condition = loses_condition[loses_condition].index
+                df.loc[idx_loses_condition, condition] = False
 
             # -------------------- DEATH FROM NCD CONDITION ---------------------------------------
             # There is a risk of death for those who have an NCD condition. Death is assumed to happen instantly.
@@ -587,10 +594,26 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 for person_id in idx_has_event:
                     self.sim.schedule_event(NcdStrokeEvent(self.module, person_id),
                                             self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
+
             elif event == 'nc_ever_heart_attack':
                 for person_id in idx_has_event:
                     self.sim.schedule_event(NcdHeartAttackEvent(self.module, person_id),
                                             self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
+
+            # -------------------- DEATH FROM NCD EVENT ---------------------------------------
+            # There is a risk of death for those who have had an NCD event. Death is assumed to happen instantly.
+
+            # Strip leading 'nc_' from condition name
+            event_name = event.replace('nc_ever_', '')
+
+            condition_idx = df.index[df.is_alive & (df[f'{event}'])]
+            selected_to_die = condition_idx[
+                rng.random_sample(size=len(condition_idx)) < self.module.parameters[f'r_death_{event}']]
+
+            for person_id in selected_to_die:
+                self.sim.schedule_event(
+                    InstantaneousDeath(self.module, person_id, f"{event_name}"), self.sim.date
+                )
 
 
 class NcdStrokeEvent(Event, IndividualScopeEventMixin):
@@ -615,6 +638,7 @@ class NcdStrokeEvent(Event, IndividualScopeEventMixin):
         #    add_or_remove='+',
         #    symptom_string='Damage_From_Stroke'
         # )
+
 
 class NcdHeartAttackEvent(Event, IndividualScopeEventMixin):
     """
