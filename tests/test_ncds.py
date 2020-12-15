@@ -55,6 +55,7 @@ def routine_checks(sim):
     # check that someone has had onset of each event
 
     assert df.nc_ever_stroke.any()
+    assert df.nc_ever_heart_attack.any()
 
     # check that someone dies of each condition
 
@@ -65,6 +66,8 @@ def routine_checks(sim):
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_ischemic_hd').any()
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_kidney_disease').any()
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('cancers').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('stroke').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('heart_attack').any()
 
 
 def test_basic_run():
