@@ -703,7 +703,7 @@ class NewbornOutcomes(Module):
         if child.nb_death_after_birth:
             self.newborn_complication_tracker['death'] += 1
             self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
-                                                                  cause="neonatal complications"), self.sim.date)
+                                                                  cause='neonatal'), self.sim.date)
 
         # If the newborn has survived and did not develop any complications during this period, they do not accrue any
         # DALYs

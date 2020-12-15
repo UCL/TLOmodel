@@ -1031,11 +1031,12 @@ class Labour (Module):
         # Store only live births to a mother parity
         if ~mother.la_intrapartum_still_birth:
             df.at[mother_id, 'la_parity'] += 1  # Only live births contribute to parity
-
+        #    logger.info(key='live_birth', data={'mother': mother_id,
+        #                                        'child': child_id})
         # TODO: review the logic of this thinking with Tim and Tim, very easy to map IP stillbirth without generating
         #  new row?
         if mother.la_intrapartum_still_birth:
-            death = demography.InstantaneousDeath(self.sim.modules['Demography'],
+            death = demography.f(self.sim.modules['Demography'],
                                                   child_id,
                                                   cause='intrapartum stillbirth')
             self.sim.schedule_event(death, self.sim.date)
@@ -1450,7 +1451,7 @@ class Labour (Module):
 
         if mni[individual_id]['death_postpartum']:
             self.labour_tracker['maternal_death'] += 1
-            self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id, cause='postpartum labour'),
+            self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id, cause='maternal'),
                                     self.sim.date)
 
             logger.debug(key='message', data=f'This is PostPartumDeathEvent scheduling a death for person '
@@ -2520,6 +2521,8 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(4, unit='D')
         self.module.labour_characteristics_checker(individual_id)
 
+        x ='y'
+
         if not df.at[individual_id, 'is_alive']:
             return
 
@@ -2543,7 +2546,7 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         if mni[individual_id]['death_in_labour']:
             self.module.labour_tracker['maternal_death'] += 1
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                  cause='labour'), self.sim.date)
+                                                                  cause='maternal'), self.sim.date)
 
             # Log the maternal death
             logger.info(key='message', data=f'This is LabourDeathEvent scheduling a death for person {individual_id} on'

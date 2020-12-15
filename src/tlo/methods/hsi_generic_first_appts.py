@@ -337,6 +337,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         df = self.sim.population.props
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+        abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
         age = df.at[person_id, "age_years"]
 
         health_system = self.sim.modules["HealthSystem"]
@@ -350,9 +351,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
             # -----  COMPLICATIONS OF ABORTION  -----
-            if df.at[person_id, 'ps_spontaneous_abortion_complication'] != 'none' or df.at[person_id,
-                                                                                           'ps_induced_abortion_'
-                                                                                           'complication'] != 'none':
+            if abortion_complications.has_any([person_id], 'sepsis', 'injury', 'haemorrhage', first=True):
                 # todo: diagnostics? - see notes in ANC module
                 event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
                     module=self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)

@@ -62,7 +62,7 @@ def test_run():
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*']),
+                                           service_availability=['*'], ignore_cons_constraints=True),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),

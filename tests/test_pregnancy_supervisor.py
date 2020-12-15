@@ -60,7 +60,7 @@ def test_run():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*']),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),

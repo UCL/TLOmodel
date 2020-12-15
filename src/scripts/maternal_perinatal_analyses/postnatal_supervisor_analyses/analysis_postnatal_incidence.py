@@ -68,5 +68,3 @@ stats['year'] = stats['date'].dt.year
 nstats = log_df['tlo.methods.newborn_outcomes']['neonatal_summary_stats']
 nstats['date'] = pd.to_datetime(nstats['date'])
 nstats['year'] = nstats['date'].dt.year
-
-x='y'

@@ -2209,12 +2209,12 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         person = df.loc[person_id]
+        abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
 
         # We check only women with complications post abortion are sent to this event
-        assert person.ps_spontaneous_abortion_complication != 'none' \
-               or person.ps_induced_abortion_complication != 'none'
+        assert abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury', first=True)
 
-        if person.is_alive:
+        """if person.is_alive:
             # Women are able to undergo a number of interventions to manage abortion complications including evacuation
             # of the uterus, antibiotics, pain management and blood transfusion
 
@@ -2244,7 +2244,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
                 logger.debug(key='message', data=f'Person {person_id} is experiencing severe complications of abortion'
                                                  f' and will be treated accordingly')
 
-                self.module.post_abortion_care_interventions(self, person_id, 'severe')
+                self.module.post_abortion_care_interventions(self, person_id, 'severe') """
 
     def did_not_run(self):
         pass
