@@ -938,11 +938,12 @@ class HealthSystem(Module):
         return dict(zip(self.bed_types, [0] * len(self.bed_types)))
 
     def check_beddays_footrpint_format(self, beddays_footprint):
-        """Check that the format of the beddays footprint is correct"""
+        """Check that the format of the beddays footprint (provided by an HSI) is correct"""
         assert type(beddays_footprint) is dict
         assert len(self.bed_types) == len(beddays_footprint)
         assert all([(bed_type in beddays_footprint) for bed_type in self.bed_types])
         assert all([((v >= 0) and (type(v) is int)) for v in beddays_footprint.values()])
+        assert beddays_footprint['non_bed_space'] == 0, "A request cannot be made for this type of bed"
 
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """

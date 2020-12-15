@@ -777,8 +777,8 @@ def check_bed_days_basics(hs_disable):
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
                 'high_dependency_bed': 10,
-                'general_bed': 5,
-                'non_bed_space': 2})
+                'general_bed': 5
+            })
 
         def apply(self, person_id, squeeze_factor):
             print(f'squeeze-factor is {squeeze_factor}')
@@ -808,10 +808,8 @@ def check_bed_days_basics(hs_disable):
     # 2) Check that helper-function to make footprints works as expected:
     assert {'non_bed_space': 0, 'general_bed': 0, 'high_dependency_bed': 0} \
         == hsi_nobd.make_beddays_footprint({})
-    assert {'non_bed_space': 2, 'general_bed': 0, 'high_dependency_bed': 0} \
-        == hsi_nobd.make_beddays_footprint({'non_bed_space': 2})
     assert {'non_bed_space': 0, 'general_bed': 4, 'high_dependency_bed': 1} \
-        == hsi_nobd.make_beddays_footprint({'non_bed_space': 0, 'general_bed': 4, 'high_dependency_bed': 1})
+        == hsi_nobd.make_beddays_footprint({'general_bed': 4, 'high_dependency_bed': 1})
 
     # 2) Check that can schedule an HSI with a bed-day footprint
     hs.schedule_hsi_event(hsi_event=hsi_nobd, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=0)
