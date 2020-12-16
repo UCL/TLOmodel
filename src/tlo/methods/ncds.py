@@ -27,9 +27,23 @@ logger.setLevel(logging.INFO)
 
 class Ncds(Module):
     """
-    One line summary goes here...
+    NCDs module covers a subset of NCD conditions and events. Conditions are binary, and individuals experience a risk
+    of acquiring or losing a condition based on annual probability and demographic/lifestyle risk factors.
 
     """
+    # save a master list of the events that are covered in this module
+    conditions = ['diabetes',
+                  'hypertension',
+                  'depression',
+                  'chronic_lower_back_pain',
+                  'chronic_kidney_disease',
+                  'chronic_ischemic_hd',
+                  'cancers']
+
+    # save a master list of the events that are covered in this module
+    events = ['ever_stroke',
+              'ever_heart_attack']
+
     # Declare Metadata (this is for a typical 'Disease Module')
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -115,36 +129,15 @@ class Ncds(Module):
                                              'baseline annual probability of dying if has ever had a heart attack')
     }
 
-    # Note that all properties must have a two letter prefix that identifies them to this module.
-
-    PROPERTIES = {
-        # These are all the states:
-        'nc_diabetes': Property(Types.BOOL, 'Whether or not someone currently has diabetes'),
-        'nc_hypertension': Property(Types.BOOL, 'Whether or not someone currently has hypertension'),
-        'nc_depression': Property(Types.BOOL, 'Whether or not someone currently has depression'),
-        # 'nc_muscoskeletal': Property(Types.BOOL, 'Whether or not someone currently has muscoskeletal conditions'),
-        # 'nc_frailty': Property(Types.BOOL, 'Whether or not someone currently has frailty'),
-        'nc_chronic_lower_back_pain': Property(Types.BOOL,
-                                               'Whether or not someone currently has chronic lower back pain'),
-        # 'nc_arthritis': Property(Types.BOOL, 'Whether or not someone currently has arthritis'),
-        # 'nc_vision_disorders': Property(Types.BOOL, 'Whether or not someone currently has vision disorders'),
-        # 'nc_chronic_liver_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic liver disease'),
-        'nc_chronic_kidney_disease': Property(Types.BOOL,
-                                              'Whether or not someone currently has chronic kidney disease'),
-        'nc_chronic_ischemic_hd': Property(Types.BOOL,
-                                           'Whether or not someone currently has chronic ischemic heart disease'),
-        # 'nc_lower_extremity_disease': Property(Types.BOOL, 'Whether or not someone currently has lower extremity disease'),
-        # 'nc_dementia': Property(Types.BOOL, 'Whether or not someone currently has dementia'),
-        # 'nc_bladder_cancer': Property(Types.BOOL, 'Whether or not someone currently has bladder cancer'),
-        # 'nc_oesophageal_cancer': Property(Types.BOOL, 'Whether or not someone currently has oesophageal cancer'),
-        # 'nc_breast_cancer': Property(Types.BOOL, 'Whether or not someone currently has breast cancer'),
-        # 'nc_prostate_cancer': Property(Types.BOOL, 'Whether or not someone currently has prostate cancer'),
-        'nc_cancers': Property(Types.BOOL, 'Whether or not someone currently has cancers'),
-        # 'nc_chronic_respiratory_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic respiratory disease'),
-        # 'nc_other_infections': Property(Types.BOOL, 'Whether or not someone currently has other infections'),
-        'nc_ever_stroke': Property(Types.BOOL, 'Whether or not someone has ever had a stroke'),
-        'nc_ever_heart_attack': Property(Types.BOOL, 'Whether or not someone has ever had a heart attack')
+    # convert conditions and events to dicts and merge together into PROPERTIES
+    condition_list = {
+        f"nc_{p}": Property(Types.BOOL, f"Whether or not someone has {p}") for p in conditions
     }
+    event_list = {
+        f"nc_{p}": Property(Types.BOOL, f"Whether or not someone has had a {p}") for p in events}
+
+    PROPERTIES = {**condition_list, **event_list}
+
 
     # TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank
     SYMPTOMS = {}
@@ -155,13 +148,8 @@ class Ncds(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # save a list of the conditions that covered in this module (extracted from PROPERTIES)
-        self.conditions = list(self.PROPERTIES.keys())
-        self.conditions.remove('nc_ever_stroke')
-        self.conditions.remove('nc_ever_heart_attack')
-
-        # save a list of the events that are covered in this module (created manually for now)
-        self.events = ['nc_ever_stroke', 'nc_ever_heart_attack']
+        self.conditions = list(Ncds.conditions)
+        self.events = list(Ncds.events)
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -195,7 +183,7 @@ class Ncds(Module):
 
             # Get the death rates from a params_dict
             self.parameters[f'r_death_{condition}'] = \
-            params_onset.loc[params_onset['parameter_name'] == f'r_death_{condition}', 'value'].values[0]
+                params_onset.loc[params_onset['parameter_name'] == f'r_death_{condition}', 'value'].values[0]
 
             params_removal = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_condition_removal.xlsx",
                                            sheet_name=f"{condition}")
