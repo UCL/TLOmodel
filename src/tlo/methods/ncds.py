@@ -52,82 +52,34 @@ class Ncds(Module):
         Metadata.USES_HEALTHBURDEN
     }
 
-    PARAMETERS = {
-        'interval_between_polls': Parameter(Types.INT, 'months between the main polling event'),
-        'baseline_annual_probability': Parameter(Types.REAL,
-                                                 'baseline annual probability of acquiring/losing condition'),
-        'rr_male': Parameter(Types.REAL, 'rr if male'),
-        'rr_0_4': Parameter(Types.REAL, 'rr if 0-4'),
-        'rr_5_9': Parameter(Types.REAL, 'rr if 5-9'),
-        'rr_10_14': Parameter(Types.REAL, 'rr if 10-14'),
-        'rr_15_19': Parameter(Types.REAL, 'rr if 15-19'),
-        'rr_20_24': Parameter(Types.REAL, 'rr if 20-24'),
-        'rr_25_29': Parameter(Types.REAL, 'rr if 25-29'),
-        'rr_30_34': Parameter(Types.REAL, 'rr if 30-34'),
-        'rr_35_39': Parameter(Types.REAL, 'rr if 35-39'),
-        'rr_40_44': Parameter(Types.REAL, 'rr if 40-44'),
-        'rr_45_49': Parameter(Types.REAL, 'rr if 45-49'),
-        'rr_50_54': Parameter(Types.REAL, 'rr if 50-54'),
-        'rr_55_59': Parameter(Types.REAL, 'rr if 55-59'),
-        'rr_60_64': Parameter(Types.REAL, 'rr if 60-64'),
-        'rr_65_69': Parameter(Types.REAL, 'rr if 65-69'),
-        'rr_70_74': Parameter(Types.REAL, 'rr if 70-74'),
-        'rr_75_79': Parameter(Types.REAL, 'rr if 75-79'),
-        'rr_80_84': Parameter(Types.REAL, 'rr if 80-84'),
-        'rr_85_89': Parameter(Types.REAL, 'rr if 85-89'),
-        'rr_90_94': Parameter(Types.REAL, 'rr if 90-94'),
-        'rr_95_99': Parameter(Types.REAL, 'rr if 95-99'),
-        'rr_100': Parameter(Types.REAL, 'rr if 100+'),
-        'rr_urban': Parameter(Types.REAL, 'rr if living in an urban area'),
-        'rr_wealth_1': Parameter(Types.REAL, 'rr if wealth 1'),
-        'rr_wealth_2': Parameter(Types.REAL, 'rr if wealth 2'),
-        'rr_wealth_3': Parameter(Types.REAL, 'rr if wealth 3'),
-        'rr_wealth_4': Parameter(Types.REAL, 'rr if wealth 4'),
-        'rr_wealth_5': Parameter(Types.REAL, 'rr if wealth 5'),
-        'rr_bmi_1': Parameter(Types.REAL, 'rr if bmi 1'),
-        'rr_bmi_2': Parameter(Types.REAL, 'rr if bmi 2'),
-        'rr_bmi_3': Parameter(Types.REAL, 'rr if bmi 3'),
-        'rr_bmi_4': Parameter(Types.REAL, 'rr if bmi 4'),
-        'rr_bmi_5': Parameter(Types.REAL, 'rr if bmi 5'),
-        'rr_low_exercise': Parameter(Types.REAL, 'rr if low exercise'),
-        'rr_high_salt': Parameter(Types.REAL, 'rr if high salt'),
-        'rr_high_sugar': Parameter(Types.REAL, 'rr if high sugar'),
-        'rr_tobacco': Parameter(Types.REAL, 'rr if tobacco'),
-        'rr_alcohol': Parameter(Types.REAL, 'rr if alcohol'),
-        'rr_marital_status_1': Parameter(Types.REAL, 'rr if never married'),
-        'rr_marital_status_2': Parameter(Types.REAL, 'rr if currently married'),
-        'rr_marital_status_3': Parameter(Types.REAL, 'rr if widowed or divorced'),
-        'rr_in_education': Parameter(Types.REAL, 'rr if in education'),
-        'rr_current_education_level_1': Parameter(Types.REAL, 'rr if education level 1'),
-        'rr_current_education_level_2': Parameter(Types.REAL, 'rr if education level 2'),
-        'rr_current_education_level_3': Parameter(Types.REAL, 'rr if education level 3'),
-        'rr_unimproved_sanitation': Parameter(Types.REAL, 'rr if unimproved sanitation'),
-        'rr_no_access_handwashing': Parameter(Types.REAL, 'rr if no access to handwashing'),
-        'rr_no_clean_drinking_water': Parameter(Types.REAL, 'rr if no access to drinking water'),
-        'rr_wood_burning_stove': Parameter(Types.REAL, 'rr if wood-burning stove'),
-        'rr_diabetes': Parameter(Types.REAL, 'rr if currently has diabetes'),
-        'rr_hypertension': Parameter(Types.REAL, 'rr if currently has hypertension'),
-        'rr_depression': Parameter(Types.REAL, 'rr if currently has depression'),
-        'rr_chronic_kidney_disease': Parameter(Types.REAL, 'rr if currently has chronic kidney disease'),
-        'rr_chronic_lower_back_pain': Parameter(Types.REAL, 'rr if currently has chronic lower back pain'),
-        'rr_chronic_ischemic_heart_disease': Parameter(Types.REAL,
-                                                       'rr if currently has chronic ischemic heart disease'),
-        'rr_cancers': Parameter(Types.REAL, 'rr if currently has cancers'),
-        'rr_ever_stroke': Parameter(Types.REAL, 'rr if has ever had stroke'),
-        'rr_ever_heart_attack': Parameter(Types.REAL,
-                                          'rr of has ever had heart attack'),
-        'r_death_nc_hypertension': Parameter(Types.REAL, 'baseline annual probability of dying if has hypertension'),
-        'r_death_nc_diabetes': Parameter(Types.REAL, 'baseline annual probability of dying if has diabetes'),
-        'r_death_nc_depression': Parameter(Types.REAL, 'baseline annual probability of dying if has depression'),
-        'r_death_nc_chronic_lower_back_pain': Parameter(Types.REAL,
-                                                        'baseline annual probability of dying if has chronic lower back pain'),
-        'r_death_nc_chronic_kidney_disease': Parameter(Types.REAL, 'baseline annual probability of dying if has CKD'),
-        'r_death_nc_chronic_ischemic_hd': Parameter(Types.REAL, 'baseline annual probability of dying if has CIHD'),
-        'r_death_nc_cancers': Parameter(Types.REAL, 'baseline annual probability of dying if has cancers'),
-        'r_death_nc_stroke': Parameter(Types.REAL, 'baseline annual probability of dying if has ever had a stroke'),
-        'r_death_nc_heart_attack': Parameter(Types.REAL,
-                                             'baseline annual probability of dying if has ever had a heart attack')
+    # create separate dicts for params for conditions and events
+    onset_conditions_param_dicts = {
+        f"{p}_onset": Parameter(Types.DICT, f"all the parameters that specify the linear models for onset of {p}")
+        for p in conditions
     }
+    removal_conditions_param_dicts = {
+        f"{p}_removal": Parameter(Types.DICT, f"all the parameters that specify the linear models for removal of {p}")
+        for p in conditions
+    }
+    onset_events_param_dicts = {
+        f"{p}_onset": Parameter(Types.DICT, f"all the parameters that specify the linear models for onset of {p}")
+        for p in events
+    }
+    death_conditions_param_dicts = {
+        f"{p}_death": Parameter(Types.DICT, f"all the parameters that specify the linear models for death from {p}")
+        for p in conditions
+    }
+    death_events_param_dicts = {
+        f"{p}_death": Parameter(Types.DICT, f"all the parameters that specify the linear models for death from {p}")
+        for p in events
+    }
+    other_params_dict = {
+        'interval_between_polls': Parameter(Types.INT, 'months between the main polling event')
+    }
+
+    PARAMETERS = {**onset_conditions_param_dicts, **removal_conditions_param_dicts, **onset_events_param_dicts,
+                  **death_conditions_param_dicts, **death_events_param_dicts, **other_params_dict
+                  }
 
     # convert conditions and events to dicts and merge together into PROPERTIES
     condition_list = {
@@ -137,7 +89,6 @@ class Ncds(Module):
         f"nc_{p}": Property(Types.BOOL, f"Whether or not someone has had a {p}") for p in events}
 
     PROPERTIES = {**condition_list, **event_list}
-
 
     # TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank
     SYMPTOMS = {}
@@ -170,37 +121,42 @@ class Ncds(Module):
         for age_range in self.age_index:
             self.incident_case_tracker_zeros[f'{age_range}'] = copy.deepcopy(zeros_counter)
 
-        self.params_dict_onset = dict()
-        self.params_dict_removal = dict()
-        self.params_dict_events = dict()
-
         for condition in self.conditions:
+            # get onset parameters
             params_onset = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_condition_onset.xlsx",
                                          sheet_name=f"{condition}")
             # replace NaNs with 1
             params_onset['value'] = params_onset['value'].replace(np.nan, 1)
-            self.params_dict_onset[condition] = params_onset
+            self.parameters[f'{condition}_onset'] = params_onset
 
-            # Get the death rates from a params_dict
-            self.parameters[f'r_death_{condition}'] = \
-                params_onset.loc[params_onset['parameter_name'] == f'r_death_{condition}', 'value'].values[0]
-
+            # get removal parameters
             params_removal = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_condition_removal.xlsx",
                                            sheet_name=f"{condition}")
             # replace NaNs with 1
             params_removal['value'] = params_removal['value'].replace(np.nan, 1)
-            self.params_dict_removal[condition] = params_removal
+            self.parameters[f'{condition}_removal'] = params_removal
+
+            # get death parameters
+            params_death = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_condition_death.xlsx",
+                                         sheet_name=f"{condition}")
+            # replace NaNs with 1
+            params_death['value'] = params_death['value'].replace(np.nan, 1)
+            self.parameters[f'{condition}_death'] = params_death
 
         for event in self.events:
-            params_events = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_events.xlsx",
-                                          sheet_name=f"{event}")
+            # get onset parameters
+            params_onset = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_events.xlsx",
+                                         sheet_name=f"{event}")
             # replace NaNs with 1
-            params_events['value'] = params_events['value'].replace(np.nan, 1)
-            self.params_dict_events[event] = params_events
+            params_onset['value'] = params_onset['value'].replace(np.nan, 1)
+            self.parameters[f'{event}_onset'] = params_onset
 
-            # Get the death rates from a params_dict
-            self.parameters[f'r_death_{event}'] = \
-                params_events.loc[params_events['parameter_name'] == f'r_death_{event}', 'value'].values[0]
+            # get death parameters
+            params_death = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_events_death.xlsx",
+                                         sheet_name=f"{event}")
+            # replace NaNs with 1
+            params_death['value'] = params_death['value'].replace(np.nan, 1)
+            self.parameters[f'{event}_death'] = params_death
 
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
@@ -233,29 +189,47 @@ class Ncds(Module):
         self.lms_removal = dict()
 
         # Build the LinearModel for occurrence of events
-        self.lms_event_occurrence = dict()
+        self.lms_event_onset = dict()
 
         for condition in self.conditions:
-            self.lms_onset[condition] = self.build_linear_model_onset(condition,
-                                                                      self.parameters['interval_between_polls'])
-            self.lms_removal[condition] = self.build_linear_model_removal(condition,
-                                                                          self.parameters['interval_between_polls'])
+            self.lms_dict[condition] = self.build_linear_model(condition,
+                                                               self.parameters['interval_between_polls'],
+                                                               lm_type='onset')
+            self.lms_onset[condition] = self.lms_dict[condition]
+
+            self.lms_removal[condition] = self.build_linear_model(condition,
+                                                                  self.parameters['interval_between_polls'],
+                                                                  lm_type='removal')
+            self.lms_removal[condition] = self.lms_dict[condition]
 
         for event in self.events:
-            self.lms_event_occurrence[event] = self.build_linear_model_events(event,
-                                                                              self.parameters['interval_between_polls'])
+            self.lms_dict[event] = self.build_linear_model(event,
+                                                           self.parameters['interval_between_polls'],
+                                                           lm_type='event')
+            self.lms_event_onset[event] = self.lms_dict[event]
 
-    def build_linear_model_onset(self, condition, interval_between_polls):
+    def build_linear_model(self, condition, interval_between_polls, lm_type):
         """
         :param_dict: the dict read in from the resourcefile
         :param interval_between_polls: the duration (in months) between the polls
         :return: a linear model
         """
 
-        p = self.params_dict_onset[condition].set_index('parameter_name').T.to_dict('records')[0]
+        # use empty dict to save results
+        self.lms_dict = dict()
+
+        # load parameters for correct condition/event
+        p = self.parameters
+        if lm_type == 'onset':
+            p = self.parameters[f'{condition}_onset'].set_index('parameter_name').T.to_dict('records')[0]
+        elif lm_type == 'removal':
+            p = self.parameters[f'{condition}_removal'].set_index('parameter_name').T.to_dict('records')[0]
+        elif lm_type == 'event':
+            p = self.parameters[f'{condition}_onset'].set_index('parameter_name').T.to_dict('records')[0]
+
         p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
 
-        self.lms_onset[condition] = LinearModel(
+        self.lms_dict[condition] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['baseline_annual_probability'],
             Predictor().when('(sex=="M")', p['rr_male']),
@@ -316,150 +290,7 @@ class Ncds(Module):
             Predictor('nc_cancers').when(True, p['rr_cancers'])
         )
 
-        return self.lms_onset[condition]
-
-    def build_linear_model_removal(self, condition, interval_between_polls):
-        """
-            :param_dict: the dict read in from the resourcefile
-            :param interval_between_polls: the duration (in months) between the polls
-            :return: a linear model
-            """
-
-        p = self.params_dict_removal[condition].set_index('parameter_name').T.to_dict('records')[0]
-        p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
-
-        self.lms_removal[condition] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['baseline_annual_probability'],
-            Predictor().when('(sex=="M")', p['rr_male']),
-            Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
-                .when('.between(5, 9)', p['rr_5_9'])
-                .when('.between(10, 14)', p['rr_10_14'])
-                .when('.between(15, 19)', p['rr_15_19'])
-                .when('.between(20, 24)', p['rr_20_24'])
-                .when('.between(25, 29)', p['rr_25_29'])
-                .when('.between(30, 34)', p['rr_30_34'])
-                .when('.between(35, 39)', p['rr_35_39'])
-                .when('.between(40, 44)', p['rr_40_44'])
-                .when('.between(45, 49)', p['rr_45_49'])
-                .when('.between(50, 54)', p['rr_50_54'])
-                .when('.between(55, 59)', p['rr_55_59'])
-                .when('.between(60, 64)', p['rr_60_64'])
-                .when('.between(65, 69)', p['rr_65_69'])
-                .when('.between(70, 74)', p['rr_70_74'])
-                .when('.between(75, 79)', p['rr_75_79'])
-                .when('.between(80, 84)', p['rr_80_84'])
-                .when('.between(85, 89)', p['rr_85_89'])
-                .when('.between(90, 94)', p['rr_90_94'])
-                .when('.between(95, 99)', p['rr_95_99'])
-                .otherwise(p['rr_100']),
-            Predictor('li_urban').when(True, p['rr_urban']),
-            Predictor('li_wealth').when('==1', p['rr_wealth_1'])
-                .when('2', p['rr_wealth_2'])
-                .when('3', p['rr_wealth_3'])
-                .when('4', p['rr_wealth_4'])
-                .when('5', p['rr_wealth_5']),
-            Predictor('li_bmi').when('==1', p['rr_bmi_1'])
-                .when('2', p['rr_bmi_2'])
-                .when('3', p['rr_bmi_3'])
-                .when('4', p['rr_bmi_4'])
-                .when('5', p['rr_bmi_5']),
-            Predictor('li_low_ex').when(True, p['rr_low_exercise']),
-            Predictor('li_high_salt').when(True, p['rr_high_salt']),
-            Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
-            Predictor('li_tob').when(True, p['rr_tobacco']),
-            Predictor('li_ex_alc').when(True, p['rr_alcohol']),
-            Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
-                .when('2', p['rr_marital_status_2'])
-                .when('3', p['rr_marital_status_3']),
-            Predictor('li_in_ed').when(True, p['rr_in_education']),
-            Predictor('li_ed_lev').when('==1', p['rr_current_education_level_1'])
-                .when('2', p['rr_current_education_level_2'])
-                .when('3', p['rr_current_education_level_3']),
-            Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
-            Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
-            Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
-            Predictor('li_wood_burn_stove').when(True, p['rr_wood_burning_stove']),
-            Predictor('nc_diabetes').when(True, p['rr_diabetes']),
-            Predictor('nc_hypertension').when(True, p['rr_hypertension']),
-            Predictor('nc_depression').when(True, p['rr_depression']),
-            Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
-            Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
-            Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease']),
-            Predictor('nc_cancers').when(True, p['rr_cancers'])
-        )
-
-        return self.lms_removal[condition]
-
-    def build_linear_model_events(self, event, interval_between_polls):
-
-        p = self.params_dict_events[event].set_index('parameter_name').T.to_dict('records')[0]
-        p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
-
-        self.lms_event_occurrence[event] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['baseline_annual_probability'],
-            Predictor().when('(sex=="M")', p['rr_male']),
-            Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
-                .when('.between(5, 9)', p['rr_5_9'])
-                .when('.between(10, 14)', p['rr_10_14'])
-                .when('.between(15, 19)', p['rr_15_19'])
-                .when('.between(20, 24)', p['rr_20_24'])
-                .when('.between(25, 29)', p['rr_25_29'])
-                .when('.between(30, 34)', p['rr_30_34'])
-                .when('.between(35, 39)', p['rr_35_39'])
-                .when('.between(40, 44)', p['rr_40_44'])
-                .when('.between(45, 49)', p['rr_45_49'])
-                .when('.between(50, 54)', p['rr_50_54'])
-                .when('.between(55, 59)', p['rr_55_59'])
-                .when('.between(60, 64)', p['rr_60_64'])
-                .when('.between(65, 69)', p['rr_65_69'])
-                .when('.between(70, 74)', p['rr_70_74'])
-                .when('.between(75, 79)', p['rr_75_79'])
-                .when('.between(80, 84)', p['rr_80_84'])
-                .when('.between(85, 89)', p['rr_85_89'])
-                .when('.between(90, 94)', p['rr_90_94'])
-                .when('.between(95, 99)', p['rr_95_99'])
-                .otherwise(p['rr_100']),
-            Predictor('li_urban').when(True, p['rr_urban']),
-            Predictor('li_wealth').when('==1', p['rr_wealth_1'])
-                .when('2', p['rr_wealth_2'])
-                .when('3', p['rr_wealth_3'])
-                .when('4', p['rr_wealth_4'])
-                .when('5', p['rr_wealth_5']),
-            Predictor('li_bmi').when('==1', p['rr_bmi_1'])
-                .when('2', p['rr_bmi_2'])
-                .when('3', p['rr_bmi_3'])
-                .when('4', p['rr_bmi_4'])
-                .when('5', p['rr_bmi_5']),
-            Predictor('li_low_ex').when(True, p['rr_low_exercise']),
-            Predictor('li_high_salt').when(True, p['rr_high_salt']),
-            Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
-            Predictor('li_tob').when(True, p['rr_tobacco']),
-            Predictor('li_ex_alc').when(True, p['rr_alcohol']),
-            Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
-                .when('2', p['rr_marital_status_2'])
-                .when('3', p['rr_marital_status_3']),
-            Predictor('li_in_ed').when(True, p['rr_in_education']),
-            Predictor('li_ed_lev').when('==1', p['rr_current_education_level_1'])
-                .when('2', p['rr_current_education_level_2'])
-                .when('3', p['rr_current_education_level_3']),
-            Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
-            Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
-            Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
-            Predictor('li_wood_burn_stove').when(True, p['rr_wood_burning_stove']),
-            Predictor('nc_diabetes').when(True, p['rr_diabetes']),
-            Predictor('nc_hypertension').when(True, p['rr_hypertension']),
-            Predictor('nc_depression').when(True, p['rr_depression']),
-            Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
-            Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
-            Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease']),
-            Predictor('nc_cancers').when(True, p['rr_cancers']),
-            Predictor('nc_ever_stroke').when(True, p['rr_ever_stroke']),
-            Predictor('nc_ever_heart_attack').when(True, p['rr_ever_heart_attack'])
-        )
-
-        return self.lms_event_occurrence[event]
+        return self.lms_dict[condition]
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
