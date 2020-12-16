@@ -1,4 +1,3 @@
-# This is a new push
 """
 The Symptom Manager:
 * Manages presence of symptoms for all disease modules
