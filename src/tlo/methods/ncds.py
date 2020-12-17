@@ -99,8 +99,8 @@ class Ncds(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        self.conditions = list(Ncds.conditions)
-        self.events = list(Ncds.events)
+        self.conditions = list(Ncds.condition_list)
+        self.events = list(Ncds.event_list)
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -182,14 +182,19 @@ class Ncds(Module):
         sim.schedule_event(Ncds_LoggingEvent(self), sim.date)
 
         # Create Tracker for the number of different types of events
-        self.eventsTracker = {'StrokeEvents': 0, 'HeartAttackEvents': 0}
+        self.eventsTracker = dict()
+        for event in self.events:
+            event_name = event.replace('nc_ever_', '')
+            self.eventsTracker.update({f'{event_name}_events': 0})
 
-        # Build the LinearModel for onset/removal of each condition
+        # Build the LinearModel for onset/removal/deaths for each condition
         self.lms_onset = dict()
         self.lms_removal = dict()
+        self.lms_death = dict()
 
         # Build the LinearModel for occurrence of events
         self.lms_event_onset = dict()
+        self.lms_event_death = dict()
 
         for condition in self.conditions:
             self.lms_dict[condition] = self.build_linear_model(condition,
@@ -197,16 +202,26 @@ class Ncds(Module):
                                                                lm_type='onset')
             self.lms_onset[condition] = self.lms_dict[condition]
 
-            self.lms_removal[condition] = self.build_linear_model(condition,
+            self.lms_dict[condition] = self.build_linear_model(condition,
                                                                   self.parameters['interval_between_polls'],
                                                                   lm_type='removal')
             self.lms_removal[condition] = self.lms_dict[condition]
+
+            self.lms_dict[condition] = self.build_linear_model(condition,
+                                                                  self.parameters['interval_between_polls'],
+                                                                  lm_type='death')
+            self.lms_death[condition] = self.lms_dict[condition]
 
         for event in self.events:
             self.lms_dict[event] = self.build_linear_model(event,
                                                            self.parameters['interval_between_polls'],
                                                            lm_type='event')
             self.lms_event_onset[event] = self.lms_dict[event]
+
+            self.lms_dict[event] = self.build_linear_model(event,
+                                                           self.parameters['interval_between_polls'],
+                                                           lm_type='death')
+            self.lms_event_death[event] = self.lms_dict[event]
 
     def build_linear_model(self, condition, interval_between_polls, lm_type):
         """
@@ -226,6 +241,8 @@ class Ncds(Module):
             p = self.parameters[f'{condition}_removal'].set_index('parameter_name').T.to_dict('records')[0]
         elif lm_type == 'event':
             p = self.parameters[f'{condition}_onset'].set_index('parameter_name').T.to_dict('records')[0]
+        elif lm_type == 'death':
+            p = self.parameters[f'{condition}_death'].set_index('parameter_name').T.to_dict('records')[0]
 
         p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
 
@@ -393,30 +410,26 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # Strip leading 'nc_' from condition name
             condition_name = condition.replace('nc_', '')
 
-            condition_idx = df.index[df.is_alive & (df[f'{condition}'])]
-            selected_to_die = condition_idx[
-                rng.random_sample(size=len(condition_idx)) < self.module.parameters[f'r_death_{condition}']]
+            eligible_population = df.is_alive & df[condition]
+            selected_to_die = self.module.lms_death[condition].predict(df.loc[eligible_population], rng)
+            if selected_to_die.any(): # catch in case no one dies
+                idx_selected_to_die = selected_to_die[selected_to_die].index
 
-            for person_id in selected_to_die:
-                self.sim.schedule_event(
-                    InstantaneousDeath(self.module, person_id, f"{condition_name}"), self.sim.date
-                )
+                for person_id in idx_selected_to_die:
+                    self.sim.schedule_event(
+                        InstantaneousDeath(self.module, person_id, f"{condition_name}"), self.sim.date
+                    )
 
         # Determine occurrence of events
         for event in self.module.events:
 
             eligible_population_for_event = df.is_alive
-            has_event = self.module.lms_event_occurrence[event].predict(df.loc[eligible_population_for_event], rng)
-            idx_has_event = has_event[has_event].index
+            has_event = self.module.lms_event_onset[event].predict(df.loc[eligible_population_for_event], rng)
+            if has_event.any(): # catch in case no one has event
+                idx_has_event = has_event[has_event].index
 
-            if event == 'nc_ever_stroke':
                 for person_id in idx_has_event:
-                    self.sim.schedule_event(NcdStrokeEvent(self.module, person_id),
-                                            self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
-
-            elif event == 'nc_ever_heart_attack':
-                for person_id in idx_has_event:
-                    self.sim.schedule_event(NcdHeartAttackEvent(self.module, person_id),
+                    self.sim.schedule_event(NcdEvent(self.module, person_id, event),
                                             self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
 
             # -------------------- DEATH FROM NCD EVENT ---------------------------------------
@@ -425,30 +438,33 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # Strip leading 'nc_' from condition name
             event_name = event.replace('nc_ever_', '')
 
-            condition_idx = df.index[df.is_alive & (df[f'{event}'])]
-            selected_to_die = condition_idx[
-                rng.random_sample(size=len(condition_idx)) < self.module.parameters[f'r_death_{event}']]
+            eligible_population = df.is_alive & df[event]
+            selected_to_die = self.module.lms_event_death[event].predict(df.loc[eligible_population], rng)
+            if selected_to_die.any():  # catch in case no one dies
+                idx_selected_to_die = selected_to_die[selected_to_die].index
 
-            for person_id in selected_to_die:
-                self.sim.schedule_event(
-                    InstantaneousDeath(self.module, person_id, f"{event_name}"), self.sim.date
-                )
+                for person_id in idx_selected_to_die:
+                    self.sim.schedule_event(
+                        InstantaneousDeath(self.module, person_id, f"{event_name}"), self.sim.date
+                    )
 
 
-class NcdStrokeEvent(Event, IndividualScopeEventMixin):
+class NcdEvent(Event, IndividualScopeEventMixin):
     """
     This is a Stroke event. It has been scheduled to occur by the Ncds_MainPollingEvent.
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, event):
         super().__init__(module, person_id=person_id)
+        self.event = event
+        self.event_name = event.replace('nc_ever_', '')
 
     def apply(self, person_id):
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
-        self.module.eventsTracker['StrokeEvents'] += 1
-        self.sim.population.props.at[person_id, 'nc_ever_stroke'] = True
+        self.module.eventsTracker[f'{self.event_name}_events'] +=1
+        self.sim.population.props.at[person_id, f'{self.event}'] = True
 
         ## Add the outward symptom to the SymptomManager. This will result in emergency care being sought
         # self.sim.modules['SymptomManager'].change_symptom(
@@ -458,29 +474,6 @@ class NcdStrokeEvent(Event, IndividualScopeEventMixin):
         #    symptom_string='Damage_From_Stroke'
         # )
 
-
-class NcdHeartAttackEvent(Event, IndividualScopeEventMixin):
-    """
-    This is a Stroke event. It has been scheduled to occur by the Ncds_MainPollingEvent.
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-    def apply(self, person_id):
-        if not self.sim.population.props.at[person_id, 'is_alive']:
-            return
-
-        self.module.eventsTracker['HeartAttackEvents'] += 1
-        self.sim.population.props.at[person_id, 'nc_ever_heart_attack'] = True
-
-        ## Add the outward symptom to the SymptomManager. This will result in emergency care being sought
-        # self.sim.modules['SymptomManager'].change_symptom(
-        #    person_id=person_id,
-        #    disease_module=self.module,
-        #    add_or_remove='+',
-        #    symptom_string='Damage_From_Heart_Attack'
-        # )
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -590,5 +583,3 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='mm_prevalence',
                     data=prop_comorbidities,
                     description='annual summary of multi-morbidities')
-
-        # NB. logging like this as cannot do directly as a dict [logger requires key in a dict to be strings]
