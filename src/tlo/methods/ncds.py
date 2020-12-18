@@ -106,20 +106,6 @@ class Ncds(Module):
         """Read parameter values from file, if required.
         To access files use: Path(self.resourcefilepath) / file_name
         """
-        self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
-
-        # dict to hold counters for the number of episodes by condition-type and age-group
-        blank_counter = dict(zip(self.conditions, [list() for _ in self.conditions]))
-        self.incident_case_tracker_blank = dict()
-        for age_range in self.age_index:
-            self.incident_case_tracker_blank[f'{age_range}'] = copy.deepcopy(blank_counter)
-
-        self.incident_case_tracker = copy.deepcopy(self.incident_case_tracker_blank)
-
-        zeros_counter = dict(zip(self.conditions, [0] * len(self.conditions)))
-        self.incident_case_tracker_zeros = dict()
-        for age_range in self.age_index:
-            self.incident_case_tracker_zeros[f'{age_range}'] = copy.deepcopy(zeros_counter)
 
         for condition in self.conditions:
             # get onset parameters
@@ -180,6 +166,20 @@ class Ncds(Module):
 
         for condition in self.conditions:
             df[condition] = False
+
+        # dict to hold counters for the number of episodes by condition-type and age-group
+        self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
+        blank_counter = dict(zip(self.conditions, [list() for _ in self.conditions]))
+        self.incident_case_tracker_blank = dict()
+        for age_range in self.age_index:
+            self.incident_case_tracker_blank[f'{age_range}'] = copy.deepcopy(blank_counter)
+
+        self.incident_case_tracker = copy.deepcopy(self.incident_case_tracker_blank)
+
+        zeros_counter = dict(zip(self.conditions, [0] * len(self.conditions)))
+        self.incident_case_tracker_zeros = dict()
+        for age_range in self.age_index:
+            self.incident_case_tracker_zeros[f'{age_range}'] = copy.deepcopy(zeros_counter)
 
     def initialise_simulation(self, sim):
         """Schedule:
@@ -340,8 +340,7 @@ class Ncds(Module):
         # df = self.sim.popultion.props
         # return pd.Series(index=df.index[df.is_alive],data=0.0)
 
-        # TODO: @britta - we will also have to gather information for daly weights for each condition and do a simple
-        #  mapping to them from the properties. For now, anyone who has anything has a daly_wt of 0.1
+        # TODO: @britta add in functionality to fetch daly weight from resourcefile
 
         df = self.sim.population.props
         any_condition = df.loc[df.is_alive, self.conditions].any(axis=1)
@@ -400,6 +399,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # -------------------------------------------------------------------------------------------
             # Add this incident case to the tracker
+            # TODO: make this use df-logic with groupby
 
             for personal_idx in idx_acquires_condition:
                 age_range = df.loc[personal_idx, ['age_range']].age_range
@@ -475,6 +475,8 @@ class NcdEvent(Event, IndividualScopeEventMixin):
         self.module.eventsTracker[f'{self.event_name}_events'] +=1
         self.sim.population.props.at[person_id, f'{self.event}'] = True
 
+        # TODO: @britta add functionality to add symptoms
+
         ## Add the outward symptom to the SymptomManager. This will result in emergency care being sought
         # self.sim.modules['SymptomManager'].change_symptom(
         #    person_id=person_id,
@@ -507,6 +509,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Convert the list of timestamps into a number of timestamps
         # and check that all the dates have occurred since self.date_last_run
+        # TODO: @britta: reconfigure incidence tracker based on df-logic above
         counts = copy.deepcopy(self.module.incident_case_tracker_zeros)
 
         for age_grp in self.module.incident_case_tracker.keys():
@@ -578,6 +581,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
         # Counter for number of co-morbidities
+        # TODO: @britta: reconfigure using groupby
         df = population.props
         # restrict df to alive and aged >=20
         df_comorbidities = df[df.is_alive & (df.age_years >= 20)]
