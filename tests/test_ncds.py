@@ -89,7 +89,7 @@ def test_basic_run():
                  )
 
     sim.make_initial_population(n=5000)
-    sim.simulate(end_date=Date(year=2015, month=1, day=1))
+    sim.simulate(end_date=Date(year=2020, month=1, day=1))
 
     routine_checks(sim)
 
@@ -111,25 +111,25 @@ def test_basic_run_with_high_incidence_hypertension():
                  )
 
     # Set incidence of hypertension to 1 and incidence of all other conditions to 0
-    sim.modules['Ncds'].params_dict_onset['nc_hypertension'].loc[
-        sim.modules['Ncds'].params_dict_onset['nc_hypertension']
-            .parameter_name == "baseline_annual_probability", "value"] = 1
-    sim.modules['Ncds'].params_dict_onset['nc_diabetes'].loc[sim.modules['Ncds'].params_dict_onset['nc_diabetes']
-                                                                 .parameter_name == "baseline_annual_probability", "value"] = 0
-    sim.modules['Ncds'].params_dict_onset['nc_depression'].loc[sim.modules['Ncds'].params_dict_onset['nc_depression']
-                                                                   .parameter_name == "baseline_annual_probability", "value"] = 0
-    sim.modules['Ncds'].params_dict_onset['nc_chronic_lower_back_pain'].loc[
-        sim.modules['Ncds'].params_dict_onset['nc_chronic_lower_back_pain']
-            .parameter_name == "baseline_annual_probability", "value"] = 0
-    sim.modules['Ncds'].params_dict_onset['nc_chronic_kidney_disease'].loc[
-        sim.modules['Ncds'].params_dict_onset['nc_chronic_kidney_disease']
-            .parameter_name == "baseline_annual_probability", "value"] = 0
-    sim.modules['Ncds'].params_dict_onset['nc_cancers'].loc[sim.modules['Ncds'].params_dict_onset['nc_cancers']
-                                                                .parameter_name == "baseline_annual_probability", "value"] = 0
+
+    p = sim.modules['Ncds'].parameters
+
+    p['nc_hypertension_onset'].loc[
+        p['nc_hypertension_onset'].parameter_name == "baseline_annual_probability", "value"] = 1
+    p['nc_diabetes_onset'].loc[
+        p['nc_diabetes_onset'].parameter_name == "baseline_annual_probability", "value"] = 0
+    p['nc_depression_onset'].loc[
+        p['nc_depression_onset'].parameter_name == "baseline_annual_probability", "value"] = 0
+    p['nc_chronic_lower_back_pain_onset'].loc[
+        p['nc_chronic_lower_back_pain_onset'].parameter_name == "baseline_annual_probability", "value"] = 0
+    p['nc_chronic_kidney_disease_onset'].loc[
+        p['nc_chronic_kidney_disease_onset'].parameter_name == "baseline_annual_probability", "value"] = 0
+    p['nc_cancers_onset'].loc[
+        p['nc_cancers_onset'].parameter_name == "baseline_annual_probability", "value"] = 0
+
     # Increase RR of heart disease very high if individual has hypertension
-    sim.modules['Ncds'].params_dict_onset['nc_chronic_ischemic_hd'].loc[
-        sim.modules['Ncds'].params_dict_onset['nc_hypertension']
-            .parameter_name == "rr_hypertension", "value"] = 1000
+    p['nc_chronic_ischemic_hd_onset'].loc[
+        p['nc_chronic_ischemic_hd_onset'].parameter_name == "rr_hypertension", "value"] = 1000
 
     sim.make_initial_population(n=2000)
     sim.simulate(end_date=Date(year=2020, month=1, day=1))

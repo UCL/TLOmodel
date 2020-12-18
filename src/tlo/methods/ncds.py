@@ -158,8 +158,17 @@ class Ncds(Module):
             params_death['value'] = params_death['value'].replace(np.nan, 1)
             self.parameters[f'{event}_death'] = params_death
 
+        # Check that every value has been read-in successfully
+        p = self.parameters
+        for param_name, param_type in self.PARAMETERS.items():
+            if param_name != 'interval_between_polls': # this param is manually entered in the code
+                param_name = f'nc_{param_name}'
+                assert param_name in p, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+                assert param_name is not None, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -230,7 +239,7 @@ class Ncds(Module):
         :return: a linear model
         """
 
-        # use empty dict to save results
+        # use temporary empty dict to save results
         self.lms_dict = dict()
 
         # load parameters for correct condition/event
