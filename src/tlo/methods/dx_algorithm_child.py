@@ -18,6 +18,12 @@ from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_PlanB,
     HSI_Diarrhoea_Treatment_PlanC,
 )
+from tlo.methods.pneumonia import (
+    HSI_IMCI_Pneumonia_Treatment_level_1,
+    HSI_IMCI_Severe_Pneumonia_Treatment_level_1,
+    HSI_IMCI_Pneumonia_Treatment_level_2,
+    HSI_IMCI_Severe_Pneumonia_Treatment_level_2,
+)
 from tlo.methods.dxmanager import DxTest
 from tlo.methods import pneumonia
 from tlo.methods.healthsystem import HSI_Event
@@ -340,8 +346,8 @@ class DxAlgorithmChild(Module):
                                  topen=self.sim.date,
                                  tclose=None
                                  )
-                    self.child_disease_management_information.update(
-                        {'correct_pneumonia_care': True, 'care_plan': HSI_iCCM_Pneumonia_Treatment_level_0})
+                    pneum_management_info.update(
+                        {'correct_pneumonia_care': True, 'care_plan': HSI_iCCM_Severe_Pneumonia_Treatment_level_0})
 
                 if care_plan_result and df.at[
                     person_id, 'ri_health_worker_iCCM_classification'] == 'severe_pneumonia':
@@ -403,7 +409,7 @@ class DxAlgorithmChild(Module):
                         pneum_management_info.update({'classification': 'non-severe_pneumonia'})
 
             self.child_disease_management_information.update({person_id: pneum_management_info})
-            return pneum_management_info
+            # return pneum_management_info
 
     def do_when_facility_level_1(self, person_id, hsi_event):
         """
@@ -424,111 +430,148 @@ class DxAlgorithmChild(Module):
         # -------------------------------------------------------------------------------------------------
         if not(df.at[person_id, 'age_exact_years'] >= 1 / 6) & (df.at[person_id, 'age_exact_years'] < 5):
             return
-
+        # ---------------------- FOR COUGH OR DIFFICULT BREATHING -----------------------------------------
+        # -------------------------------------------------------------------------------------------------
         self.imnci_as_gold_standard(person_id=person_id)
         pneum_management_level1 = dict()
 
-        # ---------------------- FOR COUGH OR DIFFICULT BREATHING -------------------------------------
-        # ---------------------------------------------------------------------------------------------
-        # DxTest results - classification and treatment plan for those correctly classified ----------------
-        classification_result1 = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run='classify_IMCI_no_pneumonia_level_1', hsi_event=hsi_event)
-        classification_result2 = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run='classify_IMCI_pneumonia_level_1', hsi_event=hsi_event)
-        classification_result3 = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run='classify_IMCI_severe_pneumonia_level_1', hsi_event=hsi_event)
+        # Dx_test for IMCI no pneumonia --------------------------------------------------------------------------
+        if df.at[person_id, 'ri_IMCI_classification_as_gold'] == 'common_cold':
+            hw_classification_for_no_pneumonia = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                dx_tests_to_run='classify_IMCI_no_pneumonia_level_1', hsi_event=hsi_event)
 
-        # For those correctly classified according to the IMCI guidelines:
-        if classification_result1 == True | classification_result2 == True | classification_result3 == True:
-            pneum_management_level1.update({
-                'facility_level': 1,
-                'correct_pneumonia_classification': True,
-                'classification': df.at[person_id, 'ri_IMCI_classification_as_gold']})
-            df.at[person_id, 'ri_health_worker_IMCI_classification'] = \
-                pneum_management_level1.get('classification')
-            # assign treatment plan ---
-            care_plan_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                dx_tests_to_run='pneumonia_care_given_level_1', hsi_event=hsi_event)
-            # todo: algorithm for the probabilities of treatment plan given
+            if hw_classification_for_no_pneumonia:
+                pneum_management_level1.update({
+                    'facility_level': 1,
+                    'correct_pneumonia_classification': True,
+                    'IMCI_classification': df.at[person_id, 'ri_IMCI_classification_as_gold'],
+                    'hw_classification': df.at[person_id, 'ri_IMCI_classification_as_gold']})
+                df.at[person_id, 'ri_health_worker_IMCI_classification'] = \
+                    pneum_management_level1.get('classification')
+                # assign treatment plan ---
+                care_plan_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                    dx_tests_to_run='pneumonia_care_given_level_1', hsi_event=hsi_event)
+                # todo: algorithm for the probabilities of treatment plan given
+                if care_plan_result:
+                    schedule_hsi(hsi_event=HSI_IMCI_No_Pneumonia_Treatment_level_1(person_id=person_id, module=self),
+                                 priority=0,
+                                 topen=self.sim.date,
+                                 tclose=None
+                                 )
+                    pneum_management_level1.update(
+                        {'correct_pneumonia_care': True, 'care_plan': HSI_IMCI_No_Pneumonia_Treatment_level_1})
+            else:
+                # IMCI no pneumonia classified as non-severe_pneumonia by health worker
+                prob_no_pneumonia_classified_as_nonsev = p['prob_no_pneumonia_classified_as_non_severe']
+                if self.rng.rand() < prob_no_pneumonia_classified_as_nonsev:
+                    df.at[person_id, 'ri_health_worker_IMCI_classification'] = 'non-severe_pneumonia'
+                    pneum_management_level1.update({
+                        'facility_level': 1,
+                        'correct_pneumonia_classification': False,
+                        'IMCI_classification': df.at[person_id, 'ri_IMCI_classification_as_gold'],
+                        'hw_classification': df.at[person_id, 'ri_health_worker_IMCI_classification']
+                    })
+                # IMCI non-severe_pneumonia classified as severe_pneumonia
+                else:
+                    df.at[person_id, 'ri_health_worker_IMCI_classification'] = 'severe_pneumonia'
+                    pneum_management_level1.update({
+                        'facility_level': 1,
+                        'correct_pneumonia_classification': False,
+                        'IMCI_classification': df.at[person_id, 'ri_IMCI_classification_as_gold'],
+                        'hw_classification': df.at[person_id, 'ri_health_worker_IMCI_classification']
+                    })
+                # run a test or print
 
-            # # # schedule the events following the correct classification and treatment assignment # # #
-            if care_plan_result and df.at[
-                person_id, 'ri_health_worker_IMCI_classification'] == 'non-severe_pneumonia':
-                schedule_hsi(hsi_event=HSI_IMCI_Pneumonia_Treatment_level_1(person_id=person_id, module=self),
-                             priority=0,
-                             topen=self.sim.date,
-                             tclose=None
-                             )
-                pneum_management_level1.update(
-                    {'correct_pneumonia_care': True, 'care_plan': HSI_IMCI_Pneumonia_Treatment_level_1})
+        # Dx_test for IMCI non-severe pneumonia ------------------------------------------------------------------
+        if df.at[person_id, 'ri_IMCI_classification_as_gold'] == 'non-severe_pneumonia':
+            hw_classification_for_pneumonia = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                dx_tests_to_run='classify_IMCI_pneumonia_level_1', hsi_event=hsi_event)
+            if hw_classification_for_pneumonia:
+                pneum_management_level1.update({
+                    'facility_level': 1,
+                    'correct_pneumonia_classification': True,
+                    'IMCI_classification': df.at[person_id, 'ri_IMCI_classification_as_gold'],
+                    'hw_classification': df.at[person_id, 'ri_IMCI_classification_as_gold']})
+                df.at[person_id, 'ri_health_worker_IMCI_classification'] = \
+                    pneum_management_level1.get('hw_classification')
+                # assign treatment plan ---
+                care_plan_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                    dx_tests_to_run='pneumonia_care_given_level_1', hsi_event=hsi_event)
+                # todo: algorithm for the probabilities of treatment plan given
+                if care_plan_result:
+                    schedule_hsi(hsi_event=HSI_IMCI_Pneumonia_Treatment_level_1(person_id=person_id,
+                                                                                module=self.sim.modules['ALRI']),
+                                 priority=0,
+                                 topen=self.sim.date,
+                                 tclose=None
+                                 )
 
-            if care_plan_result and df.at[
-                person_id, 'ri_health_worker_IMCI_classification'] == 'severe_pneumonia':
-                schedule_hsi(
-                    hsi_event=HSI_IMCI_Severe_Pneumonia_Treatment_level_1(person_id=person_id, module=self),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                    )
-                pneum_management_level1.update(
-                    {'correct_pneumonia_care': True, 'care_plan': HSI_IMCI_Severe_Pneumonia_Treatment_level_1})
+                    pneum_management_level1.update(
+                        {'correct_pneumonia_care': True, 'care_plan': HSI_IMCI_Pneumonia_Treatment_level_1})
+            else:
+                # IMCI non-severe_pneumonia classified as no pneumonia or common_cold
+                prob_nonsev_classified_as_no_pneumonia = p['prob_nonsev_pneumonia_classified_as_no_pneumonia']
+                if self.rng.rand() < prob_nonsev_classified_as_no_pneumonia:
+                    df.at[person_id, 'ri_health_worker_IMCI_classification'] = 'common_cold'
+                    pneum_management_level1.update({
+                        'facility_level': 1,
+                        'correct_pneumonia_classification': False,
+                        'IMCI_classification': df.at[person_id, 'ri_IMCI_classification_as_gold'],
+                        'hw_classification': df.at[person_id, 'ri_health_worker_IMCI_classification']})
+
+                # IMCI non-severe_pneumonia classified as severe_pneumonia
+                else:
+                    df.at[person_id, 'ri_health_worker_IMCI_classification'] = 'severe_pneumonia'
+                    pneum_management_level1.update({
+                        'facility_level': 1,
+                        'correct_pneumonia_classification': False,
+                        'IMCI_classification': df.at[person_id, 'ri_IMCI_classification_as_gold'],
+                        'hw_classification': df.at[person_id, 'ri_health_worker_IMCI_classification']})
+
+        # Dx_test for IMCI non-severe pneumonia ------------------------------------------------------------------
+        if df.at[person_id, 'ri_IMCI_classification_as_gold'] == 'severe_pneumonia':
+            hw_classification_for_severe_pneumonia = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                dx_tests_to_run='classify_IMCI_pneumonia_level_1', hsi_event=hsi_event)
+            if hw_classification_for_severe_pneumonia:
+                pneum_management_level1.update({
+                    'facility_level': 1,
+                    'correct_pneumonia_classification': True,
+                    'IMCI_classification': df.at[person_id, 'ri_IMCI_classification_as_gold'],
+                    'hw_classification': df.at[person_id, 'ri_IMCI_classification_as_gold']})
+                df.at[person_id, 'ri_health_worker_IMCI_classification'] = \
+                    pneum_management_level1.get('hw_classification')
+                # assign treatment plan ---
+                care_plan_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                    dx_tests_to_run='pneumonia_care_given_level_1', hsi_event=hsi_event)
+                # todo: algorithm for the probabilities of treatment plan given
+                if care_plan_result:
+                    schedule_hsi(hsi_event=HSI_IMCI_Severe_Pneumonia_Treatment_level_1(person_id=person_id, module=self),
+                                 priority=0,
+                                 topen=self.sim.date,
+                                 tclose=None
+                                 )
+                    pneum_management_level1.update(
+                        {'correct_pneumonia_care': True, 'care_plan': HSI_IMCI_Severe_Pneumonia_Treatment_level_1})
+            else:
+                # IMCI severe_pneumonia classified as no pneumonia or common_cold
+                prob_severe_pneumonia_classified_as_no_pneum = p['prob_severe_pneumonia_classified_as_no_pneumonia']
+                if self.rng.rand() < prob_severe_pneumonia_classified_as_no_pneum:
+                    df.at[person_id, 'ri_health_worker_IMCI_classification'] = 'common_cold'
+                    pneum_management_level1.update({
+                        'facility_level': 1,
+                        'correct_pneumonia_classification': False,
+                        'IMCI_classification': df.at[person_id, 'ri_IMCI_classification_as_gold'],
+                        'hw_classification': df.at[person_id, 'ri_health_worker_IMCI_classification']})
+                # IMCI severe_pneumonia classified as non-severe
+                else:
+                    df.at[person_id, 'ri_health_worker_IMCI_classification'] = 'non-severe_pneumonia'
+                    pneum_management_level1.update({
+                        'facility_level': 1,
+                        'correct_pneumonia_classification': False,
+                        'IMCI_classification': df.at[person_id, 'ri_IMCI_classification_as_gold'],
+                        'hw_classification': df.at[person_id, 'ri_health_worker_IMCI_classification']})
 
         self.child_disease_management_information.update({person_id: pneum_management_level1})
-
-        # ---------------------------------------------------------------------------------------------
-        # If not correctly classified according to the IMCI guidelines, determine the classification given:
-        if classification_result1 == False | classification_result2 == False | classification_result3 == False:
-            pneum_management_level1.update({
-                'facility_level': 1,
-                'correct_pneumonia_classification': False})
-        # Incorrect classifications for those with underlying upper respiratory infection
-        if (classification_result1 == False) & \
-            (df.at[person_id, 'ri_IMCI_classification_as_gold'] == 'common_cold'):
-            # IMCI no pneumonia classified as non-severe_pneumonia by health worker
-            prob_no_pneumonia_classified_as_nonsev = p['prob_no_pneumonia_classified_as_non_severe']
-            if self.rng.rand() < prob_no_pneumonia_classified_as_nonsev:
-                df.at[person_id, 'ri_health_worker_IMCI_classification'] = 'non-severe_pneumonia'
-                pneum_management_level1.update({
-                    'facility_level': 1, 'correct_pneumonia_classification': False,
-                    'classification': 'non-severe_pneumonia'})
-            # IMCI non-severe_pneumonia classified as severe_pneumonia
-            else:
-                df.at[person_id, 'ri_health_worker_IMCI_classification'] = 'severe_pneumonia'
-                pneum_management_level1.update({'classification': 'severe_pneumonia'})
-            # run a test or print
-
-        # Incorrect classifications for those with underlying IMCI non-severe_pneumonia
-        if classification_result2 == False & \
-            (df.at[person_id, 'ri_IMCI_classification_as_gold'] == 'non-severe_pneumonia'):
-            # IMCI non-severe_pneumonia classified as no pneumonia or common_cold
-            prob_nonsev_classified_as_no_pneumonia = p['prob_nonsev_pneumonia_classified_as_no_pneumonia']
-            if self.rng.rand() < prob_nonsev_classified_as_no_pneumonia:
-                df.at[person_id, 'ri_health_worker_IMCI_classification'] = 'common_cold'
-                pneum_management_level1.update({'classification': 'common_cold'})
-            # IMCI non-severe_pneumonia classified as severe_pneumonia
-            else:
-                df.at[person_id, 'ri_health_worker_IMCI_classification'] = 'severe_pneumonia'
-                pneum_management_level1.update({
-                    'facility_level': 1, 'correct_pneumonia_classification': False,
-                    'classification': 'severe_pneumonia'})
-
-        # Incorrect classifications for those with underlying IMCI severe_pneumonia
-        if classification_result3 == False & \
-            (df.at[person_id, 'ri_IMCI_classification_as_gold'] == 'severe_pneumonia'):
-            # IMCI severe_pneumonia classified as no pneumonia or common_cold
-            prob_severe_pneumonia_classified_as_no_pneum = p['prob_severe_pneumonia_classified_as_no_pneumonia']
-            if self.rng.rand() < prob_severe_pneumonia_classified_as_no_pneum:
-                df.at[person_id, 'ri_health_worker_IMCI_classification'] = 'common_cold'
-                pneum_management_level1.update({'classification': 'common_cold'})
-            # IMCI severe_pneumonia classified as non-severe
-            else:
-                df.at[person_id, 'ri_health_worker_IMCI_classification'] = 'non-severe_pneumonia'
-                pneum_management_level1.update({
-                    'facility_level': 1, 'correct_pneumonia_classification': False,
-                    'classification': 'non-severe_pneumonia'})
-
-        # self.child_disease_management_information.update({person_id: pneum_management_level1})
-        # return df.at[person_id, 'ri_health_worker_IMCI_classification'], pneum_management_level1
 
         # todo:
         #  need to determine what happens in the HSI cascade for those not assessed or those not correctly classified.
@@ -712,277 +755,6 @@ class DxAlgorithmChild(Module):
 #  *********************************** HSI Events ***********************************************************
 #  ----------------------------------------------------------------------------------------------------------
 
-class HSI_iCCM_Pneumonia_Treatment_level_0(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = 'HSI_iCCM_Pneumonia_Treatment_level_0'
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ALERT_OTHER_DISEASES = []
-        self.ACCEPTED_FACILITY_LEVEL = 0
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        pkg_code_pneumonia = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Pneumonia treatment (children)',
-                            'Intervention_Pkg_Code'])[0]
-
-        consumables_needed_pneumonia = {'Intervention_Package_Code': {pkg_code_pneumonia: 1}, 'Item_Code': {}}
-
-        # check availability of consumables
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed_pneumonia)
-
-        # Currently we do not stop the event from running if consumables are unavailble
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
-            if df.at[person_id, 'ri_current_ALRI_status']:
-                df.at[person_id, 'ri_pneumonia_treatment'] = True
-                df.at[person_id, 'ri_pneumonia_tx_start_date'] = self.sim.date
-            if df.at[person_id, 'ri_last_bronchiolitis_status']:
-                df.at[person_id, 'ri_bronchiolitis_treatment'] = True
-                df.at[person_id, 'ri_bronchiolitis_tx_start_date'] = self.sim.date
-
-        else:
-            logger.debug('The required consumables are not available')
-            # todo: prbability of referral if no drug available
-            self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self)
-
-
-class HSI_iCCM_Severe_Pneumonia_Treatment_level_0(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = 'iCCM_Severe_Pneumonia_Treatment_level_0'
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ALERT_OTHER_DISEASES = []
-        self.ACCEPTED_FACILITY_LEVEL = 0
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        # first dose of antibiotic is given - give first dose of oral antibiotic
-        # (amoxicillin tablet - 250mg)
-        # Age 2 months up to 12 months - 1 tablet
-        # Age 12 months up to 5 years - 2 tablets
-
-        # give first dose of an appropriate antibiotic
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        item_code_amoxycilin = pd.unique(
-            consumables.loc[consumables['Items'] == 'Amoxycillin 250mg_1000_CMST', 'Item_Code'])[0]
-
-        consumables_needed = {'Intervention_Package_Code': {}, 'Item_Code': {item_code_amoxycilin: 1}}
-
-        # check availability of consumables
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed)
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][item_code_amoxycilin]:
-            self.module.child_disease_management_information.update({
-                'first_dose_before_referral': True
-            })
-
-        # then refer to facility level 1 or 2
-        self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self)
-        self.sim.modules['DxAlgorithmChild'].do_when_facility_level_2(person_id=person_id, hsi_event=self)
-        # todo: which facility level is closest to be refered to?
-        # todo: what about those wo are lost to follow up? - incorporate in the code
-
-
-class HSI_IMCI_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = 'IMCI_Pneumonia_Treatment_level_1'
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ALERT_OTHER_DISEASES = []
-        self.ACCEPTED_FACILITY_LEVEL = 1
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        pkg_code_pneumonia = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Pneumonia treatment (children)',
-                            'Intervention_Pkg_Code'])[0]
-
-        consumables_needed_pneumonia = {'Intervention_Package_Code': {pkg_code_pneumonia: 1}, 'Item_Code': {}}
-
-        # check availability of consumables
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed_pneumonia)
-
-        # Currently we do not stop the event from running if consumables are unavailble
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
-            if df.at[person_id, 'ri_current_ALRI_status']:
-                df.at[person_id, 'ri_pneumonia_treatment'] = True
-                df.at[person_id, 'ri_pneumonia_tx_start_date'] = self.sim.date
-            # if df.at[person_id, 'ri_last_bronchiolitis_status']:
-            #     df.at[person_id, 'ri_bronchiolitis_treatment'] = True
-            #     df.at[person_id, 'ri_bronchiolitis_tx_start_date'] = self.sim.date
-
-        else:
-            logger.debug('The required consumables are not available')
-            # todo: probability of referral if no drug available
-            self.sim.modules['DxAlgorithmChild'].do_when_facility_level_2(person_id=person_id, hsi_event=self)
-
-        # todo: If coughing for more than 2 weeks or if having recurrent wheezing, assess for TB or asthma
-
-        # todo: follow-up in 2 days
-
-
-class HSI_IMCI_Severe_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = 'IMCI_Severe_Pneumonia_Treatment_level_1'
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['IPAdmission'] = 1
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ALERT_OTHER_DISEASES = []
-        self.ACCEPTED_FACILITY_LEVEL = 1
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        # give first dose of an appropriate antibiotic
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        item_code_benzylpenicillin = pd.unique(
-            consumables.loc[consumables['Items'] == 'Benzylpenicillin 3g (5MU), PFR_each_CMST', 'Item_Code'])[0]
-
-        consumables_needed = {'Intervention_Package_Code': {}, 'Item_Code': {item_code_benzylpenicillin: 1}}
-
-        # check availability of consumables
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed)
-        if outcome_of_request_for_consumables:
-            self.module.child_disease_management_information.update({
-                'first_dose_before_referral': True
-            })
-
-        # then refer to hospital
-        self.sim.modules['DxAlgorithmChild'].do_when_facility_level_2(person_id=person_id, hsi_event=self)
-
-
-class HSI_IMCI_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = 'IMCI_Pneumonia_Treatment_level_2'
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['IPAdmission'] = 1  # This requires one out patient
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ALERT_OTHER_DISEASES = []
-        self.ACCEPTED_FACILITY_LEVEL = 1
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        pkg_code_pneumonia = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Pneumonia treatment (children)',
-                            'Intervention_Pkg_Code'])[0]
-
-        consumables_needed_pneumonia = {'Intervention_Package_Code': {pkg_code_pneumonia: 1}, 'Item_Code': {}}
-
-        # check availability of consumables
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed_pneumonia)
-
-        # Currently we do not stop the event from running if consumables are unavailble
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
-            if df.at[person_id, 'ri_current_ALRI_status']:
-                df.at[person_id, 'ri_ALRI_treatment'] = True
-                df.at[person_id, 'ri_ALRI_tx_start_date'] = self.sim.date
-
-        # todo: follow up after 3 days
-
-
-class HSI_IMCI_Severe_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = 'IMCI_Severe_Pneumonia_Treatment_level_2'
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ALERT_OTHER_DISEASES = []
-        self.ACCEPTED_FACILITY_LEVEL = 1
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        # TODO: admit to hospital. HOW IS IT WITH NUMBER OF BEDS USED?
-        # Check for oxygen saturation with pulse oxymetry if available
-        # manage airway as appropriately
-        # give recommended antibiotic
-        # treat hgh fever if present
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-
-#         if oxygen_saturation == '< 90%':
-#             item_code_oxygen = pd.unique(
-#                 consumables.loc[
-#                     consumables['Intervention_Pkg'] == 'Oxygen, 1000 liters, primarily with oxygen concentrators',
-#                     'Intervention_Pkg_Code'])[0]
-#             item_code_nasal_tube = pd.unique(
-#                 consumables.loc[
-#                     consumables['Intervention_Pkg'] == 'Tube, nasogastric CH 8_each_CMST',
-#                     'Intervention_Pkg_Code'])[0]
-#             consumables_needed = {'Intervention_Package_Code': {}, 'Item_Code': {item_code_oxygen: 1,
-#                                                                                  item_code_nasal_tube: 1}}
-#             # check availability of consumables
-#             outcome_of_request_for_oxygen = self.sim.modules['HealthSystem'].request_consumables(
-#                 hsi_event=self, cons_req_as_footprint=consumables_needed)
-#
-#         # Antibiotic therapy
-#         item_code_gentamicin = pd.unique(
-#             consumables.loc[
-#                 consumables['Intervention_Pkg'] == 'Gentamicin Sulphate 40mg/ml, 2ml_each_CMST',
-#                 'Intervention_Pkg_Code'])[0]
-#         item_code_seringe = pd.unique(
-#             consumables.loc[
-#                 consumables['Intervention_Pkg'] == 'Syringe, needle + swab',
-#                 'Intervention_Pkg_Code'])[0]
-#         item_code_cannula = pd.unique(
-#             consumables.loc[
-#                 consumables['Intervention_Pkg'] == 'Cannula iv (winged with injection pot) 16_each_CMST',
-#                 'Intervention_Pkg_Code'])[0]
-#         consumables_needed = {'Intervention_Package_Code': {}, 'Item_Code': {item_code_gentamicin: 1,
-#                                                                              item_code_seringe: 1,
-#                                                                              item_code_cannula: 1}}
-#
-#         outcome_of_request_for_oxygen = self.sim.modules['HealthSystem'].request_consumables(
-#             hsi_event=self, cons_req_as_footprint=consumables_needed)
-#
-# # todo: OR just have as a package deal for consumables?
-
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
@@ -1021,19 +793,6 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='imci_classicications_count',
                     data=dict_to_output,
                     description='Summary of IMCI classification')
-
-        # log IMCI pneumonia management received -----------------------------------
-        # management_info_flattened = \
-        #     [{**{'dict_key': k}, **v} for k, v in self.module.child_disease_management_information.items()]
-        # management_info_flattened_df = pd.DataFrame(management_info_flattened)
-        # management_info_flattened_df.drop(columns='dict_key', inplace=True)
-        #
-        # # make a df with children with alri status as the columns -----
-        # index_alri_status_true = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
-
-        # df_alri_management_info = pd.DataFrame(data=management_info_flattened_df,
-        #                                        index=index_alri_status_true)
-                                               # columns=list(management_info_flattened_df.keys()))
 
         # Check on one child dataframe
         index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
@@ -1189,3 +948,19 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='hw_classification_for_underlying_bronchiolitis',
                     data=hw_class_for_underlying_bronchiolitis_df_T,
                     description='hw classification for underlying true condition - bronchiolitis')
+
+        # -----------------------------------------------------------------------------------------------
+        # management of childhood illnesses -----------------------------------------
+
+        # log IMCI pneumonia management received -----------------------------------
+        management_info_flattened = \
+            [{**{'dict_key': k}, **v} for k, v in self.module.child_disease_management_information.items()]
+        management_info_flattened_df = pd.DataFrame(management_info_flattened)
+        management_info_flattened_df.drop(columns='dict_key', inplace=True)
+
+        # make a df with children with alri status as the columns -----
+        index_alri_status_true = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
+
+        df_alri_management_info = pd.DataFrame(data=management_info_flattened_df,
+                                               index=index_alri_status_true)
+        columns=list(management_info_flattened_df.keys())

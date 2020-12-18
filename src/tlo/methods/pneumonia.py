@@ -34,6 +34,7 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, Individua
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
 from tlo.methods.symptommanager import Symptom
+from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -70,10 +71,10 @@ class ALRI(Module):
 
     # Declare Metadata
     METADATA = {
-        Metadata.DISEASE_MODULE,
-        Metadata.USES_SYMPTOMMANAGER,
-        Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.DISEASE_MODULE,  # Disease modules: Any disease module should carry this label.
+        Metadata.USES_SYMPTOMMANAGER,  # The 'Symptom Manager' recognises modules with this label.
+        Metadata.USES_HEALTHSYSTEM,  # The 'HealthSystem' recognises modules with this label.
+        Metadata.USES_HEALTHBURDEN  # The 'HealthBurden' module recognises modules with this label.
     }
 
     # Declare the ALRI complications:
@@ -619,6 +620,11 @@ class ALRI(Module):
         'rr_ALRI_RSV_vaccine':
             Parameter(Types.REAL,
                       'relative rate of ALRI with the RSV vaccination'
+                      ),
+
+        'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment':
+            Parameter(Types.REAL,
+                      'probability of cure for uncomplicated pneumonia given IMCI pneumonia treatment'
                       ),
 
     }
@@ -1201,6 +1207,9 @@ class ALRI(Module):
         # todo: do I need to add risk factors for death from severe complications??
         # -----------------------------------------------------------------------------------------------------
 
+        # Look-up and store the consumables that are required for each HSI
+        # self.look_up_consumables()
+
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
         This is called by the simulation whenever a new person is born.
@@ -1261,6 +1270,87 @@ class ALRI(Module):
         daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
 
         return daly_values_by_pathogen
+
+    # def look_up_consumables(self):
+    #     """Look up and store the consumables used in each of the HSI."""
+    #
+    #     def get_code(package=None, item=None):
+    #         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+    #         if package is not None:
+    #             condition = consumables['Intervention_Pkg'] == package
+    #             column = 'Intervention_Pkg_Code'
+    #         else:
+    #             condition = consumables['Items'] == item
+    #             column = 'Item_Code'
+    #         return pd.unique(consumables.loc[condition, column])[0]
+    #
+    #     def add_consumable(_event, _package, _item):
+    #         self.consumables_used_in_hsi[_event] = {
+    #             'Intervention_Package_Code': _package,
+    #             'Item_Code': _item
+    #         }
+    #
+    #     uncomplicated_pneumonia_intervention_Pkg = get_code(package='Pneumonia treatment (children)')
+    #     severe_pneumonia_intervention_Pkg = get_code(package='Treatment of severe diarrhea')
+    #     paracetamol_tablet_item = get_code(item='Paracetamol, tablet, 100 mg')
+    #     salbutamol_tablet_item = get_code(item='Salbutamol, tablet, 4 mg')
+    #     salbutamol_syrup_item = get_code(item='Salbutamol, syrup, 2 mg/5 ml')
+    #     salbutamol_sulphate_item = get_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST')
+    #     amoxycillin_suspension_item = get_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST')
+    #     amoxycillin_item = get_code(item='Amoxycillin 250mg_1000_CMST')
+    #     benzylpenicillin_item = get_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST')
+    #     gentamicin_solution_item = get_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')
+    #     ceftriaxone_item = get_code(item='Ceftriaxone 1g, PFR_each_CMST')
+    #     nasogastric_tube_item = get_code(item='Tube, nasogastric CH 8_each_CMST')
+    #     oxygen_item = get_code(item='Oxygen, 1000 liters, primarily with oxygen concentrators')
+    #     prednisolone_item = get_code(item='Prednisolone 5mg_100_CMST')
+    #     seringe_item = get_code(item='Syringe, needle + swab')
+    #     iv_cannula_item = get_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')
+    #     x_ray_item = get_code(item='X-ray')
+    #
+    #     # -- Assemble the footprints for each HSI:
+    #     add_consumable('HSI_iCCM_Pneumonia_Treatment_level_0', {}, {amoxycillin_item: 1, paracetamol_tablet_item: 1})
+    #     add_consumable('HSI_iCCM_Severe_Pneumonia_Treatment_level_0', {}, {amoxycillin_item: 1,
+    #                                                                        paracetamol_tablet_item: 1})
+    #     add_consumable('HSI_IMCI_No_Pneumonia_Treatment_level_1', {}, {})
+    #     add_consumable('HSI_IMCI_Pneumonia_Treatment_level_1', {uncomplicated_pneumonia_intervention_Pkg: 1}, {})
+    #     add_consumable('HSI_IMCI_Severe_Pneumonia_Treatment_level_1', {}, {paracetamol_tablet_item: 1,
+    #                                                                        amoxycillin_item: 1})
+    #     add_consumable('HSI_IMCI_Pneumonia_Treatment_level_2', {uncomplicated_pneumonia_intervention_Pkg: 1}, {})
+    #     add_consumable('HSI_IMCI_Severe_Pneumonia_Treatment_level_2', {severe_pneumonia_intervention_Pkg: 1}, {})
+
+    def do_treatment(self, person_id, prob_of_cure):
+        """Helper function that enacts the effects of a treatment to ALRI caused by a pathogen.
+        It will only do something if the ALRI is caused by a pathogen (this module). It will not allow any effect
+         if the respiratory infection is caused by another module.
+        * Log the treatment date
+        * Prevents this episode of diarrhoea from causing a death
+        * Schedules the cure event, at which symptoms are alleviated.
+        """
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        if not person.is_alive:
+            return
+
+        # Do nothing if the diarrhoea has not been caused by a pathogen
+        if not (
+            (person.ri_primary_ALRI_pathogen != 'not_applicable') &
+            (person.ri_ALRI_event_date_of_onset <= self.sim.date <= person.ri_end_of_last_alri_episode)
+        ):
+            return
+
+        # Log that the treatment is provided:
+        df.at[person_id, 'ri_ALRI_tx_start_date'] = self.sim.date
+
+        # Determine if the treatment is effective
+        if prob_of_cure > self.rng.rand():
+            # If treatment is successful: cancel death and schedule cure event
+            self.cancel_death_date(person_id)
+            self.sim.schedule_event(PneumoniaCureEvent(self, person_id),
+                                    self.sim.date + DateOffset(
+                                        days=self.parameters['days_between_treatment_and_cure']
+                                    ))
 
     def cancel_death_date(self, person_id):
         """
@@ -1369,8 +1459,8 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
 
             # ----------------------- Duration of the ALRI event -----------------------
-            duration_in_days_of_alri = max(1, int(
-                7 + (-2 + 4 * rng.rand())))  # assumes uniform interval around mean duration with range 4 days
+            duration_in_days_of_alri = max(7, int(
+                14 + (-2 + 4 * rng.rand())))  # assumes uniform interval around mean duration with range 4 days
 
             # ----------------------- Create the event for the onset of infection -------------------
             self.sim.schedule_event(
@@ -1643,9 +1733,7 @@ class PneumoniaCureEvent(Event, IndividualScopeEventMixin):
         # This event should only run after the person has received a treatment during this episode
         assert (
             (df.at[person_id, 'ri_ALRI_event_date_of_onset']) <=
-            (df.at[person_id, 'ri_ALRI_tx_start_date']) <=
-            self.sim.date
-        )
+            (df.at[person_id, 'ri_ALRI_tx_start_date']) <= self.sim.date)
 
         # Stop the person from dying of ALRI (if they were going to die)
         df.at[person_id, 'ri_ALRI_event_recovered_date'] = self.sim.date
@@ -1707,6 +1795,609 @@ class PneumoniaDeathEvent(Event, IndividualScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
+# COMMUNITY LEVEL - iCCM delivered through HSAs -----------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------
+class HSI_iCCM_Pneumonia_Treatment_level_0(HSI_Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Define the necessary information for an HSI
+        # (These are blank when created; but these should be filled-in by the module that calls it)
+        self.TREATMENT_ID = 'HSI_iCCM_Pneumonia_Treatment_level_0'
+
+        # APPP_FOOTPRINT: village clinic event takes small amount of time for DCSA
+        appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        appt_footprint['ConWithDCSA'] = 0.5
+        # Demonstrate the equivalence with:
+        assert appt_footprint == self.make_appt_footprint({'ConWithDCSA': 0.5})
+
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 0.5})
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at facility-level 0 / community with HSAs
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # Do here whatever happens to an individual during this health system interaction event
+        # ~~~~~~~~~~~~~~~~~~~~~~
+
+        # Make request for some consumables
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        # whole package of interventions
+        pkg_code_pneumonia = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Pneumonia treatment (children)',
+                            'Intervention_Pkg_Code'])[0]
+
+        # individual items
+        item_code1 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST', 'Item_Code']
+        )[0]
+        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Paracetamol, tablet, 100 mg', 'Item_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_pneumonia: 1},
+                              'Item_Code': {item_code1: 1, item_code2: 1}}
+
+        # check availability of consumables
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed)
+
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
+            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
+            self.module.do_treatment(
+                person_id=person_id,
+                prob_of_cure=self.module.parameters[
+                    'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment']
+            )
+        else:
+            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+            # todo: prbability of referral if no drug available
+            self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self)
+
+        # check to see if all consumables returned (for demonstration purposes):
+        # check to see if all consumables returned (for demonstration purposes):
+        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]) and\
+                        (outcome_of_request_for_consumables['Item_Code'][item_code1]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code2])
+        # use helper function instead (for demonstration purposes)
+        all_available_using_helper_function = self.get_all_consumables(
+            item_codes=[item_code1, item_code2],
+            pkg_codes=[pkg_code_pneumonia]
+        )
+        # Demonstrate equivalence
+        assert all_available == all_available_using_helper_function
+
+        # Return the actual appt footprints
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
+
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug(key='debug', data='HSI_iCCM_Pneumonia_Treatment_level_0: did not run')
+        pass
+
+
+class HSI_iCCM_Severe_Pneumonia_Treatment_level_0(HSI_Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = 'iCCM_Severe_Pneumonia_Treatment_level_0'
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ALERT_OTHER_DISEASES = []
+        self.ACCEPTED_FACILITY_LEVEL = 0
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # store management info:
+        care_management_info = dict()
+
+        # first dose of antibiotic is given - give first dose of oral antibiotic
+        # (amoxicillin tablet - 250mg)
+        # Age 2 months up to 12 months - 1 tablet
+        # Age 12 months up to 5 years - 2 tablets
+
+        # give first dose of an appropriate antibiotic
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        item_code_amoxycilin = pd.unique(
+            consumables.loc[consumables['Items'] == 'Amoxycillin 250mg_1000_CMST', 'Item_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {}, 'Item_Code': {item_code_amoxycilin: 1}}
+
+        # check availability of consumables
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed)
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][item_code_amoxycilin]:
+            care_management_info.update({
+                'treatment_plan': 'referral_with_first_dose_antibiotic'})
+
+        # then refer to facility level 1 or 2
+        self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self)
+        self.sim.modules['DxAlgorithmChild'].do_when_facility_level_2(person_id=person_id, hsi_event=self)
+        # todo: which facility level is closest to be refered to?
+        # todo: what about those wo are lost to follow up? - incorporate in the code
+
+
+# PRIMARY LEVEL - IMCI delivered in facility level 1 / health centres -------------------------------------
+# ---------------------------------------------------------------------------------------------------------
+class HSI_IMCI_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Define the necessary information for an HSI - interventions for non-severe pneumoni at facility level 1
+        # (These are blank when created; but these should be filled-in by the module that calls it)
+        self.TREATMENT_ID = 'HSI_IMCI_Pneumonia_Treatment_level_1'
+
+        # APP_FOOTPRINT: health centre event takes small amount of time for health workers
+        appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        # Demonstrate the equivalence with:
+        assert appt_footprint == self.make_appt_footprint({'Under5OPD': 1})
+
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Can occur at facility-level 1 / health centres
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # store management info:
+        care_management_info = dict()
+        # Do here whatever happens to an individual during this health system interaction event
+        # ~~~~~~~~~~~~~~~~~~~~~~
+
+        # Make request for some consumables
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        # whole package of interventions
+        pkg_code_pneumonia = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Pneumonia treatment (children)',
+                            'Intervention_Pkg_Code'])[0]
+
+        # individual items
+        item_code1 = pd.unique(consumables.loc[consumables['Items'] == 'Paracetamol, tablet, 100 mg', 'Item_Code'])[
+            0]
+        item_code2 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Salbutamol, tablet, 4 mg', 'Item_Code'])[0]
+        item_code3 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Salbutamol, syrup, 2 mg/5 ml', 'Item_Code'])[0]
+        item_code4 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Salbutamol sulphate 1mg/ml, 5ml_each_CMST', 'Item_Code'])[0]
+        item_code5 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST', 'Item_Code'])[0]
+        item_code6 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Amoxycillin 250mg_1000_CMST', 'Item_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_pneumonia: 1},
+                              'Item_Code': {item_code1: 1, item_code2: 1, item_code3: 1,
+                                            item_code4: 1, item_code5: 1, item_code6: 1}}
+
+        # check availability of consumables
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed)
+
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
+            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
+            self.module.do_treatment(
+                person_id=person_id,
+                prob_of_cure=self.module.parameters[
+                    'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment']
+            )
+            care_management_info.update({
+                'treatment_plan': 'treatment_for_pneumonia'})
+            self.module.child_disease_management_information.update({person_id: care_management_info})
+
+        else:
+            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+            # todo: probability of referral if no drug available
+            self.sim.modules['DxAlgorithmChild'].do_when_facility_level_2(person_id=person_id, hsi_event=self)
+            care_management_info.update({
+                'treatment_plan': 'no_available_treatment', 'referral_to_level_2': True})
+
+        self.module.child_disease_management_information.update({person_id: care_management_info})
+
+        # todo: If coughing for more than 2 weeks or if having recurrent wheezing, assess for TB or asthma
+
+        # todo: follow-up in 2 days
+
+        # check to see if all consumables returned (for demonstration purposes):
+        # check to see if all consumables returned (for demonstration purposes):
+        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code1]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code2]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code3]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code4]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code5]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code6])
+        # use helper function instead (for demonstration purposes)
+        all_available_using_helper_function = self.get_all_consumables(
+            item_codes=[item_code1, item_code2, item_code3, item_code4, item_code5, item_code6],
+            pkg_codes=[pkg_code_pneumonia]
+        )
+        # Demonstrate equivalence
+        assert all_available == all_available_using_helper_function
+
+        # Return the actual appt footprints
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        actual_appt_footprint['Under5OPD'] = actual_appt_footprint['Under5OPD'] * 2
+
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug(key='debug', data='HSI_IMCI_Pneumonia_Treatment_level_1: did not run')
+        pass
+
+class HSI_IMCI_Severe_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Define the necessary information for an HSI - interventions for non-severe pneumoni at facility level 1
+        # (These are blank when created; but these should be filled-in by the module that calls it)
+        self.TREATMENT_ID = 'HSI_IMCI_Severe_Pneumonia_Treatment_level_1'
+
+        # APP_FOOTPRINT: health centre event takes small amount of time for health workers
+        appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        # Demonstrate the equivalence with:
+        assert appt_footprint == self.make_appt_footprint({'Under5OPD': 1})
+
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Can occur at facility-level 1 / health centres
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # store management info:
+        care_management_info = dict()
+        # Do here whatever happens to an individual during this health system interaction event
+        # ~~~~~~~~~~~~~~~~~~~~~~
+
+        # Make request for some consumables
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        # whole package of interventions
+        pkg_code_severe_pneumonia = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe pneumonia',
+                            'Intervention_Pkg_Code'])[0]
+
+        # individual items
+        item_code1 = pd.unique(consumables.loc[consumables['Items'] == 'Benzylpenicillin 3g (5MU), PFR_each_CMST',
+                                               'Item_Code'])[0]
+        item_code2 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Gentamicin Sulphate 40mg/ml, 2ml_each_CMST', 'Item_Code'])[0]
+        item_code3 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Ceftriaxone 1g, PFR_each_CMST', 'Item_Code'])[0]
+        item_code4 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Tube, nasogastric CH 8_each_CMST', 'Item_Code'])[0]
+        item_code5 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Oxygen, 1000 liters, primarily with oxygen concentrators',
+                            'Item_Code'])[0]
+        item_code6 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Prednisolone 5mg_100_CMST', 'Item_Code'])[0]
+        item_code7 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Salbutamol, syrup, 2 mg/5 mlT', 'Item_Code'])[0]
+        item_code8 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        item_code9 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Amoxycillin 250mg_1000_CMST', 'Item_Code'])[0]
+        item_code10 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Cannula iv  (winged with injection pot) 16_each_CMST',
+                            'Item_Code'])[0]
+        item_code11 = pd.unique(
+            consumables.loc[consumables['Items'] == 'X-ray', 'Item_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_severe_pneumonia: 1},
+                              'Item_Code': {item_code1: 1, item_code2: 1, item_code3: 1,
+                                            item_code4: 1, item_code5: 1, item_code6: 1,
+                                            item_code7: 1, item_code8: 1, item_code9: 1,
+                                            item_code10: 1, item_code11: 1}}
+
+        # check availability of consumables
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed)
+
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]:
+            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
+            self.sim.schedule_event(
+                PneumoniaCureEvent(self.sim.modules['ALRI'], person_id),
+                self.sim.date + DateOffset(days=3), # todo: need to check the dates conflict with cure/ treatment/ death etc...
+            )
+            care_management_info.update({
+                'treatment_plan': 'treatment_for_severe_pneumonia'})
+
+        else:
+            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+            # todo: probability of referral if no drug available
+            self.sim.modules['DxAlgorithmChild'].do_when_facility_level_2(person_id=person_id, hsi_event=self)
+            # TODO: give first dose of antibiotic before referral
+            care_management_info.update({
+                'treatment_plan': 'no_available_treatment', 'referral_to_level_2': True})
+
+        self.module.child_disease_management_information.update({person_id: care_management_info})
+        # todo: If coughing for more than 2 weeks or if having recurrent wheezing, assess for TB or asthma
+
+        # todo: follow-up in 2 days
+
+        # check to see if all consumables returned (for demonstration purposes):
+        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code1]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code2]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code3]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code4]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code5]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code6]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code7]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code8]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code9]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code10]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code11])
+
+        # use helper function instead (for demonstration purposes)
+        all_available_using_helper_function = self.get_all_consumables(
+            item_codes=[item_code1, item_code2, item_code3, item_code4, item_code5, item_code6,
+                        item_code7, item_code8, item_code9, item_code10, item_code11],
+            pkg_codes=[pkg_code_severe_pneumonia]
+        )
+        # Demonstrate equivalence
+        assert all_available == all_available_using_helper_function
+
+        # Return the actual appt footprints
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        actual_appt_footprint['Under5OPD'] = actual_appt_footprint['Under5OPD'] * 2
+
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug(key='debug', data='HSI_IMCI_Severe_Pneumonia_Treatment_level_1: did not run')
+        pass
+
+
+# SECONDARY LEVEL - IMCI delivered in facility level 2 / hospitals -------------------------------------
+# ---------------------------------------------------------------------------------------------------------
+class HSI_IMCI_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Define the necessary information for an HSI - interventions for non-severe pneumoni at facility level 1
+        # (These are blank when created; but these should be filled-in by the module that calls it)
+        self.TREATMENT_ID = 'HSI_IMCI_Pneumonia_Treatment_level_2'
+
+        # APP_FOOTPRINT: hospital-level event takes a certain amount of time for health workers
+        appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        # Demonstrate the equivalence with:
+        assert appt_footprint == self.make_appt_footprint({'Under5OPD': 1})
+
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Can occur at facility-level 2 / hospitals
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # store management info:
+        care_management_info = dict()
+        # Do here whatever happens to an individual during this health system interaction event
+        # ~~~~~~~~~~~~~~~~~~~~~~
+
+        # Make request for some consumables
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        # whole package of interventions
+        pkg_code_pneumonia = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Pneumonia treatment (children)',
+                            'Intervention_Pkg_Code'])[0]
+
+        # individual items
+        item_code1 = pd.unique(consumables.loc[consumables['Items'] == 'Paracetamol, tablet, 100 mg', 'Item_Code'])[
+            0]
+        item_code2 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Salbutamol, tablet, 4 mg', 'Item_Code'])[0]
+        item_code3 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Salbutamol, syrup, 2 mg/5 ml', 'Item_Code'])[0]
+        item_code4 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Salbutamol sulphate 1mg/ml, 5ml_each_CMST', 'Item_Code'])[0]
+        item_code5 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST', 'Item_Code'])[0]
+        item_code6 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Amoxycillin 250mg_1000_CMST', 'Item_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_pneumonia: 1},
+                              'Item_Code': {item_code1: 1, item_code2: 1, item_code3: 1,
+                                            item_code4: 1, item_code5: 1, item_code6: 1}}
+
+        # check availability of consumables
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed)
+
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
+            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
+            self.sim.schedule_event(
+                PneumoniaCureEvent(self.sim.modules['ALRI'], person_id),
+                self.sim.date + DateOffset(days=3),
+            )
+            care_management_info.update({
+                'treatment_plan': 'treatment_for_pneumonia'})
+        else:
+            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+            # todo: probability of referral if no drug available
+            care_management_info.update({
+                'treatment_plan': 'no_available_treatment', 'referral_to_level_2': True})
+
+        self.module.child_disease_management_information.update({person_id: care_management_info})
+
+        # todo: If coughing for more than 2 weeks or if having recurrent wheezing, assess for TB or asthma
+
+        # todo: follow-up in 2 days
+
+        # check to see if all consumables returned (for demonstration purposes):
+        # check to see if all consumables returned (for demonstration purposes):
+        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code1]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code2]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code3]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code4]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code5]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code6])
+        # use helper function instead (for demonstration purposes)
+        all_available_using_helper_function = self.get_all_consumables(
+            item_codes=[item_code1, item_code2, item_code3, item_code4, item_code5, item_code6],
+            pkg_codes=[pkg_code_pneumonia]
+        )
+        # Demonstrate equivalence
+        assert all_available == all_available_using_helper_function
+
+        # Return the actual appt footprints
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        actual_appt_footprint['Under5OPD'] = actual_appt_footprint['Under5OPD'] * 2
+
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug(key='debug', data='HSI_IMCI_Pneumonia_Treatment_level_2: did not run')
+        pass
+
+        # todo: follow up after 3 days
+
+
+class HSI_IMCI_Severe_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Define the necessary information for an HSI - interventions for severe pneumonia at facility level 2
+        # (These are blank when created; but these should be filled-in by the module that calls it)
+        self.TREATMENT_ID = 'HSI_IMCI_Severe_Pneumonia_Treatment_level_2'
+
+        # APP_FOOTPRINT: hospital level event takes small amount of time for health workers
+        appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        appt_footprint['IPAdmission'] = 1  # This requires one out patient
+        # Demonstrate the equivalence with:
+        assert appt_footprint == self.make_appt_footprint({'IPAdmission': 1})
+
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Can occur at facility-level 1 / health centres
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
+            return
+        # Do here whatever happens to an individual during this health system interaction event
+        # ~~~~~~~~~~~~~~~~~~~~~~
+
+        care_management_info = dict()
+        # Make request for some consumables
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        # whole package of interventions
+        pkg_code_severe_pneumonia = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe pneumonia',
+                            'Intervention_Pkg_Code'])[0]
+
+        # individual items
+        item_code1 = pd.unique(consumables.loc[consumables['Items'] == 'Benzylpenicillin 3g (5MU), PFR_each_CMST',
+                                               'Item_Code'])[0]
+        item_code2 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Gentamicin Sulphate 40mg/ml, 2ml_each_CMST', 'Item_Code'])[0]
+        item_code3 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Ceftriaxone 1g, PFR_each_CMST', 'Item_Code'])[0]
+        item_code4 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Tube, nasogastric CH 8_each_CMST', 'Item_Code'])[0]
+        item_code5 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Oxygen, 1000 liters, primarily with oxygen concentrators',
+                            'Item_Code'])[0]
+        item_code6 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Prednisolone 5mg_100_CMST', 'Item_Code'])[0]
+        item_code7 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Salbutamol, syrup, 2 mg/5 mlT', 'Item_Code'])[0]
+        item_code8 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        item_code9 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Amoxycillin 250mg_1000_CMST', 'Item_Code'])[0]
+        item_code10 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Cannula iv  (winged with injection pot) 16_each_CMST',
+                            'Item_Code'])[0]
+        item_code11 = pd.unique(
+            consumables.loc[consumables['Items'] == 'X-ray', 'Item_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_severe_pneumonia: 1},
+                              'Item_Code': {item_code1: 1, item_code2: 1, item_code3: 1,
+                                            item_code4: 1, item_code5: 1, item_code6: 1,
+                                            item_code7: 1, item_code8: 1, item_code9: 1,
+                                            item_code10: 1, item_code11: 1}}
+
+        # check availability of consumables
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed)
+
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]:
+            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
+            self.sim.schedule_event(
+                PneumoniaCureEvent(self.sim.modules['ALRI'], person_id),
+                self.sim.date + DateOffset(days=3),
+            )
+            care_management_info.update({
+                'treatment_plan': 'treatment_for_severe_pneumonia'})
+        else:
+            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+            # todo: probability of referral if no drug available
+            # self.sim.modules['DxAlgorithmChild'].do_when_facility_level_3(person_id=person_id, hsi_event=self)
+            #todo: inpatient bed days
+            care_management_info.update({
+                'treatment_plan': 'no_available_treatment', 'referral_to_level_2': True})
+
+        # check to see if all consumables returned (for demonstration purposes):
+        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code1]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code2]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code3]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code4]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code5]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code6]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code7]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code8]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code9]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code10]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code11])
+
+        # use helper function instead (for demonstration purposes)
+        all_available_using_helper_function = self.get_all_consumables(
+            item_codes=[item_code1, item_code2, item_code3, item_code4, item_code5, item_code6,
+                        item_code7, item_code8, item_code9, item_code10, item_code11],
+            pkg_codes=[pkg_code_severe_pneumonia]
+        )
+        # Demonstrate equivalence
+        assert all_available == all_available_using_helper_function
+
+        # Return the actual appt footprints
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        actual_appt_footprint['IPAdmission'] = actual_appt_footprint['IPAdmission'] * 2
+
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug(key='debug', data='HSI_IMCI_Severe_Pneumonia_Treatment_level_2: did not run')
+        pass
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
