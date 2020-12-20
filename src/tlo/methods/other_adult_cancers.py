@@ -300,7 +300,7 @@ class OtherAdultCancer(Module):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(OtherAdultCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(OtherAdultCancerMainPollingEvent(self), sim.date + DateOffset(months=1))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -479,7 +479,7 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
-        # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
+        # scheduled to run every 1 month : do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
         df = population.props  # shortcut to dataframe
@@ -860,4 +860,4 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 #       logger.info('%s|person_one|%s',
 #                        self.sim.date,
-#                       df.loc[1].to_dict())
+#                       df.loc[3].to_dict())

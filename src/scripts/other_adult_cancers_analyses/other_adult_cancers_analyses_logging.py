@@ -33,7 +33,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2050,  1, 1)
-popsize = 1450000
+popsize = 1450
 
 # Establish the simulation object
 log_config = {
@@ -51,7 +51,7 @@ log_config = {
 #       'tlo.methods.bladder_cancer': logging.INFO,
     }
 }
-sim = Simulation(start_date=start_date, seed=1, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=2, log_config=log_config)
 
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
