@@ -312,19 +312,19 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
 
     # check that there are now some people in each of the later stages:
     df = sim.population.props
-#   assert len(df.loc[df.is_alive & (df.oac_status != 'none')]) > 0
-#   assert not pd.isnull(df.oac_status).any()
-#   assert (df.loc[df.is_alive].oac_status.value_counts().drop(index='none') > 0).all()
+    assert len(df.loc[df.is_alive & (df.oac_status != 'none')]) > 0
+    assert not pd.isnull(df.oac_status).any()
+    assert (df.loc[df.is_alive].oac_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of other adult cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
-#   assert yll['YLL_OtherAdultCancer_OtherAdultCancer'].sum() > 0
+    assert yll['YLL_OtherAdultCancer_OtherAdultCancer'].sum() > 0
 
     # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
-#   assert not (df.oac_date_diagnosis > start_date).any()
-#   assert not (df.oac_date_treatment > start_date).any()
-#   assert not (df.oac_stage_at_which_treatment_given != 'none').any()
-#   assert not (df.oac_date_palliative_care > start_date).any()
+    assert not (df.oac_date_diagnosis > start_date).any()
+    assert not (df.oac_date_treatment > start_date).any()
+    assert not (df.oac_stage_at_which_treatment_given != 'none').any()
+    assert not (df.oac_date_palliative_care > start_date).any()
 
 
 def test_check_progression_through_stages_is_blocked_by_treatment():
