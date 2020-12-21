@@ -240,9 +240,9 @@ class ProstateCancer(Module):
         # ----- Impose the symptom of random sample of those in each cancer stage to have pelvic pain:
         lm_init_pelvic_pain = LinearModel.multiplicative(
         Predictor('pc_status').when("none", 0.0)
-                            .when("prostate_confined", p['init_prop_urinary_symptoms_by_stage'][0])
-                            .when("local_ln", p['init_prop_urinary_symptoms_by_stage'][1])
-                            .when("metastatic", p['init_prop_urinary_symptoms_by_stage'][2])
+                            .when("prostate_confined", p['init_prop_pelvic_pain_symptoms_by_stage'][0])
+                            .when("local_ln", p['init_prop_pelvic_pain_symptoms_by_stage'][1])
+                            .when("metastatic", p['init_prop_pelvic_pain_symptoms_by_stage'][2])
         )
 
         has_pelvic_pain_symptoms_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
@@ -349,7 +349,7 @@ class ProstateCancer(Module):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(ProstateCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(ProstateCancerMainPollingEvent(self), sim.date + DateOffset(months=1))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period

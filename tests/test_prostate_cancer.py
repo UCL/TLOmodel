@@ -27,7 +27,7 @@ except NameError:
 
 # parameters for whole suite of tests:
 start_date = Date(2010, 1, 1)
-popsize = 14500
+popsize = 10000
 
 
 # %% Construction of simulation objects:
@@ -87,9 +87,18 @@ def zero_out_init_prev(sim):
 def seed_init_prev_in_first_stage_only(sim):
     # Set initial prevalence to zero:
     sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [0.0] * 3
-    # Put everyone in first stage ('prostate_confied')
+    # Put everyone in first stage ('prostate_confined')
     sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'][0] = 1.0
     return sim
+
+"""
+init_prop_prostate_ca_stage
+init_prop_urinary_symptoms_by_stage
+init_prop_pelvic_pain_symptoms_by_stage
+init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage
+init_prop_with_pelvic_pain_symptoms_diagnosed_prostate_ca_by_stage
+init_prop_treatment_status_prostate_ca
+"""
 
 
 def make_high_init_prev(sim):
@@ -144,7 +153,6 @@ def check_configuration_of_population(sim):
     df = sim.population.props.loc[sim.population.props.is_alive]
 
     # for convenience, define a bool for any stage of prostate cancer
-#   df['pc_status_any_stage'] = df.pc_status != 'none'
     df.loc[df.pc_status != 'none', 'pc_status_any_stage'] = True
     df.loc[df.pc_status == 'none', 'pc_status_any_stage'] = False
 
@@ -170,10 +178,13 @@ def check_configuration_of_population(sim):
     # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
     assert set(df.index[~pd.isnull(df.pc_date_diagnosis)]).issubset(df.index[df.pc_status_any_stage])
     # todo: note that urinary symptoms may go after treatment (if we code that as intended)
-#   not sure why assert is not working - I think people are not diagnosed without having symptoms
-#   assert set(df.index[~pd.isnull(df.pc_date_diagnosis)]).issubset(sim.modules['SymptomManager'].who_has('urinary'))
-#   assert set(df.index[~pd.isnull(df.pc_date_diagnosis)]).issubset(sim.modules['SymptomManager'].who_has('pelvic_pain'))
     assert (df.loc[~pd.isnull(df.pc_date_diagnosis)].pc_date_diagnosis <= sim.date).all()
+    # this assert passes if people can only get urinary symptoms / same for pelvic pain / did not know how to
+    # put in "or"
+#   assert set(df.index[~pd.isnull(df.pc_date_diagnosis)]).issubset(sim.modules['SymptomManager']
+    #   .who_has('urinary'))
+#   assert set(df.index[~pd.isnull(df.pc_date_diagnosis)]).issubset(sim.modules['SymptomManager']
+    #   .who_has('pelvic_pain'))
 
     # check that date diagnosed is consistent with the age of the person (ie. not before they were 35.0
     age_at_dx = (df.loc[~pd.isnull(df.pc_date_diagnosis)].pc_date_diagnosis - df.loc[
@@ -264,25 +275,25 @@ def test_check_progression_through_stages_is_happeneing():
     check_configuration_of_population(sim)
 
     # Simulate
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=Date(2010, 6, 1))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
     # check that there are now some people in each of the later stages:
     df = sim.population.props
-#   assert len(df.loc[df.is_alive & (df.pc_status != 'none')]) > 0
-#   assert not pd.isnull(df.pc_status).any()
-#   assert (df.loc[df.is_alive].pc_status.value_counts().drop(index='none') > 0).all()
+    assert len(df.loc[df.is_alive & (df.pc_status != 'none')]) > 0
+    assert not pd.isnull(df.pc_status).any()
+    assert (df.loc[df.is_alive].pc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of prostate cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
-#   assert yll['YLL_ProstateCancer_ProstateCancer'].sum() > 0
+    assert yll['YLL_ProstateCancer_ProstateCancer'].sum() > 0
 
     # check that people are being diagnosed, going onto treatment and palliative care:
-#   assert (df.pc_date_diagnosis > start_date).any()
-#   assert (df.pc_date_treatment > start_date).any()
-#   assert (df.pc_stage_at_which_treatment_applied != 'none').any()
-#   assert (df.pc_date_palliative_care > start_date).any()
+    assert (df.pc_date_diagnosis > start_date).any()
+    assert (df.pc_date_treatment > start_date).any()
+    assert (df.pc_stage_at_which_treatment_given != 'none').any()
+    assert (df.pc_date_palliative_care > start_date).any()
 
 
 def test_that_there_is_no_treatment_without_the_hsi_running():
@@ -316,25 +327,25 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     check_configuration_of_population(sim)
 
     # Simulate
-    sim.simulate(end_date=Date(2010, 4, 1))
+    sim.simulate(end_date=Date(2010, 6, 1))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
     # check that there are now some people in each of the later stages:
     df = sim.population.props
-#   assert len(df.loc[df.is_alive & (df.pc_status != 'none')]) > 0
-#   assert not pd.isnull(df.oc_status).any()
-#   assert (df.loc[df.is_alive].pc_status.value_counts().drop(index='none') > 0).all()
+    assert len(df.loc[df.is_alive & (df.pc_status != 'none')]) > 0
+    assert not pd.isnull(df.oc_status).any()
+    assert (df.loc[df.is_alive].pc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of prostate cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
-#   assert yll['YLL_ProstateCancer_ProstateCancer'].sum() > 0
+    assert yll['YLL_ProstateCancer_ProstateCancer'].sum() > 0
 
     # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
-#   assert not (df.pc_date_diagnosis > start_date).any()
-#   assert not (df.pc_date_treatment > start_date).any()
-#   assert not (df.pc_stage_at_which_treatment_applied != 'none').any()
-#   assert not (df.pc_date_palliative_care > start_date).any()
+    assert not (df.pc_date_diagnosis > start_date).any()
+    assert not (df.pc_date_treatment > start_date).any()
+    assert not (df.pc_stage_at_which_treatment_given != 'none').any()
+    assert not (df.pc_date_palliative_care > start_date).any()
 
 
 def test_check_progression_through_stages_is_blocked_by_treatment():
