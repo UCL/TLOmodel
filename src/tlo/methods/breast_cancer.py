@@ -319,7 +319,7 @@ class BreastCancer(Module):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(BreastCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(BreastCancerMainPollingEvent(self), sim.date + DateOffset(months=1))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
