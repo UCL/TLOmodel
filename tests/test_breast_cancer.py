@@ -293,9 +293,6 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     # remove effect of treatment:
     sim = make_treatment_ineffective(sim)
 
-    # increase progression rates:
-    sim = incr_rates_of_progression(sim)
-
     # make initial population
     sim.make_initial_population(n=popsize)
 
@@ -305,14 +302,13 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     check_configuration_of_population(sim)
 
     # Simulate
-    sim.simulate(end_date=Date(2010, 4, 1))
+    sim.simulate(end_date=Date(2010, 10, 1))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
     # check that there are now some people in each of the later stages:
     df = sim.population.props
     assert len(df.loc[df.is_alive & (df.brc_status != 'none')]) > 0
-    assert not pd.isnull(df.brc_status).any()
     assert (df.loc[df.is_alive].brc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of breast cancer
@@ -358,11 +354,11 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
         disease_module=sim.modules['BreastCancer']
     )
     sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 20) & (sim.population.props.sex == 'F'), "brc_date_diagnosis"] = sim.date
+        sim.population.props.is_alive & (sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F'), "brc_date_diagnosis"] = sim.date
     sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 20) & (sim.population.props.sex == 'F'), "brc_date_treatment"] = sim.date
+        sim.population.props.is_alive & (sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F'), "brc_date_treatment"] = sim.date
     sim.population.props.loc[sim.population.props.is_alive & (
-            sim.population.props.age_years >= 20) & (sim.population.props.sex == 'F'), "brc_stage_at_which_treatment_given"] = 'stage1'
+            sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F'), "brc_stage_at_which_treatment_given"] = 'stage1'
     check_configuration_of_population(sim)
 
     # Simulate
