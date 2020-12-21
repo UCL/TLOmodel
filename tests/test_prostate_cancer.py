@@ -179,12 +179,11 @@ def check_configuration_of_population(sim):
     assert set(df.index[~pd.isnull(df.pc_date_diagnosis)]).issubset(df.index[df.pc_status_any_stage])
     # todo: note that urinary symptoms may go after treatment (if we code that as intended)
     assert (df.loc[~pd.isnull(df.pc_date_diagnosis)].pc_date_diagnosis <= sim.date).all()
-    # this assert passes if people can only get urinary symptoms / same for pelvic pain / did not know how to
-    # put in "or"
-#   assert set(df.index[~pd.isnull(df.pc_date_diagnosis)]).issubset(sim.modules['SymptomManager']
-    #   .who_has('urinary'))
-#   assert set(df.index[~pd.isnull(df.pc_date_diagnosis)]).issubset(sim.modules['SymptomManager']
-    #   .who_has('pelvic_pain'))
+    assert set(df.index[~pd.isnull(df.pc_date_diagnosis)]).issubset(
+        set(sim.modules['SymptomManager'].who_has('urinary')
+            ).union(sim.modules['SymptomManager'].who_has('pelvic_pain')
+                    )
+    )
 
     # check that date diagnosed is consistent with the age of the person (ie. not before they were 35.0
     age_at_dx = (df.loc[~pd.isnull(df.pc_date_diagnosis)].pc_date_diagnosis - df.loc[
