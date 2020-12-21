@@ -273,7 +273,6 @@ def test_check_progression_through_stages_is_happening():
     # check that people are being diagnosed, going onto treatment and palliative care:
     assert (df.brc_date_diagnosis > start_date).any()
     assert (df.brc_date_treatment > start_date).any()
-    assert (df.brc_stage_at_which_treatment_given != 'none').any()
     assert (df.brc_date_palliative_care > start_date).any()
 
 
@@ -296,13 +295,13 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     # make initial population
     sim.make_initial_population(n=popsize)
 
-    # force that all persons aged over 20 are in the low_grade dysplasia stage to begin with:
+    # force that all persons aged over 15 are in stage 1 to begin with:
     sim.population.props.loc[
         sim.population.props.is_alive & (sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F'), "brc_status"] = 'stage1'
     check_configuration_of_population(sim)
 
     # Simulate
-    sim.simulate(end_date=Date(2010, 10, 1))
+    sim.simulate(end_date=Date(2010, 7, 1))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
@@ -362,7 +361,7 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     check_configuration_of_population(sim)
 
     # Simulate
-    sim.simulate(end_date=Date(2010, 4, 1))
+    sim.simulate(end_date=Date(2010, 7, 1))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
