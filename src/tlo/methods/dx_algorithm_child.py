@@ -19,6 +19,7 @@ from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_PlanC,
 )
 from tlo.methods.pneumonia import (
+    HSI_IMCI_No_Pneumonia_Treatment_level_1,
     HSI_IMCI_Pneumonia_Treatment_level_1,
     HSI_IMCI_Severe_Pneumonia_Treatment_level_1,
     HSI_IMCI_Pneumonia_Treatment_level_2,
@@ -453,7 +454,8 @@ class DxAlgorithmChild(Module):
                     dx_tests_to_run='pneumonia_care_given_level_1', hsi_event=hsi_event)
                 # todo: algorithm for the probabilities of treatment plan given
                 if care_plan_result:
-                    schedule_hsi(hsi_event=HSI_IMCI_No_Pneumonia_Treatment_level_1(person_id=person_id, module=self),
+                    schedule_hsi(hsi_event=HSI_IMCI_No_Pneumonia_Treatment_level_1(person_id=person_id,
+                                                                                   module=self.sim.modules['ALRI']),
                                  priority=0,
                                  topen=self.sim.date,
                                  tclose=None

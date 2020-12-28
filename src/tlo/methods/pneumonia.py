@@ -399,23 +399,14 @@ class ALRI(Module):
                       'bacterial pneumonia, viral pneumonia and bronchiolitis'
                       ),
         # Additional signs and symptoms from complications -----
-        'prob_chest_pain_adding_from_pleural_effusion':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from pleural effusion'
-                      ),
         'prob_loss_of_appetite_adding_from_pleural_effusion':
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of loss of appetite from pleural effusion'
-                      ),
-        'prob_chest_pain_adding_from_empyema':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from empyema'
                       ),
         'prob_loss_of_appetite_adding_from_empyema':
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of loss of appetite from empyema'
                       ),
-
         'prob_severe_respiratory_distress_adding_from_respiratory_failure':
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of severe respiratory distress from respiratory failure'
@@ -630,7 +621,7 @@ class ALRI(Module):
     }
 
     PROPERTIES = {
-        # ---- The pathogen which is the attributed cause of ALRI ----
+        # ---- ALRI status ----
         'ri_current_ALRI_status':
             Property(Types.BOOL,
                      'ALRI status (current or last episode)'
@@ -641,7 +632,7 @@ class ALRI(Module):
                      'Attributable pathogen for the current ALRI event',
                      categories=list(pathogens) + ['not_applicable']
                      ),
-        # ---- The bacterial pathogen which is the attributed cause of ALRI ----
+        # ---- The bacterial pathogen which is the attributed secondary infection ----
         'ri_secondary_bacterial_pathogen':
             Property(Types.CATEGORICAL,
                      'Secondary bacterial pathogen for the current ALRI event',
@@ -665,11 +656,23 @@ class ALRI(Module):
         'ri_current_ALRI_symptoms':
             Property(Types.LIST,
                      'symptoms of current ALRI event',
-                     categories=['fever', 'cough', 'difficult_breathing', 'convulsions', 'lethargy', 'not_eating', 'restlessness',
-                                 'fast_breathing', 'chest_indrawing', 'grunting', 'chest_pain', 'loss_of_appetite',
-                                 'cyanosis', 'respiratory_distress', 'hypoxia', 'tachypnoea', 'cough_with_sputum',
-                                 'hemoptysis', 'tachycardia', 'decreased_chest_movement', 'fatigue', 'no_urination_in_last_12h',
-                                 'danger_signs']
+                     categories=[
+                         'fever', 'cough', 'difficult_breathing', 'convulsions', 'lethargy', 'not_eating',
+                         'restlessness', 'bulging_fontanel',
+                         'fast_breathing', 'chest_indrawing', 'grunting', 'chest_pain', 'loss_of_appetite',
+                         'photophobia', 'nuchal_rigidity',
+                         'cyanosis', 'respiratory_distress', 'hypoxia', 'tachypnoea', 'cough_with_sputum',
+                         'weight_loss', 'nausea',
+                         'hemoptysis', 'tachycardia', 'decreased_chest_movement', 'fatigue', 'no_urination_in_last_12h',
+                         'hemoptysis',
+                         'danger_signs'
+                     ]
+                     ),
+        # ---- Chest auscultation signs ----
+        'ri_chest_auscultations_signs':
+            Property(Types.CATEGORICAL, 'underlying ALRI condition',
+                     categories=['decreased_breath_sounds', 'bronchial_breaths_sounds', 'crackles', 'wheeze',
+                                 'abnormal_vocal_resonance', 'pleural_rub'] + ['none'] + ['not_applicable']
                      ),
 
         # ---- Internal variables to schedule onset and deaths due to ALRI ----
@@ -694,7 +697,7 @@ class ALRI(Module):
         'tmp_haemophilus_vaccination': Property(Types.BOOL, 'temporary property - H. influenzae type b vaccine'),
         'tmp_influenza_vaccination': Property(Types.BOOL, 'temporary property - flu vaccine'),
 
-        # ---- HS interventions / Treatment properties ----
+        # ---- Health System interventions / Treatment properties ----
         'ri_ALRI_tx_start_date': Property(Types.DATE, 'start date of ALRI treatment for current event'),
         'ri_ALRI_antibiotic_treatment_administered':
             Property(Types.CATEGORICAL,
@@ -735,6 +738,9 @@ class ALRI(Module):
         # dict to hold the probability of onset of different types of symptom given underlying complications:
         self.prob_symptoms_uncomplicated_ALRI = dict()
         self.prob_extra_symptoms_complications = dict()
+
+        # dict to to store the information regarding HSI management of disease:
+        self.child_disease_management_information = dict()
 
         # dict to hold the DALY weights
         self.daly_wts = dict()
@@ -1754,7 +1760,7 @@ class PneumoniaCureEvent(Event, IndividualScopeEventMixin):
 
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
-                                                          disease_module=self.sim.modules['Pneumonia'])
+                                                          disease_module=self.sim.modules['ALRI'])
 
 
 class PneumoniaDeathEvent(Event, IndividualScopeEventMixin):
@@ -1929,6 +1935,41 @@ class HSI_iCCM_Severe_Pneumonia_Treatment_level_0(HSI_Event, IndividualScopeEven
 
 # PRIMARY LEVEL - IMCI delivered in facility level 1 / health centres -------------------------------------
 # ---------------------------------------------------------------------------------------------------------
+class HSI_IMCI_No_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Define the necessary information for an HSI - interventions for non-severe pneumoni at facility level 1
+        # (These are blank when created; but these should be filled-in by the module that calls it)
+        self.TREATMENT_ID = 'HSI_IMCI_No_Pneumonia_Treatment_level_1'
+
+        # APP_FOOTPRINT: health centre event takes small amount of time for health workers
+        appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        # Demonstrate the equivalence with:
+        assert appt_footprint == self.make_appt_footprint({'Under5OPD': 1})
+
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Can occur at facility-level 1 / health centres
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # no consumables, home advice
+        # store management info:
+        care_management_info = dict()
+        # Do here whatever happens to an individual during this health system interaction event
+        # ~~~~~~~~~~~~~~~~~~~~~~
+
+        # Make request for some consumables
+        care_management_info.update({
+            'treatment_plan': 'home_counselling'})
+        self.module.child_disease_management_information.update({person_id: care_management_info})
+
+
 class HSI_IMCI_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
