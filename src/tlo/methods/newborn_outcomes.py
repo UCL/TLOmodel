@@ -490,7 +490,7 @@ class NewbornOutcomes(Module):
 
         # Mean birth weights for each gestational age are listed in a parameter starting at 24 weeks
         # We select the correct mean birth weight from the parameter
-        mean_birth_weight_list_location = min(41, gestation_at_birth) - 24
+        mean_birth_weight_list_location = int(min(41, gestation_at_birth) - 24)
         standard_deviation = params['standard_deviation_birth_weights'][mean_birth_weight_list_location]
 
         # We randomly draw this newborns weight from a normal distribution around the mean for their gestation

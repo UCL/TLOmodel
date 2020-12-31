@@ -534,7 +534,7 @@ class Labour (Module):
                 params['odds_post_term_labour']
                 # Predictor('li_bmi').when('>24', params['rrr_ptl_bmi_more25']),
             ),
-            
+
             # todo: CHECK WITH TIM
             'obstructed_labour_ip': LinearModel(
                 LinearModelType.ADDITIVE,
@@ -590,7 +590,7 @@ class Labour (Module):
                 Predictor('la_maternal_ip_infection').apply(
                     lambda x: params['prob_sepsis_other_maternal_infection_ip']
                     if x & self.intrapartum_infections.element_repr('other_maternal_infection') else 0)),
-                
+
                 # Predictor('ac_received_abx_for_prom').when(True, 0.5)),  # TODO: placeholder
 
                                         # TODO: LINK WITH PROM/ CHORIOAMNIONITIS/ TREAMTNET EFFECT ETC
@@ -819,6 +819,8 @@ class Labour (Module):
                 # Predictor('li_wealth').when('2', params['or_comp_careseeking_wealth_2']),
             ),
         }
+
+            # todo: review 'cause' thinking for stillbirth to match the approach being used antenatally
 
     def initialise_population(self, population):
         df = population.props
@@ -2124,6 +2126,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # ===================================== LABOUR STATE  ==================================
             # Next we calculate the number of days pregnant this woman is, and use that to log if her labour is early or
             # late preterm, term or post term
+            # todo: update comments to reflect gestational age updates
 
             gestational_age_in_days = (self.sim.date - df.at[individual_id, 'date_of_last_pregnancy']).days
 
@@ -2154,6 +2157,9 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                 self.module.labour_tracker['post_term'] += 1
 
             # We check all women have had their labour state set
+
+            print(individual_id)
+            print (gestational_age_in_days)
             assert mni[individual_id]['labour_state'] is not None
 
             labour_state = mni[individual_id]['labour_state']
@@ -2742,7 +2748,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # women who will be referred for caesarean also wont have the risk applied
         if ~df.at[person_id, 'la_obstructed_labour_treatment'] or mni[person_id]['referred_for_cs'] == 'none':
             self.module.set_intrapartum_complications(
-                person_id, complication='uterine_rupture')  # TODO: should this be fully blocked? 
+                person_id, complication='uterine_rupture')  # TODO: should this be fully blocked?
 
         # Uterine rupture follows the same pattern as antepartum haemorrhage
         if mni[person_id]['delivery_setting'] == 'health_centre':
@@ -2957,14 +2963,14 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(HSI_Event, Indivi
 
         consumables_iron = {
             'Intervention_Package_Code': {},
-            'Item_Code': {item_code_iron_folic_acid: 93}}  # days in 3 months 
+            'Item_Code': {item_code_iron_folic_acid: 93}}  # days in 3 months
 
         # Check there availability
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=consumables_iron,
             to_log=False)
-        
+
         if outcome_of_request_for_consumables['Item_Code'][item_code_iron_folic_acid]:
             df.at[person_id, 'la_iron_folic_acid_postnatal'] = True
 

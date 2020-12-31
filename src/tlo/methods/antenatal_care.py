@@ -979,12 +979,8 @@ class CareOfWomenDuringPregnancy(Module):
 
             # TODO: copy original code back from draft PR branch
 
-            if visit_number < 3:
-                if df.at[individual_id, 'ps_will_attend_3_early_visits']:
-                    # We schedule a womans next ANC appointment by subtracting her current gestational age from the
-                    # target gestational age from the next visit on the ANC schedule (assuming health care workers would
-                    # ask women to return for the next appointment on the schedule, regardless of their gestational age
-                    # at presentation)
+            if visit_number < 4:
+                if df.at[individual_id, 'ps_will_attend_four_or_more_anc']:
                     weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
                                                                                       'ps_gestational_age_in_weeks'])
                     visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
@@ -1005,7 +1001,7 @@ class CareOfWomenDuringPregnancy(Module):
                     else:
                         logger.debug(key='message', data=f'mother {individual_id} will not seek any additional antenatal'
                                                          f' care for this pregnancy')
-            elif visit_number >= 3:
+            elif visit_number >= 4:
                 if self.rng.random_sample() < params['ac_linear_equations']['anc_continues'].predict(df.loc[[
                                                                                     individual_id]])[individual_id]:
                     weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
@@ -1709,8 +1705,8 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                 self.module.calcium_supplementation(hsi_event=self)
                 self.module.gdm_screening(hsi_event=self)
 
-                self.module.schedule_next_anc(person_id, visit_to_be_scheduled=3,
-                                              recommended_gestation_next_anc=gest_age_next_contact)
+                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 34:
                 self.module.iptp_administration(hsi_event=self)
@@ -2311,9 +2307,12 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
     def did_not_run(self):
         pass
 
+        # todo: women who cant have treatment should be at risk of rupture - schedule event here
+
     def not_available(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy: cannot not run '
                                          'with this configuration')
+        # todo: women who cant have treatment should be at risk of rupture - schedule event here
 
 
 class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, IndividualScopeEventMixin):
@@ -2338,7 +2337,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
         #  infection (not modelled) - WOMEN WILL NEED ASSESSMENT TO ENSURE THEY GET THE RIGHT TREATMENT even if cause
         #  may be apparent
 
-        # TODO: consider funneling this through the diagnostic algorithm module 
+        # TODO: consider funneling this through the diagnostic algorithm module
 
         # TODO - Eclampsia - no assessment, immediate treatment, admit (for delivery plan)
         # TODO - Severe pre-eclampsia - blood pressure, urine dip, immediate treatment admit (for delivery plan)
