@@ -486,7 +486,8 @@ class NewbornOutcomes(Module):
         params = self.parameters
         df = self.sim.population.props
 
-        # TODO: the functionality will be simplified to consider antenatal predictors
+        # TODO: the functionality will be simplified to consider antenatal predictors and effect of interventions
+        #  (balanced protein supplementation) - use linear model (dont know how best to capture pregnancy experience)
 
         # Mean birth weights for each gestational age are listed in a parameter starting at 24 weeks
         # We select the correct mean birth weight from the parameter

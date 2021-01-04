@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import math as math
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -12,6 +13,7 @@ from tlo.methods.antenatal_care import HSI_CareOfWomenDuringPregnancy_FirstAnten
     HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment
 from tlo.methods import Metadata
 from tlo.util import BitsetHandler
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -61,6 +63,8 @@ class PregnancySupervisor(Module):
             Types.REAL, 'probability of injury following an abortion'),
         'baseline_prob_early_labour_onset': Parameter(
             Types.REAL, 'monthly baseline risk of early labour onset'),
+        'rr_preterm_labour_calcium': Parameter(
+            Types.REAL, 'relative risk of early labour onset for women receiving calcium supplementation'),
         'rr_preterm_labour_post_prom': Parameter(
             Types.REAL, 'relative risk of early labour onset following PROM'),
         'prob_iron_def_per_month': Parameter(
@@ -163,12 +167,18 @@ class PregnancySupervisor(Module):
             Types.REAL, 'probability of a stillbirth following an episode of eclampsia'),
         'treatment_effect_eclampsia': Parameter(
             Types.REAL, 'treatment effect of treatment for eclampsia'),
+        'cfr_chorioamnionitis': Parameter(
+            Types.REAL, 'case fatality rate for chorioamnionitis'),
+        'prob_still_birth_chorioamnionitis': Parameter(
+            Types.REAL, 'probability of still birth for chorioamnionitis'),
         'prob_first_anc_visit_gestational_age': Parameter(
             Types.LIST, 'probability of initiation of ANC by month'),
         'prob_four_or_more_anc_visits': Parameter(
             Types.REAL, 'probability of a woman undergoing 4 or more basic ANC visits'),
         'prob_eight_or_more_anc_visits': Parameter(
             Types.REAL, 'probability of a woman undergoing 8 or more basic ANC visits'),
+        'prob_anc_at_facility_level_0_1_2': Parameter(
+            Types.LIST, 'probabilities a woman will attend ANC 1 at facility levels 0, 1 or 2'),
         'probability_htn_persists': Parameter(
             Types.REAL, 'probability of a womans hypertension persisting post birth'),
         'prob_3_early_visits': Parameter(
@@ -182,6 +192,7 @@ class PregnancySupervisor(Module):
     PROPERTIES = {
         'ps_gestational_age_in_weeks': Property(Types.INT, 'current gestational age, in weeks, of this womans '
                                                            'pregnancy'),
+        'ps_date_of_anc1': Property(Types.DATE, 'Date first ANC visit is scheduled for'),
         'ps_ectopic_pregnancy': Property(Types.BOOL, 'Whether this womans pregnancy is ectopic'),
         'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether this womans is pregnant with multiple fetuses'),
         'ps_placenta_praevia': Property(Types.BOOL, 'Whether this womans pregnancy will be complicated by placenta'
@@ -288,7 +299,8 @@ class PregnancySupervisor(Module):
             'early_onset_labour': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['baseline_prob_early_labour_onset'],
-                Predictor('ps_premature_rupture_of_membranes').when(True, params['rr_preterm_labour_post_prom'])),
+                Predictor('ps_premature_rupture_of_membranes').when(True, params['rr_preterm_labour_post_prom']),
+                Predictor('ac_receiving_calcium_supplements').when(True, params['rr_preterm_labour_calcium'])),
 
             # This equation calculates a womans monthly risk of developing anaemia during her pregnancy. This is
             # currently influenced by nutritional deficiencies and malaria status
@@ -442,6 +454,7 @@ class PregnancySupervisor(Module):
         df = population.props
 
         df.loc[df.is_alive, 'ps_gestational_age_in_weeks'] = 0
+        df.loc[df.is_alive, 'ps_date_of_anc1'] = pd.NaT
         df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = False
         df.loc[df.is_alive, 'ps_placenta_praevia'] = False
         df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
@@ -492,6 +505,7 @@ class PregnancySupervisor(Module):
         df = self.sim.population.props
 
         df.at[child_id, 'ps_gestational_age_in_weeks'] = 0
+        df.at[child_id, 'ps_date_of_anc1'] = pd.NaT
         df.at[child_id, 'ps_ectopic_pregnancy'] = False
         df.at[child_id, 'ps_placenta_praevia'] = False
         df.at[child_id, 'ps_multiple_pregnancy'] = False
@@ -511,6 +525,7 @@ class PregnancySupervisor(Module):
 
         # We reset all womans gestational age when they deliver as they are no longer pregnant
         df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
+        df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT
 
         # We currently assume that hyperglycemia due to gestational diabetes resolves following birth
         df.at[mother_id, 'ps_gest_diab'] = False
@@ -636,6 +651,7 @@ class PregnancySupervisor(Module):
         df.at[individual_id, 'is_pregnant'] = False
         df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
         df.at[individual_id, 'ac_total_anc_visits_current_pregnancy'] = 0
+        df.at[individual_id, 'ac_date_next_contact'] = pd.NaT
 
         # We store the type of abortion for analysis
         self.pregnancy_disease_tracker[f'{cause}'] += 1
@@ -759,7 +775,7 @@ class PregnancySupervisor(Module):
         if not anaemia.loc[anaemia].empty:
             logger.debug(key='message', data=f'The following women have developed anaemia during week '
                                              f'{gestation_of_interest}'
-                                             f' of the postnatal period, {anaemia.loc[anaemia]}')
+                                             f' of the antenatal period, {anaemia.loc[anaemia]}')
             self.pregnancy_disease_tracker['maternal_anaemia'] += len(anaemia.loc[anaemia])
 
     def apply_risk_of_gestational_diabetes(self, gestation_of_interest):
@@ -1067,6 +1083,7 @@ class PregnancySupervisor(Module):
         df.loc[still_birth.loc[still_birth].index, 'is_pregnant'] = False
         df.loc[still_birth.loc[still_birth].index, 'la_due_date_current_pregnancy'] = pd.NaT
         df.loc[still_birth.loc[still_birth].index, 'ps_gestational_age_in_weeks'] = 0
+        df.loc[still_birth.loc[still_birth].index, 'ac_date_next_contact'] = pd.NaT
 
         # And any pregnancy disease variabl...
         # TODO: reset disease variables for stillbirth
@@ -1093,6 +1110,7 @@ class PregnancySupervisor(Module):
         df.at[individual_id, 'is_pregnant'] = False
         df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
         df.at[individual_id, 'ps_gestational_age_in_weeks'] = 0
+        df.at[individual_id, 'ac_date_next_contact'] = pd.NaT
 
     def care_seeking_pregnancy_loss_complications(self, individual_id):
         """
@@ -1159,22 +1177,17 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # menstrual period (therefore including around 2 weeks in which a woman isnt pregnant)
 
         # We calculate a womans gestational age by first calculating the foetal age (measured from conception) and then
-        # adding 2 weeks. The literature describing the epidemiology of maternal conditions almost exclusivly uses
+        # adding 2 weeks. The literature describing the epidemiology of maternal conditions almost exclusively uses
         # gestational age
 
         alive_and_preg = df.is_alive & df.is_pregnant
         foetal_age_in_days = self.sim.date - df.loc[alive_and_preg, 'date_of_last_pregnancy']
-        foetal_age_in_weeks = round(foetal_age_in_days / np.timedelta64(1, 'W'))
-
-        df.loc[alive_and_preg, 'ps_gestational_age_in_weeks'] = foetal_age_in_weeks.astype('int64') + 2
-
-        # foetal_age_in_weeks rounds first week down to 0- here we force the lowest GA possible to be 3
-        women_ga_2 = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == 2.0)
-        df.loc[women_ga_2, 'ps_gestational_age_in_weeks'] = 3.0
+        foetal_age_in_weeks = foetal_age_in_days / np.timedelta64(1, 'W')
+        rounded_weeks = np.ceil(foetal_age_in_weeks)
+        df.loc[alive_and_preg, "ps_gestational_age_in_weeks"] = rounded_weeks + 2
 
         logger.debug(key='message', data=f'updating gestational ages on date {self.sim.date}')
-
-        assert (df.loc[alive_and_preg, 'ps_gestational_age_in_weeks'] > 2).all().all()
+        assert (df.loc[alive_and_preg, 'ps_gestational_age_in_weeks'] > 1).all().all()
 
         # =========================== APPLYING RISK OF ADVERSE PREGNANCY OUTCOMES =====================================
         # The aim of this event is to apply risk of certain outcomes of pregnancy at relevant points in a womans
@@ -1260,8 +1273,14 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                 pass
             else:
                 first_anc_date = self.sim.date + DateOffset(months=random_draw_gest_at_anc)
+                df.at[person, 'ps_date_of_anc1'] = first_anc_date
+                logger.debug(key='msg', data= f'{person} will attend ANC 1 in {random_draw_gest_at_anc} months on '
+                                              f'{first_anc_date}')
+
+                facility_level = int(self.module.rng.choice([1, 2, 3], p=params['prob_anc_at_facility_level_0_1_2']))
                 first_anc_appt = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
-                    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person)
+                    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person,
+                    facility_level_of_this_hsi=facility_level)
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(first_anc_appt, priority=0,
                                                                     topen=first_anc_date,
@@ -1274,6 +1293,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # epidemiology
 
         # The application of these risk is intentionally ordered as described below
+
+        # TODO: come back to the ordering of this
 
         # Women in the first five months of pregnancy are at risk of spontaneous abortion (miscarriage)
         for gestation_of_interest in [4, 8, 13, 17, 22]:

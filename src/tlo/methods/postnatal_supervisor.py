@@ -924,7 +924,7 @@ class PostnatalSupervisor(Module):
         if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=
                                                                    'assessment_for_postnatal_sepsis',
                                                                    hsi_event=hsi_event):
-            logger.debug(key='message', data=f'Mother {individual_id} has been assessed and diagnosed with postpartum '    
+            logger.debug(key='message', data=f'Mother {individual_id} has been assessed and diagnosed with postpartum '
                                              f'sepsis, she will be admitted for treatment')
 
             needs_admission = True
@@ -1220,7 +1220,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[week_8_postnatal_women, 'pn_anti_htn_treatment'] = False
         df.loc[week_8_postnatal_women, 'pn_emergency_event_mother'] = False
 
-        # Neonatal variables 
+        # Neonatal variables
         week_6_postnatal_neonates = df.is_alive & (df['age_days'] > 42) & (df['age_days'] < 49)
         df.loc[week_6_postnatal_neonates, 'pn_pnc_visits_neonatal'] = 0
         df.loc[week_6_postnatal_neonates, 'pn_sepsis_early_neonatal'] = False
@@ -1454,7 +1454,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
             prob_care_seeking = params['prob_pnc1_at_day_7'] * params['multiplier_for_care_seeking_with_comps']
 
             if prob_care_seeking < self.module.rng.random_sample():
-                    
+
                     # And we assume they will present earlier than day 7
                     admission_event = HSI_PostnatalSupervisor_PostnatalCareContactOne(
                         self.module, person_id=individual_id)
@@ -1463,7 +1463,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                                                                         topen=self.sim.date,
                                                                         tclose=None)
 
-            # For 'non-care seekers' risk of death is applied immediately 
+            # For 'non-care seekers' risk of death is applied immediately
             else:
                 if mother_has_complications:
                     self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother',
@@ -1545,9 +1545,13 @@ class HSI_PostnatalSupervisor_PostnatalCareContactTwo(HSI_Event, IndividualScope
         df = self.sim.population.props
         child_id = int(df.at[person_id, 'pn_id_most_recent_child'])
 
-        assert df.at[person_id, 'pn_pnc_visits_maternal'] == 1
-        assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 1
         assert df.at[person_id, 'la_is_postpartum']
+
+        if df.at[person_id, 'is_alive']:
+            assert df.at[person_id, 'pn_pnc_visits_maternal'] == 1
+
+        if df.at[child_id, 'is_alive']:
+            assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 1
 
         # If both mother and baby have died the event doesnt run
         if not df.at[person_id, 'is_alive'] and df.at[child_id, 'is_alive']:

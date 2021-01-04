@@ -2527,8 +2527,6 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(4, unit='D')
         self.module.labour_characteristics_checker(individual_id)
 
-        x ='y'
-
         if not df.at[individual_id, 'is_alive']:
             return
 
