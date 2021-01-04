@@ -17,6 +17,8 @@ from tlo.methods import (
     depression,
     epi,
     epilepsy,
+    dx_algorithm_child,
+    dx_algorithm_adult,
     hiv,
     tb,
     labour,
@@ -24,7 +26,8 @@ from tlo.methods import (
     oesophagealcancer,
     pregnancy_supervisor,
     male_circumcision,
-    Metadata
+    Metadata,
+
 )
 
 start_date = Date(2010, 1, 1)
@@ -54,6 +57,8 @@ def test_run():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
@@ -77,6 +82,8 @@ def test_module_properties():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
@@ -86,7 +93,7 @@ def test_module_properties():
     params['allowed_interventions'] = 'none'
 
     # Increase the incidence so that we get more people flowing through the RTI model
-    params['base_rate_injrti'] = params['base_rate_injrti'] * 10
+    params['base_rate_injrti'] = params['base_rate_injrti'] * 5
 
     sim.simulate(end_date=end_date)
 
@@ -122,7 +129,29 @@ def test_module_properties():
             df.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_date_to_remove_daly'])
     check_dtypes(sim)
 
+def test_with_spurious_symptoms():
+    # Run the model with spurious symptoms
 
+    sim = Simulation(start_date=start_date)
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+                 rti.RTI(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
+                 )
+
+    sim.seed_rngs(0)
+
+    sim.make_initial_population(n=popsize)
+    params = sim.modules['RTI'].parameters
+    params['allowed_interventions'] = 'none'
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
 
 def test_with_more_modules():
     # Run the simulation with multiple models, see if any errors or unexpected changes to the datatypes occurs,
@@ -145,6 +174,8 @@ def test_with_more_modules():
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
@@ -175,6 +206,8 @@ def test_run_health_system_high_squeeze():
                                            mode_appt_constraints=2),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
@@ -203,6 +236,8 @@ def test_run_health_system_events_wont_run():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
@@ -229,6 +264,8 @@ def test_sim_high_incidence():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
@@ -258,6 +295,8 @@ def test_tiny_population():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
@@ -286,6 +325,8 @@ def test_no_capabilities():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
@@ -312,6 +353,8 @@ def test_health_system_disabled():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)

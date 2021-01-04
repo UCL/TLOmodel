@@ -10,9 +10,14 @@ from tlo.methods import (
     healthsystem,
     symptommanager,
     rti,
+    dx_algorithm_child,
+    dx_algorithm_adult
 )
 import numpy as np
 from matplotlib import pyplot as plt
+import ast
+
+
 # todo: this analysis file doesn't really behave as it ought to, because I haven't included any consequences for it
 #  not running through hsi_event.not_available(). I need to fix this.
 
@@ -34,22 +39,24 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 10
+yearsrun = 1
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 pop_size = 10000
-nsim = 3
+nsim = 2
 service_availability = ["*"]
 # Create a range of capability coefficients
-capabilities_reduction = np.linspace(1, 0, 3)
+capability_coeff = np.linspace(1, 0, 3)
 # Create lists to store the simulation outputs in
 all_sim_deaths = []
 all_sim_dalys = []
+all_sim_consumables = []
 for i in range(0, nsim):
     # create lists to store the deaths and dalys in this set of simulations
     list_deaths = []
     list_tot_dalys = []
-    for capability in capabilities_reduction:
+    list_consumables_dict = []
+    for capability in capability_coeff:
         sim = Simulation(start_date=start_date)
         # We register all modules in a single call to the register method, calling once with multiple
         # objects. This is preferred to registering each module in multiple calls because we will be
@@ -58,8 +65,10 @@ for i in range(0, nsim):
             demography.Demography(resourcefilepath=resourcefilepath),
             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability,
-                                      capabilities_coefficient=float(1 - capability)),
+                                      capabilities_coefficient=float(capability)),
             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+            dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
             rti.RTI(resourcefilepath=resourcefilepath)
@@ -76,7 +85,7 @@ for i in range(0, nsim):
         tot_death = len(deaths.loc[(deaths['cause'] != 'Other')])
         list_deaths.append(tot_death)
         # get the daly data
-        dalys_df = log_df['tlo.methods.healthburden']['DALYS']
+        dalys_df = log_df['tlo.methods.healthburden']['dalys']
         males_data = dalys_df.loc[dalys_df['sex'] == 'M']
         YLL_males_data = males_data.filter(like='YLL_RTI').columns
         males_dalys = males_data[YLL_males_data].sum(axis=1) + \
@@ -88,24 +97,35 @@ for i in range(0, nsim):
 
         tot_dalys = males_dalys.tolist() + females_dalys.tolist()
         list_tot_dalys.append(sum(tot_dalys))
+        consumables_list = log_df['tlo.methods.healthsystem']['Consumables']['Item_Available'].tolist()
+        consumables_list_to_dict = []
+        for string in consumables_list:
+            consumables_list_to_dict.append(ast.literal_eval(string))
+        number_of_consumables_in_sim = 0
+        for dictionary in consumables_list_to_dict:
+            number_of_consumables_in_sim += sum(dictionary.values())
+        list_consumables_dict.append(number_of_consumables_in_sim)
     # Append the resulting deaths and dalys from this simulation to the results lists
     all_sim_deaths.append(list_deaths)
     all_sim_dalys.append(list_tot_dalys)
+    all_sim_consumables.append(list_consumables_dict)
 
 # Average out the deaths and dalys in all the simulations
 avg_tot_deaths = [float(sum(col))/len(col) for col in zip(*all_sim_deaths)]
 std_tot_deaths = [np.std(col) for col in zip(*all_sim_deaths)]
 avg_tot_dalys = [float(sum(col))/len(col) for col in zip(*all_sim_dalys)]
 std_tot_dalys = [np.std(col) for col in zip(*all_sim_dalys)]
+avg_tot_consumables = [float(sum(col))/len(col) for col in zip(*all_sim_consumables)]
+std_tot_consumables = [np.std(col) for col in zip(*all_sim_consumables)]
 # Create labels for the x axis
 labels = []
-for capability in capabilities_reduction:
-    labels.append(str(capability * 100) + '%')
+for capability in capability_coeff:
+    labels.append(str(capability))
 width = 0.3
 # create the bar plots
 plt.bar(np.arange(len(avg_tot_deaths)), avg_tot_deaths,
         width=width, color='lightsalmon', label='deaths', yerr=std_tot_deaths)
-plt.xlabel('Capability reduction')
+plt.xlabel('Capability coefficient')
 plt.title(f"Average deaths in simulations for different capability coefficients"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
@@ -118,9 +138,21 @@ plt.bar(np.arange(len(avg_tot_dalys)), avg_tot_dalys,
         width=width, color='lightsteelblue', label='DALYs', yerr=std_tot_dalys)
 plt.xticks(np.arange(len(avg_tot_deaths)), labels, rotation=45)
 plt.ylabel('DALYs')
-plt.xlabel('Capability reduction')
+plt.xlabel('Capability')
 plt.title(f"Average deaths and DALYs in simulations for different capability coefficients"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.savefig('outputs/CapabilityAnalysis/compare_mean_total_dalys_per_capability_coefficient.png',
+            bbox_inches='tight')
+plt.clf()
+# plot the number of consumables used in each sim
+plt.bar(np.arange(len(avg_tot_consumables)), avg_tot_consumables,
+        width=width, color='wheat', label='DALYs', yerr=std_tot_consumables)
+plt.xticks(np.arange(len(avg_tot_consumables)), labels, rotation=45)
+plt.ylabel('Number of consumables used')
+plt.xlabel('Capability')
+plt.title(f"Average number of consumables used in simulations for different capability coefficients"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+plt.savefig('outputs/CapabilityAnalysis/compare_mean_total_consumables_per_capability_coefficient.png',
             bbox_inches='tight')

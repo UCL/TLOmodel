@@ -10,6 +10,8 @@ from tlo.methods import (
     healthsystem,
     symptommanager,
     rti,
+    dx_algorithm_child,
+    dx_algorithm_adult
 )
 import pandas as pd
 
@@ -51,6 +53,8 @@ for i in range(0, nsim):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath)

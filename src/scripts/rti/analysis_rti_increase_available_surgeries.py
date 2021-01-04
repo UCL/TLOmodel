@@ -10,6 +10,8 @@ from tlo.methods import (
     healthsystem,
     symptommanager,
     rti,
+    dx_algorithm_adult,
+    dx_algorithm_child
 )
 import numpy as np
 from matplotlib import pyplot as plt
@@ -34,8 +36,8 @@ resourcefilepath = Path('./resources')
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 25000
-nsim = 5
+pop_size = 10000
+nsim = 2
 # Create list to store outputs in for the model run without additional surgeries
 list_deaths_without_extra_surg = []
 list_tot_dalys_no_extra = []
@@ -48,6 +50,8 @@ for i in range(0, nsim):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath)
@@ -65,7 +69,7 @@ for i in range(0, nsim):
     tot_death_with_med = len(deaths_with_med.loc[(deaths_with_med['cause'] != 'Other')])
     # Store the number of DALYs with the normal health system
     list_deaths_without_extra_surg.append(tot_death_with_med)
-    dalys_df = log_df_with_health_system['tlo.methods.healthburden']['DALYS']
+    dalys_df = log_df_with_health_system['tlo.methods.healthburden']['dalys']
     males_data = dalys_df.loc[dalys_df['sex'] == 'M']
     YLL_males_data = males_data.filter(like='YLL_RTI').columns
     males_dalys = males_data[YLL_males_data].sum(axis=1) + \
@@ -90,6 +94,8 @@ for i in range(0, nsim):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath)
@@ -105,7 +111,7 @@ for i in range(0, nsim):
     tot_death_without_med = len(deaths_without_med.loc[(deaths_without_med['cause'] != 'Other')])
     list_deaths_with_extra_surg.append(tot_death_without_med)
     # get the number of DALYS in the simulation with the included interventions
-    dalys_df = log_df_without_health_system['tlo.methods.healthburden']['DALYS']
+    dalys_df = log_df_without_health_system['tlo.methods.healthburden']['dalys']
     males_data = dalys_df.loc[dalys_df['sex'] == 'M']
     YLL_males_data = males_data.filter(like='YLL_RTI').columns
     males_dalys = males_data[YLL_males_data].sum(axis=1) + \
@@ -129,6 +135,8 @@ for i in range(0, nsim):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath)
@@ -144,7 +152,7 @@ for i in range(0, nsim):
     tot_death_without_med = len(deaths_without_med.loc[(deaths_without_med['cause'] != 'Other')])
     list_deaths_with_spinal_surg.append(tot_death_without_med)
     # get the number of DALYS in the simulation with the included spinal cord surgery
-    dalys_df = log_df_without_health_system['tlo.methods.healthburden']['DALYS']
+    dalys_df = log_df_without_health_system['tlo.methods.healthburden']['dalys']
     males_data = dalys_df.loc[dalys_df['sex'] == 'M']
     YLL_males_data = males_data.filter(like='YLL_RTI').columns
     males_dalys = males_data[YLL_males_data].sum(axis=1) + \
@@ -168,6 +176,8 @@ for i in range(0, nsim):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath)
@@ -183,7 +193,7 @@ for i in range(0, nsim):
     tot_death_without_med = len(deaths_without_med.loc[(deaths_without_med['cause'] != 'Other')])
     list_deaths_with_thoroscopy.append(tot_death_without_med)
     # get the number of DALYS in the simulation with the included thoroscopy
-    dalys_df = log_df_without_health_system['tlo.methods.healthburden']['DALYS']
+    dalys_df = log_df_without_health_system['tlo.methods.healthburden']['dalys']
     males_data = dalys_df.loc[dalys_df['sex'] == 'M']
     YLL_males_data = males_data.filter(like='YLL_RTI').columns
     males_dalys = males_data[YLL_males_data].sum(axis=1) + \

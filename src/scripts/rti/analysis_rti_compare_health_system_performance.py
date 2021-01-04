@@ -10,6 +10,8 @@ from tlo.methods import (
     healthsystem,
     symptommanager,
     rti,
+    dx_algorithm_child,
+    dx_algorithm_adult
 )
 import numpy as np
 from matplotlib import pyplot as plt
@@ -37,8 +39,8 @@ resourcefilepath = Path('./resources')
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 25000
-nsim = 5
+pop_size = 200000
+nsim = 10
 # create empty lists to store the number of deaths with a health system an without a health system and a dictionary
 # to store the log files in
 list_deaths_with_med = []
@@ -54,6 +56,8 @@ for i in range(0, nsim):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath)
@@ -76,7 +80,7 @@ for i in range(0, nsim):
     # Store the deaths from RTI in this simulation in the list of deaths with a health system
     list_deaths_with_med.append(tot_death_with_med)
     # Get the DALYs produced in the sim
-    dalys_df = log_df_with_health_system['tlo.methods.healthburden']['DALYS']
+    dalys_df = log_df_with_health_system['tlo.methods.healthburden']['dalys']
     # DALYs are split into gender and age ranges, therefor to get total DALYs we need to add them together
     # Get male data
     males_data = dalys_df.loc[dalys_df['sex'] == 'M']
@@ -109,6 +113,8 @@ for i in range(0, nsim):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath)
@@ -128,7 +134,7 @@ for i in range(0, nsim):
     deaths_without_med = log_df_without_health_system['tlo.methods.demography']['death']
     tot_death_without_med = len(deaths_without_med.loc[(deaths_without_med['cause'] != 'Other')])
     list_deaths_no_med.append(tot_death_without_med)
-    dalys_df = log_df_without_health_system['tlo.methods.healthburden']['DALYS']
+    dalys_df = log_df_without_health_system['tlo.methods.healthburden']['dalys']
     males_data = dalys_df.loc[dalys_df['sex'] == 'M']
     YLL_males_data = males_data.filter(like='YLL_RTI').columns
     males_dalys = males_data[YLL_males_data].sum(axis=1) + \

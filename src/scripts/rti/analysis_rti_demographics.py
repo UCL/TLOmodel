@@ -10,10 +10,13 @@ from tlo.methods import (
     healthsystem,
     symptommanager,
     rti,
+    dx_algorithm_adult,
+    dx_algorithm_child,
 )
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
+import ast
 
 # =============================== Analysis description ========================================================
 # This analysis file has essentially become the model fitting analysis, seeing what happens when we run the model
@@ -33,12 +36,12 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 10
+yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 100000
-nsim = 10
+pop_size = 10000
+nsim = 5
 # Create a variable whether to save figures or not
 save_figures = True
 # Create lists to store information from each simulation in
@@ -97,6 +100,26 @@ rti_model_flow_summary = []
 percent_sought_healthcare = []
 # Inpatient days
 all_sim_inpatient_days = []
+# Per sim inpatient days
+per_sim_inpatient_days = []
+# Number of consumables used
+list_consumables_dict = []
+# Overall healthsystem time usage
+health_system_time_usage = []
+# number of major surgeries
+per_sim_major_surg = []
+# number of minor surgeries
+per_sim_minor_surg = []
+# number of fractures cast
+per_sim_frac_cast = []
+# number of lacerations stitched
+per_sim_laceration = []
+# number of burns managed
+per_sim_burn_treated = []
+# number of tetanus vaccine administered
+per_sim_tetanus = []
+# number of pain medicine requested
+per_sim_pain_med = []
 # Deaths in 2010
 deaths_2010 = []
 for i in range(0, nsim):
@@ -109,6 +132,8 @@ for i in range(0, nsim):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath)
@@ -260,6 +285,9 @@ for i in range(0, nsim):
     inc_minor.append(injury_category_incidence['inc_minor'].tolist())
     inc_other.append(injury_category_incidence['inc_other'].tolist())
     tot_inc_injuries.append(injury_category_incidence['tot_inc_injuries'].tolist())
+    # Get the inpatient days usage. I take the overall inpatient day usage from all the simulations and the per-sim
+    # inpatient day info
+    this_sim_inpatient_days = []
     inpatient_day_df = log_df['tlo.methods.healthsystem']['HSI_Event'].loc[
         log_df['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'] == 'RTI_MedicalIntervention']
     for person in inpatient_day_df.index:
@@ -267,10 +295,33 @@ for i in range(0, nsim):
         # means that this patient didn't require any so append (0)
         try:
             all_sim_inpatient_days.append(inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
+            this_sim_inpatient_days.append(inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
         except KeyError:
             all_sim_inpatient_days.append(0)
-
-print(all_sim_inpatient_days)
+            this_sim_inpatient_days.append(0)
+    # get the inpatient days used in this sim
+    per_sim_inpatient_days.append(this_sim_inpatient_days)
+    # get the consumables used in each simulation
+    consumables_list = log_df['tlo.methods.healthsystem']['Consumables']['Item_Available'].tolist()
+    consumables_list_to_dict = []
+    for string in consumables_list:
+        consumables_list_to_dict.append(ast.literal_eval(string))
+    number_of_consumables_in_sim = 0
+    for dictionary in consumables_list_to_dict:
+        number_of_consumables_in_sim += sum(dictionary.values())
+    list_consumables_dict.append(number_of_consumables_in_sim)
+    # get the overall health system time used
+    health_system_time_usage.append(np.mean(log_df['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall']))
+    # get the number of treating hsi events by type
+    appointments = log_df['tlo.methods.healthsystem']['HSI_Event']
+    appointments = appointments.loc[appointments['did_run'] == True]
+    per_sim_burn_treated.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Burn_Management']))
+    per_sim_frac_cast.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Fracture_Cast']))
+    per_sim_laceration.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Suture']))
+    per_sim_major_surg.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Major_Surgeries']))
+    per_sim_minor_surg.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Minor_Surgeries']))
+    per_sim_tetanus.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Tetanus_Vaccine']))
+    per_sim_pain_med.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Acute_Pain_Management']))
 
 
 def age_breakdown(age_array):
@@ -507,6 +558,16 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
+plt.pie(data, explode=None, labels=['Males', 'Females'], colors=['lightsteelblue', 'lightsalmon'], autopct='%1.1f%%',
+        startangle=90)
+plt.title(f"Gender demographics of those with RTIs"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Gender_demographics_pie.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 # Plot the percentage of crashes attributable to alcohol
 means_of_sim = [np.mean(i) for i in percents_attributable_to_alcohol]
 means_non_alocohol = np.subtract(np.ones(len(means_of_sim)), means_of_sim)
@@ -653,6 +714,77 @@ plt.title(f"The model's predicted incidence of RTI related death "
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig('outputs/Demographics_of_RTI/Incidence_of_rti_deaths_compare_Samuel.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot the incidence of deaths produced by the model compared to the estimates from the Malawian hospital registry data,
+# Samuel et al. estimated incidence of death, and the WHO estimated incidence of death
+hospital_registry_inc = 5.1
+police_estimated_inc = 7.5
+who_est = 35
+plt.bar(np.arange(5),
+        [hospital_registry_inc,  # Estimated incidence of death from hospital data
+         police_estimated_inc,  # Estimated incidence of death from police data
+         samuel_incidence_of_rti_death,  # Estimated incidence of death from capture recapture method
+         who_est,  # Estimated incidence of death from the WHO
+         overall_av_death_inc_sim,  # Models predicted incidence of death
+         ],  # remaining deaths
+        color=['lightsalmon', 'lightsteelblue', 'wheat', 'olive', 'blue'])
+plt.xticks(np.arange(5),
+           ['Estimated'
+            '\n'
+            'incidence'
+            '\n'
+            'of death'
+            '\n'
+            'from'
+            '\n'
+            'hospital '
+            '\n'
+            'records',
+            'Estimated'
+            '\n'
+            'incidence'
+            '\n'
+            'of death from'
+            '\n'
+            'police '
+            '\n'
+            'records',
+            'Estimated'
+            '\n'
+            'incidence '
+            '\n'
+            'of death '
+            '\n'
+            'from '
+            '\n'
+            'Samuel '
+            '\n'
+            'et al. 2012',
+            'Estimated'
+            '\n'
+            ' incidence'
+            '\n'
+            'of death'
+            '\n'
+            'from WHO',
+            'Estimated'
+            '\n'
+            ' incidence'
+            '\n'
+            'of death'
+            '\n'
+            'from model'])
+plt.ylabel('Incidence per 100,000')
+plt.title(f"The model's predicted incidence of RTI related death "
+          f"\n"
+          f"compared to the various estimates for Malawi"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Incidence_of_rti_deaths_compare_hospital_police_samuel_who.png',
+                bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -977,7 +1109,90 @@ plt.title(f"Model injury inpatient days compared to Kamuzu central hospital data
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 
 if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Inpatient_day_distribution_comp_to_kamuzu.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot the distribution of inpatient days due to RTI
+days, counts = np.unique(all_sim_inpatient_days, return_counts=True)
+plt.bar(days, counts / sum(counts), width=0.8, color='lightsteelblue')
+plt.xlabel('Inpatient days')
+plt.ylabel('Percentage of patients')
+plt.title(f"Distribution of inpatient days produced by the model for RTIs"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
     plt.savefig('outputs/Demographics_of_RTI/Inpatient_day_distribution.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+
+# Plot overall health system usage
+mean_consumables_used_per_sim = np.mean(list_consumables_dict)
+mean_inpatient_days = np.mean([np.mean(sim_days) for sim_days in per_sim_inpatient_days])
+mean_fraction_health_system_time_used = np.mean(health_system_time_usage)
+average_number_of_burns_treated = np.mean(per_sim_burn_treated)
+average_number_of_fractures_treated = np.mean(per_sim_frac_cast)
+average_number_of_lacerations_treated = np.mean(per_sim_laceration)
+average_number_of_major_surgeries_performed = np.mean(per_sim_major_surg)
+average_number_of_minor_surgeries_performed = np.mean(per_sim_minor_surg)
+average_number_of_tetanus_jabs = np.mean(per_sim_tetanus)
+average_number_of_pain_meds = np.mean(per_sim_pain_med)
+# plot the number of consumables used
+plt.bar(np.arange(1), mean_consumables_used_per_sim, color='lightsteelblue')
+plt.xticks(np.arange(1), ['Consumables'])
+plt.ylabel('Average consumables used')
+plt.title(f"Average number of consumables used per sim"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Average_consumables_used.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# plot the average total number of inpatient days taken
+plt.bar(np.arange(1), mean_inpatient_days, color='lightsalmon')
+plt.xticks(np.arange(1), ['Inpatient days'])
+plt.ylabel('Average total inpatient days used')
+plt.title(f"Average number of inpatient days used per sim"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Average_inpatient_days_used.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# plot the average health system time usage
+plt.bar(np.arange(1), mean_fraction_health_system_time_used, color='wheat')
+plt.xticks(np.arange(1), ['Fraction of time'])
+plt.ylabel('Average health system time usage')
+plt.title(f"Average fraction of total health system time usage per sim"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Average_health_sys_time_used.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# plot the average number of treatments provided
+data = [average_number_of_burns_treated,
+        average_number_of_fractures_treated,
+        average_number_of_lacerations_treated,
+        average_number_of_major_surgeries_performed,
+        average_number_of_minor_surgeries_performed,
+        average_number_of_tetanus_jabs,
+        average_number_of_pain_meds]
+labels = ['Burn\nmanagement', 'Fracture\ncast', 'Suture', 'Major\nsurgery', 'Minor\nsurgery', 'Tetanus\nvaccine',
+          'Pain\nmanagement']
+
+plt.bar(np.arange(len(data)), data, color='cornflowerblue')
+plt.xticks(np.arange(len(data)), labels)
+plt.ylabel('Average number of appointments')
+plt.title(f"Average number of HSI events performed per sim"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Average_HSI_appointments_per_sim.png', bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()

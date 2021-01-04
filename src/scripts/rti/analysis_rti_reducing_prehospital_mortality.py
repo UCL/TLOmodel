@@ -10,6 +10,8 @@ from tlo.methods import (
     healthsystem,
     symptommanager,
     rti,
+    dx_algorithm_adult,
+    dx_algorithm_child
 )
 import numpy as np
 from matplotlib import pyplot as plt
@@ -34,7 +36,7 @@ resourcefilepath = Path('./resources')
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 500
+pop_size = 10000
 nsim = 5
 output_for_different_incidence = dict()
 service_availability = ["*"]
@@ -56,6 +58,8 @@ for i in range(0, nsim):
             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability),
             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+            dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
             rti.RTI(resourcefilepath=resourcefilepath)
@@ -75,7 +79,7 @@ for i in range(0, nsim):
         tot_death_without_med = len(deaths_without_med.loc[(deaths_without_med['cause'] != 'Other')])
         list_deaths.append(tot_death_without_med)
         # Get the DALYs from the sim
-        dalys_df = log_df['tlo.methods.healthburden']['DALYS']
+        dalys_df = log_df['tlo.methods.healthburden']['dalys']
         males_data = dalys_df.loc[dalys_df['sex'] == 'M']
         YLL_males_data = males_data.filter(like='YLL_RTI').columns
         males_dalys = males_data[YLL_males_data].sum(axis=1) + \

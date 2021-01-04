@@ -10,10 +10,13 @@ from tlo.methods import (
     healthsystem,
     symptommanager,
     rti,
+    dx_algorithm_adult,
+    dx_algorithm_child
 )
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
+import ast
 # =============================== Analysis description ========================================================
 # What I am doing here is modelling the what would happen if we included a number of different intervention strategies.
 # I include two here, the first is the enforcements of speed limits, which should result in a 6% reduction in incidence
@@ -42,7 +45,6 @@ end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 pop_size = 100000
 nsim = 5
 output_for_different_incidence = dict()
-service_availability = ["*"]
 # Store the incidence, deaths and DALYs in each simulation
 incidence_average = []
 list_deaths_average = []
@@ -60,13 +62,18 @@ orig_imm_death = float(params.loc[params.parameter_name == 'imm_death_proportion
 per_scenario_inc = []
 per_scenario_death = []
 per_scenario_dalys = []
+per_scenario_inpatient_days = []
+per_scenario_consumables = []
 for scenario_reduction in scenarios.values():
     inc = orig_incidence * scenario_reduction[0]
     prop_imm_death = orig_imm_death * scenario_reduction[1]
     in_scenario_incidence = []
     in_scenario_deaths = []
     in_scenario_dalys = []
+    average_inpatient_days_from_scenario = []
+    average_consumables_from_scenario = []
     for i in range(0, nsim):
+        total_inpatient_days_this_sim = 0
         sim = Simulation(start_date=start_date)
         # We register all modules in a single call to the register method, calling once with multiple
         # objects. This is preferred to registering each module in multiple calls because we will be
@@ -74,8 +81,10 @@ for scenario_reduction in scenarios.values():
         sim.register(
             demography.Demography(resourcefilepath=resourcefilepath),
             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-            healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+            dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
             rti.RTI(resourcefilepath=resourcefilepath)
@@ -103,7 +112,7 @@ for scenario_reduction in scenarios.values():
         tot_rti_deaths = len(rti_deaths.loc[(rti_deaths['cause'] != 'Other')])
         in_scenario_deaths.append(tot_rti_deaths)
         # get the dalys produced from the sim
-        dalys_df = log_df['tlo.methods.healthburden']['DALYS']
+        dalys_df = log_df['tlo.methods.healthburden']['dalys']
         males_data = dalys_df.loc[dalys_df['sex'] == 'M']
         YLL_males_data = males_data.filter(like='YLL_RTI').columns
         males_dalys = males_data[YLL_males_data].sum(axis=1) + \
@@ -115,14 +124,38 @@ for scenario_reduction in scenarios.values():
 
         tot_dalys = males_dalys.tolist() + females_dalys.tolist()
         in_scenario_dalys.append(sum(tot_dalys))
+        inpatient_day_df = log_df['tlo.methods.healthsystem']['HSI_Event'].loc[
+            log_df['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'] == 'RTI_MedicalIntervention']
+        for person in inpatient_day_df.index:
+            # Get the number of inpatient days per person, if there is a key error when trying to access inpatient days it
+            # means that this patient didn't require any so append (0)
+            try:
+                total_inpatient_days_this_sim += \
+                    inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays']
+            except KeyError:
+                total_inpatient_days_this_sim += 0
+        # Get the number of consumables used in this sim
+        average_inpatient_days_from_scenario.append(total_inpatient_days_this_sim)
+        consumables_list = log_df['tlo.methods.healthsystem']['Consumables']['Item_Available'].tolist()
+        consumables_list_to_dict = []
+        for string in consumables_list:
+            consumables_list_to_dict.append(ast.literal_eval(string))
+        number_of_consumables_in_sim = 0
+        for dictionary in consumables_list_to_dict:
+            number_of_consumables_in_sim += sum(dictionary.values())
+        average_consumables_from_scenario.append(number_of_consumables_in_sim)
+
     per_scenario_inc.append(in_scenario_incidence)
     per_scenario_death.append(in_scenario_deaths)
     per_scenario_dalys.append(in_scenario_dalys)
+    per_scenario_inpatient_days.append(np.mean(average_inpatient_days_from_scenario))
+    per_scenario_consumables.append(np.mean(average_consumables_from_scenario))
 
 average_incidence = [np.mean(inc_list) for inc_list in per_scenario_inc]
 average_deaths = [np.mean(death_list) for death_list in per_scenario_death]
 average_tot_dalys = [np.mean(daly_list) for daly_list in per_scenario_dalys]
-
+average_tot_inpatient_days = [np.mean(day_list) for day_list in per_scenario_inpatient_days]
+average_tot_consumables = [np.mean(consumables) for consumables in per_scenario_consumables]
 results_df = pd.DataFrame({
     'incidence per 100,000': average_incidence,
     'average deaths': average_deaths,
@@ -133,6 +166,10 @@ percent_inc_reduction = [((inc - average_incidence[0]) / average_incidence[0]) *
 percent_deaths_reduction = [((deaths - average_deaths[0]) / average_deaths[0]) * 100 for deaths in average_deaths
                               if average_deaths[0] != 0]
 percent_dalys_reduction = [((daly - average_tot_dalys[0]) / average_tot_dalys[0]) * 100 for daly in average_tot_dalys]
+percent_inpatient_day_reduction = [((days - average_tot_inpatient_days[0]) /
+                                    average_tot_inpatient_days[0]) * 100 for days in average_tot_inpatient_days]
+percent_consumable_reduction = [((consumables - average_tot_consumables[0]) / average_tot_consumables[0]) * 100 for
+                                consumables in average_tot_consumables]
 # plot the average deaths and dalys in the simulation on the left hand x axis and the average incidence on the right
 # hand axis
 ax = results_df[['average deaths', 'average total DALYs']].plot(kind='bar', width=.35)
@@ -146,13 +183,27 @@ plt.title(f"The effect of reducing incidence on Average Deaths/DALYS"
 plt.savefig('outputs/ReducingIncidence/incidence_vs_deaths_DALYS.png', bbox_inches='tight')
 plt.clf()
 # Plot the percent reduction of deaths and DALYs in each simulation
-plt.bar(np.arange(3), percent_inc_reduction, color='lightsteelblue', width=0.25, label='% change in incidence')
-plt.bar(np.arange(3) + 0.25, percent_deaths_reduction, color='lightsalmon', width=0.25, label='% change in deaths')
-plt.bar(np.arange(3) + 0.5, percent_dalys_reduction, color='wheat', width=0.25, label='% change in DALYs')
-plt.xticks(np.arange(3) + 0.25, scenarios.keys())
+w = 0.15
+plt.bar(np.arange(3), percent_inc_reduction, color='lightsteelblue', width=w, label='% change in incidence')
+plt.bar(np.arange(3) + 0.15, percent_deaths_reduction, color='lightsalmon', width=w, label='% change in deaths')
+plt.bar(np.arange(3) + 0.3, percent_dalys_reduction, color='wheat', width=w, label='% change in DALYs')
+plt.bar(np.arange(3) + 0.45, percent_inpatient_day_reduction, color='olive', width=w,
+        label='% change in inpatient days')
+plt.bar(np.arange(3) + 0.6, percent_consumable_reduction, color='lemonchiffon', width=w, label='% change in '
+                                                                                                 'consumables')
+plt.xticks(np.arange(3) + 0.3, scenarios.keys())
 plt.legend()
 plt.ylabel('Percent')
 plt.title(f"The percent change of incidence, average deaths and DALYS under different scenarios"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.savefig('outputs/ReducingIncidence/incidence_vs_deaths_DALYS_resulting_reduction.png', bbox_inches='tight')
+# plt.clf()
+# plt.bar(np.arange(3), percent_inpatient_day_reduction, color='wheat', width=0.25, label='% change in inpatient days')
+# plt.xticks(np.arange(3), scenarios.keys())
+# plt.legend()
+# plt.ylabel('Percent')
+# plt.title(f"The percent change in inpatient days in each scenario"
+#           f"\n"
+#           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+# plt.savefig('outputs/ReducingIncidence/incidence_vs_inpatient_days_resulting_reduction.png', bbox_inches='tight')

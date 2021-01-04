@@ -825,7 +825,6 @@ class RTI(Module):
                                     'Injury status relating to road traffic injury: none, mild, severe',
                                     categories=['none', 'mild', 'severe'],
                                     ),
-        # todo: create a writeup of the rti module explaining what all these codes are
         'rt_injury_1': Property(Types.CATEGORICAL, 'Codes for injury 1 from RTI',
                                 categories=['none', '112', '113', '133', '133a', '133b', '133c', '133d', '134', '134a',
                                             '134b', '135', '1101', '1114', '211', '212', '241', '2101', '2114', '291',
@@ -1419,7 +1418,7 @@ class RTI(Module):
         person_injuries = df.loc[[person_id], cols]
         # check this person is injured, search they have an injury code that isn't "none"
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries,
-                                                      self.PROPERTIES.get('rt_injury_1').categories[1:-1])
+                                                      self.PROPERTIES.get('rt_injury_1').categories[1:])
         assert counts > 0, 'This person has asked for medical treatment despite not being injured'
         # If they meet the requirements, send them to HSI_RTI_MedicalIntervention for further treatment
         self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1532,7 +1531,7 @@ class RTI(Module):
         # check this person is injured, search they have an injury code that isn't "none", short hand way to do this is
         # with: self.PROPERTIES.get('rt_injury_1').categories[1:-1], which is a list of the all possible injury codes
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries,
-                                                      self.PROPERTIES.get('rt_injury_1').categories[1:-1])
+                                                      self.PROPERTIES.get('rt_injury_1').categories[1:])
         assert counts > 0, 'This person has asked for pain relief despite not being injured'
         person = df.iloc[person_id]
         if person.is_alive:
@@ -2123,6 +2122,8 @@ class RTI(Module):
             df.loc[idx, 'rt_disability'] += self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
         DALYweightoverlimit = df.index[df['rt_disability'] > 1]
         df.loc[DALYweightoverlimit, 'rt_disability'] = 1
+        DALYweightunderlimit = df.index[df['rt_disability'] < 0]
+        df.loc[DALYweightunderlimit, 'rt_disability'] = 0
         assert (df.loc[injured_index, 'rt_disability'] > 0).all()
 
     def rti_alter_daly_post_treatment(self, person_id, codes):
@@ -2144,7 +2145,7 @@ class RTI(Module):
         person_injuries = df.loc[[person_id], cols]
         # check this person is injured, search they have an injury code that isn't "none"
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries,
-                                                      self.PROPERTIES.get('rt_injury_1').categories[1:-1])
+                                                      self.PROPERTIES.get('rt_injury_1').categories[1:])
         assert counts > 0, 'This person has asked for medical treatment despite not being injured'
         # Check everyone here is alive and hasn't died on scene
         assert df.loc[person_id, 'is_alive'] & ~df.loc[person_id, 'rt_imm_death']
@@ -2270,8 +2271,10 @@ class RTI(Module):
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_bilateral_lower_limb_amputation_with_treatment
 
         RTI.rti_treated_injuries(self, person_id, codes)
-        DALYweightoverlimit = df.index[df['rt_disability'] < 0]
-        df.loc[DALYweightoverlimit, 'rt_disability'] = 0
+        DALYweightunderlimit = df.index[df['rt_disability'] < 0]
+        df.loc[DALYweightunderlimit, 'rt_disability'] = 0
+        DALYweightoverlimit = df.index[df['rt_disability'] > 1]
+        df.loc[DALYweightoverlimit, 'rt_disability'] = 1
 
     def rti_swap_injury_daly_upon_treatment(self, person_id, codes):
         """
@@ -2370,7 +2373,10 @@ class RTI(Module):
             if code == 'P884':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_bilateral_lower_limb_amputation_without_treatment \
                                                       + self.daly_wt_bilateral_lower_limb_amputation_with_treatment
+        if df.loc[person_id, 'rt_disability'] > 1:
+            df.loc[person_id, 'rt_disability'] = 1
         assert df.loc[person_id, 'rt_disability'] > 0, 'No disability burden where there should be'
+
 
     def rti_determine_LOS(self, person_id):
         """
@@ -3684,6 +3690,10 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                                 self.daly_wt_femur_fracture_short_term
                             df.loc[person, 'rt_disability'] += \
                                 self.daly_wt_femur_fracture_long_term_without_treatment
+                        if df.loc[person, 'rt_disability'] < 0:
+                            df.loc[person, 'rt_disability'] = 0
+                        if df.loc[person, 'rt_disability'] > 1:
+                            df.loc[person, 'rt_disability'] = 1
                         # If they don't have a swappable code, schedule the healing of the injury
                         # get the persons injuries
                         persons_injuries = df.loc[[person], cols]
@@ -3861,6 +3871,12 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     if df.loc[person, 'rt_date_to_remove_daly'] == default_recovery:
                         # df.loc[person, 'rt_med_int'] = False
                         df.loc[person, 'rt_inj_severity'] = "none"
+                # Check that the date to remove dalys is removed if the date to remove the daly is today
+            assert now not in df.loc[person, 'rt_date_to_remove_daly']
+            if df.loc[person, 'rt_disability'] < 0:
+                df.loc[person, 'rt_disability'] = 0
+            if df.loc[person, 'rt_disability'] > 1:
+                df.loc[person, 'rt_disability'] = 1
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -4343,7 +4359,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=consumables_fractures,
-            to_log=False)
+            to_log=True)
         if is_cons_available:
             logger.debug(f"Fracture casts available for person %d's {fracturecastcounts + slingcounts} fractures",
                          person_id)
@@ -4435,7 +4451,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
             is_cons_available_1 = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self,
                 cons_req_as_footprint=consumables_open_wound_1,
-                to_log=False)['Item_Code']
+                to_log=True)['Item_Code']
 
             cond = is_cons_available_1
 
@@ -4556,7 +4572,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
             is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self,
                 cons_req_as_footprint=consumables_burns,
-                to_log=False)
+                to_log=True)
             logger.debug(is_cons_available)
             cond = is_cons_available
             if all(value == 1 for value in cond.values()):
@@ -4749,6 +4765,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                 'Item_Code': {item_code_diclofenac: 1}}
 
             if df.iloc[person_id]['age_years'] < 16:
+                # todo: don't give paracetamol to pregnant women
                 # If they are under 16 or pregnant (still to do) only give them paracetamol
                 logger.debug(pain_management_strategy_paracetamol)
                 is_paracetamol_available = self.sim.modules['HealthSystem'].request_consumables(
@@ -4823,7 +4840,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self,
                 cons_req_as_footprint=pain_management_strategy_tramadol,
-                to_log=False)['Item_Code'][item_code_tramadol]
+                to_log=True)['Item_Code'][item_code_tramadol]
             cond = is_cons_available
             logger.debug('Person %d has requested tramadol for moderate pain relief', person_id)
 
@@ -4857,7 +4874,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self,
                 cons_req_as_footprint=pain_management_strategy,
-                to_log=False)
+                to_log=True)
             cond = is_cons_available
             logger.debug('Person %d has requested morphine for severe pain relief', person_id)
 
@@ -5327,7 +5344,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         if code == '241':
             columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
                                                                                           [code])[0])
-            # using estimated 1 week to recover from eye surgery
+            # using estimated 1 week to soft tissue injury to face
             df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(month=1)
         swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a', 'P673b',
                           'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884']
@@ -5355,7 +5372,6 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
     """This is the MedicalInterventionDeathEvent. It is scheduled by the MedicalInterventionEvent to occur at the end of
      the person's determined length of stay. The risk of mortality for the person wil medical intervention is determined
      by the persons ISS score and whether they have polytrauma.
-     todo: work out how to both log the severity of injuries and reset them
     """
 
     def __init__(self, module, person_id):
@@ -5636,8 +5652,6 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         thoseininjuries = df.loc[df.rt_road_traffic_inc]
         df_injuries = thoseininjuries.loc[:, columns]
         # ==================================== Number of injuries =====================================================
-        # todo: redo the logging so that this logs the number of injuries given out in the last month, else will be
-        #  messed with, solution is to use the date of injury
         #
         oneinjury = len(df_injuries.loc[df_injuries['rt_injury_2'] == 'none'])
         self.tot1inj += oneinjury

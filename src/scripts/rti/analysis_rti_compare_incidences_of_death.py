@@ -10,6 +10,8 @@ from tlo.methods import (
     healthsystem,
     symptommanager,
     rti,
+    dx_algorithm_adult,
+    dx_algorithm_child
 )
 import numpy as np
 from matplotlib import pyplot as plt
@@ -34,7 +36,7 @@ resourcefilepath = Path('./resources')
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 25000
+pop_size = 100000
 nsim = 5
 output_for_different_incidence = dict()
 service_availability = ["*"]
@@ -44,6 +46,7 @@ list_deaths_average = []
 list_tot_dalys_average = []
 # Create a dictionary to store the parameters which we will multiply the base rate of injury by to fit to the different
 # estimates of death per 100,000
+
 estimates = {'Hospital registry \ndata': 0.31,
              'Samuel et al. \n 2012 estimate': 1.19,
              'WHO \n estimate': 2.12,
@@ -54,10 +57,13 @@ params = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_RTI.xlsx', sheet_n
 orig_incidence = float(params.loc[params.parameter_name == 'base_rate_injrti', 'value'].values)
 per_estimate_inc_of_RTI = []
 per_estimate_inc_of_RTI_death = []
+per_estimate_inpatient_days = []
 for incidence_estimate in estimates.values():
     average_inc_of_RTI_in_from_this_estimate = []
     average_inc_of_RTI_death_from_this_estimate = []
+    average_inpatient_days_from_estimate = []
     for i in range(0, nsim):
+        total_inpatient_days_this_sim = 0
         sim = Simulation(start_date=start_date)
         # We register all modules in a single call to the register method, calling once with multiple
         # objects. This is preferred to registering each module in multiple calls because we will be
@@ -67,6 +73,8 @@ for incidence_estimate in estimates.values():
             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability),
             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+            dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
             rti.RTI(resourcefilepath=resourcefilepath)
@@ -88,8 +96,20 @@ for incidence_estimate in estimates.values():
         incidence_of_death_in_sim = summary_1m['incidence of rti death per 100,000']
         average_inc_of_RTI_in_from_this_estimate.append(np.mean(incidence_in_sim))
         average_inc_of_RTI_death_from_this_estimate.append(np.mean(incidence_of_death_in_sim))
+        inpatient_day_df = log_df['tlo.methods.healthsystem']['HSI_Event'].loc[
+            log_df['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'] == 'RTI_MedicalIntervention']
+        for person in inpatient_day_df.index:
+            # Get the number of inpatient days per person, if there is a key error when trying to access inpatient days it
+            # means that this patient didn't require any so append (0)
+            try:
+                total_inpatient_days_this_sim += \
+                    inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays']
+            except KeyError:
+                total_inpatient_days_this_sim += 0
+        average_inpatient_days_from_estimate.append(total_inpatient_days_this_sim)
     per_estimate_inc_of_RTI.append(average_inc_of_RTI_in_from_this_estimate)
     per_estimate_inc_of_RTI_death.append(average_inc_of_RTI_death_from_this_estimate)
+    per_estimate_inpatient_days.append(np.mean(average_inpatient_days_from_estimate))
 # Get the average estimate of number of people involved in road traffic injuries from each simulation
 average_inc_per_estimate = []
 sd_inc_per_estimate = []
@@ -101,6 +121,12 @@ sd_inc_death_per_estimate = []
 for estimated_inc_death in per_estimate_inc_of_RTI_death:
     average_inc_death_per_estimate.append(np.mean(estimated_inc_death))
     sd_inc_death_per_estimate.append(np.std(estimated_inc_death))
+
+average_inpatient_days = []
+sd_inpatient_day = []
+for estimated_inpatient_day in per_estimate_inpatient_days:
+    average_inpatient_days.append(np.mean(estimated_inpatient_day))
+    sd_inpatient_day.append(np.std(estimated_inpatient_day))
 
 # Plot the average incidence of RTI per person from each estimated incidence of death/total number of injuries
 plt.bar(np.arange(len(estimates)), average_inc_per_estimate, color='lightsteelblue', yerr=sd_inc_per_estimate)
@@ -120,4 +146,13 @@ plt.title(f"The incidence of death due to road traffic injuries for each estimat
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.savefig('outputs/NumberOfPeopleInRTI/Incidence_of_death_from_rti.png', bbox_inches='tight')
+plt.clf()
+plt.bar(np.arange(len(estimates)), average_inpatient_days, color='wheat', yerr=sd_inpatient_day)
+plt.xticks(np.arange(len(estimates)), estimates.keys())
+plt.title(f"The estimated incidence of people with road traffic injuries"
+          f"\n"
+          f"based on different estimates of the incidence of road traffic injury deaths"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+plt.savefig('outputs/NumberOfPeopleInRTI/Estimates_inpatient_days_people_with_rti.png', bbox_inches='tight')
 plt.clf()
