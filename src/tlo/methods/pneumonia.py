@@ -34,6 +34,7 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, Individua
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
 from tlo.methods.symptommanager import Symptom
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -617,6 +618,15 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of cure for uncomplicated pneumonia given IMCI pneumonia treatment'
                       ),
+        'prob_of_cure_for_pneumonia_with_severe_complication_given_IMCI_severe_pneumonia_treatment':
+            Parameter(Types.REAL,
+                      'probability of cure for pneumonia with severe complications given IMCI pneumonia treatment'
+                      ),
+        'prob_seek_follow_up_care_after_treatment_failure':
+            Parameter(Types.REAL,
+                      'probability of seeking follow-up care after treatment failure'
+                      ),
+
 
     }
 
@@ -670,7 +680,7 @@ class ALRI(Module):
                      ),
         # ---- Chest auscultation signs ----
         'ri_chest_auscultations_signs':
-            Property(Types.CATEGORICAL, 'underlying ALRI condition',
+            Property(Types.CATEGORICAL, 'findings during chest auscultation examination',
                      categories=['decreased_breath_sounds', 'bronchial_breaths_sounds', 'crackles', 'wheeze',
                                  'abnormal_vocal_resonance', 'pleural_rub'] + ['none'] + ['not_applicable']
                      ),
@@ -693,7 +703,7 @@ class ALRI(Module):
         'tmp_hv_inf': Property(Types.BOOL, 'temporary property - hiv infection'),
         'tmp_exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
         'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
-        'tmp_pneumococcal_vaccination': Property(Types.BOOL, 'temporary property - streptococcus ALRIe vaccine'),
+        'tmp_pneumococcal_vaccination': Property(Types.BOOL, 'temporary property - streptococcus pneumoniae vaccine'),
         'tmp_haemophilus_vaccination': Property(Types.BOOL, 'temporary property - H. influenzae type b vaccine'),
         'tmp_influenza_vaccination': Property(Types.BOOL, 'temporary property - flu vaccine'),
 
@@ -816,6 +826,7 @@ class ALRI(Module):
         m = self
 
         # ---- Key Current Status Classification Properties ----
+        df.loc[df.is_alive, 'ri_ALRI_status'] = False
         df.loc[df.is_alive, 'ri_primary_ALRI_pathogen'].values[:] = 'not_applicable'
         df.loc[df.is_alive, 'ri_current_ALRI_symptoms'] = 'not_applicable'
         df.loc[df.is_alive, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
@@ -1093,7 +1104,7 @@ class ALRI(Module):
                     'chest_indrawing': p['prob_chest_indrawing_uncomplicated_ALRI_by_disease_type'][2],
                     'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][2],
                 }
-            if disease_type == 'fungal_pneumonia':
+            if disease_type == 'fungal_pneumonia':  # same as probabilities for viral pneumonia
                 return {
                     'fever': p['prob_fever_uncomplicated_ALRI_by_disease_type'][1],
                     'cough': p['prob_cough_uncomplicated_ALRI_by_disease_type'][1],
@@ -1335,11 +1346,12 @@ class ALRI(Module):
         """
         df = self.sim.population.props
         person = df.loc[person_id]
+        p = self.parameters
 
         if not person.is_alive:
             return
 
-        # Do nothing if the diarrhoea has not been caused by a pathogen
+        # Do nothing if the ALRI has not been caused by a pathogen
         if not (
             (person.ri_primary_ALRI_pathogen != 'not_applicable') &
             (person.ri_ALRI_event_date_of_onset <= self.sim.date <= person.ri_end_of_last_alri_episode)
@@ -1357,6 +1369,8 @@ class ALRI(Module):
                                     self.sim.date + DateOffset(
                                         days=self.parameters['days_between_treatment_and_cure']
                                     ))
+        # else:  # not improving seek care or death
+        #     self.do_when_not_improving(person_id)
 
     def cancel_death_date(self, person_id):
         """
@@ -1368,6 +1382,24 @@ class ALRI(Module):
         df = self.sim.population.props
         df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
 
+    # def do_when_not_improving(self, person_id):
+    #     """
+    #     Prolongs the signs and symptoms of disease
+    #     """
+    #     df = self.sim.population.props
+    #     person = df.loc[person_id]
+    #     # probability of those who follow-up for further care
+    #     # TODO: Care-seeking for those who sought care but following up for further care
+    #
+    #     # function only for those who sought care and started treatment but not improving
+    #     if not (
+    #         (person.ri_ALRI_tx_start_date <= self.sim.date)
+    #     ):
+    #         return
+    #
+    #     if self.parameters['prob_seek_follow_up_care_after_treatment_failure'] > self.rng.rand():
+    #         # schedule follow-up event
+    #         self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self) # not working line
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -1712,7 +1744,7 @@ class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
         if death_outcome:
             df.at[person_id, 'ri_ALRI_event_recovered_date'] = pd.NaT
             df.at[person_id, 'ri_ALRI_event_death_date'] = date_of_outcome
-            self.sim.schedule_event(PneumoniaDeathEvent(self.module, person_id),
+            self.sim.schedule_event(ALRIDeathEvent(self.module, person_id),
                                     date_of_outcome)
         else:
             df.at[person_id, 'ri_ALRI_event_recovered_date'] = date_of_outcome
@@ -1763,7 +1795,7 @@ class PneumoniaCureEvent(Event, IndividualScopeEventMixin):
                                                           disease_module=self.sim.modules['ALRI'])
 
 
-class PneumoniaDeathEvent(Event, IndividualScopeEventMixin):
+class ALRIDeathEvent(Event, IndividualScopeEventMixin):
     """
     This Event is for the death of someone that is caused by the infection with a pathogen that causes ALRI.
     """
@@ -2080,6 +2112,7 @@ class HSI_IMCI_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEventMixin)
         logger.debug(key='debug', data='HSI_IMCI_Pneumonia_Treatment_level_1: did not run')
         pass
 
+
 class HSI_IMCI_Severe_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -2272,9 +2305,10 @@ class HSI_IMCI_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin)
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.sim.schedule_event(
-                PneumoniaCureEvent(self.sim.modules['ALRI'], person_id),
-                self.sim.date + DateOffset(days=3),
+            self.module.do_treatment(
+                person_id=person_id,
+                prob_of_cure=self.module.parameters[
+                    'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment']
             )
             care_management_info.update({
                 'treatment_plan': 'treatment_for_pneumonia'})
