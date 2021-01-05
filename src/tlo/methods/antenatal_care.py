@@ -2356,6 +2356,11 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             logger.debug(key='message', data=f'Mother {person_id} has been admitted for treatment of a complication of '
                                              f'her pregnancy ')
 
+            # ================================= INITIATE TREATMENT FOR ANAEMIA ========================================
+
+
+
+
             # ======================== INITIATE TREATMENT FOR GESTATIONAL DIABETES (case management) ==================
             if mother.ps_gest_diab == 'uncontrolled' and mother.ac_gest_diab_on_treatment == 'none':
                 df.at[person_id, 'ac_gest_diab_on_treatment'] = 'diet_exercise'
@@ -2377,7 +2382,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             if (mother.ps_htn_disorders == 'gest_htn' or mother.ps_htn_disorders == 'mild_pre_eclamp') and \
                 ~mother.ac_gest_htn_on_treatment:
                 self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
-                df.at[person_id, 'ac_inpatient'] = False
 
                 # done
 
@@ -2386,10 +2390,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
 
                 self.module.initiate_treatment_for_severe_hypertension(person_id, self)
-
-                df.at[person_id, 'ac_inpatient'] = False
-
-                # done
 
             elif mother.ps_htn_disorders == 'severe_pre_eclamp' or mother.ps_htn_disorders == 'eclampsia':
                 if ~mother.ac_gest_htn_on_treatment:
@@ -2401,17 +2401,26 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
                 risk_of_death = params['ac_linear_equations']['ec_spe_death_post_treatment'].predict(
                     df.loc[[person_id]])[person_id]
+                # todo: should risk of stillbirth be applied here? or labour event?
+
                 if self.module.rng.random_sample() < risk_of_death:
                     logger.debug(key='msg', data=f'Mother {person_id} has died following treatment for severe '
                                                  f'pre-eclampsia/eclampsia')
                     self.sim.schedule_event(demography.InstantaneousDeath(self, person_id,
                                                                           cause='maternal'), self.sim.date)
-
-                # delivery
-
-                df.at[person_id, 'ac_inpatient'] = False
+                else:
+                    # TODO: steroids if preterm (will be given by labour event?)
+                    if df.at[person_id, 'ps_htn_disorders'] == 'eclampsia':
+                        df.at[person_id, 'ps_htn_disoders'] = 'severe_pre_eclamp'
+                    df.at[person_id, 'ac_admitted_for_delivery'] = True
+                    # todo: effect of mgso4 should reduce risk of progression from SPE TO EC intrapartum
 
         # INITIATE TREATMENT FOR ANAEMIA
+
+
+
+
+
 
         # INITIATE TREATMENT FOR PROM
 
@@ -2480,52 +2489,61 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 # TODO: comment out non EHP interventions?
                 # TODO: reset df.at[person_id, 'ac_inpatient'] after the correct number of days
 
-        #  ----------------------------- Treatment of Premature Rupture of Membranes-----------------------------------
+            # ======================== ADMISSION FOR DELIVERY (INDUCTION) ============================================
+            # TODO: caesarean?
+            if df.at[person_id, 'ac_admitted_for_immediate_delivery']:
+                    self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+                                                self.sim.date)
+            else:
+                df.at[person_id, 'ac_inpatient'] = False
+
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! REVIEW!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            #  ----------------------------- Treatment of Premature Rupture of Membranes-----------------------------------
             # TODO: this is too over complicated
-            # Here we manage treatment for women who have sought care for PROM but are not yet septic
-            if mother.ps_premature_rupture_of_membranes and ~mother.ps_chorioamnionitis:
+
+            # if mother.ps_premature_rupture_of_membranes and ~mother.ps_chorioamnionitis:
 
                 # Antibiotics are delivered to reduce risk of chorioamnionitis
-                self.module.antibiotics_for_prom(person_id, self)
+           #     self.module.antibiotics_for_prom(person_id, self)
 
                 # For women who are close to term, they are admitted to labour ward immediately and labour is induced
-                if mother.ps_gestational_age_in_weeks > 34:
-                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = True
-                    self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
-                                            self.sim.date)
+           #     if mother.ps_gestational_age_in_weeks > 34:
+           #         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = True
+           #         self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+           #                                 self.sim.date)
                     # todo: increase risk of IP sepsis due to prom/reduced due to abx?
 
                 # Women who are preterm are given steroids to improve fetal lung development as risk of preterm labour
                 # is increased
-                elif mother.ps_gestational_age_in_weeks < 35:
-                    self.module.steroids_following_pprom(person_id, self)
+           #     elif mother.ps_gestational_age_in_weeks < 35:
+           #         self.module.steroids_following_pprom(person_id, self)
 
                     # These women will remain inpatients until GA of 34 weeks and delivery can occur safely
                     # We calculate their risk of developing chorioamnionitis as an inpatient, post antibiotic
                     # treatment
-                    days_until_induction = int((34*7) - (mother.ps_gestational_age_in_weeks * 7))
+           #         days_until_induction = int((34*7) - (mother.ps_gestational_age_in_weeks * 7))
 
-                    preg_sup_param = self.sim.modules['PregnancySupervisor'].parameters
-                    risk_of_chorioamnionitis = preg_sup_param['ps_linear_equations']['chorioamnionitis'].predict(
-                        df.loc[[person_id]])[person_id]
+           #         preg_sup_param = self.sim.modules['PregnancySupervisor'].parameters
+           #         risk_of_chorioamnionitis = preg_sup_param['ps_linear_equations']['chorioamnionitis'].predict(
+           #             df.loc[[person_id]])[person_id]
 
                     # For women who develop chorioamnionitis delivery is indicated to reduce risk of poor fetal/maternal
                     # outcomes
-                    if self.module.rng.random_sample() < risk_of_chorioamnionitis:
-                        df.at[person_id, 'ps_chorioamnionitis'] = True
-                        df.at[person_id, 'ac_admitted_for_immediate_delivery'] = True
-                        self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
-                                                self.sim.date)
+           #         if self.module.rng.random_sample() < risk_of_chorioamnionitis:
+           #             df.at[person_id, 'ps_chorioamnionitis'] = True
+           #             df.at[person_id, 'ac_admitted_for_immediate_delivery'] = True
+           #             self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+           #                                     self.sim.date)
 
-                    else:
-                        self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
-                                                (self.sim.date + DateOffset(days=days_until_induction)))
-
+           #         else:
+           #             self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+           #                                     (self.sim.date + DateOffset(days=days_until_induction)))
             # Treatment of women with PROM who are currently septic
-            if mother.ps_premature_rupture_of_membranes and mother.ps_chorioamnionitis:
-                self.module.antibiotics_for_chorioamnionitis(person_id, self)
-                self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
-                                        self.sim.date)
+           # if mother.ps_premature_rupture_of_membranes and mother.ps_chorioamnionitis:
+           #     self.module.antibiotics_for_chorioamnionitis(person_id, self)
+           #     self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+           #                             self.sim.date) ""
 
         #  --------------------------------- Treatment of Antepartum Haemorrhage -------------------------------------
             # If abruption > 28 weeks --> CS
