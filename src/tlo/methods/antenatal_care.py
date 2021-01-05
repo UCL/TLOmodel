@@ -5,15 +5,18 @@ import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.lm import LinearModel, LinearModelType
+from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
+from tlo.methods import demography
+
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.labour import LabourOnsetEvent
-# from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import HSI_Labour_ElectiveCaesareanSection
 from tlo.methods.tb import HSI_TbScreening
+
 from tlo.util import BitsetHandler
+# from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -76,8 +79,8 @@ class CareOfWomenDuringPregnancy(Module):
             Types.REAL, 'probability a woman will receive the intervention "blood pressure measurement" given that the '
                         'HSI has ran and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_ifa': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "iron and folic acid" given that the HSI has '
-                        'ran and the consumables are available (proxy for clinical quality)'),
+            Types.REAL, 'probability a woman will receive the intervention "iron and folic acid" given that the HSI'
+                        ' has ran and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_bep': Parameter(
             Types.REAL, 'probability a woman will receive the intervention "Balance energy and protein supplements" '
                         'given that the HSI has ran and the consumables are available (proxy for clinical quality)'),
@@ -184,6 +187,10 @@ class CareOfWomenDuringPregnancy(Module):
         'ac_gest_htn_on_treatment': Property(
             Types.BOOL,
             'Whether this woman has been initiated on treatment for gestational hypertension'),
+        'ac_gest_diab_on_treatment': Property(
+            Types.CATEGORICAL,
+            'Treatment this woman is receiving for gestational diabetes', categories=['none', 'diet_exercise', 'orals',
+                                                                                      'insulin']),
         'ac_ectopic_pregnancy_treated': Property(
             Types.BOOL,
             'Whether this woman has received treatment for an ectopic pregnancy'),
@@ -217,9 +224,17 @@ class CareOfWomenDuringPregnancy(Module):
         params = self.parameters
 
         params['ac_linear_equations'] = {
-                'anc_continues': LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    params['prob_anc_continues']),
+
+            'anc_continues': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_anc_continues']),
+
+            'ec_spe_death_post_treatment': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['cfr_severe_pre_eclampsia'],
+                Predictor('ps_htn_disorders').when('eclampsia', params['multiplier_spe_cfr_eclampsia']),
+                Predictor('ac_mag_sulph_treatment').when(True, params['treatment_effect_mag_sulph']),
+                Predictor('ac_iv_anti_htn_treatment').when(True, params['treatment_effect_iv_anti_htn']))
         }
 
     def initialise_population(self, population):
@@ -238,6 +253,7 @@ class CareOfWomenDuringPregnancy(Module):
         df.loc[df.is_alive, 'ac_itn_provided'] = False
         df.loc[df.is_alive, 'ac_ttd_received'] = 0
         df.loc[df.is_alive, 'ac_gest_htn_on_treatment'] = False
+        df.loc[df.is_alive, 'ac_gest_diab_on_treatment'] = 'none'
         df.loc[df.is_alive, 'ac_ectopic_pregnancy_treated'] = False
         df.loc[df.is_alive, 'ac_severe_pre_eclampsia_treatment'] = False
         df.loc[df.is_alive, 'ac_eclampsia_treatment'] = False
@@ -309,6 +325,7 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[child_id, 'ac_itn_provided'] = False
         df.at[child_id, 'ac_ttd_received'] = 0
         df.at[child_id, 'ac_gest_htn_on_treatment'] = False
+        df.at[child_id, 'ac_gest_diab_on_treatment'] = 'none'
         df.at[child_id, 'ac_ectopic_pregnancy_treated'] = False
         df.at[child_id, 'ac_severe_pre_eclampsia_treatment'] = False
         df.at[child_id, 'ac_eclampsia_treatment'] = False
@@ -344,6 +361,8 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[mother_id, 'ac_ttd_received'] = 0
         # TODO: not sure this variable should be reset to 0 (check with tara)
         df.at[mother_id, 'ac_gest_htn_on_treatment'] = False
+        df.at[mother_id, 'ac_gest_diab_on_treatment'] = 'none'
+
         # todo: this will be used postnatally so needs to stay
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -410,7 +429,7 @@ class CareOfWomenDuringPregnancy(Module):
             cons_req_as_footprint=consumables_dipstick)
 
         if outcome_of_request_for_consumables['Item_Code'][item_code_urine_dipstick] and\
-            (self.rng.random_sample() <params['prob_intervention_delivered_urine_ds']):
+            (self.rng.random_sample() < params['prob_intervention_delivered_urine_ds']):
 
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='urine_dipstick_protein',
                                                                        hsi_event=hsi_event):
@@ -1086,8 +1105,6 @@ class CareOfWomenDuringPregnancy(Module):
                                              f'{person_id} did not receive one')
             return 'no_test'
 
-    def initiate_treatment_for_gdm(self, individual_id):
-        pass
 
     def start_iron_and_folic_acid(self, individual_id, hsi_event):
         """This function is called to start women on IFA who are not receiving antenatally following diagnosis of
@@ -1111,8 +1128,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_ifa,
-            to_log=False)
+            cons_req_as_footprint=consumables_ifa)
 
         # Start iron and folic acid treatment
         if outcome_of_request_for_consumables:
@@ -1220,7 +1236,41 @@ class CareOfWomenDuringPregnancy(Module):
 
         # TODO: repeat FBC and transfuse again if still anaemic? unlikely
 
-    def initiate_anti_hypertensive_treatment(self, individual_id, hsi_event):
+    def initiate_maintenance_anti_hypertensive_treatment(self, individual_id, hsi_event):
+        """
+
+        :param individual_id:
+        :param hsi_event:
+        :return:
+        """
+        df = self.sim.population.props
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        approx_days_of_pregnancy = (40 - df.at[individual_id, 'ps_gestational_age_in_weeks']) * 7
+
+        item_code_methyldopa = pd.unique(
+            consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
+
+        consumables_gest_htn_treatment = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_methyldopa: 4 * approx_days_of_pregnancy }}
+
+        # Then query if these consumables are available during this HSI
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=hsi_event,
+            cons_req_as_footprint=consumables_gest_htn_treatment)
+
+        # If they are available then the woman is started on treatment
+        if outcome_of_request_for_consumables['Item_Code'][item_code_methyldopa]:
+            df.at[individual_id, 'ac_gest_htn_on_treatment'] = True
+
+    def initiate_treatment_for_severe_hypertension(self, individual_id, hsi_event ):
+        """
+
+        :param individual_id:
+        :param hsi_event:
+        :return:
+        """
+
         df = self.sim.population.props
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
@@ -1233,50 +1283,56 @@ class CareOfWomenDuringPregnancy(Module):
             consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
         item_code_gloves = pd.unique(
             consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-        item_code_methyldopa = pd.unique(
-            consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
 
         consumables_gest_htn_treatment = {
             'Intervention_Package_Code': {},
-            'Item_Code': {item_code_hydralazine: 1, item_code_wfi: 1, item_code_needle: 1,
-                          item_code_gloves: 1, item_code_methyldopa: 4}}
-
-        # todo: this is one dose of methyldopa but needs to be enough for whole pregnancy?
+            'Item_Code': {item_code_hydralazine: 1,
+                          item_code_wfi: 1,
+                          item_code_gloves: 1,
+                          item_code_needle: 1}}
 
         # Then query if these consumables are available during this HSI
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_gest_htn_treatment,
-            to_log=False)
+            cons_req_as_footprint=consumables_gest_htn_treatment)
 
         # If they are available then the woman is started on treatment
-        if outcome_of_request_for_consumables:
-            df.at[individual_id, 'ac_gest_htn_on_treatment'] = True
+        if (outcome_of_request_for_consumables['Item_Code'][item_code_hydralazine]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code_wfi]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code_needle]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code_gloves]):
 
-            self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=hsi_event,
-                cons_req_as_footprint=consumables_gest_htn_treatment,
-                to_log=True)
+            if df.at[individual_id, 'ps_htn_disorders'] == 'severe_gest_htn':
+                df.at[individual_id, 'ps_htn_disorders'] = 'gest_htn'
+
+            if df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp' or \
+                df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia':
+                logger.debug(key='msg', data=f'Mother {individual_id} has been given intravenous anti-hypertensive as '
+                                             f'part of treatment regime for severe pre-eclampsia/eclampsia')
+                # TODO: treatment parameter to reduce acute risk of death
 
     def treatment_for_severe_pre_eclampsia_or_eclampsia(self, individual_id, cause, hsi_event):
+        """
+
+        :param individual_id:
+        :param cause:
+        :param hsi_event:
+        :return:
+        """
         df = self.sim.population.props
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
-        pkg_code_severe_preeclampsia = pd.unique(
+        pkg_code_eclampsia_and_spe = pd.unique(
             consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
                             'Intervention_Pkg_Code'])[0]
 
-        consumables_needed_spe = {'Intervention_Package_Code': {pkg_code_severe_preeclampsia: 1},
-                                  'Item_Code': {}}
+        all_available = self.get_all_consumables(
+            pkg_codes=[pkg_code_eclampsia_and_spe])
 
-        outcome_of_request_for_consumables_spe = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event, cons_req_as_footprint=consumables_needed_spe, to_log=False)
+        if all_available:
+            df.at[individual_id, 'ac_mag_sulp_treatment'] = True
 
-        if outcome_of_request_for_consumables_spe:
-            self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=hsi_event, cons_req_as_footprint=consumables_needed_spe, to_log=True)
-
-            df.at[individual_id, f'ac_{cause}treatment'] = True
+            # df.at[individual_id, f'ac_{cause}treatment'] = True
 
     def treatment_of_antepartum_haemorrhage(self, individual_id):
         df = self.sim.population.props
@@ -1441,6 +1497,20 @@ class CareOfWomenDuringPregnancy(Module):
                 cons_req_as_footprint=consumables_abx_for_chorio,
                 to_log=True)
 
+    def apply_risk_of_death_following_treatment(self, individual_id):
+        df = self.sim.population.props
+        params = self.parameters
+
+        risk_of_death = params['ac_linear_equations']['ec_spe_death_post_treatment'].predict(
+                        df.loc[[individual_id]])[individual_id]
+
+        if self.rng.random_sample() < risk_of_death:
+            logger.debug(key='msg', data=f'Mother {individual_id} has died following treatment for severe '
+                                         f'pre-eclampsia/eclampsia')
+            self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
+                                                                  cause='maternal'), self.sim.date)
+
+        # stillbirth?
 
 class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
     """ This is the  HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact. It will be scheduled by the
@@ -2273,8 +2343,9 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         # TODO: effect of squeeze (wont use probabilities for these events as less interested)
         # todo: conidtion on not already being on traetment
 
-        # TODO: Antihypertensive, antidiabetics
         # TODO: ensure ac_inpatient = False on dx from inpatient services
+
+        # todo: women may have multiple conditions- dont just turn off inpatient ?
 
         if not mother.is_alive:
             return
@@ -2285,20 +2356,60 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             logger.debug(key='message', data=f'Mother {person_id} has been admitted for treatment of a complication of '
                                              f'her pregnancy ')
 
-            # INITIATE TREATMENT FOR GESTATIONAL DIABETES (case management)
-            if mother.ps_gest_diab:
-                df.at[person_id, 'ac_gest_diab_on_treatment'] = True
+            # ======================== INITIATE TREATMENT FOR GESTATIONAL DIABETES (case management) ==================
+            if mother.ps_gest_diab == 'uncontrolled' and mother.ac_gest_diab_on_treatment == 'none':
+                df.at[person_id, 'ac_gest_diab_on_treatment'] = 'diet_exercise'
+
+                from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
+                self.sim.schedule_event(GestationalDiabetesGlycaemicControlEvent(
+                    self.sim.modules['PregnancySupervisor'], person_id), self.sim.date + DateOffset(days=7))
+
+                check_up_date = self.sim.date + DateOffset(days=28)
+
+                outpatient_checkup = HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(
+                        self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
+                                                                    topen=check_up_date,
+                                                                    tclose=check_up_date + DateOffset(days=3))
                 df.at[person_id, 'ac_inpatient'] = False
 
-        # INITIATE TREATMENT FOR HYPERTENSION
-            if mother.ps_htn_disorders != 'none' and ~mother.ac_gest_htn_on_treatment:
-                self.module.initiate_anti_hypertensive_treatment(person_id, self)
-
-            if mother.ps_htn_disorders == 'severe_pre_eclamp' or mother.ps_htn_disorders == 'eclampsia':
-                cause = mother.ps_htn_disorders
-                self.module.treatment_for_severe_pre_eclampsia_or_eclampsia(person_id, cause, self)
+            # =============================== INITIATE TREATMENT FOR HYPERTENSION ====================================
+            if (mother.ps_htn_disorders == 'gest_htn' or mother.ps_htn_disorders == 'mild_pre_eclamp') and \
+                ~mother.ac_gest_htn_on_treatment:
+                self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
                 df.at[person_id, 'ac_inpatient'] = False
 
+                # done
+
+            elif mother.ps_htn_disorders == 'severe_gest_htn' and ~mother.ac_gest_htn_on_treatment:
+                if ~mother.ac_gest_htn_on_treatment:
+                    self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
+
+                self.module.initiate_treatment_for_severe_hypertension(person_id, self)
+
+                df.at[person_id, 'ac_inpatient'] = False
+
+                # done
+
+            elif mother.ps_htn_disorders == 'severe_pre_eclamp' or mother.ps_htn_disorders == 'eclampsia':
+                if ~mother.ac_gest_htn_on_treatment:
+                    self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
+
+                self.module.treatment_for_severe_pre_eclampsia_or_eclampsia(person_id, cause=mother.ps_htn_disorders,
+                                                                            hsi_event=self)
+                self.module.initiate_treatment_for_severe_hypertension(person_id, self)
+
+                risk_of_death = params['ac_linear_equations']['ec_spe_death_post_treatment'].predict(
+                    df.loc[[person_id]])[person_id]
+                if self.module.rng.random_sample() < risk_of_death:
+                    logger.debug(key='msg', data=f'Mother {person_id} has died following treatment for severe '
+                                                 f'pre-eclampsia/eclampsia')
+                    self.sim.schedule_event(demography.InstantaneousDeath(self, person_id,
+                                                                          cause='maternal'), self.sim.date)
+
+                # delivery
+
+                df.at[person_id, 'ac_inpatient'] = False
 
         # INITIATE TREATMENT FOR ANAEMIA
 
@@ -2421,13 +2532,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         #    if mother.ps_antepartum_haemorrhage:
         #        self.module.treatment_of_antepartum_haemorrhage(person_id)
 
-        # ---------------------------------- Treatment of Severe Pre-eclampsia ---------------------------------------
-            if mother.ps_htn_disorders == 'severe_pre_eclamp' or mother.ps_htn_disorders == 'eclampsia':
-                cause = mother.ps_htn_disorders
-                self.module.treatment_for_severe_pre_eclampsia_or_eclampsia(person_id, cause, self)
-                self.module.initiate_anti_hypertensive_treatment(person_id, self)
-                df.at[person_id, 'ac_inpatient'] = False
-                # TODO: deliver
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare: did not run')
@@ -2435,6 +2539,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
     def not_available(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare: cannot not run'
                                          ' with this configuration')
+
 
 class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientFollowUp(HSI_Event, IndividualScopeEventMixin):
     """"""
@@ -2478,6 +2583,143 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientFollowUp(HSI_Event, Indi
                                                                         tclose=self.sim.date + DateOffset(days=1))
 
 
+
+class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(HSI_Event,
+                                                                                        IndividualScopeEventMixin):
+    """"""
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, CareOfWomenDuringPregnancy)
+
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_AntenatalOutpatientFollowUp'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1   # TODO: this might not take the right persons time
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        mother = df.loc[person_id]
+
+        # todo: discuss with asif
+        from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
+
+        if not mother.is_alive:
+            return
+
+        if mother.is_pregnant and ~mother.la_currently_in_labour:
+
+            # Check only women with GDM who have had treatment initiated arrive at this event
+            assert mother.ps_gest_diab != 'none'
+            assert mother.ac_gest_diab_on_treatment != 'none'
+
+            # Nothing happens to women who arrive at follow up with well controlled GDM (treatment is effective). We now
+            # assume that the treatment they are on (started in AntenatalWardInpatientCare) remains effective for the
+            # length of their pregnancy
+            if mother.ps_gest_diab == 'controlled' and mother.ac_gest_diab_on_treatment != 'none':
+                logger.debug(key='msg', data=f'Mother {person_id} has well controlled GDM on current treatment and '
+                                             f'doesnt need a further check up at present')
+                # todo: give consumables for rest of pregnancy?
+
+            # If the treatment a woman was started on has not controlled her hyperglycemia she will be started on the
+            # next treatment
+            elif mother.ps_gest_diab == 'uncontrolled':
+
+                # Women for whom diet and exercise was not effective in controlling hyperglycemia are started on oral
+                # meds
+                if mother.ac_gest_diab_on_treatment == 'diet_exercise':
+
+                    # Currently we assume women are given enough tablets to last the length of their pregnancy
+                    # todo: separate HSI to give out meds?
+                    approx_days_of_pregnancy = (40 - df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
+
+                    item_code_oral_antidiabetics = pd.unique(
+                        consumables.loc[consumables['Items'] == 'Glibenclamide 5mg_1000_CMST', 'Item_Code'])[0]
+
+                    consumables_dipstick = {
+                        'Intervention_Package_Code': {},
+                        'Item_Code': {item_code_oral_antidiabetics: approx_days_of_pregnancy * 2}} # dose 5mg BD
+
+                    outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                        hsi_event=self,
+                        cons_req_as_footprint=consumables_dipstick)
+
+                    # If the meds are available women are started on that treatment
+                    if outcome_of_request_for_consumables['Item_Code'][item_code_oral_antidiabetics]:
+                        df.at[person_id, 'ac_gest_diab_on_treatment'] = 'orals'
+
+                        # Assume new treatment is effective in controlling blood glucose on intiation
+                        df.at[person_id, 'ps_gest_diab'] = 'controlled'
+
+                        # Schedule GestationalDiabetesGlycaemicControlEvent which determines if this new treatment will
+                        # effectively control blood glucose prior to next follow up
+                        self.sim.schedule_event(GestationalDiabetesGlycaemicControlEvent(
+                            self.sim.modules['PregnancySupervisor'], person_id), self.sim.date + DateOffset(days=7))
+
+                        # Schedule follow-up
+                        check_up_date = self.sim.date + DateOffset(days=28)
+
+                        outpatient_checkup =\
+                            HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(
+                                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
+                                                                            topen=check_up_date,
+                                                                            tclose=check_up_date + DateOffset(days=3))
+
+                # This process is repeated for mothers for whom oral medication is not effectively controlling their
+                # blood sugar- they are started on insulin
+                if mother.ac_gest_diab_on_treatment == 'orals':
+
+                    item_code_oral_insulin = pd.unique(
+                        consumables.loc[consumables['Items'] == 'Insulin soluble 100 IU/ml, 10ml_each_CMS',
+                                        'Item_Code'])[0]
+
+                    consumables_insulin = {
+                        'Intervention_Package_Code': {},
+                        'Item_Code': {item_code_oral_insulin: 5}}  # ???dose
+
+                    outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                        hsi_event=self,
+                        cons_req_as_footprint=consumables_insulin)
+
+                    if outcome_of_request_for_consumables['Item_Code'][item_code_oral_insulin]:
+                        df.at[person_id, 'ac_gest_diab_on_treatment'] = 'insulin'
+                        df.at[person_id, 'ps_gest_diab'] = 'controlled'
+
+                        self.sim.schedule_event(GestationalDiabetesGlycaemicControlEvent(
+                            self.sim.modules['PregnancySupervisor'], person_id), self.sim.date + DateOffset(days=7))
+
+                        check_up_date = self.sim.date + DateOffset(days=28)
+
+                        outpatient_checkup = \
+                            HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(
+                                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
+                                                                            topen=check_up_date,
+                                                                            tclose=check_up_date + DateOffset(days=3))
+
+                if mother.ac_gest_diab_on_treatment == 'insulin':
+                    # As insulin is the 'highest' level management we assume women with poorly controlled blood sugars
+                    # on insulin have a dose amendment and therefore no additional consumables are given
+                    df.at[person_id, 'ps_gest_diab'] = 'controlled'
+
+                    self.sim.schedule_event(GestationalDiabetesGlycaemicControlEvent(
+                        self.sim.modules['PregnancySupervisor'], person_id), self.sim.date + DateOffset(days=7))
+
+                    check_up_date = self.sim.date + DateOffset(days=28)
+
+                    outpatient_checkup = \
+                        HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(
+                            self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
+                                                                        topen=check_up_date,
+                                                                        tclose=check_up_date + DateOffset(days=3))
+
+
 class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, IndividualScopeEventMixin):
     """"""
     def __init__(self, module, person_id):
@@ -2495,43 +2737,38 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        person = df.loc[person_id]
+        mother = df.loc[person_id]
         abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        if not mother.is_alive:
+            return
 
         # We check only women with complications post abortion are sent to this event
         assert abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury', first=True)
 
-        """if person.is_alive:
-            # Women are able to undergo a number of interventions to manage abortion complications including evacuation
-            # of the uterus, antibiotics, pain management and blood transfusion
+        pac_pkg = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Post-abortion case management',
+                                            'Intervention_Pkg_Code'])[0]
 
-            logger.debug(key='message', data=f'Person {person_id} is now undergoing Post Abortion Care at a facility')
+        all_available = self.get_all_consumables(
+            pkg_codes=[pac_pkg])
 
-            # A woman's probability of requiring these interventions is varied by severity of complications and taken
-            # from a study in Malawi
-            if person.ps_spontaneous_abortion_complication == 'mild' \
-                                                              or person.ps_induced_abortion_complication != 'mild':
-                logger.debug(key='message', data=f'Person {person_id} is experiencing mild complications of abortion '
-                                                 f'and will be treated accordingly')
+        if all_available:
+            if abortion_complications.has_any([person_id], 'sepsis', first=True):
 
-                # The intervention package is stored in this function
-                self.module.post_abortion_care_interventions(self, person_id, 'mild')
+                pass
+            # give abx
 
-            if person.ps_spontaneous_abortion_complication == 'moderate' \
-                                                              or person.ps_induced_abortion_complication != 'moderate':
+            if abortion_complications.has_any([person_id], 'haemorrhage', first=True):
+                pass
+            # give blood
 
-                logger.debug(key='message', data=f'Person {person_id} is experiencing moderate complications of '
-                                                 f'abortion and will be treated accordingly')
+            if abortion_complications.has_any([person_id], 'injury', first=True):
+                pass
+            # suture/minor surg?
 
-                self.module.post_abortion_care_interventions(self, person_id, 'moderate')
+        # apply risk of death?
 
-            if person.ps_spontaneous_abortion_complication == 'severe' \
-                                                              or person.ps_induced_abortion_complication != 'severe':
-
-                logger.debug(key='message', data=f'Person {person_id} is experiencing severe complications of abortion'
-                                                 f' and will be treated accordingly')
-
-                self.module.post_abortion_care_interventions(self, person_id, 'severe') """
 
     def did_not_run(self):
         pass
