@@ -97,6 +97,9 @@ class PregnancySupervisor(Module):
             Types.REAL, 'underlying risk of gestational hypertension per month without the impact of risk factors'),
         'rr_gest_htn_calcium': Parameter(
             Types.REAL, 'risk reduction of gestational hypertension for women taking daily calcium supplementation'),
+        'treatment_effect_anti_htns_progression': Parameter(
+            Types.REAL, 'Effect of anti hypertensive medication in reducing the risk of progression from mild to severe'
+                        ' hypertension'),
         'prob_gest_diab_per_month': Parameter(
             Types.REAL, 'underlying risk of gestational diabetes per month without the impact of risk factors'),
         'prob_glycaemic_control_diet_exercise': Parameter(
@@ -419,8 +422,7 @@ class PregnancySupervisor(Module):
             # This equation calculates a risk of dying from eclampsia and is mitigated by treatment
             'eclampsia_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['prob_antenatal_ec_death'],
-                Predictor('ac_eclampsia_treatment').when(True, params['treatment_effect_eclampsia'])),
+                params['prob_antenatal_ec_death']),
 
             # This equation calculates a risk of still birth following eclampsia
             'eclampsia_still_birth': LinearModel(

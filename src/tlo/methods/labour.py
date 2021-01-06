@@ -1191,6 +1191,8 @@ class Labour (Module):
         params = self.parameters
         mni = self.mother_and_newborn_info
 
+        # TODO: RUN CHECK ON WOMEN ADMITTED FROM ANTENATAL PERIOD AND SET COMPLICATIONS ACCORDINGLY
+
         # First we run check to ensure only women who have started the labour process are passed to this function
         assert mni[individual_id]['delivery_setting'] != 'none'
         # Then we check that only complications from the master complication list are passed to the function (checks for
