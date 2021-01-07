@@ -138,6 +138,8 @@ class NewbornOutcomes(Module):
             Types.REAL, 'effect of resuscitation on newborn mortality associated with encephalopathy'),
         'treatment_effect_resuscitation_preterm': Parameter(
             Types.REAL, 'effect of delayed resuscitation on newborn mortality associated with prematurity'),
+        'treatment_effect_abx_prom': Parameter(
+            Types.REAL, 'effect of antibiotics given to mothers experience PROM on risk of newborn sepsis '),
         'cfr_neonatal_sepsis': Parameter(
             Types.REAL, 'case fatality rate for a neonate due to neonatal sepsis'),
         'cfr_mild_enceph': Parameter(
@@ -278,7 +280,8 @@ class NewbornOutcomes(Module):
                 params['prob_early_onset_neonatal_sepsis_day_0'],
                 Predictor('nb_clean_birth').when('True', params['treatment_effect_clean_birth']),
                 Predictor('nb_received_cord_care').when('True', params['treatment_effect_cord_care']),
-                Predictor('nb_early_init_breastfeeding').when(True, params['treatment_effect_early_init_bf'])),
+                Predictor('nb_early_init_breastfeeding').when(True, params['treatment_effect_early_init_bf']),
+                Predictor('received_abx_for_prom', external=True).when('True', params['treatment_effect_abx_prom'])),
 
 
             # This equation is used to determine a newborns risk of encephalopathy
@@ -290,7 +293,9 @@ class NewbornOutcomes(Module):
             # (incomplete lung development)
             'rds_preterm': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['prob_respiratory_distress_preterm']),
+                params['prob_respiratory_distress_preterm'],
+                Predictor('received_corticosteroids', external=True).when('True', params['treatment_effect_steroid_'
+                                                                                         'preterm'])),
 
             # This equation is used to determine a newborns risk of failing to transition after delivery,
             # triggering resuscitation
@@ -463,9 +468,12 @@ class NewbornOutcomes(Module):
 
         # Here we define all the possible external variables used in the linear model
         steroid_status = mni[mother_id]['corticosteroids_given']
+        abx_for_prom = mni[mother_id]['abx_for_prom_given']
 
         # We return a BOOLEAN
-        return self.rng.random_sample(size=1) < eq.predict(person, received_corticosteroids=steroid_status,
+        return self.rng.random_sample(size=1) < eq.predict(person,
+                                                           received_corticosteroids=steroid_status,
+                                                           received_abx_for_prom=abx_for_prom
                                                            )[person_id]
 
     # ========================================= OUTCOME FUNCTIONS  ===================================================

@@ -130,6 +130,8 @@ class PostnatalSupervisor(Module):
             Types.REAL, 'effect of iron and folic acid treatment on risk of folate deficiency '),
         'treatment_effect_early_init_bf': Parameter(
             Types.REAL, 'effect of early initiation of breastfeeding on neonatal sepsis rates '),
+        'treatment_effect_abx_prom': Parameter(
+            Types.REAL, 'effect of early antiobiotics given to a mother with PROM on neonatal sepsis rates '),
         'treatment_effect_inj_abx_sep': Parameter(
             Types.REAL, 'effect of injectable antibiotics on neonatal sepsis mortality'),
         'treatment_effect_supp_care_sep': Parameter(
@@ -345,7 +347,8 @@ class PostnatalSupervisor(Module):
                 params['prob_early_onset_neonatal_sepsis_week_1'],
                 Predictor('nb_clean_birth').when('True', params['treatment_effect_clean_birth']),
                 Predictor('nb_received_cord_care').when('True', params['treatment_effect_cord_care']),
-                Predictor('nb_early_init_breastfeeding').when(True, params['treatment_effect_early_init_bf'])),
+                Predictor('nb_early_init_breastfeeding').when(True, params['treatment_effect_early_init_bf']),
+                Predictor('received_abx_for_prom', external=True).when('True', params['treatment_effect_abx_prom'])),
 
 
             # This equation is used to determine a neonates risk of dying following early onset sepsis in week one.
@@ -1244,7 +1247,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         child_id = int(df.at[individual_id, 'pn_id_most_recent_child'])
-
+        mni = self.sim.modules['Labour'].mother_and_newborn_info
         mother = df.loc[individual_id]
         child = df.loc[child_id]
 
@@ -1396,11 +1399,13 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         # ===============================  NEONATAL COMPLICATIONS IN WEEK ONE  =======================================
         # Newborns may develop early onset sepsis in the first week of life, we apply that risk here
         if child.is_alive:
+            abx_status = mni[individual_id]['abx_for_prom_given']
+
             logger.debug(key='message', data=f'Newborn {child_id} has arrived at PostnatalWeekOneEvent')
 
             # We then apply a risk that this womans newborn will develop sepsis during week one
             risk_eons = params['pn_linear_equations']['early_onset_neonatal_sepsis_week_1'].predict(
-                        df.loc[[child_id]])[child_id]
+                        df.loc[[child_id]], received_abx_for_prom=abx_status)[child_id]
 
             if self.module.rng.random_sample() < risk_eons:
                 df.at[child_id, 'pn_sepsis_early_neonatal'] = True

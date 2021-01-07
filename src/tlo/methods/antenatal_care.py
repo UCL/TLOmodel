@@ -151,6 +151,8 @@ class CareOfWomenDuringPregnancy(Module):
         'treatment_effect_iv_anti_htn': Parameter(
             Types.REAL, 'treatment effectiveness IV antihypertensives on mortality due to severe pre-eclampsia/'
                         'eclampsia'),
+        'prob_still_birth_aph': Parameter(
+            Types.REAL, 'probability of a still birth following APH prior to treatment'),
     }
 
     PROPERTIES = {
@@ -202,6 +204,12 @@ class CareOfWomenDuringPregnancy(Module):
         'ac_received_abx_for_chorioamnionitis': Property(
             Types.BOOL, 'Whether this woman has received antibiotics as treatment for chorioamnionitis '
                         'rupture of membranes'),
+        'ac_mag_sulph_treatment': Property(
+            Types.BOOL, 'Whether this woman has received magnesium sulphate for treatment of severe pre-eclampsia/'
+                        'eclampsia'),
+        'ac_iv_anti_htn_treatment': Property(
+            Types.BOOL, 'Whether this woman has received intravenous antihypertensive drugs for treatment of severe '
+                        'hypertension'),
         'ac_admitted_for_immediate_delivery': Property(
             Types.CATEGORICAL, 'Admission type for women needing urgent delivery in the antenatal period',
             categories=['none', 'induction_now', 'induction_future', 'caesarean_now',
@@ -259,6 +267,8 @@ class CareOfWomenDuringPregnancy(Module):
         df.loc[df.is_alive, 'ac_received_abx_for_prom'] = False
         df.loc[df.is_alive, 'ac_received_steroids_for_pprom'] = False
         df.loc[df.is_alive, 'ac_received_abx_for_chorioamnionitis'] = False
+        df.loc[df.is_alive, 'ac_mag_sulph_treatment'] = False
+        df.loc[df.is_alive, 'ac_iv_anti_htn_treatment'] = False
         df.loc[df.is_alive, 'ac_admitted_for_immediate_delivery'] = 'none'
 
         # This property stores the possible interventions a woman can receive during post abortion care
@@ -336,6 +346,8 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[child_id, 'ac_received_abx_for_prom'] = False
         df.at[child_id, 'ac_received_steroids_for_pprom'] = False
         df.at[child_id, 'ac_received_abx_for_chorioamnionitis'] = False
+        df.at[child_id, 'ac_mag_sulph_treatment'] = False
+        df.at[child_id, 'ac_iv_anti_htn_treatment'] = False
         df.at[child_id, 'ac_admitted_for_immediate_delivery'] = 'none'
 
         # On_birth we run a check at birth to make sure no women exceed 8 visits- this test ensures women are not being
@@ -371,6 +383,8 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[mother_id, 'ac_received_abx_for_prom'] = False
         df.at[mother_id, 'ac_received_steroids_for_pprom'] = False
         df.at[mother_id, 'ac_received_abx_for_chorioamnionitis'] = False
+        df.at[mother_id, 'ac_mag_sulph_treatment'] = False
+        df.at[mother_id, 'ac_iv_anti_htn_treatment'] = False
 
         # TODO: reset abortion treatment variables
         # TODO: do these variables need to remain for length of labour into postnatal period
@@ -487,7 +501,6 @@ class CareOfWomenDuringPregnancy(Module):
                 visit = HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(
                     self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
 
-
             # If this woman has attended less than 4 visits, and is predicted to attend > 4 (as determined via the
             # PregnancySupervisor module when ANC1 is scheduled) her subsequent ANC appointment is automatically
             # scheduled
@@ -538,8 +551,8 @@ class CareOfWomenDuringPregnancy(Module):
             elif visit_number >= 4:
                 # After 4 or more visits we use the linear model equation to determine if the woman will seek care for
                 # her next contact
-                if self.rng.random_sample() < params['ac_linear_equations']['anc_continues'].predict(
-                    df.loc[[individual_id]])[individual_id]:
+                if self.rng.random_sample() < params[
+                    'ac_linear_equations']['anc_continues'].predict(df.loc[[individual_id]])[individual_id]:
                     weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
                                                                                       'ps_gestational_age_in_'
                                                                                       'weeks'])
@@ -580,7 +593,6 @@ class CareOfWomenDuringPregnancy(Module):
                                                             tclose=self.sim.date + DateOffset(days=1))
 
         df.at[individual_id, 'ac_to_be_admitted'] = False
-
 
     # ================================= INTERVENTIONS DELIVERED DURING ANC ============================================
 
@@ -1264,7 +1276,7 @@ class CareOfWomenDuringPregnancy(Module):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
 
-        assert df.at[individual_id, 'ps_anaemia_in_pregnancy'] == 'severe'
+        # assert df.at[individual_id, 'ps_anaemia_in_pregnancy'] == 'severe'
 
         # Check for consumables
         item_code_blood = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
@@ -2392,7 +2404,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         # TODO: ensure ac_inpatient = False on dx from inpatient services
         # todo: induction vs caesarean?
 
-        # todo: women may have multiple conditions- dont just turn off inpatient ?
+        # TODO: IN LABOUR MODULE ENSURE WOMEN WHO ARE ADMITTED FOR DELIVERY WITH COMPLICATIONS HAVE THESE COMPLICATIONS
+        #  CARRIED OVER TO LABOUR (AND TREATMENT DELIVERED HERE HAS EFFECT)
 
         if not mother.is_alive:
             return
@@ -2475,14 +2488,11 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
                                                                     topen=check_up_date,
                                                                     tclose=check_up_date + DateOffset(days=3))
-                df.at[person_id, 'ac_inpatient'] = False
 
             # =============================== INITIATE TREATMENT FOR HYPERTENSION =====================================
             if (mother.ps_htn_disorders == 'gest_htn' or mother.ps_htn_disorders == 'mild_pre_eclamp') and \
                 ~mother.ac_gest_htn_on_treatment:
                 self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
-
-                # done
 
             elif mother.ps_htn_disorders == 'severe_gest_htn' and ~mother.ac_gest_htn_on_treatment:
                 if ~mother.ac_gest_htn_on_treatment:
@@ -2501,8 +2511,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 self.module.initiate_treatment_for_severe_hypertension(person_id, self)
 
             # ========================= INITIATE TREATMENT FOR ANTEPARTUM HAEMORRHAGE =================================
-            # TODO: check these women get blood, steroids in labour
-            # todo:check how risk of death is applied
             if mother.ps_antepartum_haemorrhage != 'none':
                 # ---------------------- APH SECONDARY TO PLACENTAL ABRUPTION -----------------------------------------
                 if mother.ps_placental_abruption and mother.ps_gestational_age_in_weeks >= 28:
@@ -2529,16 +2537,17 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
                 if mother.ps_gestational_age_in_weeks > 34:
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
-                    # todo: if abx given then this should reduce risk of sepsis intrapartum
+                    # todo:APPLY EFFECT OF ANTIBIOTICS ON IP SEPSIS
+
                 elif mother.ps_gestational_age_in_weeks < 35:
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_future'
                     # TODO: inpatient days
-                    # todo: check steroids given in labour to preterm
+                    # todo: ENSURE STEROIDS GIVEN IN LABOUR
                     #  (remove - self.module.steroids_following_pprom(person_id, self))
 
             elif mother.ps_premature_rupture_of_membranes and mother.ps_chorioamnionitis:
                 self.module.antibiotics_for_chorioamnionitis(person_id, self)
-                # todo: abx given here reduce risk of sepsis death in labour
+                # todo:APPLY EFFECT OF ANTIBIOTICS ON IP SEPSIS DEATH IN LABOUR
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
 
             # ======================== APPLY RISK OF DEATH (WHERE APPROPRIATE) =======================================
@@ -2556,39 +2565,27 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
             else:
                 # ======================== ADMISSION FOR DELIVERY (INDUCTION) ========================================
-                # TODO: force delivery at hospital or greater
-
+                # TODO: WOMEN MAY GO INTO LABOUR WHILST WAITING FOR ADMISSION
+                # TODO: ENSURE THEY ARE ON THE RIGHT PATHWAY
                 if df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'induction_now':
                     self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
                                             self.sim.date)
 
                 elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_now':
-                    pass
-                    # elective_section = HSI_Labour_ElectiveCaesareanSection(
-                    #    self.sim.modules['Labour'], person_id=person_id)
+                    self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+                                            self.sim.date)
 
-                    # self.sim.modules['HealthSystem'].schedule_hsi_event(elective_section, priority=0,
-                    #                                                    topen=self.sim.date,
-                    #                                                    tclose=self.sim.date + DateOffset(days=1))
+                elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future' or \
+                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'induction_future':
 
-                elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future':
-                    pass
-            #    if 37 > mother.ps_gestational_age_in_weeks >= 28:
-            #        days_until_safe_for_cs = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
-            #    elif mother.ps_gestational_age_in_weeks >= 37:
-            #        days_until_safe_for_cs = 1
+                    if mother.ps_gestational_age_in_weeks < 37:
+                        days_until_safe_for_cs = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
+                    else:
+                        days_until_safe_for_cs = 1
 
-            #    section_date = self.sim.date + DateOffset(days=days_until_safe_for_cs)
-
-            #    elective_section = HSI_Labour_ElectiveCaesareanSection(
-            #        self.sim.modules['Labour'], person_id=person_id)
-
-            #    self.sim.modules['HealthSystem'].schedule_hsi_event(elective_section, priority=0,
-            #                                                        topen=section_date,
-            #                                                        tclose=section_date + DateOffset(days=1))
-
-                elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'induction_future':
-                    pass
+                    admission_date = self.sim.date + DateOffset(days=days_until_safe_for_cs)
+                    self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+                                            admission_date)
 
                 else:
                     df.at[person_id, 'ac_inpatient'] = False
@@ -2862,6 +2859,8 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         mother = df.loc[person_id]
+
+        # TODO: DIFFERENCE BETWEEN PRE AND POST RUPTURE - PROBS DONT HAVE TIME RIGHT NOW
 
         assert mother.ps_ectopic_pregnancy
 
