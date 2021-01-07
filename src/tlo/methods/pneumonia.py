@@ -2509,6 +2509,7 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
         # get single row of dataframe (but not a series) ----------------
         index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
         individual_child = df.loc[[index_children_with_alri[0]]]
+        alri_check = df.loc[index_children_with_alri]
 
         logger.debug(key='individual_check',
                      data=individual_child,
@@ -2561,8 +2562,6 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
                     description='Summary of complications in a year')
 
         alri_count = df.groupby(df.ri_ALRI_disease_type).size()
-        alri_check = df.loc[index_children_with_alri]
-
         print(alri_count)
 
         # Reset the counters and the date_last_run --------------------
