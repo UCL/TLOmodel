@@ -19,6 +19,8 @@ from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_PlanC,
 )
 from tlo.methods.pneumonia import (
+    HSI_iCCM_Pneumonia_Treatment_level_0,
+    HSI_iCCM_Severe_Pneumonia_Treatment_level_0,
     HSI_IMCI_No_Pneumonia_Treatment_level_1,
     HSI_IMCI_Pneumonia_Treatment_level_1,
     HSI_IMCI_Severe_Pneumonia_Treatment_level_1,
@@ -342,7 +344,8 @@ class DxAlgorithmChild(Module):
                 # schedule the events following the correct classification and treatment assignment ---------
                 if care_plan_result and df.at[
                     person_id, 'ri_health_worker_iCCM_classification'] == 'non-severe_pneumonia':
-                    schedule_hsi(hsi_event=HSI_iCCM_Pneumonia_Treatment_level_0(person_id=person_id, module=self),
+                    schedule_hsi(hsi_event=HSI_iCCM_Pneumonia_Treatment_level_0(person_id=person_id,
+                                                                                   module=self.sim.modules['ALRI']),
                                  priority=0,
                                  topen=self.sim.date,
                                  tclose=None
@@ -353,7 +356,8 @@ class DxAlgorithmChild(Module):
                 if care_plan_result and df.at[
                     person_id, 'ri_health_worker_iCCM_classification'] == 'severe_pneumonia':
                     schedule_hsi(hsi_event=HSI_iCCM_Severe_Pneumonia_Treatment_level_0(
-                        person_id=person_id, module=self),
+                        person_id=person_id,
+                        module=self.sim.modules['ALRI']),
                         priority=0,
                         topen=self.sim.date,
                         tclose=None

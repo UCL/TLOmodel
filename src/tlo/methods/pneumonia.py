@@ -2473,6 +2473,8 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEven
     def did_not_run(self):
         logger.debug(key='debug', data='HSI_IMCI_Severe_Pneumonia_Treatment_level_2: did not run')
         pass
+
+
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
