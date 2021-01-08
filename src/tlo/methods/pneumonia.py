@@ -317,6 +317,18 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'death rate from ALRI'
                       ),
+        'r_death_from_ALRI_due_to_sepsis':
+            Parameter(Types.REAL,
+                      'death rate from ALRI due to sepsis'
+                      ),
+        'r_death_from_ALRI_due_to_respiratory_failure':
+            Parameter(Types.REAL,
+                      'death rate from ALRI due to respiratory failure'
+                      ),
+        'r_death_from_ALRI_due_to_meningitis':
+            Parameter(Types.REAL,
+                      'death rate from ALRI due to respiratory failure'
+                      ),
         'rr_death_ALRI_age12to23mo':
             Parameter(Types.REAL,
                       'death rate of ALRI for children aged 12 to 23 months'
@@ -627,7 +639,6 @@ class ALRI(Module):
                       'probability of seeking follow-up care after treatment failure'
                       ),
 
-
     }
 
     PROPERTIES = {
@@ -642,7 +653,7 @@ class ALRI(Module):
                      'Attributable pathogen for the current ALRI event',
                      categories=list(pathogens) + ['not_applicable']
                      ),
-        # ---- The bacterial pathogen which is the attributed secondary infection ----
+        # ---- The bacterial pathogen which is the attributed co-/secondary infection ----
         'ri_secondary_bacterial_pathogen':
             Property(Types.CATEGORICAL,
                      'Secondary bacterial pathogen for the current ALRI event',
@@ -1237,6 +1248,7 @@ class ALRI(Module):
         df = self.sim.population.props
 
         # ---- Key Current Status Classification Properties ----
+        df.at[child_id, 'ri_ALRI_status'] = False
         df.at[child_id, 'ri_primary_ALRI_pathogen'] = 'not_applicable'
         df.at[child_id, 'ri_current_ALRI_symptoms'] = 'not_applicable'
         df.at[child_id, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
@@ -1288,65 +1300,17 @@ class ALRI(Module):
 
         return daly_values_by_pathogen
 
-    # def look_up_consumables(self):
-    #     """Look up and store the consumables used in each of the HSI."""
-    #
-    #     def get_code(package=None, item=None):
-    #         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-    #         if package is not None:
-    #             condition = consumables['Intervention_Pkg'] == package
-    #             column = 'Intervention_Pkg_Code'
-    #         else:
-    #             condition = consumables['Items'] == item
-    #             column = 'Item_Code'
-    #         return pd.unique(consumables.loc[condition, column])[0]
-    #
-    #     def add_consumable(_event, _package, _item):
-    #         self.consumables_used_in_hsi[_event] = {
-    #             'Intervention_Package_Code': _package,
-    #             'Item_Code': _item
-    #         }
-    #
-    #     uncomplicated_pneumonia_intervention_Pkg = get_code(package='Pneumonia treatment (children)')
-    #     severe_pneumonia_intervention_Pkg = get_code(package='Treatment of severe diarrhea')
-    #     paracetamol_tablet_item = get_code(item='Paracetamol, tablet, 100 mg')
-    #     salbutamol_tablet_item = get_code(item='Salbutamol, tablet, 4 mg')
-    #     salbutamol_syrup_item = get_code(item='Salbutamol, syrup, 2 mg/5 ml')
-    #     salbutamol_sulphate_item = get_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST')
-    #     amoxycillin_suspension_item = get_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST')
-    #     amoxycillin_item = get_code(item='Amoxycillin 250mg_1000_CMST')
-    #     benzylpenicillin_item = get_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST')
-    #     gentamicin_solution_item = get_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')
-    #     ceftriaxone_item = get_code(item='Ceftriaxone 1g, PFR_each_CMST')
-    #     nasogastric_tube_item = get_code(item='Tube, nasogastric CH 8_each_CMST')
-    #     oxygen_item = get_code(item='Oxygen, 1000 liters, primarily with oxygen concentrators')
-    #     prednisolone_item = get_code(item='Prednisolone 5mg_100_CMST')
-    #     seringe_item = get_code(item='Syringe, needle + swab')
-    #     iv_cannula_item = get_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')
-    #     x_ray_item = get_code(item='X-ray')
-    #
-    #     # -- Assemble the footprints for each HSI:
-    #     add_consumable('HSI_iCCM_Pneumonia_Treatment_level_0', {}, {amoxycillin_item: 1, paracetamol_tablet_item: 1})
-    #     add_consumable('HSI_iCCM_Severe_Pneumonia_Treatment_level_0', {}, {amoxycillin_item: 1,
-    #                                                                        paracetamol_tablet_item: 1})
-    #     add_consumable('HSI_IMCI_No_Pneumonia_Treatment_level_1', {}, {})
-    #     add_consumable('HSI_IMCI_Pneumonia_Treatment_level_1', {uncomplicated_pneumonia_intervention_Pkg: 1}, {})
-    #     add_consumable('HSI_IMCI_Severe_Pneumonia_Treatment_level_1', {}, {paracetamol_tablet_item: 1,
-    #                                                                        amoxycillin_item: 1})
-    #     add_consumable('HSI_IMCI_Pneumonia_Treatment_level_2', {uncomplicated_pneumonia_intervention_Pkg: 1}, {})
-    #     add_consumable('HSI_IMCI_Severe_Pneumonia_Treatment_level_2', {severe_pneumonia_intervention_Pkg: 1}, {})
-
     def do_treatment(self, person_id, prob_of_cure):
         """Helper function that enacts the effects of a treatment to ALRI caused by a pathogen.
         It will only do something if the ALRI is caused by a pathogen (this module). It will not allow any effect
          if the respiratory infection is caused by another module.
         * Log the treatment date
-        * Prevents this episode of diarrhoea from causing a death
+        * Prevents this episode of ALRI
+         from causing a death
         * Schedules the cure event, at which symptoms are alleviated.
         """
         df = self.sim.population.props
         person = df.loc[person_id]
-        p = self.parameters
 
         if not person.is_alive:
             return
@@ -1461,21 +1425,16 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
         for person_id in person_id_that_acquire_pathogen:
             # ----------------------- Allocate a pathogen to the person ----------------------
             p_by_pathogen = probs_of_acquiring_pathogen.loc[person_id].values
-#             # print(sum(p_by_pathogen))
             normalised_p_by_pathogen = p_by_pathogen / sum(p_by_pathogen)
-#             # print(sum(normalised_p_by_pathogen))
             pathogen = rng.choice(probs_of_acquiring_pathogen.columns, p=normalised_p_by_pathogen)
 
             # ----------------- Determine the ALRI disease type for this case -----------------
             alri_disease_type_for_this_person = m.proportions_of_ALRI_disease_types_by_pathogen[pathogen]
-#             # print(alri_disease_type_for_this_person)
-
             # ------- Allocate a secondary bacterial pathogen in co-infection with primary viral pneumonia -------
             bacterial_patho_in_viral_pneumonia_coinfection = 'not_applicable'
             if pathogen in self.module.viral_patho:
                 if alri_disease_type_for_this_person == 'viral_pneumonia':
                     pneumonia_will_have_bacterial_coinfection = rng.rand() < p['prob_viral_pneumonia_bacterial_coinfection']
-#                     # print(pneumonia_will_have_bacterial_coinfection)
                     if pneumonia_will_have_bacterial_coinfection:
                         bacterial_coinfection_pathogen = rng.choice(list(self.module.bacterial_patho),
                                                                     p=p['porportion_bacterial_coinfection_pathogen'])
@@ -1490,8 +1449,6 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
                 bacterial_patho_in_viral_pneumonia_coinfection = 'not_applicable'
             if pathogen in self.module.fungal_patho:
                 bacterial_patho_in_viral_pneumonia_coinfection = 'none'
-
-#             # print(alri_disease_type_for_this_person, bacterial_patho_in_viral_pneumonia_coinfection)
 
             # ----------------------- Allocate a date of onset of ALRI ----------------------
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
@@ -1545,8 +1502,6 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         df.at[person_id, 'ri_ALRI_event_date_of_onset'] = self.sim.date
         df.at[person_id, 'ri_current_ALRI_complications'] = 'none'  # all disease start as non-severe
 
-#         # print(self.disease)
-
         # assert self.disease is not None
 
         # ----------------------- Allocate symptoms to onset of ALRI ----------------------
@@ -1571,34 +1526,18 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         # date for recovery with uncomplicated ALRI
         date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
 
-        # # ------ Add the event of a SECONDARY BACTERIAL SUPERINFECTION - in viral pneumonia and bronchiolitis ------
-        # prob_bacterial_superinfection = m.prob_secondary_bacterial_infection.predict(df.loc[[person_id]]).values[0]
-        # if rng.rand() < prob_bacterial_superinfection:
-        #     # choose a secondary bacterial pathogen
-        #     secondary_bacterial_pathogen = rng.choice(list(self.module.bacterial_patho),
-        #                                               p=p['porportion_bacterial_coinfection_pathogen'])
-        #     # date of onset of secondary bacterial infection
-        #     date_onset_secondary_bacterial = self.module.sim.date + DateOffset(
-        #         days=np.random.randint(1, high=self.duration_in_days))  # todo: has to be less than full duration
-        #
-        #     self.sim.schedule_event(BacterialSuperinfectionEvent(
-        #         self.module, person_id,
-        #         symptoms=symptoms_for_this_person, duration_in_days=self.duration_in_days,
-        #         bacterial_pathogen=secondary_bacterial_pathogen), date=date_onset_secondary_bacterial)
-
         # COMPLICATIONS ------------------------------------------------------------------------------------------
         complications_for_this_person = list()
         for complication in self.module.complications:
             prob_developing_each_complication = m.risk_of_developing_ALRI_complications[complication].predict(df.loc[[person_id]]).values[0]
             if rng.rand() < prob_developing_each_complication:
                 complications_for_this_person.append(complication)
-#         # print(complications_for_this_person)
 
         if len(complications_for_this_person) != 0:
             for i in complications_for_this_person:
                 date_onset_complications = self.module.sim.date + DateOffset(
                     days=np.random.randint(3, high=self.duration_in_days))
-#                 # print(i, date_onset_complications)
+
                 self.sim.schedule_event(PneumoniaWithComplicationsEvent(
                     self.module, person_id, duration_in_days=self.duration_in_days, symptoms=symptoms_for_this_person,
                     complication=complications_for_this_person), date_onset_complications)
@@ -1623,58 +1562,6 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         else:
             age_grp = '5+y'
         self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
-
-
-# class BacterialSuperinfectionEvent(Event, IndividualScopeEventMixin):
-#     """
-#         This Event is for the onset of a secondary bacterial superinfection
-#          in children with primary viral pneumonia or bronchiolitis
-#         """
-#
-#     def __init__(self, module, person_id, symptoms, duration_in_days, bacterial_pathogen):
-#         super().__init__(module, person_id=person_id)
-#         self.bacterial_pathogen = bacterial_pathogen
-#         self.symptoms = symptoms
-#         self.duration_in_days = duration_in_days
-#
-#     def apply(self, person_id):
-#         df = self.sim.population.props
-#         m = self.module
-#         rng = self.module.rng
-#
-#         # The event should not run if the person is not currently alive
-#         if not df.at[person_id, 'is_alive']:
-#             return
-#
-#         # Update the properties in the dataframe:
-#         df.at[person_id, 'ri_secondary_bacterial_pathogen'] = self.bacterial_pathogen
-#         df.at[person_id, 'ri_ALRI_disease_type'] = 'bacterial_pneumonia'
-#         df.at[person_id, 'ri_secondary_bacterial_infection_date'] = self.sim.date
-#
-#         all_symptoms_for_this_person = list(self.symptoms)
-#
-#         # Update the symptoms from bacterial cause
-#         added_bacterial_cause_symptoms = list()
-#         bacterial_pneumonia_add_symptoms = m.prob_symptoms_uncomplicated_ALRI['bacterial_pneumonia']
-#         for symptom, prob in bacterial_pneumonia_add_symptoms.items():
-#             if rng.rand() < prob:
-#                 added_bacterial_cause_symptoms.append(symptom)
-#                 for i in added_bacterial_cause_symptoms:
-#                     # add symptoms from complications to the list
-#                     all_symptoms_for_this_person.append(
-#                         i) if i not in all_symptoms_for_this_person \
-#                         else all_symptoms_for_this_person
-#
-#         # Onset symptoms:
-#         for symptom in added_bacterial_cause_symptoms:
-#             self.module.sim.modules['SymptomManager'].change_symptom(
-#                 person_id=person_id,
-#                 symptom_string=symptom,
-#                 add_or_remove='+',
-#                 disease_module=self.module,
-#                 duration_in_days=self.duration_in_days
-#             )
-#         df.at[person_id, 'ri_current_ALRI_symptoms'] = added_bacterial_cause_symptoms
 
 
 class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
@@ -1709,7 +1596,7 @@ class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
         possible_symptoms_by_complication = {key: val for key, val in
                                              self.module.prob_extra_symptoms_complications.items()
                                              if key in list(self.complication)}
-#         # print(possible_symptoms_by_complication)
+
         symptoms_from_complications = list()
         for complication in possible_symptoms_by_complication:
             for symptom, prob in possible_symptoms_by_complication[complication].items():
@@ -1721,7 +1608,6 @@ class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
                         i) if i not in all_symptoms_for_this_person \
                         else all_symptoms_for_this_person
 
-#         # print(all_symptoms_for_this_person)
         df.at[person_id, 'ri_current_ALRI_symptoms'] = all_symptoms_for_this_person
 
         for symptom in all_symptoms_for_this_person:
@@ -1810,7 +1696,8 @@ class ALRIDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Confirm that this is event is occurring during a current episode of diarrhoea
+        # Confirm that this is event is occurring during a current episode of ALRI
+
         assert (
             (df.at[person_id, 'ri_ALRI_event_date_of_onset']) <=
             self.sim.date <=
