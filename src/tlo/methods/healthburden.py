@@ -83,7 +83,10 @@ class HealthBurden(Module):
         pass
 
     def on_simulation_end(self):
-        logger.debug('This is being called at the end of the simulation. Time to output to the logs....')
+        logger.debug(
+            key="message",
+            data="This is being called at the end of the simulation. Time to output to the logs...."
+        )
 
         # Label and concantenate YLL and YLD dataframes
         assert self.YearsLifeLost.index.equals(self.multi_index)
@@ -100,11 +103,12 @@ class HealthBurden(Module):
         dalys = dalys.reset_index()
 
         # 2) Go line-by-line and dump to the log
-        for line_num in range(len(dalys)):
-            line_as_dict = dalys.loc[line_num].to_dict()
-            year = line_as_dict.pop('year')
-            year_as_date = pd.Timestamp(year=year, month=12, day=31)  # log output for the year on 31st December
-            logger.info('%s|DALYS|%s', year_as_date, line_as_dict)
+        for index, row in dalys.iterrows():
+            logger.info(
+                key='dalys',
+                data=row.to_dict(),
+                description='dataframe of dalys, broken down by year, sex, age-group'
+            )
 
     def get_daly_weight(self, sequlae_code):
         """
@@ -202,7 +206,10 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         # Running the DALY Logger
-        logger.debug('The DALY Logger is occuring now! %s', self.sim.date)
+        logger.debug(
+            key="message",
+            data="The DALY Logger is occuring now!"
+        )
 
         # Get the population dataframe
         df = self.sim.population.props

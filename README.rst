@@ -4,9 +4,9 @@ Overview
 
 .. start-badges
 
-.. image:: https://travis-ci.com/UCL/TLOmodel.svg?token=UKPSYZnjNU6sajG8DWb9&branch=master
-    :alt: Travis-CI Build Status
-    :target: https://travis-ci.com/UCL/TLOmodel
+.. image:: https://github.com/UCL/TLOmodel/workflows/CI/badge.svg
+    :alt: GitHub Actions Build Status
+    :target: https://github.com/UCL/TLOmodel/actions?query=workflow%3ACI
 
 .. end-badges
 

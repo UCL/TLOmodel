@@ -267,7 +267,7 @@ def test_check_progression_through_stages_is_happening():
 
     # check that there are now some people in each of the later stages:
     df = sim.population.props
-    assert not pd.isnull(df.bc_status).any()
+    assert not pd.isnull(df.bc_status[~pd.isna(df.date_of_birth)]).any()
     assert (df.loc[df.is_alive & (df.age_years >= 15)].bc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of bladder cancer
@@ -316,7 +316,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     # check that there are now some people in each of the later stages:
     df = sim.population.props
     assert len(df.loc[df.is_alive & (df.bc_status != 'none')]) > 0
-    assert not pd.isnull(df.bc_status).any()
+    assert not pd.isnull(df.bc_status[~pd.isna(df.date_of_birth)]).any()
     assert (df.loc[df.is_alive].bc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of bladder cancer

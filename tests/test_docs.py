@@ -98,14 +98,8 @@ def test_extract_bases():
     # [class name, class object, line number]
     offspring = classes[-1]
     name, obj = offspring[0:2]
-    expected = "**Base classes:**\n\n"
-    expected += ("Base class #1: `tests.test_docs_data.tlo.a.Father "
-                 "<./tests.test_docs_data.tlo.a.html"
-                 "#tests.test_docs_data.tlo.a.Father>`_\n\n")
-    expected += ("Base class #2: `tests.test_docs_data.tlo.a.Mother "
-                 "<./tests.test_docs_data.tlo.a.html"
-                 "#tests.test_docs_data.tlo.a.Mother>`_\n\n")
-    assert expected == extract_bases(name, obj)
+    expected = "Bases: :class:`tests.test_docs_data.tlo.a.Father`, :class:`tests.test_docs_data.tlo.a.Mother`"
+    assert expected == extract_bases(name, obj).strip()
 
 
 def ignore_this_test_write_rst_file():
@@ -160,9 +154,7 @@ def test_get_base_string():
     employee_name = employee_info[0]
     employee_object = employee_info[1]
     result = get_base_string(employee_name, employee_object, person_object)
-    expected = ("`tests.test_docs_data.tlo.a.Person "
-                "<./tests.test_docs_data.tlo.a.html#"
-                "tests.test_docs_data.tlo.a.Person>`_")
+    expected = ":class:`tests.test_docs_data.tlo.a.Person`"
     assert result == expected
 
 

@@ -116,8 +116,8 @@ class Symptom:
 
 
 class DuplicateSymptomWithNonIdenticalPropertiesError(Exception):
-    print("A symptom with this name has been registered already but with different properties")
-    pass
+    def __init__(self):
+        super().__init__("A symptom with this name has been registered already but with different properties")
 
 
 class SymptomManager(Module):
@@ -199,15 +199,15 @@ class SymptomManager(Module):
 
         for symptom in symptoms_to_register:
             if symptom.name not in self.symptom_names:
-                self.all_registered_symptoms = self.all_registered_symptoms.union({symptom})
-                self.symptom_names = self.symptom_names.union({symptom.name})
+                self.all_registered_symptoms.add(symptom)
+                self.symptom_names.add(symptom.name)
             elif symptom not in self.all_registered_symptoms:
                 raise DuplicateSymptomWithNonIdenticalPropertiesError
 
     def pre_initialise_population(self):
         """Define the properties for each symptom"""
         SymptomManager.PROPERTIES = dict()
-        for symptom_name in self.symptom_names:
+        for symptom_name in sorted(self.symptom_names):
             symptom_column_name = self.get_column_name_for_symptom(symptom_name)
             SymptomManager.PROPERTIES[symptom_column_name] = Property(Types.INT, f'Presence of symptom {symptom_name}')
 
@@ -361,7 +361,7 @@ class SymptomManager(Module):
         :return: list of strings for the symptoms that are currently being experienced
         """
 
-        assert isinstance(person_id, (int, np.int64)), 'person_id must be a single integer for one particular person'
+        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
 
         df = self.sim.population.props
         assert df.at[person_id, 'is_alive'], "The person is not alive"
@@ -385,7 +385,7 @@ class SymptomManager(Module):
         :param disease_module:
         :return: list of strings for the disease module name
         """
-        assert isinstance(person_id, (int, np.int64)), 'person_id must be a single integer for one particular person'
+        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
         assert isinstance(symptom_string, str), 'symptom_string must be a string'
 
         df = self.sim.population.props
@@ -404,7 +404,7 @@ class SymptomManager(Module):
         """
         df = self.sim.population.props
 
-        assert isinstance(person_id, (int, np.int64)), 'person_id must be a single integer for one particular person'
+        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
         assert df.at[person_id, 'is_alive'], "The person is not alive"
         assert disease_module.name in ([self.name] + self.recognised_module_names), \
             "Disease Module Name is not recognised"
@@ -448,7 +448,7 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
         # strip out those who do not have this symptom being caused by this disease_module
         for person_id in people_to_resolve:
             if self.symptom_string not in self.module.has_what(person_id, disease_module=self.disease_module):
-                people_to_resolve = people_to_resolve.remove(person_id)
+                people_to_resolve.remove(person_id)
 
         # run the chg_symptom function
         if people_to_resolve:
