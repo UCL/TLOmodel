@@ -153,6 +153,11 @@ class CareOfWomenDuringPregnancy(Module):
                         'eclampsia'),
         'prob_still_birth_aph': Parameter(
             Types.REAL, 'probability of a still birth following APH prior to treatment'),
+        'cfr_aph': Parameter(
+            Types.REAL, 'case fatality rate antepartum haemorrhage'),
+        'treatment_effect_bt_aph': Parameter(
+            Types.REAL, 'treatment effect of blood transfusion on antepartum haemorrhage mortality '),
+
     }
 
     PROPERTIES = {
@@ -210,6 +215,8 @@ class CareOfWomenDuringPregnancy(Module):
         'ac_iv_anti_htn_treatment': Property(
             Types.BOOL, 'Whether this woman has received intravenous antihypertensive drugs for treatment of severe '
                         'hypertension'),
+        'ac_received_blood_transfusion': Property(
+            Types.BOOL, 'Whether this woman has received a blood transfusion antenatally'),
         'ac_admitted_for_immediate_delivery': Property(
             Types.CATEGORICAL, 'Admission type for women needing urgent delivery in the antenatal period',
             categories=['none', 'induction_now', 'induction_future', 'caesarean_now',
@@ -244,7 +251,13 @@ class CareOfWomenDuringPregnancy(Module):
                 params['cfr_severe_pre_eclampsia'],
                 Predictor('ps_htn_disorders').when('eclampsia', params['multiplier_spe_cfr_eclampsia']),
                 Predictor('ac_mag_sulph_treatment').when(True, params['treatment_effect_mag_sulph']),
-                Predictor('ac_iv_anti_htn_treatment').when(True, params['treatment_effect_iv_anti_htn']))
+                Predictor('ac_iv_anti_htn_treatment').when(True, params['treatment_effect_iv_anti_htn'])),
+
+            'aph_death_post_treatment': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['cfr_aph'],
+                Predictor('ac_received_blood_transfusion').when(True, params['treatment_effect_bt_aph'])),
+
         }
 
     def initialise_population(self, population):
@@ -269,6 +282,7 @@ class CareOfWomenDuringPregnancy(Module):
         df.loc[df.is_alive, 'ac_received_abx_for_chorioamnionitis'] = False
         df.loc[df.is_alive, 'ac_mag_sulph_treatment'] = False
         df.loc[df.is_alive, 'ac_iv_anti_htn_treatment'] = False
+        df.loc[df.is_alive, 'ac_received_blood_transfusion'] = False
         df.loc[df.is_alive, 'ac_admitted_for_immediate_delivery'] = 'none'
 
         # This property stores the possible interventions a woman can receive during post abortion care
@@ -348,6 +362,7 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[child_id, 'ac_received_abx_for_chorioamnionitis'] = False
         df.at[child_id, 'ac_mag_sulph_treatment'] = False
         df.at[child_id, 'ac_iv_anti_htn_treatment'] = False
+        df.at[child_id, 'ac_received_blood_transfusion'] = False
         df.at[child_id, 'ac_admitted_for_immediate_delivery'] = 'none'
 
         # On_birth we run a check at birth to make sure no women exceed 8 visits- this test ensures women are not being
@@ -551,8 +566,8 @@ class CareOfWomenDuringPregnancy(Module):
             elif visit_number >= 4:
                 # After 4 or more visits we use the linear model equation to determine if the woman will seek care for
                 # her next contact
-                if self.rng.random_sample() < params[
-                    'ac_linear_equations']['anc_continues'].predict(df.loc[[individual_id]])[individual_id]:
+                if self.rng.random_sample() < params[ 'ac_linear_equations']['anc_continues'].predict(
+                    df.loc[[individual_id]])[individual_id]:
                     weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
                                                                                       'ps_gestational_age_in_'
                                                                                       'weeks'])
@@ -1401,7 +1416,7 @@ class CareOfWomenDuringPregnancy(Module):
             consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
                             'Intervention_Pkg_Code'])[0]
 
-        all_available = self.get_all_consumables(
+        all_available = hsi_event.get_all_consumables(
             pkg_codes=[pkg_code_eclampsia_and_spe])
 
         if all_available:
@@ -1548,7 +1563,7 @@ class CareOfWomenDuringPregnancy(Module):
         if mother.ps_antepartum_haemorrhage and (mother.ac_admitted_for_immediate_delivery == 'induction_future' or
                                                  mother.ac_admitted_for_immediate_delivery == 'caesarean_future'):
 
-            risk_of_death = params['ac_linear_equations']['ec_spe_death_post_treatment'].predict(
+            risk_of_death = params['ac_linear_equations']['aph_death_post_treatment'].predict(
                 df.loc[[individual_id]])[individual_id]
 
             if self.rng.random_sample() < risk_of_death:
