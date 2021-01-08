@@ -20,14 +20,23 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 # %% Run the Simulation
-
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 2)
-popsize = 500
+pop_size = 500
+seed = 124
+
+log_config = {
+    "filename": "imci_analysis",   # The name of the output file (a timestamp will be appended).
+    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+        "*": logging.CRITICAL,  # Asterisk matches all loggers - we set the default level to WARNING
+        "tlo.methods.pneumonia": logging.INFO,
+        # "tlo.methods.dx_algorithm_child": logging.INFO
+    }
+}
 
 # add file handler for the purpose of logging
-sim = Simulation(start_date=start_date)
-# sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -45,5 +54,5 @@ sim.register(pneumonia.ALRI(resourcefilepath=resourcefilepath))
 sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(0)
-sim.make_initial_population(n=popsize)
+sim.make_initial_population(n=pop_size)
 sim.simulate(end_date=end_date)
