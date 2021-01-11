@@ -9,7 +9,7 @@ from tlo import logging
 
 from tlo import Date, Simulation
 from tlo.methods import contraception, demography, pneumonia, enhanced_lifestyle, labour, healthsystem, \
-    symptommanager, healthseekingbehaviour, pregnancy_supervisor, dx_algorithm_child
+    symptommanager, healthseekingbehaviour, pregnancy_supervisor, dx_algorithm_child, healthburden
 
 # %%
 outputpath = Path("./outputs")
@@ -43,10 +43,9 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-
-# sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(pneumonia.ALRI(resourcefilepath=resourcefilepath))
