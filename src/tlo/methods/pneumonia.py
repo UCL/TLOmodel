@@ -1600,6 +1600,19 @@ class ALRINaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         # Check that the person is not scheduled to die in this episode
         assert pd.isnull(person.ri_ALRI_event_death_date)
 
+        # clear other properties
+        df.at[person_id, 'ri_current_ALRI_status'] = False
+        # ---- Key Current Status Classification Properties ----
+        df.at[person_id, 'ri_primary_ALRI_pathogen'] = 'not_applicable'
+        df.at[person_id, 'ri_current_ALRI_symptoms'] = 'not_applicable'
+        df.at[person_id, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
+        df.at[person_id, 'ri_ALRI_disease_type'] = 'not_applicable'
+        df.at[person_id, 'ri_ALRI_complications'] = 'not_applicable'
+
+        # clear the treatment prperties
+        df.at[person_id, 'ri_ALRI_treatment'] = False
+        df.at[person_id, 'ri_ALRI_tx_start_date'] = pd.NaT
+
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['ALRI'])
@@ -2434,7 +2447,7 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
 
     def __init__(self, module):
         # This event to occur every year
-        self.repeat = 7
+        self.repeat = 1
         super().__init__(module, frequency=DateOffset(days=self.repeat))
         self.date_last_run = self.sim.date
 
@@ -2455,41 +2468,64 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
         #
         # get single row of dataframe (but not a series) ----------------
         index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
-        individual_child = df.loc[[index_children_with_alri[0]]]
-        alri_check = df.loc[index_children_with_alri]
+        index_children = df.index[df.is_alive & (df.age_exact_years < 5)]
+        # individual_child = df.loc[[index_children_with_alri[0]]]
+        # alri_check = df.loc[index_children_with_alri]
+        # logger.info(key='individual_check',
+        #             data=individual_child,
+        #             description='following an individual through simulation')
         #
-        # logger.info('%s|person_one|%s',
-        #            self.sim.date,
-        #            df.iloc[index_children_with_alri[0], 140:170].to_dict())
+        #
+        # properties_for_logging = df.loc[index_children_with_alri[0], [
+        #                     'ri_current_ALRI_status',
+        #                     'ri_primary_ALRI_pathogen',
+        #                     'ri_secondary_bacterial_pathogen',
+        #                     'ri_ALRI_disease_type',
+        #                     'ri_ALRI_complications',
+        #                     'ri_current_ALRI_symptoms',
+        #                     'ri_ALRI_event_date_of_onset',
+        #                     'ri_ALRI_event_recovered_date',
+        #                     'ri_ALRI_severe_complication_date',
+        #                     'ri_ALRI_event_death_dat',
+        #                     'ri_ALRI_tx_start_date',
+        #                     'ri_end_of_last_alri_episode'
+        #                 ]].to_dict()
+        # #
+        # logger.info(key='one_child',
+        #             data=properties_for_logging,
+        #             description='one person')
 
-        # logger.info('%s|person_one|%s',
-        #             self.sim.date,
-        #             df.loc[index_children_with_alri[0], [
-        #                 'ri_current_ALRI_status',
-        #                 'ri_primary_ALRI_pathogen',
-        #                 'ri_secondary_bacterial_pathogen',
-        #                 'ri_ALRI_disease_type',
-        #                 'ri_ALRI_complications',
-        #                 'ri_current_ALRI_symptoms',
-        #                 'ri_ALRI_event_date_of_onset',
-        #                 'ri_ALRI_event_recovered_date',
-        #                 'ri_ALRI_severe_complication_date',
-        #                 'ri_ALRI_event_death_dat',
-        #                 'ri_ALRI_tx_start_date',
-        #                 'ri_end_of_last_alri_episode'
-        #             ]].to_dict())
+        logger.info('%s|person_one|%s',
+                    self.sim.date,
+                    df.loc[index_children[0], [
+                        'age_exact_years',
+                        'ri_current_ALRI_status',
+                        'ri_primary_ALRI_pathogen',
+                        'ri_secondary_bacterial_pathogen',
+                        'ri_ALRI_disease_type',
+                        'ri_ALRI_complications',
+                        'ri_current_ALRI_symptoms',
+                        'ri_ALRI_event_date_of_onset',
+                        'ri_ALRI_event_recovered_date',
+                        'ri_ALRI_severe_complication_date',
+                        'ri_ALRI_event_death_dat',
+                        'ri_ALRI_tx_start_date',
+                        'ri_end_of_last_alri_episode',
+                        # 'ri_IMCI_classification_as_gold',
+                        # 'ri_health_worker_IMCI_classification'
+                    ]].to_dict())
 
-        logger.info(key='individual_check',
-                    data=individual_child,
-                    description='following an individual through simulation')
-
-        # log the information on complications ----------------
-        index_alri_with_complications = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status &
-                                                 (df.ri_ALRI_complications != 'none')]
-        # make a df with children with alri complications as the columns
-        df_alri_complications = pd.DataFrame(index=index_alri_with_complications,
-                                             data=bool(),
-                                             columns=list(self.module.complications))
+        # logger.info(key='individual_check',
+        #             data=individual_child,
+        #             description='following an individual through simulation')
+        #
+#         # log the information on complications ----------------
+#         index_alri_with_complications = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status &
+#                                                  (df.ri_ALRI_complications != 'none')]
+#         # make a df with children with alri complications as the columns
+#         df_alri_complications = pd.DataFrame(index=index_alri_with_complications,
+#                                              data=bool(),
+#                                              columns=list(self.module.complications))
 #         for i in index_alri_with_complications:
 #             if 'respiratory_failure' in df.ri_ALRI_complications[i]:
 #                 update_df = pd.DataFrame({'respiratory_failure': True}, index=[i])
@@ -2509,21 +2545,18 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
 #             if 'meningitis' in df.ri_ALRI_complications[i]:
 #                 update_df = pd.DataFrame({'meningitis': True}, index=[i])
 #                 df_alri_complications.update(update_df)
-# #         print(df_alri_complications)
 #
 #         count_alri_complications = {}
 #         for complic in df_alri_complications.columns:
 #             count_complication = df_alri_complications[complic].sum()
 #             update_dict = {f'{complic}': count_complication}
 #             count_alri_complications.update(update_dict)
-# #         print(count_alri_complications)
 #
 #         complications_summary = {
 #             'count': count_alri_complications,
 #             'number_of_children_with_complications': len(index_alri_with_complications),
 #             'number_of_children_with_and_without_complications': len(index_children_with_alri)
 #         }
-# #         print(complications_summary)
 #
 #         logger.info(key='alri_complications',
 #                     data=complications_summary,
