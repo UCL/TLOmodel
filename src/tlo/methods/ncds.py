@@ -147,14 +147,13 @@ class Ncds(Module):
         # Check that every value has been read-in successfully
         p = self.parameters
         for param_name, param_type in self.PARAMETERS.items():
-            if param_name != 'interval_between_polls': # this param is manually entered in the code
+            if param_name != 'interval_between_polls':  # this param is manually entered in the code
                 param_name = f'nc_{param_name}'
                 assert param_name in p, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
                 assert param_name is not None, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
 
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -180,6 +179,9 @@ class Ncds(Module):
         self.incident_case_tracker_zeros = dict()
         for age_range in self.age_index:
             self.incident_case_tracker_zeros[f'{age_range}'] = copy.deepcopy(zeros_counter)
+
+        self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_index, columns=self.conditions)
+        self.df_incidence_tracker = copy.deepcopy(self.df_incidence_tracker_zeros)
 
     def initialise_simulation(self, sim):
         """Schedule:
@@ -212,13 +214,13 @@ class Ncds(Module):
             self.lms_onset[condition] = self.lms_dict[condition]
 
             self.lms_dict[condition] = self.build_linear_model(condition,
-                                                                  self.parameters['interval_between_polls'],
-                                                                  lm_type='removal')
+                                                               self.parameters['interval_between_polls'],
+                                                               lm_type='removal')
             self.lms_removal[condition] = self.lms_dict[condition]
 
             self.lms_dict[condition] = self.build_linear_model(condition,
-                                                                  self.parameters['interval_between_polls'],
-                                                                  lm_type='death')
+                                                               self.parameters['interval_between_polls'],
+                                                               lm_type='death')
             self.lms_death[condition] = self.lms_dict[condition]
 
         for event in self.events:
@@ -388,6 +390,8 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
 
+        # df_inc = self.module.df_incidence_tracker_zeros
+
         # Determine onset/removal of conditions
         for condition in self.module.conditions:
 
@@ -399,7 +403,11 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # -------------------------------------------------------------------------------------------
             # Add this incident case to the tracker
-            # TODO: make this use df-logic with groupby
+            # TODO: make this use df-logic with groupby  (still in progress)
+
+            #df_inc[condition] = df[acquires_condition].groupby('age_range')[condition].size()
+            #self.module.df_incidence_tracker[condition] = self.module.df_incidence_tracker[condition].add(df[acquires_condition].groupby('age_range')[condition].count(), fill_value=0)
+            #self.module.df_incidence_tracker[condition] = self.module.df_incidence_tracker.set_index(f'{condition}').add(df_inc.set_index(f'{condition}'), fill_value=0).reset_index()
 
             for personal_idx in idx_acquires_condition:
                 age_range = df.loc[personal_idx, ['age_range']].age_range
@@ -421,7 +429,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             eligible_population = df.is_alive & df[condition]
             selected_to_die = self.module.lms_death[condition].predict(df.loc[eligible_population], rng)
-            if selected_to_die.any(): # catch in case no one dies
+            if selected_to_die.any():  # catch in case no one dies
                 idx_selected_to_die = selected_to_die[selected_to_die].index
 
                 for person_id in idx_selected_to_die:
@@ -429,12 +437,16 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         InstantaneousDeath(self.module, person_id, f"{condition_name}"), self.sim.date
                     )
 
+        # add temporary df to incidence tracker
+        # df_inc = df_inc.reset_index()
+        #self.module.df_incidence_tracker = self.module.df_incidence_tracker.add(df_inc).combine_first(self.module.df_incidence_tracker).combine_first(df_inc).astype(int)
+
         # Determine occurrence of events
         for event in self.module.events:
 
             eligible_population_for_event = df.is_alive
             has_event = self.module.lms_event_onset[event].predict(df.loc[eligible_population_for_event], rng)
-            if has_event.any(): # catch in case no one has event
+            if has_event.any():  # catch in case no one has event
                 idx_has_event = has_event[has_event].index
 
                 for person_id in idx_has_event:
@@ -472,7 +484,7 @@ class NcdEvent(Event, IndividualScopeEventMixin):
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
-        self.module.eventsTracker[f'{self.event_name}_events'] +=1
+        self.module.eventsTracker[f'{self.event_name}_events'] += 1
         self.sim.population.props.at[person_id, f'{self.event}'] = True
 
         # TODO: @britta add functionality to add symptoms
@@ -484,7 +496,6 @@ class NcdEvent(Event, IndividualScopeEventMixin):
         #    add_or_remove='+',
         #    symptom_string='Damage_From_Stroke'
         # )
-
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -509,7 +520,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Convert the list of timestamps into a number of timestamps
         # and check that all the dates have occurred since self.date_last_run
-        # TODO: @britta: reconfigure incidence tracker based on df-logic above
+        # TODO: @britta: reconfigure incidence tracker based on df-logic above  (still in progress)
         counts = copy.deepcopy(self.module.incident_case_tracker_zeros)
 
         for age_grp in self.module.incident_case_tracker.keys():
@@ -526,9 +537,6 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.date_last_run = self.sim.date
 
         # Output the person-years lived by single year of age in the past year
-        # py = self.module.calc_py_lived_in_last_year()
-        # logger.info(key='person_years', data=py.to_dict())
-
         df = self.sim.population.props
         delta = pd.DateOffset(years=1)
         for cond in self.module.conditions:
@@ -581,18 +589,26 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
         # Counter for number of co-morbidities
-        # TODO: @britta: reconfigure using groupby
-        df = population.props
-        # restrict df to alive and aged >=20
-        df_comorbidities = df[df.is_alive & (df.age_years >= 20)]
-        # restrict df to list of conditions
-        df_comorbidities = df_comorbidities[
-            df_comorbidities.columns[df_comorbidities.columns.isin(self.module.conditions)]]
-        # calculate number of conditions by row
-        df_comorbidities['n_conditions'] = df_comorbidities.sum(axis=1)
-        n_comorbidities = df_comorbidities['n_conditions'].value_counts()
-        prop_comorbidities = n_comorbidities / len(df[(df.is_alive & (df.age_years >= 20))])
+        def multimorbidities_in_a_groupby_ready_for_logging(df, something, groupbylist):
+            dfx = df.groupby(groupbylist).apply(lambda dft: pd.Series(
+                {'count': dft[something].count()}))
+            pr = dfx['count'] / dfx['count'].groupby(level=[0, 1]).transform("sum")
 
-        logger.info(key='mm_prevalence',
-                    data=prop_comorbidities,
-                    description='annual summary of multi-morbidities')
+            # create into a dict with keys as strings
+            pr = pr.reset_index()
+            pr['flat_index'] = ''
+            for i in range(len(pr)):
+                pr.at[i, 'flat_index'] = '__'.join([f"{col}={pr.at[i, col]}" for col in groupbylist])
+            pr = pr.set_index('flat_index', drop=True)
+            pr = pr.drop(columns=groupbylist)
+            return pr.to_dict()
+
+        df = population.props
+        df_comorbidities = df[df.is_alive]
+        df_comorbidities['n_conditions'] = df_comorbidities.loc[:, df_comorbidities.columns.isin(self.module.conditions)].sum(axis=1)
+
+        logger.info(key='mm_prevalence_by_age_sex',
+                    description='annual summary of multi-morbidities by age and sex',
+                    data={'data': multimorbidities_in_a_groupby_ready_for_logging(df_comorbidities, 'n_conditions',
+                                                                                     ['age_range', 'sex', 'n_conditions'])}
+                    )
