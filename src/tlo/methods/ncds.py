@@ -502,6 +502,17 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Reset the counter
         self.module.df_incidence_tracker = copy.deepcopy(self.module.df_incidence_tracker_zeros)
 
+        def age_cats(ages_in_years):
+            dem = demography.Demography()
+            AGE_RANGE_CATEGORIES = dem.AGE_RANGE_CATEGORIES
+            AGE_RANGE_LOOKUP = dem.AGE_RANGE_LOOKUP
+
+            age_cats = pd.Series(
+                pd.Categorical(ages_in_years.map(AGE_RANGE_LOOKUP),
+                               categories=AGE_RANGE_CATEGORIES, ordered=True)
+            )
+            return age_cats
+
         # Output the person-years lived by single year of age in the past year
         df = self.sim.population.props
         delta = pd.DateOffset(years=1)
@@ -510,6 +521,8 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             # demography module to calculate person-years lived without the condition
             mask = (df.is_alive & ~df[f'{cond}'])
             py = de.Demography.calc_py_lived_in_last_year(self, delta, mask)
+            py['age_range'] = age_cats(py.index)
+            py = py.groupby('age_range').sum()
             logger.info(key=f'person_years_{cond}', data=py.to_dict())
 
         # Make some summary statistics for prevalence by age/sex for each condition
