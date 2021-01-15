@@ -253,8 +253,12 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 if 'RTI' in self.sim.modules:
                     df = self.sim.population.props
                     road_traffic_injuries = self.sim.modules['RTI']
-                    df.loc[person_id, 'rt_diagnosed'] = True
-                    road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
+                    # Check they haven't died from another source
+                    if df.loc[person_id, 'cause_of_death'] != '':
+                        pass
+                    else:
+                        df.loc[person_id, 'rt_diagnosed'] = True
+                        road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
 
 
 
@@ -458,40 +462,45 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             if 'severe_trauma' in symptoms:
 
                 df = self.sim.population.props
-                consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+                # Check they haven't died from another source
+                if df.loc[person_id, 'cause_of_death'] != '':
+                    pass
+                else:
+                    consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-                columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                           'rt_injury_7', 'rt_injury_8']
-                persons_injuries = df.loc[[person_id], columns]
+                    columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                               'rt_injury_7', 'rt_injury_8']
+                    persons_injuries = df.loc[[person_id], columns]
 
-                # Request multiple x-rays here, note that the diagradio requirement for the appointment footprint
-                # is dealt with in the RTI module itself.
-                road_traffic_injuries = self.sim.modules['RTI']
-                fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
-                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, fracture_codes)
-                if counts >= 1:
+                    # Request multiple x-rays here, note that the diagradio requirement for the appointment footprint
+                    # is dealt with in the RTI module itself.
+                    road_traffic_injuries = self.sim.modules['RTI']
+                    fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
+                    idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, fracture_codes)
+                    if counts >= 1:
 
-                    item_code_x_ray_film = pd.unique(
-                        consumables.loc[consumables['Items'] ==
-                                        "Monochromatic blue senstive X-ray Film, screen SizeSize: 30cm x 40cm",
-                                        'Item_Code'])[0]
-                    consumables_x_ray = {
-                        'Intervention_Package_Code': dict(),
-                        'Item_Code': {item_code_x_ray_film: counts}}
-                    is_cons_available_1 = self.sim.modules['HealthSystem'].request_consumables(
-                        hsi_event=self,
-                        cons_req_as_footprint=consumables_x_ray,
-                        to_log=False)
+                        item_code_x_ray_film = pd.unique(
+                            consumables.loc[consumables['Items'] ==
+                                            "Monochromatic blue senstive X-ray Film, screen SizeSize: 30cm x 40cm",
+                                            'Item_Code'])[0]
+                        consumables_x_ray = {
+                            'Intervention_Package_Code': dict(),
+                            'Item_Code': {item_code_x_ray_film: counts}}
+                        is_cons_available_1 = self.sim.modules['HealthSystem'].request_consumables(
+                            hsi_event=self,
+                            cons_req_as_footprint=consumables_x_ray,
+                            to_log=False)
 
-                    if is_cons_available_1:
-                        logger.debug(
-                            'This facility has x-ray capability which has been used to diagnose person %d.',
-                            person_id)
-                        logger.debug(f'Person %d had x-rays for their {counts} fractures')
-                    else:
-                        logger.debug('Total amount of x-rays required for person %d unavailable', person_id)
-                df.loc[person_id, 'rt_diagnosed'] = True
-                road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
+                        if is_cons_available_1:
+                            logger.debug(
+                                'This facility has x-ray capability which has been used to diagnose person %d.',
+                                person_id)
+                            logger.debug(f'Person %d had x-rays for their {counts} fractures')
+                        else:
+                            logger.debug('Total amount of x-rays required for person %d unavailable', person_id)
+                    df.loc[person_id, 'rt_diagnosed'] = True
+
+                    road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
 
     def did_not_run(self):
         logger.debug(key='message',

@@ -12,11 +12,19 @@ from tlo.methods import (
     rti,
     dx_algorithm_adult,
     dx_algorithm_child,
+    antenatal_care,
+    contraception,
+    labour,
+    newborn_outcomes,
+    pregnancy_supervisor,
 )
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 import ast
+
+
+
 
 # =============================== Analysis description ========================================================
 # This analysis file has essentially become the model fitting analysis, seeing what happens when we run the model
@@ -36,12 +44,13 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 2
+yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 10000
+pop_size = 100000
 nsim = 5
+
 # Create a variable whether to save figures or not
 save_figures = True
 # Create lists to store information from each simulation in
@@ -63,11 +72,14 @@ number_of_deaths_no_med = []
 number_of_deaths_unavailable_med = []
 # Incidences
 incidences_of_rti = []
+incidences_of_rti_in_children = []
 incidences_of_death = []
 incidences_of_death_pre_hospital = []
 incidences_of_death_post_med = []
 incidences_of_death_no_med = []
 incidences_of_death_unavailable_med = []
+incidences_of_rti_yearly_average = []
+incidences_of_death_yearly_average = []
 incidences_of_injuries = []
 inc_amputations = []
 inc_burns = []
@@ -94,6 +106,7 @@ number_of_injured_body_locations = []
 inj_loc_data = []
 inj_cat_data = []
 per_injury_fatal = []
+number_of_injuries_per_sim = []
 # Flows between model states
 rti_model_flow_summary = []
 # Health seeking behaviour
@@ -122,6 +135,14 @@ per_sim_tetanus = []
 per_sim_pain_med = []
 # Deaths in 2010
 deaths_2010 = []
+# Injuries in 2010
+injuries_in_2010 = []
+# Number of injuries per year
+injuries_per_year = []
+# Number of prehospital deaths in 2010
+number_of_prehospital_deaths_2010 = []
+
+
 for i in range(0, nsim):
     sim = Simulation(start_date=start_date)
     # We register all modules in a single call to the register method, calling once with multiple
@@ -136,7 +157,12 @@ for i in range(0, nsim):
         dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        rti.RTI(resourcefilepath=resourcefilepath)
+        rti.RTI(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
     )
     logfile = sim.configure_logging(filename="LogFile")
     # create and run the simulation
@@ -180,6 +206,11 @@ for i in range(0, nsim):
         log_df['tlo.methods.rti']['summary_1m']['number deaths without med'].sum())
     number_of_deaths_unavailable_med.append(
         log_df['tlo.methods.rti']['summary_1m']['number deaths unavailable med'].sum())
+    # Get the number of prehospital deaths in 2010
+    log_df['tlo.methods.rti']['summary_1m']['year'] = log_df['tlo.methods.rti']['summary_1m']['date'].dt.year
+    grouped_by_year = log_df['tlo.methods.rti']['summary_1m'].groupby('year')
+    number_of_prehospital_deaths_2010.append(grouped_by_year.get_group(2010)['number immediate deaths'].sum())
+
     # Get the percentage of those who sought health care, have made the logger output 'none_injured' if no one
     # was injured that month, hence the conditional append statement below
     percent_sought_healthcare.append(
@@ -208,14 +239,27 @@ for i in range(0, nsim):
         log_df['tlo.methods.rti']['summary_1m']
         ['incidence of death due to unavailable med per 100,000'].tolist()
     )
+    # Get incidences of death average per year
+    log_df['tlo.methods.rti']['summary_1m']['year'] = log_df['tlo.methods.rti']['summary_1m']['date'].dt.year
+    incidences_of_death_yearly_average.append(
+        log_df['tlo.methods.rti']['summary_1m'].groupby('year').mean()['incidence of rti death per 100,000'].tolist())
+    # Get the incidence of rtis average per year
+    incidences_of_rti_yearly_average.append(
+        log_df['tlo.methods.rti']['summary_1m'].groupby('year').mean()['incidence of rti per 100,000'].tolist())
+    # Get the incidence of rtis in children per year
+    incidences_of_rti_in_children.append(
+        log_df['tlo.methods.rti']['summary_1m']['incidence of rti per 100,000 in children'].tolist())
     # Get the incidence of injuries per 100,000
     incidences_of_injuries.append(log_df['tlo.methods.rti']['summary_1m']['injury incidence per 100,000'].tolist())
     # Get information on the deaths that occurred in the sim
     deaths_df = log_df['tlo.methods.demography']['death']
-    rti_deaths = len(deaths_df.loc[deaths_df['cause'] != 'Other'])
+    rti_death_causes = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death']
+    rti_deaths = len(deaths_df.loc[deaths_df['cause'].isin(rti_death_causes)])
+    # Get the number of pre-hospitl deaths to extrapolate the total number of injuries
+
     # Get the number of deaths in 2010
     first_year_deaths = deaths_df.loc[deaths_df['date'] < pd.datetime(2011, 1, 1)]
-    first_year_rti_deaths = len(first_year_deaths.loc[first_year_deaths['cause'] != 'Other'])
+    first_year_rti_deaths = len(first_year_deaths.loc[first_year_deaths['cause'].isin(rti_death_causes)])
     deaths_2010.append(first_year_rti_deaths)
     try:
         # Get the breakdown of road traffic injuries deaths by context by percentage
@@ -248,6 +292,13 @@ for i in range(0, nsim):
     # Get information on the number of injuries each person was given
     ninj_list = injury_info['Number_of_injuries'].tolist()
     ninj_list = [int(item) for sublist in ninj_list for item in sublist]
+    ninj_data = {'date': injury_info['date'],
+                 'ninj': [sum(list) for list in injury_info['Number_of_injuries'].tolist()]}
+    ninj_df = pd.DataFrame(data=ninj_data)
+    ninj_df['year'] = pd.DatetimeIndex(ninj_df['date']).year
+    number_of_injuries_per_sim.append(ninj_df['ninj'].sum())
+    injuries_in_2010.append(ninj_df.loc[ninj_df['year'] == 2010]['ninj'].sum())
+    injuries_per_year.append(ninj_df.groupby('year').sum()['ninj'].tolist())
     injury_number_distribution = log_df['tlo.methods.rti']['number_of_injuries'].drop('date', axis=1).iloc[-1].tolist()
     ninj_list_sorted = [ninj_list.count(i) for i in [1, 2, 3, 4, 5, 6, 7, 8]]
     number_of_injured_body_locations.append(ninj_list_sorted)
@@ -355,7 +406,6 @@ def age_breakdown(age_array):
             sixty1_to_sixty5, sixty6_to_seventy, seventy1_to_seventy5, seventy6_to_eighty, eighty1_to_eighty5, \
             eighty6_to_ninety, ninety_plus]
 
-
 # Plot the per injury fatality produced by the model and compare to the gbd data
 data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
 gbd_death_data = data.loc[data['measure'] == 'Deaths']
@@ -443,6 +493,26 @@ plt.title(f"Outcomes for road traffic injuries in the model"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig('outputs/Demographics_of_RTI/Outcome_Of_Crashes.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot average age of those in RTI compared to other sources
+
+mean_age = np.mean(sim_age_range)
+std_age = np.std(sim_age_range)
+police_ave_age = 32
+police_std_age = 12
+queen_elizabeth_central_hospital_mean = 32
+queen_elizabeth_central_hospital_std = 12
+plt.bar(np.arange(3), [mean_age, police_ave_age, queen_elizabeth_central_hospital_mean],
+        yerr = [std_age, police_std_age, queen_elizabeth_central_hospital_std], color='wheat')
+plt.xticks(np.arange(3), ['Model', 'Police data', 'Queen Elizabeth Central \n Hospital data'])
+plt.ylabel('Age')
+plt.title(f"Average age with RTIs compared to police and hospital data"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Age_average_comp_to_pol_hos.png', bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -639,6 +709,40 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
+# Plot the incidence predicted by the model compared to the GBD data
+data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
+data = data.loc[data['metric'] == 'Rate']
+data = data.loc[data['measure'] == 'Deaths']
+data = data.loc[data['year'] > 2009]
+gbd_time = ['2010-01-01', '2011-01-01', '2012-01-01', '2013-01-01',
+            '2014-01-01', '2015-01-01', '2016-01-01', '2017-01-01',
+            '2018-01-01', '2019-01-01']
+yearly_average_deaths = [float(sum(col)) / len(col) for col in zip(*incidences_of_death_yearly_average)]
+std_yearly_death_incidence = [np.std(i) for i in zip(*incidences_of_death_yearly_average)]
+yearly_death_inc_upper = [inc + (1.96 * std) / nsim for inc, std in zip(yearly_average_deaths,
+                                                                        std_yearly_death_incidence)]
+yearly_death_inc_lower = [inc - (1.96 * std) / nsim for inc, std in zip(yearly_average_deaths,
+                                                                        std_yearly_death_incidence)]
+log_df['tlo.methods.rti']['summary_1m']['year'] = log_df['tlo.methods.rti']['summary_1m']['date'].dt.year
+time = pd.to_datetime(gbd_time[:yearsrun])
+plt.plot(time, yearly_average_deaths, color='lightsalmon', label='Model', zorder=2)
+plt.fill_between(time.tolist(), yearly_death_inc_upper, yearly_death_inc_lower, alpha=0.5, color='lightsalmon',
+                 label='95% C.I. model', zorder=1)
+plt.plot(pd.to_datetime(gbd_time), data.val, color='mediumaquamarine', label='GBD', zorder=2)
+plt.fill_between(pd.to_datetime(gbd_time), data.upper, data.lower, alpha=0.5, color='mediumaquamarine',
+                 label='95% C.I. GBD', zorder=1)
+plt.xlabel('Year')
+plt.ylabel('Incidence of Death')
+plt.legend()
+plt.title(f"Incidence of death over time, model compared to GBD estimate"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Incidence_model_over_time.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+
 # Plot the incidences of death showing the specific causes:
 average_deaths_no_med = [float(sum(col)) / len(col) for col in zip(*incidences_of_death_no_med)]
 std_deaths_no_med = [np.std(j) for j in zip(*incidences_of_death_no_med)]
@@ -681,6 +785,24 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
+# Plot the incidence of pre-hospital mortality from the model compared to police record data
+# Results from Schlottmann et al. DOI:10.4314/mmj.v29i4.4
+incidence_of_on_scene_mortality_police = 6
+plt.bar(np.arange(2), [incidence_of_on_scene_mortality_police, overall_av_death_pre_hospital],
+        color='mediumaquamarine')
+plt.xticks(np.arange(2), ['Estimated incidence from'
+                          '\n'
+                          'police data',
+                          'Model incidence'])
+plt.ylabel('Incidence per 100,000 person years')
+plt.title(f"Average incidence of deaths due to RTI"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Incidence_of_on_scene_mortality_comp_to_police.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 # Plot the incidences of deaths from in hospital and prehospital deaths, i.e. deaths that would be picked up by
 # the hospital of the police and compare the model output to that of Samuel et al. 2012, who gave probably the
 # best estimate from Malawi specific data for the incidence of death
@@ -720,17 +842,23 @@ else:
 # Plot the incidence of deaths produced by the model compared to the estimates from the Malawian hospital registry data,
 # Samuel et al. estimated incidence of death, and the WHO estimated incidence of death
 hospital_registry_inc = 5.1
+data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
+data = data.loc[data['measure'] == 'Deaths']
+data = data.loc[data['metric'] == 'Rate']
+data = data.loc[data['year'] > 2009]
+gbd_average_2010_to_2019 = data['val'].mean()
 police_estimated_inc = 7.5
 who_est = 35
-plt.bar(np.arange(5),
+plt.bar(np.arange(6),
         [hospital_registry_inc,  # Estimated incidence of death from hospital data
          police_estimated_inc,  # Estimated incidence of death from police data
+         gbd_average_2010_to_2019,  # Estimated incidence of death from GBD Malawi data 2010 - 2019
          samuel_incidence_of_rti_death,  # Estimated incidence of death from capture recapture method
          who_est,  # Estimated incidence of death from the WHO
          overall_av_death_inc_sim,  # Models predicted incidence of death
          ],  # remaining deaths
-        color=['lightsalmon', 'lightsteelblue', 'wheat', 'olive', 'blue'])
-plt.xticks(np.arange(5),
+        color=['lightsalmon', 'lightsteelblue', 'mediumaquamarine', 'wheat', 'olive', 'blue'])
+plt.xticks(np.arange(6),
            ['Estimated'
             '\n'
             'incidence'
@@ -751,6 +879,15 @@ plt.xticks(np.arange(5),
             'police '
             '\n'
             'records',
+            'Estimated'
+            '\n'
+            'incidence'
+            '\n'
+            'of death'
+            '\n'
+            'from GBD'
+            '\n'
+            '2010-2019',
             'Estimated'
             '\n'
             'incidence '
@@ -788,7 +925,7 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
-# Plot the number of deaths predicted by the model compared to the GBD data
+# Plot the number of deaths and number of injuries predicted by the model compared to the GBD data
 GBD_death_data = pd.read_csv('resources/ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv')
 road_data = GBD_death_data.loc[GBD_death_data['cause_name'] == 'Road injuries']
 road_data_2010 = road_data.loc[road_data['year'] == 2010]
@@ -796,6 +933,13 @@ Malawi_Pop_2010 = pd.read_csv('resources/ResourceFile_Population_2010.csv')
 Malawi_pop_size_2010 = sum(Malawi_Pop_2010['Count'])
 scaler_to_pop_size = Malawi_pop_size_2010 / pop_size
 scaled_2010_deaths = np.mean(deaths_2010) * scaler_to_pop_size
+injury_number_data = pd.read_csv('resources/ResourceFile_RTI_GBD_Injury_Categories.csv')
+injury_number_data = injury_number_data.loc[injury_number_data['metric'] == 'Number']
+injury_number_in_2010 = injury_number_data.loc[injury_number_data['year'] == 2010]
+gbd_number_of_injuries_2010 = injury_number_in_2010['val'].sum()
+model_injury_number_in_2010 = np.mean(injuries_in_2010)
+scaled_model_injury_number_in_2010 = model_injury_number_in_2010 * scaler_to_pop_size
+# plot the number of deaths
 plt.bar(np.arange(2), [scaled_2010_deaths, sum(road_data_2010['val'])], color='lightsteelblue')
 plt.ylabel('Number of deaths')
 plt.xticks(np.arange(2), ['Scaled model deaths', 'GBD estimated'
@@ -803,13 +947,47 @@ plt.xticks(np.arange(2), ['Scaled model deaths', 'GBD estimated'
                                                  'number of deaths'
                                                  '\n'
                                                  'for 2010'])
-plt.title(f"The model's predicted Number of RTI related death "
+plt.title(f"The model's predicted number of RTI related death "
           f"\n"
           f"compared to the GBD 2010 estimate"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig('outputs/Demographics_of_RTI/Number_of_deaths_comp_to_GBD_2010.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# plot the model number of deaths and number of injuries compared to GBD estimates
+injury_output = [scaled_model_injury_number_in_2010, gbd_number_of_injuries_2010]
+plt.bar(np.arange(2), injury_output, color='lightsalmon', label='number of injuries')
+plt.xticks(np.arange(2), ['Model output', 'GBD estimate'])
+plt.ylabel('Number')
+plt.title(f"The model's predicted number of road traffic injuries"
+          f"\n"
+          f"compared to the GBD 2010 estimates"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Number_of_RTI_comp_to_GBD_2010.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Extrapolate the number of injuries of those who were dead on arival to include to the estimate
+average_number_of_injuries_of_those_DOA = 2.9 * np.mean(number_of_prehospital_deaths_2010)
+average_number_of_injuries_of_those_DOA_scaled = scaler_to_pop_size * average_number_of_injuries_of_those_DOA
+extrapolated_injury_output = [scaled_model_injury_number_in_2010,
+                              scaled_model_injury_number_in_2010 + average_number_of_injuries_of_those_DOA_scaled,
+                              gbd_number_of_injuries_2010]
+plt.bar(np.arange(3), extrapolated_injury_output, color='lightsalmon', label='number of injuries')
+plt.xticks(np.arange(3), ['Model output', 'Model output with extrapolation', 'GBD estimate'])
+plt.ylabel('Number')
+plt.title(f"The model's predicted number of road traffic injuries"
+          f"\n"
+          f"compared to the GBD 2010 estimates"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Extrapolated_number_of_RTI_comp_to_GBD_2010.png', bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -840,17 +1018,21 @@ if save_figures is True:
 else:
     plt.clf()
 # compare incidence of death in the model and the GBD 2010 estimate
-GBD_incidence_of_death_2010 = 13.20
-plt.bar(np.arange(2), [np.mean(average_deaths), GBD_incidence_of_death_2010], color='wheat')
+data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
+data = data.loc[data['metric'] == 'Rate']
+data = data.loc[data['measure'] == 'Deaths']
+data = data.loc[data['year'] > 2009]
+gbd_mean_inc_death_2010_to_2019 = data.val.mean()
+plt.bar(np.arange(2), [np.mean(average_deaths), gbd_mean_inc_death_2010_to_2019], color='wheat')
 plt.ylabel('Incidence of deaths')
-plt.xticks(np.arange(2), ['Model incidence of death', 'GBD estimated'
+plt.xticks(np.arange(2), ['Model incidence of death', 'Average incidence of death'
                                                       '\n'
-                                                      'incidence of deaths'
+                                                      'of GBD estimates'
                                                       '\n'
-                                                      'for 2010'])
+                                                      '2010 to 2019'])
 plt.title(f"The model's predicted incidence of RTI related death "
           f"\n"
-          f"compared to the GBD 2010 estimate"
+          f"compared to the average incidence of death from GBD study 2010-2019"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
@@ -905,6 +1087,21 @@ plt.title(f"Average road traffic injury severity distribution"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig('outputs/Demographics_of_RTI/Percentage_mild_severe_injuries.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot the percentage of mild and severe injuries to other sources
+# Police data from Schlottmann et al doi: 10.4314/mmj.v29i4.4
+plt.bar(np.arange(2), data, color='lightsteelblue', width=0.4, label='Model data')
+plt.bar(np.arange(2)+0.4, [0.64, 0.36], color='lightsalmon', width=0.4, label='Police data')
+plt.xticks(np.arange(2), ['Mild', 'Severe'])
+plt.ylabel('Percent')
+plt.legend()
+plt.title(f"Average road traffic injury severity distribution compared to police data"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Percentage_mild_severe_injuries_comparison.png', bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -973,6 +1170,7 @@ average_inc_amputations = [float(sum(col)) / len(col) for col in zip(*inc_amputa
 mean_inc_amp = np.mean(average_inc_amputations)
 std_amp = np.std(average_inc_amputations)
 gbd_inc_amp = 5.85
+gbd_perc_amp_2010 = 1.41
 average_inc_burns = [float(sum(col)) / len(col) for col in zip(*inc_burns)]
 mean_inc_burns = np.mean(average_inc_burns)
 std_burns = np.std(average_inc_burns)
@@ -1079,6 +1277,33 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
+
+# Plot percentage of injury by type in model compared to the GBD estimates
+model_injury_types = [mean_inc_amp, mean_inc_burns, mean_inc_fractures, mean_inc_tbi,
+                      mean_inc_minor, mean_inc_other, mean_inc_sci]
+model_injury_type_percentages = np.divide(model_injury_types, sum(model_injury_types))
+model_injury_type_percentages = np.multiply(model_injury_type_percentages, 100)
+gbd_inj_cat_data = pd.read_csv('resources/ResourceFile_RTI_GBD_Injury_Categories.csv')
+gbd_inj_cat_data = gbd_inj_cat_data.loc[gbd_inj_cat_data['metric'] == 'Number']
+gbd_inj_cat_data = gbd_inj_cat_data.groupby('rei').sum()
+gbd_inj_cat_data['percentage'] = gbd_inj_cat_data['val'] / sum(gbd_inj_cat_data['val'])
+gbd_percentages = np.multiply(gbd_inj_cat_data['percentage'].tolist(), 100)
+labels = gbd_inj_cat_data['percentage'].index
+plt.bar(np.arange(len(model_injury_type_percentages)), model_injury_type_percentages, width=0.4, color='lightsteelblue',
+        label='Model %\nof injury\n incidence\n by type')
+plt.bar(np.arange(len(gbd_percentages)) + 0.4, gbd_percentages, width=0.4, color='lightsalmon',
+        label='GBD 2010 %\n of injury\n incidence\n by type')
+plt.xticks(np.arange(len(model_injury_type_percentages)) + 0.2, labels, rotation=45)
+plt.ylabel('Percentage')
+plt.title(f"Model injury type predictions compared to GBD average over all years"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+plt.legend()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Average_injury_type_distribution.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 # ================================== Plot inpatient day distribution ==================================================
 # Malawi injury inpatient days data from https://doi.org/10.1016/j.jsurg.2014.09.010
 labels = ['< 1', '1', '2', '3', '4-7', '8-14', '15-30', '> 30']
@@ -1110,6 +1335,22 @@ plt.title(f"Model injury inpatient days compared to Kamuzu central hospital data
 
 if save_figures is True:
     plt.savefig('outputs/Demographics_of_RTI/Inpatient_day_distribution_comp_to_kamuzu.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Compare inpatient admissions from the model to Kamuzu central hospital data
+# Based on Purcel et al. DOI: 10.1007/s00268-020-05853-z
+percent_admitted_kch = 89.8
+percent_admitted_in_model = ((len(all_sim_inpatient_days) - sum(zero_days)) / len(all_sim_inpatient_days)) * 100
+plt.bar(np.arange(2), [np.round(percent_admitted_in_model, 2), percent_admitted_kch], color='lemonchiffon')
+plt.xticks(np.arange(2), ['Percent admitted in model', 'Percent admitted in KCH'])
+plt.ylabel('Percentage')
+plt.title(f"Model percentage inpatient admission compared to Kamuzu central hospital data"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Inpatient_admission_comp_to_kamuzu.png', bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1207,6 +1448,52 @@ params_dict.update({'base_rate_injrti': params['base_rate_injrti'],
                     'rr_injrti_age6069': params['rr_injrti_age6069'],
                     'rr_injrti_age7079': params['rr_injrti_age7079']})
 print(params_dict)
+# === Plot incidence of road traffic injuries in children===
+data = pd.read_csv('resources/ResourceFile_RTI_Incidence_of_rti_per_100000_children.csv')
+data = data.dropna(subset=['Incidence per 100,000'])
+data.sort_values(by=['Incidence per 100,000'], inplace=True)
+average_inc_in_children = np.mean([float(sum(col)) / len(col) for col in zip(*incidences_of_rti_in_children)])
+weighted_average_from_Hyder_et_al = 110.81
+plt.bar(np.arange(len(data)), data['Incidence per 100,000'], color='lightsalmon')
+plt.xticks(np.arange(len(data)), data['Source'], rotation=90)
+plt.ylabel('Incidence per 100,000')
+plt.title('Reported incidences of RTIs in children aged 0-18 in SSA')
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/RTI_incidence_in_children.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+
+plt.bar(np.arange(2), [weighted_average_from_Hyder_et_al, average_inc_in_children])
+plt.xticks(np.arange(2), ['Weighted average', 'Model'])
+plt.ylabel('Incidence per 100,000')
+plt.title(f"Weighted average of RTI incidence in children from Hyder et al\n"
+          f"compared to the model\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}"
+          )
+
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Incidence_of_RTI_in_children_model_comparison.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# ============== Plot number of injuries compared to Sundet et al =========================================
+# DOI: 10.1177/0049475518808969
+Sundet_n_patients = 4776
+Sundet_n_injuries = 7057
+Sundet_injuries_per_patient = Sundet_n_injuries / Sundet_n_patients
+total_number_of_injuries = sum(number_of_injuries_per_sim)
+Model_injuries_per_patient = total_number_of_injuries / total_n_crashes
+plt.bar(np.arange(2), [Sundet_injuries_per_patient, Model_injuries_per_patient], color='lightsteelblue')
+plt.xticks(np.arange(2), ['Injuries per person\nSundet et al. 2018', 'Injuries per person\n model'])
+plt.title(f"Injuries per person, Model compared to Sundet et al. 2018"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Injuries_per_person_model_Sundet_comp.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 # # ======================================= Create outputs for GBD DATA ===============================================
 # The following code is commented out as it relates to GBD data and not the simulation data
 # data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
