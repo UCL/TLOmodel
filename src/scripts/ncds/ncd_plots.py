@@ -33,8 +33,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2015, 1, 2)
-    popsize = 5000
+    end_date = Date(2012, 1, 2)
+    popsize = 100
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -64,8 +64,7 @@ output = parse_log_file(sim.log_filepath)
 # ----------------------------------------------- CREATE PREVALENCE PLOTS ----------------------------------------------
 
 # list all of the conditions in the module to loop through
-conditions = ['nc_diabetes', 'nc_hypertension', 'nc_depression',
-              'nc_chronic_lower_back_pain', 'nc_chronic_kidney_disease', 'nc_chronic_ischemic_hd', 'nc_cancers']
+conditions = sim.modules['Ncds'].conditions
 
 transform_output = lambda x: pd.concat([
     pd.Series(name=x.iloc[i]['date'], data=x.iloc[i]['data']) for i in range(len(x))
@@ -118,9 +117,27 @@ for condition in conditions:
 
 
 # Plot prevalence of multi-morbidities
+prev_mm_age_sex = output['tlo.methods.ncds']['mm_prevalence_by_age_sex']
+prev_mm_age_sex['year'] = pd.to_datetime(prev_mm_age_sex['date']).dt.year
+prev_mm_age_sex.drop(columns='date', inplace=True)
+prev_mm_age_sex.set_index(
+    'year',
+    drop=True,
+    inplace=True
+)
 
 
 # ----------------------------------------------- CREATE INCIDENCE PLOTS ----------------------------------------------
+
+def age_cats(ages_in_years):
+    AGE_RANGE_CATEGORIES = sim.modules.Demography.AGE_RANGE_CATEGORIES
+    AGE_RANGE_LOOKUP = sim.modules.Demography.AGE_RANGE_LOOKUP
+
+    age_cats = pd.Series(
+        pd.Categorical(ages_in_years.map(AGE_RANGE_LOOKUP),
+                       categories=AGE_RANGE_CATEGORIES, ordered=True)
+    )
+    return age_cats
 
 # Extract the relevant outputs and make a graph:
 def get_incidence_rate_and_death_numbers_from_logfile(logfile):
@@ -181,7 +198,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
 
         for age_grp in age_range:
             # extract specific condition counts from counts df
-            condition_counts[age_grp] = counts[f'{age_grp}'].apply(lambda x: x.get(f'{condition}')).dropna()
+            condition_counts[age_grp] = counts[f'{condition}'].apply(lambda x: x.get(f'{age_grp}')).dropna()
             individual_condition = condition_counts[age_grp].apply(pd.Series).div(py[age_grp],
                                                                   axis=0).dropna()
             individual_condition.columns = [f'{condition}']

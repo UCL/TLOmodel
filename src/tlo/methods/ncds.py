@@ -168,18 +168,6 @@ class Ncds(Module):
 
         # dict to hold counters for the number of episodes by condition-type and age-group
         self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
-        blank_counter = dict(zip(self.conditions, [list() for _ in self.conditions]))
-        self.incident_case_tracker_blank = dict()
-        for age_range in self.age_index:
-            self.incident_case_tracker_blank[f'{age_range}'] = copy.deepcopy(blank_counter)
-
-        self.incident_case_tracker = copy.deepcopy(self.incident_case_tracker_blank)
-
-        zeros_counter = dict(zip(self.conditions, [0] * len(self.conditions)))
-        self.incident_case_tracker_zeros = dict()
-        for age_range in self.age_index:
-            self.incident_case_tracker_zeros[f'{age_range}'] = copy.deepcopy(zeros_counter)
-
         self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_index, columns=self.conditions)
         self.df_incidence_tracker = copy.deepcopy(self.df_incidence_tracker_zeros)
 
@@ -390,7 +378,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
 
-        # df_inc = self.module.df_incidence_tracker_zeros
+        current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
 
         # Determine onset/removal of conditions
         for condition in self.module.conditions:
@@ -401,17 +389,9 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             idx_acquires_condition = acquires_condition[acquires_condition].index
             df.loc[idx_acquires_condition, condition] = True
 
-            # -------------------------------------------------------------------------------------------
-            # Add this incident case to the tracker
-            # TODO: make this use df-logic with groupby  (still in progress)
+            # Add incident cases to the tracker
+            current_incidence_df[condition] = df.loc[idx_acquires_condition, :].groupby('age_range')[condition].count()
 
-            #df_inc[condition] = df[acquires_condition].groupby('age_range')[condition].size()
-            #self.module.df_incidence_tracker[condition] = self.module.df_incidence_tracker[condition].add(df[acquires_condition].groupby('age_range')[condition].count(), fill_value=0)
-            #self.module.df_incidence_tracker[condition] = self.module.df_incidence_tracker.set_index(f'{condition}').add(df_inc.set_index(f'{condition}'), fill_value=0).reset_index()
-
-            for personal_idx in idx_acquires_condition:
-                age_range = df.loc[personal_idx, ['age_range']].age_range
-                self.module.incident_case_tracker[age_range][condition].append(self.sim.date)
             # -------------------------------------------------------------------------------------------
 
             # removal:
@@ -437,9 +417,8 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         InstantaneousDeath(self.module, person_id, f"{condition_name}"), self.sim.date
                     )
 
-        # add temporary df to incidence tracker
-        # df_inc = df_inc.reset_index()
-        #self.module.df_incidence_tracker = self.module.df_incidence_tracker.add(df_inc).combine_first(self.module.df_incidence_tracker).combine_first(df_inc).astype(int)
+        # add the new incidence numbers to tracker
+        self.module.df_incidence_tracker = self.module.df_incidence_tracker.add(current_incidence_df)
 
         # Determine occurrence of events
         for event in self.module.events:
@@ -518,23 +497,10 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # Convert the list of timestamps into a number of timestamps
-        # and check that all the dates have occurred since self.date_last_run
-        # TODO: @britta: reconfigure incidence tracker based on df-logic above  (still in progress)
-        counts = copy.deepcopy(self.module.incident_case_tracker_zeros)
-
-        for age_grp in self.module.incident_case_tracker.keys():
-            for condition in self.module.conditions:
-                list_of_times = self.module.incident_case_tracker[age_grp][condition]
-                counts[age_grp][condition] = len(list_of_times)
-                for t in list_of_times:
-                    assert self.date_last_run <= t <= self.sim.date
-
-        logger.info(key='incidence_count_by_condition', data=counts)
-
-        # Reset the counters and the date_last_run
-        self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
-        self.date_last_run = self.sim.date
+        # Convert incidence tracker to dict to pass through logger
+        logger.info(key='incidence_count_by_condition', data=self.module.df_incidence_tracker.to_dict())
+        # Reset the counter
+        self.module.df_incidence_tracker = copy.deepcopy(self.module.df_incidence_tracker_zeros)
 
         # Output the person-years lived by single year of age in the past year
         df = self.sim.population.props
@@ -588,7 +554,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 data=adult_prevalence
             )
 
-        # Counter for number of co-morbidities
+        # transforming output for logger
         def multimorbidities_in_a_groupby_ready_for_logging(df, something, groupbylist):
             dfx = df.groupby(groupbylist).apply(lambda dft: pd.Series(
                 {'count': dft[something].count()}))
@@ -603,12 +569,13 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             pr = pr.drop(columns=groupbylist)
             return pr.to_dict()
 
+        # Counter for number of co-morbidities
         df = population.props
-        df_comorbidities = df[df.is_alive]
-        df_comorbidities['n_conditions'] = df_comorbidities.loc[:, df_comorbidities.columns.isin(self.module.conditions)].sum(axis=1)
+        mask = df.is_alive == True
+        df.loc[mask, 'n_conditions'] = df.loc[mask, self.module.conditions].sum(axis=1)
 
         logger.info(key='mm_prevalence_by_age_sex',
                     description='annual summary of multi-morbidities by age and sex',
-                    data={'data': multimorbidities_in_a_groupby_ready_for_logging(df_comorbidities, 'n_conditions',
+                    data={'data': multimorbidities_in_a_groupby_ready_for_logging(df, 'n_conditions',
                                                                                      ['age_range', 'sex', 'n_conditions'])}
                     )
