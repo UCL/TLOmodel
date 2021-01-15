@@ -75,6 +75,8 @@ class NewbornOutcomes(Module):
             Types.LIST, 'list of prevalence of levels of disability for neonates born between 33 and 36 weeks'),
         'prob_congenital_ba': Parameter(
             Types.REAL, 'baseline probability of a neonate being born with a congenital anomaly'),
+        'prev_types_of_ca': Parameter(
+            Types.LIST, 'list of prevelances of each type of congential anomaly'),
         'prob_early_onset_neonatal_sepsis_day_0': Parameter(
             Types.REAL, 'baseline probability of a neonate developing early onset sepsis between birth and 24hrs'),
         'prob_sepsis_disabilities': Parameter(
@@ -177,6 +179,16 @@ class NewbornOutcomes(Module):
             Types.REAL, 'sensitivity of dx_test assessment of low birth weight in level 1 health centre'),
         'sensitivity_of_assessment_of_lbw_hp': Parameter(
             Types.REAL, 'sensitivity of dx_test assessment of low birth weight in level 1 hospital'),
+        'squeeze_threshold_essential_newborn_care': Parameter(
+            Types.REAL, 'squeeze factor threshold below which essential newborn care can be given'),
+        'squeeze_threshold_kmc': Parameter(
+            Types.REAL, 'squeeze factor threshold below which essential kangaroo mother care can be given'),
+        'squeeze_threshold_assist_with_breast_feeding': Parameter(
+            Types.REAL, 'squeeze factor threshold below which assistance with breastfeeding can be given'),
+        'squeeze_threshold_neonatal_resus': Parameter(
+            Types.REAL, 'squeeze factor threshold below which neonatal resuscitation can be given'),
+        'squeeze_threshold_sepsis_treatment': Parameter(
+            Types.REAL, 'squeeze factor threshold below which sepsis treatment can be given'),
     }
 
     PROPERTIES = {
@@ -187,7 +199,10 @@ class NewbornOutcomes(Module):
         'nb_preterm_birth_disab': Property(Types.CATEGORICAL, 'Disability associated with preterm delivery',
                                            categories=['none', 'mild_motor_and_cog', 'mild_motor', 'moderate_motor',
                                                        'severe_motor']),
-        'nb_congenital_anomaly': Property(Types.BOOL, 'Whether this newborn has been born with a congenital anomaly'),
+        'nb_congenital_anomaly': Property(Types.CATEGORICAL, 'Types of congenital anomaly of the newborn',
+                                          categories=['none', 'musculoskeletal', 'neural_tube', 'cardiovascular',
+                                                      'gastrointestinal', 'oro_facial', 'uro_genital',
+                                                      'down_syndrome']),
         'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether his neonate has developed neonatal sepsis'
                                                                ' following birth'),
         'nb_inj_abx_neonatal_sepsis': Property(Types.BOOL, 'If this neonate has injectable antibiotics as treatment '
@@ -278,8 +293,8 @@ class NewbornOutcomes(Module):
             'early_onset_neonatal_sepsis': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_early_onset_neonatal_sepsis_day_0'],
-                Predictor('nb_clean_birth').when('True', params['treatment_effect_clean_birth']),
-                Predictor('nb_received_cord_care').when('True', params['treatment_effect_cord_care']),
+                Predictor('nb_clean_birth').when(True, params['treatment_effect_clean_birth']),
+                Predictor('nb_received_cord_care').when(True, params['treatment_effect_cord_care']),
                 Predictor('nb_early_init_breastfeeding').when(True, params['treatment_effect_early_init_bf']),
                 Predictor('received_abx_for_prom', external=True).when('True', params['treatment_effect_abx_prom'])),
 
@@ -351,6 +366,7 @@ class NewbornOutcomes(Module):
                 Predictor('nb_inj_abx_neonatal_sepsis').when(True, params['treatment_effect_inj_abx_sep']),
                 Predictor('nb_supp_care_neonatal_sepsis').when(True, params['treatment_effect_supp_care_sep'])),
 
+            # todo: this needs to be modified by type of anomaly (and not just be applied on birth?)
             'congenital_anomaly_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_congenital_anomaly']),
@@ -366,7 +382,7 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_early_preterm'] = False
         df.loc[df.is_alive, 'nb_late_preterm'] = False
         df.loc[df.is_alive, 'nb_preterm_birth_disab'] = 'none'
-        df.loc[df.is_alive, 'nb_congenital_anomaly'] = False
+        df.loc[df.is_alive, 'nb_congenital_anomaly'] = 'none'
         df.loc[df.is_alive, 'nb_early_onset_neonatal_sepsis'] = False
         df.loc[df.is_alive, 'nb_inj_abx_neonatal_sepsis'] = False
         df.loc[df.is_alive, 'nb_supp_care_neonatal_sepsis'] = False
@@ -626,7 +642,7 @@ class NewbornOutcomes(Module):
             self.newborn_complication_tracker['not_breathing_at_birth'] += 1
             logger.debug(key='message', data=f'Neonate {child_id} is not breathing following delivery')
 
-        # Otherwise we use the linear model to calculate risk of inadequete breathing due to other causes not
+        # Otherwise we use the linear model to calculate risk of inadequate breathing due to other causes not
         # explicitly modelled
         elif self.eval(params['nb_newborn_equations']['not_breathing_at_birth'], child_id):
             df.at[child_id, 'nb_not_breathing_at_birth'] = True
@@ -705,7 +721,7 @@ class NewbornOutcomes(Module):
             (~child.nb_preterm_respiratory_distress):
             self.apply_risk_of_death_from_complication(individual_id, complication='not_breathing_at_birth')
 
-        if child.nb_congenital_anomaly:
+        if child.nb_congenital_anomaly != 'none':
             self.apply_risk_of_death_from_complication(individual_id, complication='congenital_anomaly')
 
         # If a newborn has died, the death is scheduled and tracked
@@ -771,7 +787,7 @@ class NewbornOutcomes(Module):
 
                 # TODO: should complication variables be reset? A newborn will never be newborn again so...
 
-                # TODO: disability for congenital anomaly
+                # TODO: disability for congenital anomaly (~350 weights)
 
         # We now delete the MNI dictionary for mothers who have died in labour but their children have survived, this
         # is done here as we use variables from the mni as predictors in some of the above equations
@@ -794,16 +810,8 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         nci = self.newborn_care_info
-        mni = self.sim.modules['Labour'].mother_and_newborn_info
         person_id = hsi_event.target
-        mother_id = df.loc[person_id, 'mother_id']
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        # -------------------------------------- CLEAN BIRTH PRACTICES -----------------------------------------------
-        # First we check if clean practices were observed during this babies birth, if so we store as a property within
-        # the nci dictionary. It is used to reduce incidence of sepsis (consumables counted in labour)
-        if mni[mother_id]['clean_birth_practices']:
-            df.at[person_id, 'nb_clean_birth'] = True
 
         # -------------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------
         # Next we determine if cord care with chlorhexidine is applied (consumables are counted during labour)
@@ -826,7 +834,7 @@ class NewbornOutcomes(Module):
             'Item_Code': {item_code_tetracycline: 1, item_code_vit_k: 1, item_code_vit_k_syringe: 1}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event, cons_req_as_footprint=consumables_vit_k_and_eye_care, to_log=True)
+            hsi_event=hsi_event, cons_req_as_footprint=consumables_vit_k_and_eye_care)
 
         # If they are available the intervention is delivered
         if outcome_of_request_for_consumables['Item_Code'][item_code_tetracycline]:
@@ -959,11 +967,8 @@ class NewbornOutcomes(Module):
                                        consumables['Intervention_Pkg'] == 'Neonatal resuscitation (institutional)',
                                        'Intervention_Pkg_Code'])[0]
 
-        consumables_needed = {'Intervention_Package_Code': {pkg_code_resus: 1}, 'Item_Code': {}}
-
-        # Query if the required consumables are available
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-           hsi_event=hsi_event, cons_req_as_footprint=consumables_needed, to_log=False)
+        all_available = hsi_event.get_all_consumables(
+            pkg_codes=[pkg_code_resus])
 
         # Use the dx_manager to determine if staff will correctly identify this neonate will require resuscitation
         if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
@@ -971,13 +976,8 @@ class NewbornOutcomes(Module):
 
             # Then, if the consumables are available,resuscitation is started. We assume this is delayed in
             # deliveries that are not attended
-            if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_resus]:
+            if all_available:
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
-
-                # Log the consumables request
-                self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=hsi_event, cons_req_as_footprint=consumables_needed, to_log=True)
-
                 self.newborn_complication_tracker['resus'] += 1
 
     def assessment_and_treatment_newborn_sepsis(self, hsi_event, facility_type):
@@ -1003,18 +1003,15 @@ class NewbornOutcomes(Module):
                                      consumables['Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
                                      'Intervention_Pkg_Code'])[0]
 
-            consumables_needed = {'Intervention_Package_Code': {pkg_code_sep: 1}, 'Item_Code': {}}
-
-            # Query if the required consumables are available
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                 hsi_event=hsi_event, cons_req_as_footprint=consumables_needed, to_log=False)
+            all_available = hsi_event.get_all_consumables(
+                pkg_codes=[pkg_code_sep])
 
             # Use the dx_manager to determine if staff will correctly identify this neonate will treatment for sepsis
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                  dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event):
 
                 # Then, if the consumables are available, treatment for sepsis is delivered
-                if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sep]:
+                if all_available:
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
                     self.newborn_complication_tracker['sep_treatment'] += 1
 
@@ -1034,12 +1031,14 @@ class NewbornOutcomes(Module):
                               item_code_giving_set: 1}}
 
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=hsi_event, cons_req_as_footprint=consumables_inj_abx_sepsis, to_log=False)
+                hsi_event=hsi_event, cons_req_as_footprint=consumables_inj_abx_sepsis)
 
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event):
 
-                if outcome_of_request_for_consumables:
+                if (outcome_of_request_for_consumables['Item_Code'][item_code_iv_penicillin]) and \
+                    (outcome_of_request_for_consumables['Item_Code'][item_code_iv_gentamicin]) and \
+                (outcome_of_request_for_consumables['Item_Code'][item_code_giving_set]):
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
                     self.newborn_complication_tracker['sep_treatment'] += 1
 
@@ -1090,7 +1089,7 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_early_preterm'] = False
         df.at[child_id, 'nb_late_preterm'] = False
         df.at[child_id, 'nb_preterm_birth_disab'] = 'none'
-        df.at[child_id, 'nb_congenital_anomaly'] = False
+        df.at[child_id, 'nb_congenital_anomaly'] = 'none'
         df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = False
         df.at[child_id, 'nb_neonatal_sepsis_disab'] = 'none'
         df.at[child_id, 'nb_preterm_respiratory_distress'] = False
@@ -1136,22 +1135,22 @@ class NewbornOutcomes(Module):
                              'vit_k': False,
                              'tetra_eye_d': False,
                              'proph_abx': False,
-                             'delivery_attended': mni[mother_id]['delivery_attended'],
                              'delivery_setting': mni[mother_id]['delivery_setting'],
                              'sought_care_for_complication': False,
                              'cause_of_death_after_birth': []}
 
             # Check these variables are not unassigned
-            assert nci[child_id]['delivery_attended'] != 'none'
             assert nci[child_id]['delivery_setting'] != 'none'
 
             # ====================================== COMPLICATIONS ====================================================
             # Determine if this child will be born with a congenital anomaly
             if self.rng.random_sample() < params['prob_congenital_ba']:
-                df.at[child_id, 'nb_congenital_anomaly'] = True
-                # TODO: replace with more detailed modelling
+                random_draw = self.rng.choice(('musculoskeletal', 'neural_tube', 'cardiovascular',
+                                               'gastrointestinal', 'oro_facial', 'uro_genital', 'down_syndrome'),
+                                              p=params['prev_types_of_ca'])
 
-            # TODO: remove as function as only called here
+                df.at[child_id, 'nb_congenital_anomaly'] = random_draw
+
             # The set birth weight function is used to determine this newborns birth weight and size for gestational age
             self.set_birth_weight(child_id, nci[child_id]['ga_at_birth'])
 
@@ -1306,6 +1305,9 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(HSI_Event, Individu
     def apply(self, person_id, squeeze_factor):
         nci = self.module.newborn_care_info
         df = self.sim.population.props
+        mni = self.sim.modules['Labour'].mother_and_newborn_info
+        mother_id = df.loc[person_id, 'mother_id']
+        params = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return
@@ -1313,19 +1315,24 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(HSI_Event, Individu
         logger.info(key='message', data=f'This is HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant:'
                                         f' child {person_id} is receiving care following delivery in a health facility')
 
+        if nci[person_id]['delivery_setting'] == 'health_centre':
+            facility_type_code = 'hc'
+        elif nci[person_id]['delivery_setting'] == 'hospital':
+            facility_type_code = 'hp'
+            # todo: will home birth care seekers break this?
+
         # ========================  PREVENTATIVE INTERVENTIONS DELIVERED AT/NEAR BIRTH ===============================
-        if ~nci[person_id]['sought_care_for_complication']:
+        if mni[mother_id]['clean_birth_practices']:
+            df.at[person_id, 'nb_clean_birth'] = True
+
+        if squeeze_factor < params['squeeze_threshold_essential_newborn_care']:
             self.module.essential_newborn_care(self)
 
-            if nci[person_id]['delivery_setting'] == 'health_centre':
-                self.module.kangaroo_mother_care(self, 'hc')
-            elif nci[person_id]['delivery_setting'] == 'hospital':
-                self.module.kangaroo_mother_care(self, 'hp')
+        if squeeze_factor < params['squeeze_threshold_kmc']:
+            self.module.kangaroo_mother_care(self, facility_type_code)
 
+        if squeeze_factor < params['squeeze_threshold_assist_with_breast_feeding']:
             self.module.breast_feeding(person_id, birth_setting='hf')  # hf = 'health facility'
-        else:
-            # Otherwise they receives no benefit of prophylaxis
-            logger.debug(key='message', data=f'neonate {person_id} did not receive essential newborn care')
 
         # =================================  COMPLICATION RISKS ===================================================
         # First we determine which, if any, complications this newborn will experience immediately following, or very
@@ -1340,17 +1347,13 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(HSI_Event, Individu
             self.module.apply_risk_of_not_breathing_at_birth(person_id)
 
         # This function manages initiation of neonatal resuscitation
-        if nci[person_id]['delivery_setting'] == 'health_centre':
-                self.module.assessment_and_initiation_of_neonatal_resus(self, 'hc')
-        if nci[person_id]['delivery_setting'] == 'hospital':
-                self.module.assessment_and_initiation_of_neonatal_resus(self, 'hp')
+        if squeeze_factor < params['squeeze_threshold_neonatal_resus']:
+            self.module.assessment_and_initiation_of_neonatal_resus(self, facility_type_code)
 
         # This function manages the assessment and treatment of neonatal sepsis, and follows the same structure as
         # resuscitation
-        if nci[person_id]['delivery_setting'] == 'health_centre':
-            self.module.assessment_and_treatment_newborn_sepsis(self, 'hc')
-        if nci[person_id]['delivery_setting'] == 'hospital':
-            self.module.assessment_and_treatment_newborn_sepsis(self, 'hp')
+        if squeeze_factor < params['squeeze_threshold_sepsis_treatment']:
+            self.module.assessment_and_treatment_newborn_sepsis(self, facility_type_code)
 
         # In the case of neonates who needed resuscitation, but do not receive the intervention, we apply a risk of
         # encephalopathy due to additional hypoxia at birth

@@ -519,6 +519,7 @@ class PostnatalSupervisor(Module):
             self.postnatal_tracker['fistula'] += 1
 
         # ======================= CONTINUATION OF COMPLICATIONS INTO THE POSTNATAL PERIOD =========================
+        # TODO: i'd like to remove this as i feel like these dont need to be properties on their own
         # Certain conditions experienced in pregnancy are liable to continue into the postnatal period
 
         # HYPERTENSIVE DISORDERS...
@@ -546,6 +547,8 @@ class PostnatalSupervisor(Module):
 
         # Finally we call a function in the PregnancySupervisor module to reset the variables from pregnancy
         self.sim.modules['PregnancySupervisor'].property_reset(mother_id)
+
+        # todo: replace this with new property reset functions
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug(key='message', data=f'This is PostnatalSupervisor, being alerted about a health system '
@@ -778,51 +781,63 @@ class PostnatalSupervisor(Module):
         df.loc[resolvers.loc[resolvers].index, 'pn_htn_disorders'] = 'none'
 
         # And for the women who's hypertension doesnt resolve we now see if it will progress to a worsened state
-        women_with_htn = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == week) & \
-                         (df.pn_htn_disorders != 'none')
-
         # This uses the transition_states function to move women between states based on the probability matrix
-        disease_states = ['gest_htn', 'severe_gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia']
-        prob_matrix = pd.DataFrame(columns=disease_states, index=disease_states)
 
-        prob_matrix['gest_htn'] = [0.8, 0.1, 0.1, 0.0, 0.0]
-        prob_matrix['severe_gest_htn'] = [0.0, 0.8, 0.0, 0.2, 0.0]
-        prob_matrix['mild_pre_eclamp'] = [0.0, 0.0, 0.8, 0.2, 0.0]
-        prob_matrix['severe_pre_eclamp'] = [0.0, 0.0, 0.0, 0.6, 0.4]
-        prob_matrix['eclampsia'] = [0.0, 0.0, 0.0, 0.0, 1]
+        # todo: check right property for anti htns in the postnatal period?
+        def apply_risk(selected, risk_of_gest_htn_progression):
 
-        current_status = df.loc[women_with_htn, "pn_htn_disorders"]
-        new_status = util.transition_states(current_status, prob_matrix, self.rng)
-        df.loc[women_with_htn, "pn_htn_disorders"] = new_status
+            disease_states = ['gest_htn', 'severe_gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia']
+            prob_matrix = pd.DataFrame(columns=disease_states, index=disease_states)
 
-        # Then we determine which women have transitioned to the most severe states, and may choose to seek care
-        assess_status_change_for_severe_pre_eclampsia = (current_status != "severe_pre_eclamp") & \
-                                                        (new_status == "severe_pre_eclamp")
+            prob_matrix['gest_htn'] = [(0.9 -risk_of_gest_htn_progression), risk_of_gest_htn_progression, 0.1, 0.0, 0.0]
+            prob_matrix['severe_gest_htn'] = [0.0, 0.8, 0.0, 0.2, 0.0]
+            prob_matrix['mild_pre_eclamp'] = [0.0, 0.0, 0.8, 0.2, 0.0]
+            prob_matrix['severe_pre_eclamp'] = [0.0, 0.0, 0.0, 0.6, 0.4]
+            prob_matrix['eclampsia'] = [0.0, 0.0, 0.0, 0.0, 1]
 
-        new_onset_severe_pre_eclampsia = assess_status_change_for_severe_pre_eclampsia[
-            assess_status_change_for_severe_pre_eclampsia]
+            current_status = df.loc[selected, "pn_htn_disorders"]
+            new_status = util.transition_states(current_status, prob_matrix, self.rng)
+            df.loc[selected, "pn_htn_disorders"] = new_status
 
-        # We log the women who have transitioned to severe pre-eclampsia and set pn_emergency_event_mother to True so
-        # they may seek care
-        if not new_onset_severe_pre_eclampsia.empty:
-            logger.debug(key='message',
-                         data='The following women have developed severe pre-eclampsia following their '
-                         f'pregnancy {new_onset_severe_pre_eclampsia.index}')
+            # Then we determine which women have transitioned to the most severe states, and may choose to seek care
+            assess_status_change_for_severe_pre_eclampsia = (current_status != "severe_pre_eclamp") & \
+                                                            (new_status == "severe_pre_eclamp")
 
-            for person in new_onset_severe_pre_eclampsia.index:
-                df.at[person, 'pn_emergency_event_mother'] = True
+            new_onset_severe_pre_eclampsia = assess_status_change_for_severe_pre_eclampsia[
+                assess_status_change_for_severe_pre_eclampsia]
 
-        # This process is repeated for women who have now developed eclampsia
-        assess_status_change_for_eclampsia = (current_status != "eclampsia") & (new_status == "eclampsia")
-        new_onset_eclampsia = assess_status_change_for_eclampsia[assess_status_change_for_eclampsia]
+            # We log the women who have transitioned to severe pre-eclampsia and set pn_emergency_event_mother to True
+            # so they may seek care
+            if not new_onset_severe_pre_eclampsia.empty:
+                logger.debug(key='message',
+                             data='The following women have developed severe pre-eclampsia following their '
+                             f'pregnancy {new_onset_severe_pre_eclampsia.index}')
 
-        if not new_onset_eclampsia.empty:
-            logger.debug(key='message', data=f'The following women have developed eclampsia during week {week} of the '
-                                             f'postnatal period: {new_onset_eclampsia.index}')
-            for person in new_onset_eclampsia.index:
-                df.at[person, 'pn_emergency_event_mother'] = True
+                for person in new_onset_severe_pre_eclampsia.index:
+                    df.at[person, 'pn_emergency_event_mother'] = True
 
-        # Next we see if women without hypertension will develop de novo hypertension in this period of time
+            # This process is repeated for women who have now developed eclampsia
+            assess_status_change_for_eclampsia = (current_status != "eclampsia") & (new_status == "eclampsia")
+            new_onset_eclampsia = assess_status_change_for_eclampsia[assess_status_change_for_eclampsia]
+
+            if not new_onset_eclampsia.empty:
+                logger.debug(key='message', data=f'The following women have developed eclampsia during week {week} of the '
+                                                 f'postnatal period: {new_onset_eclampsia.index}')
+                for person in new_onset_eclampsia.index:
+                    df.at[person, 'pn_emergency_event_mother'] = True
+
+        women_with_htn_not_on_anti_htns = df.is_alive & df.la_is_postpartum & \
+                                          (df.pn_postnatal_period_in_weeks == week) & \
+                                          (df.pn_htn_disorders != 'none') & ~df.ac_gest_htn_on_treatment
+
+        women_with_htn_on_anti_htns = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == week) & \
+                                              (df.pn_htn_disorders != 'none') & df.ac_gest_htn_on_treatment
+
+        risk_progression_mild_to_severe_htn = 0.1
+
+        apply_risk(women_with_htn_not_on_anti_htns, risk_progression_mild_to_severe_htn)
+        #apply_risk(women_with_htn_on_anti_htns, (risk_progression_mild_to_severe_htn *
+        #                                         params['treatment_effect_anti_htns_progression']))
 
         #  -------------------------------- RISK OF PRE-ECLAMPSIA HYPERTENSION --------------------------------------
         pre_eclampsia = apply_linear_model(
@@ -1174,14 +1189,16 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Round function used to ensure women are categorised in the correct week (was previously automatically
         # rounding down)
-        ppp_in_weeks = round(ppp_in_days / np.timedelta64(1, 'W'))
+        ppp_in_weeks = ppp_in_days / np.timedelta64(1, 'W')
+        # ppp_in_weeks = round(ppp_in_days / np.timedelta64(1, 'W'))
 
-        df.loc[alive_and_recently_delivered, 'pn_postnatal_period_in_weeks'] = ppp_in_weeks
+        rounded_weeks = np.ceil(ppp_in_weeks)
+
+        df.loc[alive_and_recently_delivered, 'pn_postnatal_period_in_weeks'] = rounded_weeks
         logger.debug(key='message', data=f'updating postnatal periods on date {self.sim.date}')
 
-        # Women who were rounded down to 0 are classified as week 1 in the postnatal period
-        zero_women = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 0.0)
-        df.loc[zero_women, 'pn_postnatal_period_in_weeks'] = 1.0
+        #zero_women = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 0.0)
+        #df.loc[zero_women, 'pn_postnatal_period_in_weeks'] = 1.0
 
         # Check that all women are week 1 or above
         assert (df.loc[alive_and_recently_delivered, 'pn_postnatal_period_in_weeks'] > 0).all().all()
@@ -1231,6 +1248,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[week_6_postnatal_neonates, 'pn_sepsis_neonatal_inj_abx'] = False
         df.loc[week_6_postnatal_neonates, 'pn_sepsis_neonatal_full_supp_care'] = False
 
+        # todo call all property reset functions!
 
 class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
     """
@@ -1336,6 +1354,8 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         # -------------------------------------------- HYPERTENSION --------------------------------------------------
             # For women who remain hypertensive after delivery we apply a probability that this will resolve in the
             # first week after birth
+
+            # todo: effect of still being on antihypertensives
             if mother.pn_htn_disorders != 'none':
                 if self.module.rng.random_sample() < params['prob_htn_resolves']:
                     df.at[individual_id, 'pn_htn_disorders'] = 'none'
@@ -1418,8 +1438,8 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         # We assume that women with complications, or the mothers of babies with complications, are more likely to seek
         # postnatal care- and more quickly
 
-        mother_has_complications = None
-        child_has_complications = None
+        mother_has_complications = False
+        child_has_complications = False
 
         # (we check is_alive as this event can run if either the mother or child is dead (not both)
 
@@ -1501,15 +1521,13 @@ class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScope
         assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 0
 
         # If both mother and baby have died the event doesnt run
-        if not df.at[person_id, 'is_alive'] and df.at[child_id, 'is_alive']:
-            pass
+        if ~df.at[person_id, 'is_alive'] and ~df.at[child_id, 'is_alive']:
+            return
 
         # If either are alive the event runs
         if df.at[person_id, 'is_alive'] or df.at[child_id, 'is_alive']:
             logger.debug(key='message', data=f'Mother {person_id} or child {child_id} have arrived for PNC1 on date'
                                              f' {self.sim.date}')
-
-            pnc2 = HSI_PostnatalSupervisor_PostnatalCareContactTwo(self.module, person_id=person_id)
 
             # If the mother is alive she is assessed for complications
             if df.at[person_id, 'is_alive']:
@@ -1522,6 +1540,7 @@ class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScope
                 self.module.assessment_for_neonatal_complications_during_pnc(child_id, self)
 
             # If either remain alive we determine if they will return for visit two
+            pnc2 = HSI_PostnatalSupervisor_PostnatalCareContactTwo(self.module, person_id=person_id)
             self.module.maternal_postnatal_care_care_seeking(person_id, 42, 'pnc2', pnc2)
 
     def did_not_run(self):
@@ -1586,9 +1605,7 @@ class HSI_PostnatalSupervisor_PostnatalCareContactTwo(HSI_Event, IndividualScope
 
 
 class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
-    """This is HSI_PostnatalSupervisor_InpatientCareForMaternalSepsis. It is scheduled by any of the PNC HSIs for women
-    who are require inpatient care due to a complication of the postnatal period. Treatment is delivered in this
-    event"""
+    """"""
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, PostnatalSupervisor)
