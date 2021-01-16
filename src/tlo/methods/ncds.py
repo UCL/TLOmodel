@@ -580,15 +580,36 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 pr.at[i, 'flat_index'] = '__'.join([f"{col}={pr.at[i, col]}" for col in groupbylist])
             pr = pr.set_index('flat_index', drop=True)
             pr = pr.drop(columns=groupbylist)
+            pr.columns = [0]
             return pr.to_dict()
 
         # Counter for number of co-morbidities
         df = population.props
         mask = df.is_alive == True
         df.loc[mask, 'n_conditions'] = df.loc[mask, self.module.conditions].sum(axis=1)
+        n_comorbidities_m = pd.DataFrame(index=self.module.age_index, columns=list(range(0, len(self.module.conditions)+1)))
+        n_comorbidities_f = pd.DataFrame(index=self.module.age_index, columns=list(range(0, len(self.module.conditions) + 1)))
+        df_m = df.loc[df['sex'] == "M"]
+        df_m = df_m[['age_range', 'n_conditions']]
+        df_f = df.loc[df['sex'] == "F"]
+        df_f = df_f[['age_range', 'n_conditions']]
 
-        logger.info(key='mm_prevalence_by_age_sex',
-                    description='annual summary of multi-morbidities by age and sex',
-                    data={'data': multimorbidities_in_a_groupby_ready_for_logging(df, 'n_conditions',
-                                                                                     ['age_range', 'sex', 'n_conditions'])}
+        for num in range(0, len(self.module.conditions) + 1):
+            col_m = df_m.loc[df_m['n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
+                {'count': x['n_conditions'].count()}))
+            n_comorbidities_m.loc[:, num] = col_m['count']
+
+            col_f = df_f.loc[df_f['n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
+                {'count': x['n_conditions'].count()}))
+            n_comorbidities_f.loc[:, num] = col_f['count']
+
+
+        logger.info(key='mm_prevalence_by_age_m',
+                    description='annual summary of multi-morbidities by age for men',
+                    data=n_comorbidities_m.to_dict()
+                    )
+
+        logger.info(key='mm_prevalence_by_age_f',
+                    description='annual summary of multi-morbidities by age for women',
+                    data=n_comorbidities_f.to_dict()
                     )
