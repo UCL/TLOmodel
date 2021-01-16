@@ -129,16 +129,6 @@ prev_mm_age_sex.set_index(
 
 # ----------------------------------------------- CREATE INCIDENCE PLOTS ----------------------------------------------
 
-def age_cats(ages_in_years):
-    AGE_RANGE_CATEGORIES = sim.modules.Demography.AGE_RANGE_CATEGORIES
-    AGE_RANGE_LOOKUP = sim.modules.Demography.AGE_RANGE_LOOKUP
-
-    age_cats = pd.Series(
-        pd.Categorical(ages_in_years.map(AGE_RANGE_LOOKUP),
-                       categories=AGE_RANGE_CATEGORIES, ordered=True)
-    )
-    return age_cats
-
 # Extract the relevant outputs and make a graph:
 def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     output = parse_log_file(logfile)
@@ -171,28 +161,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
                 (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
                 (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
             ).transpose()
-            tot_py.index = tot_py.index.astype(int)
-            py.loc[year, '0-4'] = tot_py.loc[0:4].sum().values[0]
-            py.loc[year, '5-9'] = tot_py.loc[5:9].sum().values[0]
-            py.loc[year, '10-14'] = tot_py.loc[10:14].sum().values[0]
-            py.loc[year, '15-19'] = tot_py.loc[15:19].sum().values[0]
-            py.loc[year, '20-24'] = tot_py.loc[20:24].sum().values[0]
-            py.loc[year, '25-29'] = tot_py.loc[25:29].sum().values[0]
-            py.loc[year, '30-34'] = tot_py.loc[30:34].sum().values[0]
-            py.loc[year, '35-39'] = tot_py.loc[35:39].sum().values[0]
-            py.loc[year, '40-44'] = tot_py.loc[40:44].sum().values[0]
-            py.loc[year, '45-49'] = tot_py.loc[45:49].sum().values[0]
-            py.loc[year, '50-54'] = tot_py.loc[50:54].sum().values[0]
-            py.loc[year, '55-59'] = tot_py.loc[55:59].sum().values[0]
-            py.loc[year, '60-64'] = tot_py.loc[60:64].sum().values[0]
-            py.loc[year, '65-69'] = tot_py.loc[65:69].sum().values[0]
-            py.loc[year, '70-74'] = tot_py.loc[70:74].sum().values[0]
-            py.loc[year, '75-79'] = tot_py.loc[75:79].sum().values[0]
-            py.loc[year, '80-84'] = tot_py.loc[80:84].sum().values[0]
-            py.loc[year, '85-89'] = tot_py.loc[85:89].sum().values[0]
-            py.loc[year, '90-94'] = tot_py.loc[90:94].sum().values[0]
-            py.loc[year, '95-99'] = tot_py.loc[95:99].sum().values[0]
-            py.loc[year, '100+'] = tot_py.loc[100:120].sum().values[0]
+            py.loc[year, :] = tot_py.T.iloc[0]
 
         condition_counts = pd.DataFrame(index=years, columns=age_range)
 
