@@ -34,7 +34,7 @@ def runsim(seed=0):
 
     start_date = Date(2010, 1, 1)
     end_date = Date(2012, 1, 2)
-    popsize = 100
+    popsize = 1000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -117,14 +117,49 @@ for condition in conditions:
 
 
 # Plot prevalence of multi-morbidities
-prev_mm_age_sex = output['tlo.methods.ncds']['mm_prevalence_by_age_sex']
-prev_mm_age_sex['year'] = pd.to_datetime(prev_mm_age_sex['date']).dt.year
-prev_mm_age_sex.drop(columns='date', inplace=True)
-prev_mm_age_sex.set_index(
+prev_mm_age_m = output['tlo.methods.ncds']['mm_prevalence_by_age_m']
+prev_mm_age_m['year'] = pd.to_datetime(prev_mm_age_m['date']).dt.year
+prev_mm_age_m.drop(columns='date', inplace=True)
+prev_mm_age_m.set_index(
     'year',
     drop=True,
     inplace=True
 )
+
+age_range = sim.modules['Demography'].AGE_RANGE_CATEGORIES
+last_year = prev_mm_age_m.iloc[-1, :].to_frame(name="counts")
+n_conditions_by_age = pd.DataFrame(index=last_year.index, columns=age_range)
+for age_grp in age_range:
+    n_conditions_by_age[age_grp] = last_year['counts'].apply(lambda x: x.get(f'{age_grp}')).dropna()
+
+n_conditions_by_age.T.plot.bar(stacked=True)
+plt.title("Prevalence of number of co-morbidities by age (M)")
+plt.ylabel("Prevalence of number of co-morbidities")
+plt.xticks(rotation=90)
+plt.savefig(outputpath / ("N_comorbidities_by_age_m" + datestamp + ".pdf"), format='pdf')
+plt.show()
+
+prev_mm_age_f = output['tlo.methods.ncds']['mm_prevalence_by_age_f']
+prev_mm_age_f['year'] = pd.to_datetime(prev_mm_age_f['date']).dt.year
+prev_mm_age_f.drop(columns='date', inplace=True)
+prev_mm_age_f.set_index(
+    'year',
+    drop=True,
+    inplace=True
+)
+
+last_year = prev_mm_age_m.iloc[-1, :].to_frame(name="counts")
+n_conditions_by_age = pd.DataFrame(index=last_year.index, columns=age_range)
+for age_grp in age_range:
+    n_conditions_by_age[age_grp] = last_year['counts'].apply(lambda x: x.get(f'{age_grp}')).dropna()
+
+n_conditions_by_age.T.plot.bar(stacked=True)
+plt.title("Prevalence of number of co-morbidities by age (F)")
+plt.ylabel("Prevalence of number of co-morbidities")
+plt.xticks(rotation=90)
+plt.savefig(outputpath / ("N_comorbidities_by_age_f" + datestamp + ".pdf"), format='pdf')
+plt.show()
+
 
 
 # ----------------------------------------------- CREATE INCIDENCE PLOTS ----------------------------------------------
@@ -162,6 +197,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
                 (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
             ).transpose()
             py.loc[year, :] = tot_py.T.iloc[0]
+            py = py.replace(0, np.nan)
 
         condition_counts = pd.DataFrame(index=years, columns=age_range)
 
@@ -185,7 +221,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
         inc_mean[age_grp] = inc_rate[age_grp].mean()
 
     # replace NaNs and inf's with 0s
-    inc_mean = inc_mean.replace([np.inf, -np.inf, np.nan],0)
+    inc_mean = inc_mean.replace([np.inf, -np.inf, np.nan], 0)
 
     return inc_mean
 

@@ -567,22 +567,6 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 data=adult_prevalence
             )
 
-        # transforming output for logger
-        def multimorbidities_in_a_groupby_ready_for_logging(df, something, groupbylist):
-            dfx = df.groupby(groupbylist).apply(lambda dft: pd.Series(
-                {'count': dft[something].count()}))
-            pr = dfx['count'] / dfx['count'].groupby(level=[0, 1]).transform("sum")
-
-            # create into a dict with keys as strings
-            pr = pr.reset_index()
-            pr['flat_index'] = ''
-            for i in range(len(pr)):
-                pr.at[i, 'flat_index'] = '__'.join([f"{col}={pr.at[i, col]}" for col in groupbylist])
-            pr = pr.set_index('flat_index', drop=True)
-            pr = pr.drop(columns=groupbylist)
-            pr.columns = [0]
-            return pr.to_dict()
-
         # Counter for number of co-morbidities
         df = population.props
         mask = df.is_alive == True
@@ -601,15 +585,17 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
             col_f = df_f.loc[df_f['n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
                 {'count': x['n_conditions'].count()}))
-            n_comorbidities_f.loc[:, num] = col_f['count']
+            n_comorbidities_f.loc[:, num] = col_f['count'] / col_f['count'].groupby(level=0).transform("sum")
 
+        prop_comorbidities_m = n_comorbidities_m.div(n_comorbidities_m.sum(axis=1), axis=0)
+        prop_comorbidities_f = n_comorbidities_f.div(n_comorbidities_f.sum(axis=1), axis=0)
 
         logger.info(key='mm_prevalence_by_age_m',
                     description='annual summary of multi-morbidities by age for men',
-                    data=n_comorbidities_m.to_dict()
+                    data=prop_comorbidities_m.to_dict()
                     )
 
         logger.info(key='mm_prevalence_by_age_f',
                     description='annual summary of multi-morbidities by age for women',
-                    data=n_comorbidities_f.to_dict()
+                    data=prop_comorbidities_f.to_dict()
                     )
