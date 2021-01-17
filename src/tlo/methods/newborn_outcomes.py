@@ -205,6 +205,8 @@ class NewbornOutcomes(Module):
                                                       'down_syndrome']),
         'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether his neonate has developed neonatal sepsis'
                                                                ' following birth'),
+        'nb_cord_care_received': Property(Types.BOOL, 'If this neonate received cord care with chlorhexidine after '
+                                                      'birth'),
         'nb_inj_abx_neonatal_sepsis': Property(Types.BOOL, 'If this neonate has injectable antibiotics as treatment '
                                                            'for neonatal sepsis'),
         'nb_supp_care_neonatal_sepsis': Property(Types.BOOL, 'If this neonate has received full supportive care for '
@@ -384,6 +386,7 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_preterm_birth_disab'] = 'none'
         df.loc[df.is_alive, 'nb_congenital_anomaly'] = 'none'
         df.loc[df.is_alive, 'nb_early_onset_neonatal_sepsis'] = False
+        df.loc[df.is_alive, 'nb_cord_care_received'] = False
         df.loc[df.is_alive, 'nb_inj_abx_neonatal_sepsis'] = False
         df.loc[df.is_alive, 'nb_supp_care_neonatal_sepsis'] = False
         df.loc[df.is_alive, 'nb_neonatal_sepsis_disab'] = 'none'
@@ -1091,6 +1094,9 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_preterm_birth_disab'] = 'none'
         df.at[child_id, 'nb_congenital_anomaly'] = 'none'
         df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = False
+        df.at[child_id, 'nb_cord_care_received'] = False
+        df.at[child_id, 'nb_inj_abx_neonatal_sepsis'] = False
+        df.at[child_id, 'nb_supp_care_neonatal_sepsis'] = False
         df.at[child_id, 'nb_neonatal_sepsis_disab'] = 'none'
         df.at[child_id, 'nb_preterm_respiratory_distress'] = False
         df.at[child_id, 'nb_not_breathing_at_birth'] = False
@@ -1107,6 +1113,7 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_received_cord_care'] = False
         df.at[child_id, 'nb_death_after_birth'] = False
         df.at[child_id, 'nb_death_after_birth_date'] = pd.NaT
+
 
         child = df.loc[child_id]
 

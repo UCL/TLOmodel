@@ -167,8 +167,8 @@ class PostnatalSupervisor(Module):
 
     PROPERTIES = {
         'pn_id_most_recent_child': Property(Types.INT, 'person_id of a mothers most recent child'),
-        'pn_postnatal_period_in_weeks': Property(Types.INT, 'The number of weeks a woman is in the postnatal period '
-                                                            '(1-6)'),
+        'pn_postnatal_period_in_weeks': Property(Types.REAL, 'The number of weeks a woman is in the postnatal period '
+                                                             '(1-6)'),
         'pn_pnc_visits_maternal': Property(Types.INT, 'The number of postnatal care visits a woman has undergone '
                                                       'following her most recent delivery'),
         'pn_pnc_visits_neonatal': Property(Types.INT, 'The number of postnatal care visits a neonate has undergone '

@@ -1204,8 +1204,10 @@ class Labour (Module):
                     df.at[individual_id, 'la_maternal_haem_non_severe_disab'] = True
                 elif df.at[individual_id, 'ps_antepartum_haemorrhage'] == 'severe':
                     df.at[individual_id, 'la_maternal_haem_severe_disab'] = True
-            else:
-                df.at[individual_id, f'la_{complication}_disab'] = True
+
+        # todo: fix so only appropriate complications are triggering disab properties
+        #    else:
+        #        df.at[individual_id, f'la_{complication}_disab'] = True
 
     def set_postpartum_complications(self, individual_id, complication):
         """This function is called either following a home birth, facility delivery or caesarean section to determine
@@ -1364,7 +1366,7 @@ class Labour (Module):
     #                                         f'in labour')
 
     #        df.at[individual_id, 'la_intrapartum_still_birth'] = True
-    #        df.at[individual_id, 'ps_previous_stillbirth'] = True
+    #        df.at[individual_id, 'ps_prev_stillbirth'] = True
     #        df.at[individual_id, 'is_pregnant'] = False
 
     def set_maternal_death_status_postpartum(self, individual_id, cause):
@@ -2511,7 +2513,7 @@ class LabourDeathAndStillBirthEvent (Event, IndividualScopeEventMixin):
             logger.debug(key='message', data=f'person {individual_id} has experienced an intrapartum still birth')
 
             df.at[individual_id, 'la_intrapartum_still_birth'] = True
-            df.at[individual_id, 'ps_previous_stillbirth'] = True
+            df.at[individual_id, 'ps_prev_stillbirth'] = True
             df.at[individual_id, 'is_pregnant'] = False
             # todo: reset antenatal variables
 

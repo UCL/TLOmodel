@@ -191,8 +191,8 @@ class PregnancySupervisor(Module):
     }
 
     PROPERTIES = {
-        'ps_gestational_age_in_weeks': Property(Types.INT, 'current gestational age, in weeks, of a womans '
-                                                           'pregnancy'),
+        'ps_gestational_age_in_weeks': Property(Types.REAL, 'current gestational age, in weeks, of a womans '
+                                                            'pregnancy'),
         'ps_date_of_anc1': Property(Types.DATE, 'Date first ANC visit is scheduled for'),
         'ps_ectopic_pregnancy': Property(Types.BOOL, 'Whether a womans pregnancy is ectopic'),
         'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether a womans is pregnant with multiple fetuses'),
@@ -1632,7 +1632,7 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
             if self.cause == 'ectopic_pregnancy':
                 df.at[individual_id, 'ps_ectopic_pregnancy'] = False
             else:
-                self.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury')
+                self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury')
                 self.sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.unset(individual_id,
                                                                                        'mva', 'd_and_c', 'misoprostol',
                                                                                        'antibiotics', 'blood_products',

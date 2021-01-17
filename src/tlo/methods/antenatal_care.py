@@ -60,7 +60,7 @@ class CareOfWomenDuringPregnancy(Module):
         'prob_anc_continues': Parameter(
             Types.REAL, 'probability a woman will return for a subsequent ANC appointment'),
         'prob_an_ip_at_facility_level_1_2_3': Parameter(
-            Types.REAL, 'probabilities that antenatal inpatient care will be scheduled at facility level 1, 2 or 3'),
+            Types.LIST, 'probabilities that antenatal inpatient care will be scheduled at facility level 1, 2 or 3'),
         'prob_intervention_delivered_urine_ds': Parameter(
             Types.REAL, 'probability a woman will receive the intervention "urine dipstick" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
@@ -1775,11 +1775,6 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
                 self.module.point_of_care_hb_testing(hsi_event=self)
                 self.module.tetanus_vaccination(hsi_event=self)
 
-                # She is then assessed to see if she will attend the next ANC contact in the schedule
-                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
-
             # If she presents after 20 weeks she is provided interventions delivered at the first catch up and then
             # the appropriate catch up interventions
             elif mother.ps_gestational_age_in_weeks > 20:
@@ -1849,6 +1844,8 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                                          f'{df.at[person_id, "ac_facility_type"]} at gestation '
                                          f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
 
+            print(person_id)
+            print(mother.ac_total_anc_visits_current_pregnancy)
             assert mother.ac_total_anc_visits_current_pregnancy == 1
             assert mother.ps_gestational_age_in_weeks is not None
             assert mother.ps_gestational_age_in_weeks is not pd.NaT
@@ -2369,15 +2366,20 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
 
 
 class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, IndividualScopeEventMixin):
-    """"""
+    """
+    This is HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment. It is schedule by the PregnancySupervisor Event
+    for women who choose to seek care for emergency treatment in pregnancy (due to severe pre-eclampsia/eclampsia,
+    antepartum haemorrhage, premature rupture of membranes or chorioamnionitis). It is assumed women present to this
+    event as their first point of contact for an emergency in pregnancy, and therefore circumnavigate regular A&E.
+    """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_MaternalEmergencyAdmission'
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_MaternalEmergencyAssessment'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1
+        the_appt_footprint['InpatientDays'] = 1
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         self.ACCEPTED_FACILITY_LEVEL = 1
@@ -2386,24 +2388,19 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        # TODO: We assume women present to this event during pregnancy with either APH, severe PE, eclampsia and
-        #  infection (not modelled) - WOMEN WILL NEED ASSESSMENT TO ENSURE THEY GET THE RIGHT TREATMENT even if cause
-        #  may be apparent
+        # TODO: TC- We originally decided that pregnant women would not come via a&e in an emergency but would rather
+        #  present to the maternity ward/service straight away hence why I made this event. I wonder if it is just
+        #  simpler to have women pass through the generic A&E event? This event doesn't really do anything...(thought
+        #  about having some kind of diagnostic algorithm here but it never happened)
 
-        # TODO: consider funneling this through the diagnostic algorithm module
+        if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant']:
+            return
 
-        # TODO - Eclampsia - no assessment, immediate treatment, admit (for delivery plan)
-        # TODO - Severe pre-eclampsia - blood pressure, urine dip, immediate treatment admit (for delivery plan)
-        # TODO - APH - ultrasound?, bloods (hb), immediate treatment admit
-        # TODO - Infection/sepsis - BP, temp etc, admit
-        # TODO- PROM, examination/patient report
-
-        # TODO: store diagnosis/cause and send to inpatient event- cause variable used to give treatment etc
-
-        if df.at[person_id, 'is_alive'] and ~df.at[person_id, 'la_currently_in_labour']:
+        if ~df.at[person_id, 'ac_inpatient'] and ~df.at[person_id, 'la_currently_in_labour']:
             df.at[person_id, 'ac_inpatient'] = True
 
             facility_level = int(self.module.rng.choice([1, 2, 3], p=[0.33, 0.33, 0.34]))
+
             admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id,
                 facility_level_this_hsi=facility_level)
@@ -2421,7 +2418,15 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
 
 
 class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
-    """"""
+    """
+    This is HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare. This HSI can be scheduled by any of the ANC HSIs
+    for women who have been identified as having complications or by HSI_CareOfWomenDuringPregnancy_
+    MaternalEmergencyAssessment or HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientFollowUp.This HSI represents the
+    antenatal ward which would deliver care to women experiencing complications associated with their pregnancy
+    including anaemia, hypertension, gestational diabetes, antepartum haemorrhage, premature rupture of membranes or
+    chorioamnionitis. For women whom delivery is indicated as part of treatment for a complications they are scheduled
+    to the LabourOnset Event
+    """
     def __init__(self, module, person_id, facility_level_this_hsi):
         super().__init__(module, person_id=person_id)
 
@@ -2447,20 +2452,24 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         # TODO: ensure ac_inpatient = False on dx from inpatient services
         # todo: induction vs caesarean?
 
-
         if not mother.is_alive:
             return
 
-        if mother.is_pregnant and ~mother.la_currently_in_labour:
+        if mother.is_pregnant and ~mother.la_currently_in_labour and ~mother.ac_inpatient :
             df.at[person_id, 'ac_inpatient'] = True
 
             logger.debug(key='message', data=f'Mother {person_id} has been admitted for treatment of a complication of '
                                              f'her pregnancy ')
 
+            # The event represents the antenatal ward at a health facility. Therefore it is assumed that women with a
+            # number of different complications could be sent to this HSI for treatment.
+
             # ================================= INITIATE TREATMENT FOR ANAEMIA ========================================
+            # Women who are referred from ANC or an outpatient appointment following point of care Hb which detected
+            # anaemia first have a full blood count test to determine the severity of their anaemia
             if mother.ps_anaemia_in_pregnancy != 'none':
-                # Women who are referred from ANC or an outpatient appointment following point of care Hb testing are
-                # admitted for a full blood count
+
+                # This test returns one of a number of possible outcomes as seen below...
                 fbc_result = self.module.full_blood_count_testing(self)
                 assert fbc_result == 'no_test' or 'none' or 'mild' or 'moderate' or 'severe'
 
@@ -2477,18 +2486,21 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 # If the FBC detected non severe anaemia (Hb >7) she is treated
                 elif fbc_result == 'non_severe':
 
-                    # Women not receiving daily iron supplementation are started on this
+                    # Women are started on daily iron and folic acid supplementation (if they are not already receiving
+                    # supplements) as treatment for mild/moderate anaemia
                     if ~mother.ac_receiving_iron_folic_acid:
                         self.module.start_iron_and_folic_acid(person_id, self)
 
-                    # Some anaemia causing deficiencies (folate, B12)  are detected through MCV reading on the
-                    # FBC, and therefore can be treated
+                    # Some anaemia causing deficiencies (folate, B12)  are detected via a FBC, and therefore can be
+                    # these deficiencies can be treated via this fuction
                     self.module.treatment_of_anaemia_causing_deficiencies(person_id, self)
 
-                    # She is scheduled to return for a repeat point of care test in four weeks time to assess if she
-                    # remains anaemic
+                    # Women are then scheduled to return for a repeat point of care test in four weeks time to assess if
+                    # they remain anaemic
                     follow_up_date = self.sim.date + DateOffset(days=28)
 
+                    # At this follow up appointment women will have their haemoglobin tested, if low they will be
+                    # admitted for further treatment
                     outpatient_checkup = HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientFollowUp(
                         self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
                     self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
@@ -2496,8 +2508,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                                                                         tclose=follow_up_date + DateOffset(days=7))
 
                 elif fbc_result == 'severe':
-                    # In the case of severe anaemia (Hb <7) a woman receives a blood transfusion in addition to other
-                    # treatments
+                    # In the case of severe anaemia (Hb <7) then, in addition to the above treatments, this woman
+                    # should receive a blood transfusion to correct her anaemia
                     self.module.antenatal_blood_transfusion(person_id, self, cause='severe_anaemia')
                     self.module.treatment_of_anaemia_causing_deficiencies(person_id, self)
                     if mother.ac_receiving_iron_folic_acid == 'False':
@@ -2511,17 +2523,20 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                                                                         topen=follow_up_date,
                                                                         tclose=follow_up_date + DateOffset(days=7))
 
-                # TODO: check malaria and HIV status and refer for treatment?
-                # TODO: deworming/schisto treatment
-
             # ======================== INITIATE TREATMENT FOR GESTATIONAL DIABETES (case management) ==================
+            # Women admitted with gestational diabetes are given dietary and exercise advice as first line treatment
             if mother.ps_gest_diab == 'uncontrolled' and mother.ac_gest_diab_on_treatment == 'none':
                 df.at[person_id, 'ac_gest_diab_on_treatment'] = 'diet_exercise'
 
+                # TODO: AT - issue with circular dependencies
+                # We then schedule GestationalDiabetesGlycaemicControlEvent which determines if this treatment will be
+                # effective in controlling this womans blood sugar prior to her next check up
                 from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
                 self.sim.schedule_event(GestationalDiabetesGlycaemicControlEvent(
                     self.sim.modules['PregnancySupervisor'], person_id), self.sim.date + DateOffset(days=7))
 
+                # We then schedule this woman to return for blood sugar testing to evaluate the effectiveness of her
+                # treatment and potentially move to second line treatment
                 check_up_date = self.sim.date + DateOffset(days=28)
 
                 outpatient_checkup = HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(
@@ -2531,14 +2546,22 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                                                                     tclose=check_up_date + DateOffset(days=3))
 
             # =============================== INITIATE TREATMENT FOR HYPERTENSION =====================================
+            # Treatment delivered to mothers with hypertension is dependent on severity. Women admitted due to more mild
+            # hypertension are started on regular oral antihypertensives therapy (reducing risk of progression to more
+            # severe hypertension)
             if (mother.ps_htn_disorders == 'gest_htn' or mother.ps_htn_disorders == 'mild_pre_eclamp') and \
-                ~mother.ac_gest_htn_on_treatment:
+            ~mother.ac_gest_htn_on_treatment:
                 self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
 
+            # Women with severe gestational hypertension are also started on routine oral antihypertensives (if not
+            # already receiving- this will prevent progression once this episode of severe hypertension has been
+            # rectified)
             elif mother.ps_htn_disorders == 'severe_gest_htn' and ~mother.ac_gest_htn_on_treatment:
                 if ~mother.ac_gest_htn_on_treatment:
                     self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
 
+                # In addition, women with more severe disease are given intravenous anti hypertensives to reduce risk
+                # of death
                 self.module.initiate_treatment_for_severe_hypertension(person_id, self)
 
             # todo: CS for eclampsia
@@ -2549,7 +2572,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 if ~mother.ac_gest_htn_on_treatment:
                     self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
 
-                self.module.treatment_for_severe_pre_eclampsia_or_eclampsia(person_id, cause=mother.ps_htn_disorders,
+                self.module.treatment_for_severe_pre_eclampsia_or_eclampsia(person_id,
                                                                             hsi_event=self)
                 self.module.initiate_treatment_for_severe_hypertension(person_id, self)
 
