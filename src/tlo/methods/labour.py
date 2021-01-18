@@ -2060,7 +2060,8 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
         mni = self.module.mother_and_newborn_info
         person = df.loc[individual_id]
 
-        if self.module.check_labour_can_proceed(individual_id):
+        if self.module.check_labour_can_proceed(individual_id): # todo: add some kind of check for the very early
+            # preterms admitted due to aph
 
             # We indicate this woman is now in labour using this property, and by adding her individual ID to our
             # labour list (for testing)

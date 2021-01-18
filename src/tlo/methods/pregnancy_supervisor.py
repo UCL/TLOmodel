@@ -194,7 +194,9 @@ class PregnancySupervisor(Module):
         'ps_gestational_age_in_weeks': Property(Types.REAL, 'current gestational age, in weeks, of a womans '
                                                             'pregnancy'),
         'ps_date_of_anc1': Property(Types.DATE, 'Date first ANC visit is scheduled for'),
-        'ps_ectopic_pregnancy': Property(Types.BOOL, 'Whether a womans pregnancy is ectopic'),
+        'ps_ectopic_pregnancy': Property(Types.CATEGORICAL, 'Whether a womans is experiencing ectopic pregnancy and'
+                                                            ' its current state',
+                                         categories=['none', 'not_ruptured', 'ruptured']),
         'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether a womans is pregnant with multiple fetuses'),
         'ps_placenta_praevia': Property(Types.BOOL, 'Whether a womans pregnancy will be complicated by placenta'
                                                     'praevia'),
@@ -388,15 +390,21 @@ class PregnancySupervisor(Module):
                 Predictor('ac_ectopic_pregnancy_treated').when(True, params['treatment_effect_ectopic_pregnancy_'
                                                                             'treatment'])),
 
-            # This equation calculates a risk of dying after complications following an induced abortion
+            # This equation calculates a risk of dying after complications following an induced abortion. It is reduced
+            # by treatment
             'induced_abortion_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['prob_induced_abortion_death']),
+                params['prob_induced_abortion_death'],
+                Predictor('ac_post_abortion_care_interventions').when('>0',
+                                                                      params['treatment_effect_post_abortion_care'])),
 
-            # This equation calculates a risk of dying after complications following a spontaneous abortion
+            # This equation calculates a risk of dying after complications following a spontaneous abortion. It is
+            # reduced by treatment
             'spontaneous_abortion_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['prob_spontaneous_abortion_death']),
+                params['prob_spontaneous_abortion_death'],
+                Predictor('ac_post_abortion_care_interventions').when('>0',
+                                                                      params['treatment_effect_post_abortion_care'])),
 
             # This equation calculates a risk of still birth following an antepartum haemorrhage
             'antepartum_haemorrhage_stillbirth': LinearModel(
@@ -463,7 +471,7 @@ class PregnancySupervisor(Module):
 
         df.loc[df.is_alive, 'ps_gestational_age_in_weeks'] = 0
         df.loc[df.is_alive, 'ps_date_of_anc1'] = pd.NaT
-        df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = False
+        df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = 'none'
         df.loc[df.is_alive, 'ps_placenta_praevia'] = False
         df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
         df.loc[df.is_alive, 'ps_anaemia_in_pregnancy'] = 'none'
@@ -514,7 +522,7 @@ class PregnancySupervisor(Module):
 
         df.at[child_id, 'ps_gestational_age_in_weeks'] = 0
         df.at[child_id, 'ps_date_of_anc1'] = pd.NaT
-        df.at[child_id, 'ps_ectopic_pregnancy'] = False
+        df.at[child_id, 'ps_ectopic_pregnancy'] = 'none'
         df.at[child_id, 'ps_placenta_praevia'] = False
         df.at[child_id, 'ps_multiple_pregnancy'] = False
         df.at[child_id, 'ps_anaemia_in_pregnancy'] = 'none'
@@ -555,7 +563,9 @@ class PregnancySupervisor(Module):
         logger.debug(key='message', data='This is PregnancySupervisor reporting my health values')
 
         health_values_1 = df.loc[df.is_alive, 'ps_ectopic_pregnancy'].map(
-            {False: 0, True: p['ectopic_pregnancy']})
+            {'none': 0,
+             'not_ruptured': p['ectopic_pregnancy'],
+             'ruptured': p['ectopic_pregnancy']})
         health_values_1.name = 'Ectopic Pregnancy'
 
         health_values_2 = df.loc[df.is_alive, 'ps_anaemia_in_pregnancy'].map(
@@ -665,7 +675,7 @@ class PregnancySupervisor(Module):
         spont_abortion = self.apply_linear_model(
             params['ps_linear_equations']['spontaneous_abortion'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   ~df['ps_ectopic_pregnancy'] & ~df['ac_inpatient']])
+                   (df['ps_ectopic_pregnancy'] == 'none') & ~df['ac_inpatient']])
 
         # The apply_risk_of_abortion_complications function is called for women who lose their pregnancy. It resets
         # properties, set complications and care seeking
@@ -686,7 +696,7 @@ class PregnancySupervisor(Module):
         abortion = self.apply_linear_model(
             params['ps_linear_equations']['induced_abortion'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   ~df['ps_ectopic_pregnancy'] & ~df['ac_inpatient']])
+                   (df['ps_ectopic_pregnancy'] == 'none') & ~df['ac_inpatient']])
 
         for person in abortion.loc[abortion].index:
             # Similarly the abortion function is called for each of these women
@@ -812,7 +822,7 @@ class PregnancySupervisor(Module):
         anaemia = self.apply_linear_model(
             params['ps_linear_equations']['maternal_anaemia'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   ~df['ps_ectopic_pregnancy'] & (df['ps_anaemia_in_pregnancy'] == 'none')
+                   (df['ps_ectopic_pregnancy'] == 'none')  & (df['ps_anaemia_in_pregnancy'] == 'none')
                    & ~df['ac_inpatient'] & ~df['la_currently_in_labour']])
 
         # We use a weight random draw to determine the severity of the anaemia
@@ -838,9 +848,12 @@ class PregnancySupervisor(Module):
         params = self.parameters
 
         gest_diab = self.apply_linear_model(
-            params['ps_linear_equations']['gest_diab'], df.loc[df['is_alive'] & df['is_pregnant'] & (
-                df['ps_gestational_age_in_weeks'] == gestation_of_interest) & (df['ps_gest_diab'] == 'none') &
-                                                               ~df['ps_ectopic_pregnancy'] & ~df['ac_inpatient'] &
+            params['ps_linear_equations']['gest_diab'], df.loc[df['is_alive'] & df['is_pregnant'] &
+                                                               (df['ps_gestational_age_in_weeks'] ==
+                                                                gestation_of_interest) &
+                                                               (df['ps_gest_diab'] == 'none') &
+                                                               (df['ps_ectopic_pregnancy'] == 'none')
+                                                               & ~df['ac_inpatient'] &
                                                                ~df['la_currently_in_labour']])
 
         # Gestational diabetes, at onset, is defined as uncontrolled prior to treatment
@@ -868,7 +881,7 @@ class PregnancySupervisor(Module):
         pre_eclampsia = self.apply_linear_model(
             params['ps_linear_equations']['pre_eclampsia'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   (df['ps_htn_disorders'] == 'none') & ~df['ps_ectopic_pregnancy'] & ~df['ac_inpatient']
+                   (df['ps_htn_disorders'] == 'none') & (df['ps_ectopic_pregnancy'] == 'none') & ~df['ac_inpatient']
                    & ~df['la_currently_in_labour']])
 
         df.loc[pre_eclampsia.loc[pre_eclampsia].index, 'ps_prev_pre_eclamp'] = True
@@ -884,7 +897,7 @@ class PregnancySupervisor(Module):
         gest_hypertension = self.apply_linear_model(
             params['ps_linear_equations']['gest_htn'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest)
-                   & (df['ps_htn_disorders'] == 'none') & ~df['ps_ectopic_pregnancy'] & ~df['ac_inpatient']
+                   & (df['ps_htn_disorders'] == 'none') & (df['ps_ectopic_pregnancy'] == 'none') & ~df['ac_inpatient']
                    & ~df['la_currently_in_labour']])
 
         df.loc[gest_hypertension.loc[gest_hypertension].index, 'ps_htn_disorders'] = 'gest_htn'
@@ -986,7 +999,7 @@ class PregnancySupervisor(Module):
         at_risk_of_death_htn = self.apply_linear_model(
             params['ps_linear_equations']['death_from_hypertensive_disorder'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   ~df['ps_ectopic_pregnancy'] & ~df['ac_inpatient'] & ~df['la_currently_in_labour'] &
+                   (df['ps_ectopic_pregnancy'] == 'none') & ~df['ac_inpatient'] & ~df['la_currently_in_labour'] &
                    (df['ps_htn_disorders'] == ('severe_gest_htn', 'severe_pre_eclamp'))])
 
         if not at_risk_of_death_htn.loc[at_risk_of_death_htn].empty:
@@ -1013,7 +1026,7 @@ class PregnancySupervisor(Module):
         placenta_abruption = self.apply_linear_model(
             params['ps_linear_equations']['placental_abruption'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   ~df['ps_placental_abruption'] & ~df['ps_ectopic_pregnancy'] & ~df['ac_inpatient'] &
+                   ~df['ps_placental_abruption'] & (df['ps_ectopic_pregnancy'] == 'none') & ~df['ac_inpatient'] &
                    ~df['la_currently_in_labour']])
 
         df.loc[placenta_abruption.loc[placenta_abruption].index, 'ps_placental_abruption'] = True
@@ -1035,7 +1048,7 @@ class PregnancySupervisor(Module):
         antepartum_haemorrhage = self.apply_linear_model(
             params['ps_linear_equations']['antepartum_haem'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   ~df['ps_ectopic_pregnancy'] & ~df['ac_inpatient'] & ~df['la_currently_in_labour'] &
+                   (df['ps_ectopic_pregnancy'] == 'none') & ~df['ac_inpatient'] & ~df['la_currently_in_labour'] &
                    (df['ps_antepartum_haemorrhage'] == 'none')])
 
         # Weighted random draw is used to determine severity (for DALY weight mapping)
@@ -1067,7 +1080,7 @@ class PregnancySupervisor(Module):
         prom = self.apply_linear_model(
             params['ps_linear_equations']['premature_rupture_of_membranes'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   ~df['ps_ectopic_pregnancy'] & ~df['ac_inpatient'] & ~df['la_currently_in_labour']])
+                   (df['ps_ectopic_pregnancy'] == 'none') & ~df['ac_inpatient'] & ~df['la_currently_in_labour']])
 
         df.loc[prom.loc[prom].index, 'ps_premature_rupture_of_membranes'] = True
 
@@ -1098,7 +1111,7 @@ class PregnancySupervisor(Module):
         preterm_labour = self.apply_linear_model(
             params['ps_linear_equations']['early_onset_labour'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest)
-                   & ~df['ps_ectopic_pregnancy'] & ~df['ac_inpatient'] & ~df['la_currently_in_labour']])
+                   & (df['ps_ectopic_pregnancy'] == 'none') & ~df['ac_inpatient'] & ~df['la_currently_in_labour']])
 
         if not preterm_labour.loc[preterm_labour].empty:
             logger.debug(key='message',
@@ -1146,7 +1159,7 @@ class PregnancySupervisor(Module):
         still_birth = self.apply_linear_model(
             params['ps_linear_equations']['antenatal_stillbirth'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   ~df['ps_ectopic_pregnancy'] & ~df['ac_inpatient'] & ~df['la_currently_in_labour']])
+                   (df['ps_ectopic_pregnancy'] == 'none') & ~df['ac_inpatient'] & ~df['la_currently_in_labour']])
 
         self.pregnancy_disease_tracker['antenatal_stillbirth'] += len(still_birth.loc[still_birth])
 
@@ -1291,7 +1304,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == 3)])
 
         # Make the appropriate changes to the data frame and log the number of ectopic pregnancies
-        df.loc[ectopic_risk.loc[ectopic_risk].index, 'ps_ectopic_pregnancy'] = True
+        df.loc[ectopic_risk.loc[ectopic_risk].index, 'ps_ectopic_pregnancy'] = 'not_ruptured'
         self.module.pregnancy_disease_tracker['ectopic_pregnancy'] += len(ectopic_risk.loc[ectopic_risk])
 
         if not ectopic_risk.loc[ectopic_risk].empty:
@@ -1310,7 +1323,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         multiples = self.module.apply_linear_model(
             params['ps_linear_equations']['multiples'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == 3) &
-                   ~df['ps_ectopic_pregnancy']])
+                   (df['ps_ectopic_pregnancy'] == 'none')])
 
         df.loc[multiples.loc[multiples].index, 'ps_multiple_pregnancy'] = True
         self.module.pregnancy_disease_tracker['multiples'] += len(multiples.loc[multiples])
@@ -1328,7 +1341,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         placenta_praevia = self.module.apply_linear_model(
             params['ps_linear_equations']['placenta_praevia'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == 3) &
-                   ~df['ps_ectopic_pregnancy']])
+                   (df['ps_ectopic_pregnancy'] == 'none')])
 
         df.loc[placenta_praevia.loc[placenta_praevia].index, 'ps_placenta_praevia'] = True
         self.module.pregnancy_disease_tracker['placenta_praevia'] += len(placenta_praevia.loc[placenta_praevia])
@@ -1344,7 +1357,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         anc_attendance = self.module.apply_linear_model(
             params['ps_linear_equations']['four_or_more_anc_visits'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == 3) &
-                   ~df['ps_ectopic_pregnancy']])
+                   (df['ps_ectopic_pregnancy'] == 'none')])
 
         # This property is used  during antenatal care to ensure the right % of women attend four or more visits
         df.loc[anc_attendance.loc[anc_attendance].index, 'ps_will_attend_four_or_more_anc'] = True
@@ -1441,9 +1454,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # from care seeking following abortion/ectopic
         care_seeking = self.module.apply_linear_model(
             params['ps_linear_equations']['care_seeking_pregnancy_complication'],
-            df.loc[df['is_alive'] & df['is_pregnant'] & ~df['ps_ectopic_pregnancy'] & df['ps_emergency_event'] &
-                   ~df['ac_inpatient'] & ~df['la_currently_in_labour'] & (df['la_due_date_current_pregnancy']
-                                                                          != self.sim.date)])
+            df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_ectopic_pregnancy'] == 'none')
+                   & df['ps_emergency_event'] & ~df['ac_inpatient'] & ~df['la_currently_in_labour']
+                   & (df['la_due_date_current_pregnancy'] != self.sim.date)])
 
         # We reset this variable to prevent additional unnecessary care seeking next month
         df.loc[care_seeking.index, 'ps_emergency_event'] = False
@@ -1541,7 +1554,7 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         # Check only the right women have arrived here
-        assert df.at[individual_id, 'ps_ectopic_pregnancy']
+        assert df.at[individual_id, 'ps_ectopic_pregnancy'] == 'not_ruptured'
         assert df.at[individual_id, 'ps_gestational_age_in_weeks'] < 9
         assert ~df.at[individual_id, 'ac_inpatient']
 
@@ -1579,7 +1592,7 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         # Check the right woman has arrived at this event
-        assert df.at[individual_id, 'ps_ectopic_pregnancy']
+        assert df.at[individual_id, 'ps_ectopic_pregnancy'] == 'not_ruptured'
         assert ~df.at[individual_id, 'ac_inpatient']
 
         if not df.at[individual_id, 'is_alive']:
@@ -1587,6 +1600,9 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
 
         logger.debug(key='message', data=f'persons {individual_id} untreated ectopic pregnancy has now ruptured on '
                                          f'date {self.sim.date}')
+
+        # Set the variable
+        df.at[individual_id, 'ps_ectopic_pregnancy'] = 'ruptured'
 
         # We see if this woman will now seek care following rupture
         self.module.care_seeking_pregnancy_loss_complications(individual_id)
@@ -1630,7 +1646,7 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
         else:
             # Otherwise we reset any variables
             if self.cause == 'ectopic_pregnancy':
-                df.at[individual_id, 'ps_ectopic_pregnancy'] = False
+                df.at[individual_id, 'ps_ectopic_pregnancy'] = 'none'
             else:
                 self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury')
                 self.sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.unset(individual_id,

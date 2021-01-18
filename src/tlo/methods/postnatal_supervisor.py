@@ -24,12 +24,13 @@ class PostnatalSupervisor(Module):
 
     For mothers: This module applies risk of complications across the postnatal period, which is  defined as birth
     until day 42 post-delivery. PostnatalWeekOne Event represents the first week post birth where risk of complications
-    remains high. The primary mortality causing complications here are infection/sepsis and secondary postpartum
-    haemorrhage. Women with or without complications may/may not seek Postnatal Care at day 7 post birth (we assume
-    women who seek care will also bring their newborns with them to the HSI where they will also be assessed). This HSI
-    assesses mothers and newborns and schedules admissions if complications are found. The PostnatalSupervisor Event
-    applies risk of complications weekly from week 2-6 (ending on day 42). This event also determines additional
-    care seeking for mothers who are unwell during this time period. All maternal variables are reset on day 42.
+    remains high. The primary mortality causing complications here are infection/sepsis, secondary postpartum
+    haemorrhage and hypertension. Women with or without complications may/may not seek Postnatal Care at day 7 post
+    birth (we assume women who seek care will also bring their newborns with them to the HSI where they will also be
+    assessed). This HSI assesses mothers and newborns and schedules admissions if complications are found. The
+    PostnatalSupervisor Event applies risk of complications weekly from week 2-6 (ending on day 42). This event also
+    determines additional care seeking for mothers who are unwell during this time period. All maternal variables are
+    reset on day 42.
 
     For neonates: This module applies risk of complications during the neonatal period, from birth until day 28. The
     PostnatalWeekOne Event applies risk of early onset neonatal sepsis (sepsis onsetting prior to day 7 of life). Care
@@ -131,7 +132,7 @@ class PostnatalSupervisor(Module):
         'treatment_effect_early_init_bf': Parameter(
             Types.REAL, 'effect of early initiation of breastfeeding on neonatal sepsis rates '),
         'treatment_effect_abx_prom': Parameter(
-            Types.REAL, 'effect of early antiobiotics given to a mother with PROM on neonatal sepsis rates '),
+            Types.REAL, 'effect of early antibiotics given to a mother with PROM on neonatal sepsis rates '),
         'treatment_effect_inj_abx_sep': Parameter(
             Types.REAL, 'effect of injectable antibiotics on neonatal sepsis mortality'),
         'treatment_effect_supp_care_sep': Parameter(
