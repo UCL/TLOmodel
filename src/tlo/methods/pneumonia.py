@@ -689,12 +689,6 @@ class ALRI(Module):
                          'danger_signs'
                      ]
                      ),
-        # ---- Chest auscultation signs ----
-        'ri_chest_auscultations_signs':
-            Property(Types.CATEGORICAL, 'findings during chest auscultation examination',
-                     categories=['decreased_breath_sounds', 'bronchial_breaths_sounds', 'crackles', 'wheeze',
-                                 'abnormal_vocal_resonance', 'pleural_rub'] + ['none'] + ['not_applicable']
-                     ),
 
         # ---- Internal variables to schedule onset and deaths due to ALRI ----
         'ri_ALRI_event_date_of_onset': Property(Types.DATE, 'date of onset of current ALRI event'),
@@ -720,16 +714,23 @@ class ALRI(Module):
 
         # ---- Health System interventions / Treatment properties ----
         'ri_ALRI_tx_start_date': Property(Types.DATE, 'start date of ALRI treatment for current event'),
+
+        'ri_chest_auscultations_signs':
+            Property(Types.CATEGORICAL, 'findings during chest auscultation examination',
+                     categories=['decreased_breath_sounds', 'bronchial_breaths_sounds', 'crackles', 'wheeze',
+                                 'abnormal_vocal_resonance', 'pleural_rub'] + ['none'] + ['not_applicable']
+                     ),
+
         'ri_ALRI_antibiotic_treatment_administered':
             Property(Types.CATEGORICAL,
                      'Antibiotic treatment given for the ALRI',
                      categories=['benzyl penicillin injection', 'amoxicillin', 'cotrimoxazole', 'other_antibiotic',
-                                 'chlorampheniciol', 'prednisolone']),
+                                 'chlorampheniciol', 'prednisolone'] + ['none'] + ['not_applicable']),
         'ri_peripheral_oxygen_saturation':
             Property(Types.CATEGORICAL,
                      'Level of peripheral oxygen saturation to be read by a pulse oximetry',
                      categories=['SpO2<90%', 'SpO2_90-92%', 'SpO2>92%']),
-        'oxygen_therapy_given':
+        'ri_oxygen_therapy_given':
             Property(Types.BOOL,
                      'Oxygen therapy received at the hospital (for severe cases)'),
     }
@@ -791,10 +792,9 @@ class ALRI(Module):
 
         # Store the symptoms that this module will use:
         self.symptoms = {
-            'fever', 'cough', 'difficult_breathing', 'convulsions', 'lethargy', 'not_eating', 'restlessness', 'bulging_fontanel',
-            'fast_breathing', 'chest_indrawing', 'grunting', 'chest_pain', 'loss_of_appetite', 'photophobia', 'nuchal_rigidity',
-            'cyanosis', 'respiratory_distress', 'hypoxia', 'tachypnoea', 'cough_with_sputum', 'weight_loss', 'nausea',
-            'hemoptysis', 'tachycardia', 'decreased_chest_movement', 'fatigue', 'no_urination_in_last_12h', 'hemoptysis',
+            'fever', 'cough', 'difficult_breathing', 'convulsions', 'lethargy', 'not_eating',
+            'tachypnoea', 'fast_breathing', 'chest_indrawing', 'grunting', 'chest_pain',
+            'cyanosis', 'respiratory_distress',
             'danger_signs'
         }
 
@@ -852,6 +852,10 @@ class ALRI(Module):
 
         df.loc[df.is_alive, 'ri_ALRI_treatment'] = False
         df.loc[df.is_alive, 'ri_ALRI_tx_start_date'] = pd.NaT
+        df.loc[df.is_alive, 'ri_chest_auscultations_signs'] = 'not_applicable'
+        df.loc[df.is_alive, 'ri_ALRI_antibiotic_treatment_administered'] = 'not_applicable'
+        df.loc[df.is_alive, 'ri_peripheral_oxygen_saturation'] = 'SpO2>92%'
+        df.loc[df.is_alive, 'ri_oxygen_therapy_given'] = False
 
         # ---- Temporary values ----
         df.loc[df.is_alive, 'tmp_malnutrition'] = False
@@ -996,8 +1000,8 @@ class ALRI(Module):
                                 "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
                                 p['prob_pneumothorax_by_bacterial_pneumonia'])
                             .when(
-                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', "
-                                "'other_viral_pathogens'])",
+                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', "
+                                "'Bocavirus', 'other_viral_pathogens'])",
                                 p['prob_pneumothorax_by_viral_pneumonia'])
                             .otherwise(0.0)
                             ),
@@ -1011,6 +1015,10 @@ class ALRI(Module):
                                 "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
                                 "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
                                 p['prob_pleural_effusion_by_bacterial_pneumonia'])
+                            .when(
+                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', "
+                                "'Bocavirus', 'other_viral_pathogens'])",
+                                p['prob_pleural_effusion_by_viral_pneumonia'])
                             .otherwise(0.0)
                             ),
 
@@ -1019,12 +1027,12 @@ class ALRI(Module):
                             1.0,
                             Predictor('ri_current_ALRI_complications').apply(
                                 lambda x: p['prob_pleural_effusion_to_empyema'] if 'pleural_effusion' in x else 0)
-                            ),
+                            ),  # TODO: add another if condition here, if pathogen is a bacterial agent
 
             'lung_abscess':
                 LinearModel(LinearModelType.MULTIPLICATIVE,
                             1.0,
-                            Predictor('ri_primary_ALRI_pathogen')
+                            Predictor('ri_primary_ALRI_pathogen' or 'ri_secondary_bacterial_pathogen')
                             .when(
                                 ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
                                 "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
@@ -1036,15 +1044,16 @@ class ALRI(Module):
             'sepsis':
                 LinearModel(LinearModelType.MULTIPLICATIVE,
                             1.0,
-                            Predictor('ri_primary_ALRI_pathogen')
+                            Predictor('ri_primary_ALRI_pathogen' or 'ri_secondary_bacterial_pathogen')
                             .when(
                                 ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
                                 "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
                                 "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
-                                p['prob_sepsis_by_bacterial_pneumonia'])
+                                p['prob_sepsis_by_bacterial_pneumonia']),
+                            Predictor('ri_primary_ALRI_pathogen')
                             .when(
-                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', "
-                                "'other_viral_pathogens'])",
+                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', "
+                                "'Bocavirus', 'other_viral_pathogens'])",
                                 p['prob_sepsis_by_viral_pneumonia'])
                             .otherwise(0.0)
                             ),
@@ -1072,8 +1081,8 @@ class ALRI(Module):
                                 p['prob_respiratory_failure_by_bacterial_pneumonia'])
 
                             .when(
-                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', "
-                                "'other_viral_pathogens'])",
+                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', "
+                                "'Bocavirus', 'other_viral_pathogens'])",
                                 p['prob_respiratory_failure_by_viral_pneumonia'])
                             .otherwise(0.0)
                             ),
@@ -1138,66 +1147,66 @@ class ALRI(Module):
             if complicat == 'pneumothorax':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
-                    'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
+                    # 'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
                     'cyanosis': p[f'prob_cyanosis_adding_from_{complicat}'],
-                    'fatigue': p[f'prob_fatigue_adding_from_{complicat}'],
+                    # 'fatigue': p[f'prob_fatigue_adding_from_{complicat}'],
                     'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complicat}'],
-                    'decreased_chest_movement': p[f'prob_decreased_chest_movement_adding_from_{complicat}'],
+                    # 'decreased_chest_movement': p[f'prob_decreased_chest_movement_adding_from_{complicat}'],
                 }
             if complicat == 'pleural_effusion':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
-                    'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
+                    # 'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
                     'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complicat}'],
                 }
             if complicat == 'empyema':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
-                    'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
+                    # 'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
                     'respiratory_distress': p[f'prob_respiratory_distress_adding_from_{complicat}'],
                 }
             if complicat == 'lung_abscess':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
-                    'tachypnoea': p[f'prob_tachypnoea_adding_from_{complicat}'],
-                    'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
-                    'hemoptysis': p[f'prob_hemoptysis_adding_from_{complicat}'],
+                    # 'tachypnoea': p[f'prob_tachypnoea_adding_from_{complicat}'],
+                    # 'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
+                    # 'hemoptysis': p[f'prob_hemoptysis_adding_from_{complicat}'],
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
-                    'weight_loss': p[f'prob_weight_loss_adding_from_{complicat}'],
-                    'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
+                    # 'weight_loss': p[f'prob_weight_loss_adding_from_{complicat}'],
+                    # 'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
                 }
             if complicat == 'respiratory_failure':
                 return {
                     'cyanosis': p[f'prob_cyanosis_adding_from_{complicat}'],
                     'tachypnoea': p[f'prob_tachypnoea_adding_from_{complicat}'],
-                    'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
-                    'lethargy': p[f'prob_lethargy_adding_from_{complicat}'],
-                    'restlessness': p[f'prob_restlessness_adding_from_{complicat}'],
+                    # 'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
+                    # 'lethargy': p[f'prob_lethargy_adding_from_{complicat}'],
+                    # 'restlessness': p[f'prob_restlessness_adding_from_{complicat}'],
                     'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complicat}'],
                 }
             if complicat == 'sepsis':
                 return {
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
-                    'fatigue': p[f'prob_fatigue_adding_from_{complicat}'],
+                    # 'fatigue': p[f'prob_fatigue_adding_from_{complicat}'],
                     'tachypnoea': p[f'prob_tachypnoea_adding_from_{complicat}'],
-                    'lethargy': p[f'prob_lethargy_adding_from_{complicat}'],
+                    # 'lethargy': p[f'prob_lethargy_adding_from_{complicat}'],
                     'convulsions': p[f'prob_convulsions_adding_from_{complicat}'],
-                    'not_eating': p[f'prob_not_eating_adding_from_{complicat}'],
-                    'vomiting': p[f'prob_vomiting_adding_from_{complicat}'],
-                    'no_urination_in_last_12h': p[f'prob_no_urination_in_last_12h_adding_from_{complicat}'],
+                    # 'not_eating': p[f'prob_not_eating_adding_from_{complicat}'],
+                    # 'vomiting': p[f'prob_vomiting_adding_from_{complicat}'],
+                    # 'no_urination_in_last_12h': p[f'prob_no_urination_in_last_12h_adding_from_{complicat}'],
                 }
             if complicat == 'meningitis':
                 return {
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
                     'headache': p[f'prob_headache_adding_from_{complicat}'],
-                    'bulging_fontanel': p[f'prob_bulging_fontanel_adding_from_{complicat}'],
+                    # 'bulging_fontanel': p[f'prob_bulging_fontanel_adding_from_{complicat}'],
                     'convulsions': p[f'prob_convulsions_adding_from_{complicat}'],
-                    'nausea': p[f'prob_nausea_adding_from_{complicat}'],
+                    # 'nausea': p[f'prob_nausea_adding_from_{complicat}'],
                     'vomiting': p[f'prob_vomiting_adding_from_{complicat}'],
-                    'photophobia': p[f'prob_photophobia_adding_from_{complicat}'],
-                    'nuchal_rigidity': p[f'prob_nuchal_rigidity_adding_from_{complicat}'],
+                    # 'photophobia': p[f'prob_photophobia_adding_from_{complicat}'],
+                    # 'nuchal_rigidity': p[f'prob_nuchal_rigidity_adding_from_{complicat}'],
                 }
 
         for complication in ALRI.complications:
@@ -1364,6 +1373,7 @@ class ALRI(Module):
     #     if self.parameters['prob_seek_follow_up_care_after_treatment_failure'] > self.rng.rand():
     #         # schedule follow-up event
     #         self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self) # not working line
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -1642,6 +1652,8 @@ class AlriWithComplicationsEvent(Event, IndividualScopeEventMixin):
 
         # complications for this person
         df.at[person_id, 'ri_ALRI_complications'] = list(self.complication)
+        if self.complication in ['sepsis', 'meningitis', 'respiratory_failure']:
+            df.at[person_id, 'ri_ALRI_severe_complication_date'] = self.sim.date
 
         # add to the initial list of uncomplicated ALRI symptoms
         all_symptoms_for_this_person = list(self.symptoms)  # original uncomplicated symptoms list to add to
