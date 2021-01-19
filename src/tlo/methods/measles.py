@@ -33,10 +33,11 @@ class Measles(Module):
         self.symptoms = {
             'rash',
             'fever',
-            'respiratory_symptoms',
-            'eye_complaint',
             'diarrhoea',
-            'pneumonia',
+            'encephalitis',
+            'otitis_media',
+            'respiratory_symptoms',  # pneumonia
+            'eye_complaint'
         }
 
     # declare metadata
@@ -76,8 +77,10 @@ class Measles(Module):
 
     # Declaration of the specific symptoms that this module will use
     SYMPTOMS = {
-        "rash",  # moderate symptoms, will trigger healthcare seeking in community/district facility
-        "pneumonia",  # this should be integrated with Ines' pneumonia module
+        'rash',  # moderate symptoms, will trigger healthcare seeking in community/district facility
+        'pneumonia',  # this should be integrated with Ines' pneumonia module
+        'encephalitis',
+        'otitis_media'
     }
 
     def read_parameters(self, data_folder):
@@ -92,15 +95,16 @@ class Measles(Module):
 
         self.parameters["symptom_prob"] = workbook["symptoms"]
 
-        # TODO: check - moderate symptoms all mapped to moderate_measles, pneumonia mapped to severe_measles
+        # moderate symptoms all mapped to moderate_measles, pneumonia/encephalitis mapped to severe_measles
         if "HealthBurden" in self.sim.modules.keys():
             self.parameters["daly_wts"] = {
                 "rash": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
                 "fever": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
-                "respiratory_symptoms": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
-                "eye_complaint": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
                 "diarrhoea": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
-                "pneumonia": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=206),
+                "encephalitis": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=206),
+                "otitis_media": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
+                "respiratory_symptoms": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=206),
+                "eye_complaint": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
             }
 
         # Declare symptoms that this module will cause and which are not included in the generic symptoms:
@@ -110,8 +114,15 @@ class Measles(Module):
                 self.sim.modules['SymptomManager'].register_symptom(
                     Symptom(name=symptom_name,
                             odds_ratio_health_seeking_in_children=2.5,
-                            odds_ratio_health_seeking_in_adults=2.5)  # rash and pneumonia both non-emergencies
+                            odds_ratio_health_seeking_in_adults=2.5)  # rash, pneumonia, otitis media non-emergencies
                 )
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(
+                name='encephalitis',
+                emergency_in_adults=True,
+                emergency_in_children=True
+            )
+        )
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -243,18 +254,17 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, "me_date_measles"] = self.sim.date
 
         # assign symptoms
-        # symptom_list = {"rash", "fever", "respiratory_symptoms", "eye_complaint", "diarrhoea", "pneumonia"}
         symptom_list = self.module.symptoms
 
         ref_age = df.at[person_id, "age_years"]
-        # age limit for symptom data is 20 years
-        if ref_age > 20:
-            ref_age = 20
+        # age limit for symptom data is 30 years
+        if ref_age > 30:
+            ref_age = 30
 
         # read probabilities of symptoms by age
         symptom_prob = symptom_prob.loc[symptom_prob.age == ref_age]
 
-        # everybody gets rash and fever, other symptoms assigned with age-specific probability
+        # everybody gets rash, fever and eye complaint, other symptoms assigned with age-specific probability
         for symptom in symptom_list:
 
             specific_symptom_prob = symptom_prob.loc[symptom_prob.symptom == symptom, "probability"].values[0]
@@ -273,6 +283,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
 
         assert 'rash' in self.sim.modules["SymptomManager"].has_what(person_id)
         assert 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
+        assert 'eye_complaint' in self.sim.modules["SymptomManager"].has_what(person_id)
 
         # schedule symptom resolution without treatment - this only occurs if death doesn't happen first
         self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id),
@@ -414,7 +425,7 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
             }
 
         # for measles with pneumonia
-        if "pneumonia" in self.sim.modules["SymptomManager"].has_what(person_id):
+        if "respiratory_symptoms" in self.sim.modules["SymptomManager"].has_what(person_id):
             the_cons_footprint = {
                 "Intervention_Package_Code": {package_code2: 1},
                 "Item_Code": {item_code1: 1}
@@ -493,8 +504,6 @@ class MeaslesLoggingFortnightEvent(RegularEvent, PopulationScopeEventMixin):
         # this will check for all measles cases in the past two weeks (average symptom duration)
         # and look at current symptoms
         # so if symptoms have resolved they won't be included
-
-        # symptom_list = {"rash", "fever", "respiratory_symptoms", "eye_complaint", "diarrhoea", "pneumonia"}
 
         symptom_list = self.module.symptoms
         symptom_output = dict()
