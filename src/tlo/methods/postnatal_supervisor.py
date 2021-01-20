@@ -1460,17 +1460,19 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
 
                     prob_matrix['gest_htn'] = [0.8, 0.1, 0.1, 0.0, 0.0]
                     prob_matrix['severe_gest_htn'] = [0.0, 0.8, 0.0, 0.2, 0.0]
-
-                    # We modify the probability of progressing from mild to severe gestational hypertension for women
-                    # who are on anti hypertensives
-                    if ~df.at[individual_id, 'pn_gest_htn_on_treatment']:
-                        prob_matrix['severe_gest_htn'][2] = 0.8
-                    else:
-                        prob_matrix['severe_gest_htn'][2] = 0.8 * params['treatment_effect_anti_htns_progression_pn']
-
                     prob_matrix['mild_pre_eclamp'] = [0.0, 0.0, 0.8, 0.2, 0.0]
                     prob_matrix['severe_pre_eclamp'] = [0.0, 0.0, 0.0, 0.6, 0.4]
                     prob_matrix['eclampsia'] = [0.0, 0.0, 0.0, 0.0, 1]
+
+                    # TODO: AT- this is messy and wondered how I could make neater
+                    # We modify the probability of progressing from mild to severe gestational hypertension for women
+                    # who are on anti hypertensives
+                    if ~df.at[individual_id, 'pn_gest_htn_on_treatment']:
+                        prob_matrix['gest_htn'][2] = 0.1
+                    else:
+                        treatment_reduced_risk = 0.1 * params['treatment_effect_anti_htns_progression_pn']
+                        prob_matrix['gest_htn'][2] = treatment_reduced_risk
+                        prob_matrix['gest_htn'][0] = 1 - (treatment_reduced_risk + 0.1)
 
                     current_status = df.loc[[individual_id], 'pn_htn_disorders']
                     new_status = util.transition_states(current_status, prob_matrix, self.module.rng)

@@ -18,7 +18,7 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
+    labour, antenatal_care,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -146,6 +146,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
@@ -177,6 +178,7 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
@@ -243,6 +245,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
@@ -326,6 +329,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      ),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                      labour.Labour(resourcefilepath=resourcefilepath),
+                     antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                      pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
@@ -442,6 +446,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
                      ),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                      labour.Labour(resourcefilepath=resourcefilepath),
+                     antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                      pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
@@ -694,6 +699,7 @@ def test_run_each_of_the_HSI():
                  ),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)

@@ -448,6 +448,9 @@ class CareOfWomenDuringPregnancy(Module):
         elif mother.ps_gestational_age_in_weeks >= 40:
             recommended_gestation_next_anc = 42
 
+        print(person_id)
+        print(mother.ps_gestational_age_in_weeks)
+
         return recommended_gestation_next_anc
 
     def antenatal_care_scheduler(self, individual_id, visit_to_be_scheduled, recommended_gestation_next_anc,
@@ -1634,16 +1637,16 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
         # TODO: TC - Do you think there should the a squeeze factor threshold over which this event just doesnt run?
         #  Different to labour where there is a threshold per intervention (same question for all ANC contacts)
 
-        # If the mother is no longer alive the HSI will not run
-        if not mother.is_alive:
+        # If the mother is no longer alive or pregnant the HSI will not run
+        if not mother.is_alive or not mother.is_pregnant:
             return
 
-        # This function returns the gestational age, in weeks, at which this woman should return for the next ANC
-        # visit in her schedule
-        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
         # The contents of this HSI will only run for women who are still pregnant and are not currently in labour
-        if mother.is_pregnant and ~mother.la_currently_in_labour:
+        if ~mother.la_currently_in_labour:
+
+            # This function returns the gestational age, in weeks, at which this woman should return for the next
+            # ANC visit in her schedule
+            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
 
             # Women may have lost a pregnancy and become pregnant again meaning this event will still run, this prevents
             # incorrect HSIs running
@@ -1661,6 +1664,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
                 logger.debug(key='msg', data=f'mother {person_id} is scheduled to attend ANC today but is currently an '
                                              f'inpatient- she will be scheduled to arrive at her next visit instead and'
                                              f' no interventions will be delivered here')
+
 
                 weeks_due_next_visit = int(gest_age_next_contact - df.at[person_id, 'ps_gestational_age_in_weeks'])
                 visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
@@ -1782,15 +1786,15 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive:
+        if not mother.is_alive or not mother.is_pregnant:
             return
 
         # Ensure this event only runs for the correct women
-        if mother.is_pregnant and ~mother.la_currently_in_labour:
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
+        if ~mother.la_currently_in_labour:
             if self.sim.date != mother.ac_date_next_contact:
                 return
+
+            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
 
             if mother.ac_inpatient:
                 # Women who are inpatients at the time of their ANC appointment will try to return for this visit at
@@ -1890,14 +1894,14 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive:
+        if not mother.is_alive or not mother.is_pregnant:
             return
 
-        if mother.is_pregnant and ~mother.la_currently_in_labour:
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
+        if ~mother.la_currently_in_labour:
             if self.sim.date != mother.ac_date_next_contact:
                 return
+
+            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
 
             if mother.ac_inpatient:
                 logger.debug(key='msg', data=f'Mother {person_id} was due to receive ANC today but she is an inpatient'
@@ -1990,14 +1994,14 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive:
+        if not mother.is_alive or not mother.is_pregnant:
             return
 
-        if mother.is_pregnant and ~mother.la_currently_in_labour:
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
+        if ~mother.la_currently_in_labour:
             if self.sim.date != mother.ac_date_next_contact:
                 return
+
+            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
 
             if mother.ac_inpatient:
                 logger.debug(key='msg', data=f'Mother {person_id} was due to receive ANC today but she is an inpatient'
@@ -2082,14 +2086,14 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive:
+        if not mother.is_alive or not mother.is_pregnant:
             return
 
-        if mother.is_pregnant and ~mother.la_currently_in_labour:
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
+        if ~mother.la_currently_in_labour:
             if self.sim.date != mother.ac_date_next_contact:
                 return
+
+            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
 
             if mother.ac_inpatient:
                 logger.debug(key='msg', data=f'Mother {person_id} was due to receive ANC today but she is an inpatient'
@@ -2175,14 +2179,14 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive:
+        if not mother.is_alive or not mother.is_pregnant:
             return
 
-        if mother.is_pregnant and ~mother.la_currently_in_labour:
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
+        if ~mother.la_currently_in_labour:
             if self.sim.date != mother.ac_date_next_contact:
                 return
+
+            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
 
             if mother.ac_inpatient:
                 logger.debug(key='msg', data=f'Mother {person_id} was due to receive ANC today but she is an inpatient'
@@ -2260,14 +2264,14 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive:
+        if not mother.is_alive or not mother.is_pregnant:
             return
 
-        if mother.is_pregnant and ~mother.la_currently_in_labour:
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
+        if ~mother.la_currently_in_labour:
             if self.sim.date != mother.ac_date_next_contact:
                 return
+
+            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
 
             if mother.ac_inpatient:
                 logger.debug(key='msg', data=f'Mother {person_id} was due to receive ANC today but she is an inpatient'
@@ -2343,11 +2347,11 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive:
+        if not mother.is_alive or not mother.is_pregnant:
             return
 
         # Women who are inpatients for their last visit will not attempt to return for this visit
-        if mother.is_pregnant and ~mother.la_currently_in_labour and ~mother.ac_inpatient:
+        if ~mother.la_currently_in_labour and ~mother.ac_inpatient:
             if self.sim.date != mother.ac_date_next_contact:
                 return
 

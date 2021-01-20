@@ -13,8 +13,8 @@ from tlo.methods import (
     healthsystem,
     labour,
     pregnancy_supervisor,
-    antenatal_care,
-    symptommanager, tb, hiv, male_circumcision, newborn_outcomes, healthburden
+    antenatal_care, postnatal_supervisor,
+    symptommanager, male_circumcision, newborn_outcomes, healthburden
 )
 
 start_date = Date(2010, 1, 1)
@@ -34,14 +34,13 @@ def simulation():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 hiv.hiv(resourcefilepath=resourcefilepath),
-                 tb.tb(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
