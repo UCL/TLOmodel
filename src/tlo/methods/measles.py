@@ -462,7 +462,7 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
 
 
 # ---------------------------------------------------------------------------------
-# Health System Interaction Events
+# Logging Events
 # ---------------------------------------------------------------------------------
 
 class MeaslesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
