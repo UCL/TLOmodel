@@ -953,6 +953,8 @@ class RTI(Module):
         'rt_disability': Property(Types.REAL, 'disability weight for current month'),
         'rt_date_inj': Property(Types.DATE, 'date of latest injury'),
         'rt_med_int': Property(Types.BOOL, 'whether this person is currently undergoing medical treatment'),
+        'rt_in_icu': Property(Types.BOOL, 'whether this person is currently in ICU for RTI'),
+        'rt_in_hdu': Property(Types.BOOL, 'whether this person is currently in HDU for RTI'),
         'rt_MAIS_military_score': Property(Types.INT, 'the maximum AIS-military score, used as a proxy to calculate the'
                                                       'probability of mortality without medical intervention'),
         'rt_date_death_no_med': Property(Types.DATE, 'the date which the person has is scheduled to die without medical'
@@ -2448,6 +2450,9 @@ class RTI(Module):
             days_until_treatment_end = inpatient_days_ISS_more_than_25
         if days_until_treatment_end < 0:
             days_until_treatment_end = 0
+        # Determine if they will require time in the ICU/HDU
+        # todo: make this more sophisticated, currently model will take the 2.7% highest ISS scores and place people in
+        #  the ICU and the next 3.3% of highest ISS scores and place them in the HDU
         # Return the LOS
         return days_until_treatment_end
 
@@ -2544,6 +2549,8 @@ class RTI(Module):
         df.at[child_id, 'rt_imm_death'] = False
         df.at[child_id, 'rt_perm_disability'] = False
         df.at[child_id, 'rt_med_int'] = False  # default: no one has a had medical intervention
+        df.at[child_id, 'rt_in_icu'] = False
+        df.at[child_id, 'rt_in_hdu'] = False
         df.at[child_id, 'rt_date_to_remove_daly'] = [pd.NaT] * 8
         df.at[child_id, 'rt_diagnosed'] = False
         df.at[child_id, 'rt_recovery_no_med'] = False  # default: no recovery without medical intervention
@@ -3394,6 +3401,8 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         df.loc[diedfromrtiidx, "rt_unavailable_med_death"] = False
         df.loc[diedfromrtiidx, "rt_disability"] = 0
         df.loc[diedfromrtiidx, "rt_med_int"] = False
+        df.loc[diedfromrtiidx, 'rt_in_icu'] = False
+        df.loc[diedfromrtiidx, 'rt_in_hdu'] = False
         for index, row in df.loc[diedfromrtiidx].iterrows():
             df.at[index, 'rt_date_to_remove_daly'] = [pd.NaT] * 8
         df.loc[diedfromrtiidx, "rt_diagnosed"] = False
@@ -4147,6 +4156,15 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # ================ Determine how long the person will be in hospital based on their ISS score ==================
         self.inpatient_days = road_traffic_injuries.rti_determine_LOS(person_id)
         self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': self.inpatient_days})
+        # ================ Determine whether the person will require ICU days =========================================
+        # Percentage of RTIs that required ICU stay 2.7% at KCH : https://doi.org/10.1007/s00268-020-05853-z
+        # todo: get ICU days from tim hallet
+        self.icu_cut_off = 38
+        self.hdu_cut_off = 29
+        if df.loc[person_id, 'rt_ISS_score'] > self.icu_cut_off:
+            df.loc[person_id, 'rt_in_icu'] = True
+        elif self.icu_cut_off >= df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off:
+            df.loc[person_id, 'rt_in_hdu'] = True
 
     def apply(self, person_id, squeeze_factor):
         road_traffic_injuries = self.sim.modules['RTI']
@@ -6048,6 +6066,13 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             percent_died_post_care = n_death_post_med / n_sought_care
         else:
             percent_died_post_care = 'none_injured'
+
+        if n_sought_care > 0:
+            percentage_admitted_to_ICU = len(df.loc[df.rt_med_int & df.rt_in_icu]) / n_sought_care
+            percent_admitted_to_hdu = len(df.loc[df.rt_med_int & df.rt_in_hdu]) / n_sought_care
+        else:
+            percentage_admitted_to_ICU = 'none_injured'
+            percent_admitted_to_hdu = 'none_injured'
         dict_to_output = {
             'number involved in a rti': n_in_RTI,
             'incidence of rti per 100,000': (n_in_RTI / ((n_alive - n_in_RTI) * (1 / 12))) * 100000,
@@ -6080,7 +6105,9 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             'total injuries': totalinj,
             'male:female ratio': mfratio,
             'percent sought healthcare': percent_sought_care,
-            'percentage died after med': percent_died_post_care
+            'percentage died after med': percent_died_post_care,
+            'percent admitted to ICU': percentage_admitted_to_ICU,
+            'percent admitted to HDU': percent_admitted_to_hdu
         }
         logger.info(key='summary_1m',
                     data=dict_to_output,

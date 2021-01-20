@@ -49,7 +49,7 @@ start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
 pop_size = 100000
-nsim = 5
+nsim = 3
 
 # Create a variable whether to save figures or not
 save_figures = True
@@ -111,6 +111,10 @@ number_of_injuries_per_sim = []
 rti_model_flow_summary = []
 # Health seeking behaviour
 percent_sought_healthcare = []
+# Admitted to ICU
+percent_admitted_to_icu = []
+# Admitted to HDU
+percent_admitted_to_hdu = []
 # Inpatient days
 all_sim_inpatient_days = []
 # Per sim inpatient days
@@ -215,6 +219,14 @@ for i in range(0, nsim):
     # was injured that month, hence the conditional append statement below
     percent_sought_healthcare.append(
         [i for i in log_df['tlo.methods.rti']['summary_1m']['percent sought healthcare'].tolist() if i !=
+         'none_injured']
+    )
+    percent_admitted_to_icu.append(
+        [i for i in log_df['tlo.methods.rti']['summary_1m']['percent admitted to ICU'].tolist() if i !=
+         'none_injured']
+    )
+    percent_admitted_to_hdu.append(
+        [i for i in log_df['tlo.methods.rti']['summary_1m']['percent admitted to HDU'].tolist() if i !=
          'none_injured']
     )
     # Get the percentage of people who died after seeking healthcare
@@ -443,6 +455,34 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
+# Plot the percentage of people admitted to ICU and HDU
+per_sim_icu_average = np.mean([np.mean(i) for i in percent_admitted_to_icu])
+per_sim_hdu_average = np.mean([np.mean(i) for i in percent_admitted_to_hdu])
+plt.pie([per_sim_icu_average, per_sim_hdu_average, 1 - (per_sim_icu_average + per_sim_hdu_average)],
+        explode=[0.2, 0, 0], labels=['ICU', 'HDU', 'Inpatient'], colors=['wheat', 'lightsalmon', 'lightsteelblue'],
+        autopct='%1.1f%%')
+plt.title(f"Average percentage admitted to ICU/HDU"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Percent_admitted_icu_hdu_pie.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+data = np.multiply([per_sim_icu_average, per_sim_hdu_average], 100)
+plt.bar(np.arange(2), data, color='lightsteelblue', label='Model', width=0.4)
+plt.bar(np.arange(2) + 0.4, [2.7, 3.3], color='lightsalmon', label='KCH', width=0.4)
+plt.xticks(np.arange(2) + 0.2, ['Percent admitted ICU', 'Percent admitted HDU'])
+plt.ylabel('Percentage')
+plt.title(f"Average percentage admitted to ICU/HDU"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Percent_admitted_icu_hdu_bar.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+
 # Plot the percentage of death post med
 overall_average_post_med_death = np.mean(percent_died_after_med)
 plt.pie([overall_average_post_med_death, 1 - overall_average_post_med_death],
@@ -1094,7 +1134,7 @@ else:
 # Police data from Schlottmann et al doi: 10.4314/mmj.v29i4.4
 plt.bar(np.arange(2), data, color='lightsteelblue', width=0.4, label='Model data')
 plt.bar(np.arange(2)+0.4, [0.64, 0.36], color='lightsalmon', width=0.4, label='Police data')
-plt.xticks(np.arange(2), ['Mild', 'Severe'])
+plt.xticks(np.arange(2) + 0.2, ['Mild', 'Severe'])
 plt.ylabel('Percent')
 plt.legend()
 plt.title(f"Average road traffic injury severity distribution compared to police data"
@@ -1108,7 +1148,8 @@ else:
 # Plot the distribution of the ISS scores
 flattened_scores = [score for sublist in iss_scores for score in sublist]
 scores, counts = np.unique(flattened_scores, return_counts=True)
-plt.bar(scores, counts / sum(counts), width=0.8, color='lightsteelblue')
+distribution_of_scores = counts / sum(counts)
+plt.bar(scores, distribution_of_scores, width=0.8, color='lightsteelblue')
 plt.xlabel('ISS scores')
 plt.ylabel('Percentage')
 plt.title(f"Average road traffic injury ISS score distribution"
@@ -1117,6 +1158,34 @@ plt.title(f"Average road traffic injury ISS score distribution"
 plt.xlim([0, 75])
 if save_figures is True:
     plt.savefig('outputs/Demographics_of_RTI/Average_ISS_scores.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Show the cumulative distribution of ISS scores
+injury_severity_cumulative_sum = np.cumsum(distribution_of_scores)
+icu_cut_off_index = list(filter(lambda k: k > 1 - 0.027, injury_severity_cumulative_sum))[0]
+hdu_cut_off_index = list(filter(lambda k: k > 1 - (0.027 + 0.033), injury_severity_cumulative_sum))[0]
+index_for_ICU = list(injury_severity_cumulative_sum).index(icu_cut_off_index)
+index_for_HCU = list(injury_severity_cumulative_sum).index(hdu_cut_off_index)
+score_for_ICU = scores[index_for_ICU]
+score_for_HCU = scores[index_for_HCU]
+plt.scatter(scores, injury_severity_cumulative_sum, color='lightsteelblue')
+plt.hlines(hdu_cut_off_index, 0, score_for_HCU, colors='r', linestyles='dashed')
+plt.vlines(score_for_HCU, 0, hdu_cut_off_index, colors='r', linestyles='dashed', label=f"Cut off score for HDU:\n"
+                                                                                       f"{score_for_HCU}")
+plt.hlines(icu_cut_off_index, 0, score_for_ICU, colors='g', linestyles='dashed')
+plt.vlines(score_for_ICU, 0, icu_cut_off_index, colors='g', linestyles='dashed', label=f"Cut off score for ICU:\n"
+                                                                                       f"{score_for_ICU}")
+plt.xlabel('ISS scores')
+plt.ylabel('Cumulative sum')
+plt.legend()
+plt.title(f"Cumulative summation of ISS scores and scores for HDU and ICU admission"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+plt.xlim([0, 75])
+plt.ylim([0, 1])
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/ISS_scores_ICU_HDU_admission.png', bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1342,7 +1411,7 @@ else:
 # Based on Purcel et al. DOI: 10.1007/s00268-020-05853-z
 percent_admitted_kch = 89.8
 percent_admitted_in_model = ((len(all_sim_inpatient_days) - sum(zero_days)) / len(all_sim_inpatient_days)) * 100
-plt.bar(np.arange(2), [np.round(percent_admitted_in_model, 2), percent_admitted_kch], color='lemonchiffon')
+plt.bar(np.arange(2), [np.round(percent_admitted_in_model, 2), percent_admitted_kch], color='lightsteelblue')
 plt.xticks(np.arange(2), ['Percent admitted in model', 'Percent admitted in KCH'])
 plt.ylabel('Percentage')
 plt.title(f"Model percentage inpatient admission compared to Kamuzu central hospital data"
