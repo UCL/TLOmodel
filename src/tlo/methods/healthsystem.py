@@ -1,3 +1,13 @@
+"""
+Todo:   - speed up
+        - phase-out use of facility_name and replace with facility_id
+        - re-organised resource files: bring in one united file, and then decompose following read_parameters
+        - bed days parameterisation
+        - let the level of the appointment be in the log
+        - move things to the hsi base class
+        - let the logger give times of each hcw
+"""
+
 import heapq as hp
 import inspect
 from pathlib import Path
@@ -22,6 +32,14 @@ class HealthSystem(Module):
     The execution of all health systems interactions are controlled through this module.
     """
 
+    # Define the types of bed that exist. The order give the sequences of bed that are used
+    # (i.e. in descending order of intensiveness)
+    bed_types = [
+        "high_dependency_bed",
+        "general_bed",
+        "non_bed_space",
+    ]
+
     PARAMETERS = {
         'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
         'Daily_Capabilities': Parameter(
@@ -40,6 +58,7 @@ class HealthSystem(Module):
             'Mapping between a district and all of the health facilities to which its \
                       population have access.',
         ),
+        'BedCapacity': Parameter(Types.DATA_FRAME, 'Bed-days capacity by facility'),
         'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
         'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
     }
@@ -47,8 +66,18 @@ class HealthSystem(Module):
     PROPERTIES = {
         'hs_dist_to_facility': Property(
             Types.REAL, 'The distance for each person to their nearest clinic (of any type)'
-        )
+        ),
+        'hs_is_inpatient': Property(
+            Types.BOOL, 'Whether or not the person is currently an in-patient at any medical facility'
+        ),
     }
+
+    # add in internal properties for entry/exit to different types of bed
+    for bed_type in bed_types:
+        PROPERTIES[f"hs_next_first_day_in_bed_{bed_type}"] = Property(
+            Types.DATE, f"Date when person will next enter bed_type {bed_type}. (pd.NaT) is nothing scheduled")
+        PROPERTIES[f"hs_next_last_day_in_bed_{bed_type}"] = Property(
+            Types.DATE, f"Date of the last day in the next stay in bed_type {bed_type}. (pd.NaT) is nothing scheduled")
 
     def __init__(
         self,
@@ -92,7 +121,7 @@ class HealthSystem(Module):
             assert type(service_availability) is list
             self.service_availability = service_availability
 
-        # Check that the capabilities coefficident is correct
+        # Check that the capabilities coefficient is correct
         assert capabilities_coefficient >= 0
         assert type(capabilities_coefficient) is float
         self.capabilities_coefficient = capabilities_coefficient
@@ -110,6 +139,15 @@ class HealthSystem(Module):
         self.store_hsi_events_that_have_run = store_hsi_events_that_have_run
         if self.store_hsi_events_that_have_run:
             self.store_of_hsi_events_that_have_run = list()
+
+        # Create store for ending in-patient status
+        self.list_of_cols_with_internal_dates = dict()
+        self.list_of_cols_with_internal_dates['entries'] = [
+            f"hs_next_first_day_in_bed_{bed_type}" for bed_type in self.bed_types]
+        self.list_of_cols_with_internal_dates['exits'] = [
+            f"hs_next_last_day_in_bed_{bed_type}" for bed_type in self.bed_types]
+        self.list_of_cols_with_internal_dates['all'] = \
+            self.list_of_cols_with_internal_dates['entries'] + self.list_of_cols_with_internal_dates['exits']
 
         logger.info(key="message",
                     data=f"----------------------------------------------------------------------"
@@ -154,6 +192,12 @@ class HealthSystem(Module):
         # NB. Modules can use this to look-up what consumables they need.
         self.parameters['Consumables'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Consumables.csv')
         self.process_consumables_file()
+
+        # Read in in-patient capacity
+        self.parameters['BedCapacity'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Bed_Capacity.csv'
+        ).iloc[:, 1:].set_index('Facility_Name')
+        assert all([bed_type in self.parameters['BedCapacity'].columns for bed_type in self.bed_types])
 
     def process_consumables_file(self):
         """Helper function for processing the consumables data (stored as self.parameters['Consumables'])
@@ -204,6 +248,10 @@ class HealthSystem(Module):
         #  population density distribitions)
         # Note that this characteritic is inherited from mother to child.
         df.loc[df.is_alive, 'hs_dist_to_facility'] = self.rng.uniform(0.01, 5.00, df.is_alive.sum())
+        df.loc[df.is_alive, 'hs_is_inpatient'] = False
+
+        # Put pd.NaT for all the properties concerned with entry/exit of different types of bed.
+        df.loc[df.is_alive, self.list_of_cols_with_internal_dates['all']] = pd.NaT
 
     def initialise_simulation(self, sim):
 
@@ -232,11 +280,19 @@ class HealthSystem(Module):
         # Update consumables available today:
         self.determine_availability_of_consumables_today()
 
+        # Initialise the bed-days-tracker:
+        self.initialise_beddays_tracker()
+
+        # Schedule the first (repeating) event to update status of hs_is_in_patient
+        sim.schedule_event(RefreshInPatient(self), sim.date)
+
     def on_birth(self, mother_id, child_id):
 
         # New child inherits the hs_dist_to_facility of the mother
         df = self.sim.population.props
         df.at[child_id, 'hs_dist_to_facility'] = df.at[mother_id, 'hs_dist_to_facility']
+        df.at[child_id, 'hs_is_inpatient'] = False
+        df.loc[child_id, self.list_of_cols_with_internal_dates['all']] = pd.NaT
 
     def register_disease_module(self, new_disease_module):
         """
@@ -277,20 +333,16 @@ class HealthSystem(Module):
 
         if isinstance(hsi_event.target, tlo.population.Population):  # check if hsi_event is population-scoped
             # This is a population-scoped HSI event...
-            # ... So it needs TREATMENT_ID
-            # ... But it does not need APPT, CONS, ACCEPTED_FACILITY_LEVEL and ALERT_OTHER_DISEASES, or did_not_run().
-
-            assert 'TREATMENT_ID' in dir(hsi_event)
-            assert 'EXPECTED_APPT_FOOTPRINT_FOOTPRINT' not in dir(hsi_event)
-            assert 'ACCEPTED_FACILITY_LEVEL' not in dir(hsi_event)
-            assert 'ALERT_OTHER_DISEASES' not in dir(hsi_event)
+            # ... So it only needs TREATMENT_ID (the other items are ignored)
+            assert ('TREATMENT_ID' in dir(hsi_event)) and (hsi_event.TREATMENT_ID != '')
 
         else:
             # This is an individual-scoped HSI event.
-            # It must have APPT, CONS, ACCEPTED_FACILITY_LEVELS and ALERT_OTHER_DISEASES defined
+            # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT, ACCEPTED_FACILITY_LEVELS and
+            # ALERT_OTHER_DISEASES defined
 
             # Correctly formatted footprint
-            assert 'TREATMENT_ID' in dir(hsi_event)
+            assert ('TREATMENT_ID' in dir(hsi_event)) and (hsi_event.TREATMENT_ID != '')
 
             # Correct formated EXPECTED_APPT_FOOTPRINT
             assert 'EXPECTED_APPT_FOOTPRINT' in dir(hsi_event)
@@ -303,6 +355,9 @@ class HealthSystem(Module):
             assert hsi_event.ACCEPTED_FACILITY_LEVEL in list(
                 pd.unique(self.parameters['Facilities_For_Each_District']['Facility_Level'])
             )
+
+            assert 'BEDDAYS_FOOTPRINT' in dir(hsi_event)
+            self.check_beddays_footrpint_format(hsi_event.BEDDAYS_FOOTPRINT)
 
             # That it has a list for the other disease that will be alerted when it is run and that this make sense
             assert 'ALERT_OTHER_DISEASES' in dir(hsi_event)
@@ -343,7 +398,7 @@ class HealthSystem(Module):
         elif hsi_event.TREATMENT_ID is None:
             allowed = True  # (if no treatment_id it can pass)
         elif hsi_event.TREATMENT_ID.startswith('GenericFirstAppt'):
-            allowed = True  # allow all GenericFirstAppt's
+            allowed = True  # allow all GenericFirstAppts
         else:
             # check to see if anything provided given any wildcards
             for s in self.service_availability:
@@ -590,6 +645,30 @@ class HealthSystem(Module):
         """
         raise Exception('Do not use get_prob_seek_care().')
 
+    def get_facility_id(self, hsi_event):
+        """Helper function to find the facility_id (the integer value) at which an HSI event will take place"""
+        # Gather useful information
+
+        df = self.sim.population.props
+        fac_per_district = self.parameters['Facilities_For_Each_District']
+
+        # Gather information about the HSI event
+        the_person_id = hsi_event.target
+        the_district = df.at[the_person_id, 'district_of_residence']
+
+        # Get the (one) health_facility available to this person (based on their district), which is accepted by the
+        # hsi_event.ACCEPTED_FACILITY_LEVEL:
+        the_facility_info = fac_per_district.loc[
+            (fac_per_district['District'] == the_district)
+            & (fac_per_district['Facility_Level'] == hsi_event.ACCEPTED_FACILITY_LEVEL),
+            ['Facility_ID', 'Facility_Name'],
+        ].iloc[0]
+
+        the_facility_id = the_facility_info.Facility_ID
+        the_facility_name = the_facility_info.Facility_Name
+
+        return the_facility_id, the_facility_name
+
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
         This will take an HSI event and return the required appointments in terms of the time required of each
@@ -603,15 +682,11 @@ class HealthSystem(Module):
         """
 
         # Gather useful information
-        df = self.sim.population.props
-        mfl = self.parameters['Master_Facilities_List']
-        fac_per_district = self.parameters['Facilities_For_Each_District']
         appt_types = self.parameters['Appt_Types_Table']['Appt_Type_Code'].values
         appt_times = self.parameters['Appt_Time_Table']
 
         # Gather information about the HSI event
-        the_person_id = hsi_event.target
-        the_district = df.at[the_person_id, 'district_of_residence']
+        the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
 
         # Get the appt_footprint
         if actual_appt_footprint is None:
@@ -623,13 +698,7 @@ class HealthSystem(Module):
 
         # Get the (one) health_facility available to this person (based on their district), which is accepted by the
         # hsi_event.ACCEPTED_FACILITY_LEVEL:
-        the_facility_id = fac_per_district.loc[
-            (fac_per_district['District'] == the_district)
-            & (fac_per_district['Facility_Level'] == hsi_event.ACCEPTED_FACILITY_LEVEL),
-            'Facility_ID',
-        ].values[0]
-
-        the_facility_level = mfl.loc[mfl['Facility_ID'] == the_facility_id, 'Facility_Level'].values[0]
+        the_facility_id, the_facility_name = self.get_facility_id(hsi_event)
 
         # Transform the treatment footprint into a demand for time for officers of each type, for this
         # facility level (it varies by facility level)
@@ -861,6 +930,20 @@ class HealthSystem(Module):
             "Intervention_Package_Code": pkgs
         }
 
+    def get_blank_beddays_footprint(self):
+        """
+        Helper function to generate a blank footprint for the bed-days required by an HSI
+        :return: a footprint of the correct format, specifying no bed days
+        """
+        return dict(zip(self.bed_types, [0] * len(self.bed_types)))
+
+    def check_beddays_footrpint_format(self, beddays_footprint):
+        """Check that the format of the beddays footprint is correct"""
+        assert type(beddays_footprint) is dict
+        assert len(self.bed_types) == len(beddays_footprint)
+        assert all([(bed_type in beddays_footprint) for bed_type in self.bed_types])
+        assert all([((v >= 0) and (type(v) is int)) for v in beddays_footprint.values()])
+
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
         This will write to the log with a record that this HSI event has occured.
@@ -965,6 +1048,187 @@ class HealthSystem(Module):
 
         return list_of_events
 
+    def initialise_beddays_tracker(self):
+        """Initialise the bed days tracker.
+        Create a dataframe for each type of beds that give the total number of beds currently available in each facility
+         (rows) by the date during the simulation (columns).
+
+        It is decremented by 1 for each person occupying a bed for one day.
+
+        The current implementation assumes that bed capacity is held constant throughout the simulation; but it could be
+         changed through modifications here.
+        """
+        self.bed_tracker = dict()
+
+        for bed_type in self.bed_types:
+            df = pd.DataFrame(index=self.parameters['BedCapacity'].index,
+                              columns=pd.date_range(self.sim.start_date, self.sim.end_date, freq='D'),
+                              data=1)
+            df = df.mul(self.parameters['BedCapacity'][bed_type], axis=0)
+            assert not df.isna().any().any()
+            self.bed_tracker[bed_type] = df
+
+    def impose_beddays_footprint(self, hsi_event):
+        """This is called to reflect that a new occupany of bed-days should be recorded:
+        * Cause to be reflected in the bed_tracker that an hsi_event is being run that will cause bed to be
+         occupied.
+        * Update the property ```hs_is_inpatient``` to show that this person is now an in-patient
+
+         NB. If multiple bed types are required, then it is assumed that these run in the sequence given in
+         ```bed_types```.
+         """
+        df = self.sim.population.props
+        new_footprint = hsi_event.BEDDAYS_FOOTPRINT
+
+        if not type(hsi_event.target) is int:
+            # If this is a population level event, do nothing
+            return
+
+        person_id = hsi_event.target
+
+        def apply_footprint(footprint):
+            """Edit the internal properties in the dataframe to reflect this in-patient stay"""
+            # reset all internal properties about dates of transition between bed use states:
+            df.loc[person_id, self.list_of_cols_with_internal_dates['all']] = pd.NaT
+
+            # compute the entry/exit dates of bed use states:
+            dates_of_bed_use = self.compute_dates_of_bed_use(footprint)
+
+            # record these dates in the internal properties:
+            df.loc[person_id, dates_of_bed_use.keys()] = dates_of_bed_use.values()
+
+            # enter these to tracker
+            self.edit_bed_tracker(
+                dates_of_bed_use=dates_of_bed_use,
+                person_id=person_id,
+                add_footprint=True
+            )
+
+        if not df.at[person_id, 'hs_is_inpatient']:
+            # apply the new footprint if the person is not already an in-patient
+            apply_footprint(new_footprint)
+            # label person as an in-patient
+            df.at[person_id, 'hs_is_inpatient'] = True
+
+        else:
+            # if person is already an in-patient:
+            # calculate how much time left in each bed remains for the person who is already an in-patient
+            remaining_footprint = self.get_remaining_footprint(person_id)
+
+            # combine the remaining footprint with the new footprint, with days in each bed-type running concurrently:
+            combo_footprint = {bed_type: max(new_footprint[bed_type], remaining_footprint[bed_type])
+                               for bed_type in self.bed_types
+                               }
+
+            # remove the old footprint and apply the combined footprint
+            self.remove_beddays_footprint(person_id)
+            apply_footprint(combo_footprint)
+
+    def edit_bed_tracker(self, dates_of_bed_use, person_id, add_footprint=True):
+        """Helper function to record the usage (or freeing-up) of beds in the bed-tracker
+        dates_of_bed_use: the dates of entry/exit from beds of each type
+        person_id: used to find the facility to use
+        add_footprint: whether the footprint should be added (i.e. consume a bed), or the reversed (i.e. free a bed).
+            The latter is used to when a footprint is removed when a person dies or before a new footprint is added.
+        """
+
+        # determine the facility_id
+        the_facility_name = 'National Hospital'  # todo - make this specific to the district/region using person_id
+        operation = -1 if add_footprint else 1
+
+        for bed_type in self.bed_types:
+            date_start_this_bed = dates_of_bed_use[f"hs_next_first_day_in_bed_{bed_type}"]
+            date_end_this_bed = dates_of_bed_use[f"hs_next_last_day_in_bed_{bed_type}"]
+            self.bed_tracker[bed_type].loc[the_facility_name, date_start_this_bed: date_end_this_bed] += operation
+
+    def compute_dates_of_bed_use(self, footprint):
+        """Helper function to compute the dates of entry/exit from beds of each type according to a bed-days footprint
+         (which provides information in terms of number of whole days).
+        NB. It is always assumed that the footprint begins with today's date. """
+
+        now = self.sim.date
+        start_allbeds = now
+        end_allbeds = now + pd.DateOffset(days=sum(footprint.values()) - 1)
+
+        dates_of_bed_use = dict()
+
+        start_this_bed = start_allbeds
+        for bed_type in self.bed_types:
+            if footprint[bed_type] > 0:
+                end_this_bed = start_this_bed + pd.DateOffset(days=footprint[bed_type] - 1)
+
+                # record these dates:
+                dates_of_bed_use[f"hs_next_first_day_in_bed_{bed_type}"] = start_this_bed
+                dates_of_bed_use[f"hs_next_last_day_in_bed_{bed_type}"] = end_this_bed
+
+                # get ready for next bed type:
+                start_this_bed = end_this_bed + pd.DateOffset(days=1)
+            else:
+                dates_of_bed_use[f"hs_next_first_day_in_bed_{bed_type}"] = pd.NaT
+                dates_of_bed_use[f"hs_next_last_day_in_bed_{bed_type}"] = pd.NaT
+
+        # check that dates run as expected
+        assert (start_this_bed - pd.DateOffset(days=1)) == end_allbeds
+
+        return dates_of_bed_use
+
+    def get_remaining_footprint(self, person_id):
+        """Helper function to work out how many days remaining in each bed-type of current stay for a given person."""
+        df = self.sim.population.props
+        now = self.sim.date
+
+        d = df.loc[person_id, self.list_of_cols_with_internal_dates['all']]
+        remaining_footprint = self.get_blank_beddays_footprint()
+
+        for bed_type in self.bed_types:
+            if d[f'hs_next_last_day_in_bed_{bed_type}'] >= now:
+                remaining_footprint[bed_type] = 1 + \
+                                                (
+                                                    d[f'hs_next_last_day_in_bed_{bed_type}']
+                                                    - max(now, d[f'hs_next_first_day_in_bed_{bed_type}'])
+                                                ).days
+                # NB. The '+1' accounts for the fact that 'today' is included
+
+        return remaining_footprint
+
+    def remove_beddays_footprint(self, person_id):
+        """Helper function that will remove from the bed-days tracker the days of bed-days remaining for a person.
+        This is called when the person dies or when a new footprint is imposed"""
+        remaining_footprint = self.get_remaining_footprint(person_id)
+        dates_of_bed_use = self.compute_dates_of_bed_use(remaining_footprint)
+        self.edit_bed_tracker(
+            dates_of_bed_use=dates_of_bed_use,
+            person_id=person_id,
+            add_footprint=False
+        )
+
+    def on_simulation_end(self):
+        """Dump the record of the bed_tracker to the log"""
+        for bed_type in self.bed_tracker:
+            for index, row in self.bed_tracker[bed_type].iterrows():
+                row.index = row.index.astype(str)
+                row['Facility_Name'] = index
+
+                logger.info(
+                    key=f'bed_tracker_{bed_type}',
+                    data=row,
+                    description=f'dataframe of bed_tracker of type {bed_type}, broken down by day and facility'
+                )
+
+
+class RefreshInPatient(RegularEvent, PopulationScopeEventMixin):
+    """Refresh the hs_in_patient status. This event runs every day"""
+    def __init__(self, module: HealthSystem):
+        super().__init__(module, frequency=DateOffset(days=1))
+
+    def apply(self, population):
+        df = self.sim.population.props
+        exit_cols = self.module.list_of_cols_with_internal_dates['exits']
+
+        # if any "date of last day in bed" in not null and in the future, then the person is an in-patient:
+        df.loc[df.is_alive, "hs_is_inpatient"] = \
+            ((~df.loc[df.is_alive, exit_cols].isnull()) & ~(df.loc[df.is_alive, exit_cols] < self.sim.date)).any(axis=1)
+
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
@@ -991,6 +1255,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(days=1))
 
     def apply(self, population):
+
         # 0) Determine the availability of consumables today based on their probabilities
         self.module.determine_availability_of_consumables_today()
 
@@ -1111,8 +1376,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 if ok_to_run:
 
+                    # Compute the fraction of the bed-days in the footprint that is available and log the usage:
+                    # todo - this provides exactly the beddays that were requested,
+                    #  ... but this will be where the check on availability is gated
+                    event._received_info_about_bed_days = event.BEDDAYS_FOOTPRINT
+
                     # Run the HSI event (allowing it to return an updated appt_footprint)
-                    actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
+                    actual_appt_footprint = event.run(
+                        squeeze_factor=squeeze_factor
+                    )
 
                     # Check if the HSI event returned updated appt_footprint
                     if actual_appt_footprint is not None:
@@ -1195,10 +1467,27 @@ class HSI_Event:
         # This is needed so mixin constructors are called
         super().__init__(*args, **kwargs)
 
-    def apply(self, *args, **kwargs):
+        # Defaults for the HSI information:
+        self.TREATMENT_ID = ''
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = None
+        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
+        self._received_info_about_bed_days = None
+
+    @property
+    def bed_days_allocated_to_this_event(self):
+        if self._received_info_about_bed_days is None:
+            # default to the footprint if no information about bed-days is received
+            return self.BEDDAYS_FOOTPRINT
+        else:
+            return self._received_info_about_bed_days
+
+    def apply(self, squeeze_factor=0.0, *args, **kwargs):
         """Apply this event to the population.
 
         Must be implemented by subclasses.
+
         """
         raise NotImplementedError
 
@@ -1224,7 +1513,8 @@ class HSI_Event:
 
     def post_apply_hook(self):
         """Do any required processing after apply() completes."""
-        pass
+        # Impose the bed-days footprint:
+        self.module.sim.modules['HealthSystem'].impose_beddays_footprint(self)
 
     def run(self, squeeze_factor):
         """Make the event happen."""
@@ -1272,6 +1562,28 @@ class HSI_Event:
 
         return all_available
 
+    def make_beddays_footprint(self, dict_of_beddays):
+        """Helper function to make a correctly-formed 'bed-days footprint'"""
+        # get blank footprint
+        footprint = self.sim.modules['HealthSystem'].get_blank_beddays_footprint()
+
+        # do checks
+        assert type(dict_of_beddays) is dict
+        assert all([(k in footprint.keys()) for k in dict_of_beddays.keys()])
+        assert all([type(v) in (float, int) for v in dict_of_beddays.values()])
+
+        # make footprint (defaulting to zero where a type of bed-days is not specified)
+        for k, v in dict_of_beddays.items():
+            footprint[k] = v
+
+        return footprint
+
+    def is_all_beddays_allocated(self):
+        """Check if the entire footprint requested is allocated"""
+        return all(
+            [self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT]
+        )
+
     def make_appt_footprint(self, dict_of_appts):
         """Helper function to make an appt_footprint. Create the full appt_footprint that is expected from a dictionary
         only giving the types of appointments needed."""
@@ -1309,4 +1621,6 @@ class HSIEventWrapper(Event):
 
         if isinstance(self.hsi_event.target, tlo.population.Population) \
                 or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
+
+            # Run the event (with 0 squeeze_factor) and ignore the output
             _ = self.hsi_event.run(squeeze_factor=0.0)
