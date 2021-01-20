@@ -78,7 +78,6 @@ class Measles(Module):
     # Declaration of the specific symptoms that this module will use
     SYMPTOMS = {
         'rash',  # moderate symptoms, will trigger healthcare seeking in community/district facility
-        'pneumonia',  # this should be integrated with Ines' pneumonia module
         'encephalitis',
         'otitis_media'
     }
@@ -108,14 +107,18 @@ class Measles(Module):
             }
 
         # Declare symptoms that this module will cause and which are not included in the generic symptoms:
-        generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
-        for symptom_name in self.symptoms:
-            if symptom_name not in generic_symptoms:
-                self.sim.modules['SymptomManager'].register_symptom(
-                    Symptom(name=symptom_name,
-                            odds_ratio_health_seeking_in_children=2.5,
-                            odds_ratio_health_seeking_in_adults=2.5)  # rash, pneumonia, otitis media non-emergencies
-                )
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='rash',
+                    odds_ratio_health_seeking_in_children=2.5,
+                    odds_ratio_health_seeking_in_adults=2.5)  # non-emergencies
+        )
+
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='otitis_media',
+                    odds_ratio_health_seeking_in_children=2.5,
+                    odds_ratio_health_seeking_in_adults=2.5)  # non-emergencies
+        )
+
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(
                 name='encephalitis',
@@ -264,6 +267,9 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         # read probabilities of symptoms by age
         symptom_prob = symptom_prob.loc[symptom_prob.age == ref_age]
 
+        # symptom onset
+        symp_onset = self.sim.date + DateOffset(days=rng.random_integers(low=7, high=21, size=1))
+
         # everybody gets rash, fever and eye complaint, other symptoms assigned with age-specific probability
         for symptom in symptom_list:
 
@@ -277,17 +283,18 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
                     symptom_string=symptom,
                     add_or_remove="+",
                     disease_module=self.sim.modules["Measles"],
-                    date_of_onset=self.sim.date,
+                    date_of_onset=symp_onset,
                     duration_in_days=14,  # same duration for all symptoms
                 )
 
+        # every case should have the following symptoms:
         assert 'rash' in self.sim.modules["SymptomManager"].has_what(person_id)
         assert 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
         assert 'eye_complaint' in self.sim.modules["SymptomManager"].has_what(person_id)
 
         # schedule symptom resolution without treatment - this only occurs if death doesn't happen first
-        self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id),
-                                self.sim.date + DateOffset(days=14))
+        symp_resolve = symp_onset + DateOffset(days=rng.random_integers(low=7, high=14, size=1))
+        self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id), symp_resolve)
 
         # probability of death
         if rng.random_sample(size=1) < symptom_prob.loc[symptom_prob.symptom == "death", "probability"].values[0]:
@@ -300,7 +307,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
 
             # schedule the death
             self.sim.schedule_event(
-                death_event, self.sim.date + DateOffset(days=rng.randint(low=0, high=7)))
+                death_event, symp_onset + DateOffset(days=rng.random_integers(low=3, high=7, size=1)))
 
 
 class MeaslesSymptomResolveEvent(Event, IndividualScopeEventMixin):
@@ -471,24 +478,24 @@ class MeaslesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------------------------ INCIDENCE ------------------------------------
 
         # infected in the last time-step
-        # incidence rate per 1000 person-years
+        # incidence rate per 1000 people per month
         # include those cases that have died in the case load
         tmp = len(
             df.loc[(df.me_date_measles > (now - DateOffset(months=self.repeat)))]
         )
         pop = len(df[df.is_alive])
 
-        inc_1000py = (tmp / pop) * 1000
+        inc_1000people = (tmp / pop) * 1000
 
         incidence_summary = {
             "number_new_cases": tmp,
             "population": pop,
-            "inc_1000py": inc_1000py,
+            "inc_1000people": inc_1000people,
         }
 
         logger.info(key="incidence",
                     data=incidence_summary,
-                    description="summary of measles incidence per month")
+                    description="summary of measles incidence per 1000 people per month")
 
 
 class MeaslesLoggingFortnightEvent(RegularEvent, PopulationScopeEventMixin):
