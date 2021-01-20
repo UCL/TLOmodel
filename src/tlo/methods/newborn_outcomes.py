@@ -491,7 +491,7 @@ class NewbornOutcomes(Module):
         # Mean birth weights for each gestational age are listed in a parameter starting at 24 weeks
         # We select the correct mean birth weight from the parameter
         if gestation_at_birth < 24:
-            mean_birth_weight_list_location = 24
+            mean_birth_weight_list_location = 1
         else:
             mean_birth_weight_list_location = int(min(41, gestation_at_birth) - 24)
 
@@ -1420,7 +1420,7 @@ class BreastfeedingStatusUpdateEventSixMonths(Event, IndividualScopeEventMixin):
         # For infants who are exclusively breastfeeding at 6 months, we determine if they will change to non-exclusive
         # feeding or no breastfeeding
         if child.nb_breastfeeding_type == 'exclusive':
-            random_draw = self.module.rng.choice(('non_exclusive', 'none'), p=params[0.5, 0.5])
+            random_draw = self.module.rng.choice(('non_exclusive', 'none'), p=[0.5, 0.5])
             df.at[individual_id, 'nb_breastfeeding_type'] = random_draw
 
         # Similarly, for infants who are non-exclusively breastfeeding at 6 months we determine if they will continue

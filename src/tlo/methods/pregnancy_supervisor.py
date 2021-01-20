@@ -619,35 +619,25 @@ class PregnancySupervisor(Module):
         df = self.sim.population.props
 
         if ind_or_df == 'individual':
-            # df.at[ind_id_or_index, 'ps_ectopic_pregnancy'] = False
-            df.at[id_or_index, 'ps_gestational_age_in_weeks'] = 0
-            df.at[id_or_index, 'ps_date_of_anc1'] = pd.NaT
-            df.at[id_or_index, 'ps_placenta_praevia'] = False
-            df.at[id_or_index, 'ps_multiple_pregnancy'] = False
-            df.at[id_or_index, 'ps_anaemia_in_pregnancy'] = 'none'
-            df.at[id_or_index, 'ps_will_attend_four_or_more_anc'] = False
-            df.at[id_or_index, 'ps_htn_disorders'] = 'none'
-            df.at[id_or_index, 'ps_gest_diab'] = 'none'
-            df.at[id_or_index, 'ps_placental_abruption'] = False
-            df.at[id_or_index, 'ps_antepartum_haemorrhage'] = 'none'
-            df.at[id_or_index, 'ps_premature_rupture_of_membranes'] = False
-            df.at[id_or_index, 'ps_chorioamnionitis'] = False
-            df.at[id_or_index, 'ps_emergency_event'] = False
-
+            set = df.at
         else:
-            df.loc[id_or_index, 'ps_gestational_age_in_weeks'] = 0
-            df.loc[id_or_index, 'ps_date_of_anc1'] = pd.NaT
-            df.loc[id_or_index, 'ps_placenta_praevia'] = False
-            df.loc[id_or_index, 'ps_multiple_pregnancy'] = False
-            df.loc[id_or_index, 'ps_anaemia_in_pregnancy'] = 'none'
-            df.loc[id_or_index, 'ps_will_attend_four_or_more_anc'] = False
-            df.loc[id_or_index, 'ps_htn_disorders'] = 'none'
-            df.loc[id_or_index, 'ps_gest_diab'] = 'none'
-            df.loc[id_or_index, 'ps_placental_abruption'] = False
-            df.loc[id_or_index, 'ps_antepartum_haemorrhage'] = 'none'
-            df.loc[id_or_index, 'ps_premature_rupture_of_membranes'] = False
-            df.loc[id_or_index, 'ps_chorioamnionitis'] = False
-            df.loc[id_or_index, 'ps_emergency_event'] = False
+            set = df.loc
+
+        # df.at[ind_id_or_index, 'ps_ectopic_pregnancy'] = False
+        set[id_or_index, 'ps_gestational_age_in_weeks'] = 0
+        set[id_or_index, 'ps_date_of_anc1'] = pd.NaT
+        set[id_or_index, 'ps_placenta_praevia'] = False
+        set[id_or_index, 'ps_multiple_pregnancy'] = False
+        set[id_or_index, 'ps_anaemia_in_pregnancy'] = 'none'
+        set[id_or_index, 'ps_will_attend_four_or_more_anc'] = False
+        set[id_or_index, 'ps_htn_disorders'] = 'none'
+        set[id_or_index, 'ps_gest_diab'] = 'none'
+        set[id_or_index, 'ps_placental_abruption'] = False
+        set[id_or_index, 'ps_antepartum_haemorrhage'] = 'none'
+        set[id_or_index, 'ps_premature_rupture_of_membranes'] = False
+        set[id_or_index, 'ps_chorioamnionitis'] = False
+        set[id_or_index, 'ps_emergency_event'] = False
+        self.deficiencies_in_pregnancy.unset(id_or_index, 'iron', 'folate', 'b12')
 
     def apply_linear_model(self, lm, df):
         """
@@ -822,7 +812,7 @@ class PregnancySupervisor(Module):
         anaemia = self.apply_linear_model(
             params['ps_linear_equations']['maternal_anaemia'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   (df['ps_ectopic_pregnancy'] == 'none')  & (df['ps_anaemia_in_pregnancy'] == 'none')
+                   (df['ps_ectopic_pregnancy'] == 'none') & (df['ps_anaemia_in_pregnancy'] == 'none')
                    & ~df['ac_inpatient'] & ~df['la_currently_in_labour']])
 
         # We use a weight random draw to determine the severity of the anaemia
@@ -1243,18 +1233,6 @@ class PregnancySupervisor(Module):
         else:
             logger.debug(key='message', data=f'Mother {individual_id} will not seek care following pregnancy loss')
             return False
-
-    def property_reset(self, individual_id):
-        #  TODO: !?!?!?!?!?!!!?!?!?! REMOVE!?!?!?!?!?!!!?!?!?!
-        """
-        This function is called by PostnatalSupervisor on birth to reset pregnancy variables
-        :param individual_id: individual_id
-        """
-        df = self.sim.population.props
-
-        df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
-        df.at[individual_id, 'ps_htn_disorders'] = 'none'
-        self.deficiencies_in_pregnancy.unset(individual_id, 'iron', 'folate', 'b12')
 
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):

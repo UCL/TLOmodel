@@ -43,8 +43,8 @@ except NameError:
     resourcefilepath = Path('./resources')
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 10000
+end_date = Date(2015, 1, 1)
+popsize = 5000
 
 
 def check_dtypes(simulation):

@@ -6,7 +6,8 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, demography, postnatal_supervisor
+from tlo.methods import Metadata, demography
+from tlo.methods.postnatal_supervisor import PostnatalWeekOneEvent
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_PresentsForCareWithSymptoms
@@ -644,8 +645,6 @@ class Labour (Module):
                 #   Predictor('la_parity').when('>4', params['or_ur_grand_multip']),
                 #   Predictor('la_previous_cs_delivery').when(True, params['or_ur_prev_cs']),
                 #   Predictor('la_obstructed_labour').when(True, params['or_ur_ref_ol']),
-                # TODO: to include la_obstructed_labour_treatment to be a predictor that reduces likelihood of uterine
-                # rupture?
             ),
 
             'uterine_rupture_death': LinearModel(
@@ -675,25 +674,25 @@ class Labour (Module):
 
             'probability_delivery_health_centre': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['odds_deliver_in_health_centre']),
-                # Predictor('age_years').when('.between(24,30)', params['rrr_hc_delivery_age_25_29'])
-                #                      .when('.between(29,35)', params['rrr_hc_delivery_age_30_34'])
-                #                      .when('.between(34,40)', params['rrr_hc_delivery_age_35_39'])
-                #                      .when('.between(39,45)', params['rrr_hc_delivery_age_40_44'])
-                #                     .when('.between(44,50)', params['rrr_hc_delivery_age_45_49']),
-                # Predictor('li_urban').when(False, params['rrr_hc_delivery_rural']),
-                # Predictor('la_parity').when('.between(2,5)', params['rrr_hc_delivery_parity_3_to_4'])
-                #                      .when('>4', params['rrr_hc_delivery_parity_>4']),
-                # Predictor('li_mar_stat').when('2', params['rrr_hc_delivery_married'])),
+                params['odds_deliver_in_health_centre'],
+                Predictor('age_years').when('.between(24,30)', params['rrr_hc_delivery_age_25_29'])
+                                      .when('.between(29,35)', params['rrr_hc_delivery_age_30_34'])
+                                      .when('.between(34,40)', params['rrr_hc_delivery_age_35_39'])
+                                      .when('.between(39,45)', params['rrr_hc_delivery_age_40_44'])
+                                     .when('.between(44,50)', params['rrr_hc_delivery_age_45_49']),
+                Predictor('li_urban').when(False, params['rrr_hc_delivery_rural']),
+                Predictor('la_parity').when('.between(2,5)', params['rrr_hc_delivery_parity_3_to_4'])
+                                      .when('>4', params['rrr_hc_delivery_parity_>4']),
+                Predictor('li_mar_stat').when('2', params['rrr_hc_delivery_married'])),
 
             'probability_delivery_at_home': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['odds_deliver_at_home']),
-                # Predictor('age_years').when('.between(34,40)', params['rrr_hb_delivery_age_35_39'])
-                #                      .when('.between(39,45)', params['rrr_hb_delivery_age_40_44'])
-                #                      .when('.between(44,50)', params['rrr_hb_delivery_age_45_49']),
-                # Predictor('la_parity').when('.between(2,5)', params['rrr_hb_delivery_parity_3_to_4'])
-                #                      .when('>4', params['rrr_hb_delivery_parity_>4']),
+                params['odds_deliver_at_home'],
+                Predictor('age_years').when('.between(34,40)', params['rrr_hb_delivery_age_35_39'])
+                                      .when('.between(39,45)', params['rrr_hb_delivery_age_40_44'])
+                                      .when('.between(44,50)', params['rrr_hb_delivery_age_45_49']),
+                 Predictor('la_parity').when('.between(2,5)', params['rrr_hb_delivery_parity_3_to_4'])
+                                      .when('>4', params['rrr_hb_delivery_parity_>4'])),
 
 
             'care_seeking_for_complication': LinearModel(
@@ -1475,7 +1474,7 @@ class Labour (Module):
             if day_for_event + days_post_birth_int > 5:
                 day_for_event = 0
 
-            self.sim.schedule_event(postnatal_supervisor.PostnatalWeekOneEvent(self.sim.modules['PostnatalSupervisor'],
+            self.sim.schedule_event(PostnatalWeekOneEvent(self.sim.modules['PostnatalSupervisor'],
                                                                                individual_id),
                                     self.sim.date + DateOffset(days=day_for_event))
 
@@ -2135,8 +2134,13 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                 self.module.labour_tracker['post_term'] += 1
 
             # We check all women have had their labour state set
+            print(individual_id)
+            print(foetal_age_in_days)
+            print(gestational_age_in_days)
+            print(df.at[individual_id, 'ps_gestational_age_in_weeks'])
             assert mni[individual_id]['labour_state'] is not None
-
+            # todo: we're currently allowing 22 weekers to go into labour - this is wrong, we need to maybe say that if
+            #  a woman is having a severe comp of pregnancy before 24 weeks that she has an induced abortion
             labour_state = mni[individual_id]['labour_state']
             logger.debug(key='message', data=f'This is LabourOnsetEvent, person {individual_id} has now gone into '
                                             f'{labour_state} on date {self.sim.date}')

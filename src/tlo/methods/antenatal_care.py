@@ -2418,8 +2418,6 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
             logger.debug(key='msg', data=f'Mother {person_id} has presented at HSI_CareOfWomenDuringPregnancy_Maternal'
                                          f'EmergencyAssessment to seek care for a complication ')
 
-            df.at[person_id, 'ac_inpatient'] = True
-
             facility_level = int(self.module.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1_2_3']))
 
             admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
@@ -2645,7 +2643,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
                         self.module.antenatal_blood_transfusion(person_id, self, cause='antepartum_haem')
 
-                assert mother.ac_admitted_for_immediate_delivery != 'none'
+                assert df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none'
 
             # ======================= INITIATE TREATMENT FOR PROM +/- CHORIOAMNIONITIS ================================
             # Treatment for women with premature rupture of membranes is dependent upon a womans gestational age and if
