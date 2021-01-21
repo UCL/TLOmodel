@@ -688,7 +688,8 @@ class ALRI(Module):
         'ri_ALRI_event_date_of_onset': Property(Types.DATE, 'date of onset of current ALRI event'),
         'ri_ALRI_event_recovered_date': Property(Types.DATE, 'date of recovery from current ALRI event'),
         'ri_ALRI_event_death_date': Property(Types.DATE, 'date of death caused by current ALRI event'),
-        'ri_ALRI_severe_complication_date': Property(Types.DICT, 'date of progression to a severe complication'),
+        'ri_ALRI_pulmonary_complication_date': Property(Types.DATE, 'date of progression to a pulmonary complication'),
+        'ri_ALRI_severe_complication_date': Property(Types.DATE, 'date of progression to a severe complication'),
         'ri_end_of_last_alri_episode':
             Property(Types.DATE, 'date on which the last episode of ALRI is resolved, (including '
                                  'allowing for the possibility that a cure is scheduled following onset). '
@@ -1265,6 +1266,8 @@ class ALRI(Module):
         df.at[child_id, 'ri_ALRI_event_date_of_onset'] = pd.NaT
         df.at[child_id, 'ri_ALRI_event_recovered_date'] = pd.NaT
         df.at[child_id, 'ri_ALRI_event_death_date'] = pd.NaT
+        df.at[child_id, 'ri_ALRI_pulmonary_complication_date'] = pd.NaT
+        df.at[child_id, 'ri_ALRI_severe_complication_date'] = pd.NaT
         df.at[child_id, 'ri_end_of_last_alri_episode'] = pd.NaT
 
         # ---- Temporary values ----
@@ -1652,28 +1655,19 @@ class AlriWithComplicationsEvent(Event, IndividualScopeEventMixin):
 
         # complications for this person
         df.at[person_id, 'ri_ALRI_complications'] = list(self.complication)
-        complication_date_stored = dict()
-        if self.complication == 'pleural_effusion':
-            complication_date_stored.update({'pleural_effusion': self.sim.date})
-        if self.complication == 'empyema':
-            complication_date_stored.update({'empyema': self.sim.date})
-        if self.complication == 'pneumothorax':
-            complication_date_stored.update({'pneumothorax': self.sim.date})
-        if self.complication == 'lung_abscess':
-            complication_date_stored.update({'lung_abscess': self.sim.date})
-        if self.complication == 'sepsis':
-            complication_date_stored.update({'sepsis': self.sim.date})
-        if self.complication == 'meningitis':
-            complication_date_stored.update({'meningitis': self.sim.date})
-        if self.complication == 'respiratory_failure':
-            complication_date_stored.update({'respiratory_failure': self.sim.date})
 
-        df.at[person_id, 'ri_ALRI_severe_complication_date'] = complication_date_stored
-        print(complication_date_stored)
+        # organise by non-severe and severe complications
+        lung_complications = ['pleural_effusion', 'empyema', 'pneumothorax', 'lung_abscess']
+        severe_complications = ['sepsis', 'meningitis', 'respiratory_failure']
+
+        if any(i in lung_complications for i in list(self.complication)):
+            df.at[person_id, 'ri_ALRI_pulmonary_complication_date'] = self.sim.date
+
+        if any(i in severe_complications for i in list(self.complication)):
+            df.at[person_id, 'ri_ALRI_severe_complication_date'] = self.sim.date
 
         # add to the initial list of uncomplicated ALRI symptoms
         all_symptoms_for_this_person = list(self.symptoms)  # original uncomplicated symptoms list to add to
-
         # keep only the probabilities for the complications of the person:
         possible_symptoms_by_complication = {key: val for key, val in
                                              self.module.prob_extra_symptoms_complications.items()
