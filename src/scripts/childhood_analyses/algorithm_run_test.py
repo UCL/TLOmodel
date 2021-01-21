@@ -8,36 +8,20 @@ import os
 from pathlib import Path
 from tlo import Date, Simulation, logging
 from tlo import Date, Simulation
-from tlo.methods import contraception, demography, pneumonia, healthsystem, enhanced_lifestyle, \
+from tlo.methods import contraception, demography, ALRI, healthsystem, enhanced_lifestyle, \
     symptommanager, healthburden, healthseekingbehaviour, dx_algorithm_child, labour, pregnancy_supervisor
 
 # %%
 outputpath = Path("./outputs")
 resourcefilepath = Path("./resources")
 
-
-# log_config = {
-#     'filename': 'LogFile',
-#     'directory': outputpath,
-#     'custom_levels': {
-#         'tlo.methods.demography': logging.CRITICAL,
-#         'tlo.methods.contraception': logging.CRITICAL,
-#         'tlo.methods.healthsystem': logging.CRITICAL,
-#         'tlo.methods.labour': logging.CRITICAL,
-#         'tlo.methods.healthburden': logging.CRITICAL,
-#         'tlo.methods.symptommanager': logging.CRITICAL,
-#         'tlo.methods.healthseekingbehaviour': logging.CRITICAL,
-#         'tlo.methods.pregnancy_supervisor': logging.CRITICAL,
-#         'tlo.methods.pneumonia': logging.INFO,
-#     }
-# }
 log_config = {
     "filename": "imci_analysis",   # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.CRITICAL,  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.pneumonia": logging.INFO,
-        # "tlo.methods.dx_algorithm_child": logging.INFO
+        "tlo.methods.ALRI": logging.INFO,
+        "tlo.methods.dx_algorithm_child": logging.INFO
     }
 }
 
@@ -66,7 +50,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disabl
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 # sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
-sim.register(pneumonia.ALRI(resourcefilepath=resourcefilepath))
+sim.register(ALRI.ALRI(resourcefilepath=resourcefilepath))
 sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(0)

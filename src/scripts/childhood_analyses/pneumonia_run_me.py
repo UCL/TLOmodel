@@ -1,5 +1,5 @@
 """
-This script is used in development. It will become the test script for pneumonia module.
+This script is used in development. It will become the test script for ALRI module.
 """
 
 # %% Import Statements and initial declarations
@@ -9,7 +9,7 @@ from tlo import logging
 from tlo.analysis.utils import parse_log_file
 
 from tlo import Date, Simulation
-from tlo.methods import contraception, demography, pneumonia, enhanced_lifestyle, labour, healthsystem, \
+from tlo.methods import contraception, demography, ALRI, enhanced_lifestyle, labour, healthsystem, \
     symptommanager, healthseekingbehaviour, pregnancy_supervisor, dx_algorithm_child, healthburden
 
 # Path to the resource files used by the disease and intervention methods
@@ -24,14 +24,14 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 pop_size = 100
-seed = 123
+seed = 111
 
 log_config = {
     "filename": "imci_analysis",   # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.CRITICAL,  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.pneumonia": logging.INFO,
+        "tlo.methods.ALRI": logging.INFO,
     }
 }
 
@@ -51,7 +51,7 @@ sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-sim.register(pneumonia.ALRI(resourcefilepath=resourcefilepath))
+sim.register(ALRI.ALRI(resourcefilepath=resourcefilepath))
 
 sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 

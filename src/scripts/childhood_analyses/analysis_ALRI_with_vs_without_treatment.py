@@ -22,7 +22,7 @@ from tlo.methods import (
     labour,
     pregnancy_supervisor,
     symptommanager,
-    pneumonia,
+    ALRI,
 )
 
 # %%
@@ -62,7 +62,7 @@ for label, service_avail in scenarios.items():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 pneumonia.ALRI(resourcefilepath=resourcefilepath),
+                 ALRI.ALRI(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
 

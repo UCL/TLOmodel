@@ -16,7 +16,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
-    pneumonia,
+    ALRI,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
@@ -69,7 +69,7 @@ sim.register(
     contraception.Contraception(resourcefilepath=resources),
     labour.Labour(resourcefilepath=resources),
     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
-    pneumonia.ALRI(resourcefilepath=resources),
+    ALRI.ALRI(resourcefilepath=resources),
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resources)
 )
 

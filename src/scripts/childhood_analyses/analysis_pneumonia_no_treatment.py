@@ -19,7 +19,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
-    pneumonia,
+    ALRI,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
@@ -67,7 +67,7 @@ for label, service_avail in scenarios.items():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 pneumonia.ALRI(resourcefilepath=resourcefilepath),
+                 ALRI.ALRI(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
     sim.make_initial_population(n=popsize)
