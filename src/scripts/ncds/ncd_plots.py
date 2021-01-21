@@ -115,7 +115,6 @@ for condition in conditions:
     plt.xlabel('Year')
     plt.show()
 
-
 # Plot prevalence of multi-morbidities
 prev_mm_age_m = output['tlo.methods.ncds']['mm_prevalence_by_age_m']
 prev_mm_age_m['year'] = pd.to_datetime(prev_mm_age_m['date']).dt.year
@@ -161,7 +160,6 @@ plt.savefig(outputpath / ("N_comorbidities_by_age_f" + datestamp + ".pdf"), form
 plt.show()
 
 
-
 # ----------------------------------------------- CREATE INCIDENCE PLOTS ----------------------------------------------
 
 # Extract the relevant outputs and make a graph:
@@ -205,7 +203,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
             # extract specific condition counts from counts df
             condition_counts[age_grp] = counts[f'{condition}'].apply(lambda x: x.get(f'{age_grp}')).dropna()
             individual_condition = condition_counts[age_grp].apply(pd.Series).div(py[age_grp],
-                                                                  axis=0).dropna()
+                                                                                  axis=0).dropna()
             individual_condition.columns = [f'{condition}']
             if condition == conditions[0]:
                 inc_rate[age_grp] = condition_counts[age_grp].apply(pd.Series).div(py[age_grp],
@@ -213,7 +211,6 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
                 inc_rate[age_grp].columns = [f'{condition}']
             else:
                 inc_rate[age_grp] = inc_rate[age_grp].join(individual_condition)
-
 
     # Produce mean incidence rates of incidence rate during the simulation:
     inc_mean = pd.DataFrame()
@@ -224,6 +221,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     inc_mean = inc_mean.replace([np.inf, -np.inf, np.nan], 0)
 
     return inc_mean
+
 
 inc_by_condition = get_incidence_rate_and_death_numbers_from_logfile(sim.log_filepath)
 

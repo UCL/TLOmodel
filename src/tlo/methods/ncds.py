@@ -571,8 +571,10 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         mask = df.is_alive == True
         df.loc[mask, 'n_conditions'] = df.loc[mask, self.module.conditions].sum(axis=1)
-        n_comorbidities_m = pd.DataFrame(index=self.module.age_index, columns=list(range(0, len(self.module.conditions)+1)))
-        n_comorbidities_f = pd.DataFrame(index=self.module.age_index, columns=list(range(0, len(self.module.conditions) + 1)))
+        n_comorbidities_m = pd.DataFrame(index=self.module.age_index,
+                                         columns=list(range(0, len(self.module.conditions) + 1)))
+        n_comorbidities_f = pd.DataFrame(index=self.module.age_index,
+                                         columns=list(range(0, len(self.module.conditions) + 1)))
         df_m = df.loc[df['sex'] == "M"]
         df_m = df_m[['age_range', 'n_conditions']]
         df_f = df.loc[df['sex'] == "F"]
