@@ -27,7 +27,7 @@ pop_size = 100
 seed = 111
 
 log_config = {
-    "filename": "imci_analysis",   # The name of the output file (a timestamp will be appended).
+    "filename": "one_child",   # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.CRITICAL,  # Asterisk matches all loggers - we set the default level to WARNING

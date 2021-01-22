@@ -212,7 +212,7 @@ class ALRI(Module):
         #  'HIV negative, no SAM'
         #  ),
 
-        # Probability of bacterial co- / superinfection
+        # Probability of bacterial co- / secondary infection
         'prob_viral_pneumonia_bacterial_coinfection':
             Parameter(Types.REAL,
                       'probability of primary viral pneumonia having a bacterial co-infection'
@@ -220,10 +220,6 @@ class ALRI(Module):
         'porportion_bacterial_coinfection_pathogen':
             Parameter(Types.LIST,
                       'proportions of bacterial pathogens in a co-infection pneumonia'
-                      ),
-        'prob_secondary_bacterial_infection_in_viral_pneumonia':
-            Parameter(Types.REAL,
-                      'probability of primary viral pneumonia having a bacterial superinfection'
                       ),
         'prob_secondary_bacterial_infection_in_bronchiolitis':
             Parameter(Types.REAL,
@@ -253,6 +249,10 @@ class ALRI(Module):
         'prob_sepsis_by_bacterial_pneumonia':
             Parameter(Types.REAL,
                       'probability of sepsis caused by primary or secondary bacterial pneumonia'
+                      ),
+        'prob_sepsis_by_bronchiolitis':
+            Parameter(Types.REAL,
+                      'probability of sepsis caused by viral bronchiolitis'
                       ),
         # 'prob_sepsis_to_septic_shock': Parameter
         # (Types.REAL, 'probability of sepsis causing septic shock'
@@ -300,7 +300,7 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of pneumothorax caused by primary viral pneumonia'
                       ),
-        'prob_atelectasis_by_bronchiolitis':
+        'prob_pneumothorax_by_bronchiolitis':
             Parameter(Types.REAL,
                       'probability of atelectasis/ lung collapse caused by bronchiolitis'
                       ),
@@ -492,9 +492,9 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of chest pain / pleurisy from lung abscess'
                       ),
-        'prob_tachypnoea_adding_from_lung_abscess':
+        'prob_fast_breathing_adding_from_lung_abscess':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of tachypnoea/ fast breathing from lung abscess'
+                      'probability of additional signs/symptoms of fast_breathing/ fast breathing from lung abscess'
                       ),
         'prob_cough_sputum_adding_from_lung_abscess':
             Parameter(Types.REAL,
@@ -525,9 +525,9 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of cyanosis from respiratory failure'
                       ),
-        'prob_tachypnoea_adding_from_respiratory_failure':
+        'prob_fast_breathing_adding_from_respiratory_failure':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of tachypnoea/ fast breathing from respiratory failure'
+                      'probability of additional signs/symptoms of fast_breathing/ fast breathing from respiratory failure'
                       ),
         'prob_tachycardia_adding_from_respiratory_failure':
             Parameter(Types.REAL,
@@ -583,9 +583,9 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of fatigue from sepsis'
                       ),
-        'prob_tachypnoea_adding_from_sepsis':
+        'prob_fast_breathing_adding_from_sepsis':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of tachypnoea from sepsis'
+                      'probability of additional signs/symptoms of fast_breathing from sepsis'
                       ),
         'prob_convulsions_adding_from_sepsis':
             Parameter(Types.REAL,
@@ -679,7 +679,7 @@ class ALRI(Module):
                      categories=[
                          'fever', 'cough', 'difficult_breathing', 'convulsions', 'lethargy',
                          'fast_breathing', 'chest_indrawing', 'grunting', 'chest_pain',
-                         'cyanosis', 'respiratory_distress', 'hypoxia', 'tachypnoea',
+                         'cyanosis', 'respiratory_distress', 'hypoxia', 'fast_breathing',
                          'danger_signs'
                      ]
                      ),
@@ -755,9 +755,6 @@ class ALRI(Module):
         self.prob_symptoms_uncomplicated_ALRI = dict()
         self.prob_extra_symptoms_complications = dict()
 
-        # dict to hold the dates of onset of different complications
-        self.complications_date_onset = dict()
-
         # dict to to store the information regarding HSI management of disease:
         self.child_disease_management_information = dict()
 
@@ -790,7 +787,7 @@ class ALRI(Module):
         # Store the symptoms that this module will use:
         self.symptoms = {
             'fever', 'cough', 'difficult_breathing', 'convulsions', 'lethargy', 'not_eating',
-            'tachypnoea', 'fast_breathing', 'chest_indrawing', 'grunting', 'chest_pain',
+            'fast_breathing', 'fast_breathing', 'chest_indrawing', 'grunting', 'chest_pain',
             'cyanosis', 'respiratory_distress',
             'danger_signs'
         }
@@ -831,7 +828,6 @@ class ALRI(Module):
         Sets that there is no one with ALRI at initiation.
         """
         df = population.props  # a shortcut to the data-frame storing data for individuals
-        m = self
 
         # ---- Key Current Status Classification Properties ----
         df.loc[df.is_alive, 'ri_ALRI_status'] = False
@@ -845,6 +841,7 @@ class ALRI(Module):
         df.loc[df.is_alive, 'ri_ALRI_event_date_of_onset'] = pd.NaT
         df.loc[df.is_alive, 'ri_ALRI_event_recovered_date'] = pd.NaT
         df.loc[df.is_alive, 'ri_ALRI_event_death_date'] = pd.NaT
+        df.loc[df.is_alive, 'ri_ALRI_pulmonary_complication_date'] = pd.NaT
         df.loc[df.is_alive, 'ri_ALRI_severe_complication_date'] = pd.NaT
         df.loc[df.is_alive, 'ri_end_of_last_alri_episode'] = pd.NaT
 
@@ -973,7 +970,7 @@ class ALRI(Module):
                             "'parainfluenza', 'influenza']) & "
                             "ri_ALRI_disease_type == 'viral_pneumonia'"
                             "& ri_secondary_bacterial_pathogen =='not_applicable'",
-                            p['prob_secondary_bacterial_infection_in_viral_pneumonia']),
+                            p['prob_viral_pneumonia_bacterial_coinfection']),
                         Predictor()
                         .when(
                             "ri_primary_ALRI_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
@@ -991,33 +988,47 @@ class ALRI(Module):
             'pneumothorax':
                 LinearModel(LinearModelType.MULTIPLICATIVE,
                             1.0,
-                            Predictor('ri_primary_ALRI_pathogen')
+                            Predictor('ri_primary_ALRI_pathogen' or 'ri_secondary_bacterial_pathogen')
                             .when(
                                 ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
                                 "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
                                 "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
-                                p['prob_pneumothorax_by_bacterial_pneumonia'])
+                                p['prob_pneumothorax_by_bacterial_pneumonia']),
+                            Predictor()
                             .when(
-                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', "
-                                "'Bocavirus', 'other_viral_pathogens'])",
-                                p['prob_pneumothorax_by_viral_pneumonia'])
-                            .otherwise(0.0)
+                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
+                                "ri_ALRI_disease_type == 'viral_pneumonia' ",
+                                p['prob_pneumothorax_by_viral_pneumonia']),
+                            Predictor()
+                            .when(
+                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
+                                "ri_ALRI_disease_type == 'bronchiolitis' ",
+                                p['prob_pneumothorax_by_bronchiolitis'])
                             ),
 
             'pleural_effusion':
                 LinearModel(LinearModelType.MULTIPLICATIVE,
                             1.0,
-                            Predictor('ri_primary_ALRI_pathogen')
+                            Predictor('ri_primary_ALRI_pathogen' or 'ri_secondary_bacterial_pathogen')
                             .when(
                                 ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
                                 "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
                                 "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
-                                p['prob_pleural_effusion_by_bacterial_pneumonia'])
+                                p['prob_pleural_effusion_by_bacterial_pneumonia']),
+                            Predictor()
                             .when(
-                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', "
-                                "'Bocavirus', 'other_viral_pathogens'])",
-                                p['prob_pleural_effusion_by_viral_pneumonia'])
-                            .otherwise(0.0)
+                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
+                                "ri_ALRI_disease_type == 'viral_pneumonia' ",
+                                p['prob_pleural_effusion_by_viral_pneumonia']),
+                            Predictor()
+                            .when(
+                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
+                                "ri_ALRI_disease_type == 'bronchiolitis' ",
+                                p['prob_pleural_effusion_by_bronchiolitis'])
                             ),
 
             'empyema':
@@ -1048,12 +1059,22 @@ class ALRI(Module):
                                 "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
                                 "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
                                 p['prob_sepsis_by_bacterial_pneumonia']),
-                            Predictor('ri_primary_ALRI_pathogen')
+                            Predictor()
                             .when(
-                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', "
-                                "'Bocavirus', 'other_viral_pathogens'])",
-                                p['prob_sepsis_by_viral_pneumonia'])
-                            .otherwise(0.0)
+                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
+                                "ri_ALRI_disease_type == 'viral_pneumonia' ",
+                                p['prob_sepsis_by_viral_pneumonia']),
+                            Predictor()
+                            .when(
+                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
+                                "ri_ALRI_disease_type == 'bronchiolitis' ",
+                                p['prob_sepsis_by_bronchiolitis']),
+                            Predictor('ri_ALRI_complications').apply(
+                                lambda x: p['prob_lung_abscess_to_sepsis'] if 'lung_abscess' in x else 0),
+                            Predictor('ri_ALRI_complications').apply(
+                                lambda x: p['prob_empyema_to_sepsis'] if 'empyema' in x else 0),
                             ),
 
             'meningitis':
@@ -1071,19 +1092,28 @@ class ALRI(Module):
             'respiratory_failure':
                 LinearModel(LinearModelType.MULTIPLICATIVE,
                             1.0,
-                            Predictor('ri_primary_ALRI_pathogen')
+                            Predictor('ri_primary_ALRI_pathogen' or 'ri_secondary_bacterial_pathogen')
                             .when(
                                 ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
                                 "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
                                 "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
-                                p['prob_respiratory_failure_by_bacterial_pneumonia'])
-
+                                p['prob_respiratory_failure_by_bacterial_pneumonia']),
+                            Predictor()
                             .when(
-                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', "
-                                "'Bocavirus', 'other_viral_pathogens'])",
-                                p['prob_respiratory_failure_by_viral_pneumonia'])
-                            .otherwise(0.0)
-                            ),
+                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
+                                "ri_ALRI_disease_type == 'viral_pneumonia' ",
+                                p['prob_respiratory_failure_by_viral_pneumonia']),
+                            Predictor()
+                            .when(
+                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
+                                "ri_ALRI_disease_type == 'bronchiolitis' ",
+                                p['prob_respiratory_failure_by_bronchiolitis']),
+                            Predictor('ri_ALRI_complications').apply(
+                                lambda x: p['prob_pneumothorax_to_respiratory_failure'] if 'pneumothorax' in x else 0)
+                            )
+
         }),
 
         # check that equations have been declared for each complication
@@ -1168,7 +1198,7 @@ class ALRI(Module):
             if complicat == 'lung_abscess':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
-                    # 'tachypnoea': p[f'prob_tachypnoea_adding_from_{complicat}'],
+                    # 'fast_breathing': p[f'prob_fast_breathing_adding_from_{complicat}'],
                     # 'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
                     # 'hemoptysis': p[f'prob_hemoptysis_adding_from_{complicat}'],
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
@@ -1178,7 +1208,7 @@ class ALRI(Module):
             if complicat == 'respiratory_failure':
                 return {
                     'cyanosis': p[f'prob_cyanosis_adding_from_{complicat}'],
-                    'tachypnoea': p[f'prob_tachypnoea_adding_from_{complicat}'],
+                    'fast_breathing': p[f'prob_fast_breathing_adding_from_{complicat}'],
                     # 'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
                     # 'lethargy': p[f'prob_lethargy_adding_from_{complicat}'],
                     # 'restlessness': p[f'prob_restlessness_adding_from_{complicat}'],
@@ -1188,7 +1218,7 @@ class ALRI(Module):
                 return {
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
                     # 'fatigue': p[f'prob_fatigue_adding_from_{complicat}'],
-                    'tachypnoea': p[f'prob_tachypnoea_adding_from_{complicat}'],
+                    'fast_breathing': p[f'prob_fast_breathing_adding_from_{complicat}'],
                     # 'lethargy': p[f'prob_lethargy_adding_from_{complicat}'],
                     'convulsions': p[f'prob_convulsions_adding_from_{complicat}'],
                     # 'not_eating': p[f'prob_not_eating_adding_from_{complicat}'],
@@ -1265,9 +1295,11 @@ class ALRI(Module):
         # ---- Internal values ----
         df.at[child_id, 'ri_ALRI_event_date_of_onset'] = pd.NaT
         df.at[child_id, 'ri_ALRI_event_recovered_date'] = pd.NaT
+        df.at[child_id, 'ri_ALRI_event_recovered_date'] = pd.NaT
         df.at[child_id, 'ri_ALRI_event_death_date'] = pd.NaT
         df.at[child_id, 'ri_ALRI_pulmonary_complication_date'] = pd.NaT
         df.at[child_id, 'ri_ALRI_severe_complication_date'] = pd.NaT
+        df.at[child_id, 'ri_ALRI_pulmonary_complication_date'] = pd.NaT
         df.at[child_id, 'ri_end_of_last_alri_episode'] = pd.NaT
 
         # ---- Temporary values ----
@@ -1621,6 +1653,10 @@ class ALRINaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
         df.at[person_id, 'ri_ALRI_disease_type'] = 'not_applicable'
         df.at[person_id, 'ri_ALRI_complications'] = 'not_applicable'
+        df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
+        df.at[person_id, 'ri_ALRI_pulmonary_complication_date'] = pd.NaT
+        df.at[person_id, 'ri_ALRI_severe_complication_date'] = pd.NaT
+        df.at[person_id, 'ri_end_of_last_alri_episode'] = pd.NaT
 
         # clear the treatment prperties
         df.at[person_id, 'ri_ALRI_treatment'] = False
@@ -1758,7 +1794,6 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'ri_ALRI_event_recovered_date'] = self.sim.date
         df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
 
-        # clear other properties
         df.at[person_id, 'ri_current_ALRI_status'] = False
         # ---- Key Current Status Classification Properties ----
         df.at[person_id, 'ri_primary_ALRI_pathogen'] = 'not_applicable'
@@ -1766,6 +1801,11 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
         df.at[person_id, 'ri_ALRI_disease_type'] = 'not_applicable'
         df.at[person_id, 'ri_ALRI_complications'] = 'not_applicable'
+        df.at[person_id, 'ri_ALRI_event_recovered_date'] = self.sim.date
+        df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
+        df.at[person_id, 'ri_ALRI_pulmonary_complication_date'] = pd.NaT
+        df.at[person_id, 'ri_ALRI_severe_complication_date'] = pd.NaT
+        df.at[person_id, 'ri_end_of_last_alri_episode'] = pd.NaT
 
         # clear the treatment prperties
         df.at[person_id, 'ri_ALRI_treatment'] = False
@@ -2529,14 +2569,11 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
                         'ri_current_ALRI_symptoms',
                         'ri_ALRI_event_date_of_onset',
                         'ri_ALRI_event_recovered_date',
+                        'ri_ALRI_tx_start_date',
+                        'ri_ALRI_pulmonary_complication_date',
                         'ri_ALRI_severe_complication_date',
                         'ri_ALRI_event_death_date',
-                        'ri_ALRI_tx_start_date',
                         'ri_end_of_last_alri_episode',
-                        'date_onset_complication_respiratory_failure',
-                        'date_onset_complication_sepsis',
-                        'date_onset_complication_meningitis'
-
                         # 'ri_IMCI_classification_as_gold',
                         # 'ri_health_worker_IMCI_classification'
                     ]].to_dict())
