@@ -296,6 +296,8 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         symp_resolve = symp_onset + DateOffset(days=rng.random_integers(low=7, high=14, size=1))
         self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id), symp_resolve)
 
+        # todo separate probability for people with HIV
+
         # probability of death
         if rng.random_sample(size=1) < symptom_prob.loc[symptom_prob.symptom == "death", "probability"].values[0]:
             logger.debug(key="MeaslesOnsetEvent",
