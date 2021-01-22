@@ -1,5 +1,4 @@
 import os
-import time
 from pathlib import Path
 
 import pytest
@@ -46,12 +45,15 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
 popsize = 5000
 
+
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
+
+@pytest.mark.group2
 def test_run():
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -75,4 +77,3 @@ def test_run():
 
 
 test_run()
-

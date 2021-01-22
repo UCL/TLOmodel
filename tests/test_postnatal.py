@@ -1,4 +1,3 @@
-import datetime
 import os
 from pathlib import Path
 
@@ -47,6 +46,7 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 1000
 
+
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
@@ -75,5 +75,6 @@ def test_run():
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
+
 
 test_run()

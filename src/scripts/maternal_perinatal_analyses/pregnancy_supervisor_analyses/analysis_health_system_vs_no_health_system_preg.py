@@ -11,17 +11,18 @@ from tlo.methods import (
     contraception,
     demography,
     enhanced_lifestyle,
-    healthseekingbehaviour,
+    healthseekingbehaviour, healthburden,
     healthsystem,
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
-    symptommanager, male_circumcision, hiv, tb, postnatal_supervisor
+    symptommanager, postnatal_supervisor
 )
+
 seed = 567
 
 log_config = {
-    "filename": "postnatal_analysis",   # The name of the output file (a timestamp will be appended).
+    "filename": "postnatal_analysis",  # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
@@ -62,13 +63,10 @@ for label, service_avail in scenarios.items():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_avail),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 #male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 #hiv.hiv(resourcefilepath=resourcefilepath),
-                 #tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
@@ -76,7 +74,6 @@ for label, service_avail in scenarios.items():
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    #logfile = log_config["filename"]
     logfile = sim.configure_logging(filename="LogFile")
 
     sim.make_initial_population(n=popsize)
@@ -130,8 +127,9 @@ crude_gest_htn = dict()
 
 for label, file in output_files.items():
     maternal_mortality_ratio[label], still_birth_ratio[label], anaemia_rate[label], crude_pre_eclampsia[label], \
-    crude_gest_htn[label] = \
+        crude_gest_htn[label] = \
         get_incidence_rate_and_death_numbers_from_logfile(file)
+
 data = {}
 
 
@@ -144,7 +142,7 @@ def generate_graphs(dictionary, title, saved_title):
     plt.show()
 
 
-generate_graphs(maternal_mortality_ratio,'Combined antenatal and intrapartum MMR by Year', "mmr_by_scenario")
+generate_graphs(maternal_mortality_ratio, 'Combined antenatal and intrapartum MMR by Year', "mmr_by_scenario")
 # generate_graphs(still_birth_ratio, 'Combined antenatal and intrapartum SBR by Year', "sbr_by_scenario")
 #  generate_graphs(anaemia_rate, 'Anaemia Rate by Year', "ar_by_scenario")
 # generate_graphs(crude_pre_eclampsia, 'Crude new onset pre-eclampsia cases', "cpe_by_scenario")

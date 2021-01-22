@@ -12,12 +12,13 @@ from tlo.methods import (
     demography,
     enhanced_lifestyle,
     healthseekingbehaviour,
+    healthburden,
     healthsystem,
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
-    symptommanager, male_circumcision, tb, hiv, postnatal_supervisor
-)
+    symptommanager, postnatal_supervisor)
+
 seed = 567
 
 log_config = {
@@ -81,14 +82,11 @@ for label, allowed_interventions in scenarios.items():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*']),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 hiv.hiv(resourcefilepath=resourcefilepath),
-                 tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),

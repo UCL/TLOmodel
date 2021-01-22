@@ -103,7 +103,6 @@ for label, dx_test_specificity in scenarios.items():
     params['sensitivity_of_assessment_of_lbw_hc'] = dx_test_specificity[1]
     params['sensitivity_of_assessment_of_lbw_hp'] = dx_test_specificity[0]
 
-
     sim.simulate(end_date=end_date)
 
     # Save the full set of results:

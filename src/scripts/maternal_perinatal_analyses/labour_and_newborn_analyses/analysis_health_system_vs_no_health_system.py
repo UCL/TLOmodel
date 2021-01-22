@@ -86,6 +86,7 @@ for label, service_avail in scenarios.items():
     # Save the full set of results:
     output_files[label] = logfile
 
+
 def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     output = parse_log_file(logfile)
 

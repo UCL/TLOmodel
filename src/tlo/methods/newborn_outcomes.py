@@ -320,8 +320,9 @@ class NewbornOutcomes(Module):
             'preterm_birth_other_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_preterm_birth'],
-                # todo: i dont think this is currently detailed enough, should be some kind of function that you call
-                #  based on week at delivery that returns the parameter
+                # todo: TC- I dont think this is currently detailed enough, there should be some kind of function that
+                #  you call based on week at delivery that returns the parameter meaning the CFR for the very earliest
+                #  preterms would be very high.
                 Predictor('nb_early_preterm').when(True, params['rr_preterm_death_early_preterm']),
                 Predictor('nb_kangaroo_mother_care').when(True, params['treatment_effect_kmc']),
                 Predictor('received_corticosteroids', external=True).when('True', params['treatment_effect_steroid_'
@@ -452,7 +453,6 @@ class NewbornOutcomes(Module):
         :return: BOOL outcome
         """
         df = self.sim.population.props
-        nci = self.newborn_care_info
         mni = self.sim.modules['Labour'].mother_and_newborn_info
         mother_id = df.loc[person_id, 'mother_id']
         person = df.loc[[person_id]]
@@ -486,7 +486,9 @@ class NewbornOutcomes(Module):
         df = self.sim.population.props
 
         # TODO: TC- I think we discussed replacing this with a more simple linear model that considered transient
-        #  maternal factors which may influence LBW, that might be a job for version 2.0?
+        #  maternal factors which may influence LBW, that might be a job for version 2.0 as I dont know the best way to
+        #  capture potential risk factors that may have been present during pregnancy but arent at the time of birth
+        #  (wary I have a lot of properties already)?
 
         # Mean birth weights for each gestational age are listed in a parameter starting at 24 weeks
         # We select the correct mean birth weight from the parameter
@@ -696,8 +698,9 @@ class NewbornOutcomes(Module):
 
         # Death due to breathing difficulties is implicitly captured in the CFR for encephalopathy and pretmaturity/RDS,
         # therefore only neonates without those complications face a separate CFR for 'not breathing at birth'
-        if child.nb_not_breathing_at_birth and child.nb_encephalopathy == 'none' and \
-            (~child.nb_preterm_respiratory_distress):
+        if child.nb_not_breathing_at_birth and \
+            child.nb_encephalopathy == 'none' and \
+           (~child.nb_preterm_respiratory_distress):
             self.apply_risk_of_death_from_complication(individual_id, complication='not_breathing_at_birth')
 
         if child.nb_congenital_anomaly != 'none':
@@ -713,7 +716,7 @@ class NewbornOutcomes(Module):
         # DALYs
         else:
             if ~child.nb_early_preterm and ~child.nb_late_preterm and (child.nb_encephalopathy == 'none') and \
-                ~child.nb_early_onset_neonatal_sepsis and ~child.nb_not_breathing_at_birth:
+              ~child.nb_early_onset_neonatal_sepsis and ~child.nb_not_breathing_at_birth:
                 logger.debug(key='message', data=f'Person {individual_id} has not accrued any DALYs following '
                                                  f'delivery')
 
@@ -761,6 +764,8 @@ class NewbornOutcomes(Module):
 
                 # TODO: TC/TH- I have not yet mapped the disability associated with congenital birth anomalies as there
                 #  are approx 350 weights in the DALY file- there was some discussion about CA having its own module
+                #  but I'm not sure what the plan is there- maybe not needed for first version but may need to consider
+                #  disability?
 
         # We now delete the MNI dictionary for mothers who have died in labour but their children have survived, this
         # is done here as we use variables from the mni as predictors in some of the above equations
@@ -821,7 +826,7 @@ class NewbornOutcomes(Module):
 
         # This process is repeated for vitamin K
         if (outcome_of_request_for_consumables['Item_Code'][item_code_vit_k]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_vit_k_syringe]):
+           (outcome_of_request_for_consumables['Item_Code'][item_code_vit_k_syringe]):
 
             logger.debug(key='message', data=f'Neonate {person_id} has received vitamin k prophylaxis following'
                                              f' a facility delivery')
@@ -972,9 +977,9 @@ class NewbornOutcomes(Module):
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
 
-        # TODO: TC- I'm not fully sure this assumption holds true, let me know what you think? 'Full supportive care'
-        #  for newborns is defined in LIST as "hospital-based full supportive care, including oxygen, IV fluids,
-        #  IV antibiotics, blood transfusion, phototherapy, etc. as needed"
+        # TODO: TC- I'm not fully sure this assumption (above) holds true, let me know what you think?
+        #  'Full supportive care' for newborns is defined in LIST as "hospital-based full supportive care,
+        #  including oxygen, IV fluids, IV antibiotics, blood transfusion, phototherapy, etc. as needed"
 
         if facility_type == 'hp':
             # Define the consumables
@@ -1200,9 +1205,12 @@ class NewbornOutcomes(Module):
             # probability that their mother will seek care and bring them to
             # HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant
 
-            if (m['delivery_setting'] == 'home_birth') and (child.nb_not_breathing_at_birth or
-                                                            child.nb_early_onset_neonatal_sepsis or
-                                                            child.nb_encephalopathy != 'none'):
+            # TODO TC- currently dont assume that care would be sought for pre-term babies without obvious complications
+            #  following home birth - would you agree?
+
+            if (m['delivery_setting'] == 'home_birth') and (df.at[child_id, 'nb_not_breathing_at_birth'] or
+                                                            df.at[child_id, 'nb_early_onset_neonatal_sepsis'] or
+                                                            (df.at[child_id, 'nb_encephalopathy'] != 'none')):
                 if self.eval(params['nb_newborn_equations']['care_seeking_for_complication'], child_id):
                     nci[child_id]['sought_care_for_complication'] = True
 
@@ -1218,9 +1226,19 @@ class NewbornOutcomes(Module):
                                                      f'after a complication has developed following a home_birth')
 
                 else:
-                    # If care will not be sought for this newborn we immediately apply risk of death and make changes to
-                    # the data frame accordingly
-                    self.set_death_and_disability_status(child_id)
+                    if (m['delivery_setting'] == 'home_birth') and (df.at[child_id, 'nb_not_breathing_at_birth'] or
+                                                                    df.at[child_id, 'nb_early_onset_neonatal_sepsis'] or
+                                                                    (df.at[child_id, 'nb_encephalopathy'] != 'none')
+                                                                    or df.at[child_id, 'nb_early_preterm'] or
+                                                                    df.at[child_id, 'nb_late_preterm']):
+                        # If care will not be sought for this newborn we immediately apply risk of death and make
+                        # changes to the data frame accordingly
+                        self.set_death_and_disability_status(child_id)
+
+                        # TODO TC: I'm not sure how best to handle death from prematurity after day one? Currently
+                        #  I apply risk of death just once following birth, and whilst most of the deaths will occur
+                        #  then there needs to be some kind of spread- should i just do a random weighted draw across
+                        #  the first week/month of life?
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.info(key='message', data=f'This is NewbornOutcomes, being alerted about a health system interaction '
@@ -1235,6 +1253,10 @@ class NewbornOutcomes(Module):
 
         df = self.sim.population.props
         p = self.parameters['nb_daly_weights']
+
+        # TODO: TC/TH- All the neonatal DALY weights in the file refer to lifetime disability associated with certain
+        #  complications so am I correct in thinking that the individual should have that weight attached to them for
+        #  life? Currently that is how it is modelled
 
         # Disability properties are mapped to DALY weights and stored for the health burden module
         health_values_1 = df.loc[df.is_alive, 'nb_retinopathy_prem'].map(
@@ -1355,26 +1377,34 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(HSI_Event, Individu
         # encephalopathy due to additional hypoxia at birth
         if (df.at[person_id, 'nb_encephalopathy'] == 'none') and \
             df.at[person_id, 'nb_not_breathing_at_birth'] and \
-            ~df.at[person_id, 'nb_received_neonatal_resus']:
+           ~df.at[person_id, 'nb_received_neonatal_resus']:
             self.module.apply_risk_of_encephalopathy(person_id)
 
         # =======================================  RISK OF DEATH ======================================================
         # For newborns that have experience any complications following delivery in a facility we now determine if
         # they will die following treatment
+
         if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or \
             df.at[person_id, 'nb_not_breathing_at_birth'] or \
-            (df.at[person_id, 'nb_encephalopathy'] != 'none'):
+            (df.at[person_id, 'nb_encephalopathy'] != 'none') or df.at[person_id, 'nb_early_preterm'] or \
+           df.at[person_id, 'nb_late_preterm']:
             self.module.set_death_and_disability_status(person_id)
 
         if not df.at[person_id, 'nb_death_after_birth']:
             self.module.immunisations(person_id)
             self.module.hiv_prophylaxis_and_referral(person_id)
 
+            # TODO: TC- I've assumed that neonates with complications will need some kind of inpatient care.
+            #  This will need to be linked to NICU when we get there
+
             # Surviving neonates with complications on day 1 are admitted to the inpatient event which lives in the
             # Postnatal Supervisor module
 
-            if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or (df.at[person_id, 'nb_encephalopathy'] != 'none') \
-                or df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm']:
+            if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] \
+                or (df.at[person_id, 'nb_encephalopathy'] != 'none') \
+                or df.at[person_id, 'nb_early_preterm'] \
+               or df.at[person_id, 'nb_late_preterm']:
+
                 event = HSI_PostnatalSupervisor_NeonatalWardInpatientCare(
                     self.sim.modules['PostnatalSupervisor'], person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0,
@@ -1412,7 +1442,6 @@ class BreastfeedingStatusUpdateEventSixMonths(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         child = df.loc[individual_id]
-        params = self.module.parameters
 
         if not child.is_alive:
             return

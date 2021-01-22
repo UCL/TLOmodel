@@ -16,7 +16,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     pregnancy_supervisor,
-    symptommanager, newborn_outcomes, hiv, tb, male_circumcision, antenatal_care
+    symptommanager, newborn_outcomes, antenatal_care, postnatal_supervisor
 )
 
 start_date = Date(2010, 1, 1)
@@ -63,13 +63,11 @@ def test_no_health_system(tmpdir):
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         contraception.Contraception(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-        hiv.hiv(resourcefilepath=resourcefilepath),
-        tb.tb(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         epi.Epi(resourcefilepath=resourcefilepath),
     )
@@ -118,13 +116,11 @@ def test_epi_scheduling_hsi_events(tmpdir):
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         contraception.Contraception(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-        hiv.hiv(resourcefilepath=resourcefilepath),
-        tb.tb(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         epi.Epi(resourcefilepath=resourcefilepath),
     )

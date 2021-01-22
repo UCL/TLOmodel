@@ -1,9 +1,7 @@
-import datetime
 import os
 from pathlib import Path
 
 import pytest
-from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo import Date, Simulation, logging
 from tlo.methods import (
     antenatal_care,
@@ -37,10 +35,6 @@ log_config = {
 }
 
 
-def test_complex_lm_equations():
-    pass
-# TODO: CREATE A SERIES OF TESTS TO CHECK THE OUTPUTS OF THE MORE COMPLEX LINEAR MODELS (PPH/SEPSIS)
-
 # The resource files
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -70,7 +64,7 @@ def test_run():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 #healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*']),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -81,27 +75,7 @@ def test_run():
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-
     sim.make_initial_population(n=popsize)
-
-    def test_complex_lm_equations():
-        params_labour = sim.modules['Labour'].parameters
-
-
-
-
-        pass
-
-
-    params_ps = sim.modules['PregnancySupervisor'].parameters
-
-    #params_ps['prob_gest_htn_per_month'] = 1
-    #params_ps['prob_pre_eclampsia_per_month'] = 1
-    # params_ps['probability_htn_persists'] = 1
-    # params_labour['prob_progression_gest_htn'] = 1
-    # params_labour['prob_progression_mild_pre_eclamp'] = 1
-    # params_labour['prob_progression_severe_pre_eclamp'] = 1
-
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
@@ -120,7 +94,7 @@ def test_run_health_system_high_squeeze():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 #healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
                                            capabilities_coefficient=0.0,
@@ -132,7 +106,6 @@ def test_run_health_system_high_squeeze():
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -152,7 +125,7 @@ def test_run_health_system_events_wont_run():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 #healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=[]),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -163,13 +136,13 @@ def test_run_health_system_events_wont_run():
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
 
+
 test_run()
-# test_run_health_system_events_wont_run()
-# test_run_health_system_high_squeeze()
+test_run_health_system_events_wont_run()
+test_run_health_system_high_squeeze()

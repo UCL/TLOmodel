@@ -6,7 +6,6 @@ from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from tlo.lm import LinearModel, LinearModelType, Predictor
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -21,7 +20,7 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
-    symptommanager, male_circumcision, hiv, tb, postnatal_supervisor
+    symptommanager, postnatal_supervisor
 )
 
 seed = 567
@@ -52,8 +51,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 50000
+end_date = Date(2011, 1, 1)
+popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -74,21 +73,18 @@ allowed_interventions = ['prophylactic_labour_interventions',
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 #healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*']),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 #hiv.hiv(resourcefilepath=resourcefilepath),
-                 #tb.tb(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+             contraception.Contraception(resourcefilepath=resourcefilepath),
+             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                       service_availability=['*']),
+             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+             labour.Labour(resourcefilepath=resourcefilepath),
+             newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+             antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
 sim.make_initial_population(n=popsize)
 """params_lab = sim.modules['Labour'].parameters
@@ -108,7 +104,7 @@ params_lab['la_labour_equations']['antepartum_haem_death'] =\
                                  params_lab['aph_delayed_treatment_effect_md']),
                 Predictor('received_blood_transfusion', external=True).when(True,
                                                                             params_lab['aph_bt_treatment_effect_md']))
-           
+
 params_lab['cfr_severe_pre_eclamp'] = 0
 params_lab['cfr_eclampsia'] = 0
 params_lab['cfr_sepsis'] = 0
@@ -139,6 +135,14 @@ params_post['cfr_early_onset_neonatal_sepsis'] = 0.2
 params_post['cfr_late_neonatal_sepsis'] = 0.2
 params_post['cfr_eclampsia_pn'] = 0
 """
+
+df = sim.population.props
+
+women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+df.loc[women_repro.index, 'is_pregnant'] = True
+df.loc[women_repro.index, 'date_of_last_pregnancy'] = start_date
+for person in women_repro.index:
+    sim.modules['Labour'].set_date_of_labour(person)
 
 sim.simulate(end_date=end_date)
 
@@ -225,4 +229,3 @@ plt.xticks(y_pos, objects)
 plt.ylabel('Neonatal deaths/1000 births')
 plt.title('Neonatal mortality rate in 2011')
 plt.show()
-
