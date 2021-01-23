@@ -734,8 +734,8 @@ class Labour(Module):
                                              .when("eclampsia", params['rr_still_birth_ec']),
                 Predictor('mode_of_delivery', external=True).when("instrumental",
                                                                   params['treatment_effect_avd_still_birth'])
-                                                             .when("caesarean_section",
-                                                                   params['treatment_effect_cs_still_birth'])),
+                                                            .when("caesarean_section",
+                                                                  params['treatment_effect_cs_still_birth'])),
 
             # This regression equation uses data from the DHS to predict a womans probability of choosing to deliver in
             # a health centre
@@ -1167,9 +1167,8 @@ class Labour(Module):
             return False
 
         # If she is alive, pregnant, not in labour AND her due date is today then the event will run
-        elif person.is_alive \
-            and person.is_pregnant \
-            and (person.la_due_date_current_pregnancy == self.sim.date)  and ~person.la_currently_in_labour:
+        elif person.is_alive and person.is_pregnant and (person.la_due_date_current_pregnancy == self.sim.date) \
+                and ~person.la_currently_in_labour:
 
             # If the woman in not currently an inpatient then we assume this is her normal labour
             if person.ac_admitted_for_immediate_delivery == 'none':
@@ -2397,14 +2396,14 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
             # Here we allow a woman to go into early preterm labour with a gestational age of 23 (limit is 24) to
             # account for PregnancySupervisor only updating weekly
-            elif params['lower_limit_early_preterm_days'] <= gestational_age_in_days <= params['upper_limit_early_' \
+            elif params['lower_limit_early_preterm_days'] <= gestational_age_in_days <= params['upper_limit_early_'
                                                                                                'preterm_days']:
 
                 mni[individual_id]['labour_state'] = 'early_preterm_labour'
                 self.module.labour_tracker['early_preterm'] += 1
                 df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
-            elif params['lower_limit_late_preterm_days'] <= gestational_age_in_days <= params['upper_limit_late_' \
+            elif params['lower_limit_late_preterm_days'] <= gestational_age_in_days <= params['upper_limit_late_'
                                                                                               'preterm_days']:
 
                 mni[individual_id]['labour_state'] = 'late_preterm_labour'
@@ -3384,7 +3383,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             actual_appt_footprint['MajorSurg'] = actual_appt_footprint['MajorSurg']
 
         elif (not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_cs']) and\
-          mni[person_id]['referred_for_blood']:
+                mni[person_id]['referred_for_blood']:
             actual_appt_footprint['MajorSurg'] = actual_appt_footprint['InpatientDays']
 
     def did_not_run(self):

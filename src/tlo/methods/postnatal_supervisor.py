@@ -1557,10 +1557,8 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                  mother.pn_htn_disorders != 'severe_pre_eclamp' and mother.pn_htn_disorders != 'eclampsia':
                 mother_has_complications = False
 
-            elif mother.pn_sepsis_late_postpartum or \
-                mother.pn_postpartum_haem_secondary or \
-                mother.pn_htn_disorders == 'severe_pre_eclamp' or \
-               mother.pn_htn_disorders == 'eclampsia':
+            elif mother.pn_sepsis_late_postpartum or mother.pn_postpartum_haem_secondary or \
+                    mother.pn_htn_disorders == 'severe_pre_eclamp' or mother.pn_htn_disorders == 'eclampsia':
 
                 mother_has_complications = True
 
@@ -1963,10 +1961,10 @@ class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if total_births_last_year == 0:
             total_births_last_year = 1
 
-        ra_lower_limit = 14
-        ra_upper_limit = 50
-        women_reproductive_age = df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > ra_lower_limit) &
-                                           (df.age_years < ra_upper_limit))]
+        # ra_lower_limit = 14
+        # ra_upper_limit = 50
+        # women_reproductive_age = df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > ra_lower_limit) &
+        #                                   (df.age_years < ra_upper_limit))]
         # total_women_reproductive_age = len(women_reproductive_age)
 
         total_pph = self.module.postnatal_tracker['secondary_pph']

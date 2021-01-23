@@ -355,6 +355,7 @@ class CareOfWomenDuringPregnancy(Module):
         set[id_or_index, 'ac_mag_sulph_treatment'] = False
         set[id_or_index, 'ac_iv_anti_htn_treatment'] = False
         set[id_or_index, 'ac_received_blood_transfusion'] = False
+        set[id_or_index, 'ac_inpatient'] = False
         set[id_or_index, 'ac_admitted_for_immediate_delivery'] = 'none'
 
     def on_birth(self, mother_id, child_id):
@@ -583,7 +584,8 @@ class CareOfWomenDuringPregnancy(Module):
         params = self.parameters
 
         # Use a weighted random draw to determine which level of facility the woman will be admitted too
-        facility_level = int(self.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1_2_3']))
+        # facility_level = int(self.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1_2_3']))
+        facility_level = int(self.rng.choice([1, 2], p=[0.5, 0.5]))
 
         # Schedule the HSI
         inpatient = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
@@ -1415,8 +1417,9 @@ class CareOfWomenDuringPregnancy(Module):
             # We dont assume antihypertensives convert severe pre-eclampsia/eclampsia to a more mild version of the
             # disease (as the disease is multi-system and hypertension is only one contributing factor to mortality) but
             # instead use this property to reduce risk of acute death from this episode of disease
-            if df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp' or \
-              df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia':
+            if df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp' or\
+                    df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia':
+
                 logger.debug(key='msg', data=f'Mother {individual_id} has been given intravenous anti-hypertensive as '
                                              f'part of treatment regime for severe pre-eclampsia/eclampsia')
                 df.at[individual_id, 'ac_iv_anti_htn_treatment'] = True
@@ -2356,7 +2359,8 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
             logger.debug(key='msg', data=f'Mother {person_id} has presented at HSI_CareOfWomenDuringPregnancy_Maternal'
                                          f'EmergencyAssessment to seek care for a complication ')
 
-            facility_level = int(self.module.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1_2_3']))
+            # facility_level = int(self.module.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1_2_3']))
+            facility_level = int(self.module.rng.choice([1, 2], p=[0.5, 0.5]))
 
             admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id,
@@ -2563,15 +2567,15 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
 
-                    elif mother.ps_antepartum_haemorrhage == 'mild_moderate' \
-                      and mother.ps_gestational_age_in_weeks >= 37:
+                    elif mother.ps_antepartum_haemorrhage == 'mild_' \
+                                                             'moderate' and mother.ps_gestational_age_in_weeks >= 37:
                         # Women experiencing mild or moderate bleeding but who are around term gestation are admitted
                         # for caesarean
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
 
-                    elif mother.ps_antepartum_haemorrhage == 'mild_moderate' \
-                      and mother.ps_gestational_age_in_weeks < 37:
+                    elif mother.ps_antepartum_haemorrhage == 'mild' \
+                                                             '_moderate' and mother.ps_gestational_age_in_weeks < 37:
                         # Women with more mild bleeding remain as inpatients until their gestation has increased and
                         # then will be delivered by caesarean
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
@@ -2594,7 +2598,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     self.module.antibiotics_for_prom(person_id, self)
 
                     # Guidelines suggest women over 34 weeks of gestation should be admitted for induction to to
-                    # increase drisk of morbidity and mortality
+                    # increased risk of morbidity and mortality
                     if mother.ps_gestational_age_in_weeks >= 34:
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for induction due to prom/chorio')
@@ -2621,8 +2625,11 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             # Women for whom immediate delivery is indicated are schedule to move straight to the labour model where
             # they will have the appropriate properties set and facility delivery at a hospital scheduled (mode of
             # delivery will match the recommended mode here)
-            if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'induction_now') or \
-            (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_now'):
+            if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'induction_now') or (df.at[person_id,
+                                                                                                     'ac_admitted_'
+                                                                                                     'for_immediate_'
+                                                                                                     'delivery'] ==
+                                                                                               'caesarean_now'):
 
                 logger.debug(key='msg', data=f'Mother {person_id} will move to labour ward for '
                                              f'{df.at[person_id, "ac_admitted_for_immediate_delivery"]} today')
@@ -2633,8 +2640,12 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             # inpatients until they can move to the labour model. Currently it is possible for women to go into
             # labour whilst as an inpatient - it is assumed they are delivered via the mode recommended here
             # (i.e induction/caesarean)
-            elif (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future') or \
-            (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'induction_future'):
+            elif (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future') or (df.at[person_id,
+                                                                                                          'ac_admitted_'
+                                                                                                          'for_'
+                                                                                                          'immediate_'
+                                                                                                          'delivery'] ==
+                                                                                                    'induction_future'):
 
                 # Here we calculate how many days this woman needs to remain on the antenatal ward before she can go
                 # for delivery (assuming delivery is indicated to occur at 37 weeks)
@@ -2642,6 +2653,11 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     days_until_safe_for_cs = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
                 else:
                     days_until_safe_for_cs = 1
+
+                # TODO: TC - Currently women with very severe complications that onset early (most likely placental
+                #  abruption with severe bleeding) are admitted for 'delivery' regardless of gestational age- leading
+                #  to newborns being born far too early to realistically survive. I need to check with a clinician what
+                #  would happen in practice - I feel like it would be terminiation
 
                 # We schedule the LabourOnset event for this woman will be able to progress for delivery
                 admission_date = self.sim.date + DateOffset(days=days_until_safe_for_cs)
@@ -2710,7 +2726,10 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
             # If she is determined to still be anaemic she is admitted for additional treatment via the inpatient event
             elif fbc_result == 'mild' or fbc_result == 'moderate' or fbc_result == 'severe':
 
-                facility_level = int(self.module.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1_2_3']))
+                # facility_level = int(self.module.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1
+                # _2_3']))
+                facility_level = int(self.module.rng.choice([1, 2], p=[0.5, 0.5]))
+
                 admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id,
                     facility_level_this_hsi=facility_level)
@@ -2762,7 +2781,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
             return
 
         if ~mother.la_currently_in_labour and ~mother.ac_inpatient and mother.ps_gest_diab != 'none' \
-            and mother.ac_gest_diab_on_treatment != 'none' and mother.ps_gestational_age_in_weeks > 21:
+                and mother.ac_gest_diab_on_treatment != 'none' and mother.ps_gestational_age_in_weeks > 21:
             logger.debug(key='msg', data=f'Mother {person_id} has presented for review of her GDM')
 
             # Nothing happens to women who arrive at follow up with well controlled GDM (treatment is effective). We now
@@ -3046,8 +3065,8 @@ class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         early_anc3 = self.module.anc_tracker['timely_ANC3']
         diet_sup_6_months = self.module.anc_tracker['diet_supp_6_months']
 
-        ra_lower_limit = 14
-        ra_upper_limit = 50
+        # ra_lower_limit = 14
+        # ra_upper_limit = 50
         # women_reproductive_age = df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > ra_lower_limit) &
         #                                   (df.age_years < ra_upper_limit))]
         # total_women_reproductive_age = len(women_reproductive_age)

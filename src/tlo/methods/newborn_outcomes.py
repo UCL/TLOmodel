@@ -1043,14 +1043,14 @@ class NewbornOutcomes(Module):
         # Therefore if this event cannot run we need to apply risk of complication developing, as done below
         if ~nci[individual_id]['sought_care_for_complication']:
 
-            self.module.apply_risk_of_neonatal_infection_and_sepsis(individual_id)
-            self.module.apply_risk_of_encephalopathy(individual_id)
+            self.apply_risk_of_neonatal_infection_and_sepsis(individual_id)
+            self.apply_risk_of_encephalopathy(individual_id)
 
             if df.at[individual_id, 'nb_early_preterm'] or df.at[individual_id, 'nb_late_preterm']:
-                self.module.apply_risk_of_preterm_respiratory_distress_syndrome(individual_id)
+                self.apply_risk_of_preterm_respiratory_distress_syndrome(individual_id)
 
-            self.module.apply_risk_of_not_breathing_at_birth(individual_id)
-            self.module.set_death_and_disability_status(individual_id)
+            self.apply_risk_of_not_breathing_at_birth(individual_id)
+            self.set_death_and_disability_status(individual_id)
 
     def on_birth(self, mother_id, child_id):
         """The on_birth function of this module sets key properties of all newborns, including prematurity

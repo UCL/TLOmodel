@@ -1381,7 +1381,10 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
                 # We used a weighted draw to decide what facility level this woman will seek care at, as ANC is offered
                 # at multiple levels
-                facility_level = int(self.module.rng.choice([1, 2, 3], p=params['prob_anc_at_facility_level_0_1_2']))
+
+                # facility_level = int(self.module.rng.choice([1, 2, 3], p=params['prob_anc_at_facility_level_0_1_2']))
+
+                facility_level = int(self.module.rng.choice([1, 2], p=[0.5, 0.5]))
                 assert facility_level != 0
 
                 # TODO: AT- I chose to import the event within this Event as it seemed strange to just have the first
@@ -1559,6 +1562,7 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
         # Check only the right women have arrived here
         assert df.at[individual_id, 'ps_ectopic_pregnancy'] == 'not_ruptured'
         assert df.at[individual_id, 'ps_gestational_age_in_weeks'] < 9
+        print(individual_id)
         assert ~df.at[individual_id, 'ac_inpatient']
 
         if not df.at[individual_id, 'is_alive']:

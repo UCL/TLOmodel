@@ -14,7 +14,7 @@ from tlo.methods import (
     labour,
     oesophagealcancer,
     pregnancy_supervisor,
-    symptommanager, hiv, tb, male_circumcision, newborn_outcomes, antenatal_care
+    symptommanager, newborn_outcomes, antenatal_care, postnatal_supervisor
 )
 
 # %% Setup:
@@ -44,13 +44,11 @@ def make_simulation_healthsystemdisabled():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 hiv.hiv(resourcefilepath=resourcefilepath),
-                 tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
     sim.seed_rngs(0)
@@ -71,13 +69,11 @@ def make_simulation_nohsi():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 hiv.hiv(resourcefilepath=resourcefilepath),
-                 tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
     sim.seed_rngs(0)
