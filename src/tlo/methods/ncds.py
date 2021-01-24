@@ -2,20 +2,20 @@
 The joint NCDs model by Tim Hallett and Britta Jewell, October 2020
 
 """
-from pathlib import Path
-
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
-from tlo.methods import Metadata, demography
-from tlo.methods.demography import InstantaneousDeath
-import tlo.methods.demography as de
-from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods.healthsystem import HSI_Event
-
-import pandas as pd
-import numpy as np
 import copy
 import math
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+import tlo.methods.demography as de
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.methods import Metadata, demography
+from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.healthsystem import HSI_Event
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -35,10 +35,8 @@ class Ncds(Module):
     conditions = ['diabetes',
                   'hypertension',
                   'depression',
-                  'chronic_lower_back_pain',
                   'chronic_kidney_disease',
-                  'chronic_ischemic_hd',
-                  'cancers']
+                  'chronic_ischemic_hd']
 
     # save a master list of the events that are covered in this module
     events = ['ever_stroke',

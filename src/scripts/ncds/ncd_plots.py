@@ -1,23 +1,24 @@
-from pathlib import Path
 import datetime
+from pathlib import Path
 
-import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     labour,
+    ncds,
     pregnancy_supervisor,
     symptommanager,
-    dx_algorithm_child,
-    ncds
 )
 
 # %%
