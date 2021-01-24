@@ -579,9 +579,7 @@ class CareOfWomenDuringPregnancy(Module):
         detected during ANC
         :param individual_id: individual_id
         """
-
         df = self.sim.population.props
-        params = self.parameters
 
         # Use a weighted random draw to determine which level of facility the woman will be admitted too
         # facility_level = int(self.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1_2_3']))
@@ -2345,7 +2343,6 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        params = self.module.parameters
 
         # TODO: TC- We originally decided that pregnant women would not come via a&e in an emergency but would rather
         #  present to the maternity ward/service straight away hence why I made this event. I wonder if it is just
@@ -2704,7 +2701,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
-        params = self.module.parameters
 
         if not mother.is_alive or not mother.is_pregnant:
             return
