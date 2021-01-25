@@ -99,112 +99,124 @@ class ALRI(Module):
         # Incidence rate by pathogens  -----
         'base_inc_rate_ALRI_by_RSV':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by RSV in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence rate of ALRI caused by RSV in age groups 0-11, 12-23, 24-59 months, '
+                      'per child per year'
                       ),
         'base_inc_rate_ALRI_by_Rhinovirus':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Rhinovirus in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence of ALRI caused by Rhinovirus in age groups 0-11, 12-23, 24-59 months, '
+                      'per child per year'
                       ),
         'base_inc_rate_ALRI_by_HMPV':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by HMPV in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence of ALRI caused by HMPV in age groups 0-11, 12-23, 24-59 months, '
+                      'per child per year'
                       ),
         'base_inc_rate_ALRI_by_Parainfluenza':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Parainfluenza 1-4 in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence of ALRI caused by Parainfluenza 1-4 in age groups 0-11, 12-23, 24-59 months, '
+                      'per child per year'
                       ),
         'base_inc_rate_ALRI_by_Strep_pneumoniae_PCV13':
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by Streptoccocus pneumoniae PCV13 serotype '
-                      'in age groups 0-11, 12-23, 24-59 months'
+                      'in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_Strep_pneumoniae_non_PCV13':
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by Streptoccocus pneumoniae non PCV13 serotype '
-                      'in age groups 0-11, 12-23, 24-59 months'
+                      'in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_Hib':
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by Haemophilus influenzae type b '
-                      'in age groups 0-11, 12-23, 24-59 months'
+                      'in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_H.influenzae_non_type_b':
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by Haemophilus influenzae non-type b '
-                      'in age groups 0-11, 12-23, 24-59 months'
+                      'in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_Enterobacteriaceae':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Enterobacteriaceae in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence of ALRI caused by Enterobacteriaceae in age groups 0-11, 12-23, 24-59 months,'
+                      ' per child per year'
                       ),
         'base_inc_rate_ALRI_by_other_Strepto_Enterococci':
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by other streptococci and Enterococci including '
-                      'Streptococcus pyogenes and Enterococcus faecium in age groups 0-11, 12-23, 24-59 months'
+                      'Streptococcus pyogenes and Enterococcus faecium in age groups 0-11, 12-23, 24-59 months,'
+                      ' per child per year'
                       ),
         'base_inc_rate_ALRI_by_Staph_aureus':
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by Staphylococcus aureus '
-                      'in age groups 0-11, 12-23, 24-59 months'
+                      'in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_Influenza':
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by Influenza type A, B, and C '
-                      'in age groups 0-11, 12-23, 24-59 months'
+                      'in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_P.jirovecii':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by P. jirovecii in age groups 0-11, 12-59 months'
+                      'baseline incidence of ALRI caused by P. jirovecii in age groups 0-11, 12-59 months, '
+                      'per child per year'
                       ),
         'base_inc_rate_ALRI_by_Adenovirus':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by adenovirus in age groups 0-11, 12-59 months'
+                      'baseline incidence of ALRI caused by adenovirus in age groups 0-11, 12-59 months, '
+                      'per child per year'
                       ),
         'base_inc_rate_ALRI_by_Bocavirus':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by bocavirus in age groups 0-11, 12-59 months'
+                      'baseline incidence of ALRI caused by bocavirus in age groups 0-11, 12-59 months, '
+                      'per child per year'
                       ),
         'base_inc_rate_ALRI_by_other_viral_pathogens':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by other viral pathogens in age groups 0-11, 12-59 months'
+                      'baseline incidence of ALRI caused by other viral pathogens in age groups 0-11, 12-59 months, '
+                      'per child per year'
                       ),
         'base_inc_rate_ALRI_by_other_bacterial_pathogens':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by other viral pathogens in age groups 0-11, 12-59 months'
+                      'baseline incidence of ALRI caused by other viral pathogens in age groups 0-11, 12-59 months, '
+                      'per child per year'
                       ),
+
         # Risk factors parameters -----
         'rr_ALRI_HHhandwashing':
             Parameter(Types.REAL,
-                      'relative rate of ALRI with household handwashing with soap'
+                      'relative rate of acquiring ALRI for children with household handwashing with soap '
                       ),
         'rr_ALRI_HIV_untreated':
             Parameter(Types.REAL,
-                      'relative rate of ALRI for untreated HIV positive status'
+                      'relative rate of acquiring ALRI for children with untreated HIV positive status'
                       ),
         'rr_ALRI_underweight':
             Parameter(Types.REAL,
-                      'relative rate of ALRI for underweight'
+                      'relative rate of acquiring ALRI for underweight children'
                       ),
         'rr_ALRI_low_birth_weight':
             Parameter(Types.REAL,
-                      'relative rate of ALRI with low birth weight infants'
+                      'relative rate of acquiring ALRI for infants with low birth weight'
                       ),
         'rr_ALRI_not_excl_breastfeeding':
             Parameter(Types.REAL,
-                      'relative rate of ALRI for not exclusive breastfeeding upto 6 months'
+                      'relative rate of acquiring ALRI for not exclusive breastfeeding upto 6 months'
                       ),
         'rr_ALRI_indoor_air_pollution':
             Parameter(Types.REAL,
-                      'relative rate of ALRI for indoor air pollution'
+                      'relative rate of acquiring ALRI for indoor air pollution'
                       ),
         # 'rr_ALRI_pneumococcal_vaccine': Parameter
-        # (Types.REAL, 'relative rate of ALRI for pneumonococcal vaccine'
+        # (Types.REAL, 'relative rate of acquiring ALRI for pneumonococcal vaccine'
         #  ),
         # 'rr_ALRI_haemophilus_vaccine': Parameter
-        # (Types.REAL, 'relative rate of ALRI for haemophilus vaccine'
+        # (Types.REAL, 'relative rate of acquiring ALRI for haemophilus vaccine'
         #  ),
         # 'rr_ALRI_influenza_vaccine': Parameter
-        # (Types.REAL, 'relative rate of ALRI for influenza vaccine'
+        # (Types.REAL, 'relative rate of acquiring ALRI for influenza vaccine'
         #  ),
         # 'r_progress_to_severe_ALRI': Parameter
         # (Types.LIST,
@@ -217,14 +229,15 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of primary viral pneumonia having a bacterial co-infection'
                       ),
-        'porportion_bacterial_coinfection_pathogen':
+        'proportion_bacterial_coinfection_pathogen':
             Parameter(Types.LIST,
-                      'proportions of bacterial pathogens in a co-infection pneumonia'
+                      'list of proportions of each bacterial pathogens in a co-infection pneumonia'
                       ),
         'prob_secondary_bacterial_infection_in_bronchiolitis':
             Parameter(Types.REAL,
                       'probability of viral bronchiolitis having a bacterial infection'
                       ),
+
         # Probability of complications -----
         'prob_respiratory_failure_by_viral_pneumonia':
             Parameter(Types.REAL,
@@ -286,7 +299,7 @@ class ALRI(Module):
                       ),
         'prob_empyema_to_sepsis':
             Parameter(Types.REAL,
-                      'probability of empyema causing sepsis'
+                      'probability of (bacterial) empyema causing sepsis'
                       ),
         'prob_lung_abscess_by_bacterial_pneumonia':
             Parameter(Types.REAL,
@@ -312,21 +325,19 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of lung abscess causing sepsis'
                       ),
-        'r_death_from_ALRI':
-            Parameter(Types.REAL,
-                      'death rate from ALRI'
-                      ),
+
+        # death parameters -----
         'r_death_from_ALRI_due_to_sepsis':
             Parameter(Types.REAL,
-                      'death rate from ALRI due to sepsis'
+                      'death rate from ALRI due to sepsis, base age 0-11 months'
                       ),
         'r_death_from_ALRI_due_to_respiratory_failure':
             Parameter(Types.REAL,
-                      'death rate from ALRI due to respiratory failure'
+                      'death rate from ALRI due to respiratory failure, base age 0-11 months'
                       ),
         'r_death_from_ALRI_due_to_meningitis':
             Parameter(Types.REAL,
-                      'death rate from ALRI due to respiratory failure'
+                      'death rate from ALRI due to meningitis, base age 0-11 months'
                       ),
         'rr_death_ALRI_age12to23mo':
             Parameter(Types.REAL,
@@ -348,6 +359,7 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'death rate of ALRI for children with low birth weight (applicable to infants)'
                       ),
+
         # Proportions of what disease type (viral ALRI) -----
         'proportion_viral_pneumonia_by_RSV':
             Parameter(Types.REAL,
@@ -381,6 +393,7 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'proportion of other pathogens infection causing viral pneumonia'
                       ),
+
         # Probability of symptom development -----
         'prob_fever_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
@@ -410,6 +423,7 @@ class ALRI(Module):
                       'list of probabilities of danger signs by '
                       'bacterial pneumonia, viral pneumonia and bronchiolitis'
                       ),
+
         # Additional signs and symptoms from complications -----
         'prob_loss_of_appetite_adding_from_pleural_effusion':
             Parameter(Types.REAL,
@@ -437,21 +451,9 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of cyanosis from pneumothorax'
                       ),
-        'prob_tachycardia_adding_from_pneumothorax':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of tachycardia from pneumothorax'
-                      ),
         'prob_difficult_breathing_adding_from_pneumothorax':
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of difficult breathing from pneumothorax'
-                      ),
-        'prob_fatigue_adding_from_pneumothorax':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fatigue from pneumothorax'
-                      ),
-        'prob_decreased_chest_movement_adding_from_pneumothorax':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of decreased chest wall movement from pneumothorax'
                       ),
         # pleural effusion -----------
         'prob_chest_pain_adding_from_pleural_effusion':
@@ -466,10 +468,6 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of dyspnoea/ difficult breathing from pleural effusion'
                       ),
-        'prob_cough_sputum_adding_from_pleural_effusion':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of cough with sputum from pleural effusion'
-                      ),
         # Empyema ------------
         'prob_chest_pain_adding_from_empyema':
             Parameter(Types.REAL,
@@ -478,10 +476,6 @@ class ALRI(Module):
         'prob_fever_adding_from_empyema':
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of fever from empyema'
-                      ),
-        'prob_cough_sputum_adding_from_empyema':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of cough with sputum from empyema'
                       ),
         'prob_respiratory_distress_adding_from_empyema':
             Parameter(Types.REAL,
@@ -496,25 +490,9 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of fast_breathing/ fast breathing from lung abscess'
                       ),
-        'prob_cough_sputum_adding_from_lung_abscess':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of cough with sputum from lung abscess'
-                      ),
         'prob_fever_adding_from_lung_abscess':
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of fever from lung abscess'
-                      ),
-        'prob_hemoptysis_adding_from_lung_abscess':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of hemoptysis from lung abscess'
-                      ),
-        'prob_tachycardia_adding_from_lung_abscess':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of tachycardia from lung abscess'
-                      ),
-        'prob_weight_loss_adding_from_lung_abscess':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of weight loss from lung abscess'
                       ),
         # Hypoxaemic Respiratory failure
         'prob_difficult_breathing_adding_from_respiratory_failure':
@@ -527,19 +505,11 @@ class ALRI(Module):
                       ),
         'prob_fast_breathing_adding_from_respiratory_failure':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fast_breathing/ fast breathing from respiratory failure'
+                      'probability of additional signs/symptoms of fast_breathing from respiratory failure'
                       ),
-        'prob_tachycardia_adding_from_respiratory_failure':
+        'prob_danger_signs_adding_from_respiratory_failure':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of tachycardia from respiratory failure'
-                      ),
-        'prob_lethargy_adding_from_respiratory_failure':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of lethargy from respiratory failure'
-                      ),
-        'prob_restlessness_adding_from_respiratory_failure':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of restlessness from respiratory failure'
+                      'probability of additional signs/symptoms of danger signs from respiratory failure'
                       ),
         # meningitis ------------
         'prob_headache_adding_from_meningitis':
@@ -550,65 +520,25 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of fever from meningitis'
                       ),
-        'prob_bulging_fontanel_adding_from_meningitis':
+        'prob_danger_signs_adding_from_meningitis':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of bulging fontanel from meningitis'
-                      ),
-        'prob_convulsions_adding_from_meningitis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of convulsions from meningitis'
-                      ),
-        'prob_nausea_adding_from_meningitis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of nausea from meningitis'
-                      ),
-        'prob_vomiting_adding_from_meningitis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of vomiting from meningitis'
-                      ),
-        'prob_photophobia_adding_from_meningitis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of photophobia from meningitis'
-                      ),
-        'prob_nuchal_rigidity_adding_from_meningitis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of nuchal rigidity from meningitis'
+                      'probability of additional signs/symptoms of danger_signs from meningitis'
                       ),
         # Sepsis ----------------
-        'prob_lethargy_adding_from_sepsis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of lethargy from sepsis'
-                      ),
-        'prob_fatigue_adding_from_sepsis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fatigue from sepsis'
-                      ),
         'prob_fast_breathing_adding_from_sepsis':
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of fast_breathing from sepsis'
                       ),
-        'prob_convulsions_adding_from_sepsis':
+        'prob_danger_signs_adding_from_sepsis':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of convulsions from sepsis'
-                      ),
-        'prob_not_eating_adding_from_sepsis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of not eating from sepsis'
+                      'probability of additional signs/symptoms of danger signs from sepsis'
                       ),
         'prob_fever_adding_from_sepsis':
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of fever from sepsis'
                       ),
-        'prob_vomiting_adding_from_sepsis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of vomiting from sepsis'
-                      ),
-        'prob_no_urination_in_last_12h_adding_from_sepsis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of no urination for 12h from sepsis'
-                      ),
 
-        # other properties
+        # other parameters
         'days_between_treatment_and_cure':
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'
                       ),
@@ -734,13 +664,11 @@ class ALRI(Module):
         self.resourcefilepath = resourcefilepath
 
         # equations for the incidence of ALRI by pathogen:
-        self.incidence_equations_by_pathogen = dict()
+        self.incidence_equations_by_pathogen\
+            = dict()
 
         # equations for the proportions of ALRI diseases:
         self.proportions_of_ALRI_disease_types_by_pathogen = dict()
-
-        # equation for the probability of viral/bacterial (co-infection) pneumonia:
-        self.viral_pneumonia_with_bacterial_coinfection = dict()
 
         # equations for the probabilities of secondary bacterial superinfection:
         self.prob_secondary_bacterial_infection = None
@@ -873,10 +801,10 @@ class ALRI(Module):
         """
 
         # Schedule the main polling event (to first occur immidiately)
-        sim.schedule_event(AcuteLowerRespiratoryInfectionPollingEvent(self), sim.date)
+        sim.schedule_event(AcuteLowerRespiratoryInfectionPollingEvent(self), sim.date + DateOffset(days=0))
 
         # Schedule the main logging event (to first occur in one year)
-        sim.schedule_event(AcuteLowerRespiratoryInfectionLoggingEvent(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(AcuteLowerRespiratoryInfectionLoggingEvent(self), sim.date + DateOffset(days=0))
 
         # Get DALY weights
         # get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
@@ -1175,66 +1103,46 @@ class ALRI(Module):
             if complicat == 'pneumothorax':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
-                    # 'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
                     'cyanosis': p[f'prob_cyanosis_adding_from_{complicat}'],
-                    # 'fatigue': p[f'prob_fatigue_adding_from_{complicat}'],
                     'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complicat}'],
-                    # 'decreased_chest_movement': p[f'prob_decreased_chest_movement_adding_from_{complicat}'],
                 }
             if complicat == 'pleural_effusion':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
-                    # 'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
                     'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complicat}'],
                 }
             if complicat == 'empyema':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
-                    # 'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
                     'respiratory_distress': p[f'prob_respiratory_distress_adding_from_{complicat}'],
                 }
             if complicat == 'lung_abscess':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
-                    # 'fast_breathing': p[f'prob_fast_breathing_adding_from_{complicat}'],
-                    # 'cough_with_sputum': p[f'prob_cough_sputum_adding_from_{complicat}'],
-                    # 'hemoptysis': p[f'prob_hemoptysis_adding_from_{complicat}'],
+                    'fast_breathing': p[f'prob_fast_breathing_adding_from_{complicat}'],
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
-                    # 'weight_loss': p[f'prob_weight_loss_adding_from_{complicat}'],
-                    # 'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
                 }
             if complicat == 'respiratory_failure':
                 return {
                     'cyanosis': p[f'prob_cyanosis_adding_from_{complicat}'],
                     'fast_breathing': p[f'prob_fast_breathing_adding_from_{complicat}'],
-                    # 'tachycardia': p[f'prob_tachycardia_adding_from_{complicat}'],
-                    # 'lethargy': p[f'prob_lethargy_adding_from_{complicat}'],
-                    # 'restlessness': p[f'prob_restlessness_adding_from_{complicat}'],
                     'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complicat}'],
+                    'danger_signs': p[f'prob_danger_signs_adding_from_{complicat}'],
                 }
             if complicat == 'sepsis':
                 return {
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
-                    # 'fatigue': p[f'prob_fatigue_adding_from_{complicat}'],
                     'fast_breathing': p[f'prob_fast_breathing_adding_from_{complicat}'],
-                    # 'lethargy': p[f'prob_lethargy_adding_from_{complicat}'],
-                    'convulsions': p[f'prob_convulsions_adding_from_{complicat}'],
-                    # 'not_eating': p[f'prob_not_eating_adding_from_{complicat}'],
-                    # 'vomiting': p[f'prob_vomiting_adding_from_{complicat}'],
-                    # 'no_urination_in_last_12h': p[f'prob_no_urination_in_last_12h_adding_from_{complicat}'],
+                    'danger_signs': p[f'prob_danger_signs_adding_from_{complicat}'],
+
                 }
             if complicat == 'meningitis':
                 return {
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
                     'headache': p[f'prob_headache_adding_from_{complicat}'],
-                    # 'bulging_fontanel': p[f'prob_bulging_fontanel_adding_from_{complicat}'],
-                    'convulsions': p[f'prob_convulsions_adding_from_{complicat}'],
-                    # 'nausea': p[f'prob_nausea_adding_from_{complicat}'],
-                    'vomiting': p[f'prob_vomiting_adding_from_{complicat}'],
-                    # 'photophobia': p[f'prob_photophobia_adding_from_{complicat}'],
-                    # 'nuchal_rigidity': p[f'prob_nuchal_rigidity_adding_from_{complicat}'],
+                    'danger_signs': p[f'prob_danger_signs_adding_from_{complicat}'],
                 }
 
         for complication in ALRI.complications:
@@ -1656,7 +1564,6 @@ class ALRINaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
         df.at[person_id, 'ri_ALRI_pulmonary_complication_date'] = pd.NaT
         df.at[person_id, 'ri_ALRI_severe_complication_date'] = pd.NaT
-        df.at[person_id, 'ri_end_of_last_alri_episode'] = pd.NaT
 
         # clear the treatment prperties
         df.at[person_id, 'ri_ALRI_treatment'] = False
@@ -1805,7 +1712,6 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
         df.at[person_id, 'ri_ALRI_pulmonary_complication_date'] = pd.NaT
         df.at[person_id, 'ri_ALRI_severe_complication_date'] = pd.NaT
-        df.at[person_id, 'ri_end_of_last_alri_episode'] = pd.NaT
 
         # clear the treatment prperties
         df.at[person_id, 'ri_ALRI_treatment'] = False
