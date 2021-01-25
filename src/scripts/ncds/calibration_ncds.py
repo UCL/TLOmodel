@@ -59,7 +59,14 @@ def runsim(params):
     p['nc_diabetes_onset'].loc[
         p['nc_diabetes_onset'].parameter_name == "baseline_annual_probability", "value"] = params[0]
     p['nc_hypertension_onset'].loc[
-        p['nc_hypertension_onset'].parameter_name == "baseline_annual_probability", "value"] = 1
+        p['nc_hypertension_onset'].parameter_name == "baseline_annual_probability", "value"] = params[2]
+    p['nc_depression_onset'].loc[
+        p['nc_depression_onset'].parameter_name == "baseline_annual_probability", "value"] = params[4]
+    p['nc_chronic_ischemic_hd'].loc[
+        p['nc_chronic_ischemic_hd'].parameter_name == "baseline_annual_probability", "value"] = params[6]
+    p['nc_chronic_kidney_disease'].loc[
+        p['nc_chronic_kidney_disease'].parameter_name == "baseline_annual_probability", "value"] = params[8]
+
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -90,7 +97,7 @@ def err(params, data_y1, data_y2):
     return np.concatenate((err1, err2))
 
 
-p0 = [0.003, 0.0139, 0.0017, 0.00324, 0.001018] # baseline probability of acquiring and dying from: diabetes, hypertension, depression, heart disease, kidney disease
+p0 = [0.003, 0.01, 0.0139, 0.01, 0.0017, 0.01, 0.00324, 0.01, 0.001018, 0.01] # baseline probability of acquiring and dying from: diabetes, hypertension, depression, heart disease, kidney disease
 data_x = [1, 2, 3, 4, 5, 6, 7, 8] # number of age cats (0-9, 10-19, 20-29, 30-39, 40-49, 50-59, 60-69, 70-79, 80+)
 data_y1 = [0.0, 0.0, 0.0029, 0.0126, 0.0382, 0.0820, 0.1323, 0.1936, 0.1761] # prevalence of diabetes
 data_y2 = [0.0, 0.0, 0.0091, 0.0370, 0.1180, 0.2655, 0.4551, 0.6476, 0.7375] # prevalence of hypertension
