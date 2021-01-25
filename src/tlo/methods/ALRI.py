@@ -714,10 +714,8 @@ class ALRI(Module):
 
         # Store the symptoms that this module will use:
         self.symptoms = {
-            'fever', 'cough', 'difficult_breathing', 'convulsions', 'lethargy', 'not_eating',
-            'fast_breathing', 'fast_breathing', 'chest_indrawing', 'grunting', 'chest_pain',
-            'cyanosis', 'respiratory_distress',
-            'danger_signs'
+            'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain',
+            'cyanosis', 'respiratory_distress', 'danger_signs'
         }
 
     def read_parameters(self, data_folder):
@@ -903,8 +901,8 @@ class ALRI(Module):
                         .when(
                             "ri_primary_ALRI_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
                             "'parainfluenza', 'influenza']) & "
-                            "ri_ALRI_disease_type == 'bronchiolitis' & "
-                            "ri_secondary_bacterial_pathogen =='not_applicable' ",
+                            "ri_ALRI_disease_type == 'bronchiolitis' "
+                            " & ri_secondary_bacterial_pathogen =='not_applicable'",
                             p['prob_secondary_bacterial_infection_in_bronchiolitis'])
                         )
 
@@ -1380,25 +1378,24 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
 
             # ----------------- Determine the ALRI disease type for this case -----------------
             alri_disease_type_for_this_person = m.proportions_of_ALRI_disease_types_by_pathogen[pathogen]
+
             # ------- Allocate a secondary bacterial pathogen in co-infection with primary viral pneumonia -------
-            bacterial_patho_in_viral_pneumonia_coinfection = 'not_applicable'
+            bacterial_patho_in_viral_ALRI_coinfection = 'not_applicable'
+
             if pathogen in self.module.viral_patho:
-                if alri_disease_type_for_this_person == 'viral_pneumonia':
-                    pneumonia_will_have_bacterial_coinfection = rng.rand() < p['prob_viral_pneumonia_bacterial_coinfection']
-                    if pneumonia_will_have_bacterial_coinfection:
-                        bacterial_coinfection_pathogen = rng.choice(list(self.module.bacterial_patho),
-                                                                    p=p['porportion_bacterial_coinfection_pathogen'])
-                        bacterial_patho_in_viral_pneumonia_coinfection = bacterial_coinfection_pathogen
-                        # update to co-infection property
-                        alri_disease_type_for_this_person = 'bacterial_pneumonia'
-                    else:
-                        bacterial_patho_in_viral_pneumonia_coinfection = 'none'
-                if alri_disease_type_for_this_person == 'bronchiolitis':
-                    bacterial_patho_in_viral_pneumonia_coinfection = 'none'
+                prob_bacterial_infection = m.prob_secondary_bacterial_infection.predict(df.loc[[person_id]]).values[0]
+                if rng.rand() < prob_bacterial_infection:
+                    bacterial_coinfection_pathogen = rng.choice(list(self.module.bacterial_patho),
+                                                                p=p['proportion_bacterial_coinfection_pathogen'])
+                    bacterial_patho_in_ALRI_coinfection = bacterial_coinfection_pathogen
+                    # update to co-infection property
+                    alri_disease_type_for_this_person = 'bacterial_pneumonia'
+                else:
+                    bacterial_patho_in_ALRI_coinfection = 'none'
             if pathogen in self.module.bacterial_patho:
-                bacterial_patho_in_viral_pneumonia_coinfection = 'not_applicable'
+                bacterial_patho_in_ALRI_coinfection = 'not_applicable'
             if pathogen in self.module.fungal_patho:
-                bacterial_patho_in_viral_pneumonia_coinfection = 'none'
+                bacterial_patho_in_ALRI_coinfection = 'none'
 
             # ----------------------- Allocate a date of onset of ALRI ----------------------
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
@@ -1414,7 +1411,7 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
                     person_id=person_id,
                     pathogen=pathogen,
                     disease_type=alri_disease_type_for_this_person,
-                    co_bacterial_patho=bacterial_patho_in_viral_pneumonia_coinfection,
+                    co_bacterial_patho=bacterial_patho_in_ALRI_coinfection,
                     duration_in_days=duration_in_days_of_alri,
                 ),
                 date=date_onset
