@@ -149,7 +149,8 @@ class HealthSeekingBehaviour(Module):
         """
 
         # Schedule the HealthSeekingBehaviourPoll
-        sim.schedule_event(HealthSeekingBehaviourPoll(self), sim.date)
+        self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
+        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
 
         # Assemble the health-care seeking information from the symptoms that have been registered
         for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:

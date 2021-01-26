@@ -286,6 +286,12 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
+    # check that some have symptoms onset recently
+    assert 0 < len(sim.modules['SymptomManager'].persons_with_newly_onset_symptoms)
+
+    # run health-care seeking event:
+    sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.apply(sim.population)
+
     # Check that Generic Non-Emergency HSI events are scheduled but not Emergency HSI
     q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
     assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
