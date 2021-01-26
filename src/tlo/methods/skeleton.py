@@ -24,13 +24,13 @@ class Skeleton(Module):
     All disease modules need to be implemented as a class inheriting from Module.
     They need to provide several methods which will be called by the simulation
     framework:
-    * `read_parameters(data_folder)`
-    * `initialise_population(population)`
-    * `initialise_simulation(sim)`
-    * `on_birth(mother, child)`
-    * `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
-    *  `report_daly_values()` [If this is disease module]
 
+        - `read_parameters(data_folder)`
+        - `initialise_population(population)`
+        - `initialise_simulation(sim)`
+        - `on_birth(mother, child)`
+        - `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
+        -  `report_daly_values()` [If this is disease module]
     """
     # Declare Metadata (this is for a typical 'Disease Module')
     METADATA = {
@@ -227,11 +227,12 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         """
         Do the action that take place in this health system interaction, in light of prevailing conditions in the
-        healthcare system
+        healthcare system:
+
             * squeeze_factor (an argument provided to the event) indicates the extent to which this HSI_Event is being
-             run in the context of an over-burdened healthcare facility.
+              run in the context of an over-burdened healthcare facility.
             * bed_days_allocated_to_this_event (a property of the event) indicates the number and types of bed-days
-             that have been allocated to this event.
+              that have been allocated to this event.
 
         Can return an updated APPT_FOOTPRINT if this differs from the declaration in self.EXPECTED_APPT_FOOTPRINT
         """
