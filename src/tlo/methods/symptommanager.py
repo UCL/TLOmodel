@@ -116,8 +116,8 @@ class Symptom:
 
 
 class DuplicateSymptomWithNonIdenticalPropertiesError(Exception):
-    print("A symptom with this name has been registered already but with different properties")
-    pass
+    def __init__(self):
+        super().__init__("A symptom with this name has been registered already but with different properties")
 
 
 class SymptomManager(Module):
@@ -362,7 +362,7 @@ class SymptomManager(Module):
         :return: list of strings for the symptoms that are currently being experienced
         """
 
-        assert isinstance(person_id, (int, np.int64)), 'person_id must be a single integer for one particular person'
+        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
 
         df = self.sim.population.props
         assert df.at[person_id, 'is_alive'], "The person is not alive"
@@ -386,7 +386,7 @@ class SymptomManager(Module):
         :param disease_module:
         :return: list of strings for the disease module name
         """
-        assert isinstance(person_id, (int, np.int64)), 'person_id must be a single integer for one particular person'
+        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
         assert isinstance(symptom_string, str), 'symptom_string must be a string'
 
         df = self.sim.population.props
@@ -405,7 +405,7 @@ class SymptomManager(Module):
         """
         df = self.sim.population.props
 
-        assert isinstance(person_id, (int, np.int64)), 'person_id must be a single integer for one particular person'
+        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
         assert df.at[person_id, 'is_alive'], "The person is not alive"
         assert disease_module.name in ([self.name] + self.recognised_module_names), \
             "Disease Module Name is not recognised"
