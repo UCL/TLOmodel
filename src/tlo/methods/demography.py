@@ -355,6 +355,10 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
             df.at[individual_id, 'date_of_death'] = self.sim.date
             df.at[individual_id, 'cause_of_death'] = self.cause
 
+            # release any beds-days that would be used by this person:
+            if 'HealthSystem' in self.sim.modules:
+                self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
+
         logger.debug(key='official_death',
                      data=(f"*******************************************The person {individual_id} "
                            f"is now officially dead and has died of {self.cause}"))
