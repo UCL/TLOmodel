@@ -1,4 +1,4 @@
-'''The functions used by tlo_methods_rst.py.'''
+"""The functions used by tlo_methods_rst.py."""
 
 import inspect
 from inspect import isclass, iscode, isframe, isfunction, ismethod, ismodule, istraceback
@@ -6,14 +6,14 @@ from os import walk
 
 
 def get_package_name(dirpath):
-    '''
+    """
     Given a file path to a TLO package, return the name in dot form.
 
     :param dirpath: the path to the package,
            e.g. (1) "./src/tlo/logging/sublog" or (2) "./src/tlo"
     :return: string of package name in dot form,
            e.g. (1) "tlo.logging.sublog" or (2) "tlo"
-    '''
+    """
     TLO = "/tlo/"
     if TLO not in dirpath:
         raise ValueError(f"Sorry, {TLO} isn't in dirpath ({dirpath})")
@@ -30,7 +30,7 @@ def get_package_name(dirpath):
 
 
 def generate_module_dict(topdir):
-    '''
+    """
     Given a root directory topdir, iterates recursively
     over top dir and the files and subdirectories within it.
     Returns a dictionary with each key = path to a directory
@@ -40,7 +40,7 @@ def generate_module_dict(topdir):
     :param topdir: root directory to traverse downwards from, iteratively.
     :returns: dict with key = a directory,
               value = list of Python files in dir `key`.
-    '''
+    """
     data = {}  # key = path to dir, value = list of .py files
 
     for (dirpath, dirnames, filenames) in walk(topdir):
@@ -60,7 +60,7 @@ def generate_module_dict(topdir):
 
 
 def get_classes_in_module(fqn, module_obj):
-    '''
+    """
     Generate a list of lists of the classes *defined* in
     the required module (file), in the order in which they
     appear in the module file. Note that this excludes
@@ -75,7 +75,7 @@ def get_classes_in_module(fqn, module_obj):
     :param module_obj: an object representing this module
     :param return: list of entries, each of the form:
                 [class name, class object, line number]
-    '''
+    """
     classes = []
     module_info = inspect.getmembers(module_obj)  # Gets everything
     for name, obj in module_info:
@@ -100,7 +100,7 @@ def get_classes_in_module(fqn, module_obj):
 
 
 def get_fully_qualified_name(filename, context):
-    '''
+    """
     Given a file name and a context
     return the fully-qualified name of the *module*
 
@@ -110,7 +110,7 @@ def get_fully_qualified_name(filename, context):
     :param filename: name of file, e.g. "mockitis.py"
     :param context: "location" of module, e.g. "tlo.methods"
     :return: a string, e.g. "tlo.methods.mockitis"
-    '''
+    """
     parts = filename.split(".")
     # print(f"getfqn: {filename}, {context}")
     if context == "":
@@ -121,13 +121,13 @@ def get_fully_qualified_name(filename, context):
 
 
 def write_rst_file(rst_dir, fqn, mobj):
-    '''
+    """
     We want to write one .rst file per module in ./src/tlo/methods
 
     :param rst_dir: directory in which to write the new .rst file
     :param fqn: fully-qualified module name, e.g. "tlo.methods.mockitis"
     :param mobj: the module object
-    '''
+    """
     filename = f"{rst_dir}/{fqn}.rst"
     with open(filename, 'w') as out:
 
@@ -156,11 +156,11 @@ def write_rst_file(rst_dir, fqn, mobj):
 
 
 def get_class_output_string(classinfo):
-    '''Generate output string for a single class to be written to an rst file.
+    """Generate output string for a single class to be written to an rst file.
 
     :param classinfo: a list with [class name, class object, line number]
     :return: the string to output
-    '''
+    """
     class_name, class_obj, _ = classinfo
     # mystr = f"\n\n\n" \
     #        f".. autoclass:: {class_name}\n" \
@@ -376,7 +376,7 @@ def which_functions_to_print(clazz):
 
 
 def extract_bases(class_name, class_obj, spacer=""):
-    '''
+    """
     Document which classes this class inherits from,
     except for the object class or this class itself.
 
@@ -386,7 +386,7 @@ def extract_bases(class_name, class_obj, spacer=""):
     :param spacer: string to use as whitespace padding.
     :return: Tuple with (1) string of base(s) for this class (if any), with
              links to their docs. (2) the list of base class objects
-    '''
+    """
     # This next line gets the base classes including "object" class,
     # and also the class_name class itself:
     bases = inspect.getmro(class_obj)
@@ -423,7 +423,7 @@ def extract_bases(class_name, class_obj, spacer=""):
 
 
 def get_base_string(class_name, class_obj, base_obj):
-    '''
+    """
     For this object, representing a base class,
     extract its name and add a hyperlink to it.
     Unless it is the root 'object' class, or the name of the class itself.
@@ -435,7 +435,7 @@ def get_base_string(class_name, class_obj, base_obj):
                      e.g. <class 'tlo.core.Module'> or <class 'object'>
                      or <class 'tlo.methods.mockitis.Mockitis'>
     :return: string as hyperlink
-    '''
+    """
     # Extract fully-qualified name of base (e.g. "tlo.core.Module")
     # from its object representation (e.g. "<class 'tlo.core.Module'>")
     # print (f"DEBUG: before = {class_name}, {base_obj}")
@@ -482,7 +482,7 @@ def get_base_string(class_name, class_obj, base_obj):
 
 
 def get_link(base_fqn, base_obj):
-    '''Given a name like Mockitis and a base_string like
+    """Given a name like Mockitis and a base_string like
     tlo.core.Module, create a link to the latter's doc page.
 
     :param base_fqn: fully-qualified name of the base class,
@@ -490,7 +490,7 @@ def get_link(base_fqn, base_obj):
     :param base_obj: the object representing the base class
     :return: a string with the link to the base class's place in the generated
              documentation.
-    '''
+    """
     # Example of module_defining_class: <module 'tlo.core' from '/Users/...
     module_defining_class = str(inspect.getmodule(base_obj))
     module_pieces = module_defining_class.split(" ")
@@ -514,7 +514,7 @@ def get_link(base_fqn, base_obj):
 
 
 def create_table(mydict):
-    '''
+    """
     Dynamically create a table of arbitrary length
     from a PROPERTIES or PARAMETERS dictionary.
 
@@ -526,7 +526,7 @@ def create_table(mydict):
 
     The table is returned as a list of strings.
     If there is no data, an empty list is returned.
-    '''
+    """
 
     examplestr = '''
 .. list-table::
