@@ -7,7 +7,6 @@
 # https://medium.com/@eikonomega/getting-started-with-sphinx-autodoc-part-1-2cebbbca5365
 #
 
-#import docutils
 import os
 import sys
 
@@ -80,8 +79,9 @@ napoleon_use_param = False
 #     'undoc-members': True,
 #     'exclude-members': '__weakref__'
 # NB some will only take a boolean value.
-#autodoc_default_flags = ['members', 'special-members', 'show-inheritance']
-# See "autodoc_default_options" at https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+# autodoc_default_flags = ['members', 'special-members', 'show-inheritance']
+# See "autodoc_default_options" at:
+# https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 # The supported options are 'members', 'member-order', 'undoc-members',
 # 'private-members', 'special-members', 'inherited-members',
 # 'show-inheritance', 'ignore-module-all', 'imported-members'
@@ -97,7 +97,7 @@ autodoc_default_options = {
     #'add_module_names': False,
 
     # List below what you don't want to see documented:
-    'exclude-members': '__dict__, name, rng, sim'  ##, read_parameters',
+    'exclude-members': '__dict__, name, rng, sim'  # , read_parameters',
 }
 
 # Stop displaying fully-qualified domain names of classes.
@@ -105,4 +105,9 @@ autodoc_default_options = {
 add_module_names = False
 
 # The checker can't see private repos
-linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*']
+linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*',
+                    'https://www.who.int/bulletin/volumes/88/8/09-068213/en/nn']
+
+# Stop displaying fully-qualified domain names of classes.
+# e.g. rather than "class A.B.C", just say "class C".
+add_module_names = False
