@@ -12,9 +12,10 @@ logger.setLevel(logging.INFO)
 
 
 class Mockitis(Module):
-    """
-    This is a dummy infectious disease.
+    """This is a dummy infectious disease.
+
     It demonstrates the following behaviours in respect of the healthsystem module:
+
         - Registration of the disease module with healthsystem
         - Reading DALY weights and reporting daly values related to this disease
         - Health care seeking
