@@ -1133,6 +1133,9 @@ class HealthSystem(Module):
         add_footprint: whether the footprint should be added (i.e. consume a bed), or the reversed (i.e. free a bed).
             The latter is used to when a footprint is removed when a person dies or before a new footprint is added.
         """
+        # Exit silently if bed_tracker has not been initialised
+        if 'bed_tracker' not in dir(self):
+            return
 
         # determine the facility_id
         the_facility_name = 'National Hospital'  # todo - make this specific to the district/region using person_id
