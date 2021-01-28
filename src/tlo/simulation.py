@@ -75,16 +75,16 @@ class Simulation:
 
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                           custom_levels: Dict[str, int] = None):
-        """
-        Configure logging, can write logging to a logfile in addition the default of stdout.
+        """Configure logging, can write logging to a logfile in addition the default of stdout.
+
         Minimum custom levels for each loggers can be specified for filtering out messages.
 
         :param filename: Prefix for logfile name, final logfile will have a datetime appended
         :param directory: Path to output directory, default value is the outputs folder.
         :param custom_levels: dictionary to set logging levels, '*' can be used as a key for all registered modules.
                               This is likely to be used to disable all disease modules, and then enable one of interest
-                              e.g. {'*': logging.CRITICAL
-                                    'tlo.methods.hiv': logging.INFO}
+                              e.g. ``{'*': logging.CRITICAL 'tlo.methods.hiv': logging.INFO}``
+
         :return: Path of the log file if a filename has been given.
         """
         # clear logging environment
