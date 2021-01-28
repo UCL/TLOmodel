@@ -1077,7 +1077,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # probability of improved sanitation upon moving to urban from rural
         unimproved_sanitation_newly_urban_idx = df.index[
-            df.li_unimproved_sanitation & df.is_alive & df.li_date_trans_to_urban == self.sim.date
+            df.li_unimproved_sanitation & df.is_alive & (df.li_date_trans_to_urban == self.sim.date)
             ]
 
         random_draw = rng.random_sample(len(unimproved_sanitation_newly_urban_idx))
@@ -1118,7 +1118,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # probability of no clean drinking water upon moving to urban from rural
         no_clean_drinking_water_newly_urban_idx = df.index[
-            df.li_no_clean_drinking_water & df.is_alive & df.li_date_trans_to_urban == self.sim.date
+            df.li_no_clean_drinking_water & df.is_alive & (df.li_date_trans_to_urban == self.sim.date)
             ]
 
         random_draw = rng.random_sample(len(no_clean_drinking_water_newly_urban_idx))
@@ -1146,7 +1146,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # probability of moving to wood burn stove upon moving to urban from rural
         wood_burn_stove_newly_urban_idx = df.index[
-            df.li_wood_burn_stove & df.is_alive & df.li_date_trans_to_urban == self.sim.date
+            df.li_wood_burn_stove & df.is_alive & (df.li_date_trans_to_urban == self.sim.date)
             ]
 
         random_draw = rng.random_sample(len(wood_burn_stove_newly_urban_idx))

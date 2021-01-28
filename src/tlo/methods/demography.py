@@ -217,7 +217,8 @@ class Demography(Module):
         # renaming columns for clarity
         df_py = df_py.rename({'age_exact_years': 'age_exact_end', 'age_years': 'age_years_end'}, axis=1)
 
-        df_py['age_exact_start'] = (one_year_ago - df_py.date_of_birth) / pd.Timedelta(1, 'Y')  # exact age at the start
+        # exact age at the start
+        df_py['age_exact_start'] = (one_year_ago - df_py.date_of_birth) / np.timedelta64(1, 'Y')
         df_py['age_years_start'] = np.floor(df_py.age_exact_start).astype(np.int64)  # int age at start of the period
         df_py['years_in_age_start'] = df_py.age_years_end - df_py.age_exact_start  # time spent in age at start
         df_py['years_in_age_end'] = df_py.age_exact_end - df_py.age_years_end  # time spent in age at end
@@ -354,6 +355,10 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
             df.at[individual_id, 'is_alive'] = False
             df.at[individual_id, 'date_of_death'] = self.sim.date
             df.at[individual_id, 'cause_of_death'] = self.cause
+
+            # release any beds-days that would be used by this person:
+            if 'HealthSystem' in self.sim.modules:
+                self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
 
         logger.debug(key='official_death',
                      data=(f"*******************************************The person {individual_id} "
