@@ -91,3 +91,14 @@ plt.ylabel('Number of deaths')
 handles, labels = plt.gca().get_legend_handles_labels()
 plt.legend(reversed(handles), reversed(labels), loc='upper right', ncol=2)
 plt.show()
+
+
+# percent of deaths due to HIV, NCD (stroke, heart disease, diabetes) and childhood (pneumon, diarrhoa, neonatal)
+gbd.sum()[[
+    'HIV/AIDS',
+    'Childhood Diarrhoea',
+    'Childhood Pneumonia',
+    'Neonatal Disorders',
+    'Diabetes',
+    'Stroke & Heart Disease'
+]].sum() / gbd.sum().sum()
