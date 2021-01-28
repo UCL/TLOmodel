@@ -72,7 +72,7 @@ def test_sims(tmpdir):
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing, itn=None)
+        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
     )
 
     # Run the simulation and flush the logger
@@ -142,7 +142,7 @@ def test_remove_malaria_test(tmpdir):
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing, itn=None)
+        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
     )
 
     # Run the simulation and flush the logger
@@ -207,7 +207,7 @@ def test_schedule_rdt_for_all(tmpdir):
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing, itn=None)
+        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
     )
 
     # Run the simulation and flush the logger
@@ -259,7 +259,7 @@ def test_dx_algorithm_for_malaria_outcomes():
                      dx_algorithm_adult.DxAlgorithmAdult(),
                      newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                      antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                     malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing, itn=None)
+                     malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
                      )
 
         sim.make_initial_population(n=popsize)

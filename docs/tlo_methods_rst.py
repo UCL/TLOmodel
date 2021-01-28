@@ -1,4 +1,4 @@
-''' This module is used to generate nice documentation.
+""" This module is used to generate nice documentation.
 
 A typical invocation, as is done in tox.ini, would be:
  > python docs/tlo_methods_rst.py
@@ -10,7 +10,7 @@ methods to generate the module-specific .rst files (which are
 subsequently converted by Sphinx into the HTMl files desired).
 e.g. the PARAMETERS and PROPERTIES dictionaries are displayed
 as nice tables rather than the raw Python representation of
-dictionaries, using bespoke methods defined here.'''
+dictionaries, using bespoke methods defined here."""
 
 import importlib
 from pathlib import Path
@@ -35,10 +35,11 @@ if __name__ == '__main__':
     # Need the trailing slash after tlo - it needs "/tlo/":
     # mydata = generate_module_dict("./src/tlo/")
     mydata = generate_module_dict(module_directory)
-    for dir in mydata:  # e.g. .../src/tlo/logging/sublog
-        package = get_package_name(dir)  # e.g. "tlo.logging.sublog"
-        files = mydata[dir]  # e.g. ["fileA.py", "fileB.py", ...]
-        print(f"In directory [{dir}]: files are {files}")
+
+    for directory in mydata:  # e.g. .../src/tlo/logging/sublog
+        package = get_package_name(directory)  # e.g. "tlo.logging.sublog"
+        files = mydata[directory]  # e.g. ["fileA.py", "fileB.py", ...]
+        print(f"In directory [{directory}]: files are {files}")
         for f in files:
             # e.g. "tlo.logging.sublog.fileA":
             fqn = get_fully_qualified_name(f, package)
