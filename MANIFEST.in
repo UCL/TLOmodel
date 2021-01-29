@@ -9,7 +9,6 @@ include .coveragerc
 include tox.ini .travis.yml
 
 exclude .editorconfig
-recursive-exclude notebooks *
 recursive-exclude .ci *
 recursive-exclude outputs *
 recursive-exclude resources *
