@@ -4,12 +4,24 @@
 #
 #    pip-compile --output-file=base.txt base.in
 #
-jinja2==2.11.2            # via -r base.in
-markupsafe==1.1.1         # via jinja2
-numpy==1.19.4             # via -r base.in, pandas, scipy
-pandas==1.1.4             # via -r base.in
-python-dateutil==2.8.1    # via pandas
-pytz==2020.4              # via pandas
-scipy==1.5.4              # via -r base.in
-six==1.15.0               # via python-dateutil
-xlrd==1.2.0               # via -r base.in
+et-xmlfile==1.0.1
+    # via openpyxl
+jdcal==1.4.1
+    # via openpyxl
+numpy==1.19.5
+    # via
+    #   -r base.in
+    #   pandas
+    #   scipy
+openpyxl==3.0.6
+    # via -r base.in
+pandas==1.2.1
+    # via -r base.in
+python-dateutil==2.8.1
+    # via pandas
+pytz==2020.5
+    # via pandas
+scipy==1.6.0
+    # via -r base.in
+six==1.15.0
+    # via python-dateutil
