@@ -491,8 +491,9 @@ class HealthSystem(Module):
 
         assert set(appt_footprint.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
         # All sensible numbers for the number of appointments requested (no negative and at least one appt required)
-
-        assert all(np.asarray([(appt_footprint[k]) for k in appt_footprint.keys()]) >= 0)
+        for k in appt_footprint.keys():
+            assert appt_footprint[k] >= 0
+        # assert all(np.asarray([(appt_footprint[k]) for k in appt_footprint.keys()]) >= 0)
 
         assert not all(value == 0 for value in appt_footprint.values())
 
@@ -967,6 +968,7 @@ class HealthSystem(Module):
             assert squeeze_factor is not None
 
             appts = actual_appt_footprint
+            appts.update(hsi_event.BEDDAYS_FOOTPRINT)
             log_info = dict()
             log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
             # key appointment types that are non-zero
@@ -981,6 +983,8 @@ class HealthSystem(Module):
                 log_info['Squeeze_Factor'] = squeeze_factor
 
         log_info['did_run'] = did_run
+
+        # log_info['bed_day_type'] = hsi_event.BEDDAYS_FOOTPRINT
 
         logger.info(key="HSI_Event",
                     data=log_info,

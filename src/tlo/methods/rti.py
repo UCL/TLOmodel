@@ -33,9 +33,17 @@ class RTI(Module):
             Types.REAL,
             'Base rate of RTI per year',
         ),
-        'rr_injrti_age018': Parameter(
+        'rr_injrti_age04': Parameter(
             Types.REAL,
-            'risk ratio of RTI in age 0-18 compared to base rate of RTI'
+            'risk ratio of RTI in age 0-4 compared to base rate of RTI'
+        ),
+        'rr_injrti_age59': Parameter(
+            Types.REAL,
+            'risk ratio of RTI in age 5-9 compared to base rate of RTI'
+        ),
+        'rr_injrti_age1017': Parameter(
+            Types.REAL,
+            'risk ratio of RTI in age 10-17 compared to base rate of RTI'
         ),
         'rr_injrti_age1829': Parameter(
             Types.REAL,
@@ -811,12 +819,109 @@ class RTI(Module):
             Types.REAL,
             'A parameter to determine the probability of death without medical intervention with a military AIS'
             'score of 5'
-        ), 'prob_death_MAIS6': Parameter(
+        ),
+        'prob_death_MAIS6': Parameter(
             Types.REAL,
             'A parameter to determine the probability of death without medical intervention with a military AIS'
             'score of 6'
         ),
-
+        'femur_fracture_skeletal_traction_mean_los': Parameter(
+            Types.INT,
+            'The mean length of stay for a person with a femur fracture being treated with skeletal traction'
+        ),
+        'other_skeletal_traction_los': Parameter(
+            Types.INT,
+            'The mean length of stay for a person with a non-femur fracture being treated with skeletal traction'
+        ),
+        'prob_foot_frac_require_cast': Parameter(
+            Types.REAL,
+            'The probability that a person with a foot fracture will be treated with a plaster cast'
+        ),
+        'prob_foot_frac_require_maj_surg': Parameter(
+            Types.REAL,
+            'The probability that a person with a foot fracture will be treated with a major surgery'
+        ),
+        'prob_foot_frac_require_min_surg': Parameter(
+            Types.REAL,
+            'The probability that a person with a foot fracture will be treated with a major surgery'
+        ),
+        'prob_foot_frac_require_amp': Parameter(
+            Types.REAL,
+            'The probability that a person with a foot fracture will be treated with amputation via a major surgery'
+        ),
+        'prob_tib_fib_frac_require_cast': Parameter(
+            Types.REAL,
+            'The probability that a person with a tibia/fibula fracture will be treated with a plaster cast'
+        ),
+        'prob_tib_fib_frac_require_maj_surg': Parameter(
+            Types.REAL,
+            'The probability that a person with a tibia/fibula fracture will be treated with a major surgery'
+        ),
+        'prob_tib_fib_frac_require_min_surg': Parameter(
+            Types.REAL,
+            'The probability that a person with a tibia/fibula fracture will be treated with a minor surgery'
+        ),
+        'prob_tib_fib_frac_require_amp': Parameter(
+            Types.REAL,
+            'The probability that a person with a tibia/fibula fracture will be treated with an amputation via major '
+            'surgery'
+        ),
+        'prob_tib_fib_frac_require_traction': Parameter(
+            Types.REAL,
+            'The probability that a person with a tibia/fibula fracture will be treated with skeletal traction'
+        ),
+        'prob_femural_fracture_require_major_surgery': Parameter(
+            Types.REAL,
+            'The probability that a person with a femur fracture will be treated with major surgery'
+        ),
+        'prob_femural_fracture_require_minor_surgery': Parameter(
+            Types.REAL,
+            'The probability that a person with a femur fracture will be treated with minor surgery'
+        ),
+        'prob_femural_fracture_require_cast': Parameter(
+            Types.REAL,
+            'The probability that a person with a femur fracture will be treated with a plaster cast'
+        ),
+        'prob_femural_fracture_require_amputation': Parameter(
+            Types.REAL,
+            'The probability that a person with a femur fracture will be treated with amputation via major surgery'
+        ),
+        'prob_pelvis_fracture_traction': Parameter(
+            Types.REAL,
+            'The probability that a person with a pelvis fracture will be treated with skeletal traction'
+        ),
+        'prob_pelvis_frac_major_surgery': Parameter(
+            Types.REAL,
+            'The probability that a person with a pelvis fracture will be treated with major surgery'
+        ),
+        'prob_pelvis_frac_minor_surgery': Parameter(
+            Types.REAL,
+            'The probability that a person with a pelvis fracture will be treated with minor surgery'
+        ),
+        'prob_dis_hip_require_maj_surg': Parameter(
+            Types.REAL,
+            'The probability that a person with a dislocated hip will be treated with a major surgery'
+        ),
+        'prob_dis_hip_require_cast': Parameter(
+            Types.REAL,
+            'The probability that a person with a dislocated hip will be treated with a plaster cast'
+        ),
+        'prob_hip_dis_require_traction': Parameter(
+            Types.REAL,
+            'The probability that a person with a dislocated hip will be treated with skeletal traction'
+        ),
+        'hdu_cut_off_iss_score': Parameter(
+            Types.INT,
+            'The ISS score used as a criteria to admit patients to the HDU/ICU units'
+        ),
+        'mean_icu_days': Parameter(
+            Types.REAL,
+            'The mean length of stay in the ICU'
+        ),
+        'sd_icu_days': Parameter(
+            Types.REAL,
+            'The standard deviation in length of stay in the ICU'
+        ),
     }
 
     PROPERTIES = {
@@ -937,6 +1042,11 @@ class RTI(Module):
                                             'P134b', 'P135', 'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675',
                                             'P675a', 'P675b', 'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883',
                                             'P884']),
+        'rt_injuries_to_cast': Property(Types.LIST, 'A list of injuries that are to be treated with casts'),
+        'rt_injuries_for_minor_surgery': Property(Types.LIST, 'A list of injuries that are to be treated with a minor'
+                                                              'surgery'),
+        'rt_injuries_for_major_surgery': Property(Types.LIST, 'A list of injuries that are to be treated with a minor'
+                                                              'surgery'),
         'rt_ISS_score': Property(Types.INT, 'The ISS score associated with the injuries resulting from a road traffic'
                                             'accident'),
         'rt_perm_disability': Property(Types.BOOL, 'whether the injuries from an RTI result in permanent disability'),
@@ -953,8 +1063,7 @@ class RTI(Module):
         'rt_disability': Property(Types.REAL, 'disability weight for current month'),
         'rt_date_inj': Property(Types.DATE, 'date of latest injury'),
         'rt_med_int': Property(Types.BOOL, 'whether this person is currently undergoing medical treatment'),
-        'rt_in_icu': Property(Types.BOOL, 'whether this person is currently in ICU for RTI'),
-        'rt_in_hdu': Property(Types.BOOL, 'whether this person is currently in HDU for RTI'),
+        'rt_in_icu_or_hdu': Property(Types.BOOL, 'whether this person is currently in ICU for RTI'),
         'rt_MAIS_military_score': Property(Types.INT, 'the maximum AIS-military score, used as a proxy to calculate the'
                                                       'probability of mortality without medical intervention'),
         'rt_date_death_no_med': Property(Types.DATE, 'the date which the person has is scheduled to die without medical'
@@ -1371,6 +1480,9 @@ class RTI(Module):
         df.loc[df.is_alive, 'rt_date_death_no_med'] = pd.NaT
         for index, row in df.iterrows():
             df.at[index, 'rt_date_to_remove_daly'] = [pd.NaT] * 8  # no one has any injuries to remove dalys for
+            df.at[index, 'rt_injuries_to_cast'] = []
+            df.at[index, 'rt_injuries_for_minor_surgery'] = []
+            df.at[index, 'rt_injuries_for_major_surgery'] = []
 
     def initialise_simulation(self, sim):
         """At the start of the simulation we schedule a logging event, which records the relevant information
@@ -1452,12 +1564,13 @@ class RTI(Module):
         # treated in this simulation, it seems there is a limited available to treat spinal cord injuries and chest
         # trauma in Malawi, so these are initially left out, but we will test different scenarios to see what happens
         # when we include those treatments
-        surgically_treated_codes = ['112', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
+        surgically_treated_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
                                     '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363',
-                                    '782', '782a', '782b', '782c', '783', '882', '883', '884',
+                                    '782', '782a', '782b', '782c', '783', '822a', '882', '883', '884',
                                     'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P782a', 'P782b',
                                     'P782c', 'P783', 'P882', 'P883', 'P884'
                                     ]
+
         # If we allow surgical treatment of spinal cord injuries, extend the surgically treated codes to include spinal
         # cord injury codes
         if 'include_spine_surgery' in self.allowed_interventions:
@@ -1471,6 +1584,8 @@ class RTI(Module):
             additional_codes = ['441', '443', '453', '453a', '453b', '463']
             for code in additional_codes:
                 surgically_treated_codes.append(code)
+        assert len(set(df.loc[person_id, 'rt_injuries_for_major_surgery']) & set(surgically_treated_codes)) > 0, \
+            'This person has asked for surgery but does not have an appropriate injury'
         person = df.iloc[person_id]
         # isolate the relevant injury information
         cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
@@ -1506,7 +1621,10 @@ class RTI(Module):
         assert df.loc[person_id, 'cause_of_death'] not in rti_deaths, 'person sent for treatment died from rti module'
         assert df.at[person_id, 'rt_med_int'], 'Person sent for treatment did not go through rti med int'
         person = df.iloc[person_id]
-        surgically_treated_codes = ['211', '212', '291', '241', '322', '323', '722', '822a', '822b']
+        surgically_treated_codes = ['211', '212', '291', '241', '322', '323', '722', '811', '812', '813a',
+                                    '813b', '813c']
+        assert len(set(df.loc[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0, \
+            'This person has asked for a minor surgery but does not need it'
         # Isolate the relevant injury information
         cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                 'rt_injury_7', 'rt_injury_8']
@@ -1633,7 +1751,7 @@ class RTI(Module):
         cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                 'rt_injury_7', 'rt_injury_8']
         person_injuries = df.loc[[person_id], cols]
-        fracture_codes = ['712a', '712b', '712c', '811', '812']
+        fracture_codes = ['712a', '712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
         # Check they have an injury treated by HSI_RTI_Fracture_Cast
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, fracture_codes)
         assert counts > 0, "This person has asked for fracture treatment, but doens't have appropriate fractures"
@@ -2398,7 +2516,6 @@ class RTI(Module):
             df.loc[person_id, 'rt_disability'] = 1
         assert df.loc[person_id, 'rt_disability'] > 0, 'No disability burden where there should be'
 
-
     def rti_determine_LOS(self, person_id):
         """
         This function determines the length of stay a person sent to the health care system will require, based on how
@@ -2544,13 +2661,15 @@ class RTI(Module):
         df.at[child_id, 'rt_injury_6'] = "none"
         df.at[child_id, 'rt_injury_7'] = "none"
         df.at[child_id, 'rt_injury_8'] = "none"
+        df.at[child_id, 'rt_injuries_to_cast'] = []
+        df.at[child_id, 'rt_injuries_for_minor_surgery'] = []
+        df.at[child_id, 'rt_injuries_for_major_surgery'] = []
         df.at[child_id, 'rt_polytrauma'] = False
         df.at[child_id, 'rt_ISS_score'] = 0
         df.at[child_id, 'rt_imm_death'] = False
         df.at[child_id, 'rt_perm_disability'] = False
         df.at[child_id, 'rt_med_int'] = False  # default: no one has a had medical intervention
-        df.at[child_id, 'rt_in_icu'] = False
-        df.at[child_id, 'rt_in_hdu'] = False
+        df.at[child_id, 'rt_in_icu_or_hdu'] = False
         df.at[child_id, 'rt_date_to_remove_daly'] = [pd.NaT] * 8
         df.at[child_id, 'rt_diagnosed'] = False
         df.at[child_id, 'rt_recovery_no_med'] = False  # default: no recovery without medical intervention
@@ -2593,7 +2712,13 @@ class RTI(Module):
         :return: injurydescription - a dataframe for the injury/injuries summarised in the TLO injury code form along
                                      with data on their ISS score, used for calculating mortality and whether they have
                                      polytrauma or not.
-
+        Todo: see if we can include the following factors for injury severity:
+            - The setting of the patient (rural/urban) as rural location was a predictor for severe injury AOR 2.41
+            (1.49-3.90)
+            - Seatbelt use (none compared to using AOR 4.49 (1.47-13.76))
+            - Role of person in crash (Different risk for different type, see paper)
+            - Alcohol use (AOR 1.74 (1.11-2.74) compared to none)
+        TODO: make some of the fractures people receive open
         """
         p = self.parameters
         # Import the distribution of injured body regions from the VIBES study
@@ -3176,6 +3301,7 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
                         to calculate the probability for mortality later on.
 
     """
+
     #     todo: find a way to thread this event so people get involved in road traffic injuries at different points in
     #      the month rather than all happening on the first
     def __init__(self, module):
@@ -3187,7 +3313,9 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         self.base_1m_prob_rti = (p['base_rate_injrti'] / 12)
         if 'reduce_incidence' in p['allowed_interventions']:
             self.base_1m_prob_rti = self.base_1m_prob_rti * 0.335
-        self.rr_injrti_age018 = p['rr_injrti_age018']
+        self.rr_injrti_age04 = p['rr_injrti_age04']
+        self.rr_injrti_age59 = p['rr_injrti_age59']
+        self.rr_injrti_age1017 = p['rr_injrti_age1017']
         self.rr_injrti_age1829 = p['rr_injrti_age1829']
         self.rr_injrti_age3039 = p['rr_injrti_age3039']
         self.rr_injrti_age4049 = p['rr_injrti_age4049']
@@ -3401,10 +3529,12 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         df.loc[diedfromrtiidx, "rt_unavailable_med_death"] = False
         df.loc[diedfromrtiidx, "rt_disability"] = 0
         df.loc[diedfromrtiidx, "rt_med_int"] = False
-        df.loc[diedfromrtiidx, 'rt_in_icu'] = False
-        df.loc[diedfromrtiidx, 'rt_in_hdu'] = False
+        df.loc[diedfromrtiidx, 'rt_in_icu_or_hdu'] = False
         for index, row in df.loc[diedfromrtiidx].iterrows():
             df.at[index, 'rt_date_to_remove_daly'] = [pd.NaT] * 8
+            df.at[index, 'rt_injuries_to_cast'] = []
+            df.at[index, 'rt_injuries_for_minor_surgery'] = []
+            df.at[index, 'rt_injuries_for_major_surgery'] = []
         df.loc[diedfromrtiidx, "rt_diagnosed"] = False
         df.loc[diedfromrtiidx, "rt_polytrauma"] = False
         df.loc[diedfromrtiidx, "rt_inj_severity"] = "none"
@@ -3442,9 +3572,9 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         eq = LinearModel(LinearModelType.MULTIPLICATIVE,
                          self.base_1m_prob_rti,
                          Predictor('sex').when('M', self.rr_injrti_male),
-                         Predictor('age_years').when('.between(0,4)', 0.5),
-                         Predictor('age_years').when('.between(5,10)', 0.7),
-                         Predictor('age_years').when('.between(5,17)', self.rr_injrti_age018),
+                         Predictor('age_years').when('.between(0,4)', self.rr_injrti_age04),
+                         Predictor('age_years').when('.between(5,9)', self.rr_injrti_age59),
+                         Predictor('age_years').when('.between(10,17)', self.rr_injrti_age1017),
                          Predictor('age_years').when('.between(18,29)', self.rr_injrti_age1829),
                          Predictor('age_years').when('.between(30,39)', self.rr_injrti_age3039),
                          Predictor('age_years').when('.between(40,49)', self.rr_injrti_age4049),
@@ -3936,7 +4066,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
     need fracture casts to HSI_RTI_Casting.
 
     Pain medication is also requested here with HSI_RTI_Acute_Pain_Management.
-
     """
 
     def __init__(self, module, person_id):
@@ -3992,62 +4121,323 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Find probability that skull fractures will require surgery
         if counts > 0:
             if require_surgery < self.prob_depressed_skull_fracture:
-                logger.debug('Person %d has a depressed skull fracture which will require surgery', person_id)
+                # update the number of surgeries needed to treat this person
                 self.major_surgery_counts += 1
+                # add the injury to the injuries to be treated with major surgery so they aren't treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].append('112')
             else:
-                actual_injury = np.intersect1d(codes, person_injuries.values)
-                self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
+                self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, '112')
+        # check if this person has a basilar skull fracture and needs the injury to heal with time
         codes = ['113']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
+            # add the injury to the heal with time injuries
             self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, '113')
         # -------------------------------- Facial fractures -----------------------------------------------------------
         # Check whether the person has facial fractures, then if they do schedule a surgery to treat it
         codes = ['211', '212']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
+            # determine the exact injury they have
+            actual_injury = np.intersect1d(codes, person_injuries.values)
+            # update the number of minor surgeries needed
             self.minor_surgery_counts += 1
+            # store the injury to the injuries treated by minor surgery to make sure they aren't treated elsewhere
+            df.loc[person_id, 'rt_injuries_for_minor_surgery'].append(actual_injury[0])
         # consumables required: closed reduction. In some cases surgery
         # --------------------------------- Thorax Fractures -----------------------------------------------------------
         # Check whether the person has a broken rib (and therefor needs no further medical care apart from pain
         # management) or if they have flail chest, a life threatening condition which will require surgery.
+
+        # check if they have a rib fracture
         codes = ['412']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
-            actual_injury = np.intersect1d(codes, person_injuries.values)
-            self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
+            self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, '412')
         codes = ['414']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
+            # update the number of major surgeries required
             self.major_surgery_counts += 1
+            # add the injury to the injuries to be treated by major surgeries so it isn't treated elsewhere
+            df.loc[person_id, 'rt_injuries_for_major_surgery'].append('414')
         # --------------------------------- Lower extremity fractures --------------------------------------------------
-        # Check if the person has a broken femur/hip which will require a surgery.
-        codes = ['813', '813a', '813b', '813c']
-        idx1, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
-        # Major surgery required for broken femur/hip/pelvis
+        # Three treatment options in use currently for treating foot fractures:
+        # 1) major surgery - open reduction internal fixation
+        # 2) minor surgery - external fixation
+        # 3) fracture cast
+        # Later I hope to include amputation of foot fractures which occurs in some case. The information used to
+        # predict the treatment plan comes from Chagomerana et al. 2017, a hospital report from a hospital in Lilongwe
+        # Design treatment plan for foot fractures: first specify the treatments that are available and store them for
+        # use in the apply section
+        self.foot_frac_major_surg = False
+        self.foot_frac_minor_surg = False
+        self.foot_frac_amputation = False
+        self.foot_frac_cast = False
+        # Load the parameters used to determine which treatment option to use
+        prob_foot_frac_require_cast = p['prob_foot_frac_require_cast']
+        prob_foot_frac_require_maj_surg = p['prob_foot_frac_require_maj_surg']
+        prob_foot_frac_require_min_surg = p['prob_foot_frac_require_min_surg']
+        prob_foot_frac_require_amp = p['prob_foot_frac_require_amp']
+        # Check if this person has a foot fracture
+        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, ['811'])
         if counts > 0:
-            self.major_surgery_counts += 1
+            # Use a random variable to choose which treatment to use
+            treatment_plan = self.module.rng.random_sample(size=1)
+            # check if this tibia fracture can be treated with a cast
+            if treatment_plan < prob_foot_frac_require_cast:
+                # update treatment plan
+                self.foot_frac_cast = True
+                # put the injury in the injuries to be cast property to stop them being treated elsewhere
+                df.loc[person_id, 'rt_injuries_to_cast'].append('811')
+            # Check if this fracture needs to be treated with external fixation (minor surgery)
+            elif treatment_plan < prob_foot_frac_require_cast + prob_foot_frac_require_min_surg:
+                # update treatment plan
+                self.foot_frac_minor_surg = True
+                # update the number of minor surgeries needed
+                self.minor_surgery_counts += 1
+                # put the injury in the injuries for minor surgery property to stop them being treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_minor_surgery'].append('811')
+            # Check if this fracture needs to be treated with open reduction internal fixation (major surg)
+            elif treatment_plan < prob_foot_frac_require_cast + prob_foot_frac_require_min_surg + \
+                prob_foot_frac_require_maj_surg:
+                # update the treatment plan
+                self.foot_frac_major_surg = True
+                # update the number of major surgeries
+                self.major_surgery_counts += 1
+                # put the injury in the injuries to be cast property to stop them being treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].append('811')
+            # Check if this fracture needs to be treated by amputation
+            else:
+                # self.foot_frac_amputation = True
+                # todo: in this incidence swap the code and daly weight for amputation
+                # for the time being, assume all amputations are major surgeries
+                # update the treatment plan
+                self.foot_frac_major_surg = True
+                # update the number of major surgeries
+                self.major_surgery_counts += 1
+                # put the injury in the injuries to be cast property to stop them being treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].append('811')
+
+            # check that no more than one treatment plan has been chosen for the foot fracture
+            treatment_options = [self.foot_frac_major_surg, self.foot_frac_minor_surg, self.foot_frac_amputation,
+                                 self.foot_frac_cast]
+            assert sum(treatment_options) <= 1, 'multiple treatment options assigned to treat this foot fracture'
+
+        # Design treatment plan for tibia/fibula fractures
+        # Four treatment options in use currently for treating tibia/fibula fractures:
+        # 1) major surgery - open reduction internal fixation
+        # 2) minor surgery - external fixation
+        # 3) fracture cast
+        # 4) skeletal traction - a 'heal with time' treatment
+        # Set up treatment options
+        self.tib_fib_frac_major_surg = False
+        self.tib_fib_frac_minor_surg = False
+        self.tib_fib_frac_amputation = False
+        self.tib_fib_frac_traction = False
+        self.tib_fib_frac_cast = False
+        # Load the parameters used to determine treatment for tibia/fibula fractures
+        prob_tib_fib_frac_require_cast = p['prob_tib_fib_frac_require_cast']
+        prob_tib_fib_frac_require_maj_surg = p['prob_tib_fib_frac_require_maj_surg']
+        prob_tib_fib_frac_require_min_surg = p['prob_tib_fib_frac_require_min_surg']
+        prob_tib_fib_frac_require_amp = p['prob_tib_fib_frac_require_amp']
+        prob_tib_fib_frac_require_traction = p['prob_tib_fib_frac_require_traction']
+        # Check if the person has a broken tibia/fibula
+        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, ['812'])
+        if counts > 0:
+            # determine what the treatment for this person will be
+            treatment_plan = self.module.rng.random_sample(size=1)
+            # check if this tibia fracture can be treated with a cast
+            if treatment_plan < prob_tib_fib_frac_require_cast:
+                # update the treatment plan
+                self.tib_fib_frac_cast = True
+                # put the injury in the injuries to be cast property to stop them being treated elsewhere
+                df.loc[person_id, 'rt_injuries_to_cast'].append('812')
+            # Check if this fracture needs to be treated with external fixation (minor surgery)
+            elif treatment_plan < prob_tib_fib_frac_require_cast + \
+                prob_tib_fib_frac_require_min_surg:
+                # update the treatment plan
+                self.tib_fib_frac_minor_surg = True
+                # put the injury in the injuries for minor surgery property to stop them being treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_minor_surgery'].append('812')
+                # update the number of minor surgeries needed
+                self.minor_surgery_counts += 1
+            # Check if this fracture needs to be treated with open reduction internal fixation (major surg)
+            elif treatment_plan < prob_tib_fib_frac_require_cast + prob_tib_fib_frac_require_min_surg + \
+                prob_tib_fib_frac_require_maj_surg:
+                # update the treatment plan
+                self.tib_fib_frac_major_surg = True
+                # put the injury in the injuries for major surgery property to stop them being treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].append('812')
+                # update the number of major surgeries needed
+                self.major_surgery_counts += 1
+            # Check if this fracture needs to be treated with traction
+            elif treatment_plan < prob_tib_fib_frac_require_cast + prob_tib_fib_frac_require_min_surg + \
+                    prob_tib_fib_frac_require_maj_surg + prob_tib_fib_frac_require_traction:
+                # update the treatment plan
+                self.tib_fib_frac_traction = True
+                # update the list of heal with time injuries
+                self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, '812')
+            else:
+                # self.tib_fib_frac_amputation = True
+                # self.tib_fib_frac_traction = True
+                # self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, '812')
+                # for now, just assume that all amputations are major surgeries
+                self.tib_fib_frac_major_surg = True
+                # put the injury in the injuries for major surgery property to stop them being treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].append('812')
+                # update the number of major surgeries needed
+                self.major_surgery_counts += 1
+            # make sure that there is only one treatment plan chosed to treat this injury
+            treatment_options = [self.tib_fib_frac_major_surg, self.tib_fib_frac_minor_surg,
+                                 self.tib_fib_frac_amputation, self.tib_fib_frac_traction, self.tib_fib_frac_cast]
+            assert sum(treatment_options) <= 1, 'multiple treatment options assigned to treat this tib/fib fracture'
+
+        # Design treatment plan for femur fractures / hip fractures
+        # for femur/hip fractures there are currently four treatment options included in the model:
+        # 1) skeletal traction
+        # 2) minor surgery (external fixation)
+        # 3) major surgery (open reduction internal fixation)
+        # 4) fracture cast
+        # in the future I hope to include amputations
+
+        # Check if the person has a broken femur/hip/pelvis which will require a major/minor surgery or traction.
+        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, ['813a', '813c'])
+        # create the treatment plan options
+        self.femur_skeletal_traction = False
+        self.femur_minor_surgery = False
+        self.femur_major_surgery = False
+        self.femur_cast = False
+        self.femur_amputation = False
+        # Load the parameters used to determine the treatment plan
+        prob_femural_fracture_require_major_surgery = p['prob_femural_fracture_require_major_surgery']
+        prob_femural_fracture_require_minor_surgery = p['prob_femural_fracture_require_minor_surgery']
+        prob_femural_fracture_require_cast = p['prob_femural_fracture_require_cast']
+        # todo: work out how to change this to an amputation
+        prob_femural_fracture_require_amputation = p['prob_femural_fracture_require_amputation']
+        if counts > 0:
+            # create a treatment plan
+            treatment_plan = self.module.rng.random_sample(size=1)
+            # work out if this injury is a femur fracture or a hip fracture
+            actual_injury = np.intersect1d(['813a', '813c'], person_injuries.values)
+            # check if femur fracture needs major surgery
+            if treatment_plan < prob_femural_fracture_require_major_surgery:
+                # update the number of major surgeries required
+                self.major_surgery_counts += 1
+                # update the treatment plan
+                self.femur_major_surgery = True
+                # store the injury in the major surgeries property so it won't be treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
+            # check if femur fracture needs minor surgery
+            elif treatment_plan < prob_femural_fracture_require_major_surgery + \
+                prob_femural_fracture_require_minor_surgery:
+                # update the number of minor surgeries required
+                self.minor_surgery_counts += 1
+                # update the treatment plan
+                self.femur_minor_surgery = True
+                # store the injury in the minor surgeries property so it won't be treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_minor_surgery'].append(actual_injury[0])
+            # check if femur fracture needs casting
+            elif treatment_plan < prob_femural_fracture_require_major_surgery + \
+                prob_femural_fracture_require_minor_surgery + prob_femural_fracture_require_cast:
+                # update the treatment plan
+                self.femur_cast = True
+                # put the injury in the injuries to be cast property to stop them being treated elsewhere
+                df.loc[person_id, 'rt_injuries_to_cast'].append(actual_injury[0])
+            # Check if femur fracture it treated using skeletal traction
+            else:
+                # store the injury in the heal with time injuries
+                self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
+                self.femur_skeletal_traction = True
+            # check that only one treatment option has been chosed for this femur/hip fracture
+            treatment_options = [self.femur_skeletal_traction, self.femur_minor_surgery, self.femur_major_surgery,
+                                 self.femur_cast, self.femur_amputation]
+            assert sum(treatment_options) <= 1, 'multiple treatment options assigned to treat this femur/hip fracture'
+
+        # Design the treatment plan for pelvis fractures
+        # Three treatment options in use currently for treating pelvis fractures:
+        # 1) major surgery - open reduction internal fixation
+        # 2) minor surgery - external fixation
+        # 3) fracture cast
+        # 4) skeletal traction
+        # set up the treatment options
+        self.pelvis_skeletal_traction = False
+        self.pelvis_major_surgery = False
+        self.pelvis_minor_surgery = False
+        self.pelvis_fracture_cast = False
+        # Load the parameters used to determine pelvis fracture treatment plans
+        prob_pelvis_fracture_traction = p['prob_pelvis_fracture_traction']
+        prob_pelvis_frac_major_surgery = p['prob_pelvis_frac_major_surgery']
+        prob_pelvis_frac_minor_surgery = p['prob_pelvis_frac_minor_surgery']
+        # See if this person has a pelvis fracture
+        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, ['813b'])
+        if counts > 0:
+            # create a treatment plan option
+            treatment_plan = self.module.rng.random_sample(size=1)
+            # Determine if this pelvis fracture will be treated with skeletal traction
+            if treatment_plan < prob_pelvis_fracture_traction:
+                # add the pelvis fracture to the heal with time injuries
+                self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, '813b')
+                # update the treatment plan
+                self.pelvis_skeletal_traction = True
+            # Determine if this pelvis fracture will be treated with a minor surgery
+            elif treatment_plan < prob_pelvis_fracture_traction + prob_pelvis_frac_minor_surgery:
+                # update the number of minor surgeries required
+                self.minor_surgery_counts += 1
+                # update the treatment plan
+                self.pelvis_minor_surgery = True
+                # add the injury to the injuries to be treated with minor surgeries so they aren't treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_minor_surgery'].append('813b')
+            # Determine if the pelvis fracture will be treated with major surgery
+            elif treatment_plan < prob_pelvis_fracture_traction + prob_pelvis_frac_minor_surgery + \
+                prob_pelvis_frac_major_surgery:
+                # update the number of major surgeries required
+                self.major_surgery_counts += 1
+                # update the treatment plan
+                self.pelvis_major_surgery = True
+                # add the injury to the injuries to be treated by major surgery so it isn't treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].append('813b')
+            # Determine if the injury will be treated with a cast
+            else:
+                # update the treatment plan
+                self.pelvis_fracture_cast = True
+                # add the injury to be treated by fracture cast so it isn't treated elsewhere
+                df.loc[person_id, 'rt_injuries_to_cast'].append('813b')
+            # Make sure that only one treatment plant for the pelvis fracture has been chosen
+            treatment_options = [self.pelvis_skeletal_traction, self.pelvis_major_surgery, self.pelvis_minor_surgery,
+                                 self.pelvis_fracture_cast]
+            assert sum(treatment_options) <= 1, 'multiple treatment options assigned to treat this femur/hip fracture'
         # ------------------------------ Traumatic brain injury requirements ------------------------------------------
         # Check whether the person has a severe traumatic brain injury, which in some cases will require a major surgery
         # to treat
         codes = ['133', '133a', '133b', '133c', '133d' '134', '134a', '134b', '135']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        # determine if this TBI will require a craniotomy
         require_surgery = self.module.rng.random_sample(size=1)
         if counts > 0:
+            # find the exact injury
+            actual_injury = np.intersect1d(codes, person_injuries.values)
             if require_surgery < self.prob_TBI_require_craniotomy:
+                # update the number of major surgeries needed
                 self.major_surgery_counts += 1
+                # add the injury to the injuries to be treated by major surgery so they aren't treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
             else:
-                actual_injury = np.intersect1d(codes, person_injuries.values)
                 self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
         # ------------------------------ Abdominal organ injury requirements ------------------------------------------
         # Check if the person has any abodominal organ injuries, if they do, determine whether they require a surgery or
         # not
         codes = ['552', '553', '554']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        # determine if this TBI will require an laporotomy
         require_surgery = self.module.rng.random_sample(size=1)
         if counts > 0:
+            # find the exact injury
+            actual_injury = np.intersect1d(codes, person_injuries.values)
             if require_surgery < self.prob_exploratory_laparotomy:
+                # update the number of major surgeries needed
                 self.major_surgery_counts += 1
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
             else:
                 actual_injury = np.intersect1d(codes, person_injuries.values)
                 self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
@@ -4056,96 +4446,190 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Check whether they have a spinal cord injury, if we allow spinal cord surgery capacilities here, ask for a
         # surgery, otherwise make the injury permanent
         codes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676']
+        # Ask if this person has a spinal cord injury
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if (counts > 0) & ('include_spine_surgery' in self.allowed_interventions):
+            # if this person has a spinal cord injury and we allow surgeries, determine their exact injury
+            actual_injury = np.intersect1d(codes, person_injuries.values)
+            # update the number of major surgeries
             self.major_surgery_counts += 1
+            # add the injury to the injuries to be treated by major surgery
+            df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
         elif counts > 0:
+            # if no surgery assume that the person will be permanently disabled
             df.at[person_id, 'rt_perm_disability'] = True
             # Find the column and code where the permanent injury is stored
             column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id, codes=codes)
-            logger.debug('@@@@@@@@@@ Person %d had intervention for SCI on %s but still disabled!!!!!!',
-                         person_id, self.sim.date)
+            # make the injury permanent by adding a 'P' before the code
             df.loc[person_id, column] = "P" + code
             code = df.loc[person_id, column]
+            # find which property the injury is stored in
             columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, [code])
             for col in columns:
                 # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
                 # it permanent)
                 df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + \
                                                                                 DateOffset(days=1)
-
+        # check if the person has a vertebrae fracture
         codes = ['612']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
-            actual_injury = np.intersect1d(codes, person_injuries.values)
+            # add the injury to the heal with time injuries
             self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, '612')
-
         # --------------------------------- Dislocations --------------------------------------------------------------
         # Check if they have a dislocation, will require surgery but otherwise they can be taken care of in the RTI med
         # app
-        codes = ['322', '323', '722', '822', '822a', '822b']
-        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
-        require_surgery = self.module.rng.random_sample(size=1)
+        # Create treatment plan for dislocated hip, there are currently three options:
+        # 1) major surgery - open reduction internal fixation
+        # 2) casting
+        # 3) skeletal traction
+        # Set up the treatment options
+        self.hip_dis_require_major_surg = False
+        self.hip_dis_require_cast = False
+        self.hip_dis_require_traction = False
+        # load the parameters used to determine the treatment plan
+        prob_dis_hip_require_maj_surg = p['prob_dis_hip_require_maj_surg']
+        prob_dis_hip_require_cast = p['prob_dis_hip_require_cast']
+        prob_hip_dis_require_traction = p['prob_hip_dis_require_traction']
+        # See if person has dislocated hip
+        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, ['822a'])
         if counts > 0:
-            if require_surgery < self.prob_dislocation_requires_surgery:
-                self.minor_surgery_counts += 1
+            # Set up the treatment plan
+            treatment_plan = self.module.rng.random_sample(size=1)
+            # See if this person is treated with skeletal traction
+            if treatment_plan < prob_hip_dis_require_traction:
+                # Add the injury to the heal with time injuries
+                self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, '822a')
+                # update the treatment plan
+                self.hip_dis_require_traction = True
+            # See if this person is treated with a major surgery
+            elif treatment_plan < prob_hip_dis_require_traction + prob_dis_hip_require_maj_surg:
+                # update the number of major surgeries needed
+                self.major_surgery_counts += 1
+                # update the treatment plan
+                self.hip_dis_require_major_surg = True
+                # add the injury to the injuries that need to be treated with major surgeries
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].append('822a')
+            # Determine if the injury will be treated with a cast
             else:
-                actual_injury = np.intersect1d(codes, person_injuries.values)
+                # Update the treatment plan
+                self.hip_dis_require_cast = True
+                # add the injury to this injuries that need to be cast
+                df.loc[person_id, 'rt_injuries_to_cast'].append('822a')
+            # Make sure only one treatment plan has been chosen
+            treatment_options = [self.hip_dis_require_major_surg, self.hip_dis_require_cast,
+                                 self.hip_dis_require_traction]
+            assert sum(treatment_options) <= 1, 'person had multiple treatment options for hip dislocation assigned'
+        # Knee dislocations will be treated by casting
+        # Determine the treatment plans for dislocated necks ('322', '323') and dislocated shoulders ('722')
+        codes = ['322', '323', '722']
+        # check if they have a neck or shoulder dislocation
+        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        if counts > 0:
+            # determine if they will require surgery
+            require_surgery = self.module.rng.random_sample(size=1)
+            # determine the exact injury they have
+            actual_injury = np.intersect1d(codes, person_injuries.values)
+            # Check if they require a minor surgery
+            if require_surgery < self.prob_dislocation_requires_surgery:
+                # update the number of minor surgeries required
+                self.minor_surgery_counts += 1
+                # add the injury to the injuries to be treated in minor surgery so they aren't treated elsewhere
+                df.loc[person_id, 'rt_injuries_for_minor_surgery'].append(actual_injury[0])
+            else:
+                # if the injury isn't treated in surgery, add the injury to the heal with time injuries
                 self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
-
         # --------------------------------- Soft tissue injury in neck -------------------------------------------------
         # check whether they have a soft tissue/internal bleeding injury in the neck. If so schedule a surgery.
         codes = ['342', '343']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
+            # find the exact injury they have
+            actual_injury = np.intersect1d(codes, person_injuries.values)
+            # update the number of major surgeries required.
             self.major_surgery_counts += 1
-
+            # add these injuries to the injuries to be treated by major surgery so they aren't treated elsewhere
+            df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
         # --------------------------------- Soft tissue injury in thorax/ lung injury ----------------------------------
         # Check whether they have any soft tissue injuries in the thorax, if so schedule surgery if required else make
         # the injuries heal over time without further medical care
         codes = ['441', '443', '453', '453a', '453b']
+        # check if they have chest traume
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if (counts > 0) & ('include_thoroscopy' in self.allowed_interventions):
+            # work out the exact injury they have
+            actual_injury = np.intersect1d(codes, person_injuries.values)
+            # update the number of major surgeries required
             self.major_surgery_counts += 1
+            # add the injury to the injuries to be treated with major surgery so they aren't treated elsewhere
+            df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
+        # check if they have chest trauma which is just air in the chest cavity which resolves on its own
         codes = ['442']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
-            actual_injury = np.intersect1d(codes, person_injuries.values)
-            self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
+            # add the injury to the heal with time injuries
+            self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, '442')
         # -------------------------------- Internal bleeding -----------------------------------------------------------
         # Check if they have any internal bleeding in the neck, if so schedule a major surgery
         codes = ['361', '363']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
+            # Work out what the injury is
+            actual_injury = np.intersect1d(codes, person_injuries.values)
+            # update the number of major surgeries required
             self.major_surgery_counts += 1
+            # add the injury to the injuries to be treated with major surgery so it isn't treated elsewhere
+            df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
         # check if they have internal bleeding in the thorax, and if the surgery is available, schedule a major surgery
         codes = ['463']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if (counts > 0) & ('include_thoroscopy' in self.allowed_interventions):
+            # update the number of major surgeries needed
             self.major_surgery_counts += 1
+            # add the injury to the injuries to be treated with major surgery.
+            df.loc[person_id, 'rt_injuries_for_major_surgery'].append('463')
+        # check if this person has minor internal bleeding which will heal without intervention
         codes = ['461']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
-            actual_injury = np.intersect1d(codes, person_injuries.values)
-            self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
+            # add the injury to the heal with time injuries
+            self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, '461')
         # ------------------------------------- Amputations ------------------------------------------------------------
-        # Check if they have had an amputation and schedule a major surgery if so.
-        codes = ['782', '782a', '782b', '782c', '783', '882', '883', '884']
+        # Check if they have or need an amputation in the upper extremities
+        codes = ['782', '782a', '782b', '782c', '783']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
+            # determine the injuries the person has
+            actual_injury = np.intersect1d(codes, person_injuries.values)
             self.major_surgery_counts += 1
+            df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
+        # Check if they have or need an amputation in the lower extremities
+        codes = ['882', '883', '884']
+        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        if counts > 0:
+            # determine the injuries the person has
+            actual_injury = np.intersect1d(codes, person_injuries.values)
+            self.major_surgery_counts += 1
+            df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
         # --------------------------------------- Eye injury -----------------------------------------------------------
-        # check if they have an eye injury and schedule a minor surgery if so
+        # check if they have an eye injury and schedule a minor surgery if so schedule a minor surgery
         codes = ['291']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
+            # update the number of minor surgeries needed
             self.minor_surgery_counts += 1
+            # add the injury to the list of injuries treated by minor surgeries
+            df.loc[person_id, 'rt_injuries_for_minor_surgery'].append('291')
+
         # ------------------------------ Soft tissue injury in face ----------------------------------------------------
         # check if they have any facial soft tissue damage and schedule a minor surgery if so.
         codes = ['241']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
+            # update the number of minor surgeries needed
             self.minor_surgery_counts += 1
+            # add the injury to the list of injuries treated by minor surgeries
+            df.loc[person_id, 'rt_injuries_for_minor_surgery'].append('241')
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'RTI_MedicalIntervention'  # This must begin with the module name
@@ -4155,16 +4639,70 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
 
         # ================ Determine how long the person will be in hospital based on their ISS score ==================
         self.inpatient_days = road_traffic_injuries.rti_determine_LOS(person_id)
+        # If the patient needs skeletal traction for their injuries they need to stay at minimum 6 weeks,
+        # average length of stay for those with femur skeletal traction found from Kramer et al. 2016:
+        # https://doi.org/10.1007/s00264-015-3081-3
+        # todo: put in complications from femur fractures
+        self.femur_fracture_skeletal_traction_mean_los = p['femur_fracture_skeletal_traction_mean_los']
+        self.other_skeletal_traction_los = p['other_skeletal_traction_los']
+        if self.femur_skeletal_traction & (self.inpatient_days < 55):
+            self.inpatient_days = self.femur_fracture_skeletal_traction_mean_los
+        if self.pelvis_skeletal_traction & (self.inpatient_days < 42):
+            self.inpatient_days = self.other_skeletal_traction_los
+        if self.tib_fib_frac_traction & (self.inpatient_days < 42):
+            self.inpatient_days = self.other_skeletal_traction_los
+        if self.hip_dis_require_traction & (self.inpatient_days < 42):
+            self.inpatient_days = self.other_skeletal_traction_los
+        # Specify the type of bed days needed? not sure if necessary
+        self.BEDDAYS_FOOTPRINT.update({'general_bed': self.inpatient_days})
+        # update the expected appointment foortprint
         self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': self.inpatient_days})
         # ================ Determine whether the person will require ICU days =========================================
         # Percentage of RTIs that required ICU stay 2.7% at KCH : https://doi.org/10.1007/s00268-020-05853-z
-        # todo: get ICU days from tim hallet
-        self.icu_cut_off = 38
-        self.hdu_cut_off = 29
-        if df.loc[person_id, 'rt_ISS_score'] > self.icu_cut_off:
-            df.loc[person_id, 'rt_in_icu'] = True
-        elif self.icu_cut_off >= df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off:
-            df.loc[person_id, 'rt_in_hdu'] = True
+        # Percentage of RTIs that require HDU stay 3.3% at KCH
+        # Assume for now that ICU admission is entirely dependent on injury severity so that only the 2.7% of most
+        # severe injuries get admitted to ICU and the following 3.3% of most severe injuries get admitted to HDU
+        # NOTE: LEAVING INPATIENT DAYS IN PLACE TEMPORARILY
+        # Seems only one level of care above normal so adjust accordingly
+        # self.icu_cut_off_iss_score = 38
+        self.hdu_cut_off_iss_score = p['hdu_cut_off_iss_score']
+        # No info for length of stay in those units so take temporarily from other source:
+        # https://doi.org/10.1186/cc13976
+        # determine the number of ICU days used to treat patient
+        mean_icu_days = p['mean_icu_days']
+        sd_icu_days = p['sd_icu_days']
+        self.icu_days = int(self.module.rng.normal(mean_icu_days, sd_icu_days, 1))
+        # if the number of ICU days is less than zero make it zero
+        if self.icu_days < 0:
+            self.icu_days = 0
+        if df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off_iss_score:
+            # update the property showing if a person is in ICU
+            df.loc[person_id, 'rt_in_icu_or_hdu'] = True
+            # update the bed days footprint
+            self.BEDDAYS_FOOTPRINT.update({'high_dependency_bed': self.icu_days})
+            # store the injury information of patients in ICU
+            logger.info(key='ICU_patients',
+                        data=person_injuries,
+                        description='The injuries of ICU patients')
+
+        # Other test admission protocol. Basing ICU admission of whether they have a TBI
+        # 17.3% of head injury patients in KCH were admitted to ICU/HDU (7.9 and 9.4% respectively)
+
+        # Injury characteristics of patients admitted to ICU in Tanzania:
+        # 97.8% had lacerations
+        # 32.4% had fractures
+        # 21.5% had TBI
+        # 13.1% had abdominal injuries
+        # 2.9% had burns
+        # 3.8% had 'other' injuries
+        # https://doi.org/10.1186/1757-7241-19-61
+
+        # tbi_codes = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135']
+        # idx, counts = RTI.rti_find_and_count_injuries(person_injuries, tbi_codes)
+        # rand_for_tbi_icu_admission = self.module.rng.random_sample(size=1)
+        # if (counts > 0) & (rand_for_tbi_icu_admission < 0.173):
+        #     df.loc[person_id, 'rt_in_icu_or_hdu'] = True
+        #     self.BEDDAYS_FOOTPRINT.update({'high_dependency_bed': self.icu_days})
 
     def apply(self, person_id, squeeze_factor):
         road_traffic_injuries = self.sim.modules['RTI']
@@ -4190,7 +4728,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # =============================== Make 'healed with time' injuries disappear ===================================
         if len(self.heal_with_time_injuries) > 0:
             # check whether the heal with time injuries include dislocations, which may have been sent to surgery
-            dislocations = ['322', '323', '722', '822', '822a', '822b']
+            dislocations = ['322', '323', '722', '822', '822a']
             dislocations_injury = np.intersect1d(dislocations, self.heal_with_time_injuries)
             if len(dislocations_injury) > 0:
                 for code in dislocations_injury:
@@ -4210,13 +4748,9 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                                                                                                       [code])[0])
                         # using estimated 2 months to recover from dislocated hip
                         df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(months=2)
-                    else:
-                        columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                                      [code])[0])
-                        # using estimated 6 weeks to recover from dislocated knee
-                        df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=6)
+
             # Check whether the heal with time injury is a skull fracture, which may have been sent to surgery
-            fractures = ['112', '113', '412', '612']
+            fractures = ['112', '113', '412', '612', '812', '813a', '813b', '813c']
             fractures_injury = np.intersect1d(fractures, self.heal_with_time_injuries)
             if len(fractures_injury) > 0:
                 for code in fractures_injury:
@@ -4242,6 +4776,35 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                         # using estimated 9 weeks PLACEHOLDER FOR Vertebrae FRACTURE
                         df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(
                             weeks=9)
+                    if (code == '812') & self.tib_fib_frac_traction:
+                        columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+                                                                                                      [code])[0]
+                                                         )
+                        # using estimated 9 weeks PLACEHOLDER FOR skeletal traction for hip
+                        df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(
+                            weeks=9)
+                    if (code == '813a') & self.femur_skeletal_traction:
+                        columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+                                                                                                      [code])[0]
+                                                         )
+                        # using estimated 9 weeks PLACEHOLDER FOR skeletal traction for hip
+                        df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(
+                            weeks=9)
+                    if (code == '813b') & self.pelvis_skeletal_traction:
+                        columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+                                                                                                      [code])[0]
+                                                         )
+                        # using estimated 9 weeks PLACEHOLDER FOR skeletal traction for pelvis
+                        df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(
+                            weeks=9)
+                    if (code == '813c') & self.femur_skeletal_traction:
+                        columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+                                                                                                      [code])[0]
+                                                         )
+                        # using estimated 9 weeks PLACEHOLDER FOR skeletal traction for femur
+                        df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(
+                            weeks=9)
+
             abdominal = ['552', '553', '554']
             abdominal_injury = np.intersect1d(abdominal, self.heal_with_time_injuries)
             # check whether the heal with time injury is an abdominal injury
@@ -4302,7 +4865,9 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # ------------------------------ Cast-able fractures ----------------------------------------------------------
         # Schedule the fracture treatments by calling the functions rti_ask_for_fracture_casts which in turn schedules
         # the treatment
-        codes = ['712', '712a', '712b', '712c', '811', '812']
+        codes = ['712', '712a', '712b', '712c', '822a', '822b']
+        for injury in df.loc[person_id, 'rt_injuries_to_cast']:
+            codes.append(injury)
         idx, fracturecounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if fracturecounts > 0 & (df.loc[person_id, 'cause_of_death'] == ''):
             road_traffic_injuries.rti_ask_for_fracture_casts(person_id=person_id)
@@ -4363,6 +4928,12 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
     '712c' - broken radius/ulna
     '811' - Fractured foot
     '812' - broken tibia/fibula
+    '813a' - Broken hip
+    '813b' - broken pelvis
+    '813c' - broken femur
+
+    '822a' - dislocated hip
+    '822b' - dislocated knee
     """
 
     def __init__(self, module, person_id):
@@ -4385,7 +4956,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                 'rt_injury_7', 'rt_injury_8']
         person_injuries = df.loc[[person_id], cols]
         # check if they have a fracture that requires a cast
-        codes = ['712b', '712c', '811', '812']
+        codes = ['712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
         idx, fracturecastcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         # check if they have a fracture that requires a sling
         codes = ['712a']
@@ -4425,7 +4996,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             non_empty_injuries = person_injuries[person_injuries != "none"]
             non_empty_injuries = non_empty_injuries.dropna(axis=1)
             # Find the injury codes treated by fracture casts/slings
-            codes = ['712a', '712b', '712c', '811', '812']
+            codes = ['712a', '712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
             relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
             # Some TLO codes have daly weights associated with treated and non-treated injuries, swap-able codes are
             # listed below
@@ -4440,6 +5011,8 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             # Find the injuries that have been treated and then schedule a recovery date
             columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
             for col in columns:
+                # todo: update this with recovery times for casted broken hips/pelvis/femurs
+                # todo: update this with recovery times for casted dislocated hip
                 df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
                                                                                 DateOffset(weeks=7)
             else:
@@ -4833,9 +5406,8 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Package_Code': dict(),
                 'Item_Code': {item_code_diclofenac: 1}}
 
-            if df.iloc[person_id]['age_years'] < 16:
-                # todo: don't give paracetamol to pregnant women
-                # If they are under 16 or pregnant (still to do) only give them paracetamol
+            if (df.iloc[person_id]['age_years'] < 16) or df.iloc[person_id]['is_pregnant']:
+                # If they are under 16 or pregnant only give them paracetamol
                 logger.debug(pain_management_strategy_paracetamol)
                 is_paracetamol_available = self.sim.modules['HealthSystem'].request_consumables(
                     hsi_event=self,
@@ -4988,6 +5560,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         are equipped to provide advanced orthopaedic surgery. - Lavy et al. 2007
 
         '112' - Depressed skull fracture - reported use of surgery in Eaton et al. 2017
+        '811' - fractured foot - reported use of surgery in Chagomerana et al. 2017
+        '812' - fracture tibia/fibula - reported use of surgery in Chagomerana et al. 2017
         '813a' - Fractured hip - reported use of surgery and Lavy et al. 2007
         '813b' - Fractured pelvis - reported use of surgery and Lavy et al. 2007
         '813c' - Fractured femur - reported use of surgery and Lavy et al. 2007
@@ -5051,6 +5625,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         '882' - Amputated toe
         '883' - Unilateral lower limb amputation
         '884' - Bilateral lower limb amputation
+
+        Dislocations - Reported in Chagomerana et al. 2017
+        '822a' Hip dislocation
         """
 
     def __init__(self, module, person_id):
@@ -5084,9 +5661,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # Isolate the relevant injury information
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                    'rt_injury_7', 'rt_injury_8']
-        surgically_treated_codes = ['112', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
+        surgically_treated_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
                                     '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363',
-                                    '782', '782a', '782b', '782c', '783', '882', '883', '884',
+                                    '782', '782a', '782b', '782c', '783', '822a', '882', '883', '884',
                                     'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P782a', 'P782b',
                                     'P782c', 'P783', 'P882', 'P883', 'P884']
         # If we have allowed spinal cord surgeries to be treated in this simulation, include the associated injury codes
@@ -5102,9 +5679,12 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             for code in additional_codes:
                 surgically_treated_codes.append(code)
         persons_injuries = df.loc[[person_id], columns]
+        injuries_to_be_treated = df.loc[person_id, 'rt_injuries_for_major_surgery']
+        assert len(set(injuries_to_be_treated) & set(surgically_treated_codes)) > 0, \
+            'This person has asked for surgery but does not have an appropriate injury'
         # check the people sent here have at least one injury treated by this HSI event
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
-        assert counts > 0
+        assert counts > 0, (persons_injuries.to_dict(), surgically_treated_codes)
         # People can be sent here for multiple surgeries, but only one injury can be treated at a time. Decide which
         # injury is being treated in this surgery
         idx_for_untreated_injuries = []
@@ -5112,9 +5692,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             if pd.isnull(time):
                 idx_for_untreated_injuries.append(index)
 
-        relevant_codes = np.intersect1d(persons_injuries.values[0][idx_for_untreated_injuries],
-                                        surgically_treated_codes)
-        assert len(relevant_codes) > 0, persons_injuries.values[0]
+        relevant_codes = np.intersect1d(injuries_to_be_treated, surgically_treated_codes)
+        assert len(relevant_codes) > 0, (persons_injuries.values[0], idx_for_untreated_injuries, person_id,
+                                         persons_injuries.values[0][idx_for_untreated_injuries])
         code = rng.choice(relevant_codes)
         self.treated_code = code
         # ------------------------ Track permanent disabilities with treatment ----------------------------------------
@@ -5212,6 +5792,21 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
                 assert len(relevant_codes) > 0
                 code = rng.choice(relevant_codes)
+        if code == '822a':
+            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+                                                                                          [code])[0])
+            # using estimated 6 - 12 months to recover from a hip dislocation
+            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(months=9)
+        if code == '811':
+            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+                                                                                          [code])[0])
+            # using estimated 9 weeks to recover from a foot fracture treated with surgery
+            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
+        if code == '812':
+            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+                                                                                          [code])[0])
+            # using estimated 9 weeks to recover from a tibia/fibula fracture treated with surgery
+            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
         if code == '813a':
             columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
                                                                                           [code])[0])
@@ -5320,8 +5915,14 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         '323' - Dislocation in the neck
 
         '722' - Dislocated shoulder
-        '822a' - Dislocated hip
-        '822b' - Dislocated knee
+
+        External fixation of fractures
+        '811' - fractured foot
+        '812' - fractures tibia/fibula
+        '813a' - Fractured hip
+        '813b' - Fractured pelvis
+        '813C' - Fractured femur
+
         """
 
     def __init__(self, module, person_id):
@@ -5344,7 +5945,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries = self.sim.modules['RTI']
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                    'rt_injury_7', 'rt_injury_8']
-        surgically_treated_codes = ['322', '211', '212', '323', '722', '822a', '822b', '291', '241']
+        surgically_treated_codes = ['322', '211', '212', '323', '722', '291', '241', '811', '812', '813a', '813b',
+                                    '813c']
         persons_injuries = df.loc[[person_id], columns]
         # =========================================== Tests ============================================================
         # check the people sent here hasn't died due to rti, have had their injuries diagnosed and been through RTI_Med
@@ -5357,7 +5959,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         assert counts > 0
         non_empty_injuries = persons_injuries[persons_injuries != "none"]
         non_empty_injuries = non_empty_injuries.dropna(axis=1)
-        relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
+
+        relevant_codes = np.intersect1d(df.loc[person_id, 'rt_injuries_for_minor_surgery'], surgically_treated_codes)
         # Check that a code has been selected to be treated
         assert len(relevant_codes) > 0
         code = rng.choice(relevant_codes)
@@ -5385,27 +5988,6 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 non_empty_injuries.drop(non_empty_injuries.columns[columns], axis=1, inplace=True)
                 relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
                 code = rng.choice(relevant_codes)
-        if code == '822a':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [code])[0])
-            # using estimated 7 weeks to recover from dislocated hip surgery
-            if pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]):
-                df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=7)
-            else:
-                non_empty_injuries.drop(non_empty_injuries.columns[columns], axis=1, inplace=True)
-                relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
-                code = rng.choice(relevant_codes)
-        if code == '822b':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [code])[0])
-            # using estimated 7 weeks to recover from dislocated knee surgery
-            if pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]):
-                df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=7)
-            else:
-                non_empty_injuries.drop(non_empty_injuries.columns[columns], axis=1, inplace=True)
-                relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
-                code = rng.choice(relevant_codes)
-
         if code == '211' or code == '212':
             columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
                                                                                           [code])[0])
@@ -5420,7 +6002,32 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
             columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
                                                                                           [code])[0])
             # using estimated 1 week to soft tissue injury to face
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(month=1)
+            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=1)
+        if code == '811':
+            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+                                                                                          [code])[0])
+            # using estimated 9 weeks for external fixation
+            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
+        if code == '812':
+            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+                                                                                          [code])[0])
+            # using estimated 9 weeks for external fixation
+            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
+        if code == '813a':
+            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+                                                                                          [code])[0])
+            # using estimated 9 weeks for external fixation
+            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
+        if code == '813b':
+            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+                                                                                          [code])[0])
+            # using estimated 9 weeks for external fixation
+            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
+        if code == '813c':
+            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+                                                                                          [code])[0])
+            # using estimated 9 weeks for external fixation
+            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
         swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a', 'P673b',
                           'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884']
         if code in swapping_codes:
@@ -5997,6 +6604,18 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         # ================================= Injury severity ===========================================================
         sev = df.loc[df.rt_road_traffic_inc]
         sev = sev['rt_inj_severity']
+        rural_injuries = df.loc[df.rt_road_traffic_inc & ~df.li_urban]
+        if len(rural_injuries) > 0:
+            percent_sev_rural = \
+                len(rural_injuries.loc[rural_injuries['rt_inj_severity'] == 'severe']) / len(rural_injuries)
+        else:
+            percent_sev_rural = 'none_injured'
+        urban_injuries = df.loc[df.rt_road_traffic_inc & df.li_urban]
+        if len(urban_injuries) > 0:
+            percent_sev_urban = \
+                len(urban_injuries.loc[urban_injuries['rt_inj_severity'] == 'severe']) / len(urban_injuries)
+        else:
+            percent_sev_urban = 'none_injured'
         ISSlist = thoseininjuries['rt_ISS_score'].tolist()
         ISSlist = list(filter(lambda num: num != 0, ISSlist))
         self.ISSscore += ISSlist
@@ -6010,7 +6629,9 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         dict_to_output = {
             'total_mild_injuries': self.totmild,
             'total_severe_injuries': self.totsevere,
-            'ISS_score': self.ISSscore
+            'ISS_score': self.ISSscore,
+            'Percent_severe_rural': percent_sev_rural,
+            'Percent_severe_urban': percent_sev_urban
         }
         logger.info(key='injury_severity',
                     data=dict_to_output,
@@ -6068,16 +6689,15 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             percent_died_post_care = 'none_injured'
 
         if n_sought_care > 0:
-            percentage_admitted_to_ICU = len(df.loc[df.rt_med_int & df.rt_in_icu]) / n_sought_care
-            percent_admitted_to_hdu = len(df.loc[df.rt_med_int & df.rt_in_hdu]) / n_sought_care
+            percentage_admitted_to_ICU_or_HDU = len(df.loc[df.rt_med_int & df.rt_in_icu_or_hdu]) / n_sought_care
         else:
-            percentage_admitted_to_ICU = 'none_injured'
-            percent_admitted_to_hdu = 'none_injured'
+            percentage_admitted_to_ICU_or_HDU = 'none_injured'
+
         dict_to_output = {
             'number involved in a rti': n_in_RTI,
             'incidence of rti per 100,000': (n_in_RTI / ((n_alive - n_in_RTI) * (1 / 12))) * 100000,
             'incidence of rti per 100,000 in children': (children_in_RTI /
-                                                        ((children_alive - children_in_RTI) * (1 / 12))) * 100000,
+                                                         ((children_alive - children_in_RTI) * (1 / 12))) * 100000,
             'incidence of rti death per 100,000': (len(diedfromrtiidx) /
                                                    ((n_alive - len(diedfromrtiidx)) * (1 / 12))) * 100000,
             'incidence of death post med per 100,000': (len(df.loc[df.rt_post_med_death]) /
@@ -6106,8 +6726,7 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             'male:female ratio': mfratio,
             'percent sought healthcare': percent_sought_care,
             'percentage died after med': percent_died_post_care,
-            'percent admitted to ICU': percentage_admitted_to_ICU,
-            'percent admitted to HDU': percent_admitted_to_hdu
+            'percent admitted to ICU or HDU': percentage_admitted_to_ICU_or_HDU,
         }
         logger.info(key='summary_1m',
                     data=dict_to_output,

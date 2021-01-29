@@ -38,7 +38,8 @@ log_config = {
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.rti": logging.INFO,
-        "tlo.methods.healthsystem": logging.DEBUG
+        "tlo.methods.healthsystem": logging.DEBUG,
+        "tlo.methods.labour": logging.disable(logging.DEBUG)
     }
 }
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
@@ -48,8 +49,8 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 100000
-nsim = 3
+pop_size = 10000
+nsim = 2
 
 # Create a variable whether to save figures or not
 save_figures = True
@@ -111,10 +112,8 @@ number_of_injuries_per_sim = []
 rti_model_flow_summary = []
 # Health seeking behaviour
 percent_sought_healthcare = []
-# Admitted to ICU
-percent_admitted_to_icu = []
-# Admitted to HDU
-percent_admitted_to_hdu = []
+# Admitted to ICU or HDU
+percent_admitted_to_icu_or_hdu = []
 # Inpatient days
 all_sim_inpatient_days = []
 # Per sim inpatient days
@@ -145,7 +144,18 @@ injuries_in_2010 = []
 injuries_per_year = []
 # Number of prehospital deaths in 2010
 number_of_prehospital_deaths_2010 = []
-
+# ICU injury characteristics
+ICU_frac = []
+ICU_dis = []
+ICU_tbi = []
+ICU_soft = []
+ICU_int_o = []
+ICU_int_b = []
+ICU_sci = []
+ICU_amp = []
+ICU_eye = []
+ICU_lac = []
+ICU_burn = []
 
 for i in range(0, nsim):
     sim = Simulation(start_date=start_date)
@@ -221,14 +231,62 @@ for i in range(0, nsim):
         [i for i in log_df['tlo.methods.rti']['summary_1m']['percent sought healthcare'].tolist() if i !=
          'none_injured']
     )
-    percent_admitted_to_icu.append(
-        [i for i in log_df['tlo.methods.rti']['summary_1m']['percent admitted to ICU'].tolist() if i !=
+    # Get the percentage of patients admitted to ICU or HDU
+    percent_admitted_to_icu_or_hdu.append(
+        [i for i in log_df['tlo.methods.rti']['summary_1m']['percent admitted to ICU or HDU'].tolist() if i !=
          'none_injured']
     )
-    percent_admitted_to_hdu.append(
-        [i for i in log_df['tlo.methods.rti']['summary_1m']['percent admitted to HDU'].tolist() if i !=
-         'none_injured']
-    )
+    icu_df = \
+        log_df['tlo.methods.rti']['ICU_patients']
+    icu_df = icu_df.drop('date', axis=1)
+    road_traffic_injuries = sim.modules['RTI']
+    frac_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '712a', '712b', '712c',
+                  '811', '812', '813', '813a', '813b', '813c']
+    idx, frac_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, frac_codes)
+    perc_frac = (len(idx) / len(icu_df)) * 100
+    dislocationcodes = ['322', '323', '722', '822', '822a', '822b']
+    idx, dis_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, dislocationcodes)
+    perc_dis = (len(idx) / len(icu_df)) * 100
+    tbi_codes = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135']
+    idx, tbi_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, tbi_codes)
+    perc_tbi = (len(idx) / len(icu_df)) * 100
+    softtissueinjcodes = ['241', '342', '343', '441', '442', '443']
+    idx, soft_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, softtissueinjcodes)
+    perc_soft = (len(idx) / len(icu_df)) * 100
+    organinjurycodes = ['453', '453a', '453b', '552', '553', '554']
+    idx, int_o_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, organinjurycodes)
+    perc_int_o = (len(idx) / len(icu_df)) * 100
+    internalbleedingcodes = ['361', '363', '461', '463']
+    idx, int_b_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, internalbleedingcodes)
+    perc_int_b = (len(idx) / len(icu_df)) * 100
+    spinalcordinjurycodes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676']
+    idx, sci_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, spinalcordinjurycodes)
+    perc_sci = (len(idx) / len(icu_df)) * 100
+    amputationcodes = ['782', '782a', '782b', '783', '882', '883', '884']
+    idx, amp_counts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, amputationcodes)
+    perc_amp = (len(idx) / len(icu_df)) * 100
+    eyecodes = ['291']
+    idx, eyecounts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, eyecodes)
+    perc_eye = (len(idx) / len(icu_df)) * 100
+    externallacerationcodes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
+    idx, externallacerationcounts = road_traffic_injuries.rti_find_and_count_injuries(icu_df,
+                                                                                      externallacerationcodes)
+    perc_lac = (len(idx) / len(icu_df)) * 100
+    burncodes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
+    idx, burncounts = road_traffic_injuries.rti_find_and_count_injuries(icu_df, burncodes)
+    perc_burn = (len(idx) / len(icu_df)) * 100
+    if len(icu_df) > 0:
+        ICU_frac.append(perc_frac)
+        ICU_dis.append(perc_dis)
+        ICU_tbi.append(perc_tbi)
+        ICU_soft.append(perc_soft)
+        ICU_int_o.append(perc_int_o)
+        ICU_int_b.append(perc_int_b)
+        ICU_sci.append(perc_sci)
+        ICU_amp.append(perc_amp)
+        ICU_eye.append(perc_eye)
+        ICU_lac.append(perc_lac)
+        ICU_burn.append(perc_burn)
     # Get the percentage of people who died after seeking healthcare
     percent_died_after_med.append(
         log_df['tlo.methods.rti']['summary_1m']['number deaths post med'].sum() /
@@ -385,7 +443,8 @@ for i in range(0, nsim):
     per_sim_minor_surg.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Minor_Surgeries']))
     per_sim_tetanus.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Tetanus_Vaccine']))
     per_sim_pain_med.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Acute_Pain_Management']))
-
+    # todo: plot the urban vs rural injury severity currently produced by the model (injury_severity)
+    print(i)
 
 def age_breakdown(age_array):
     """
@@ -456,24 +515,14 @@ if save_figures is True:
 else:
     plt.clf()
 # Plot the percentage of people admitted to ICU and HDU
-per_sim_icu_average = np.mean([np.mean(i) for i in percent_admitted_to_icu])
-per_sim_hdu_average = np.mean([np.mean(i) for i in percent_admitted_to_hdu])
-plt.pie([per_sim_icu_average, per_sim_hdu_average, 1 - (per_sim_icu_average + per_sim_hdu_average)],
-        explode=[0.2, 0, 0], labels=['ICU', 'HDU', 'Inpatient'], colors=['wheat', 'lightsalmon', 'lightsteelblue'],
-        autopct='%1.1f%%')
-plt.title(f"Average percentage admitted to ICU/HDU"
-          f"\n"
-          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-if save_figures is True:
-    plt.savefig('outputs/Demographics_of_RTI/Percent_admitted_icu_hdu_pie.png', bbox_inches='tight')
-    plt.clf()
-else:
-    plt.clf()
-data = np.multiply([per_sim_icu_average, per_sim_hdu_average], 100)
-plt.bar(np.arange(2), data, color='lightsteelblue', label='Model', width=0.4)
-plt.bar(np.arange(2) + 0.4, [2.7, 3.3], color='lightsalmon', label='KCH', width=0.4)
-plt.xticks(np.arange(2) + 0.2, ['Percent admitted ICU', 'Percent admitted HDU'])
+per_sim_icu_or_hdu_average = np.mean([np.mean(i) for i in percent_admitted_to_icu_or_hdu])
+
+data = np.multiply([per_sim_icu_or_hdu_average], 100)
+plt.bar(np.arange(1), data, color='lightsteelblue', label='Model', width=0.4)
+plt.bar(np.arange(1) + 0.4, [2.7 + 3.3], color='lightsalmon', label='KCH', width=0.4)
+plt.xticks(np.arange(1) + 0.2, ['Percent admitted ICU or HDU'])
 plt.ylabel('Percentage')
+plt.legend()
 plt.title(f"Average percentage admitted to ICU/HDU"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
@@ -1506,17 +1555,7 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
-params_dict = dict()
-params_dict.update({'base_rate_injrti': params['base_rate_injrti'],
-                    'rr_injrti_male': params['rr_injrti_male'],
-                    'rr_injrti_age018': params['rr_injrti_age018'],
-                    'rr_injrti_age1829': params['rr_injrti_age1829'],
-                    'rr_injrti_age3039': params['rr_injrti_age3039'],
-                    'rr_injrti_age4049': params['rr_injrti_age4049'],
-                    'rr_injrti_age5059': params['rr_injrti_age5059'],
-                    'rr_injrti_age6069': params['rr_injrti_age6069'],
-                    'rr_injrti_age7079': params['rr_injrti_age7079']})
-print(params_dict)
+
 # === Plot incidence of road traffic injuries in children===
 data = pd.read_csv('resources/ResourceFile_RTI_Incidence_of_rti_per_100000_children.csv')
 data = data.dropna(subset=['Incidence per 100,000'])
@@ -1563,7 +1602,59 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
-# # ======================================= Create outputs for GBD DATA ===============================================
+
+# Plot the ICU patient characteristics
+mean_perc_frac = np.mean(ICU_frac)
+mean_perc_dis = np.mean(ICU_dis)
+mean_perc_tbi = np.mean(ICU_tbi)
+mean_perc_soft = np.mean(ICU_soft)
+mean_perc_int_o = np.mean(ICU_int_o)
+mean_perc_int_b = np.mean(ICU_int_b)
+mean_perc_sci = np.mean(ICU_sci)
+mean_perc_amp = np.mean(ICU_amp)
+mean_perc_eye = np.mean(ICU_eye)
+mean_perc_lac = np.mean(ICU_lac)
+mean_perc_burn = np.mean(ICU_burn)
+data = [mean_perc_frac, mean_perc_dis, mean_perc_tbi, mean_perc_soft, mean_perc_int_o, mean_perc_int_b, mean_perc_sci,
+        mean_perc_amp, mean_perc_eye, mean_perc_lac, mean_perc_burn]
+labels = ['Fractures', 'Dislocations', 'TBI', 'Soft tissue injury', 'Internal organ injury', 'Internal bleeding',
+          'SCI', 'Amputation', 'Eye injury', 'Laceration', 'Burn']
+plt.bar(np.arange(len(labels)), data, color='lightsteelblue')
+plt.ylabel('Percent injury type in ICU patients')
+plt.title(f"Injuries in ICU patients by type"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/ICU_injury_categories.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot the ICU injury characteristics compared to a Tanzanian ICU unit
+lacerations_percent = 97.8
+fractures_percent = 32.4
+tbi_percent = 21.5
+visceral_injury_percent = 13.1
+burns_percent = 2.9
+other_injuries = 3.8
+tanzanian_data = [lacerations_percent, fractures_percent, tbi_percent, visceral_injury_percent, burns_percent,
+                  other_injuries]
+model_equiv_data = [mean_perc_lac, mean_perc_frac, mean_perc_tbi, mean_perc_int_o + mean_perc_int_b, mean_perc_burn,
+                    mean_perc_soft + mean_perc_amp + mean_perc_eye + mean_perc_dis + mean_perc_sci]
+labels = ['Lacerations', 'Fractures', 'TBI', 'Visceral injury', 'Burns', 'Other']
+plt.bar(np.arange(len(tanzanian_data)), tanzanian_data, label='ICU data', color='lightsalmon', width=0.4)
+plt.bar(np.arange(len(model_equiv_data)) + 0.4, model_equiv_data, label='Model output', color='lightsteelblue',
+        width=0.4)
+plt.xticks(np.arange(len(model_equiv_data)) + 0.2, labels, rotation=45)
+plt.legend()
+plt.title(f"Injuries in ICU patients by type compared to Chalya et al. 2011"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/ICU_injury_categories_comp_chalya.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# ======================================= Create outputs for GBD DATA ===============================================
 # The following code is commented out as it relates to GBD data and not the simulation data
 # data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
 # gbd_death_data = data.loc[data['measure'] == 'Deaths']
