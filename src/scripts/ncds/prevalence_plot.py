@@ -1,23 +1,24 @@
-from pathlib import Path
 import datetime
+from pathlib import Path
 
-import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     labour,
+    ncds,
     pregnancy_supervisor,
     symptommanager,
-    dx_algorithm_child,
-    ncds
 )
 
 # %%
@@ -38,8 +39,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2090, 1, 2)
-    popsize = 20000
+    end_date = Date(2012, 1, 2)
+    popsize = 500
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -67,8 +68,6 @@ output = parse_log_file(sim.log_filepath)
 
 
 # %% Create illustrative plot of individual trajectories of glucose over time.
-
-# Join-up values from each log to create a trace for an individual
 
 transform_output = lambda x: pd.concat([
     pd.Series(name=x.iloc[i]['date'], data=x.iloc[i]['data']) for i in range(len(x))
@@ -279,6 +278,8 @@ plt.title('Prevalence of Adults with Co-Morbidities')
 plt.savefig(outputpath / 'prevalence_comorbidities_adults.pdf')
 #plt.ylim([0, 1])
 plt.show()
+
+
 
 
 

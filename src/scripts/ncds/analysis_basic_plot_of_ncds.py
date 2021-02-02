@@ -1,26 +1,27 @@
 # todo: run the model and make plots of prevalence and incidence of each conditons wrt age/sex
 #  make helpfer functions to make the plots for each condition and then loop through them all
 
-from pathlib import Path
 import datetime
+from pathlib import Path
 
-import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     labour,
+    ncds,
     pregnancy_supervisor,
     symptommanager,
-    dx_algorithm_child,
-    ncds
 )
 
 # %%
@@ -37,8 +38,8 @@ output_files = dict()
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 2)
-popsize = 200
+end_date = Date(2015, 1, 2)
+popsize = 2000
 
 for label, service_avail in scenarios.items():
     log_config = {'filename': 'LogFile'}
@@ -64,6 +65,50 @@ for label, service_avail in scenarios.items():
 
     # Save the full set of results:
     output_files[label] = sim.log_filepath
+
+# --------------------------------PLOTTING-------------------------------------------
+
+# list all of the conditions in the module to loop through
+conditions = ['nc_diabetes', 'nc_hypertension', 'nc_depression',
+              'nc_chronic_lower_back_pain', 'nc_chronic_kidney_disease', 'nc_chronic_ischemic_hd', 'nc_cancers']
+
+transform_output = lambda x: pd.concat([
+    pd.Series(name=x.iloc[i]['date'], data=x.iloc[i]['data']) for i in range(len(x))
+], axis=1, sort=False).transpose()
+
+def restore_multi_index(dat):
+    """restore the multi-index that had to be flattened to pass through the logger"""
+    cols = dat.columns
+    index_value_list = list()
+    for col in cols.str.split('__'):
+        index_value_list.append(tuple(component.split('=')[1] for component in col))
+    index_name_list = tuple(component.split('=')[0] for component in cols[0].split('__'))
+    dat.columns = pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
+    return dat
+
+
+# Plot prevalence by age and sex
+def get_prevalence_from_logfile(logfile):
+    output = parse_log_file(logfile)
+
+    for condition in conditions:
+
+        # give conditions readable names for plotting
+        condition_name = condition.replace('nc_', '')
+        condition_name = condition_name.replace('_', ' ')
+        condition_name = condition_name.title()
+
+        prevalence_by_age_and_sex = restore_multi_index(
+            transform_output(
+                output['tlo.methods.ncds'][f'{condition}_prevalence_by_age_and_sex']
+            )
+        )
+
+        prevalence_by_age_and_sex.iloc[-1].transpose().plot.bar()
+        plt.ylabel(f'Proportion With {condition_name}')
+        plt.title(f'Prevalence of {condition_name} by Age')
+        plt.savefig(outputpath / f'prevalence_{condition_name}_by_age.pdf')
+        plt.show()
 
 
 # %% Extract the relevant outputs and make a graph:
