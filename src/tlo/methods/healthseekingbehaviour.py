@@ -149,7 +149,8 @@ class HealthSeekingBehaviour(Module):
         """
 
         # Schedule the HealthSeekingBehaviourPoll
-        sim.schedule_event(HealthSeekingBehaviourPoll(self), sim.date)
+        self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
+        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
 
         # Assemble the health-care seeking information from the symptoms that have been registered
         for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
@@ -216,7 +217,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         # all persons and skip the checks/options in the `has_what()` method
         # todo: move this to symptom manager i.e. have_what(person_ids) (but better name)
         persons_symptoms = selected_persons.apply(
-            lambda p: [s for s in symptom_manager.symptom_names if p[f'sy_{s}'] > 0], axis=1
+            lambda p: [s for s in symptom_manager.symptom_names if p[f'sy_{s}'] > 0], axis=1, result_type='reduce'
         ).rename('symptoms')
 
         # make dataframe for processing below:

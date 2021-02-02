@@ -1,7 +1,4 @@
--r base.txt
-
-# Interactive web-browser interface
-jupyter
+-r base.in
 
 # Plotting
 matplotlib
@@ -9,7 +6,7 @@ pyshp
 
 # Running tests
 pytest
-virtualenv==15.1.0  # To avoid breaking anaconda on Mac :(
+virtualenv
 tox
 
 # Building requirements files

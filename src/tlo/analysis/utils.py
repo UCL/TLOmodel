@@ -56,27 +56,29 @@ def _parse_line(line):
 def parse_log_file(filepath, level: int = logging.INFO):
     """Parses logged output from a TLO run and returns Pandas dataframes.
 
-    The format can be one of two style, old-style TLO logging like :
+    The format can be one of two style, old-style TLO logging like ::
+
         INFO|<logger name>|<simulation datestamp>|<log key>|<python list or dictionary>
 
     or a JSON representation with the first instance from a log key being a header line, and all following
     rows being data only rows (without column names or metadata).
 
-    The dictionary returned has the format:
-    {
-        <logger 1 name>: {
-                           <log key 1>: <pandas dataframe>,
-                           <log key 2>: <pandas dataframe>,
-                           <log key 3>: <pandas dataframe>
-                         },
+    The dictionary returned has the format::
 
-        <logger 2 name>: {
-                           <log key 4>: <pandas dataframe>,
-                           <log key 5>: <pandas dataframe>,
-                           <log key 6>: <pandas dataframe>
-                         },
-        ...
-    }
+        {
+            <logger 1 name>: {
+                               <log key 1>: <pandas dataframe>,
+                               <log key 2>: <pandas dataframe>,
+                               <log key 3>: <pandas dataframe>
+                             },
+
+            <logger 2 name>: {
+                               <log key 4>: <pandas dataframe>,
+                               <log key 5>: <pandas dataframe>,
+                               <log key 6>: <pandas dataframe>
+                             },
+            ...
+        }
 
     :param filepath: file path to log file
     :param level: logging level to be parsed for structured logging

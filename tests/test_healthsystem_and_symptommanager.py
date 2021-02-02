@@ -777,8 +777,8 @@ def check_bed_days_basics(hs_disable):
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
                 'high_dependency_bed': 10,
-                'general_bed': 5,
-                'non_bed_space': 2})
+                'general_bed': 5
+            })
 
         def apply(self, person_id, squeeze_factor):
             print(f'squeeze-factor is {squeeze_factor}')
@@ -808,10 +808,8 @@ def check_bed_days_basics(hs_disable):
     # 2) Check that helper-function to make footprints works as expected:
     assert {'non_bed_space': 0, 'general_bed': 0, 'high_dependency_bed': 0} \
         == hsi_nobd.make_beddays_footprint({})
-    assert {'non_bed_space': 2, 'general_bed': 0, 'high_dependency_bed': 0} \
-        == hsi_nobd.make_beddays_footprint({'non_bed_space': 2})
     assert {'non_bed_space': 0, 'general_bed': 4, 'high_dependency_bed': 1} \
-        == hsi_nobd.make_beddays_footprint({'non_bed_space': 0, 'general_bed': 4, 'high_dependency_bed': 1})
+        == hsi_nobd.make_beddays_footprint({'general_bed': 4, 'high_dependency_bed': 1})
 
     # 2) Check that can schedule an HSI with a bed-day footprint
     hs.schedule_hsi_event(hsi_event=hsi_nobd, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=0)
@@ -852,7 +850,9 @@ def check_bed_days_basics(hs_disable):
 
     diff = pd.DataFrame()
     for bed_type in hsi_bd.BEDDAYS_FOOTPRINT:
-        diff[bed_type] = - (hs.bed_tracker[bed_type].loc[the_facility_name] - orig[bed_type].loc[the_facility_name])
+        diff[bed_type] = - (
+            hs.bed_tracker[bed_type].loc[:, the_facility_name] - orig[bed_type].loc[:, the_facility_name]
+        )
 
     first_day = diff[diff.sum(axis=1) > 0].index.min()
     last_day = diff[diff.sum(axis=1) > 0].index.max()
@@ -894,8 +894,8 @@ def check_bed_days_basics(hs_disable):
     assert orig['non_bed_space'].equals(hs.bed_tracker['non_bed_space'])
     assert all(
         [0] * 99 + [1] * 2 == (
-            orig['high_dependency_bed'].loc[the_facility_name] -
-            hs.bed_tracker['high_dependency_bed'].loc[the_facility_name]
+            orig['high_dependency_bed'].loc[:, the_facility_name] -
+            hs.bed_tracker['high_dependency_bed'].loc[:, the_facility_name]
         ).values
     )
 
@@ -954,7 +954,7 @@ def check_bed_days_property_is_inpatient(hs_disable):
             super().__init__(module, frequency=pd.DateOffset(days=1))
 
         def apply(self, population):
-            self.module.in_patient_status.loc[self.sim.date.date()] = \
+            self.module.in_patient_status.loc[self.sim.date.normalize()] = \
                 population.props.loc[[0, 1, 2], 'hs_is_inpatient'].values
 
     # Create a dummy HSI with both-types of Bed Day specified
@@ -994,7 +994,7 @@ def check_bed_days_property_is_inpatient(hs_disable):
     # check that in-patient status is consistent with recorded usage of beds
     tot_time_as_in_patient = sim.modules['DummyModule'].in_patient_status.sum(axis=1)
     tracker = sim.modules['HealthSystem'].bed_tracker['general_bed']
-    beds_occupied = tracker.sum()[0] - tracker.sum()
+    beds_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
     assert (beds_occupied == tot_time_as_in_patient).all()
 
     check_dtypes(sim)
@@ -1048,7 +1048,7 @@ def check_bed_days_released_on_death(hs_disable):
             super().__init__(module, frequency=pd.DateOffset(days=1))
 
         def apply(self, population):
-            self.module.in_patient_status.loc[self.sim.date.date()] = \
+            self.module.in_patient_status.loc[self.sim.date.normalize()] = \
                 population.props.loc[[0, 1], 'hs_is_inpatient'].values
 
     # Create a dummy HSI with both-types of Bed Day specified
@@ -1079,7 +1079,7 @@ def check_bed_days_released_on_death(hs_disable):
     assert sim.population.props.at[1, 'is_alive']   # person 1 is alive
 
     tracker = sim.modules['HealthSystem'].bed_tracker['general_bed']
-    bed_occupied = tracker.sum()[0] - tracker.sum()
+    bed_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
     assert all([0] * 2 + [2] * 3 + [1] * 7 + [0] * 9 == bed_occupied.values)
 
 

@@ -491,9 +491,8 @@ class HealthSystem(Module):
 
         assert set(appt_footprint.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
         # All sensible numbers for the number of appointments requested (no negative and at least one appt required)
-        for k in appt_footprint.keys():
-            assert appt_footprint[k] >= 0
-        # assert all(np.asarray([(appt_footprint[k]) for k in appt_footprint.keys()]) >= 0)
+
+        assert all(np.asarray([(appt_footprint[k]) for k in appt_footprint.keys()]) >= 0)
 
         assert not all(value == 0 for value in appt_footprint.values())
 
@@ -939,11 +938,12 @@ class HealthSystem(Module):
         return dict(zip(self.bed_types, [0] * len(self.bed_types)))
 
     def check_beddays_footrpint_format(self, beddays_footprint):
-        """Check that the format of the beddays footprint is correct"""
+        """Check that the format of the beddays footprint (provided by an HSI) is correct"""
         assert type(beddays_footprint) is dict
         assert len(self.bed_types) == len(beddays_footprint)
         assert all([(bed_type in beddays_footprint) for bed_type in self.bed_types])
         assert all([((v >= 0) and (type(v) is int)) for v in beddays_footprint.values()])
+        assert beddays_footprint['non_bed_space'] == 0, "A request cannot be made for this type of bed"
 
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
@@ -968,7 +968,6 @@ class HealthSystem(Module):
             assert squeeze_factor is not None
 
             appts = actual_appt_footprint
-            appts.update(hsi_event.BEDDAYS_FOOTPRINT)
             log_info = dict()
             log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
             # key appointment types that are non-zero
@@ -983,8 +982,6 @@ class HealthSystem(Module):
                 log_info['Squeeze_Factor'] = squeeze_factor
 
         log_info['did_run'] = did_run
-
-        # log_info['bed_day_type'] = hsi_event.BEDDAYS_FOOTPRINT
 
         logger.info(key="HSI_Event",
                     data=log_info,
@@ -1063,12 +1060,13 @@ class HealthSystem(Module):
          changed through modifications here.
         """
         self.bed_tracker = dict()
-
         for bed_type in self.bed_types:
-            df = pd.DataFrame(index=self.parameters['BedCapacity'].index,
-                              columns=pd.date_range(self.sim.start_date, self.sim.end_date, freq='D'),
-                              data=1)
-            df = df.mul(self.parameters['BedCapacity'][bed_type], axis=0)
+            df = pd.DataFrame(
+                index=pd.date_range(self.sim.start_date, self.sim.end_date, freq='D'),
+                columns=self.parameters['BedCapacity'].index,
+                data=1
+            )
+            df = df.mul(self.parameters['BedCapacity'][bed_type], axis=1)
             assert not df.isna().any().any()
             self.bed_tracker[bed_type] = df
 
@@ -1143,7 +1141,7 @@ class HealthSystem(Module):
         for bed_type in self.bed_types:
             date_start_this_bed = dates_of_bed_use[f"hs_next_first_day_in_bed_{bed_type}"]
             date_end_this_bed = dates_of_bed_use[f"hs_next_last_day_in_bed_{bed_type}"]
-            self.bed_tracker[bed_type].loc[the_facility_name, date_start_this_bed: date_end_this_bed] += operation
+            self.bed_tracker[bed_type].loc[date_start_this_bed: date_end_this_bed, the_facility_name] += operation
 
     def compute_dates_of_bed_use(self, footprint):
         """Helper function to compute the dates of entry/exit from beds of each type according to a bed-days footprint

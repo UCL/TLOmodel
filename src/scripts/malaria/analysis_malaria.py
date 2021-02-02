@@ -32,8 +32,8 @@ t0 = time.time()
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
-popsize = 5000
+end_date = Date(2020, 12, 31)
+popsize = 500
 
 # Establish the simulation object
 log_config = {
@@ -49,6 +49,7 @@ sim = Simulation(start_date=start_date, seed=25, log_config=log_config)
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
 service_availability = ["*"]
 malaria_testing = 0.35  # adjust this to match rdt/tx levels
+itn = 0.6  # adjust if changing ITN coverage from 2019 onwards, should be <=0.7 for matching to ICL incidence tables
 
 # Register the appropriate modules
 sim.register(
@@ -76,7 +77,7 @@ sim.register(
     malaria.Malaria(
         resourcefilepath=resourcefilepath,
         testing=malaria_testing,
-        itn=None,
+        itn=itn,
     )
 )
 
