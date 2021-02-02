@@ -5,6 +5,7 @@ This will demonstrate the effect of different treatment
 # %% Import Statements and initial declarations
 import datetime
 from pathlib import Path
+from tlo import logging
 
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -46,17 +47,24 @@ output_files = dict()
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 2)
 popsize = 1000
+seed = 123
 
 for label, service_avail in scenarios.items():
-    log_config = {'filename': 'LogFile'}
+    log_config = {
+        "filename": "one_child",  # The name of the output file (a timestamp will be appended).
+        "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+        "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+            "*": logging.CRITICAL,  # Asterisk matches all loggers - we set the default level to WARNING
+        }
+    }
     # add file handler for the purpose of logging
-    sim = Simulation(start_date=start_date, seed=1, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_avail),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),

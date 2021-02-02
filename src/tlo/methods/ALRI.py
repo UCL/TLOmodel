@@ -1190,9 +1190,12 @@ class ALRI(Module):
             Predictor('tmp_low_birth_weight').when(True, p['rr_death_ALRI_low_birth_weight']),
             Predictor('age_years')
                 .when('.between(1,1)', p['rr_death_ALRI_age12to23mo'])
-                .when('.between(2,4)', p['rr_death_ALRI_age24to59mo'])
+                .when('.between(2,4)', p['rr_death_ALRI_age24to59mo']),
+            # Predictor()
+            #     .when("ri_ALRI_complications == 'respiratory_failure' & "
+            #           "ri_ALRI_disease_type.isin(['bronchiolitis', 'viral_pneumonia']) & "
+            #           "ri_oxygen_therapy_given == 'True'", p['prob_respiratory_failure_by_bronchiolitis']),
         )
-        # todo: do I need to add risk factors for death from severe complications??
         # -----------------------------------------------------------------------------------------------------
 
         # Look-up and store the consumables that are required for each HSI
@@ -1345,7 +1348,7 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
     # TODO: how to fix this
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
+        super().__init__(module, frequency=DateOffset(months=1))
         # NB. The frequency of the occurrences of this event can be edited safely.
 
     def apply(self, population):
@@ -1511,7 +1514,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         # if at least one complication developed in the ALRI event
         if len(complications_for_this_person) != 0:
             for complication in complications_for_this_person:
-                if complication in self.module.lung_complications:
+                if complication in self.module.lung_complications:  # schedule for pulmonary complications
                     date_onset_complications = self.module.sim.date + DateOffset(
                         days=np.random.randint(0, high=self.duration_in_days))
                     # schedule the complication event
@@ -1521,9 +1524,9 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
                         symptoms=symptoms_for_this_person,
                         complication=complications_for_this_person),
                         date_onset_complications)
-                if complication in self.module.severe_complications:
+                if complication in self.module.severe_complications:  # schedule for severe complications
                     date_onset_complications = self.module.sim.date + DateOffset(
-                        days=np.random.randint(3, high=self.duration_in_days))
+                        days=np.random.randint(0, high=self.duration_in_days))
                     # schedule the complication event
                     self.sim.schedule_event(AlriWithSevereComplicationsEvent(
                         self.module, person_id,
@@ -1615,12 +1618,15 @@ class AlriWithPulmonaryComplicationsEvent(Event, IndividualScopeEventMixin):
             )
 
         # Determine severe complication outcome -------------------------------------------------------------------
-        complications_for_this_person = list()
+        date_of_recovery = df.at[person_id, 'ri_ALRI_event_date_of_onset'] + DateOffset(self.duration_in_days)
+        # use the outcome date to get the number of days from onset of lung complication
+        delta_date = date_of_recovery - self.sim.date
+        delta_in_days = delta_date.days
 
         date_of_onset_severe_complication = self.sim.date + DateOffset(
-            days=np.random.randint(0, high=(self.duration_in_days - 3)))
-        date_of_recovery = df.at[person_id, 'ri_ALRI_event_date_of_onset'] + DateOffset(self.duration_in_days)
+            days=np.random.randint(0, high=delta_in_days))
 
+        complications_for_this_person = list()
         for complication in ['respiratory_failure', 'sepsis']:
             prob_progressing_severe_complication = m.risk_of_progressing_to_severe_complications[complication].predict(
                 df.loc[[person_id]]).values[0]
@@ -1738,7 +1744,7 @@ class ALRINaturalRecoveryEvent(Event, IndividualScopeEventMixin):
             return
 
         # Confirm that this is event is occurring during a current episode of ALRI
-        # assert person.ri_ALRI_event_date_of_onset <= self.sim.date <= person.ri_end_of_last_alri_episode
+        assert person.ri_ALRI_event_date_of_onset <= self.sim.date <= person.ri_end_of_last_alri_episode
 
         # Check that the person is not scheduled to die in this episode
         # assert pd.isnull(person.ri_ALRI_event_death_date)
@@ -2226,10 +2232,15 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEven
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.sim.schedule_event(
-                ALRICureEvent(self.sim.modules['ALRI'], person_id),
-                self.sim.date + DateOffset(days=3), # todo: need to check the dates conflict with cure/ treatment/ death etc...
+            self.module.do_treatment(
+                person_id=person_id,
+                prob_of_cure=self.module.parameters[
+                    'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment']
             )
+            # self.sim.schedule_event(
+            #     ALRICureEvent(self.sim.modules['ALRI'], person_id),
+            #     self.sim.date + DateOffset(days=3), # todo: need to check the dates conflict with cure/ treatment/ death etc...
+            # )
             care_management_info.update({
                 'treatment_plan': 'treatment_for_severe_pneumonia'})
 
@@ -2541,9 +2552,9 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
                 counts[age_grp][pathogen] = len(list_of_times)
                 for t in list_of_times:
                     assert self.date_last_run <= t <= self.sim.date
-        #
+
         # logger.info(key='incidence_count_by_pathogen', data=counts)
-        #
+
         # get single row of dataframe (but not a series) ----------------
         index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
         index_children = df.index[df.age_exact_years < 5]

@@ -24,7 +24,7 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 pop_size = 100
-seed = 111
+seed = 112
 
 log_config = {
     "filename": "one_child",   # The name of the output file (a timestamp will be appended).
