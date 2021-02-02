@@ -1,6 +1,6 @@
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
@@ -12,9 +12,10 @@ logger.setLevel(logging.INFO)
 
 
 class Mockitis(Module):
-    """
-    This is a dummy infectious disease.
+    """This is a dummy infectious disease.
+
     It demonstrates the following behaviours in respect of the healthsystem module:
+
         - Registration of the disease module with healthsystem
         - Reading DALY weights and reporting daly values related to this disease
         - Health care seeking
@@ -152,11 +153,11 @@ class Mockitis(Module):
         infected_years_ago = self.rng.exponential(scale=5, size=infected_count)
 
         # pandas requires 'timedelta' type for date calculations
-        infected_td_ago = pd.to_timedelta(infected_years_ago, unit='y')
+        infected_td_ago = pd.to_timedelta(infected_years_ago * DAYS_IN_YEAR, unit='D')
 
         # date of death of the infected individuals (in the future)
         death_years_ahead = self.rng.exponential(scale=20, size=infected_count)
-        death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+        death_td_ahead = pd.to_timedelta(death_years_ahead * DAYS_IN_YEAR, unit='D')
 
         # set the properties of infected individuals
         df.loc[df.mi_is_infected, 'mi_date_infected'] = self.sim.date - infected_td_ago
@@ -207,7 +208,7 @@ class Mockitis(Module):
 
             # Scheduled death date
             death_years_ahead = self.rng.exponential(scale=30)
-            death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+            death_td_ahead = pd.to_timedelta(death_years_ahead * DAYS_IN_YEAR, unit='D')
 
             # Level of symptoms
             level_of_symptoms = self.parameters['level_of_symptoms']
@@ -305,7 +306,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
             infected_idx = currently_susc[now_infected]
 
             death_years_ahead = 5  # self.module.rng.exponential(scale=30, size=now_infected.sum())
-            death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+            death_td_ahead = pd.to_timedelta(death_years_ahead * DAYS_IN_YEAR, unit='D')
 
             df.loc[infected_idx, 'mi_is_infected'] = True
             df.loc[infected_idx, 'mi_status'] = 'C'

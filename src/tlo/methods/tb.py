@@ -270,7 +270,10 @@ class tb(Module):
         frac_active_tb = active_tb_prob_year.loc[
             (active_tb_prob_year.Sex == 'M') & (active_tb_prob_year.ages == 0), 'incidence_per_capita']
 
-        active = df[df.is_alive & (df.tb_inf == 'uninfected')].sample(frac=frac_active_tb, random_state=self.rng).index
+        active = df[df.is_alive & (df.tb_inf == 'uninfected')].sample(
+            frac=frac_active_tb.iloc[0], random_state=self.rng
+        ).index
+
         # print(active)
         df.loc[active, 'tb_inf'] = 'active_susc_primary'
         df.loc[active, 'tb_date_active'] = now
