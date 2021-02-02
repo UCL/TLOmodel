@@ -49,8 +49,8 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 10000
-nsim = 2
+pop_size = 100000
+nsim = 4
 
 # Create a variable whether to save figures or not
 save_figures = True
@@ -156,7 +156,10 @@ ICU_amp = []
 ICU_eye = []
 ICU_lac = []
 ICU_burn = []
-
+# injury severity of rural vs urban injuries
+per_sim_rural_severe = []
+per_sim_urban_severe = []
+#
 for i in range(0, nsim):
     sim = Simulation(start_date=start_date)
     # We register all modules in a single call to the register method, calling once with multiple
@@ -444,6 +447,8 @@ for i in range(0, nsim):
     per_sim_tetanus.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Tetanus_Vaccine']))
     per_sim_pain_med.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Acute_Pain_Management']))
     # todo: plot the urban vs rural injury severity currently produced by the model (injury_severity)
+    per_sim_rural_severe.append(log_df['tlo.methods.rti']['injury_severity']['Percent_severe_rural'].tolist())
+    per_sim_urban_severe.append(log_df['tlo.methods.rti']['injury_severity']['Percent_severe_urban'].tolist())
     print(i)
 
 def age_breakdown(age_array):

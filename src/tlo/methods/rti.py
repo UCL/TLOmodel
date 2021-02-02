@@ -2718,7 +2718,6 @@ class RTI(Module):
             - Seatbelt use (none compared to using AOR 4.49 (1.47-13.76))
             - Role of person in crash (Different risk for different type, see paper)
             - Alcohol use (AOR 1.74 (1.11-2.74) compared to none)
-        TODO: make some of the fractures people receive open
         """
         p = self.parameters
         # Import the distribution of injured body regions from the VIBES study
@@ -2760,6 +2759,11 @@ class RTI(Module):
                 cat = self.rng.uniform(0, 1)
                 # create a random variable which will determine the severity of the injury
                 severity = self.rng.uniform(0, 1)
+                # create a random variable that will decide if certain fractures are open or not
+                open_frac = self.rng.uniform(0, 1)
+                open_fracture = False
+                # todo: make some injuries open and assign the exact injuries people have at this point, all open LX
+                #  have AIS 3
                 # create a base for the cumulative probability
                 # iterate over all the potential injured body regions
                 # Once we find the region of the cumulative frequency of proportion of injury location
@@ -3569,12 +3573,13 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
 
         # ========= Update for people currently not involved in a RTI, make some involved in a RTI event ==============
         # Use linear model helper class
+        # todo: calibrate the model
         eq = LinearModel(LinearModelType.MULTIPLICATIVE,
                          self.base_1m_prob_rti,
                          Predictor('sex').when('M', self.rr_injrti_male),
                          Predictor('age_years').when('.between(0,4)', self.rr_injrti_age04),
                          Predictor('age_years').when('.between(5,9)', self.rr_injrti_age59),
-                         Predictor('age_years').when('.between(10,17)', self.rr_injrti_age1017),
+                         Predictor('age_years').when('.between(10,17)', 0.9),
                          Predictor('age_years').when('.between(18,29)', self.rr_injrti_age1829),
                          Predictor('age_years').when('.between(30,39)', self.rr_injrti_age3039),
                          Predictor('age_years').when('.between(40,49)', self.rr_injrti_age4049),
@@ -3681,6 +3686,7 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         # Find those with polytrauma and update the rt_polytrauma property so they have polytrauma
         polytrauma_idx = selected_for_rti_inj.loc[selected_for_rti_inj.Polytrauma].index
         df.loc[polytrauma_idx, 'rt_polytrauma'] = True
+        # Make some of the fractures people have open fractures
 
         # =+=+=+=+=+=+=+=+=+=+=+=+=+=+ Injury specific updates =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
         # =+=+=+=+=+=+=+=+=+=+=+=+=+=+ Assign the DALY weights =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
