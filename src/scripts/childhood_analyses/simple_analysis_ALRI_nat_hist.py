@@ -27,15 +27,13 @@ from tlo.methods import (
     symptommanager,
 )
 
-seed = 123
-
 log_config = {
     "filename": "imci_analysis",   # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.pneumonia": logging.INFO,
-        "tlo.methods.dx_algorithm_child": logging.INFO
+        # "tlo.methods.dx_algorithm_child": logging.INFO
     }
 }
 
@@ -46,6 +44,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
 pop_size = 100
+seed = 198
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
 # `log_config` arguments, these will override the default behaviour.
@@ -63,6 +62,7 @@ service_availability = ["*"]
 sim.register(
     demography.Demography(resourcefilepath=resources),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+    healthburden.HealthBurden(resourcefilepath=resources),
     healthsystem.HealthSystem(resourcefilepath=resources, service_availability=service_availability),
     symptommanager.SymptomManager(resourcefilepath=resources),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),

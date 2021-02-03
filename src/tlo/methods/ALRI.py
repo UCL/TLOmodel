@@ -30,7 +30,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
@@ -1619,7 +1619,7 @@ class AlriWithPulmonaryComplicationsEvent(Event, IndividualScopeEventMixin):
 
         # Determine severe complication outcome -------------------------------------------------------------------
         date_of_recovery = df.at[person_id, 'ri_ALRI_event_date_of_onset'] + DateOffset(self.duration_in_days)
-        # use the outcome date to get the number of days from onset of lung complication
+        # use the outcome date to get the number of days from onset of lung complication to outcome
         delta_date = date_of_recovery - self.sim.date
         delta_in_days = delta_date.days
 
@@ -1748,6 +1748,9 @@ class ALRINaturalRecoveryEvent(Event, IndividualScopeEventMixin):
 
         # Check that the person is not scheduled to die in this episode
         # assert pd.isnull(person.ri_ALRI_event_death_date)
+
+        if not pd.isnull(person.ri_ALRI_event_death_date):
+            return
 
         # clear other properties
         df.at[person_id, 'ri_current_ALRI_status'] = False
@@ -2476,9 +2479,10 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEven
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.sim.schedule_event(
-                ALRICureEvent(self.sim.modules['ALRI'], person_id),
-                self.sim.date + DateOffset(days=3),
+            self.module.do_treatment(
+                person_id=person_id,
+                prob_of_cure=self.module.parameters[
+                    'prob_of_cure_for_pneumonia_with_severe_complication_given_IMCI_severe_pneumonia_treatment']
             )
             care_management_info.update({
                 'treatment_plan': 'treatment_for_severe_pneumonia'})
@@ -2537,7 +2541,7 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
     def __init__(self, module):
         # This event to occur every year
         self.repeat = 1
-        super().__init__(module, frequency=DateOffset(days=self.repeat))
+        super().__init__(module, frequency=DateOffset(years=self.repeat))
         self.date_last_run = self.sim.date
 
     def apply(self, population):
@@ -2604,6 +2608,33 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
                         # 'ri_IMCI_classification_as_gold',
                         # 'ri_health_worker_IMCI_classification'
                     ]].to_dict())
+
+        start_date = Date(2010, 1, 1)
+        end_date = Date(2015, 1, 1)
+
+        after_start_date_recovery = df['ri_ALRI_event_recovered_date'] >= start_date
+        before_end_date_recovery = df['ri_ALRI_event_recovered_date'] <= end_date
+        between_two_dates_recovery = after_start_date_recovery & before_end_date_recovery
+        recovered = df.loc[between_two_dates_recovery]
+
+        after_start_date_treatment = df['ri_ALRI_tx_start_date'] >= start_date
+        before_end_date_treatment = df['ri_ALRI_tx_start_date'] <= end_date
+        between_two_dates_treatment = after_start_date_treatment & before_end_date_treatment
+        treated = df.loc[between_two_dates_treatment]
+
+        after_start_date_death = df['ri_ALRI_event_death_date'] >= start_date
+        before_end_date_death = df['ri_ALRI_event_death_date'] <= end_date
+        between_two_dates_death = after_start_date_death & before_end_date_death
+        died = df.loc[between_two_dates_death]
+
+        print(recovered)
+
+        data_for_df = {'recovered': len(after_start_date_recovery), 'treated': len(treated), 'died': len(died)}
+        # percentages_df = pd.DataFrame.from_dict(data_for_df)
+
+        logger.info(key='percentages',
+                    data=data_for_df,
+                    description='proportion of recovery, treated, died')
 
         # logger.info(key='individual_check',
         #             data=individual_child,

@@ -22,9 +22,9 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2013, 1, 1)
 pop_size = 100
-seed = 112
+seed = 145
 
 log_config = {
     "filename": "one_child",   # The name of the output file (a timestamp will be appended).
@@ -60,4 +60,9 @@ sim.make_initial_population(n=pop_size)
 sim.simulate(end_date=end_date)
 
 # parse the simulation logfile to get the output dataframes
-# output = parse_log_file(sim.log_filepath)
+output = parse_log_file(sim.log_filepath)
+one_person = output['tlo.methods.ALRI']['person_one']
+
+
+# save into an cvs file
+one_person.to_csv(r'./outputs/one_person1.csv', index=False)
