@@ -24,8 +24,6 @@ import pandas as pd
 import ast
 
 
-
-
 # =============================== Analysis description ========================================================
 # This analysis file has essentially become the model fitting analysis, seeing what happens when we run the model
 # and whether an ordinary model run will behave how we would expect it to, hitting the right demographics, producing
@@ -49,8 +47,8 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 100000
-nsim = 4
+pop_size = 50000
+nsim = 2
 
 # Create a variable whether to save figures or not
 save_figures = True
@@ -136,6 +134,8 @@ per_sim_burn_treated = []
 per_sim_tetanus = []
 # number of pain medicine requested
 per_sim_pain_med = []
+# number of open fracture appointments used
+per_sim_open_frac = []
 # Deaths in 2010
 deaths_2010 = []
 # Injuries in 2010
@@ -446,6 +446,7 @@ for i in range(0, nsim):
     per_sim_minor_surg.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Minor_Surgeries']))
     per_sim_tetanus.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Tetanus_Vaccine']))
     per_sim_pain_med.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Acute_Pain_Management']))
+    per_sim_open_frac.append(len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Open_Fracture_Treatment']))
     # todo: plot the urban vs rural injury severity currently produced by the model (injury_severity)
     per_sim_rural_severe.append(log_df['tlo.methods.rti']['injury_severity']['Percent_severe_rural'].tolist())
     per_sim_urban_severe.append(log_df['tlo.methods.rti']['injury_severity']['Percent_severe_urban'].tolist())
@@ -1502,6 +1503,7 @@ average_number_of_major_surgeries_performed = np.mean(per_sim_major_surg)
 average_number_of_minor_surgeries_performed = np.mean(per_sim_minor_surg)
 average_number_of_tetanus_jabs = np.mean(per_sim_tetanus)
 average_number_of_pain_meds = np.mean(per_sim_pain_med)
+average_number_of_open_fracs = np.mean(per_sim_open_frac)
 # plot the number of consumables used
 plt.bar(np.arange(1), mean_consumables_used_per_sim, color='lightsteelblue')
 plt.xticks(np.arange(1), ['Consumables'])
@@ -1545,9 +1547,10 @@ data = [average_number_of_burns_treated,
         average_number_of_major_surgeries_performed,
         average_number_of_minor_surgeries_performed,
         average_number_of_tetanus_jabs,
-        average_number_of_pain_meds]
+        average_number_of_pain_meds,
+        average_number_of_open_fracs]
 labels = ['Burn\nmanagement', 'Fracture\ncast', 'Suture', 'Major\nsurgery', 'Minor\nsurgery', 'Tetanus\nvaccine',
-          'Pain\nmanagement']
+          'Pain\nmanagement', 'Open \nfracture\ntreatment']
 
 plt.bar(np.arange(len(data)), data, color='cornflowerblue')
 plt.xticks(np.arange(len(data)), labels)

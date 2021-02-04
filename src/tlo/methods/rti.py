@@ -937,13 +937,12 @@ class RTI(Module):
                                             '461', '463', '453', '453a', '453b', '441', '442', '443', '4101', '4113',
                                             '552', '553', '554', '5101', '5113', '612', '673', '673a', '673b', '674',
                                             '674a', '674b', '675', '675a', '675b', '676', '712', '712a', '712b', '712c',
-                                            '722', '782',
-                                            '782a', '782b', '782c', '783', '7101', '7113', '811', '812',
-                                            '813', '813a', '813b', '813c', '822', '822a', '822b', '882', '883', '884',
-                                            '8101', '8113', 'P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a',
-                                            'P134b', 'P135', 'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675',
-                                            'P675a', 'P675b', 'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883',
-                                            'P884']),
+                                            '722', '782', '782a', '782b', '782c', '783', '7101', '7113', '811', '813do',
+                                            '812', '813eo', '813', '813a', '813b', '813bo', '813c', '813co', '822',
+                                            '822a', '822b', '882', '883', '884', '8101', '8113', 'P133', 'P133a',
+                                            'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
+                                            'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b',
+                                            'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']),
         'rt_injury_2': Property(Types.CATEGORICAL, 'Codes for injury 2 from RTI',
                                 categories=['none', '112', '113', '133', '133a', '133b', '133c', '133d', '134', '134a',
                                             '134b', '135', '1101', '1114', '211', '212', '241', '2101', '2114', '291',
@@ -951,13 +950,12 @@ class RTI(Module):
                                             '461', '463', '453', '453a', '453b', '441', '442', '443', '4101', '4113',
                                             '552', '553', '554', '5101', '5113', '612', '673', '673a', '673b', '674',
                                             '674a', '674b', '675', '675a', '675b', '676', '712', '712a', '712b', '712c',
-                                            '722', '782',
-                                            '782a', '782b', '782c', '783', '7101', '7113', '811', '812',
-                                            '813', '813a', '813b', '813c', '822', '822a', '822b', '882', '883', '884',
-                                            '8101', '8113', 'P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a',
-                                            'P134b', 'P135', 'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675',
-                                            'P675a', 'P675b', 'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883',
-                                            'P884']),
+                                            '722', '782', '782a', '782b', '782c', '783', '7101', '7113', '811', '813do',
+                                            '812', '813eo', '813', '813a', '813b', '813bo', '813c', '813co', '822',
+                                            '822a', '822b', '882', '883', '884', '8101', '8113', 'P133', 'P133a',
+                                            'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
+                                            'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b',
+                                            'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']),
         'rt_injury_3': Property(Types.CATEGORICAL, 'Codes for injury 3 from RTI',
                                 categories=['none', '112', '113', '133', '133a', '133b', '133c', '133d', '134', '134a',
                                             '134b', '135', '1101', '1114', '211', '212', '241', '2101', '2114', '291',
@@ -965,13 +963,12 @@ class RTI(Module):
                                             '461', '463', '453', '453a', '453b', '441', '442', '443', '4101', '4113',
                                             '552', '553', '554', '5101', '5113', '612', '673', '673a', '673b', '674',
                                             '674a', '674b', '675', '675a', '675b', '676', '712', '712a', '712b', '712c',
-                                            '722', '782',
-                                            '782a', '782b', '782c', '783', '7101', '7113', '811', '812',
-                                            '813', '813a', '813b', '813c', '822', '822a', '822b', '882', '883', '884',
-                                            '8101', '8113', 'P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a',
-                                            'P134b', 'P135', 'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675',
-                                            'P675a', 'P675b', 'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883',
-                                            'P884']),
+                                            '722', '782', '782a', '782b', '782c', '783', '7101', '7113', '811', '813do',
+                                            '812', '813eo', '813', '813a', '813b', '813bo', '813c', '813co', '822',
+                                            '822a', '822b', '882', '883', '884', '8101', '8113', 'P133', 'P133a',
+                                            'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
+                                            'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b',
+                                            'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']),
         'rt_injury_4': Property(Types.CATEGORICAL, 'Codes for injury 4 from RTI',
                                 categories=['none', '112', '113', '133', '133a', '133b', '133c', '133d', '134', '134a',
                                             '134b', '135', '1101', '1114', '211', '212', '241', '2101', '2114', '291',
@@ -979,13 +976,12 @@ class RTI(Module):
                                             '461', '463', '453', '453a', '453b', '441', '442', '443', '4101', '4113',
                                             '552', '553', '554', '5101', '5113', '612', '673', '673a', '673b', '674',
                                             '674a', '674b', '675', '675a', '675b', '676', '712', '712a', '712b', '712c',
-                                            '722', '782',
-                                            '782a', '782b', '782c', '783', '7101', '7113', '811', '812',
-                                            '813', '813a', '813b', '813c', '822', '822a', '822b', '882', '883', '884',
-                                            '8101', '8113', 'P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a',
-                                            'P134b', 'P135', 'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675',
-                                            'P675a', 'P675b', 'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883',
-                                            'P884']),
+                                            '722', '782', '782a', '782b', '782c', '783', '7101', '7113', '811', '813do',
+                                            '812', '813eo', '813', '813a', '813b', '813bo', '813c', '813co', '822',
+                                            '822a', '822b', '882', '883', '884', '8101', '8113', 'P133', 'P133a',
+                                            'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
+                                            'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b',
+                                            'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']),
         'rt_injury_5': Property(Types.CATEGORICAL, 'Codes for injury 5 from RTI',
                                 categories=['none', '112', '113', '133', '133a', '133b', '133c', '133d', '134', '134a',
                                             '134b', '135', '1101', '1114', '211', '212', '241', '2101', '2114', '291',
@@ -993,13 +989,12 @@ class RTI(Module):
                                             '461', '463', '453', '453a', '453b', '441', '442', '443', '4101', '4113',
                                             '552', '553', '554', '5101', '5113', '612', '673', '673a', '673b', '674',
                                             '674a', '674b', '675', '675a', '675b', '676', '712', '712a', '712b', '712c',
-                                            '722', '782',
-                                            '782a', '782b', '782c', '783', '7101', '7113', '811', '812',
-                                            '813', '813a', '813b', '813c', '822', '822a', '822b', '882', '883', '884',
-                                            '8101', '8113', 'P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a',
-                                            'P134b', 'P135', 'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675',
-                                            'P675a', 'P675b', 'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883',
-                                            'P884']),
+                                            '722', '782', '782a', '782b', '782c', '783', '7101', '7113', '811', '813do',
+                                            '812', '813eo', '813', '813a', '813b', '813bo', '813c', '813co', '822',
+                                            '822a', '822b', '882', '883', '884', '8101', '8113', 'P133', 'P133a',
+                                            'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
+                                            'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b',
+                                            'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']),
         'rt_injury_6': Property(Types.CATEGORICAL, 'Codes for injury 6 from RTI',
                                 categories=['none', '112', '113', '133', '133a', '133b', '133c', '133d', '134', '134a',
                                             '134b', '135', '1101', '1114', '211', '212', '241', '2101', '2114', '291',
@@ -1007,13 +1002,12 @@ class RTI(Module):
                                             '461', '463', '453', '453a', '453b', '441', '442', '443', '4101', '4113',
                                             '552', '553', '554', '5101', '5113', '612', '673', '673a', '673b', '674',
                                             '674a', '674b', '675', '675a', '675b', '676', '712', '712a', '712b', '712c',
-                                            '722', '782',
-                                            '782a', '782b', '782c', '783', '7101', '7113', '811', '812',
-                                            '813', '813a', '813b', '813c', '822', '822a', '822b', '882', '883', '884',
-                                            '8101', '8113', 'P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a',
-                                            'P134b', 'P135', 'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675',
-                                            'P675a', 'P675b', 'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883',
-                                            'P884']),
+                                            '722', '782', '782a', '782b', '782c', '783', '7101', '7113', '811', '813do',
+                                            '812', '813eo', '813', '813a', '813b', '813bo', '813c', '813co', '822',
+                                            '822a', '822b', '882', '883', '884', '8101', '8113', 'P133', 'P133a',
+                                            'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
+                                            'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b',
+                                            'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']),
         'rt_injury_7': Property(Types.CATEGORICAL, 'Codes for injury 7 from RTI',
                                 categories=['none', '112', '113', '133', '133a', '133b', '133c', '133d', '134', '134a',
                                             '134b', '135', '1101', '1114', '211', '212', '241', '2101', '2114', '291',
@@ -1021,13 +1015,12 @@ class RTI(Module):
                                             '461', '463', '453', '453a', '453b', '441', '442', '443', '4101', '4113',
                                             '552', '553', '554', '5101', '5113', '612', '673', '673a', '673b', '674',
                                             '674a', '674b', '675', '675a', '675b', '676', '712', '712a', '712b', '712c',
-                                            '722', '782',
-                                            '782a', '782b', '782c', '783', '7101', '7113', '811', '812',
-                                            '813', '813a', '813b', '813c', '822', '822a', '822b', '882', '883', '884',
-                                            '8101', '8113', 'P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a',
-                                            'P134b', 'P135', 'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675',
-                                            'P675a', 'P675b', 'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883',
-                                            'P884']),
+                                            '722', '782', '782a', '782b', '782c', '783', '7101', '7113', '811', '813do',
+                                            '812', '813eo', '813', '813a', '813b', '813bo', '813c', '813co', '822',
+                                            '822a', '822b', '882', '883', '884', '8101', '8113', 'P133', 'P133a',
+                                            'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
+                                            'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b',
+                                            'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']),
         'rt_injury_8': Property(Types.CATEGORICAL, 'Codes for injury 8 from RTI',
                                 categories=['none', '112', '113', '133', '133a', '133b', '133c', '133d', '134', '134a',
                                             '134b', '135', '1101', '1114', '211', '212', '241', '2101', '2114', '291',
@@ -1035,13 +1028,12 @@ class RTI(Module):
                                             '461', '463', '453', '453a', '453b', '441', '442', '443', '4101', '4113',
                                             '552', '553', '554', '5101', '5113', '612', '673', '673a', '673b', '674',
                                             '674a', '674b', '675', '675a', '675b', '676', '712', '712a', '712b', '712c',
-                                            '722', '782',
-                                            '782a', '782b', '782c', '783', '7101', '7113', '811', '812',
-                                            '813', '813a', '813b', '813c', '822', '822a', '822b', '882', '883', '884',
-                                            '8101', '8113', 'P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a',
-                                            'P134b', 'P135', 'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675',
-                                            'P675a', 'P675b', 'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883',
-                                            'P884']),
+                                            '722', '782', '782a', '782b', '782c', '783', '7101', '7113', '811', '813do',
+                                            '812', '813eo', '813', '813a', '813b', '813bo', '813c', '813co', '822',
+                                            '822a', '822b', '882', '883', '884', '8101', '8113', 'P133', 'P133a',
+                                            'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
+                                            'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b',
+                                            'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']),
         'rt_injuries_to_cast': Property(Types.LIST, 'A list of injuries that are to be treated with casts'),
         'rt_injuries_for_minor_surgery': Property(Types.LIST, 'A list of injuries that are to be treated with a minor'
                                                               'surgery'),
@@ -1765,6 +1757,40 @@ class RTI(Module):
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
+    def rti_ask_for_open_fracture_treatment(self, person_id, counts):
+        """Function called by HSI_RTI_MedicalIntervention to centralise open fracture treatment requests. This function
+        schedules an open fracture event, conditional on whether they are alive, being treated and have an appropriate
+        injury.
+
+        :param person_id: the person requesting a tetanus jab
+        :param counts: the number of open fractures that requires a treatment
+        :return: n/a
+        """
+        df = self.sim.population.props
+        # Check to see whether they have been sent here from RTI_MedicalIntervention and are haven't died due to rti
+        rti_deaths = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death']
+        assert df.loc[person_id, 'cause_of_death'] not in rti_deaths, 'person sent for treatment died from rti module'
+        assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
+        # Isolate the relevant injury information
+        person = df.iloc[person_id]
+        open_fracture_codes = ['813bo', '813co', '813do', '813eo']
+        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                'rt_injury_7', 'rt_injury_8']
+        person_injuries = df.loc[[person_id], cols]
+        # Check that they have an open fracture
+        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, open_fracture_codes)
+        assert counts > 0, "This person has requested open fracture treatment but doesn't require one"
+        if person.is_alive:
+            for i in range(0, counts):
+                # shedule the treatments, say the treatments occur a day appart for now
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_RTI_Open_Fracture_Treatment(module=self,
+                                                      person_id=person_id),
+                    priority=0,
+                    topen=self.sim.date + DateOffset(days=i),
+                    tclose=self.sim.date + DateOffset(days=15 + i)
+                )
+
     def rti_ask_for_tetanus(self, person_id):
         """
         Function called by HSI_RTI_MedicalIntervention to centralise all tetanus requests. This function schedules a
@@ -1872,12 +1898,7 @@ class RTI(Module):
 
     def rti_assign_daly_weights(self, injured_index):
         """
-        This function assigns DALY weights associated with each injury when they happen. It also changes the injury code
-        in some cases, where multiple injuries are assigned to each code (This is due to the fact that the code is
-        broken down to three sections, i.e. injury location (first number, 1 - 8), injury category (1 - 11) and injury
-        severity (1 - 6) and some injuries have the same location, category and severity but need further classification
-        to assign the correct daly weight, and then remove the correct daly weight when the injury is healed. E.g. a
-        fractured foot and ankle have the same location, category and severity, but different daly weights.
+        This function assigns DALY weights associated with each injury when they happen.
 
         By default this function gives the DALY weight for each condition without treatment, this will then be swapped
         for the DALY weight associated with the injury with treatment when treatment occurs.
@@ -1905,68 +1926,31 @@ class RTI(Module):
         # ------ Find those with skull fractures and update rt_fracture to match and call for treatment ---------------
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['112'])
         if len(idx) > 0:
-            for injuredperson in idx:
-                df.loc[injuredperson, 'rt_disability'] += self.daly_wt_unspecified_skull_fracture
+            df.loc[idx, 'rt_disability'] += self.daly_wt_unspecified_skull_fracture
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['113'])
         if len(idx) > 0:
-            for injuredperson in idx:
-                df.loc[injuredperson, 'rt_disability'] += self.daly_wt_basilar_skull_fracture
+            df.loc[idx, 'rt_disability'] += self.daly_wt_basilar_skull_fracture
         # ------ Find those with traumatic brain injury and update rt_tbi to match and call the TBI treatment ---------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['133'])
-        # There is a one-to-many mapping for the daly weights associated with code 133, create the map here and then
-        # change the code 133 to reflect the particular daly weight the original code is mapped to
-        dalyweightsfor133 = [self.daly_wt_subarachnoid_hematoma, self.daly_wt_brain_contusion,
-                             self.daly_wt_intraventricular_haemorrhage, self.daly_wt_subgaleal_hematoma]
-        probabilities = p['daly_dist_code_133']
-        idx_for_choose = [0, 1, 2, 3]
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['133a'])
         if len(idx) > 0:
-            for injuredperson in idx:
-                choose = rng.choice(idx_for_choose, p=probabilities)
-                if choose == 0:
-                    # person has a subarachnoid hematoma, assign the correct daly weight to rt_disability
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor133[choose]
-                    # Change code 133 to 133a so that the correct daly weight will by removed if treatment is successful
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['133'])
-                    df.loc[injuredperson, column] = code + "a"
-                elif choose == 1:
-                    # person has a brain contusion, assign the correct daly weight to rt_disability
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor133[choose]
-                    # Change code 133 to 133b so that the correct daly weight will by removed if treatment is successful
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['133'])
-                    df.loc[injuredperson, column] = code + "b"
-                elif choose == 2:
-                    # person has a intraventricular haemorrhage, assign the correct daly weight to rt_disability
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor133[choose]
-                    # Change code 133 to 133c so that the correct daly weight will by removed if treatment is successful
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['133'])
-                    df.loc[injuredperson, column] = code + "c"
-                else:
-                    # person has a subgaleal hematoma, assign the correct daly weight to rt_disability
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor133[choose]
-                    # Change code 133 to 133d so that the correct daly weight will by removed if treatment is successful
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['133'])
-                    df.loc[injuredperson, column] = code + "d"
+            df.loc[idx, 'rt_disability'] += self.daly_wt_subarachnoid_hematoma
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['133b'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_brain_contusion
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['133c'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_intraventricular_haemorrhage
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['133d'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_subgaleal_hematoma
 
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['134'])
-        # Code 134 maps on to two daly weights, assign the daly weights and update the codes as required
-        dalyweightsfor134 = [self.daly_wt_epidural_hematoma, self.daly_wt_subdural_hematoma]
-        probabilities = p['daly_dist_code_134']
-        idx_for_choose = [0, 1]
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['134a'])
         if len(idx) > 0:
-            for injuredperson in idx:
-                choose = rng.choice(idx_for_choose, p=probabilities)
-                if choose == 0:
-                    # This person has an epidural hematoma, assign correct daly weight
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor134[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['134'])
-                    # Update the code
-                    df.loc[injuredperson, column] = code + "a"
-                else:
-                    # This person has a subdural hematoma, assign correct daly weight
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor134[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['134'])
-                    # Update the code
-                    df.loc[injuredperson, column] = code + "b"
+            df.loc[idx, 'rt_disability'] += self.daly_wt_epidural_hematoma
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['134b'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_subdural_hematoma
+
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['135'])
         if len(idx) > 0:
             df.loc[idx, 'rt_disability'] += self.daly_wt_diffuse_axonal_injury
@@ -1983,14 +1967,12 @@ class RTI(Module):
         codes = ['211', '212']
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, codes)
         if counts > 0:
-            for injuredperson in idx:
-                df.loc[injuredperson, 'rt_disability'] += self.daly_wt_facial_fracture
+            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_fracture
 
         # ----------------- Find those with lacerations/soft tissue injuries and assign DALY weight -------------------
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['2101'])
         if len(idx) > 0:
-            for injuredperson in idx:
-                df.loc[injuredperson, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
+            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
 
         # ----------------- Find those with eye injuries and assign DALY weight ---------------------------------------
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['291'])
@@ -2036,21 +2018,12 @@ class RTI(Module):
         if len(idx) > 0:
             df.loc[idx, 'rt_disability'] += self.daly_wt_hemothorax
         # -------------------------------- Internal organ injury ------------------------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['453'])
-        dalyweightsfor453 = [self.daly_wt_diaphragm_rupture, self.daly_wt_lung_contusion]
-        probabilities = p['daly_dist_code_453']
-        idx_for_choose = [0, 1]
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['453a'])
         if len(idx) > 0:
-            for injuredperson in idx:
-                choose = rng.choice(idx_for_choose, p=probabilities)
-                if choose == 0:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor453[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['453'])
-                    df.loc[injuredperson, column] = code + "a"
-                else:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor453[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['453'])
-                    df.loc[injuredperson, column] = code + "b"
+            df.loc[idx, 'rt_disability'] += self.daly_wt_diaphragm_rupture
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['453b'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_lung_contusion
         # ----------------------------------- Soft tissue injury ------------------------------------------------------
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['441'])
         if len(idx) > 0:
@@ -2087,39 +2060,18 @@ class RTI(Module):
         if len(idx) > 0:
             df.loc[idx, 'rt_disability'] += self.daly_wt_vertebrae_fracture
         # ---------------------------------- Spinal cord injuries -----------------------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['673'])
-        dalyweightsfor673 = [self.daly_wt_spinal_cord_lesion_neck_without_treatment,
-                             self.daly_wt_spinal_cord_lesion_below_neck_without_treatment]
-        probabilities = p['daly_dist_code_673']
-        idx_for_choose = [0, 1]
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['673a'])
         if len(idx) > 0:
-            for injuredperson in idx:
-                choose = rng.choice(idx_for_choose, p=probabilities)
-                if choose == 0:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor673[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['673'])
-                    df.loc[injuredperson, column] = code + "a"
-                else:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor673[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['673'])
-                    df.loc[injuredperson, column] = code + "b"
-
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['674', '675'])
-        dalyweightsfor674675 = [self.daly_wt_spinal_cord_lesion_neck_without_treatment,
-                                self.daly_wt_spinal_cord_lesion_below_neck_without_treatment]
-        probabilities = p['daly_dist_codes_674_675']
-        idx_for_choose = [0, 1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_spinal_cord_lesion_neck_without_treatment
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['673b'])
         if len(idx) > 0:
-            for injuredperson in idx:
-                choose = rng.choice(idx_for_choose, p=probabilities)
-                if choose == 0:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor674675[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['674', '675'])
-                    df.loc[injuredperson, column] = code + "a"
-                else:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor674675[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['674', '675'])
-                    df.loc[injuredperson, column] = code + "b"
+            df.loc[idx, 'rt_disability'] += self.daly_wt_spinal_cord_lesion_below_neck_without_treatment
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['674a', '675a'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_spinal_cord_lesion_neck_without_treatment
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['674b', '675b'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_spinal_cord_lesion_below_neck_without_treatment
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['676'])
         if len(idx) > 0:
             df.loc[idx, 'rt_disability'] += self.daly_wt_spinal_cord_lesion_neck_without_treatment
@@ -2127,54 +2079,32 @@ class RTI(Module):
         # ============================== AIS body region 7: upper extremities ======================================
         # ------------------------------------------ fractures ------------------------------------------------------
         # Fracture to Clavicle, scapula, humerus, Hand/wrist, Radius/ulna
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['712'])
-        dalyweightsfor712 = [self.daly_wt_clavicle_scapula_humerus_fracture,
-                             self.daly_wt_hand_wrist_fracture_without_treatment,
-                             self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment]
-        probabilities = p['daly_dist_code_712']
-        idx_for_choose = [0, 1, 2]
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['712a'])
         if len(idx) > 0:
-            for injuredperson in idx:
-                choose = rng.choice(idx_for_choose, p=probabilities)
-                if choose == 0:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor712[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['712'])
-                    df.loc[injuredperson, column] = code + "a"
-                elif choose == 1:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor712[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['712'])
-                    df.loc[injuredperson, column] = code + "b"
-                else:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor712[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['712'])
-                    df.loc[injuredperson, column] = code + "c"
+            df.loc[idx, 'rt_disability'] += self.daly_wt_clavicle_scapula_humerus_fracture
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['712b'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_hand_wrist_fracture_without_treatment
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['712c'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment
+
         # ------------------------------------ Dislocation of shoulder ---------------------------------------------
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['722'])
         if len(idx) > 0:
             df.loc[idx, 'rt_disability'] += self.daly_wt_dislocated_shoulder
         # ------------------------------------------ Amputations -----------------------------------------------------
         # Amputation of fingers, Unilateral upper limb amputation, Thumb amputation
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['782'])
-        dalyweightsfor782 = [self.daly_wt_amputated_finger,
-                             self.daly_wt_unilateral_arm_amputation_without_treatment,
-                             self.daly_wt_amputated_thumb]
-        probabilities = p['daly_dist_code_782']
-        idx_for_choose = [0, 1, 2]
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['782a'])
         if len(idx) > 0:
-            for injuredperson in idx:
-                choose = rng.choice(idx_for_choose, p=probabilities)
-                if choose == 0:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor782[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['782'])
-                    df.loc[injuredperson, column] = code + "a"
-                if choose == 1:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor782[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['782'])
-                    df.loc[injuredperson, column] = code + "b"
-                else:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor782[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['782'])
-                    df.loc[injuredperson, column] = code + "c"
+            df.loc[idx, 'rt_disability'] += self.daly_wt_amputated_finger
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['782b'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_unilateral_arm_amputation_without_treatment
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['782c'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_amputated_thumb
+
         # Bilateral upper limb amputation
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['783'])
         if len(idx) > 0:
@@ -2192,51 +2122,48 @@ class RTI(Module):
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['811'])
         if len(idx) > 0:
             df.loc[idx, 'rt_disability'] += self.daly_wt_foot_fracture_short_term_with_without_treatment
+        # Broken foot (open), currently combining the daly weight used for open wounds and the fracture
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813do'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_foot_fracture_short_term_with_without_treatment + \
+                                            self.daly_wt_facial_soft_tissue_injury
         # Broken patella, tibia, fibula
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['812'])
         if len(idx) > 0:
             df.loc[idx, 'rt_disability'] += self.daly_wt_patella_tibia_fibula_fracture_without_treatment
-        # Broken Hip, Pelvis, Femur other than femoral neck
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813'])
-        dalyweightsfor813 = [self.daly_wt_hip_fracture_short_term_with_without_treatment,
-                             self.daly_wt_pelvis_fracture_short_term,
-                             self.daly_wt_femur_fracture_short_term]
-        probabilities = p['daly_dist_code_813']
-        idx_for_choose = [0, 1, 2]
+        # Broken foot (open), currently combining the daly weight used for open wounds and the fracture
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813eo'])
         if len(idx) > 0:
-            for injuredperson in idx:
-                choose = rng.choice(idx_for_choose, p=probabilities)
-                if choose == 0:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor813[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['813'])
-                    df.loc[injuredperson, column] = code + "a"
-                elif choose == 1:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor813[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['813'])
-                    df.loc[injuredperson, column] = code + "b"
-                else:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor813[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['813'])
-                    df.loc[injuredperson, column] = code + "c"
-
+           df.loc[idx, 'rt_disability'] += self.daly_wt_patella_tibia_fibula_fracture_without_treatment + \
+                                           self.daly_wt_facial_soft_tissue_injury
+        # Broken Hip, Pelvis, Femur other than femoral neck
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813a'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_hip_fracture_short_term_with_without_treatment
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813b'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_pelvis_fracture_short_term
+        # broken pelvis (open)
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813bo'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_pelvis_fracture_short_term + \
+                                            self.daly_wt_facial_soft_tissue_injury
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813c'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_femur_fracture_short_term
+        # broken femur (open)
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813co'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_femur_fracture_short_term + \
+                                            self.daly_wt_facial_soft_tissue_injury
         # -------------------------------------- Dislocations -------------------------------------------------------
         # Dislocated hip, knee
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['822'])
-        dalyweightsfor822 = [self.daly_wt_dislocated_hip,
-                             self.daly_wt_dislocated_knee]
-        probabilities = p['daly_dist_code_822']
-        idx_for_choose = [0, 1]
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['822a'])
         if len(idx) > 0:
-            for injuredperson in idx:
-                choose = rng.choice(idx_for_choose, p=probabilities)
-                if choose == 0:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor822[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['822'])
-                    df.loc[injuredperson, column] = code + "a"
-                else:
-                    df.loc[injuredperson, 'rt_disability'] += dalyweightsfor822[choose]
-                    column, code = RTI.rti_find_injury_column(self, person_id=injuredperson, codes=['822'])
-                    df.loc[injuredperson, column] = code + "b"
+            df.loc[idx, 'rt_disability'] += self.daly_wt_dislocated_hip
+        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['822b'])
+        if len(idx) > 0:
+            df.loc[idx, 'rt_disability'] += self.daly_wt_dislocated_knee
         # --------------------------------------- Amputations ------------------------------------------------------
         # toes
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['882'])
@@ -2408,6 +2335,20 @@ class RTI(Module):
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_unilateral_lower_limb_amputation_with_treatment
             if code == 'P884':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_bilateral_lower_limb_amputation_with_treatment
+            # ----------------------------- Codes treated with open fracture treatment --------------------------------
+            if code == '813bo':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_pelvis_fracture_long_term + \
+                                                      self.daly_wt_facial_soft_tissue_injury
+            if code == '813co':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_femur_fracture_short_term + \
+                                                      self.daly_wt_facial_soft_tissue_injury
+            if code == '813do':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_foot_fracture_short_term_with_without_treatment + \
+                                                      self.daly_wt_facial_soft_tissue_injury
+            if code == '813eo':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_patella_tibia_fibula_fracture_without_treatment + \
+                                                      self.daly_wt_facial_soft_tissue_injury
+
 
         RTI.rti_treated_injuries(self, person_id, codes)
         DALYweightunderlimit = df.index[df['rt_disability'] < 0]
@@ -2434,8 +2375,8 @@ class RTI(Module):
         assert df.loc[person_id, 'cause_of_death'] not in rti_deaths, 'person sent for treatment died from rti module'
         # Check they have an appropriate injury code to swap
 
-        swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a', 'P673b',
-                          'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884']
+        swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', '813bo', 'P673a',
+                          'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884']
         relevant_codes = np.intersect1d(codes, swapping_codes)
         cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                 'rt_injury_7', 'rt_injury_8']
@@ -2477,6 +2418,9 @@ class RTI(Module):
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_hip_fracture_short_term_with_without_treatment + \
                                                       self.daly_wt_hip_fracture_long_term_with_treatment
             if code == '813b':
+                df.loc[person_id, 'rt_disability'] += - self.daly_wt_pelvis_fracture_short_term + \
+                                                      self.daly_wt_pelvis_fracture_long_term
+            if code == '813bo':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_pelvis_fracture_short_term + \
                                                       self.daly_wt_pelvis_fracture_long_term
             if code == 'P673a':
@@ -2728,9 +2672,11 @@ class RTI(Module):
         predinjcat = []
         predinjiss = []
         predpolytrauma = []
+        predinjdetail = []
         injlocstring = []
         injcatstring = []
         injaisstring = []
+        injdetailstr = []
         severity_category = []
         number_of_injuries = []
         # Iterate over the total number of injured people
@@ -2753,15 +2699,20 @@ class RTI(Module):
             injcat = []
             # Create an empty vector which will store the severity of the injuries
             injais = []
+            # Create an empty vector to store the exact nature of the injury
+            injdetail = []
             injurylocation = self.rng.choice(injlocdist[0], ninj, p=injlocdist[1], replace=False)
 
             for injlocs in injurylocation:
                 cat = self.rng.uniform(0, 1)
                 # create a random variable which will determine the severity of the injury
                 severity = self.rng.uniform(0, 1)
+                # create an empty string to be used for adding detail to the injury if more than one injury maps to the
+                # code system
+                detail = 'none'
                 # create a random variable that will decide if certain fractures are open or not
                 open_frac = self.rng.uniform(0, 1)
-                open_fracture = False
+
                 # todo: make some injuries open and assign the exact injuries people have at this point, all open LX
                 #  have AIS 3
                 # create a base for the cumulative probability
@@ -2818,10 +2769,16 @@ class RTI(Module):
                         if severity <= self.head_prob_TBI_AIS3:
                             # Mild TBI
                             injais.append(3)
+                            probabilities = p['daly_dist_code_133']
+                            detail_add_on = ['a', 'b', 'c', 'd']
+                            detail = self.rng.choice(detail_add_on, p=probabilities)
                         elif self.head_prob_TBI_AIS3 < severity <= self.head_prob_TBI_AIS3 + \
                             self.head_prob_TBI_AIS4:
                             # Moderate TBI
                             injais.append(4)
+                            probabilities = p['daly_dist_code_134']
+                            detail_add_on = ['a', 'b']
+                            detail = self.rng.choice(detail_add_on, p=probabilities)
                         elif self.head_prob_TBI_AIS3 + self.head_prob_TBI_AIS4 < severity:
                             # Severe TBI
                             injais.append(5)
@@ -2949,6 +2906,10 @@ class RTI(Module):
                         injcat.append(int(5))
                         # Lung contusion and Diaphragm rupture
                         injais.append(3)
+                        probabilities = p['daly_dist_code_453']
+                        detail_add_on = ['a', 'b']
+                        detail = self.rng.choice(detail_add_on, p=probabilities)
+
                     # Decide if the injury is a fracture/flail chest
                     elif self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
                         self.thorax_prob_internal_organ_injury < cat <= self.thorax_prob_skin_wound + \
@@ -3037,10 +2998,19 @@ class RTI(Module):
                         # Decide how severe the injury is
                         if severity <= base1:
                             injais.append(3)
+                            probabilities = p['daly_dist_code_673']
+                            detail_add_on = ['a', 'b']
+                            detail = self.rng.choice(detail_add_on, p=probabilities)
                         elif base1 < cat <= base1 + base2:
                             injais.append(4)
+                            probabilities = p['daly_dist_codes_674_675']
+                            detail_add_on = ['a', 'b']
+                            detail = self.rng.choice(detail_add_on, p=probabilities)
                         elif base1 + base2 < cat <= base1 + base2 + base3:
                             injais.append(5)
+                            probabilities = p['daly_dist_codes_674_675']
+                            detail_add_on = ['a', 'b']
+                            detail = self.rng.choice(detail_add_on, p=probabilities)
                         else:
                             injais.append(6)
                 # Decide What the injury to the upper extremities is
@@ -3062,6 +3032,9 @@ class RTI(Module):
                         # Fracture to arm
                         injcat.append(int(1))
                         injais.append(2)
+                        probabilities = p['daly_dist_code_712']
+                        detail_add_on = ['a', 'b', 'c']
+                        detail = self.rng.choice(detail_add_on, p=probabilities)
                     # Decide if the injury is a dislocation
                     elif self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture < cat <= \
                         self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture + \
@@ -3078,6 +3051,9 @@ class RTI(Module):
                         if severity <= self.upper_ex_prob_amputation_AIS2:
                             # Amputation to finger/thumb/unilateral arm
                             injais.append(2)
+                            probabilities = p['daly_dist_code_782']
+                            detail_add_on = ['a', 'b', 'c']
+                            detail = self.rng.choice(detail_add_on, p=probabilities)
                         else:
                             # Amputation, arm, bilateral
                             injais.append(3)
@@ -3102,14 +3078,39 @@ class RTI(Module):
                         # Decide how severe the injury will be
                         if severity < self.lower_ex_prob_fracture_AIS1:
                             # Foot fracture
-                            injais.append(1)
+                            # is the foot fracture open?
+                            prob_foot_frac_open = 0.36
+                            if open_frac < prob_foot_frac_open:
+                                detail = 'do'
+                                injais.append(3)
+                            else:
+                                injais.append(1)
                         elif self.lower_ex_prob_fracture_AIS1 < severity <= self.lower_ex_prob_fracture_AIS1 + \
                             self.lower_ex_prob_fracture_AIS2:
                             # Lower leg fracture
-                            injais.append(2)
+                            # is the lower leg fracture open?
+                            prob_foot_frac_open = 0.36
+                            if open_frac < prob_foot_frac_open:
+                                detail = 'eo'
+                                injais.append(3)
+                            else:
+                                injais.append(2)
                         else:
                             # Upper leg fracture
                             injais.append(3)
+                            probabilities = p['daly_dist_code_813']
+                            detail_add_on = ['a', 'b', 'c']
+                            detail = self.rng.choice(detail_add_on, p=probabilities)
+                            if detail == 'b':
+                                prob_pelvis_frac_open = 0.2
+                                if open_frac < prob_pelvis_frac_open:
+                                    detail = detail + 'o'
+                            if detail == 'c':
+                                prob_femur_frac_open = 0.133
+                                if open_frac < prob_femur_frac_open:
+                                    detail = detail + 'o'
+
+
                     # Decide if the injury is a dislocation
                     elif self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture < cat <= \
                         self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture + \
@@ -3117,6 +3118,9 @@ class RTI(Module):
                         # dislocation of hip or knee
                         injcat.append(int(2))
                         injais.append(2)
+                        probabilities = p['daly_dist_code_822']
+                        detail_add_on = ['a', 'b']
+                        detail = self.rng.choice(detail_add_on, p=probabilities)
                     # Decide if the injury is an amputation
                     elif self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture + \
                         self.lower_ex_prob_dislocation < cat:
@@ -3133,11 +3137,15 @@ class RTI(Module):
                         else:
                             # Bilateral limb amputation
                             injais.append(4)
+                # Add the injury detail to the injury detail list
+                injdetail.append(detail)
+
             # Check that every injury has been assigned by checking there is a injury category, AIS score and a location
             # for all injuries
             assert len(injcat) == ninj
             assert len(injais) == ninj
             assert len(allinjlocs) == ninj
+            assert len(injdetail) == ninj
 
             # Create a dataframe that stores the injury location and severity for each person, the point of this
             # dataframe is to use some of the pandas tools to manipulate the generated injury data to calculate
@@ -3145,6 +3153,7 @@ class RTI(Module):
             injlocstring.append(' '.join(map(str, allinjlocs)))
             injcatstring.append(' '.join(map(str, injcat)))
             injaisstring.append(' '.join(map(str, injais)))
+            injdetailstr.append(' '.join(map(str, injdetail)))
             injdata = {'AIS location': allinjlocs, 'AIS severity': injais}
             df = pd.DataFrame(injdata, columns=['AIS location', 'AIS severity'])
             # Find the most severe injury to the person in each body region, creates a new column containing the
@@ -3187,6 +3196,7 @@ class RTI(Module):
             predinjcat.append(injcat)
             predinjiss.append(ISSscore)
             predpolytrauma.append(polytrauma)
+            predinjdetail.append(injdetail)
         injdf = pd.DataFrame()
         injdf['Injury locations'] = predinjlocs
         injdf['Injury locations string'] = injlocstring
@@ -3199,13 +3209,17 @@ class RTI(Module):
         injdf['Injury category string'] = injcatstring
         injdf['ISS'] = predinjiss
         injdf['Polytrauma'] = predpolytrauma
+        injdf['Detail'] = injdetailstr
         injdf['Injury category string'] = injdf['Injury category string'].astype(str)
         injurycategories = injdf['Injury category string'].str.split(expand=True)
         injdf['Injury locations string'] = injdf['Injury locations string'].astype(str)
         injurylocations = injdf['Injury locations string'].str.split(expand=True)
         injdf['Injury AIS string'] = injdf['Injury AIS string'].astype(str)
         injuryais = injdf['Injury AIS string'].str.split(expand=True)
-        injurydescription = injurylocations + injurycategories + injuryais
+        injdf['Detail'] = injdf['Detail'].astype(str)
+        injurydetails = injdf['Detail'].str.split(expand=True)
+        injurydetails = injurydetails.replace(to_replace='none', value='')
+        injurydescription = injurylocations + injurycategories + injuryais + injurydetails
         injurydescription = injurydescription.astype(str)
         for (columnname, columndata) in injurydescription.iteritems():
             injurydescription.rename(
@@ -4413,6 +4427,12 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             treatment_options = [self.pelvis_skeletal_traction, self.pelvis_major_surgery, self.pelvis_minor_surgery,
                                  self.pelvis_fracture_cast]
             assert sum(treatment_options) <= 1, 'multiple treatment options assigned to treat this femur/hip fracture'
+        # -------------------------------------- Open fractures -------------------------------------------------------
+        self.open_fractures = 0
+        open_fracture_codes = ['813bo', '813co', '813do', '813eo']
+        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, open_fracture_codes)
+        if len(idx) > 0:
+            self.open_fractures += counts
         # ------------------------------ Traumatic brain injury requirements ------------------------------------------
         # Check whether the person has a severe traumatic brain injury, which in some cases will require a major surgery
         # to treat
@@ -4877,7 +4897,9 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         idx, fracturecounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if fracturecounts > 0 & (df.loc[person_id, 'cause_of_death'] == ''):
             road_traffic_injuries.rti_ask_for_fracture_casts(person_id=person_id)
-
+        # ------------------------------------ Open fractures ---------------------------------------------------------
+        if self.open_fractures > 0 & (df.loc[person_id, 'cause_of_death'] == ''):
+            road_traffic_injuries.rti_ask_for_open_fracture_treatment(person_id=person_id, counts=self.open_fractures)
         # ============================== Generic injury management =====================================================
 
         # ================================= Pain management ============================================================
@@ -5006,8 +5028,8 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
             # Some TLO codes have daly weights associated with treated and non-treated injuries, swap-able codes are
             # listed below
-            swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a', 'P673b',
-                              'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884']
+            swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', '813bo', 'P673a',
+                              'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884']
             # iterate over the treated codes
             for code in relevant_codes:
                 # check if the treated code is one where we have to swap the daly weights for
@@ -5028,6 +5050,116 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
     def did_not_run(self, person_id):
         logger.debug('Fracture casts unavailable for person %d', person_id)
 
+class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
+    """
+    This HSI event handles fracture casts/giving slings for those who need it. The HSI event tests whether the injured
+    person has an appropriate injury code, determines how many fractures the person and then requests fracture
+    treatment as required.
+
+    The injury codes dealt with in this HSI event are:
+    '813bo' - Open fracture of the pelvis
+    '813co' - Open fracture of the femur
+    '813do' - Open fracture of the foot
+    '813eo' - Open fracture of the tibia/fibula/ankle/patella
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, RTI)
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1  # Placeholder requirement
+        the_appt_footprint['MinorSurg'] = 1  # wound debridement requires minor surgery
+        the_accepted_facility_level = 1
+        self.TREATMENT_ID = 'RTI_Open_Fracture_Treatment'  # This must begin with the module name
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        road_traffic_injuries = self.sim.modules['RTI']
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # isolate the relevant injury information
+        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                'rt_injury_7', 'rt_injury_8']
+        person_injuries = df.loc[[person_id], cols]
+        # check if they have a fracture that requires a cast
+        codes = ['813bo', '813co', '813do', '813eo']
+        idx, open_fracture_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+
+        consumables_fractures = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
+        # Check the person sent here is alive, been through the generic first appointment,
+        # been through the RTI med intervention
+        rti_deaths = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death']
+        assert df.loc[person_id, 'cause_of_death'] not in rti_deaths, 'person sent for treatment died from rti module'
+        assert df.loc[person_id, 'rt_diagnosed'], 'person sent here has not been diagnosed'
+        assert df.loc[person_id, 'rt_med_int'], 'person sent here has not been treated'
+        # Check that the person sent here has an injury treated by this module
+        assert open_fracture_counts > 0
+        # If they have a fracture that needs a cast, ask for plaster of paris
+        if open_fracture_counts > 0:
+            # Ask for ceftriaxon antibiotics as first choice.
+            first_choice_antibiotic_code = pd.unique(
+                consumables.loc[consumables['Items'] ==
+                                'ceftriaxon 500 mg, powder for injection_10_IDA',
+                                'Item_Code'])[0]
+            consumables_fractures['Item_Code'].update({first_choice_antibiotic_code: 1})
+            # Ask for sterilized gauze
+            item_code_cetrimide_chlorhexidine = pd.unique(
+                consumables.loc[consumables['Items'] ==
+                                'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
+            consumables_fractures['Item_Code'].update({item_code_cetrimide_chlorhexidine: 1})
+            item_code_gauze = pd.unique(
+                consumables.loc[
+                    consumables['Items'] == "Dressing, paraffin gauze 9.5cm x 9.5cm (square)_packof 36_CMST",
+                    'Item_Code'])[0]
+            consumables_fractures['Item_Code'].update({item_code_gauze: 1})
+            # Ask for suture kit
+            item_code_suture_kit = pd.unique(
+                consumables.loc[consumables['Items'] == 'Suture pack', 'Item_Code'])[0]
+            consumables_fractures['Item_Code'].update({item_code_suture_kit: 1})
+            # If wound is "grossly contaminated" administer Metronidazole
+            # todo: parameterise the probability of wound contamination
+            prob_open_wound_contaminated = 0.1
+            rand_for_contamination = self.module.rng.random_sample(size=1)
+            if rand_for_contamination < prob_open_wound_contaminated:
+                conaminated_wound_metronidazole_code = pd.unique(
+                    consumables.loc[consumables['Items'] ==
+                                    'Metronidazole, injection, 500 mg in 100 ml vial',
+                                    'Item_Code'])[0]
+                consumables_fractures['Item_Code'].update({conaminated_wound_metronidazole_code: 1})
+
+        # Check that there are enough consumables to treat this person's fractures
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_fractures,
+            to_log=True)
+        if is_cons_available:
+            logger.debug(f"Fracture casts available for person %d's {open_fracture_counts} open fractures",
+                         person_id)
+            df.at[person_id, 'rt_med_int'] = True
+            # Find the persons injuries
+            non_empty_injuries = person_injuries[person_injuries != "none"]
+            non_empty_injuries = non_empty_injuries.dropna(axis=1)
+            # Find the injury codes treated by fracture casts/slings
+            codes = ['813bo', '813co', '813do', '813eo']
+            relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
+            treated_code = self.module.rng.choice(relevant_codes)
+            # Some TLO codes have daly weights associated with treated and non-treated injuries
+            if treated_code == '813bo':
+                road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, treated_code)
+            # Find the injury that has been treated and then schedule a recovery date
+            columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, treated_code)
+            for col in columns:
+                # estimated 6-9 months recovery times for open fractures
+                df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
+                                                                                DateOffset(months=7)
+            else:
+                logger.debug(f"Person %d's has {open_fracture_counts} open fractures without treatment",
+                             person_id)
+
+    def did_not_run(self, person_id):
+        logger.debug('Open fracture treatment unavailable for person %d', person_id)
 
 class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
     """
@@ -5365,6 +5497,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                                '322', '323', '722', '822', '822a', '822b',  # dislocations
                                '342', '343', '361', '363',  # neck trauma
                                '461',  # chest wall bruising
+                               '813bo', '813co', '813do', '813eo'  # open fractures
                                ]
         moderate_idx, moderate_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries,
                                                                                           Moderate_Pain_Codes)
@@ -5389,7 +5522,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         elif len(mild_idx) > 0:
             pain_level = "mild"
 
-        if pain_level is "mild":
+        if pain_level == "mild":
             # Multiple options, some are conditional
             # Give paracetamol
             # Give NSAIDS such as aspirin (unless they are under 16) for soft tissue pain, but not if they are pregnant
@@ -5412,7 +5545,8 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Package_Code': dict(),
                 'Item_Code': {item_code_diclofenac: 1}}
 
-            if (df.iloc[person_id]['age_years'] < 16) or df.iloc[person_id]['is_pregnant']:
+            if (df.iloc[person_id]['age_years'] < 16):
+                # or df.iloc[person_id]['is_pregnant']
                 # If they are under 16 or pregnant only give them paracetamol
                 logger.debug(pain_management_strategy_paracetamol)
                 is_paracetamol_available = self.sim.modules['HealthSystem'].request_consumables(
@@ -5470,7 +5604,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                 logger.debug('This facility has no pain management available for their mild pain, person %d.',
                              person_id)
 
-        if pain_level is "moderate":
+        if pain_level == "moderate":
             dict_to_output = {'person': person_id,
                               'pain level': pain_level}
             logger.info(key='Requested_Pain_Management',
@@ -5503,7 +5637,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                 logger.debug('This facility has no pain management available for moderate pain for person %d.',
                              person_id)
 
-        if pain_level is "severe":
+        if pain_level == "severe":
             dict_to_output = {'person': person_id,
                               'pain level': pain_level}
             logger.info(key='Requested_Pain_Management',
