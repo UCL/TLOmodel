@@ -1,24 +1,21 @@
 graft docs
 graft src
 graft tests
-graft outputs
-
-exclude resources
-
-include .bumpversion.cfg
-include .coveragerc
-include .editorconfig
+graft requirements
 
 include README.rst
-
+include .bumpversion.cfg
+include .coveragerc
 include tox.ini .travis.yml
 
-recursive-include notebooks *.ipynb
-recursive-include requirements *.in
-recursive-include requirements *.txt
-recursive-include requirements Makefile
-
-recursive-exclude resources *
+exclude .editorconfig
 recursive-exclude .ci *
+recursive-exclude outputs *
+recursive-exclude resources *
 
-global-exclude *.py[cod] __pycache__ *.so *.dylib .ipynb_checkpoints/**
+# some files inside of docs are generated
+recursive-exclude docs/reference tlo.*.rst
+exclude docs/reference/tlo.rst
+exclude docs/reference/modules.rst
+
+global-exclude *.py[cod] __pycache__ *.so *.dylib .ipynb_checkpoints/** *~
