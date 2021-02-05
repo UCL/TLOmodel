@@ -560,6 +560,10 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Make some summary statistics for prevalence by age/sex for each condition
         df = population.props
+        # make custom age range cats
+        df_age_cats = df
+        df_age_cats['custom_age_range'] = df_age_cats['age_range']
+        df_age_cats['custom_age_range'] = np.where(df_age_cats['age_years'] >= 80, '80+', df_age_cats['age_range'])
 
         def proportion_of_something_in_a_groupby_ready_for_logging(df, something, groupbylist):
             dfx = df.groupby(groupbylist).apply(lambda dft: pd.Series(
@@ -580,13 +584,14 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         for condition in self.module.conditions:
             # Strip leading 'nc_' from condition name
             condition_name = condition.replace('nc_', '')
+            prev_age_sex = proportion_of_something_in_a_groupby_ready_for_logging(df_age_cats, f'{condition}',
+                                                                                  ['sex', 'custom_age_range'])
 
             # Prevalence of conditions broken down by sex and age
             logger.info(
                 key=f'{condition_name}_prevalence_by_age_and_sex',
                 description='current fraction of the population classified as having condition, by sex and age',
-                data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, f'{condition}',
-                                                                                     ['sex', 'age_range'])}
+                data={'data': prev_age_sex}
             )
 
             # Prevalence of conditions by adults aged 20 or older
@@ -641,19 +646,24 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_comorbidities_all = pd.DataFrame(index=self.module.age_index,
                                            columns=list(range(0, len(self.module.conditions) + 1)))
         df = df[['age_range', 'n_conditions']]
+
         for num in range(0, len(self.module.conditions) + 1):
             col = df.loc[df['n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
                 {'count': x['n_conditions'].count()}))
             n_comorbidities_all.loc[:, num] = col['count']
+
         prop_comorbidities_all = n_comorbidities_all.div(n_comorbidities_all.sum(axis=1), axis=0)
+
         logger.info(key='mm_prevalence_by_age_all',
                     description='annual summary of multi-morbidities by age for all',
                     data=prop_comorbidities_all.to_dict()
                     )
+
         df = population.props
         df = df[df.is_alive]
         df['four_age_bins'] = pd.cut(x=df['age_years'], bins=[0, 20, 45, 65, 120], right=False)
         df['all_adults'] = pd.cut(x=df['age_years'], bins=[0, 20, 120], right=False)
+
         condition_combos = ['di_hy', 'di_de', 'di_ck', 'di_ci', 'hy_de', 'hy_ck', 'hy_ci', 'de_ck', 'de_ci', 'ck_ci']
         df['di_hy'] = np.where(df['nc_diabetes'] & df['nc_hypertension'], True, False)
         df['di_de'] = np.where(df['nc_diabetes'] & df['nc_depression'], True, False)
@@ -665,6 +675,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df['de_ck'] = np.where(df['nc_depression'] & df['nc_chronic_kidney_disease'], True, False)
         df['de_ci'] = np.where(df['nc_depression'] & df['nc_chronic_ischemic_hd'], True, False)
         df['ck_ci'] = np.where(df['nc_chronic_kidney_disease'] & df['nc_chronic_ischemic_hd'], True, False)
+
         n_combos = pd.DataFrame(index=df['four_age_bins'].value_counts().sort_index().index,
                                 columns=condition_combos)
         for condition_combo in condition_combos:
@@ -672,12 +683,15 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 {'count': x[f'{condition_combo}'].count()}))
             n_combos.reset_index()
             n_combos.loc[:, f'{condition_combo}'] = col['count'].values
+
         prop_combos = n_combos.div(df.groupby(['four_age_bins'])['four_age_bins'].count(), axis=0)
         prop_combos.index = prop_combos.index.astype(str)
+
         logger.info(key='prop_combos',
                     description='proportion of combinations of morbidities',
                     data=prop_combos.to_dict()
                     )
+
         n_combos_adults = pd.DataFrame(index=df['all_adults'].value_counts().sort_index().index,
                                        columns=condition_combos)
         for condition_combo in condition_combos:
@@ -685,8 +699,10 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 {'count': x[f'{condition_combo}'].count()}))
             n_combos_adults.reset_index()
             n_combos_adults.loc[:, f'{condition_combo}'] = col['count'].values
+
         prop_combos_adults = n_combos_adults.div(df.groupby(['all_adults'])['all_adults'].count(), axis=0)
         prop_combos_adults.index = prop_combos_adults.index.astype(str)
+
         logger.info(key='prop_combos_adults',
                     description='proportion of combinations of morbidities for all adults',
                     data=prop_combos_adults.to_dict()
