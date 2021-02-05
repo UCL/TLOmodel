@@ -331,17 +331,33 @@ class ALRI(Module):
                       ),
 
         # death parameters -----
-        'r_death_from_ALRI_due_to_sepsis':
+        'base_death_rate_ALRI_by_bacterial_pneumonia':
             Parameter(Types.REAL,
-                      'death rate from ALRI due to sepsis, base age 0-11 months'
+                      'baseline death rate from bacterial pneumonia, base age 0-11 months'
                       ),
-        'r_death_from_ALRI_due_to_respiratory_failure':
+        'base_death_rate_ALRI_by_bronchiolitis':
             Parameter(Types.REAL,
-                      'death rate from ALRI due to respiratory failure, base age 0-11 months'
+                      'baseline death rate from bronchiolitis, base age 0-11 months'
                       ),
-        'r_death_from_ALRI_due_to_meningitis':
+        'base_death_rate_ALRI_by_viral_pneumonia':
             Parameter(Types.REAL,
-                      'death rate from ALRI due to meningitis, base age 0-11 months'
+                      'baseline death rate from viral pneumonia, base age 0-11 months'
+                      ),
+        'base_death_rate_ALRI_by_fungal_pneumonia':
+            Parameter(Types.REAL,
+                      'baseline death rate from fungal pneumonia, base age 0-11 months'
+                      ),
+        'rr_death_ALRI_sepsis':
+            Parameter(Types.REAL,
+                      'relative death rate from ALRI for sepsis, base age 0-11 months'
+                      ),
+        'rr_death_ALRI_respiratory_failure':
+            Parameter(Types.REAL,
+                      'relative death rate from ALRI for respiratory failure, base age 0-11 months'
+                      ),
+        'rr_death_ALRI_meningitis':
+            Parameter(Types.REAL,
+                      'relative death rate from ALRI for meningitis, base age 0-11 months'
                       ),
         'rr_death_ALRI_age12to23mo':
             Parameter(Types.REAL,
@@ -682,7 +698,7 @@ class ALRI(Module):
         self.risk_of_progressing_to_severe_complications = dict()
 
         # Linear Model for predicting the risk of death:
-        self.risk_of_death_severe_ALRI = dict()
+        self.mortality_equations_by_disease = dict()
 
         # dict to hold the probability of onset of different types of symptom given underlying complications:
         self.prob_symptoms_uncomplicated_ALRI = dict()
@@ -803,11 +819,14 @@ class ALRI(Module):
         * Establishes the linear models and other data structures using the parameters that have been read-in
         """
 
-        # Schedule the main polling event (to first occur immidiately)
+        # Schedule the main polling event (to first occur immediately)
         sim.schedule_event(AcuteLowerRespiratoryInfectionPollingEvent(self), sim.date + DateOffset(days=0))
 
         # Schedule the main logging event (to first occur in one year)
-        sim.schedule_event(AcuteLowerRespiratoryInfectionLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(AcuteLowerRespiratoryInfectionLoggingEvent(self), sim.date + DateOffset(years=1))
+
+        # Schedule the individual check logging event (to first occur immediately, and to occur every year)
+        # sim.schedule_event(AlriIindividualCheckLoggingEvent(self), sim.date + DateOffset(days=0))
 
         # Get DALY weights
         # get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
@@ -860,8 +879,8 @@ class ALRI(Module):
             assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
             return scaled_lm
 
-        for pathogen in ALRI.pathogens:
-            self.incidence_equations_by_pathogen[pathogen] = make_scaled_linear_model(pathogen)
+        for patho in ALRI.pathogens:
+            self.incidence_equations_by_pathogen[patho] = make_scaled_linear_model(patho)
 
         # check that equations have been declared for each pathogens
         assert self.pathogens == set(list(self.incidence_equations_by_pathogen.keys()))
@@ -1170,32 +1189,79 @@ class ALRI(Module):
         # APPLY A LINEAR MODEL FOR THE RISK OF DEATH DUE TO ALRI (SEVERE COMPLICATIONS)
         # -----------------------------------------------------------------------------------------------------
         # Create a linear model for the risk of dying due to complications: sepsis, meningitis, respiratory failure
-        # TODO: change this - this is wrong maths
-        def death_risk(complications_list):
-            total = 0
-            if 'sepsis' in complications_list:
-                total += p['r_death_from_ALRI_due_to_sepsis']
-            if 'respiratory_failure' in complications_list:
-                total += p['r_death_from_ALRI_due_to_respiratory_failure']
-            if 'meningitis' in complications_list:
-                total += p['r_death_from_ALRI_due_to_meningitis']
-            return total
+        def make_scaled_linear_model_for_death(disease_type):
+            """Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
+            0-year-olds and then creates a new linear model with adjusted intercept so incidents in 0-year-olds
+            matches the specified value in the model when averaged across the population
+            """
 
-        self.risk_of_death_severe_ALRI = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1.0,
-            Predictor('ri_ALRI_complications').apply(death_risk),
-            Predictor('tmp_hv_inf').when(True, p['rr_death_ALRI_HIV']),
-            Predictor('tmp_malnutrition').when(True, p['rr_death_ALRI_SAM']),
-            Predictor('tmp_low_birth_weight').when(True, p['rr_death_ALRI_low_birth_weight']),
-            Predictor('age_years')
-                .when('.between(1,1)', p['rr_death_ALRI_age12to23mo'])
-                .when('.between(2,4)', p['rr_death_ALRI_age24to59mo']),
-            # Predictor()
-            #     .when("ri_ALRI_complications == 'respiratory_failure' & "
-            #           "ri_ALRI_disease_type.isin(['bronchiolitis', 'viral_pneumonia']) & "
-            #           "ri_oxygen_therapy_given == 'True'", p['prob_respiratory_failure_by_bronchiolitis']),
-        )
+            def make_linear_model_for_death(disease_type, intercept=1.0):
+                base_death_rate = f'base_death_rate_ALRI_by_{disease_type}'
+                return LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    intercept,
+                    Predictor('ri_ALRI_disease_type')
+                        .when('bronchiolitis', p[base_death_rate])  # baseline death rates for bronchiolitis
+                        .when('viral_pneumonia', p[base_death_rate])
+                        .when('bacterial_pneumonia', p[base_death_rate])
+                        .when('fungal_pneumonia', p[base_death_rate])
+                        .otherwise(0.0),
+                    Predictor('tmp_hv_inf').when(True, p['rr_death_ALRI_HIV']),
+                    Predictor('tmp_malnutrition').when(True, p['rr_death_ALRI_SAM']),
+                    Predictor('tmp_low_birth_weight').when(True, p['rr_death_ALRI_low_birth_weight']),
+                    Predictor('age_years')
+                        .when('.between(1,1)', p['rr_death_ALRI_age12to23mo'])
+                        .when('.between(2,4)', p['rr_death_ALRI_age24to59mo']),
+                    Predictor('ri_ALRI_complications')
+                        .when('respiratory_failure', p['rr_death_ALRI_respiratory_failure'])
+                        .when('sepsis', p['rr_death_ALRI_sepsis'])
+                        .when('meningitis', p['rr_death_ALRI_meningitis']),
+                    # Predictor('ri_oxygen_therapy_given').when(True, p['oxygen_therapy_effectiveness_ALRI']),
+                    # Predictor('ri_antibiotic_administered').when(True, p['antibiotic_therapy_effectiveness_ALRI']),
+
+                )
+
+            df = self.sim.population.props
+            unscaled_lm = make_linear_model_for_death(disease_type)
+            target_mean = p[f'base_death_rate_ALRI_by_{disease_type}']
+            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
+            scaled_intercept = 1.0 * (target_mean / actual_mean)
+            scaled_lm = make_linear_model_for_death(disease_type, intercept=scaled_intercept)
+            # check by applying the model to mean incidence of 0-year-olds
+            # assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
+            return scaled_lm
+
+        for disease_type in ALRI.disease_type:
+            self.mortality_equations_by_disease[disease_type] = make_scaled_linear_model_for_death(disease_type)
+
+        # def death_risk(complications_list):
+        #     total = 0
+        #     if 'sepsis' in complications_list:
+        #         total += p['r_death_from_ALRI_due_to_sepsis']
+        #     if 'respiratory_failure' in complications_list:
+        #         total += p['r_death_from_ALRI_due_to_respiratory_failure']
+        #     if 'meningitis' in complications_list:
+        #         total += p['r_death_from_ALRI_due_to_meningitis']
+        #     return total
+
+        # death = death_risk(complications_list=['sepsis'])
+        # print(death)
+
+        # self.risk_of_death_severe_ALRI = LinearModel(
+        #     LinearModelType.MULTIPLICATIVE,
+        #     1.0,
+        #     Predictor('ri_ALRI_complications').apply(death_risk),
+        #     Predictor('tmp_hv_inf').when(True, p['rr_death_ALRI_HIV']),
+        #     Predictor('tmp_malnutrition').when(True, p['rr_death_ALRI_SAM']),
+        #     Predictor('tmp_low_birth_weight').when(True, p['rr_death_ALRI_low_birth_weight']),
+        #     Predictor('age_years')
+        #         .when('.between(1,1)', p['rr_death_ALRI_age12to23mo'])
+        #         .when('.between(2,4)', p['rr_death_ALRI_age24to59mo']),
+        #     # Predictor()
+        #     #     .when("ri_ALRI_complications == 'respiratory_failure' & "
+        #     #           "ri_ALRI_disease_type.isin(['bronchiolitis', 'viral_pneumonia']) & "
+        #     #           "ri_oxygen_therapy_given == 'True'", p['prob_respiratory_failure_by_bronchiolitis']),
+        # )
         # -----------------------------------------------------------------------------------------------------
 
         # Look-up and store the consumables that are required for each HSI
@@ -1706,14 +1772,19 @@ class AlriWithSevereComplicationsEvent(Event, IndividualScopeEventMixin):
         date_of_outcome = \
             df.at[person_id, 'ri_ALRI_event_date_of_onset'] + DateOffset(days=self.duration_in_days)
 
-        prob_death_from_ALRI = m.risk_of_death_severe_ALRI.predict(df.loc[[person_id]]).values[0]
+        for disease in m.disease_type:
+            prob_death_from_ALRI = m.mortality_equations_by_disease[disease].predict(df.loc[[person_id]]).values[0]
+
+        # for pathogen in m.pathogens:
+        #     inc_of_acquiring_alri[pathogen] = m.incidence_equations_by_pathogen[pathogen] \
+        #         .predict(df.loc[mask_could_get_new_alri_event])
 
         if rng.rand() < prob_death_from_ALRI:
-            df.at[person_id, 'ri_ALRI_event_death_date'] = date_of_outcome
+            # df.at[person_id, 'ri_ALRI_event_death_date'] = date_of_outcome
             self.sim.schedule_event(ALRIDeathEvent(self.module, person_id),
                                     date_of_outcome)
         else:
-            df.at[person_id, 'ri_ALRI_event_recovered_date'] = date_of_outcome
+            # df.at[person_id, 'ri_ALRI_event_recovered_date'] = date_of_outcome
             self.sim.schedule_event(ALRINaturalRecoveryEvent(self.module, person_id),
                                     date_of_outcome)
 
@@ -2540,8 +2611,8 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
 
     def __init__(self, module):
         # This event to occur every year
-        self.repeat = 1
-        super().__init__(module, frequency=DateOffset(years=self.repeat))
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
         self.date_last_run = self.sim.date
 
     def apply(self, population):
@@ -2558,56 +2629,6 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
                     assert self.date_last_run <= t <= self.sim.date
 
         # logger.info(key='incidence_count_by_pathogen', data=counts)
-
-        # get single row of dataframe (but not a series) ----------------
-        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
-        index_children = df.index[df.age_exact_years < 5]
-        # individual_child = df.loc[[index_children_with_alri[0]]]
-        # alri_check = df.loc[index_children_with_alri]
-        # logger.info(key='individual_check',
-        #             data=individual_child,
-        #             description='following an individual through simulation')
-        #
-        #
-        # properties_for_logging = df.loc[index_children_with_alri[0], [
-        #                     'ri_current_ALRI_status',
-        #                     'ri_primary_ALRI_pathogen',
-        #                     'ri_secondary_bacterial_pathogen',
-        #                     'ri_ALRI_disease_type',
-        #                     'ri_ALRI_complications',
-        #                     'ri_current_ALRI_symptoms',
-        #                     'ri_ALRI_event_date_of_onset',
-        #                     'ri_ALRI_event_recovered_date',
-        #                     'ri_ALRI_severe_complication_date',
-        #                     'ri_ALRI_event_death_date',
-        #                     'ri_ALRI_tx_start_date',
-        #                     'ri_end_of_last_alri_episode'
-        #                 ]].to_dict()
-        # #
-        # logger.info(key='one_child',
-        #             data=properties_for_logging,
-        #             description='one person')
-
-        logger.info('%s|person_one|%s',
-                    self.sim.date,
-                    df.loc[index_children[0], [
-                        'age_exact_years',
-                        'ri_current_ALRI_status',
-                        'ri_primary_ALRI_pathogen',
-                        'ri_secondary_bacterial_pathogen',
-                        'ri_ALRI_disease_type',
-                        'ri_ALRI_complications',
-                        'ri_current_ALRI_symptoms',
-                        'ri_ALRI_event_date_of_onset',
-                        'ri_ALRI_event_recovered_date',
-                        'ri_ALRI_tx_start_date',
-                        'ri_ALRI_pulmonary_complication_date',
-                        'ri_ALRI_severe_complication_date',
-                        'ri_ALRI_event_death_date',
-                        'ri_end_of_last_alri_episode',
-                        # 'ri_IMCI_classification_as_gold',
-                        # 'ri_health_worker_IMCI_classification'
-                    ]].to_dict())
 
         start_date = Date(2010, 1, 1)
         end_date = Date(2015, 1, 1)
@@ -2627,20 +2648,14 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
         between_two_dates_death = after_start_date_death & before_end_date_death
         died = df.loc[between_two_dates_death]
 
-        print(recovered)
+        data_for_df = {'recovered': len(recovered), 'treated': len(treated), 'died': len(died)}
+        percentages_df = pd.DataFrame.from_dict(data_for_df)
 
-        data_for_df = {'recovered': len(after_start_date_recovery), 'treated': len(treated), 'died': len(died)}
-        # percentages_df = pd.DataFrame.from_dict(data_for_df)
+        # logger.info(key='percentages',
+        #             data=data_for_df,
+        #             description='proportion of recovery, treated, died')
 
-        logger.info(key='percentages',
-                    data=data_for_df,
-                    description='proportion of recovery, treated, died')
-
-        # logger.info(key='individual_check',
-        #             data=individual_child,
-        #             description='following an individual through simulation')
-        #
-#         # log the information on complications ----------------
+        # log the information on complications ----------------
 #         index_alri_with_complications = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status &
 #                                                  (df.ri_ALRI_complications != 'none')]
 #         # make a df with children with alri complications as the columns
@@ -2685,9 +2700,49 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
 #
 #         alri_count = df.groupby(df.ri_ALRI_disease_type).size()
 # #         print(alri_count)
-#
-#         # Reset the counters and the date_last_run --------------------
-#         self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
-#         self.date_last_run = self.sim.date
-#
-# # todo : empyema not being added complications
+
+        # Reset the counters and the date_last_run --------------------
+        self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
+        self.date_last_run = self.sim.date
+
+
+class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    This Event logs the daily occurrence to a single individual child.
+    """
+
+    def __init__(self, module):
+        # This event to occur every year
+        self.repeat = 1
+        super().__init__(module, frequency=DateOffset(days=self.repeat))
+        self.date_last_run = self.sim.date
+
+    def apply(self, population):
+        df = self.sim.population.props
+
+        # get single row of dataframe (but not a series) ----------------
+        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
+        index_children = df.index[df.age_exact_years < 5]
+        # individual_child = df.loc[[index_children_with_alri[0]]]
+        alri_check = df.loc[index_children_with_alri]
+
+        logger.info('%s|person_one|%s',
+                    self.sim.date,
+                    df.loc[index_children[0], [
+                        'age_exact_years',
+                        'ri_current_ALRI_status',
+                        'ri_primary_ALRI_pathogen',
+                        'ri_secondary_bacterial_pathogen',
+                        'ri_ALRI_disease_type',
+                        'ri_ALRI_complications',
+                        'ri_current_ALRI_symptoms',
+                        'ri_ALRI_event_date_of_onset',
+                        'ri_ALRI_event_recovered_date',
+                        'ri_ALRI_tx_start_date',
+                        'ri_ALRI_pulmonary_complication_date',
+                        'ri_ALRI_severe_complication_date',
+                        'ri_ALRI_event_death_date',
+                        'ri_end_of_last_alri_episode',
+                        # 'ri_IMCI_classification_as_gold',
+                        # 'ri_health_worker_IMCI_classification'
+                    ]].to_dict())
