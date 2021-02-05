@@ -97,14 +97,46 @@ for condition in conditions:
         )
     )
 
-    prev_condition_age_sex.iloc[-1].transpose().plot.bar()
+    prev_df = pd.DataFrame(index=["M/0-4", "M/10-14", "M/15-19", "M/20-24", "M/25-29", "M/30-34", "M/35-39",
+                                  "M/40-44", "M/45-49", "M/5-9", "M/50-54", "M/55-59", "M/60-64", "M/65-69", "M/70-74",
+                                  "M/75-79", "M/80+", "F/0-4", "F/10-14", "F/15-19", "F/20-24", "F/25-29",
+                                  "F/30-34", "F/35-39", "F/40-44", "F/45-49", "F/5-9", "F/50-54", "F/55-59", "F/60-64",
+                                  "F/65-69", "F/70-74", "F/75-79", "F/80+"])
+    prev_df['model_prevalence'] = prev_condition_age_sex.iloc[-1].transpose().values
+    new_index = ["M/0-4", "M/5-9", "M/10-14", "M/15-19", "M/20-24", "M/25-29", "M/30-34", "M/35-39",
+                                  "M/40-44", "M/45-49", "M/50-54", "M/55-59", "M/60-64", "M/65-69", "M/70-74",
+                                  "M/75-79", "M/80+", "F/0-4", "F/5-9", "F/10-14", "F/15-19", "F/20-24", "F/25-29",
+                                  "F/30-34", "F/35-39", "F/40-44", "F/45-49", "F/50-54", "F/55-59", "F/60-64",
+                                  "F/65-69", "F/70-74", "F/75-79", "F/80+"]
+    prev_df = prev_df.reindex(new_index)
+
+    # need to drop some age cats to match model
+    data = sim.modules['Ncds'].parameters[f'{condition}_initial_prev']
+    data = data[~(data["parameter_name"].isin(['m_85-89', 'm_90-94', 'm_95-99', 'm_100+', 'f_85-89', 'f_90-94',
+                                               'f_95-99', 'f_100+']))]
+    prev_df['data_prevalence'] = data['value'].values
+
+    bar_width = 0.5
+    opacity = 0.25
+
+    bar = plt.bar(prev_df.index, prev_df['model_prevalence'], bar_width,
+            alpha=opacity,
+            color='b',
+            label='Model')
+    scatter = plt.scatter(prev_df.index, prev_df['data_prevalence'], s=20,
+                alpha=1.0,
+                color='black',
+                label="Denaxas et al.")
+    plt.xticks(rotation=90)
     plt.ylabel(f'Proportion With {condition_title}')
-    plt.title(f'Prevalence of {condition_title}')
-    plt.savefig(outputpath / f'prevalence_{condition_title}_by_age.pdf')
-    # plt.ylim([0, 1])
+    plt.title(f'Prevalence of {condition_title} by Age and Sex')
+    plt.legend([bar, scatter], ['Model', 'Denaxas et al.'])
+    plt.savefig(outputpath / f'prevalence_{condition_title}_by_age_sex.pdf')
+    #plt.ylim([0, 1])
+    plt.tight_layout()
     plt.show()
 
-    # Plot prevalence among all adults for each condition
+    # Plot prevalence among all adults over time for each condition
     prev_condition_all = output['tlo.methods.ncds'][f'{condition_name}_prevalence']
 
     prev_condition_all['year'] = pd.to_datetime(prev_condition_all['date']).dt.year
@@ -112,8 +144,9 @@ for condition in conditions:
     prev_condition_all.set_index('year', drop=True, inplace=True)
 
     plt.plot(prev_condition_all)
-    plt.ylabel(f'Prevalence of {condition_title} Over Time')
+    plt.ylabel(f'Prevalence of {condition_title} Over Time (Ages 20+)')
     plt.xlabel('Year')
+    # plt.ylim([0, 1])
     plt.show()
 
 # Plot prevalence of multi-morbidities
@@ -136,6 +169,8 @@ n_conditions_by_age.T.plot.bar(stacked=True)
 plt.title("Prevalence of number of co-morbidities by age (M)")
 plt.ylabel("Prevalence of number of co-morbidities")
 plt.xticks(rotation=90)
+plt.legend(loc=(1.04,0))
+plt.tight_layout()
 plt.savefig(outputpath / ("N_comorbidities_by_age_m" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
@@ -148,7 +183,7 @@ prev_mm_age_f.set_index(
     inplace=True
 )
 
-last_year = prev_mm_age_m.iloc[-1, :].to_frame(name="counts")
+last_year = prev_mm_age_f.iloc[-1, :].to_frame(name="counts")
 n_conditions_by_age = pd.DataFrame(index=last_year.index, columns=age_range)
 for age_grp in age_range:
     n_conditions_by_age[age_grp] = last_year['counts'].apply(lambda x: x.get(f'{age_grp}')).dropna()
@@ -157,8 +192,69 @@ n_conditions_by_age.T.plot.bar(stacked=True)
 plt.title("Prevalence of number of co-morbidities by age (F)")
 plt.ylabel("Prevalence of number of co-morbidities")
 plt.xticks(rotation=90)
+plt.legend(loc=(1.04,0))
+plt.tight_layout()
 plt.savefig(outputpath / ("N_comorbidities_by_age_f" + datestamp + ".pdf"), format='pdf')
 plt.show()
+
+prev_mm_age_all = output['tlo.methods.ncds']['mm_prevalence_by_age_all']
+prev_mm_age_all['year'] = pd.to_datetime(prev_mm_age_all['date']).dt.year
+prev_mm_age_all.drop(columns='date', inplace=True)
+prev_mm_age_all.set_index(
+    'year',
+    drop=True,
+    inplace=True
+)
+
+last_year = prev_mm_age_all.iloc[-1, :].to_frame(name="counts")
+n_conditions_by_age = pd.DataFrame(index=last_year.index, columns=age_range)
+for age_grp in age_range:
+    n_conditions_by_age[age_grp] = last_year['counts'].apply(lambda x: x.get(f'{age_grp}')).dropna()
+
+n_conditions_by_age.T.plot.bar(stacked=True)
+plt.title("Prevalence of number of co-morbidities by age")
+plt.ylabel("Prevalence of number of co-morbidities")
+plt.xticks(rotation=90)
+plt.legend(loc=(1.04,0))
+plt.tight_layout()
+plt.savefig(outputpath / ("N_comorbidities_by_age_all" + datestamp + ".pdf"), format='pdf')
+plt.show()
+
+# ----------------------------------------------- RETRIEVE COMBINATION OF CONDITIONS ----------------------------------
+
+prop_combos = output['tlo.methods.ncds']['prop_combos']
+prop_combos['year'] = pd.to_datetime(prop_combos['date']).dt.year
+prop_combos.drop(columns='date', inplace=True)
+prop_combos.set_index(
+    'year',
+    drop=True,
+    inplace=True
+)
+
+last_year = prop_combos.iloc[-1, :].to_frame(name="props")
+age_grps = ['[0, 20)', '[20, 45)', '[45, 65)', '[65, 120)']
+props_by_age = pd.DataFrame(index=last_year.index, columns=age_grps)
+for age_grp in age_grps:
+    props_by_age[age_grp] = last_year['props'].apply(lambda x: x.get(f'{age_grp}')).dropna()
+
+props_by_age.to_csv('condition_combos.csv')
+
+prop_combos_adults = output['tlo.methods.ncds']['prop_combos_adults']
+prop_combos_adults['year'] = pd.to_datetime(prop_combos_adults['date']).dt.year
+prop_combos_adults.drop(columns='date', inplace=True)
+prop_combos_adults.set_index(
+    'year',
+    drop=True,
+    inplace=True
+)
+
+last_year = prop_combos_adults.iloc[-1, :].to_frame(name="props")
+age_grps = ['[0, 20)', '[20, 120)']
+props_by_age_adults = pd.DataFrame(index=last_year.index, columns=age_grps)
+for age_grp in age_grps:
+    props_by_age_adults[age_grp] = last_year['props'].apply(lambda x: x.get(f'{age_grp}')).dropna()
+
+props_by_age_adults.to_csv('condition_combos_adults.csv')
 
 
 # ----------------------------------------------- CREATE INCIDENCE PLOTS ----------------------------------------------
