@@ -964,7 +964,7 @@ def check_bed_days_property_is_inpatient(hs_disable):
             super().__init__(module, frequency=pd.DateOffset(days=1))
 
         def apply(self, population):
-            self.module.in_patient_status.loc[self.sim.date.date()] = \
+            self.module.in_patient_status.loc[self.sim.date.normalize()] = \
                 population.props.loc[[0, 1, 2], 'hs_is_inpatient'].values
 
     # Create a dummy HSI with both-types of Bed Day specified
@@ -1058,7 +1058,7 @@ def check_bed_days_released_on_death(hs_disable):
             super().__init__(module, frequency=pd.DateOffset(days=1))
 
         def apply(self, population):
-            self.module.in_patient_status.loc[self.sim.date.date()] = \
+            self.module.in_patient_status.loc[self.sim.date.normalize()] = \
                 population.props.loc[[0, 1], 'hs_is_inpatient'].values
 
     # Create a dummy HSI with both-types of Bed Day specified

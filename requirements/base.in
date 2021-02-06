@@ -3,6 +3,4 @@
 numpy
 pandas
 scipy
-xlrd
-
-jinja2  # Needed for pandas.Styler
+openpyxl
