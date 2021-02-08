@@ -1205,6 +1205,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props
         person = df.loc[person_id]
+        m = self.module
 
         if not person["is_alive"]:
             return
@@ -1218,10 +1219,10 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
             logger.warning('This event should not be running')
 
         # Determine if this appointment is actually attended by the person who has already started on PrEP
-        if self.module.rng.random_sample() < self.module.parameters['probability_of_being_retained_on_prep_every_3_months']:
+        if m.rng.random_sample() < m.parameters['probability_of_being_retained_on_prep_every_3_months']:
             # Continue on PrEP - and schedule an HSI for a refill appointment today
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.module),
+                HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=m),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=7),
                 priority=0
@@ -1243,6 +1244,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props
         person = df.loc[person_id]
+        m = self.module
 
         if not person["is_alive"]:
             return
@@ -1252,10 +1254,10 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             logger.warning('This event should not be running')
 
         # Determine if this appointment is actually attended by the person who has already started on PrEP
-        if self.module.rng.random_sample() < self.module.parameters['probability_of_being_retained_on_art_every_6_months']:
+        if m.rng.random_sample() < m.parameters['probability_of_being_retained_on_art_every_6_months']:
             # Continue on Treatment - and schedule an HSI for a continuation appointment today
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self.module),
+                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=m),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=14),
                 priority=0
@@ -1263,7 +1265,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
 
         else:
             # Defaults to being off Treatment
-            self.module.stops_treatment(person_id)
+            m.stops_treatment(person_id)
 
 
 # ---------------------------------------------------------------------------
@@ -1350,9 +1352,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # Consider if the person will be referred to start ART
                     has_aids_symptoms = 'aids_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
                     if self.module.lm['lm_art'].predict(df=df.loc[[person_id]],
-                                                  rng=self.module.rng,
-                                                  has_aids_symptoms=has_aids_symptoms
-                                                  ):
+                                                        rng=self.module.rng,
+                                                        has_aids_symptoms=has_aids_symptoms):
                         self.sim.modules['HealthSystem'].schedule_hsi_event(
                             HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self.module),
                             topen=self.sim.date,
