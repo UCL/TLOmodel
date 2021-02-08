@@ -384,19 +384,19 @@ class Hiv(Module):
         df = population.props
 
         # --- Current status
-        df["hv_inf"] = False
-        df["hv_art"].values[:] = "not"
-        df["hv_is_on_prep"] = False
-        df["hv_behaviour_change"] = False
-        df["hv_diagnosed"] = False
-        df["hv_number_tests"] = 0
+        df.loc[df.is_alive, "hv_inf"] = False
+        df.loc[df.is_alive, "hv_art"] = "not"
+        df.loc[df.is_alive, "hv_is_on_prep"] = False
+        df.loc[df.is_alive, "hv_behaviour_change"] = False
+        df.loc[df.is_alive, "hv_diagnosed"] = False
+        df.loc[df.is_alive, "hv_number_tests"] = 0
 
         # --- Dates on which things have happened
-        df["hv_date_inf"] = pd.NaT
-        df["hv_last_test_date"] = pd.NaT
+        df.loc[df.is_alive, "hv_date_inf"] = pd.NaT
+        df.loc[df.is_alive, "hv_last_test_date"] = pd.NaT
 
         # -- Temporary --
-        df["tmp_breastfed"] = False
+        df.loc[df.is_alive, "tmp_breastfed"] = False
 
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
