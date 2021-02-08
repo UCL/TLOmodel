@@ -70,216 +70,166 @@ class Hiv(Module):
 
     PROPERTIES = {
         # --- Core Properties
-        "hv_inf": Property(Types.BOOL,
-                           "Is person currently infected with HIV (NB. AIDS status is determined by prescence of the "
-                           "AIDS Symptom."),
-        "hv_art": Property(Types.CATEGORICAL,
-                           "ART status of person, whether on ART or not; and whether viral load is suppressed or not if"
-                           " on ART.",
-                           categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
-        'hv_is_on_prep': Property(Types.BOOL,
-                                  'Whether or not the person is currently taking and receiving a protective effect from'
-                                  ' Pre-Exposure Prophylaxsis.'),
-        "hv_behaviour_change": Property(Types.BOOL,
-                                        "Has this person been exposed to HIV prevention counselling following a "
-                                        "negative HIV test result"),
-        "hv_diagnosed": Property(Types.BOOL, "knows that they are hiv+: i.e. is hiv+ and tested as hiv+"),
-        "hv_number_tests": Property(Types.INT, "number of hiv tests ever taken"),
-        "hv_last_test_date": Property(Types.DATE, "date of last hiv test"),
+        "hv_inf": Property(
+            Types.BOOL,
+            "Is person currently infected with HIV (NB. AIDS status is determined by prescence of the AIDS Symptom."),
+        "hv_art": Property(
+            Types.CATEGORICAL,
+            "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
+            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
+        "hv_is_on_prep": Property(
+            Types.BOOL,
+            "Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis."),
+        "hv_behaviour_change": Property(
+            Types.BOOL,
+            "Has this person been exposed to HIV prevention counselling following a negative HIV test result"),
+        "hv_diagnosed": Property(Types.BOOL, "Knows that they are HIV+: i.e. is HIV+ and tested as HIV+"),
+        "hv_number_tests": Property(Types.INT, "Number of HIV tests ever taken"),
+        "hv_last_test_date": Property(Types.DATE, "Date of last HIV test"),
 
-        # # --- Dates on which things have happened:
-        "hv_date_inf": Property(Types.DATE, "Date infected with hiv"),
+        # --- Dates on which things have happened:
+        "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
 
         # -- Temporary variable for breastfeeding:
         "tmp_breastfed": Property(Types.BOOL, "Is the person currently receiving breast milk from mother")
     }
 
     PARAMETERS = {
-        # baseline characteristics
+        # Baseline characteristics
         "time_inf": Parameter(Types.DATA_FRAME, "prob of time since infection for baseline adult pop"),
         "art_coverage": Parameter(Types.DATA_FRAME, "coverage of ART at baseline"),
 
-        "fraction_of_those_infected_that_have_aids_at_initiation": Parameter(Types.REAL,
-                                                                             "Fraction of persons living with HIV at "
-                                                                             "baseline that have developed AIDS"),
-        "testing_coverage_male": Parameter(
-            Types.REAL, "proportion of adult male population tested"),
-        "testing_coverage_female": Parameter(
-            Types.REAL, "proportion of adult female population tested"),
+        "fraction_of_those_infected_that_have_aids_at_initiation": Parameter(
+            Types.REAL, "Fraction of persons living with HIV at baseline that have developed AIDS"),
+        "testing_coverage_male": Parameter(Types.REAL, "proportion of adult male population tested"),
+        "testing_coverage_female": Parameter(Types.REAL, "proportion of adult female population tested"),
 
-        # natural history - transmission - overall rates
-        "beta": Parameter(
-            Types.REAL, "transmission rate"),
-        "prob_mtct_untreated": Parameter(
-            Types.REAL, "probability of mother to child transmission"),
-        "prob_mtct_treated": Parameter(
-            Types.REAL, "probability of mother to child transmission, mother on ART"),
+        # Natural history - transmission - overall rates
+        "beta": Parameter(Types.REAL, "Transmission rate"),
+        "prob_mtct_untreated": Parameter(Types.REAL, "Probability of mother to child transmission"),
+        "prob_mtct_treated": Parameter(Types.REAL, "Probability of mother to child transmission, mother on ART"),
         "prob_mtct_incident_preg": Parameter(
-            Types.REAL,
-            "probability of mother to child transmission, mother infected during pregnancy"),
+            Types.REAL, "Probability of mother to child transmission, mother infected during pregnancy"),
         "monthly_prob_mtct_bf_untreated": Parameter(
-            Types.REAL,
-            "probability of mother to child transmission during breastfeeding"),
+            Types.REAL, "Probability of mother to child transmission during breastfeeding"),
         "monthly_prob_mtct_bf_treated": Parameter(
-            Types.REAL,
-            "probability of mother to child transmission, mother infected during breastfeeding"),
+            Types.REAL, "Probability of mother to child transmission, mother infected during breastfeeding"),
 
-        # natural history - transmission - relative risk of HIV acquisition (non-intervention)
-        "rr_fsw": Parameter(Types.REAL, "relative risk of hiv with female sex work"),
-        "rr_circumcision": Parameter(
-            Types.REAL, "relative risk of hiv with circumcision"
-        ),
-        "rr_rural": Parameter(Types.REAL, "relative risk of hiv in rural location"),
-        "rr_windex_poorer": Parameter(
-            Types.REAL, "relative risk of hiv with wealth level poorer"
-        ),
-        "rr_windex_middle": Parameter(
-            Types.REAL, "relative risk of hiv with wealth level middle"
-        ),
-        "rr_windex_richer": Parameter(
-            Types.REAL, "relative risk of hiv with wealth level richer"
-        ),
-        "rr_windex_richest": Parameter(
-            Types.REAL, "relative risk of hiv with wealth level richest"
-        ),
-        "rr_sex_f": Parameter(Types.REAL, "relative risk of hiv if female"),
-        "rr_age_gp20": Parameter(
-            Types.REAL, "relative risk of hiv if age 20-24 compared with 15-19"
-        ),
-        "rr_age_gp25": Parameter(Types.REAL, "relative risk of hiv if age 25-29"),
-        "rr_age_gp30": Parameter(Types.REAL, "relative risk of hiv if age 30-34"),
-        "rr_age_gp35": Parameter(Types.REAL, "relative risk of hiv if age 35-39"),
-        "rr_age_gp40": Parameter(Types.REAL, "relative risk of hiv if age 40-44"),
-        "rr_age_gp45": Parameter(Types.REAL, "relative risk of hiv if age 45-49"),
-        "rr_age_gp50": Parameter(Types.REAL, "relative risk of hiv if age 50+"),
-        "rr_edlevel_primary": Parameter(
-            Types.REAL, "relative risk of hiv with primary education"
-        ),
-        "rr_edlevel_secondary": Parameter(
-            Types.REAL, "relative risk of hiv with secondary education"
-        ),
-        "rr_edlevel_higher": Parameter(
-            Types.REAL, "relative risk of hiv with higher education"
-        ),
+        # Natural history - transmission - relative risk of HIV acquisition (non-intervention)
+        "rr_fsw": Parameter(Types.REAL, "Relative risk of HIV with female sex work"),
+        "rr_circumcision": Parameter(Types.REAL, "Relative risk of HIV with circumcision"),
+        "rr_rural": Parameter(Types.REAL, "Relative risk of HIV in rural location"),
+        "rr_windex_poorer": Parameter(Types.REAL, "Relative risk of HIV with wealth level poorer"),
+        "rr_windex_middle": Parameter(Types.REAL, "Relative risk of HIV with wealth level middle"),
+        "rr_windex_richer": Parameter(Types.REAL, "Relative risk of HIV with wealth level richer"),
+        "rr_windex_richest": Parameter(Types.REAL, "Relative risk of HIV with wealth level richest"),
+        "rr_sex_f": Parameter(Types.REAL, "Relative risk of HIV if female"),
+        "rr_age_gp20": Parameter(Types.REAL, "Relative risk of HIV if age 20-24 compared with 15-19"),
+        "rr_age_gp25": Parameter(Types.REAL, "Relative risk of HIV if age 25-29"),
+        "rr_age_gp30": Parameter(Types.REAL, "Relative risk of HIV if age 30-34"),
+        "rr_age_gp35": Parameter(Types.REAL, "Relative risk of HIV if age 35-39"),
+        "rr_age_gp40": Parameter(Types.REAL, "Relative risk of HIV if age 40-44"),
+        "rr_age_gp45": Parameter(Types.REAL, "Relative risk of HIV if age 45-49"),
+        "rr_age_gp50": Parameter(Types.REAL, "Relative risk of HIV if age 50+"),
+        "rr_edlevel_primary": Parameter(Types.REAL, "Relative risk of HIV with primary education"),
+        "rr_edlevel_secondary": Parameter(Types.REAL, "Relative risk of HIV with secondary education"),
+        "rr_edlevel_higher": Parameter(Types.REAL, "Relative risk of HIV with higher education"),
 
-        # natural history - transmission - relative risk of HIV acquisition (interventions)
-        "rr_behaviour_change": Parameter(
-            Types.REAL, "relative risk of hiv with behaviour modification"
-        ),
+        # Natural history - transmission - relative risk of HIV acquisition (interventions)
+        "rr_behaviour_change": Parameter(Types.REAL, "Relative risk of HIV with behaviour modification"),
         "proportion_reduction_in_risk_of_hiv_aq_if_on_prep": Parameter(
-            Types.REAL, "proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; "
-                        "1.0 for perfect efficacy."),
+            Types.REAL,
+            "Proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; 1.0 for perfect efficacy."),
 
-        # natural history - survival (adults)
-        "mean_months_between_aids_and_death": Parameter(Types.REAL,
-                                                        "Mean number of months (distributed exponentially) for the "
-                                                        "time between AIDS and AIDS Death"),
-        "infection_to_death_weibull_shape_1519": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 15-19"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_shape_2024": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 20-24"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_shape_2529": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 25-29"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_shape_3034": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 30-34"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_shape_3539": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 35-39"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_shape_4044": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 40-44"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_shape_4549": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 45-49"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_scale_1519": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 15-19"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_scale_2024": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 20-24"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_scale_2529": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 25-29"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_scale_3034": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 30-34"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_scale_3539": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 35-39"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_scale_4044": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 40-44"
-                                                           " years"),
-        "infection_to_death_weibull_scale_4549": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 45-49"
-                                                           " years (units: years)"),
+        # Natural history - survival (adults)
+        "mean_months_between_aids_and_death": Parameter(
+            Types.REAL, "Mean number of months (distributed exponentially) for the time between AIDS and AIDS Death"),
+        "infection_to_death_weibull_shape_1519": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 15-19 yo (units: years)"),
+        "infection_to_death_weibull_shape_2024": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 20-24 yo (units: years)"),
+        "infection_to_death_weibull_shape_2529": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 25-29 yo (units: years)"),
+        "infection_to_death_weibull_shape_3034": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 30-34 yo (units: years)"),
+        "infection_to_death_weibull_shape_3539": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 35-39 yo (units: years)"),
+        "infection_to_death_weibull_shape_4044": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 40-44 yo (units: years)"),
+        "infection_to_death_weibull_shape_4549": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 45-49 yo (units: years)"),
+        "infection_to_death_weibull_scale_1519": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 15-19 yo (units: years)"),
+        "infection_to_death_weibull_scale_2024": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 20-24 yo (units: years)"),
+        "infection_to_death_weibull_scale_2529": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 25-29 yo (units: years)"),
+        "infection_to_death_weibull_scale_3034": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 30-34 yo (units: years)"),
+        "infection_to_death_weibull_scale_3539": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 35-39 yo (units: years)"),
+        "infection_to_death_weibull_scale_4044": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 40-44 yo (units: years)"),
+        "infection_to_death_weibull_scale_4549": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 45-49 yo (units: years)"),
         "art_default_to_aids_mean_years": Parameter(
-            Types.REAL, "Mean years between when a person (any change) stops being on treatment to when AIDS is onset "
-                        "(if the abscence of resuming treatment)."),
+            Types.REAL,
+            "Mean years between when a person (any change) stops being on treatment to when AIDS is onset (if the "
+            "absence of resuming treatment)."),
 
-        # natural history - survival (children)
+        # Natural history - survival (children)
         "mean_survival_for_infants_infected_prior_to_birth": Parameter(
-            Types.REAL,
-            "Exponential rate parameter for mortality in infants who are infected before birth"),
+            Types.REAL, "Exponential rate parameter for mortality in infants who are infected before birth"),
         "infection_to_death_infant_infection_after_birth_weibull_scale": Parameter(
-            Types.REAL,
-            "Weibull scale parameter for mortality in infants who are infected after birth"),
+            Types.REAL, "Weibull scale parameter for mortality in infants who are infected after birth"),
         "infection_to_death_infant_infection_after_birth_weibull_shape": Parameter(
-            Types.REAL,
-            "Weibull shape parameter for mortality in infants who are infected after birth"),
+            Types.REAL, "Weibull shape parameter for mortality in infants who are infected after birth"),
 
         # Uptake of Interventions
         "prob_spontaneous_test_12m": Parameter(
-            Types.REAL, "probability that a person will seek HIV testing per 12 month period."),
+            Types.REAL, "Probability that a person will seek HIV testing per 12 month period."),
         "prob_start_art_after_hiv_test": Parameter(
-            Types.REAL, "probability that a person will start treatment, if HIV-positive, following testing"),
+            Types.REAL, "Probability that a person will start treatment, if HIV-positive, following testing"),
         "rr_start_art_if_aids_symptoms": Parameter(
-            Types.REAL, "relative probability of a person starting treatment if they have aids_symptoms compared to if"
+            Types.REAL, "Relative probability of a person starting treatment if they have aids_symptoms compared to if"
                         "they do not."
         ),
         "prob_behav_chg_after_hiv_test": Parameter(
-            Types.REAL, "probability that a person will change risk behaviours, if HIV-negative, following testing"),
+            Types.REAL, "Probability that a person will change risk behaviours, if HIV-negative, following testing"),
         "prob_prep_for_fsw_after_hiv_test": Parameter(
-            Types.REAL, "probability that a FSW will start PrEP, if HIV-negative, following testing"),
+            Types.REAL, "Probability that a FSW will start PrEP, if HIV-negative, following testing"),
         "prob_circ_after_hiv_test": Parameter(
-            Types.REAL, "probability that a male will be circumcised, if HIV-negative, following testing"),
+            Types.REAL, "Probability that a male will be circumcised, if HIV-negative, following testing"),
         "probability_of_being_retained_on_prep_every_3_months": Parameter(
-            Types.REAL, "probability that someone who has initiated on prep will attend an appointment and be on prep "
+            Types.REAL, "Probability that someone who has initiated on prep will attend an appointment and be on prep "
                         "for the next 3 months, until the next appointment."),
         "probability_of_being_retained_on_art_every_6_months": Parameter(
-            Types.REAL, "probability that someone who has initiated on treatment will attend an appointment and be on "
+            Types.REAL, "Probability that someone who has initiated on treatment will attend an appointment and be on "
                         "treatment for next 6 months, until the next appointment."),
         "probability_of_seeking_further_art_appointment_if_drug_not_available": Parameter(
-            Types.REAL, "probability that a person who 'should' be on art will seek another appointment (the following "
+            Types.REAL, "Probability that a person who 'should' be on art will seek another appointment (the following "
                         "day and try for each of the next 7 days) if drugs were not available."),
         "probability_of_seeking_further_art_appointment_if_appointment_not_available": Parameter(
-            Types.REAL, "probability that a person who 'should' be on art will seek another appointment if the health-"
+            Types.REAL, "Probability that a person who 'should' be on art will seek another appointment if the health-"
                         "system has not been able to provide them with an appointment"),
-        "vls_m": Parameter(
-            Types.REAL, "rates of viral load suppression males"),
-        "vls_f": Parameter(
-            Types.REAL, "rates of viral load suppression males"),
-        "vls_child": Parameter(
-            Types.REAL, "rates of viral load suppression in children 0-14 years"),
-        "prep_start_year": Parameter(
-            Types.REAL, "year from which PrEP is available")
+        "vls_m": Parameter(Types.REAL, "Rates of viral load suppression males"),
+        "vls_f": Parameter(Types.REAL, "Rates of viral load suppression males"),
+        "vls_child": Parameter(Types.REAL, "Rates of viral load suppression in children 0-14 years"),
+        "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available")
     }
 
     def read_parameters(self, data_folder):
