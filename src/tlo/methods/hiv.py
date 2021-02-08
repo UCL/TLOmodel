@@ -781,17 +781,13 @@ class Hiv(Module):
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
-        mother_infected_prior_to_pregnancy = \
-            df.at[mother_id, 'hv_inf'] & (
-                df.at[mother_id, 'hv_date_inf'] <= df.at[mother_id, 'date_of_last_pregnancy']
-            )
-        mother_infected_during_pregnancy = \
-            df.at[mother_id, 'hv_inf'] & (
-                df.at[mother_id, 'hv_date_inf'] > df.at[mother_id, 'date_of_last_pregnancy']
-            )
+        mother = df.loc[mother_id]
+
+        mother_infected_prior_to_pregnancy = mother.hv_inf & (mother.hv_date_inf < mother.date_of_last_pregnancy)
+        mother_infected_during_pregnancy = mother.hv_inf & (mother.hv_date_inf > mother.date_of_last_pregnancy)
 
         if mother_infected_prior_to_pregnancy:
-            if (df.at[mother_id, "hv_art"] == "on_VL_suppressed"):
+            if mother.hv_art == "on_VL_suppressed":
                 #  mother has existing infection, mother ON ART and VL suppressed at time of delivery
                 child_infected = self.rng.random_sample() < params["prob_mtct_treated"]
             else:
@@ -811,7 +807,7 @@ class Hiv(Module):
 
         # ----------------------------------- MTCT - DURING BREASTFEEDING --------------------------
         # If child is not infected and is being breastfed, then expose them to risk of MTCT through breastfeeding
-        if (~child_infected and df.at[child_id, "tmp_breastfed"] and df.at[mother_id, "hv_inf"]):
+        if ~child_infected and df.at[child_id, "tmp_breastfed"] and mother.hv_inf:
             self.mtct_during_breastfeeding(mother_id, child_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
