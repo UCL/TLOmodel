@@ -61,6 +61,9 @@ class Hiv(Module):
 
         self.stored_test_numbers = []  # create empty list for storing hiv test numbers
 
+        self.daly_wts = dict()
+        self.lm = dict()
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
@@ -263,7 +266,6 @@ class Hiv(Module):
         if "HealthBurden" in self.sim.modules.keys():
             # Chronic infection but not AIDS (including if on ART)
             # (taken to be equal to "Symptomatic HIV without anaemia")
-            self.daly_wts = dict()
             self.daly_wts['hiv_infection_but_not_aids'] = self.sim.modules["HealthBurden"].get_daly_weight(17)
 
             #  AIDS without anti-retroviral treatment without anemia
@@ -285,7 +287,7 @@ class Hiv(Module):
 
         # ---- LINEAR MODELS -----
         # LinearModel for the relative risk of becoming infected during the simulation
-        self.rr_of_infection = LinearModel.multiplicative(
+        self.lm['rr_of_infection'] = LinearModel.multiplicative(
             Predictor('age_years')  .when('<15', 0.0)
                                     .when('<20', 1.0)
                                     .when('<25', p["rr_age_gp20"])
@@ -311,7 +313,7 @@ class Hiv(Module):
         )
 
         # LinearModels to give the shape and scale for the Weibull distribution describing time from infection to death
-        self.scale_parameter_for_infection_to_death = LinearModel.multiplicative(
+        self.lm['scale_parameter_for_infection_to_death'] = LinearModel.multiplicative(
             Predictor('age_years')  .when('<20', p["infection_to_death_weibull_scale_1519"])
                                     .when('<25', p["infection_to_death_weibull_scale_2024"])
                                     .when('<30', p["infection_to_death_weibull_scale_2529"])
@@ -322,7 +324,7 @@ class Hiv(Module):
                                     .otherwise(p["infection_to_death_weibull_scale_4549"])
         )
 
-        self.shape_parameter_for_infection_to_death = LinearModel.multiplicative(
+        self.lm['shape_parameter_for_infection_to_death'] = LinearModel.multiplicative(
             Predictor('age_years')  .when('<20', p["infection_to_death_weibull_shape_1519"])
                                     .when('<25', p["infection_to_death_weibull_shape_2024"])
                                     .when('<30', p["infection_to_death_weibull_shape_2529"])
@@ -337,14 +339,14 @@ class Hiv(Module):
         # Linear model that give the probability of seeking a 'Spontaneous' Test for HIV
         # (= sum of probabilities for accessing any HIV service when not ill)
 
-        self.lm_spontaneous_test_12m = LinearModel(
+        self.lm['lm_spontaneous_test_12m'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prob_spontaneous_test_12m"],
             Predictor('hv_diagnosed').when(True, 0.0).otherwise(1.0)
         )
 
         # Linear model if the person will start ART, following when the person has been diagnosed:
-        self.lm_art = LinearModel(
+        self.lm['lm_art'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prob_start_art_after_hiv_test"],
             Predictor('hv_inf').when(True, 1.0).otherwise(0.0),
@@ -352,14 +354,14 @@ class Hiv(Module):
         )
 
         # Linear model for changing behaviour following an HIV-negative test
-        self.lm_behavchg = LinearModel(
+        self.lm['lm_behavchg'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prob_behav_chg_after_hiv_test"],
             Predictor('hv_inf').when(False, 1.0).otherwise(0.0)
         )
 
         # Linear model for starting PrEP (if F/sex-workers), following when the person has tested HIV -ve:
-        self.lm_prep = LinearModel(
+        self.lm['lm_prep'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prob_prep_for_fsw_after_hiv_test"],
             Predictor('hv_inf').when(False, 1.0).otherwise(0.0),
@@ -368,7 +370,7 @@ class Hiv(Module):
         )
 
         # Linear model for circumcision (if M) following when the person has been diagnosed:
-        self.lm_circ = LinearModel(
+        self.lm['lm_circ'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prob_circ_after_hiv_test"],
             Predictor('hv_inf').when(False, 1.0).otherwise(0.0),
@@ -899,10 +901,10 @@ class Hiv(Module):
         else:
             # The person is infected after age 5.0
             # - get the shape parameters (unit: years)
-            scale = self.scale_parameter_for_infection_to_death.predict(
+            scale = self.lm['scale_parameter_for_infection_to_death'].predict(
                 self.sim.population.props.loc[[person_id]]).values[0]
             # - get the scale parameter (unit: years)
-            shape = self.shape_parameter_for_infection_to_death.predict(
+            shape = self.lm['shape_parameter_for_infection_to_death'].predict(
                 self.sim.population.props.loc[[person_id]]).values[0]
             # - draw from Weibull and convert to months
             months_to_death = self.rng.weibull(shape) * scale * 12
@@ -1045,7 +1047,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # Compute chance that each susceptible person becomes infected:
             #  - relative chance of infection (acts like a scaling-factor on 'beta')
-            rr_of_infection = self.module.rr_of_infection.predict(df.loc[susc_idx])
+            rr_of_infection = self.module.lm['rr_of_infection'].predict(df.loc[susc_idx])
 
             #  - probability of infection = beta * I/N
             p_infection = rr_of_infection * beta * (n_infectious / (n_infectious + n_susceptible))
@@ -1067,7 +1069,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         horizontal_transmission(from_sex='F', to_sex='M')
 
         # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
-        prob_spontaneous_test = self.module.lm_spontaneous_test_12m.predict(
+        prob_spontaneous_test = self.module.lm['lm_spontaneous_test_12m'].predict(
             df.loc[df.is_alive]) * fraction_of_year_between_polls
         will_test = self.module.rng.rand(len(prob_spontaneous_test)) < prob_spontaneous_test
         idx_will_test = will_test[will_test].index
@@ -1350,7 +1352,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
                     # Consider if the person will be referred to start ART
                     has_aids_symptoms = 'aids_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
-                    if self.module.lm_art.predict(df=df.loc[[person_id]],
+                    if self.module.lm['lm_art'].predict(df=df.loc[[person_id]],
                                                   rng=self.module.rng,
                                                   has_aids_symptoms=has_aids_symptoms
                                                   ):
@@ -1369,12 +1371,14 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # The test was negative: make referrals to other services:
 
                     # Consider if the person's risk will be reduced by behaviour change counselling
-                    if self.module.lm_behavchg.predict(df.loc[[person_id]], self.module.rng):
+                    if self.module.lm['lm_behavchg'].predict(df.loc[[person_id]], self.module.rng):
                         df.at[person_id, 'hv_behaviour_change'] = True
 
                     # If person is a man, and not circumcised, then consider referring to VMMC
                     if (person['sex'] == 'M') & (~person['li_is_circ']):
-                        if self.module.lm_circ.predict(df.loc[[person_id]], self.module.rng):
+                        x = self.module.lm['lm_circ'].predict(df.loc[[person_id]], self.module.rng)
+                        print('here x=', x, type(x))  # x= False <class 'numpy.bool_'> in new thing
+                        if x:
                             self.sim.modules['HealthSystem'].schedule_hsi_event(
                                 HSI_Hiv_Circ(person_id=person_id, module=self.module),
                                 topen=self.sim.date,
@@ -1390,7 +1394,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                         ~person['hv_is_on_prep'] &
                         (self.sim.date.year >= self.module.parameters['prep_start_year'])
                     ):
-                        if self.module.lm_prep.predict(df.loc[[person_id]], self.module.rng):
+                        if self.module.lm['lm_prep'].predict(df.loc[[person_id]], self.module.rng):
                             self.sim.modules['HealthSystem'].schedule_hsi_event(
                                 HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.module),
                                 topen=self.sim.date,
@@ -1469,7 +1473,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             # label as diagnosed
             df.at[person_id, 'hv_diagnosed'] = True
             # Consider if the person will be referred to start ART
-            if self.module.lm_art.predict(df.loc[[person_id]], self.module.rng):
+            if self.module.lm['lm_art'].predict(df.loc[[person_id]], self.module.rng):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self.module),
                     topen=self.sim.date,

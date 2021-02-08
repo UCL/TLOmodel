@@ -564,7 +564,7 @@ def test_hsi_testandrefer_and_circ():
     sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
     # Make the chance of being referred 100%
-    sim.modules['Hiv'].lm_circ = LinearModel.multiplicative()
+    sim.modules['Hiv'].lm['lm_circ'] = LinearModel.multiplicative()
     df = sim.population.props
 
     # Get target person and make them HIV-negative man and not ever having had a test and not already circumcised
