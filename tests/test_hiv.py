@@ -600,7 +600,7 @@ def test_hsi_testandrefer_and_behavchg():
     sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
     # Make the chance of having behaviour change 100%
-    sim.modules['Hiv'].lm_behavchg = LinearModel.multiplicative()
+    sim.modules['Hiv'].lm['lm_behavchg'] = LinearModel.multiplicative()
 
     df = sim.population.props
 
@@ -628,7 +628,7 @@ def test_hsi_testandrefer_and_prep():
     sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
     # Make the chance of being referred 100%
-    sim.modules['Hiv'].lm_prep = LinearModel.multiplicative()
+    sim.modules['Hiv'].lm['lm_prep'] = LinearModel.multiplicative()
 
     df = sim.population.props
 
@@ -706,7 +706,7 @@ def test_hsi_testandrefer_and_art():
     sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
     # Make the chance of being referred to ART following testing is 100%
-    sim.modules['Hiv'].lm_art = LinearModel.multiplicative()
+    sim.modules['Hiv'].lm['lm_art'] = LinearModel.multiplicative()
 
     # Make sure that the person will continue to seek care
     sim.modules['Hiv'].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
