@@ -63,6 +63,7 @@ class Hiv(Module):
 
         self.daly_wts = dict()
         self.lm = dict()
+        self.footprints_for_consumables_required = dict()
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -676,7 +677,6 @@ class Hiv(Module):
 
         # 7) Look-up and store the codes for the consumables used in the interventions.
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        self.footprints_for_consumables_required = dict()
 
         # Circumcison:
         pkg_codes_for_circ = pd.unique(
