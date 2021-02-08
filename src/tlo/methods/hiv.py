@@ -444,7 +444,7 @@ class Hiv(Module):
             'rel_prob_by_risk_factor'].transform('mean')
         p['scaled_rel_prob_by_risk_factor'] = p['rel_prob_by_risk_factor'] / p['mean_of_rel_prob_within_age_sex_group']
         p['overall_prob_of_infec'] = p['scaled_rel_prob_by_risk_factor'] * p['prob_of_infec']
-        infec = self.rng.rand(len(p['overall_prob_of_infec'])) < p['overall_prob_of_infec']
+        infec = self.rng.random_sample(len(p['overall_prob_of_infec'])) < p['overall_prob_of_infec']
 
         # Assign the designated person as infected in the population.props dataframe:
         df.loc[infec, 'hv_inf'] = True
@@ -484,7 +484,7 @@ class Hiv(Module):
         prob_art = prob_art.fillna(0)
 
         art_idx = prob_art.index[
-            (self.rng.rand(len(prob_art)) < prob_art)
+            (self.rng.random_sample(len(prob_art)) < prob_art)
             & df.is_alive
             & df.hv_inf
             ]
@@ -498,7 +498,7 @@ class Hiv(Module):
         notsuppr = list()  # list of all indices for persons on ART and not suppressed
 
         def split_into_vl_and_notvl(all_idx, prob):
-            vl_suppr = self.rng.rand(len(all_idx)) < prob
+            vl_suppr = self.rng.random_sample(len(all_idx)) < prob
             suppr.extend(all_idx[vl_suppr])
             notsuppr.extend(all_idx[~vl_suppr])
 
@@ -793,14 +793,14 @@ class Hiv(Module):
         if mother_infected_prior_to_pregnancy:
             if (df.at[mother_id, "hv_art"] == "on_VL_suppressed"):
                 #  mother has existing infection, mother ON ART and VL suppressed at time of delivery
-                child_infected = self.rng.rand() < params["prob_mtct_treated"]
+                child_infected = self.rng.random_sample() < params["prob_mtct_treated"]
             else:
                 # mother was infected prior to prgenancy but is not on VL suppressed at time of delivery
-                child_infected = self.rng.rand() < params["prob_mtct_untreated"]
+                child_infected = self.rng.random_sample() < params["prob_mtct_untreated"]
 
         elif mother_infected_during_pregnancy:
             #  mother has incident infection during pregnancy, NO ART
-            child_infected = self.rng.rand() < params["prob_mtct_incident_preg"]
+            child_infected = self.rng.random_sample() < params["prob_mtct_incident_preg"]
 
         else:
             # mother is not infected
