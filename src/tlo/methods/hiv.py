@@ -969,11 +969,12 @@ class Hiv(Module):
 
     def check_config_of_properties(self):
         """check that the properties are currently configured correctly"""
-        df_alive = self.sim.population.props.loc[self.sim.population.props.is_alive]
+        df = self.sim.population.props
+        df_alive = df.loc[df.is_alive]
 
         # basic check types of columns and dtypes
         orig = self.sim.population.new_row
-        assert (self.sim.population.props.dtypes == orig.dtypes).all()
+        assert (df.dtypes == orig.dtypes).all()
 
         def is_subset(col_for_set, col_for_subset):
             # Confirms that the series of col_for_subset is true only for a subset of the series for col_for_set
@@ -1049,7 +1050,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             p_infection = rr_of_infection * beta * (n_infectious / (n_infectious + n_susceptible))
 
             # New infections:
-            will_be_infected = self.module.rng.rand(len(p_infection)) < p_infection
+            will_be_infected = self.module.rng.random_sample(len(p_infection)) < p_infection
             idx_new_infection = will_be_infected[will_be_infected].index
 
             # Schedule the date of infection for each new infection:
@@ -1067,7 +1068,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
         prob_spontaneous_test = self.module.lm['lm_spontaneous_test_12m'].predict(
             df.loc[df.is_alive]) * fraction_of_year_between_polls
-        will_test = self.module.rng.rand(len(prob_spontaneous_test)) < prob_spontaneous_test
+        will_test = self.module.rng.random_sample(len(prob_spontaneous_test)) < prob_spontaneous_test
         idx_will_test = will_test[will_test].index
 
         for person_id in idx_will_test:
@@ -1217,7 +1218,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
             logger.warning('This event should not be running')
 
         # Determine if this appointment is actually attended by the person who has already started on PrEP
-        if (self.module.rng.rand() < self.module.parameters['probability_of_being_retained_on_prep_every_3_months']):
+        if self.module.rng.random_sample() < self.module.parameters['probability_of_being_retained_on_prep_every_3_months']:
             # Continue on PrEP - and schedule an HSI for a refill appointment today
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.module),
@@ -1251,7 +1252,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             logger.warning('This event should not be running')
 
         # Determine if this appointment is actually attended by the person who has already started on PrEP
-        if (self.module.rng.rand() < self.module.parameters['probability_of_being_retained_on_art_every_6_months']):
+        if self.module.rng.random_sample() < self.module.parameters['probability_of_being_retained_on_art_every_6_months']:
             # Continue on Treatment - and schedule an HSI for a continuation appointment today
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self.module),
@@ -1562,7 +1563,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give-up coming back to
             # pick-up medication.
             if (
-                self.module.rng.rand() <
+                self.module.rng.random_sample() <
                 self.module.parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"]
             ):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1628,7 +1629,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             else:
                 prob_vs = p["vls_f"]
 
-        return "on_VL_suppressed" if (self.module.rng.rand() < prob_vs) else "on_not_VL_suppressed"
+        return "on_VL_suppressed" if (self.module.rng.random_sample() < prob_vs) else "on_not_VL_suppressed"
 
     def get_drugs(self, age_of_person):
         """Helper function to get the ART according to the age of the person being treated. Returns bool to indicate
@@ -1681,7 +1682,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # determine if will seek another HSI:
         if (
-            self.module.rng.rand() <
+            self.module.rng.random_sample() <
             self.module.parameters["probability_of_seeking_further_art_appointment_if_appointment_not_available"]
         ):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
