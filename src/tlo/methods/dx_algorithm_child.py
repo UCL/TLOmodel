@@ -276,7 +276,7 @@ class DxAlgorithmChild(Module):
                             return 'common_cold'
 
             imci_classification = imci_gold_classification_level_1(
-                person_symptoms_list=list(df.at[person_id, 'ri_current_ALRI_symptoms']))
+                person_symptoms_list=self.sim.modules['ALRI'].ALRI_symptoms.get([person_id], first=True))
             if imci_classification == 'severe_pneumonia':
                 df.at[person_id, 'ri_IMCI_classification_as_gold'] = 'severe_pneumonia'
             if imci_classification == 'non-severe_pneumonia':

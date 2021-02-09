@@ -10,7 +10,7 @@ from tlo.analysis.utils import parse_log_file
 
 from tlo import Date, Simulation
 from tlo.methods import contraception, demography, ALRI, enhanced_lifestyle, labour, healthsystem, \
-    symptommanager, healthseekingbehaviour, pregnancy_supervisor, dx_algorithm_child, healthburden
+    symptommanager, healthseekingbehaviour, pregnancy_supervisor, healthburden, dx_algorithm_child
 
 # Path to the resource files used by the disease and intervention methods
 resourcefilepath = Path("./resources")
