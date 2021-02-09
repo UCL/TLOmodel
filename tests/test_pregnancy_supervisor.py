@@ -53,6 +53,16 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
+def set_all_women_as_pregnant(sim):
+    df = sim.population.props
+
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    df.loc[women_repro.index, 'is_pregnant'] = True
+    df.loc[women_repro.index, 'date_of_last_pregnancy'] = start_date
+    for person in women_repro.index:
+        sim.modules['Labour'].set_date_of_labour(person)
+
+
 def registering_modules():
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
@@ -72,12 +82,12 @@ def registering_modules():
 
     return sim
 
-
+# =========================================== PREGNANCY SUPERVISOR TESTS ==============================================
 @pytest.mark.group2
 def test_run_with_normal_allocation_of_pregnancy():
     sim = registering_modules()
 
-    sim.make_initial_population(n=10000)
+    sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
 
@@ -87,13 +97,7 @@ def test_run_with_high_volumes_of_pregnancy():
     sim = registering_modules()
     sim.make_initial_population(n=1000)
 
-    df = sim.population.props
-
-    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
-    df.loc[women_repro.index, 'is_pregnant'] = True
-    df.loc[women_repro.index, 'date_of_last_pregnancy'] = start_date
-    for person in women_repro.index:
-        sim.modules['Labour'].set_date_of_labour(person)
+    set_all_women_as_pregnant(sim)
 
     sim.simulate(end_date=Date(2011, 1, 1))
 
@@ -103,22 +107,17 @@ def test_ensure_spont_abortion_stops_pregnancies():
     sim = registering_modules()
 
     sim.make_initial_population(n=100)
-
-    df = sim.population.props
-    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
-    df.loc[women_repro.index, 'is_pregnant'] = True
-    df.loc[women_repro.index, 'date_of_last_pregnancy'] = start_date
-    for person in women_repro.index:
-        sim.modules['Labour'].set_date_of_labour(person)
+    set_all_women_as_pregnant(sim)
 
     params = sim.modules['PregnancySupervisor'].parameters
-
     params['ps_linear_equations']['spontaneous_abortion'] = \
         LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1)
 
     sim.simulate(end_date=Date(2011, 1, 1))
+
+    df = sim.population.props
     assert len(df) == 100
 
 
@@ -127,13 +126,7 @@ def test_ensure_induced_abortion_stops_pregnancies():
     sim = registering_modules()
 
     sim.make_initial_population(n=100)
-
-    df = sim.population.props
-    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
-    df.loc[women_repro.index, 'is_pregnant'] = True
-    df.loc[women_repro.index, 'date_of_last_pregnancy'] = start_date
-    for person in women_repro.index:
-        sim.modules['Labour'].set_date_of_labour(person)
+    set_all_women_as_pregnant(sim)
 
     params = sim.modules['PregnancySupervisor'].parameters
     params['ps_linear_equations']['induced_abortion'] = \
@@ -142,6 +135,8 @@ def test_ensure_induced_abortion_stops_pregnancies():
             1)
 
     sim.simulate(end_date=Date(2011, 1, 1))
+
+    df = sim.population.props
     assert len(df) == 100
 
 
@@ -150,13 +145,7 @@ def test_ensure_ectopics_stops_pregnancies():
     sim = registering_modules()
 
     sim.make_initial_population(n=100)
-
-    df = sim.population.props
-    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
-    df.loc[women_repro.index, 'is_pregnant'] = True
-    df.loc[women_repro.index, 'date_of_last_pregnancy'] = start_date
-    for person in women_repro.index:
-        sim.modules['Labour'].set_date_of_labour(person)
+    set_all_women_as_pregnant(sim)
 
     params = sim.modules['PregnancySupervisor'].parameters
     params['ps_linear_equations']['ectopic'] = \
@@ -165,6 +154,8 @@ def test_ensure_ectopics_stops_pregnancies():
             1)
 
     sim.simulate(end_date=Date(2011, 1, 1))
+
+    df = sim.population.props
     assert len(df) == 100
 
 
@@ -173,3 +164,5 @@ test_run_with_high_volumes_of_pregnancy()
 test_ensure_spont_abortion_stops_pregnancies()
 test_ensure_induced_abortion_stops_pregnancies()
 test_ensure_ectopics_stops_pregnancies()
+
+# =========================================== PREGNANCY SUPERVISOR TESTS ==============================================

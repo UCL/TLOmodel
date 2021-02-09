@@ -1038,26 +1038,32 @@ class Labour(Module):
         health_values_1 = df.loc[df.is_alive, 'la_obstructed_labour_disab'].map(
             {False: 0, True: p['la_daly_wts']['obstructed_labour']})
         health_values_1.name = 'Obstructed Labour'
+        health_values_1 = pd.to_numeric(health_values_1)
 
         health_values_2 = df.loc[df.is_alive, 'la_eclampsia_disab'].map(
             {False: 0, True: p['la_daly_wts']['eclampsia']})
         health_values_2.name = 'Eclampsia'
+        health_values_2 = pd.to_numeric(health_values_2)
 
         health_values_3 = df.loc[df.is_alive, 'la_sepsis_disab'].map(
             {False: 0, True: p['la_daly_wts']['maternal_sepsis']})
         health_values_3.name = 'Maternal Sepsis'
+        health_values_3 = pd.to_numeric(health_values_3)
 
         health_values_4 = df.loc[df.is_alive, 'la_maternal_haem_non_severe_disab'].map(
             {False: 0, True: p['la_daly_wts']['haemorrhage_moderate']})
         health_values_4.name = 'Non Severe Maternal Haemorrhage'
+        health_values_4 = pd.to_numeric(health_values_4)
 
         health_values_5 = df.loc[df.is_alive, 'la_maternal_haem_severe_disab'].map(
             {False: 0, True: p['la_daly_wts']['haemorrhage_severe']})
         health_values_5.name = 'Severe Maternal Haemorrhage'
+        health_values_5 = pd.to_numeric(health_values_5)
 
         health_values_6 = df.loc[df.is_alive, 'la_uterine_rupture_disab'].map(
             {False: 0, True: p['la_daly_wts']['uterine_rupture']})
         health_values_6.name = 'Uterine Rupture'
+        health_values_6 = pd.to_numeric(health_values_6)
 
         health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive],
                                       health_values_3.loc[df.is_alive], health_values_4.loc[df.is_alive],
@@ -2808,10 +2814,14 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         if df.at[individual_id, 'la_uterine_rupture']:
             self.module.set_maternal_death_status_intrapartum(individual_id, cause='uterine_rupture')
 
-        # Next we determine if this woman will experience an intrapartum still birth. All woman have a risk of
-        # still birth applied which is increased by complications in labour. Treatment modelled to reduce risk of
-        # intrapartum stillbirth include assisted vaginal delivery and caesarean section
-        if self.module.predict(params['la_labour_equations']['intrapartum_still_birth'], individual_id):
+        # Next we determine if this woman will experience an intrapartum still birth. We assume any women who have had
+        # to deliver before 24 weeks will experience stillbirth  # todo: should it be neonatal death not SB
+
+        # Otherwise all woman have a risk of still birth applied which is increased by complications in labour.
+        # Treatment modelled to reduce risk of intrapartum stillbirth include assisted vaginal delivery and
+        # caesarean section
+        if (df.at[individual_id, 'ps_gestational_age_in_weeks'] < 24) or \
+            self.module.predict(params['la_labour_equations']['intrapartum_still_birth'], individual_id):
             logger.debug(key='message', data=f'person {individual_id} has experienced an intrapartum still birth')
 
             df.at[individual_id, 'la_intrapartum_still_birth'] = True

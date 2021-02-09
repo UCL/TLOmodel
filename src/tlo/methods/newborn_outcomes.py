@@ -1259,27 +1259,32 @@ class NewbornOutcomes(Module):
                     {'none': 0, 'mild': p['mild_vision_rptb'], 'moderate': p['moderate_vision_rptb'],
                      'severe': p['severe_vision_rptb'], 'blindness': p['blindness_rptb']})
         health_values_1.name = 'Retinopathy of Prematurity'
+        health_values_1 = pd.to_numeric(health_values_1)
 
         health_values_2 = df.loc[df.is_alive, 'nb_encephalopathy_disab'].map(
             {'none': 0, 'mild_motor': p['mild_motor_enceph'], 'mild_motor_and_cog': p['mild_motor_cognitive_enceph'],
              'moderate_motor': p['moderate_motor_enceph'], 'severe_motor': p['severe_motor_enceph']})
         health_values_2.name = 'Neonatal Encephalopathy'
+        health_values_2 = pd.to_numeric(health_values_2)
 
         health_values_3 = df.loc[df.is_alive, 'nb_neonatal_sepsis_disab'].map(
             {'none': 0, 'mild_motor': p['mild_motor_sepsis'], 'mild_motor_and_cog': p['mild_motor_cognitive_sepsis'],
              'moderate_motor': p['moderate_motor_sepsis'], 'severe_motor': p['severe_motor_sepsis']})
         health_values_3.name = 'Neonatal Sepsis Long term Disability'
+        health_values_3 = pd.to_numeric(health_values_3)
 
         health_values_4 = df.loc[df.is_alive, 'nb_preterm_birth_disab'].map(
             {'none': 0, 'mild_motor': p['mild_motor_preterm'], 'mild_motor_and_cog': p['mild_motor_cognitive_preterm'],
              'moderate_motor': p['moderate_motor_preterm'], 'severe_motor': p['severe_motor_preterm']})
         health_values_4.name = 'Preterm Birth Disability'
+        health_values_4 = pd.to_numeric(health_values_4)
 
         health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive],
-                                      health_values_3.loc[df.is_alive], health_values_4.loc[df.is_alive]], axis=1)
+                                     health_values_3.loc[df.is_alive], health_values_4.loc[df.is_alive]], axis=1)
 
         scaling_factor = (health_values_df.sum(axis=1).clip(lower=0, upper=1) /
                           health_values_df.sum(axis=1)).fillna(1.0)
+
         health_values_df = health_values_df.multiply(scaling_factor, axis=0)
 
         return health_values_df

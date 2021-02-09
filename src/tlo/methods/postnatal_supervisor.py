@@ -162,7 +162,7 @@ class PostnatalSupervisor(Module):
         'prob_attend_pnc3': Parameter(
             Types.REAL, 'Probability that a woman receiving PNC2 care will return for PNC3 care'),
         'prob_care_seeking_postnatal_emergency': Parameter(
-            Types.REAL, 'baseline probability '),
+            Types.REAL, 'baseline probability of emergency care seeking for women in the postnatal period'),
         'prob_care_seeking_postnatal_emergency_neonate': Parameter(
             Types.REAL, 'baseline probability care will be sought for a neonate with a complication'),
         'prob_pnc1_at_day_7': Parameter(
@@ -274,6 +274,7 @@ class PostnatalSupervisor(Module):
                 'moderate_motor_sepsis_neonate': self.sim.modules['HealthBurden'].get_daly_weight(438),
                 'severe_motor_sepsis_neonate': self.sim.modules['HealthBurden'].get_daly_weight(435),
                 'mild_motor_cognitive_sepsis_neonate': self.sim.modules['HealthBurden'].get_daly_weight(441)}
+                # todo: eclampsia/pre-eclampsia
 
         # ======================================= LINEAR MODEL EQUATIONS =============================================
         # All linear equations used in this module are stored within the pn_linear_equations
@@ -621,14 +622,17 @@ class PostnatalSupervisor(Module):
              'vesicovaginal': p['vv_fistula'],
              'rectovaginal': p['rv_fistula']})
         health_values_1.name = 'Fistula'
+        health_values_1 = pd.to_numeric(health_values_1)
 
         health_values_2 = df.loc[df.is_alive, 'pn_postpartum_haem_secondary'].map(
             {False: 0, True: p['haemorrhage_moderate']})
         health_values_2.name = 'Secondary PPH'
+        health_values_2 = pd.to_numeric(health_values_2)
 
         health_values_3 = df.loc[df.is_alive, 'pn_sepsis_late_postpartum'].map(
             {False: 0, True: p['maternal_sepsis']})
         health_values_3.name = 'Postnatal Sepsis'
+        health_values_3 = pd.to_numeric(health_values_3)
 
         health_values_4 = df.loc[df.is_alive, 'pn_anaemia_following_pregnancy'].map(
             {'none': 0,
@@ -636,6 +640,7 @@ class PostnatalSupervisor(Module):
              'moderate': p['moderate_anaemia'],
              'severe': p['severe_anaemia']})
         health_values_4.name = 'Postnatal Anaemia'
+        health_values_4 = pd.to_numeric(health_values_4)
 
         health_values_5 = df.loc[df.is_alive, 'pn_htn_disorders'].map(
             {'none': 0,
@@ -646,6 +651,7 @@ class PostnatalSupervisor(Module):
              'severe_pre_eclamp': p['mild_htn_disorder'],
              'eclampsia': p['mild_htn_disorder']})
         health_values_5.name = 'Hypertensive disorder'
+        health_values_5 = pd.to_numeric(health_values_5)
 
         health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive],
                                       health_values_3.loc[df.is_alive], health_values_4.loc[df.is_alive],
@@ -1635,6 +1641,8 @@ class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScope
         if ~df.at[person_id, 'is_alive'] and ~df.at[child_id, 'is_alive']:
             return
 
+        # TODO: homebirths should get essential interventions here
+
         # If either are alive the event runs
         if df.at[person_id, 'is_alive'] or df.at[child_id, 'is_alive']:
             logger.debug(key='message', data=f'Mother {person_id} or child {child_id} have arrived for PNC1 on date'
@@ -1802,6 +1810,7 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
                 hsi_event=self,
                 cons_req_as_footprint=consumables_gest_htn_treatment)
 
+            # todo: severe gest htn
             # If they are available then the woman is started on treatment
             if outcome_of_request_for_consumables['Item_Code'][item_code_methyldopa]:
                 df.at[person_id, 'pn_gest_htn_on_treatment'] = True
@@ -1851,6 +1860,7 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
 
             if all_available:
                 df.at[person_id, 'pn_mag_sulph_treatment'] = True
+                #todo: should reduce risk of SPE
 
         # ------------------------------------- ANAEMIA TREATMENT -----------------------------------------------
         #  todo: review treatment with TC before copying here

@@ -48,7 +48,7 @@ class CareOfWomenDuringPregnancy(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # This dictionary is used by to track the frequency of certain events in the module which are processed by the
+        # This dictionary is used to track the frequency of certain events in the module which are processed by the
         # logging event
         self.anc_tracker = dict()
 
@@ -61,6 +61,8 @@ class CareOfWomenDuringPregnancy(Module):
             Types.REAL, 'probability a woman will return for a subsequent ANC appointment'),
         'prob_an_ip_at_facility_level_1_2_3': Parameter(
             Types.LIST, 'probabilities that antenatal inpatient care will be scheduled at facility level 1, 2 or 3'),
+        'squeeze_factor_threshold_anc': Parameter(
+            Types.REAL, 'squeeze factor threshold over which an ANC appointment cannot run'),
         'prob_intervention_delivered_urine_ds': Parameter(
             Types.REAL, 'probability a woman will receive the intervention "urine dipstick" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
@@ -448,6 +450,7 @@ class CareOfWomenDuringPregnancy(Module):
         elif mother.ps_gestational_age_in_weeks >= 40:
             recommended_gestation_next_anc = 42
 
+        print(mother.ps_gestational_age_in_weeks)
         return recommended_gestation_next_anc
 
     def antenatal_care_scheduler(self, individual_id, visit_to_be_scheduled, recommended_gestation_next_anc,
@@ -1097,6 +1100,118 @@ class CareOfWomenDuringPregnancy(Module):
         self.iptp_administration(hsi_event=hsi_event)
         self.calcium_supplementation(hsi_event=hsi_event)
 
+    def check_anc1_can_run(self, hsi_event, individual_id, squeeze_factor, gest_age_next_contact):
+        """
+        This function is called by the first ANC contact to determine if it can run
+        :param hsi_event: HSI event in which the function has been called
+        :param individual_id: individual id
+        :param squeeze_factor: squeeze_factor of the HSI calling this function
+        :param gest_age_next_contact: gestational age, in weeks, this woman is due to return for her next ANC
+        :returns True/False as to whether the event can run
+        """
+        df = self.sim.population.props
+        params = self.parameters
+
+        visit = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
+            self.sim.modules['CareOfWomenDuringPregnancy'],
+            person_id=individual_id, facility_level_of_this_hsi=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
+        date_difference = self.sim.date - df.at[individual_id, 'ps_date_of_anc1']
+
+        # Only women who are alive, still pregnant and not in labour can attend ANC1
+        if not df.at[individual_id, 'is_alive'] or not df.at[individual_id, 'is_pregnant'] or \
+            df.at[individual_id, 'la_currently_in_labour']:
+            return False
+
+        # Here we block the event from running for previously scheduled ANC1 HSIs for women who have lost a pregnancy
+        # and become pregnant again
+
+        elif (date_difference > pd.to_timedelta(7, unit='D')) or \
+            df.at[individual_id, 'ac_total_anc_visits_current_pregnancy'] > 0 or \
+             df.at[individual_id, 'ps_gestational_age_in_weeks'] < 7:
+            logger.debug(key='msg', data=f'mother {individual_id} has arrived at ANC1 that was scheduled in a previous '
+                                         f'pregnancy and therefore the event will not run')
+
+            return False
+
+        # If the woman is an inpatient when ANC1 is scheduled, she will try and return at the next appropriate
+        # gestational age
+        elif df.at[individual_id, 'ac_inpatient']:
+            # We assume that she will return for her first appointment at the next gestation in the schedule
+            logger.debug(key='msg', data=f'mother {individual_id} is scheduled to attend ANC today but is currently an '
+                                         f'inpatient- she will be scheduled to arrive at her next visit instead and'
+                                         f' no interventions will be delivered here')
+
+            weeks_due_next_visit = int(gest_age_next_contact - df.at[individual_id, 'ps_gestational_age_in_weeks'])
+            visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
+                                                                topen=visit_date,
+                                                                tclose=visit_date + DateOffset(days=7))
+            df.at[individual_id, 'ps_date_of_anc1'] = visit_date
+            return False
+
+        # Finally, if the squeeze factor is too high the event wont run and she will return tomorrow
+        elif squeeze_factor > params['squeeze_factor_threshold_anc']:
+            logger.debug(key='msg', data=f'Mother {individual_id} cannot receive ANC today as the squeeze factor is '
+                                         f'too high')
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
+                                                                topen=self.sim.date + DateOffset(days=1),
+                                                                tclose=self.sim.date + DateOffset(days=2))
+            return False
+
+        else:
+            return True
+
+    def check_subsequent_anc_can_run(self, hsi_event, individual_id, this_contact, next_visit_number, squeeze_factor,
+                                     gest_age_next_contact):
+        """
+        This function is called by all subsequent ANC contacts to determine if they can run
+        :param hsi_event: HSI event in which the function has been called
+        :param individual_id: individual id
+        :param this_contact: HSI object of the current ANC contact that needs to be rebooked
+        :param next_visit_number: Number of the next ANC contact in the schedule
+        :param squeeze_factor: squeeze_factor of the HSI calling this function
+        :param gest_age_next_contact: gestational age, in weeks, this woman is due to return for her next ANC
+        :returns True/False as to whether the event can run
+        """
+
+        df = self.sim.population.props
+        params = self.parameters
+
+        date_difference = self.sim.date - df.at[individual_id, 'ac_date_next_contact']
+        print('date diff', date_difference)
+
+        # If women have died, are no longer pregnant, are in labour or more than a week has past since the HSI was
+        # scheduled then it will not run
+        if not df.at[individual_id, 'is_alive'] or not df.at[individual_id, 'is_pregnant'] or \
+            df.at[individual_id, 'la_currently_in_labour'] or (df.at[individual_id, 'ps_gestational_age_in_weeks']) \
+            or (date_difference > pd.to_timedelta(7, unit='D')):
+            return False
+
+        # If the woman is currently an inpatient then she will return for the next contact in the schedule
+        elif df.at[individual_id, 'ac_inpatient']:
+            logger.debug(key='msg', data=f'Mother {individual_id} was due to receive ANC today but she is an inpatient'
+                                         f'- we will now determine if she will return for this visit in the future')
+            self.antenatal_care_scheduler(individual_id, visit_to_be_scheduled=next_visit_number,
+                                          recommended_gestation_next_anc=gest_age_next_contact,
+                                          facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL)
+            return False
+
+        # If the squeeze factor is too high she will return tomorrow
+        elif squeeze_factor > params['squeeze_factor_threshold_anc']:
+            logger.debug(key='msg', data=f'Mother {individual_id} cannot receive ANC today as the squeeze factor is '
+                                         f'too high')
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(this_contact, priority=0,
+                                                                topen=self.sim.date + DateOffset(days=1),
+                                                                tclose=self.sim.date + DateOffset(days=2))
+            return False
+
+        else:
+            return True
+
     # =============================== INTERVENTIONS DELIVERED DURING INPATIENT CARE ===================================
     # The following functions contain code for the interventions which are called by antenatal HSIs (not including
     # routine ANC) this includes post abortion/ectopic care and antenatal inpatient care
@@ -1205,10 +1320,6 @@ class CareOfWomenDuringPregnancy(Module):
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=hsi_event,
             cons_req_as_footprint=consumables_ifa)
-
-        # TODO: TC- I'd also like to discuss this logic with you below, I'm not sure its the right approach (however
-        #  treatment of specific deficiencies is not in the EHP - but is in clinical guidelines, therefore it may be too
-        #  granular)
 
         # Treatment is provided dependent on deficiencies present
         if pregnancy_deficiencies.has_any([individual_id], 'iron', first=True):
@@ -1563,8 +1674,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FirstAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AntenatalFirst': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        # self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         assert self.ACCEPTED_FACILITY_LEVEL != 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -1572,54 +1682,11 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        # TODO: TC - Do you think there should the a squeeze factor threshold over which this event just doesnt run?
-        #  Different to labour where there is a threshold per intervention (same question for all ANC contacts). I
-        #  assume it is possible that a woman would be turned away as too busy? But we can assume they would return
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        can_anc1_run = self.module.check_anc1_can_run(self, person_id, squeeze_factor, gest_age_next_contact)
 
-        # If the mother is no longer alive or pregnant the HSI will not run
-        if not mother.is_alive or not mother.is_pregnant:
-            return
-
-        # The contents of this HSI will only run for women who are still pregnant and are not currently in labour
-        if ~mother.la_currently_in_labour:
-
-            # This function returns the gestational age, in weeks, at which this woman should return for the next
-            # ANC visit in her schedule
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
-            # Women may have lost a pregnancy and become pregnant again meaning this event will still run, this prevents
-            # incorrect HSIs running
-            if mother.ps_date_of_anc1 != self.sim.date or\
-                (mother.ac_total_anc_visits_current_pregnancy > 0) or \
-               (mother.ps_gestational_age_in_weeks < 7):
-                logger.debug(key='msg', data=f'mother {person_id} has arrived at ANC1 that was scheduled in a previous '
-                                             f'pregnancy and therefore the event will not run')
-                return
-
-            # Women may be scheduled to receive ANC today but already be an inpatient (due to possible care seeking
-            # in the community)
-            if mother.ac_inpatient:
-                # We assume that she will return for her first appointment at the next gestation in the schedule
-                logger.debug(key='msg', data=f'mother {person_id} is scheduled to attend ANC today but is currently an '
-                                             f'inpatient- she will be scheduled to arrive at her next visit instead and'
-                                             f' no interventions will be delivered here')
-
-                weeks_due_next_visit = int(gest_age_next_contact - df.at[person_id, 'ps_gestational_age_in_weeks'])
-                visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                facility_level = self.ACCEPTED_FACILITY_LEVEL
-                assert facility_level != 0
-
-                visit = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
-                    self.sim.modules['CareOfWomenDuringPregnancy'],
-                    person_id=person_id, facility_level_of_this_hsi=facility_level)
-
-                self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
-                                                                    topen=visit_date,
-                                                                    tclose=visit_date + DateOffset(days=7))
-                df.at[person_id, 'ps_date_of_anc1'] = visit_date
-                return
-
-            # Finally check only women who have not attended any ANC contacts during this pregnancy arrive at this
+        if can_anc1_run:
+            # Check only women who have not attended any ANC contacts during this pregnancy arrive at this
             # event
             assert mother.ac_total_anc_visits_current_pregnancy == 0
 
@@ -1721,25 +1788,16 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive or not mother.is_pregnant:
-            return
+        # Here we define variables used within the function that checks in this ANC visit can run
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        this_contact = HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(
+            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
 
-        # Ensure this event only runs for the correct women
-        if ~mother.la_currently_in_labour:
-            if self.sim.date != mother.ac_date_next_contact:
-                return
+        # Run the check
+        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 2, squeeze_factor,
+                                                               gest_age_next_contact)
 
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
-            if mother.ac_inpatient:
-                # Women who are inpatients at the time of their ANC appointment will try to return for this visit at
-                # the next point in the schedule
-                logger.debug(key='msg', data=f'Mother {person_id} was due to receive ANC today but she is an inpatient'
-                                             f'- we will now determine if she will return for this visit in the future')
-                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
-                return
+        if can_anc_run:
 
             logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
             logger.debug(key='msg', data=f'mother {person_id}presented for ANC 2 at a '
@@ -1829,22 +1887,16 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive or not mother.is_pregnant:
-            return
+        # Here we define variables used within the function that checks in this ANC visit can run
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        this_contact = HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(
+            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
 
-        if ~mother.la_currently_in_labour:
-            if self.sim.date != mother.ac_date_next_contact:
-                return
+        # Run the check
+        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 3, squeeze_factor,
+                                                               gest_age_next_contact)
 
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
-            if mother.ac_inpatient:
-                logger.debug(key='msg', data=f'Mother {person_id} was due to receive ANC today but she is an inpatient'
-                                             f'- we will now determine if she will return for this visit in the future')
-                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
-                return
+        if can_anc_run:
 
             logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
             logger.debug(key='message', data=f'mother {person_id}presented for ANC 3 at a '
@@ -1929,22 +1981,16 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive or not mother.is_pregnant:
-            return
+        # Here we define variables used within the function that checks in this ANC visit can run
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        this_contact = HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(
+            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
 
-        if ~mother.la_currently_in_labour:
-            if self.sim.date != mother.ac_date_next_contact:
-                return
+        # Run the check
+        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 4, squeeze_factor,
+                                                               gest_age_next_contact)
 
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
-            if mother.ac_inpatient:
-                logger.debug(key='msg', data=f'Mother {person_id} was due to receive ANC today but she is an inpatient'
-                                             f'- we will now determine if she will return for this visit in the future')
-                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=4,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
-                return
+        if can_anc_run:
 
             logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
             logger.debug(key='message', data=f'mother {person_id}presented for ANC 4 at a '
@@ -2021,23 +2067,16 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive or not mother.is_pregnant:
-            return
+        # Here we define variables used within the function that checks in this ANC visit can run
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        this_contact = HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(
+            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
 
-        if ~mother.la_currently_in_labour:
-            if self.sim.date != mother.ac_date_next_contact:
-                return
+        # Run the check
+        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 5, squeeze_factor,
+                                                               gest_age_next_contact)
 
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
-            if mother.ac_inpatient:
-                logger.debug(key='msg', data=f'Mother {person_id} was due to receive ANC today but she is an inpatient'
-                                             f'- we will now determine if she will return for this visit in the future')
-                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=5,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
-                return
-
+        if can_anc_run:
             logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
             logger.debug(key='msg', data=f'mother {person_id}presented for ANC 5 at a '
                                          f'{df.at[person_id, "ac_facility_type"]} at gestation '
@@ -2114,22 +2153,16 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive or not mother.is_pregnant:
-            return
+        # Here we define variables used within the function that checks in this ANC visit can run
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        this_contact = HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(
+            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
 
-        if ~mother.la_currently_in_labour:
-            if self.sim.date != mother.ac_date_next_contact:
-                return
+        # Run the check
+        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 6, squeeze_factor,
+                                                               gest_age_next_contact)
 
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
-            if mother.ac_inpatient:
-                logger.debug(key='msg', data=f'Mother {person_id} was due to receive ANC today but she is an inpatient'
-                                             f'- we will now determine if she will return for this visit in the future')
-                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=6,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
-                return
+        if can_anc_run:
 
             logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
             logger.debug(key='msg', data=f'mother {person_id}presented for ANC 6 at a '
@@ -2199,22 +2232,16 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive or not mother.is_pregnant:
-            return
+        # Here we define variables used within the function that checks in this ANC visit can run
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        this_contact = HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(
+            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
 
-        if ~mother.la_currently_in_labour:
-            if self.sim.date != mother.ac_date_next_contact:
-                return
+        # Run the check
+        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 7, squeeze_factor,
+                                                               gest_age_next_contact)
 
-            gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
-            if mother.ac_inpatient:
-                logger.debug(key='msg', data=f'Mother {person_id} was due to receive ANC today but she is an inpatient'
-                                             f'- we will now determine if she will return for this visit in the future')
-                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=7,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
-                return
+        if can_anc_run:
 
             logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
             logger.debug(key='msg', data=f'mother {person_id}presented for ANC 7 at a '
@@ -2282,13 +2309,16 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        if not mother.is_alive or not mother.is_pregnant:
-            return
+        # Here we define variables used within the function that checks in this ANC visit can run
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        this_contact = HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(
+            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
 
-        # Women who are inpatients for their last visit will not attempt to return for this visit
-        if ~mother.la_currently_in_labour and ~mother.ac_inpatient:
-            if self.sim.date != mother.ac_date_next_contact:
-                return
+        # Run the check
+        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 7, squeeze_factor,
+                                                               gest_age_next_contact)
+
+        if can_anc_run:
 
             logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
             logger.debug(key='msg', data=f'mother {person_id}presented for ANC 7 at a'
@@ -2344,10 +2374,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        # TODO: TC- We originally decided that pregnant women would not come via a&e in an emergency but would rather
-        #  present to the maternity ward/service straight away hence why I made this event. I wonder if it is just
-        #  simpler to have women pass through the generic A&E event? This event doesn't really do anything...(thought
-        #  about having some kind of diagnostic algorithm here but it never ended up happenig)
+        # TODO: remove and schedule through ED
 
         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant']:
             return
@@ -2502,6 +2529,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                                                                     tclose=check_up_date + DateOffset(days=3))
 
             # =============================== INITIATE TREATMENT FOR HYPERTENSION =====================================
+            # todo: effect on progression SPE-EC?
             # Treatment delivered to mothers with hypertension is dependent on severity. Women admitted due to more mild
             # hypertension are started on regular oral antihypertensives therapy (reducing risk of progression to more
             # severe hypertension)
@@ -2651,10 +2679,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 else:
                     days_until_safe_for_cs = 1
 
-                # TODO: TC - Currently women with very severe complications that onset early (most likely placental
-                #  abruption with severe bleeding) are admitted for 'delivery' regardless of gestational age- leading
-                #  to newborns being born far too early to realistically survive. I need to check with a clinician what
-                #  would happen in practice - I feel like it would be terminiation
+                # TODO: for now, assume all 22-24 weekers are stillbirths (check with clinician)
 
                 # We schedule the LabourOnset event for this woman will be able to progress for delivery
                 admission_date = self.sim.date + DateOffset(days=days_until_safe_for_cs)
@@ -2722,6 +2747,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
             # If she is determined to still be anaemic she is admitted for additional treatment via the inpatient event
             elif fbc_result == 'mild' or fbc_result == 'moderate' or fbc_result == 'severe':
 
+                # todo: sort facility levels
                 # facility_level = int(self.module.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1
                 # _2_3']))
                 facility_level = int(self.module.rng.choice([1, 2], p=[0.5, 0.5]))
@@ -3019,6 +3045,8 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
             # However if treatment cant be delivered for women who have not yet experienced rupture (due to lack of
             # consumables) we schedule these women to arrive at the rupture event as they have not received treatment
             self.module.ectopic_pregnancy_treatment_doesnt_run(person_id)
+            logger.debug(key='msg', data=f'Mother {person_id} could not receive treatment due to insufficient '
+                                         f'consumables')
 
     def did_not_run(self):
         person_id = self.target
