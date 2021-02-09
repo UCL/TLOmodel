@@ -783,7 +783,7 @@ class Hiv(Module):
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
         mother = df.loc[mother_id]
 
-        mother_infected_prior_to_pregnancy = mother.hv_inf & (mother.hv_date_inf < mother.date_of_last_pregnancy)
+        mother_infected_prior_to_pregnancy = mother.hv_inf & (mother.hv_date_inf <= mother.date_of_last_pregnancy)
         mother_infected_during_pregnancy = mother.hv_inf & (mother.hv_date_inf > mother.date_of_last_pregnancy)
 
         if mother_infected_prior_to_pregnancy:
@@ -807,7 +807,7 @@ class Hiv(Module):
 
         # ----------------------------------- MTCT - DURING BREASTFEEDING --------------------------
         # If child is not infected and is being breastfed, then expose them to risk of MTCT through breastfeeding
-        if ~child_infected and df.at[child_id, "tmp_breastfed"] and mother.hv_inf:
+        if not child_infected and df.at[child_id, "tmp_breastfed"] and mother.hv_inf:
             self.mtct_during_breastfeeding(mother_id, child_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
