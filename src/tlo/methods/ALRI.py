@@ -633,14 +633,8 @@ class ALRI(Module):
                      ),
         # ---- Symptoms associated with ALRI ----
         'ri_current_ALRI_symptoms':
-            Property(Types.LIST,
-                     'symptoms of current ALRI event',
-                     categories=[
-                         'fever', 'cough', 'difficult_breathing', 'convulsions', 'lethargy',
-                         'fast_breathing', 'chest_indrawing', 'grunting', 'chest_pain',
-                         'cyanosis', 'respiratory_distress', 'hypoxia', 'fast_breathing',
-                         'danger_signs'
-                     ]
+            Property(Types.INT,
+                     'bitset column, stores symptoms of current ALRI event'
                      ),
 
         # ---- Internal variables to schedule onset and deaths due to ALRI ----
@@ -693,6 +687,7 @@ class ALRI(Module):
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
+
         self.resourcefilepath = resourcefilepath
 
         # equations for the incidence of ALRI by pathogen:
@@ -822,6 +817,12 @@ class ALRI(Module):
                                                 ['pneumothorax', 'pleural_effusion', 'empyema',
                                                  'lung_abscess', 'sepsis', 'meningitis',
                                                  'respiratory_failure', 'none', 'not_applicable'])
+
+        # This biset property stores set of symptoms that can occur
+        self.ALRI_symptoms = BitsetHandler(self.sim.population, 'ri_current_ALRI_symptoms',
+                                           ['fever', 'cough', 'difficult_breathing', 'fast_breathing',
+                                            'chest_indrawing', 'chest_pain', 'cyanosis', 'respiratory_distress',
+                                            'danger_signs'])
 
     def complications_append(self, person_id, complication):
         """
@@ -1394,6 +1395,8 @@ class ALRI(Module):
         for symptom, prob in prob_symptoms_uncomplicated_alri.items():
             if rng.rand() < prob:
                 symptoms_for_this_person.append(symptom)
+                # df.at[person_id, 'ri_current_ALRI_symptoms'] = symptoms_for_this_person
+                self.ALRI_symptoms.set([person_id], f'{symptom}')
 
         # Onset symptoms:
         for symptom in symptoms_for_this_person:
@@ -1405,7 +1408,6 @@ class ALRI(Module):
                 duration_in_days=duration_in_days
             )
 
-        df.at[person_id, 'ri_current_ALRI_symptoms'] = symptoms_for_this_person
         return symptoms_for_this_person
 
     def alri_with_complications_symptoms(self, symptoms, complication, person_id, duration_in_days):
