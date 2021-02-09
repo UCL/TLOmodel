@@ -1,16 +1,10 @@
 # %% Import Statements
+import matplotlib.pyplot as plt
+import pandas as pd
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import (
-    contraception,
-    demography,
-    enhanced_lifestyle,
-    healthseekingbehaviour,
-    healthsystem,
-    labour,
-    pregnancy_supervisor,
-    symptommanager,
-)
+from tlo.methods import demography, enhanced_lifestyle
 
 
 def run():
@@ -26,7 +20,7 @@ def run():
     log_config = {
         "filename": "enhanced_lifestyle",  # The prefix for the output file. A timestamp will be added to this.
         "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
-            "tlo.methods.demography": logging.INFO,
+            "tlo.methods.demography": logging.WARNING,
             "tlo.methods.enhanced_lifestyle": logging.INFO
         }
     }
@@ -35,8 +29,8 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2050, 1, 1)
-    pop_size = 1000
+    end_date = Date(2030, 1, 1)
+    pop_size = 20000
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
     # `log_config` arguments, these will override the default behaviour.
@@ -45,21 +39,12 @@ def run():
     # Path to the resource files used by the disease and intervention methods
     resources = "./resources"
 
-    # Used to configure health system behaviour
-    service_availability = ["*"]
-
     # We register all modules in a single call to the register method, calling once with multiple
     # objects. This is preferred to registering each module in multiple calls because we will be
     # able to handle dependencies if modules are registered together
     sim.register(
         demography.Demography(resourcefilepath=resources),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-        healthsystem.HealthSystem(resourcefilepath=resources, disable=True, service_availability=service_availability),
-        symptommanager.SymptomManager(resourcefilepath=resources),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-        contraception.Contraception(resourcefilepath=resources),
-        labour.Labour(resourcefilepath=resources),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
     )
 
     sim.make_initial_population(n=pop_size)
@@ -72,3 +57,22 @@ sim = run()
 
 # %% read the results
 output = parse_log_file(sim.log_filepath)
+
+
+def extract_formatted_series(df):
+    return pd.Series(index=pd.to_datetime(df['date']), data=df.iloc[:, 1].values)
+
+
+# Examine Proportion Men Circumcised:
+circ = extract_formatted_series(output['tlo.methods.enhanced_lifestyle']['prop_adult_men_circumcised'])
+circ.plot()
+plt.title('Proportion of Adult Men Circumcised')
+plt.ylim(0, 0.30)
+plt.show()
+
+# Examine Proportion Women sex Worker:
+fsw = extract_formatted_series(output['tlo.methods.enhanced_lifestyle']['proportion_1549_women_sexworker'])
+fsw.plot()
+plt.title('Proportion of 15-49 Women Sex Workers')
+plt.ylim(0, 0.01)
+plt.show()
