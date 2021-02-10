@@ -435,9 +435,8 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                             ~df.la_has_had_hysterectomy &
                             df.age_years.between(self.age_low, self.age_high) &
                             ~df.co_contraception.isin(['not_using', 'female_steralization']) &
-                            (pd.isnull(df.la_due_date_current_pregnancy) | (self.sim.date >
-                                                                            df.la_due_date_current_pregnancy +
-                                                                            pd.to_timedelta(42, unit='D'))))
+                            ~df.la_is_postpartum
+                            )
 
         prob_of_failure = df.loc[possible_to_fail, 'co_contraception'].map(prob_of_failure)
 
@@ -484,11 +483,12 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props  # get the population dataframe
 
+        # simplified with the addition of new postnatal property (women cant get pregnant 42 days post birth)
+        # JC 10/02/2021
         # get the subset of women from the population dataframe and relevant characteristics
         subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & \
-                 (df.co_contraception == 'not_using') & ~df.la_currently_in_labour & ~df.la_has_had_hysterectomy &\
-                 (pd.isnull(df.la_due_date_current_pregnancy) | (self.sim.date > df.la_due_date_current_pregnancy +
-                                                                 pd.to_timedelta(42, unit='D')))
+                 (df.co_contraception == 'not_using') & ~df.la_currently_in_labour & ~df.la_has_had_hysterectomy & \
+                 ~df.la_is_postpartum
 
         females = df.loc[subset, ['co_contraception', 'age_years']]
 

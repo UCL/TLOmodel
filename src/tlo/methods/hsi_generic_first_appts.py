@@ -356,7 +356,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
         if 'Labour' in self.sim.modules:
-            mni = self.sim.modules['Labour'].mother_and_newborn_info
+            mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
             labour_list = self.sim.modules['Labour'].women_in_labour
 
             # -----  COMPLICATION DURING BIRTH  -----

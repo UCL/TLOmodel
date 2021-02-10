@@ -422,6 +422,12 @@ class PostnatalSupervisor(Module):
                 Predictor('pn_sepsis_neonatal_inj_abx').when(True, params['treatment_effect_inj_abx_sep']),
                 Predictor('pn_sepsis_neonatal_full_supp_care').when(True, params['treatment_effect_supp_care_sep'])),
 
+            # This equation is used to determine the probability that a woman will seek care for PNC after delivery
+            'care_seeking_for_first_pnc_visit': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_pnc1_at_day_7']),
+            # todo: predictors from paper
+
             # This equation is used to determine if a mother will seek care for treatment in the instance of an
             # emergency complication postnatally (sepsis or haemorrhage)
             'care_seeking_postnatal_complication_mother': LinearModel(
@@ -1370,7 +1376,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         child_id = int(df.at[individual_id, 'pn_id_most_recent_child'])
-        mni = self.sim.modules['Labour'].mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         mother = df.loc[individual_id]
         child = df.loc[child_id]
 
@@ -1577,8 +1583,12 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
 
         # If neither the mother or the child are experiencing any complications in the first week after birth,
         # we determine if they will present for the scheduled PNC check up at day 7
+
+        prob_will_seek_care = params['pn_linear_equations']['care_seeking_for_first_pnc_visit'].predict(
+            df.loc[[individual_id]])[individual_id]
+
         if not child_has_complications and not mother_has_complications:
-            if self.module.rng.random_sample() < params['prob_pnc1_at_day_7']:
+            if self.module.rng.random_sample() < prob_will_seek_care:
                 days_until_day_7 = self.sim.date - mother.la_date_most_recent_delivery
                 days_until_day_7_int = int(days_until_day_7 / np.timedelta64(1, 'D'))
 
@@ -1594,7 +1604,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         # of care seeking for postnatal check up is higher
 
         elif mother_has_complications or child_has_complications:
-            prob_care_seeking = params['prob_pnc1_at_day_7'] * params['multiplier_for_care_seeking_with_comps']
+            prob_care_seeking = prob_will_seek_care* params['multiplier_for_care_seeking_with_comps']
 
             if prob_care_seeking < self.module.rng.random_sample():
                 # And we assume they will present earlier than day 7

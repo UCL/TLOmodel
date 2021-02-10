@@ -450,7 +450,7 @@ class NewbornOutcomes(Module):
         :return: BOOL outcome
         """
         df = self.sim.population.props
-        mni = self.sim.modules['Labour'].mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         mother_id = df.loc[person_id, 'mother_id']
         person = df.loc[[person_id]]
 
@@ -670,7 +670,7 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         child = df.loc[individual_id]
-        mni = self.sim.modules['Labour'].mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         nci = self.newborn_care_info
         params = self.parameters
 
@@ -1067,7 +1067,7 @@ class NewbornOutcomes(Module):
         if (df.at[mother_id, 'is_alive'] and ~df.at[mother_id, 'la_intrapartum_still_birth']) or \
            (~df.at[mother_id, 'is_alive'] and df.at[mother_id, 'la_maternal_death_in_labour'] and
            ~df.at[mother_id, 'la_intrapartum_still_birth']):
-            mni = self.sim.modules['Labour'].mother_and_newborn_info
+            mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
             m = mni[mother_id]
 
         df.at[child_id, 'nb_early_preterm'] = False
@@ -1310,7 +1310,7 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(HSI_Event, Individu
     def apply(self, person_id, squeeze_factor):
         nci = self.module.newborn_care_info
         df = self.sim.population.props
-        mni = self.sim.modules['Labour'].mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         mother_id = df.loc[person_id, 'mother_id']
         params = self.module.parameters
 

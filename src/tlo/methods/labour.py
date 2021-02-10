@@ -33,9 +33,6 @@ class Labour(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # This dictionary will store additional information around delivery and birth
-        self.mother_and_newborn_info = dict()
-
         # This dictionary will track incidence of complications of labour
         self.labour_tracker = dict()
 
@@ -1119,7 +1116,7 @@ class Labour(Module):
         :param person_id: individual_id
         """
         df = self.sim.population.props
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         person = df.loc[[person_id]]
 
         # We define specific external variables used as predictors in the equations defined below
@@ -1224,7 +1221,7 @@ class Labour(Module):
         """
         df = self.sim.population.props
         params = self.parameters
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # First we run check to ensure only women who have started the labour process are passed to this function
         assert mni[individual_id]['delivery_setting'] != 'none'
@@ -1311,7 +1308,7 @@ class Labour(Module):
         'uterine_atony','lacerations', 'retained_placenta', 'other_pph_cause','postpartum_haem']
         """
         df = self.sim.population.props
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.parameters
 
         # This function follows a roughly similar pattern as set_intrapartum_complications
@@ -1459,7 +1456,7 @@ class Labour(Module):
         :param cause: (STR) complication which may cause death
         """
         df = self.sim.population.props
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.parameters
 
         # Check that only the correct causes are being passed to the function
@@ -1493,7 +1490,7 @@ class Labour(Module):
         :param cause: (STR) complication which may cause death
         """
         df = self.sim.population.props
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.parameters
 
         assert cause in self.possible_postpartum_complications
@@ -1524,7 +1521,7 @@ class Labour(Module):
         :param individual_id: individual_id
         """
         df = self.sim.population.props
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # We ensure that this function is only being applied to the correct women
         self.postpartum_characteristics_checker(individual_id)
@@ -1660,7 +1657,7 @@ class Labour(Module):
         """ This function checks a womans event and hsi_event queues to ensure that she has the correct events scheduled
          during the process of labour. It is not currently in use.
          """
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         events = self.sim.find_events_for_person(person_id=individual_id)
 
         # Here we iterate through each womans event queue to insure she has the correct events scheduled
@@ -1701,7 +1698,7 @@ class Labour(Module):
         """
         df = self.sim.population.props
         params = self.parameters
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
@@ -1956,7 +1953,7 @@ class Labour(Module):
         (STR) 'hc' == health centre, 'hp' == hospital
         """
         df = self.sim.population.props
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.parameters
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -2079,7 +2076,7 @@ class Labour(Module):
         """
         df = self.sim.population.props
         params = self.parameters
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         person_id = hsi_event.target
 
         if 'assessment_and_plan_for_referral_antepartum_haemorrhage' not in params['allowed_interventions']:
@@ -2129,7 +2126,7 @@ class Labour(Module):
         """
         df = self.sim.population.props
         params = self.parameters
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         person_id = hsi_event.target
 
         if 'assessment_and_plan_for_referral_uterine_rupture' not in params['allowed_interventions']:
@@ -2157,7 +2154,7 @@ class Labour(Module):
         HSI_Labour_PresentsForSkilledBirthAttendanceFollowingLabour
         :param hsi_event: HSI event in which the function has been called:
         """
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.parameters
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -2193,7 +2190,7 @@ class Labour(Module):
         :param facility_type: type of facility this intervention is being delivered in
         (STR) 'hc' == health centre, 'hp' == hospital
         """
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.parameters
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -2250,7 +2247,7 @@ class Labour(Module):
         :param facility_type: type of facility this intervention is being delivered in
         (STR) 'hc' == health centre, 'hp' == hospital
         """
-        mni = self.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.parameters
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -2342,7 +2339,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         params = self.module.parameters
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # First we use this check to determine if labour can precede (includes checks on is_alive)
         if self.module.check_labour_can_proceed(individual_id):
@@ -2355,33 +2352,34 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # We then run the labour_characteristics_checker as a final check that only appropriate women are here
             self.module.labour_characteristics_checker(individual_id)
 
-            # Next we populate the maternal and newborn info dictionary with baseline values before the womans labour
-            # begins
-            mni[individual_id] = {'labour_state': None,
-                                  # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
-                                  'delivery_setting': None,  # home_birth, health_centre, hospital
-                                  'delayed_pp_infection': False,
-                                  'onset_of_delayed_inf': 0,
-                                  'corticosteroids_given': False,
-                                  'clean_birth_practices': False,
-                                  'abx_for_prom_given': False,
-                                  'abx_for_pprom_given': False,
-                                  'amtsl_given': False,
-                                  'mode_of_delivery': 'vaginal_delivery',  # vaginal_delivery, instrumental,
-                                  # caesarean_section
-                                  'squeeze_to_high_for_hsi': False,  # True (T) or False (F)
-                                  'squeeze_to_high_for_hsi_pp': False,  # True (T) or False (F)
-                                  'sought_care_for_complication': False,  # True (T) or False (F)
-                                  'sought_care_labour_phase': 'none',  # none, intrapartum, postpartum
-                                  'referred_for_cs': False,  # True (T) or False (F)
-                                  'referred_for_blood': False,  # True (T) or False (F)
-                                  'received_blood_transfusion': False,  # True (T) or False (F)
-                                  'referred_for_surgery': False,  # True (T) or False (F)'
-                                  'death_in_labour': False,  # True (T) or False (F)
-                                  'cause_of_death_in_labour': [],
-                                  'stillbirth_in_labour': False,  # True (T) or False (F)
-                                  'cause_of_stillbirth_in_labour': [],
-                                  'death_postpartum': False}  # True (T) or False (F)
+            # Append labor specific variables to the mni
+            labour_variables = {'labour_state': None,
+                                # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
+                                'delivery_setting': None,  # home_birth, health_centre, hospital
+                                'delayed_pp_infection': False,
+                                'onset_of_delayed_inf': 0,
+                                'corticosteroids_given': False,
+                                'clean_birth_practices': False,
+                                'abx_for_prom_given': False,
+                                'abx_for_pprom_given': False,
+                                'amtsl_given': False,
+                                'mode_of_delivery': 'vaginal_delivery',
+                                # vaginal_delivery, instrumental, caesarean_section
+                                'squeeze_to_high_for_hsi': False,  # True (T) or False (F)
+                                'squeeze_to_high_for_hsi_pp': False,  # True (T) or False (F)
+                                'sought_care_for_complication': False,  # True (T) or False (F)
+                                'sought_care_labour_phase': 'none',  # none, intrapartum, postpartum
+                                'referred_for_cs': False,  # True (T) or False (F)
+                                'referred_for_blood': False,  # True (T) or False (F)
+                                'received_blood_transfusion': False,  # True (T) or False (F)
+                                'referred_for_surgery': False,  # True (T) or False (F)'
+                                'death_in_labour': False,  # True (T) or False (F)
+                                'cause_of_death_in_labour': [],
+                                'stillbirth_in_labour': False,  # True (T) or False (F)
+                                'cause_of_stillbirth_in_labour': [],
+                                'death_postpartum': False}  # True (T) or False (F)}
+
+            mni[individual_id].update(labour_variables)
 
             # ===================================== LABOUR STATE  =====================================================
             # Next we categories each woman according to her gestation age at delivery. These categories include term
@@ -2538,7 +2536,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.module.parameters
 
         if not df.at[individual_id, 'is_alive']:
@@ -2610,7 +2608,7 @@ class BirthEvent(Event, IndividualScopeEventMixin):
     def apply(self, mother_id):
         df = self.sim.population.props
         person = df.loc[mother_id]
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # This event tells the simulation that the woman's pregnancy is over and generates the new child in the
         # data frame
@@ -2711,7 +2709,7 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.module.parameters
 
         assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(5, unit='D')
@@ -2786,7 +2784,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         params = self.module.parameters
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         if not df.at[individual_id, 'is_alive']:
             return
@@ -2868,7 +2866,7 @@ class DeleteMNIDictionary(Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         if df.at[individual_id, 'is_alive']:
             del mni[individual_id]
@@ -2903,7 +2901,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
 
     def apply(self, person_id, squeeze_factor):
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         df = self.sim.population.props
         params = self.module.parameters
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -3050,7 +3048,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
     def did_not_run(self):
         person_id = self.target
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # If a woman has chosen to deliver in a facility from the onset of labour, but the squeeze factor is too high,
         # she will be forced to return home to deliver
@@ -3076,7 +3074,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         Note that this called at the time of the event being passed to the Health System at schedule_hsi_event(...) and
         not at the time when the HSI is intended to be run (as specified by the 'topen' parameter in that call)"""
         person_id = self.target
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         # If a woman has chosen to deliver in a facility but this event isnt allowed with the set service configuration
         # then she will deliver at home
         logger.debug(key='message', data=f'This event is not in the allowed service availability and therefore cannot '
@@ -3105,7 +3103,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(HSI_Event, Indivi
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
 
     def apply(self, person_id, squeeze_factor):
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         df = self.sim.population.props
         params = self.module.parameters
 
@@ -3187,7 +3185,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(HSI_Event, Indivi
 
     def did_not_run(self):
         person_id = self.target
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         logger.debug(key='message', data='HSI_Labour_ReceivesCareForPostpartumPeriod: did not run as the squeeze factor'
                                          f'is too high, mother {person_id} will return home on date {self.sim.date}')
@@ -3229,7 +3227,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.module.parameters
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
@@ -3398,7 +3396,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
     def did_not_run(self):
         person_id = self.target
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         logger.debug(key='message', data='HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare: did not run as the '
                                          f'squeeze factor is too high, mother {person_id} did not receive care')
@@ -3421,7 +3419,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
     def not_available(self):
         person_id = self.target
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         logger.debug(key='message', data='HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare is not in the '
                                          f'allowed service availability and therefore cannot run for mother {person_id}'
@@ -3454,7 +3452,7 @@ class HSI_Labour_ReceivesCareFollowingCaesareanSection(HSI_Event, IndividualScop
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        mni = self.module.mother_and_newborn_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         df = self.sim.population.props
         params = self.module.parameters
 
