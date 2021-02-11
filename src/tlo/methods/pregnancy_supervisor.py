@@ -192,6 +192,8 @@ class PregnancySupervisor(Module):
             Types.REAL, 'Probability that a woman who is pregnant will seek care in the event of a complication'),
         'prob_seek_care_pregnancy_loss': Parameter(
             Types.REAL, 'Probability that a woman who has developed complications post pregnancy loss will seek care'),
+        'prob_seek_care_induction': Parameter(
+            Types.REAL, 'Probability that a woman who is post term will seek care for induction of labour'),
     }
 
     PROPERTIES = {
@@ -545,6 +547,9 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_premature_rupture_of_membranes'] = False
         df.at[child_id, 'ps_chorioamnionitis'] = False
         df.at[child_id, 'ps_emergency_event'] = False
+
+    def further_on_birth_pregnancy_supervisor(self, mother_id):
+        df = self.sim.population.props
 
         # We reset all womans gestational age when they deliver as they are no longer pregnant
         df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
@@ -1230,6 +1235,33 @@ class PregnancySupervisor(Module):
             self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person),
                                     new_due_date)
 
+    def update_variables_post_still_birth_for_data_frame(self, women):
+        """
+        This function updates variables for a slice of the dataframe who have experience antepartum stillbirth
+        :param women: women who are experiencing stillbirth
+        """
+        df = self.sim.population.props
+
+        self.pregnancy_disease_tracker['antenatal_stillbirth'] += len(women)
+
+        # We reset the relevant pregnancy variables
+        df.loc[women.index, 'ps_prev_stillbirth'] = True
+
+        # And reset relevant variables
+        df.loc[women.index, 'is_pregnant'] = False
+        self.sim.modules['Labour'].reset_due_date(
+            ind_or_df='data_frame', id_or_index=women.index, new_due_date=pd.NaT)
+
+        self.pregnancy_supervisor_property_reset(
+            ind_or_df='data_frame', id_or_index=women.index)
+
+        self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
+            ind_or_df='data_frame', id_or_index=women.index)
+
+        if not women.empty:
+            logger.debug(key='message', data=f'The following women have have experienced an antepartum'
+                                             f' stillbirth,{women}')
+
     def apply_risk_of_still_birth(self, gestation_of_interest):
         """
         This function applies risk of still birth to a slice of the data frame. It is called by PregnancySupervisorEvent
@@ -1243,42 +1275,28 @@ class PregnancySupervisor(Module):
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
                    (df['ps_ectopic_pregnancy'] == 'none') & ~df['ac_inpatient'] & ~df['la_currently_in_labour']])
 
-        self.pregnancy_disease_tracker['antenatal_stillbirth'] += len(still_birth.loc[still_birth])
-
-        # We reset the relevant pregnancy variables
-        df.loc[still_birth.loc[still_birth].index, 'ps_prev_stillbirth'] = True
-
-        # And reset relevant variables
-        df.loc[still_birth.loc[still_birth].index, 'is_pregnant'] = False
-        self.sim.modules['Labour'].reset_due_date(
-            ind_or_df='data_frame', id_or_index=still_birth.loc[still_birth].index, new_due_date=pd.NaT)
-
-        self.pregnancy_supervisor_property_reset(
-            ind_or_df='data_frame', id_or_index=still_birth.loc[still_birth].index)
-
-        self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
-            ind_or_df='data_frame', id_or_index=still_birth.loc[still_birth].index)
-
-        if not still_birth.loc[still_birth].empty:
-            logger.debug(key='message', data=f'The following women have have experienced an antepartum'
-                                             f' stillbirth,{still_birth.loc[still_birth]}')
+        self.update_variables_post_still_birth_for_data_frame(still_birth.loc[still_birth])
 
     def induction_care_seeking_and_still_birth_risk(self, gestation_of_interest):
         """
-        This function applies risk of still birth to a slice of the data frame. It is called by PregnancySupervisorEvent
+        This function is called for post term women and applies a probability that they will seek care for induction
+        and if not will experience antenatal stillbirth
         :param gestation_of_interest: INT used to select women from the data frame at certain gestation
         """
         df = self.sim.population.props
         params = self.parameters
-        # todo fix!!!
 
+        # We select the appropriate women
         post_term_women = df.loc[
             df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
                    (df['ps_ectopic_pregnancy'] == 'none') & ~df['ac_inpatient'] & ~df['la_currently_in_labour']]
 
+        # Apply a probability they will seek care for induction
         care_seekers = pd.Series(self.rng.random_sample(len(post_term_women)) < params['prob_seek_care_induction'],
-                              index=post_term_women.index)
+                                 index=post_term_women.index)
 
+        # If they do, we scheduled them to preset to a health facility immediately (this HSI schedules the correct
+        # labour modules)
         for person in care_seekers.loc[care_seekers].index:
             from tlo.methods.antenatal_care import HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour
 
@@ -1288,8 +1306,14 @@ class PregnancySupervisor(Module):
             self.sim.modules['HealthSystem'].schedule_hsi_event(induction, priority=0,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=7))
+
+        # We apply risk of still birth to those who dont seek care
+        # todo check this is right
+        non_care_seekers = df.loc[care_seekers.loc[~care_seekers].index]
         still_birth = self.apply_linear_model(
-            params['ps_linear_equations']['antenatal_stillbirth'], care_seekers.loc[~care_seekers])
+            params['ps_linear_equations']['antenatal_stillbirth'], non_care_seekers)
+
+        self.update_variables_post_still_birth_for_data_frame(still_birth.loc[still_birth])
 
     def update_variables_post_still_birth_for_individual(self, individual_id):
         """
@@ -1404,7 +1428,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                            'mild_mod_anaemia_onset': pd.NaT,
                            'sev_anaemia_onset': pd.NaT,
                            'gest_htn_onset': pd.NaT,
-                            # 'severe_gest_htn_onset': pd.NaT,
+                        #  'severe_gest_htn_onset': pd.NaT,
                            'mild_pre_eclamp_onset': pd.NaT,
                            'severe_pre_eclamp_onset': pd.NaT,
                            'eclampsia_onset': pd.NaT,
@@ -1671,7 +1695,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # ============================ POST TERM RISK OF STILLBIRTH ==================================================
         for gestation_of_interest in [41, 42, 43, 44, 45]:
             self.module.induction_care_seeking_and_still_birth_risk(gestation_of_interest=gestation_of_interest)
-
 
 
 class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):

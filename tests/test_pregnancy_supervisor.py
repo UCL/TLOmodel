@@ -1,7 +1,8 @@
 import pytest
 import os
 from pathlib import Path
-
+import pandas as pd
+from tlo.analysis.utils import parse_log_file
 from tlo import Date, Simulation, logging
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
@@ -88,7 +89,8 @@ def registering_modules():
 def test_run_with_normal_allocation_of_pregnancy():
     sim = registering_modules()
 
-    sim.make_initial_population(n=10000)
+    sim.make_initial_population(n=5000)
+
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
 
@@ -101,6 +103,31 @@ def test_run_with_high_volumes_of_pregnancy():
     set_all_women_as_pregnant(sim)
 
     sim.simulate(end_date=Date(2011, 1, 1))
+
+@pytest.mark.group2
+def test_twins_logic():
+    sim = registering_modules()
+    sim.make_initial_population(n=1000)
+    set_all_women_as_pregnant(sim)
+
+    params = sim.modules['PregnancySupervisor'].parameters
+    params['ps_linear_equations']['multiples'] = \
+        LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            0.5)
+
+    sim.simulate(end_date=Date(2011, 1, 1))
+    df = sim.population.props
+
+    twins = df.nb_is_twin != 'not_twin'
+    assert (df.loc[twins.loc[twins].index, 'nb_twin_sibling_id'] != -1).all().all()
+
+    first_born_twins = df.nb_is_twin == 'first_born'
+    second_born_twins = df.nb_is_twin == 'second_born'
+    assert (len(first_born_twins.loc[first_born_twins]) == len(second_born_twins.loc[second_born_twins]))
+
+    assert (df.loc[first_born_twins.loc[first_born_twins].index, 'mother_id'] ==
+            df.loc[second_born_twins.loc[second_born_twins].index, 'mother_id'])
 
 
 @pytest.mark.group2
@@ -166,4 +193,3 @@ test_run_with_normal_allocation_of_pregnancy()
 #test_ensure_induced_abortion_stops_pregnancies()
 #test_ensure_ectopics_stops_pregnancies()
 
-# =========================================== PREGNANCY SUPERVISOR TESTS ==============================================

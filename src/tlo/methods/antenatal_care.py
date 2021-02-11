@@ -383,6 +383,8 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[child_id, 'ac_received_blood_transfusion'] = False
         df.at[child_id, 'ac_admitted_for_immediate_delivery'] = 'none'
 
+    def further_on_birth_care_of_women_in_pregnancy(self, mother_id):
+        df = self.sim.population.props
         # On_birth we run a check at birth to make sure no women exceed 8 visits- this test ensures women are not being
         # scheduled more ANC than required
         # logic
@@ -393,6 +395,8 @@ class CareOfWomenDuringPregnancy(Module):
                                  'age': df.at[mother_id, 'age_years'],
                                  'date_of_delivery': self.sim.date,
                                  'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy']}
+
+        # todo: this logging will happen twice for women with twins...
 
         logger.info(key='anc_count_on_birth', data=total_anc_visit_count, description='A dictionary containing the '
                                                                                       'number of ANC visits each woman'

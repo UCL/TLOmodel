@@ -175,6 +175,9 @@ class NewbornOutcomes(Module):
     }
 
     PROPERTIES = {
+        'nb_is_twin': Property(Types.CATEGORICAL, 'Whether this child is a twin',
+                                                   categories=['not_twin', 'first_born', 'second_born']),
+        'nb_twin_sibling_id': Property(Types.INT, 'id number of this twins sibling'),
         'nb_early_preterm': Property(Types.BOOL, 'whether this neonate has been born early preterm (24-33 weeks '
                                                  'gestation)'),
         'nb_late_preterm': Property(Types.BOOL, 'whether this neonate has been born late preterm (34-36 weeks '
@@ -368,6 +371,8 @@ class NewbornOutcomes(Module):
     def initialise_population(self, population):
         df = population.props
 
+        df.loc[df.is_alive, 'nb_is_twin'] = 'not_twin'
+        df.loc[df.is_alive, 'nb_twin_sibling_id'] = -1
         df.loc[df.is_alive, 'nb_early_preterm'] = False
         df.loc[df.is_alive, 'nb_late_preterm'] = False
         df.loc[df.is_alive, 'nb_preterm_birth_disab'] = 'none'
@@ -1063,12 +1068,50 @@ class NewbornOutcomes(Module):
         params = self.parameters
         nci = self.newborn_care_info
 
+        self.sim.modules['Labour'].further_on_birth_labour(mother_id, child_id)
+
         # We check that the baby has survived labour and has been delivered (even if the mother did not survive)
         if (df.at[mother_id, 'is_alive'] and ~df.at[mother_id, 'la_intrapartum_still_birth']) or \
            (~df.at[mother_id, 'is_alive'] and df.at[mother_id, 'la_maternal_death_in_labour'] and
            ~df.at[mother_id, 'la_intrapartum_still_birth']):
             mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
             m = mni[mother_id]
+
+        # =========================================== Twins... =================================================
+        # When a mother has twins the do_birth function is called twice in sucession, meaning the on_birth function of
+        # all modules (including this one) run twice
+        child_id_row_above = child_id - 1
+
+        # Here we use information about the neonates position in the dataframe to determine if they are the first or
+        # second born twin
+        if df.at[mother_id, 'ps_multiple_pregnancy']:
+            # If this childs mother is pregnant with twins, and the child in the previous row is not a twin and their
+            # mother id does not match then this child is the first born twin
+            if (df.at[child_id_row_above, 'nb_is_twin'] == 'not_twin') and \
+              (df.at[child_id, 'mother_id'] != df.at[child_id_row_above, 'mother_id']):
+                df.at[child_id, 'nb_is_twin'] = 'first_born'
+
+            # Otherwise if the child in the row above is a first born twin with the same mother_id then this child is
+            # assumed to be the second born twin
+            elif (df.at[child_id_row_above, 'nb_is_twin'] == 'first_born') \
+              and (df.at[child_id, 'mother_id'] == df.at[child_id_row_above, 'mother_id']):
+                df.at[child_id, 'nb_is_twin'] = 'second_born'
+
+                # When the second born twin is born with link the siblings by storing the id number of their sibling as
+                # a property
+                df.at[child_id, 'nb_twin_sibling_id'] = child_id_row_above
+                df.at[child_id_row_above, 'nb_twin_sibling_id'] = child_id
+
+                # and log the twin pair
+                twin_birth = {'twin_1_id': child_id_row_above,
+                              'twin_2_id': child_id,
+                              'mother_id': mother_id,
+                              'date_of_delivery': self.sim.date}
+
+                logger.info(key='twin_birth', data=twin_birth, description='A record of each birth of twin pairs')
+        else:
+            df.at[child_id, 'nb_is_twin'] = 'not_twin'
+            df.at[child_id, 'nb_twin_sibling_id'] = -1
 
         df.at[child_id, 'nb_early_preterm'] = False
         df.at[child_id, 'nb_late_preterm'] = False
@@ -1235,6 +1278,12 @@ class NewbornOutcomes(Module):
                         #  I apply risk of death just once following birth, and whilst most of the deaths will occur
                         #  then there needs to be some kind of spread- should i just do a random weighted draw across
                         #  the first week/month of life?
+
+        if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
+                                                          (df.at[child_id, 'nb_is_twin'] == 'first_born')):
+            self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)
+            self.sim.modules['PregnancySupervisor'].further_on_birth_pregnancy_supervisor(mother_id)
+            self.sim.modules['PostnatalSupervisor'].further_on_birth_postnatal_supervisor(mother_id, child_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.info(key='message', data=f'This is NewbornOutcomes, being alerted about a health system interaction '

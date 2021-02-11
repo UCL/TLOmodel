@@ -565,9 +565,13 @@ class PostnatalSupervisor(Module):
         df.at[child_id, 'pn_anaemia_following_pregnancy'] = 'none'
         df.at[child_id, 'pn_emergency_event_mother'] = False
 
+    def further_on_birth_postnatal_supervisor(self, mother_id, child_id):
+        df = self.sim.population.props
+        params = self.parameters
+
         # We store the ID number of the child this woman has most recently delivered as a property of the woman. This is
         # because PNC is scheduled for the woman during the Labour Module but must act on both mother and child
-        df.at[mother_id, 'pn_id_most_recent_child'] = child_id
+        df.at[mother_id, 'pn_id_most_recent_child'] = child_id # todo: this will store id of first born only
 
         # Here we determine if, following childbirth, this woman will develop a fistula
         risk_of_fistula = params['pn_linear_equations'][
@@ -586,7 +590,7 @@ class PostnatalSupervisor(Module):
         # The majority of hypertension related to pregnancy resolve with delivery of the foetus. However the condition
         # may persist (and even onset within the postnatal period...)
         if df.at[mother_id, 'ps_htn_disorders'] == 'gest_htn' or 'severe_gest_htn' or 'mild_pre_eclamp' or \
-                                                   'severe_pre_eclamp':
+            'severe_pre_eclamp':
             if self.rng.random_sample() < params['prob_htn_persists']:
                 logger.debug(key='message', data=f'mother {mother_id} will remain hypertensive despite successfully '
                                                  f'delivering')
