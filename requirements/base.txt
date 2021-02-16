@@ -4,35 +4,24 @@
 #
 #    pip-compile --output-file=base.txt base.in
 #
-adal==1.2.5               # via msrestazure
-azure-batch==9.0.0        # via -r base.in
-azure-common==1.1.26      # via azure-batch
-azure-core==1.9.0         # via azure-storage-file-share
-azure-storage-file-share==12.3.0  # via -r base.in
-certifi==2020.11.8        # via msrest, requests
-cffi==1.14.4              # via cryptography
-chardet==3.0.4            # via requests
-click==7.1.2              # via -r base.in
-cryptography==3.2.1       # via adal, azure-storage-file-share
-gitdb==4.0.5              # via gitpython
-gitpython==3.1.11         # via -r base.in
-idna==2.10                # via requests
-isodate==0.6.0            # via msrest
-jinja2==2.11.2            # via -r base.in
-markupsafe==1.1.1         # via jinja2
-msrest==0.6.19            # via azure-batch, azure-storage-file-share, msrestazure
-msrestazure==0.6.4        # via azure-batch
-numpy==1.19.4             # via -r base.in, pandas, scipy
-oauthlib==3.1.0           # via requests-oauthlib
-pandas==1.1.4             # via -r base.in
-pycparser==2.20           # via cffi
-pyjwt==1.7.1              # via adal
-python-dateutil==2.8.1    # via adal, pandas
-pytz==2020.4              # via pandas
-requests-oauthlib==1.3.0  # via msrest
-requests==2.25.0          # via adal, azure-core, msrest, requests-oauthlib
-scipy==1.5.4              # via -r base.in
-six==1.15.0               # via azure-core, cryptography, isodate, msrestazure, python-dateutil
-smmap==3.0.4              # via gitdb
-urllib3==1.26.2           # via requests
-xlrd==1.2.0               # via -r base.in
+et-xmlfile==1.0.1
+    # via openpyxl
+jdcal==1.4.1
+    # via openpyxl
+numpy==1.19.5
+    # via
+    #   -r base.in
+    #   pandas
+    #   scipy
+openpyxl==3.0.6
+    # via -r base.in
+pandas==1.2.1
+    # via -r base.in
+python-dateutil==2.8.1
+    # via pandas
+pytz==2020.5
+    # via pandas
+scipy==1.6.0
+    # via -r base.in
+six==1.15.0
+    # via python-dateutil

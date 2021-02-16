@@ -298,6 +298,7 @@ class SymptomManager(Module):
                                                              disease_module=disease_module,
                                                              duration_in_days=duration_in_days)
             self.sim.schedule_event(event=auto_onset_event, date=date_of_onset)
+            return
 
         # Make the operation:
         if add_or_remove == '+':
@@ -361,7 +362,7 @@ class SymptomManager(Module):
         :return: list of strings for the symptoms that are currently being experienced
         """
 
-        assert isinstance(person_id, (int, np.int64)), 'person_id must be a single integer for one particular person'
+        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
 
         df = self.sim.population.props
         assert df.at[person_id, 'is_alive'], "The person is not alive"
@@ -385,7 +386,7 @@ class SymptomManager(Module):
         :param disease_module:
         :return: list of strings for the disease module name
         """
-        assert isinstance(person_id, (int, np.int64)), 'person_id must be a single integer for one particular person'
+        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
         assert isinstance(symptom_string, str), 'symptom_string must be a string'
 
         df = self.sim.population.props
@@ -404,7 +405,7 @@ class SymptomManager(Module):
         """
         df = self.sim.population.props
 
-        assert isinstance(person_id, (int, np.int64)), 'person_id must be a single integer for one particular person'
+        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
         assert df.at[person_id, 'is_alive'], "The person is not alive"
         assert disease_module.name in ([self.name] + self.recognised_module_names), \
             "Disease Module Name is not recognised"

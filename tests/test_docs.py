@@ -98,8 +98,10 @@ def test_extract_bases():
     # [class name, class object, line number]
     offspring = classes[-1]
     name, obj = offspring[0:2]
-    expected = "Bases: :class:`tests.test_docs_data.tlo.a.Father`, :class:`tests.test_docs_data.tlo.a.Mother`"
-    assert expected == extract_bases(name, obj).strip()
+    expected = "Bases: :class:`tests.test_docs_data.tlo.a.Father`," \
+               " :class:`tests.test_docs_data.tlo.a.Mother`"
+    (base_str, base_objects) = extract_bases(name, obj)
+    assert expected == base_str.strip()
 
 
 def ignore_this_test_write_rst_file():
@@ -132,11 +134,13 @@ def test_get_class_output_string():
     numspaces = 5
     spacer = numspaces * ' '
 
-    # NB we expect the following to be in name order
-    # i.e. alphabetical rather than source code order.
+    expected += f"{spacer}**Functions (defined or overridden in " \
+                f"class Person):**\n\n"
+
+    # These functions should be listed in source-file order.
     expected += f"{spacer}.. automethod:: __init__\n\n"
-    expected += f"{spacer}.. automethod:: get_name\n\n"
     expected += f"{spacer}.. automethod:: set_name\n\n"
+    expected += f"{spacer}.. automethod:: get_name\n\n"
 
     expected += "\n\n\n"
     assert result == expected

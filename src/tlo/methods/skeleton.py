@@ -24,13 +24,13 @@ class Skeleton(Module):
     All disease modules need to be implemented as a class inheriting from Module.
     They need to provide several methods which will be called by the simulation
     framework:
-    * `read_parameters(data_folder)`
-    * `initialise_population(population)`
-    * `initialise_simulation(sim)`
-    * `on_birth(mother, child)`
-    * `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
-    *  `report_daly_values()` [If this is disease module]
 
+        - `read_parameters(data_folder)`
+        - `initialise_population(population)`
+        - `initialise_simulation(sim)`
+        - `on_birth(mother, child)`
+        - `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
+        -  `report_daly_values()` [If this is disease module]
     """
     # Declare Metadata (this is for a typical 'Disease Module')
     METADATA = {
@@ -226,16 +226,32 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         """
-        Do the action that take place in this health system interaction, in light of squeeze_factor
-        Can reutrn an updated APPT_FOOTPRINT if this differs from the declaration in self.EXPECTED_APPT_FOOTPRINT
+        Do the action that take place in this health system interaction, in light of prevailing conditions in the
+        healthcare system:
+
+            * squeeze_factor (an argument provided to the event) indicates the extent to which this HSI_Event is being
+              run in the context of an over-burdened healthcare facility.
+            * bed_days_allocated_to_this_event (a property of the event) indicates the number and types of bed-days
+              that have been allocated to this event.
+
+        Can return an updated APPT_FOOTPRINT if this differs from the declaration in self.EXPECTED_APPT_FOOTPRINT
         """
         pass
 
     def did_not_run(self):
         """
-        Do any action that is neccessary when the health system interaction is not run.
+        Do any action that is necessary each time when the health system interaction is not run.
         This is called each day that the HSI is 'due' but not run due to insufficient health system capabilities.
         Return False to cause this HSI event not to be rescheduled and to therefore never be run.
         (Returning nothing or True will cause this event to be rescheduled for the next day.)
+        """
+        pass
+
+    def never_ran(self):
+        """
+        Do any action that is neccessary when it is clear that the HSI event will never be run. This will occur if it
+        has not run and the simulation date has passed the date 'tclose' by which the event was scheduled to have
+        occurred.
+        Do not return anything.
         """
         pass

@@ -5,9 +5,7 @@ click
 numpy
 pandas
 scipy
-xlrd
-
-jinja2  # Needed for pandas.Styler
+openpyxl
 
 # To submit jobs to Azure Batch
 azure-batch

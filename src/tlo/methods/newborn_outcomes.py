@@ -832,12 +832,12 @@ class NewbornOutcomes(Module):
         health_values_3.name = 'Neonatal Sepsis Long term Disability'
 
         health_values_4 = df.loc[df.is_alive, 'nb_early_onset_neonatal_sepsis'].map(
-            {False: 0, True: p['severe_infection_sepsis']})
+            {False: 0, True: p['severe_infection_sepsis']}).astype(float)
         health_values_4.name = 'Neonatal Sepsis Acute Disability'
 
         health_values_5 = df.loc[df.is_alive, 'nb_preterm_birth_disab'].map(
             {'none': 0, 'mild_motor': p['mild_motor_preterm'], 'mild_motor_and_cog': p['mild_motor_cognitive_preterm'],
-             'moderate_motor': p['moderate_motor_preterm'], 'severe_motor': p['severe_motor_preterm']})
+             'moderate_motor': p['moderate_motor_preterm'], 'severe_motor': p['severe_motor_preterm']}).astype(float)
         health_values_5.name = 'Preterm Birth Disability'
 
         health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive],
