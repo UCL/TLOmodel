@@ -2,6 +2,7 @@ import textwrap
 from pathlib import Path
 import datetime
 import json
+import math
 import os
 
 import click
@@ -59,22 +60,28 @@ def batch_submit(scenario_file, config_file):
     copy of the code used by Azure Batch is identical to your own.
     """
     scenario_file = Path(scenario_file).as_posix()
+
+    current_branch = is_file_clean(scenario_file)
+    # current_branch = "mg/scenarios-batch"
+    if current_branch is False:
+        return
+
     scenario = load_scenario(scenario_file)
-    run_json = scenario.save_draws()
+    repo = Repo('.')
+    commit = next(repo.iter_commits(max_count=1, paths=scenario_file))
+    run_json = scenario.save_draws(commit=commit.hexsha)
 
     with open(Path(config_file).as_posix()) as json_file:
         config = json.load(json_file)
 
-    current_branch = is_file_clean(scenario_file)
-    if current_branch is False:
-        return
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
 
     # Name of the user to be used in the storage directory
     user_name = config["AZURE_STORAGE_ACCOUNT_NAME"]
 
     # ID of the Batch job.
-    job_id = config["JOB_ID"] + "-" + timestamp
+    job_id = Path(scenario_file).stem + "-" + timestamp
+    # job_id = config["JOB_ID"] + "-" + timestamp
 
     # Path in Azure storage where to store the files for this job
     azure_directory = f"{user_name}/{job_id}"
@@ -110,7 +117,7 @@ def batch_submit(scenario_file, config_file):
     vm_size = config["POOL_VM_SIZE"]
     # TODO: cap the number of nodes in the pool?  Take the number of nodes in
     # input from the user, but always at least 2?
-    pool_node_count = max(2, scenario.number_of_draws * scenario.samples_per_draw)
+    pool_node_count = max(2, math.ceil(scenario.number_of_draws * scenario.runs_per_draw))
 
     # User identity in the Batch tasks
     auto_user = batchmodels.AutoUserSpecification(
@@ -170,6 +177,7 @@ def batch_submit(scenario_file, config_file):
     command = f"""
     git fetch --all
     git checkout -b {current_branch} origin/{current_branch}
+    git pull
     tlo batch-run {azure_run_json} {working_dir} {{}} {{}}
     cp -r {working_dir}/* {azure_directory}/.
     """
@@ -321,9 +329,8 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     :param str vm_size: Type of virtual machine to use as pool.
     :param int pool_node_count: Number of nodes in the pool.
     :param str job_id: The ID for the job.
-    :type batch_service_client: `azure.batch.models.ContainerRegistry`
     :param container_conf: Configuration of a container.
-    :type batch_service_client: `azure.batch.models.ContainerConfiguration`
+    :type container_conf: `azure.batch.models.ContainerConfiguration`
     :param mount_configuration: Configuration of the images to mount on the nodes.
     :type mount_configuration: `list[azure.batch.models.MountConfiguration]`
     """
@@ -347,6 +354,7 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
         vm_size=vm_size,
         target_dedicated_nodes=pool_node_count,
         mount_configuration=mount_configuration,
+        task_slots_per_node=1
     )
 
     auto_pool_specification = batchmodels.AutoPoolSpecification(
@@ -383,7 +391,7 @@ def add_tasks(batch_service_client, user_identity, job_id,
     """
 
     print("Adding {} task(s) to job [{}]...".format(
-        scenario.number_of_draws * scenario.samples_per_draw,
+        scenario.number_of_draws * scenario.runs_per_draw,
         job_id))
 
     tasks = list()
@@ -394,10 +402,10 @@ def add_tasks(batch_service_client, user_identity, job_id,
     )
 
     for draw_number in range(0, scenario.number_of_draws):
-        for sample_number in range(0, scenario.samples_per_draw):
+        for run_number in range(0, scenario.runs_per_draw):
             task = batchmodels.TaskAddParameter(
-                id=f"Draw_{draw_number}-sample_{sample_number}",
-                command_line=command.format(draw_number, sample_number),
+                id=f"draw_{draw_number}-run_{run_number}",
+                command_line=command.format(draw_number, run_number),
                 container_settings=task_container_settings,
                 user_identity=user_identity,
             )

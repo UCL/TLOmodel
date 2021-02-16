@@ -295,7 +295,8 @@ class SampleRunner:
         :param: x an integer
         :returns: an integer
         """
-        x ^= (x >> 16) * 0x7feb352d
-        x ^= (x >> 15) * 0x846ca68b
-        x ^= (x >> 16)
+        x *= 0x7feb352d
+        x ^= x >> 15
+        x *= 0x846ca68b
+        x ^= x >> 16
         return x % (2 ** 32)
