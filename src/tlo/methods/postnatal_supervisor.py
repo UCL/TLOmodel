@@ -1407,7 +1407,6 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[week_8_postnatal_women, 'pn_anaemia_following_pregnancy'] = 'none'
 
 
-
         self.module.postpartum_infections_late.unset(week_8_postnatal_women, 'endometritis', 'urinary_tract_inf',
                                                      'skin_soft_tissue_inf', 'other_maternal_infection')
         self.module.deficiencies_following_pregnancy.unset(week_8_postnatal_women, 'iron', 'folate', 'b12')
