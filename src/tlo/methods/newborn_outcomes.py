@@ -455,13 +455,12 @@ class NewbornOutcomes(Module):
         :return: BOOL outcome
         """
         df = self.sim.population.props
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        mother_id = df.loc[person_id, 'mother_id']
+        nci = self.newborn_care_info
         person = df.loc[[person_id]]
 
         # Here we define all the possible external variables used in the linear model
-        steroid_status = mni[mother_id]['corticosteroids_given']
-        abx_for_prom = mni[mother_id]['abx_for_prom_given']
+        steroid_status = nci[person_id]['corticosteroids_given']
+        abx_for_prom = nci[person_id]['abx_for_prom_given']
 
         # We return a BOOLEAN
         return self.rng.random_sample(size=1) < eq.predict(person,
@@ -773,7 +772,9 @@ class NewbornOutcomes(Module):
         # is done here as we use variables from the mni as predictors in some of the above equations
         mother_id = df.loc[individual_id, 'mother_id']
         if df.at[mother_id, 'la_maternal_death_in_labour']:
-            del mni[mother_id]
+            if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
+                                                              mni[mother_id, 'twin_count'] == 2):
+                del mni[mother_id]
 
         del nci[individual_id]
 
@@ -1054,6 +1055,23 @@ class NewbornOutcomes(Module):
             self.apply_risk_of_not_breathing_at_birth(individual_id)
             self.set_death_and_disability_status(individual_id)
 
+    def link_twins(self, child_one, child_two, mother_id):
+        df = self.sim.population.props
+
+        df.at[child_one, 'nb_is_twin'] = 'first_born'
+        df.at[child_one, 'nb_twin_sibling_id'] = child_two
+
+        df.at[child_two, 'nb_is_twin'] = 'first_born'
+        df.at[child_two, 'nb_twin_sibling_id'] = child_one
+
+        # and log the twin pair
+        twin_birth = {'twin_1_id': child_one,
+                      'twin_2_id': child_two,
+                      'mother_id': mother_id,
+                      'date_of_delivery': self.sim.date}
+
+        logger.info(key='twin_birth', data=twin_birth, description='A record of each birth of twin pairs')
+
     def on_birth(self, mother_id, child_id):
         """The on_birth function of this module sets key properties of all newborns, including prematurity
         status and schedules functions to set weight and size. For newborns delivered at home it determines if they will
@@ -1077,39 +1095,12 @@ class NewbornOutcomes(Module):
             mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
             m = mni[mother_id]
 
-        # =========================================== Twins... =================================================
-        # When a mother has twins the do_birth function is called twice in sucession, meaning the on_birth function of
-        # all modules (including this one) run twice
-        child_id_row_above = child_id - 1
+        if df.at[mother_id, 'ps_multiple_pregnancy'] & m['twin_count'] == 0:
+            m['twin_count'] = 1
+        elif df.at[mother_id, 'ps_multiple_pregnancy'] & m['twin_count'] == 1:
+            m['twin_count'] = 2
 
-        # Here we use information about the neonates position in the dataframe to determine if they are the first or
-        # second born twin
-        if df.at[mother_id, 'ps_multiple_pregnancy']:
-            # If this childs mother is pregnant with twins, and the child in the previous row is not a twin and their
-            # mother id does not match then this child is the first born twin
-            if (df.at[child_id_row_above, 'nb_is_twin'] == 'not_twin') and \
-              (df.at[child_id, 'mother_id'] != df.at[child_id_row_above, 'mother_id']):
-                df.at[child_id, 'nb_is_twin'] = 'first_born'
-
-            # Otherwise if the child in the row above is a first born twin with the same mother_id then this child is
-            # assumed to be the second born twin
-            elif (df.at[child_id_row_above, 'nb_is_twin'] == 'first_born') \
-              and (df.at[child_id, 'mother_id'] == df.at[child_id_row_above, 'mother_id']):
-                df.at[child_id, 'nb_is_twin'] = 'second_born'
-
-                # When the second born twin is born with link the siblings by storing the id number of their sibling as
-                # a property
-                df.at[child_id, 'nb_twin_sibling_id'] = child_id_row_above
-                df.at[child_id_row_above, 'nb_twin_sibling_id'] = child_id
-
-                # and log the twin pair
-                twin_birth = {'twin_1_id': child_id_row_above,
-                              'twin_2_id': child_id,
-                              'mother_id': mother_id,
-                              'date_of_delivery': self.sim.date}
-
-                logger.info(key='twin_birth', data=twin_birth, description='A record of each birth of twin pairs')
-        else:
+        elif ~df.at[mother_id, 'ps_multiple_pregnancy']:
             df.at[child_id, 'nb_is_twin'] = 'not_twin'
             df.at[child_id, 'nb_twin_sibling_id'] = -1
 
@@ -1164,7 +1155,10 @@ class NewbornOutcomes(Module):
                              'vit_k': False,
                              'tetra_eye_d': False,
                              'proph_abx': False,
+                             'abx_for_prom_given': mni[mother_id]['abx_for_prom_given'],
+                             'corticosteroids_given': mni[mother_id]['corticosteroids_given'],
                              'delivery_setting': mni[mother_id]['delivery_setting'],
+                             'clean_birth_practices': mni[mother_id]['clean_birth_practices'],
                              'sought_care_for_complication': False,
                              'cause_of_death_after_birth': []}
 
@@ -1280,7 +1274,7 @@ class NewbornOutcomes(Module):
                         #  the first week/month of life?
 
         if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
-                                                          (df.at[child_id, 'nb_is_twin'] == 'first_born')):
+                                                          m['twin_count'] == 1):
             self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)
             self.sim.modules['PregnancySupervisor'].further_on_birth_pregnancy_supervisor(mother_id)
             self.sim.modules['PostnatalSupervisor'].further_on_birth_postnatal_supervisor(mother_id, child_id)
@@ -1359,8 +1353,6 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(HSI_Event, Individu
     def apply(self, person_id, squeeze_factor):
         nci = self.module.newborn_care_info
         df = self.sim.population.props
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        mother_id = df.loc[person_id, 'mother_id']
         params = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
@@ -1388,7 +1380,7 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(HSI_Event, Individu
 
         # The effect of clean birth practices are stored as a property of the newborn as they reduce risk of sepsis into
         # the postnatal period
-        if mni[mother_id]['clean_birth_practices']:
+        if nci[person_id]['clean_birth_practices']:
             df.at[person_id, 'nb_clean_birth'] = True
 
         # As with labour we use a squeeze factor threshold to determine if events will run

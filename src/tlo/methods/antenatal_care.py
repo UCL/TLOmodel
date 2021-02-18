@@ -621,6 +621,9 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.parameters
 
+        # todo: is this always readmitting women with hypertension? (i.e women on treatment shouldnt be readmitted
+        #  unless change in severity?)
+
         # Define the consumables
         item_code_urine_dipstick = pd.unique(
             consumables.loc[consumables['Items'] == 'Test strips, urine analysis', 'Item_Code'])[0]
@@ -659,6 +662,9 @@ class CareOfWomenDuringPregnancy(Module):
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_pressure_measurement',
                                                                        hsi_event=hsi_event):
                 hypertension_diagnosed = True
+
+                if ~df.at[person_id, 'ac_gest_htn_on_treatment']:
+                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(person_id, 'hypertension_onset')
             else:
                 hypertension_diagnosed = False
         else:
@@ -1078,7 +1084,9 @@ class CareOfWomenDuringPregnancy(Module):
                     # We assume women with a positive GDM screen will be admitted (if they are not already receiving
                     # outpatient care)
                     if df.at[person_id, 'ac_gest_diab_on_treatment'] == 'none':
+                        self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(person_id, 'gest_diab_onset')
                         df.at[person_id, 'ac_to_be_admitted'] = True
+
                         logger.debug(key='msg', data=f'Mother {person_id} has had GDM detected after a blood glucose '
                                                      f'testing and will require admission')
                     else:
@@ -1294,6 +1302,7 @@ class CareOfWomenDuringPregnancy(Module):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
         pregnancy_deficiencies = self.sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy
+        store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
         # Calculate the approximate dose for the remainder of pregnancy
         approx_days_of_pregnancy = (40 - df.at[individual_id, 'ps_gestational_age_in_weeks']) * 7
@@ -1335,6 +1344,8 @@ class CareOfWomenDuringPregnancy(Module):
             if outcome_of_request_for_consumables['Item_Code'][item_code_elemental_iron]:
                 if self.rng.random_sample() < params['effect_of_iron_replacement_for_resolving_anaemia']:
                     df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
+                    for severity in df.at[individual_id, 'ps_anaemia_in_pregnancy']:
+                        store_dalys_in_mni(individual_id, f'{severity}_anaemia_resolution')
 
                 if self.rng.random_sample() < params['effect_of_iron_replacement_for_resolving_iron_def']:
                     pregnancy_deficiencies.unset([individual_id], 'iron')
@@ -1342,6 +1353,8 @@ class CareOfWomenDuringPregnancy(Module):
         if pregnancy_deficiencies.has_any([individual_id], 'folate', first=True):
             if outcome_of_request_for_consumables['Item_Code'][item_code_folate]:
                 if self.rng.random_sample() < params['effect_of_folate_replacement_for_resolving_anaemia']:
+                    for severity in df.at[individual_id, 'ps_anaemia_in_pregnancy']:
+                        store_dalys_in_mni(individual_id, f'{severity}_anaemia_resolution')
                     df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
                 if self.rng.random_sample() < params['effect_of_folate_replacement_for_resolving_folate_def']:
@@ -1350,6 +1363,8 @@ class CareOfWomenDuringPregnancy(Module):
         if pregnancy_deficiencies.has_any([individual_id], 'b12', first=True):
             if outcome_of_request_for_consumables['Item_Code'][item_code_b12]:
                 if self.rng.random_sample() < params['effect_of_b12_replacement_for_resolving_anaemia']:
+                    for severity in df.at[individual_id, 'ps_anaemia_in_pregnancy']:
+                        store_dalys_in_mni(individual_id, f'{severity}_anaemia_resolution')
                     df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
                 if self.rng.random_sample() < params['effect_of_b12_replacement_for_resolving_b12_def']:
@@ -1366,6 +1381,7 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.module.parameters
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
         # Calculate the approximate dose for the remainder of pregnancy
         approx_days_of_pregnancy = (40 - df.at[individual_id, 'ps_gestational_age_in_weeks']) * 7
@@ -1394,6 +1410,8 @@ class CareOfWomenDuringPregnancy(Module):
             # starting on a course of IFA will correct anaemia prior to follow up
             if self.module.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
                 df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
+                for severity in df.at[individual_id, 'ps_anaemia_in_pregnancy']:
+                    store_dalys_in_mni(individual_id, f'{severity}_anaemia_resolution')
 
     def antenatal_blood_transfusion(self, individual_id, hsi_event, cause):
         """
@@ -1408,6 +1426,7 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
+        store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
         # Check for consumables
         item_code_blood = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
@@ -1438,6 +1457,8 @@ class CareOfWomenDuringPregnancy(Module):
                 # RBCs will correct this woman's severe anaemia
                 if params['treatment_effect_blood_transfusion_anaemia'] < self.rng.random_sample():
                     df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
+                for severity in df.at[individual_id, 'ps_anaemia_in_pregnancy']:
+                    store_dalys_in_mni(individual_id, f'{severity}_anaemia_resolution')
 
             # If the woman has experience haemorrhage post abortion we store that the intervention has been received in
             # this property which reduces her risk of death
@@ -2369,7 +2390,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
         self.TREATMENT_ID = 'HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['InpatientDays'] = 1
+        the_appt_footprint['Over5OPD'] = 1
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         self.ACCEPTED_FACILITY_LEVEL = 1
@@ -2378,10 +2399,13 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
+        # If the woman is no longer alive, pregnant or is in labour then the event doesnt run
         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant'] or not \
           df.at[person_id, 'la_currently_in_labour']:
             return
 
+        # We set this admission property to show shes being admitted for induction of labour and hand her over to the
+        # labour events
         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
         logger.debug(key='msg', data=f'Mother {person_id} will move to labour ward for '
                                      f'{df.at[person_id, "ac_admitted_for_immediate_delivery"]} today')
@@ -2465,10 +2489,14 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
         self.ACCEPTED_FACILITY_LEVEL = facility_level_this_hsi
         self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+
+        logger.debug(key='msg', data=f'Bed-days allocated to this event:'
+                                     f' {self.bed_days_allocated_to_this_event}')
 
         if not mother.is_alive:
             return
@@ -3071,6 +3099,8 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
 
         # If they are available then treatment can go ahead
         if all_available:
+            self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(person_id, 'ectopic_resolution')
+
             logger.debug(key='message', data=f'Mother {person_id} will now undergo surgery due to ectopic pregnancy as '
                                              f'consumables are available')
 

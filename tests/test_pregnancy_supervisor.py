@@ -27,7 +27,7 @@ log_config = {
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # warning  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.demography": logging.DEBUG,
+        "tlo.methods.contraception": logging.DEBUG,
         "tlo.methods.labour": logging.DEBUG,
         "tlo.methods.healthsystem": logging.FATAL,
         "tlo.methods.hiv": logging.FATAL,
@@ -89,7 +89,7 @@ def registering_modules():
 def test_run_with_normal_allocation_of_pregnancy():
     sim = registering_modules()
 
-    sim.make_initial_population(n=5000)
+    sim.make_initial_population(n=1000)
 
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
@@ -186,10 +186,17 @@ def test_ensure_ectopics_stops_pregnancies():
     df = sim.population.props
     assert len(df) == 100
 
+@pytest.mark.group2
+def test_daly_output(tmpdir):
+    sim = registering_modules()
+
+    sim.make_initial_population(n=1000)
+
+    f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
+    sim.simulate(end_date=Date(2012, 1, 1))
+    output = parse_log_file(f)
+    print(output['tlo.methods.healthburden']['dalys'])
+
 
 test_run_with_normal_allocation_of_pregnancy()
-#test_run_with_high_volumes_of_pregnancy()
-#test_ensure_spont_abortion_stops_pregnancies()
-#test_ensure_induced_abortion_stops_pregnancies()
-#test_ensure_ectopics_stops_pregnancies()
 
