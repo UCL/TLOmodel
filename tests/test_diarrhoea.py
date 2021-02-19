@@ -299,10 +299,13 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     # Check for non-zero level of death
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
 
-    # Check that those with a gi_last_diarrhoea_death_date in the past, are now dead with a cause of death of Diarrhoea
-    dead_due_to_diarrhoea = ~df.is_alive & df.cause_of_death.str.startswith('Diarrhoea')
+    # Check that those with a gi_last_diarrhoea_death_date in the past, are now dead
+    # NB. Cannot guarantee that all will have a cause of death that is Diarrhoea, because OtherDeathPoll can also
+    #  cause deaths.
     gi_death_date_in_past = ~pd.isnull(df.gi_last_diarrhoea_death_date) & (df.gi_last_diarrhoea_death_date <= sim.date)
-    assert (dead_due_to_diarrhoea == gi_death_date_in_past).all()
+    assert (
+        ~(df.loc[gi_death_date_in_past, 'is_alive']) & ~pd.isnull(df.loc[gi_death_date_in_past, 'date_of_birth'])
+    ).all()
 
 
 @pytest.mark.group2
