@@ -635,15 +635,7 @@ class PostnatalSupervisor(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         monthly_daly = dict()
 
-        # todo: direct copy from pregnacy supervisor
         # todo: add onset dates for complications
-
-        def acute_daly_calculation(complication, daly_weight):
-            if pd.isnull(mni[person][f'{complication}_onset']):
-                return
-            elif self.sim.date - DateOffset(months=1) < mni[person][f'{complication}_onset'] <= self.sim.date:
-                monthly_daly[person] += p[f'{daly_weight}'] / 52
-                mni[person][f'{complication}_onset'] = pd.NaT
 
         def chronic_daly_calculations(complication, daly_weight):
             if pd.isnull(mni[person][f'{complication}_onset']):
@@ -673,18 +665,8 @@ class PostnatalSupervisor(Module):
             if df.at[person, 'is_alive']:
                 monthly_daly[person] = 0
 
-                for complications_and_dalys in [['eclampsia', 'eclampsia'],
-                                                ['secondary_pph', 'haemorrhage_moderate'], # assume all sec PPH mod?
-                                                ['sepsis', 'maternal_sepsis']]:
-                    acute_daly_calculation(complication=complications_and_dalys[0],
-                                           daly_weight=complications_and_dalys[1])
-
                 for complications_and_dalys in [['vesicovaginal_fistula', 'vv_fistula'],
-                                                ['rectovaginal_fistula', 'rv_fistula'],
-                                                # todo: all hypertension dalys captured in preg sup?
-                                                ['mild_anaemia', 'mild_iron_def_anaemia'],
-                                                ['moderate_anaemia', 'moderate_iron_def_anaemia'],
-                                                ['severe_anaemia', 'severe_iron_def_anaemia']]:
+                                                ['rectovaginal_fistula', 'rv_fistula']]:
                     chronic_daly_calculations(complication=complications_and_dalys[0],
                                               daly_weight=complications_and_dalys[1])
 
@@ -735,7 +717,8 @@ class PostnatalSupervisor(Module):
             """
             onset_condition = apply_linear_model(
                 params['pn_linear_equations'][f'{eq}'],
-                df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week)])
+                df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
+                       ~df['hs_is_inpatient']])
             return onset_condition
 
         # -------------------------------------- INFECTIONS ---------------------------------------------------------
@@ -865,6 +848,7 @@ class PostnatalSupervisor(Module):
 
         women_with_htn = df.loc[
             df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
+            ~df['hs_is_inpatient'] &
             (df['pn_htn_disorders'].str.contains('gest_htn|severe_gest_htn|mild_pre_eclamp|severe_pre_eclamp|'
                                                  'eclampsia'))]
 
@@ -930,7 +914,7 @@ class PostnatalSupervisor(Module):
             (df.pn_postnatal_period_in_weeks == week) & \
             (df['pn_htn_disorders'].str.contains('gest_htn|severe_gest_htn|mild_pre_eclamp|severe_pre_eclamp|'
                                                  'eclampsia')) & \
-            ~df.pn_gest_htn_on_treatment
+            ~df.pn_gest_htn_on_treatment & ~df.hs_is_inpatient
 
         women_with_htn_on_anti_htns = \
             df.is_alive & \
@@ -938,7 +922,7 @@ class PostnatalSupervisor(Module):
             (df.pn_postnatal_period_in_weeks == week) & \
             (df['pn_htn_disorders'].str.contains('gest_htn|severe_gest_htn|mild_pre_eclamp|severe_pre_eclamp|'
                                                  'eclampsia')) & \
-            df.pn_gest_htn_on_treatment
+            df.pn_gest_htn_on_treatment & ~df.hs_is_inpatient
 
         risk_progression_mild_to_severe_htn = 0.1
 
@@ -1000,7 +984,7 @@ class PostnatalSupervisor(Module):
         care_seeking = apply_linear_model(
             params['pn_linear_equations']['care_seeking_postnatal_complication_mother'],
             df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
-                   df['pn_emergency_event_mother']])
+                   df['pn_emergency_event_mother'] & ~df['hs_is_inpatient']])
 
         # Reset this property to stop repeat care seeking
         df.loc[care_seeking.index, 'pn_emergency_event_mother'] = False
@@ -1033,7 +1017,7 @@ class PostnatalSupervisor(Module):
         onset_sepsis = apply_linear_model(
             params['pn_linear_equations']['late_onset_neonatal_sepsis'],
             df.loc[df['is_alive'] & (df['age_days'] > upper_and_lower_day_limits[0]) &
-                   (df['age_days'] < upper_and_lower_day_limits[1])])
+                   (df['age_days'] < upper_and_lower_day_limits[1]) & ~df['hs_is_inpatient']])
 
         df.loc[onset_sepsis.loc[onset_sepsis].index, 'pn_sepsis_late_neonatal'] = False
         self.postnatal_tracker['late_neonatal_sepsis'] += 1
@@ -1067,6 +1051,14 @@ class PostnatalSupervisor(Module):
         params = self.parameters
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
+
+        # First each woman is screened for postnatal depression
+        if 'depression' in self.sim.modules.keys():
+            if self.rng.random_sample() < params['prob_intervention_delivered_depression_screen_pnc']:
+                logger.debug(key='msg', data=f'Mother {individual_id} will now be receive screening for depression'
+                                             f' during PNC and commence treatment as appropriate')
+                if ~df.at[individual_id, 'de_ever_diagnosed_depression']:
+                    self.sim.modules['Depression'].do_when_suspected_depression(individual_id, hsi_event)
 
         # We create a variable that will be set to true if a health work detects a complication and chooses to admit
         # (in case of multiple complications requiring admission)
@@ -1395,17 +1387,19 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                          (df.pn_htn_disorders.str.contains('gest_htn|severe_gest_htn|mild_pre_eclamp|'
                                                                            'severe_pre_eclamp|eclampsia'))
 
-        df.loc[week_8_postnatal_women_htn, 'pn_htn_disorders'] = 'none'
-        for person in week_8_postnatal_women_htn.index:
+        for person in week_8_postnatal_women_htn.loc[week_8_postnatal_women_htn].index:
             store_dalys_in_mni(person, 'hypertension_resolution')
+
+        df.loc[week_8_postnatal_women_htn, 'pn_htn_disorders'] = 'none'
 
         week_8_postnatal_women_anaemia = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8) & \
                                      (df.pn_anaemia_following_pregnancy != 'none')
-        for person in week_8_postnatal_women_anaemia.index:
+
+        for person in week_8_postnatal_women_anaemia.loc[week_8_postnatal_women_anaemia].index:
             for severity in df.at[person, 'pn_anaemia_following_pregnancy']:
                 store_dalys_in_mni(person, f'{severity}_anaemia_resolution')
-        df.loc[week_8_postnatal_women, 'pn_anaemia_following_pregnancy'] = 'none'
 
+        df.loc[week_8_postnatal_women, 'pn_anaemia_following_pregnancy'] = 'none'
 
         self.module.postpartum_infections_late.unset(week_8_postnatal_women, 'endometritis', 'urinary_tract_inf',
                                                      'skin_soft_tissue_inf', 'other_maternal_infection')
@@ -1417,8 +1411,10 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[week_8_postnatal_women, 'pn_iv_anti_htn_treatment'] = False
         df.loc[week_8_postnatal_women, 'pn_emergency_event_mother'] = False
 
-        # for person in week_8_postnatal_women.index:
-        #    del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]
+        # todo: i think this will crash for women getting pregnant soon after birth
+        # todo: offset here to allow dalys to be counted for women whose conditions stop at the end of pregnancy
+        for person in week_8_postnatal_women.loc[week_8_postnatal_women].index:
+            self.sim.schedule_event(DeleteMNIDictionary(self.module, person), self.sim.date + DateOffset(weeks=6))
 
         # Neonatal variables
         week_6_postnatal_neonates = df.is_alive & (df['age_days'] > 42) & (df['age_days'] < 49)
@@ -1427,6 +1423,20 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[week_6_postnatal_neonates, 'pn_sepsis_late_neonatal'] = False
         df.loc[week_6_postnatal_neonates, 'pn_sepsis_neonatal_inj_abx'] = False
         df.loc[week_6_postnatal_neonates, 'pn_sepsis_neonatal_full_supp_care'] = False
+
+
+class DeleteMNIDictionary(Event, IndividualScopeEventMixin):
+    """"""
+
+    def __init__(self, module, individual_id):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+        if df.at[individual_id, 'is_alive'] and ~df.at[individual_id, 'is_pregnant']:
+            del mni[individual_id]
 
 
 class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
@@ -1540,9 +1550,10 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
             # first week after birth
 
             # if mother.pn_htn_disorders != 'none':
-            if mother.pn_htn_disorders.contains('gest_htn|severe_gest_htn|mild_pre_eclamp|severe_pre_eclamp|'
-                                                    'eclampsia'):
-                if self.module.rng.random_sample() < params['prob_htn_resolves']:
+            if 'none' not in mother.pn_htn_disorders:
+                if 'resolved' in mother.pn_htn_disorders:
+                    pass
+                elif self.module.rng.random_sample() < params['prob_htn_resolves']:
                     store_dalys_in_mni(individual_id, 'hypertension_resolution')
                     df.at[individual_id, 'pn_htn_disorders'] = 'resolved'
 
@@ -1825,6 +1836,7 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1832,6 +1844,8 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         assert df.at[person_id, 'la_is_postpartum']
+
+        # todo: should this run when woman is still inpatient?
 
         if not mother.is_alive:
             return
@@ -1992,6 +2006,7 @@ class HSI_PostnatalSupervisor_NeonatalWardInpatientCare(HSI_Event, IndividualSco
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

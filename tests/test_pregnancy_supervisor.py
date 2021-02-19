@@ -85,6 +85,39 @@ def registering_modules():
     return sim
 
 # =========================================== PREGNANCY SUPERVISOR TESTS ==============================================
+
+"""def test_dalys_being_captured(tmpdir):
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {"*": logging.INFO}
+    }
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*']),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+
+    sim.make_initial_population(n=1000)
+    sim.simulate(end_date=Date(2015, 1, 1))
+
+    # read the results
+    output = parse_log_file(sim.log_filepath)
+
+    # Do the checks for the healthsystem
+    daly_df = output['tlo.methods.healthburden']['dalys']
+    print(daly_df)"""
+
 @pytest.mark.group2
 def test_run_with_normal_allocation_of_pregnancy():
     sim = registering_modules()
@@ -185,17 +218,6 @@ def test_ensure_ectopics_stops_pregnancies():
 
     df = sim.population.props
     assert len(df) == 100
-
-@pytest.mark.group2
-def test_daly_output(tmpdir):
-    sim = registering_modules()
-
-    sim.make_initial_population(n=1000)
-
-    f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
-    sim.simulate(end_date=Date(2012, 1, 1))
-    output = parse_log_file(f)
-    print(output['tlo.methods.healthburden']['dalys'])
 
 
 test_run_with_normal_allocation_of_pregnancy()

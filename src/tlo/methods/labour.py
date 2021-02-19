@@ -1029,11 +1029,7 @@ class Labour(Module):
 
                 for complications_and_dalys in [['obstructed_labour', 'obstructed_labour'],
                                                 ['eclampsia', 'eclampsia'],
-                                                ['sepsis', 'maternal_sepsis'],
                                                 ['uterine_rupture', 'uterine_rupture'],
-                                                ['mild_mod_aph', 'haemorrhage_moderate'],
-                                                ['severe_aph', 'haemorrhage_severe'],
-                                                ['mild_mod_pph', 'haemorrhage_moderate'],
                                                 ['severe_pph', 'haemorrhage_severe']]:
                     acute_daly_calculation(complication=complications_and_dalys[0],
                                            daly_weight=complications_and_dalys[1])
@@ -2589,8 +2585,6 @@ class BirthEvent(Event, IndividualScopeEventMixin):
             else:
                 self.sim.do_birth(mother_id)
 
-            # We schedule all women to an event to ensure the MNI dictionaries are deleted
-            self.sim.schedule_event(DeleteMNIDictionary(self.module, mother_id), self.sim.date + DateOffset(days=43))
 
             # ====================================== SCHEDULING POSTPARTUM EVENTS ======================================
             # Women who have birth at home will next pass to this event, again applying risk of complications
@@ -2825,21 +2819,6 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             logger.info(key='intrapartum_stillbirth', data=still_birth, description='record of intrapartum stillbirth')
 
 
-class DeleteMNIDictionary(Event, IndividualScopeEventMixin):
-    """Event scheduled for all women who deliver to ensure MNI dictionary is deleted- but still usable in modules that
-    require information up until day + 42"""
-
-    def __init__(self, module, individual_id):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        if df.at[individual_id, 'is_alive']:
-            del mni[individual_id]
-
-
 class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, IndividualScopeEventMixin):
     """
     This is the HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour. This event is the first HSI for women who have
@@ -2868,6 +2847,8 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'NormalDelivery': 1})
         self.ALERT_OTHER_DISEASES = []
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 1})
+        # todo: this doesnt really match up with when labour onsets? probably fine
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -3067,6 +3048,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(HSI_Event, Indivi
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
         self.ALERT_OTHER_DISEASES = []
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -3189,6 +3171,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
+
         self.timing = timing
 
     def apply(self, person_id, squeeze_factor):
@@ -3423,6 +3407,7 @@ class HSI_Labour_ReceivesCareFollowingCaesareanSection(HSI_Event, IndividualScop
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info

@@ -209,7 +209,6 @@ class CareOfWomenDuringPregnancy(Module):
                                                                           'delivery in the antenatal period',
                                                        categories=['none', 'induction_now', 'induction_future',
                                                                    'caesarean_now', 'caesarean_future']),
-        'ac_inpatient': Property(Types.BOOL, 'Whether this woman is currently an inpatient on the antenatal ward'),
     }
 
     def read_parameters(self, data_folder):
@@ -357,7 +356,6 @@ class CareOfWomenDuringPregnancy(Module):
         set[id_or_index, 'ac_mag_sulph_treatment'] = False
         set[id_or_index, 'ac_iv_anti_htn_treatment'] = False
         set[id_or_index, 'ac_received_blood_transfusion'] = False
-        set[id_or_index, 'ac_inpatient'] = False
         set[id_or_index, 'ac_admitted_for_immediate_delivery'] = 'none'
 
     def on_birth(self, mother_id, child_id):
@@ -676,6 +674,14 @@ class CareOfWomenDuringPregnancy(Module):
             df.at[person_id, 'ac_to_be_admitted'] = True
             logger.debug(key='msg', data=f'Mother {person_id} has had hypertension or proteinuria detected in ANC and '
                                          f'will now need admission')
+
+        # Here we conduct screening and initiate treatment for depression as needed
+        if 'depression' in self.sim.modules.keys():
+            if self.rng.random_sample() < params['prob_intervention_delivered_depression_screen']:
+                logger.debug(key='msg', data=f'Mother {person_id} will now be receive screening for depression during'
+                                             f' ANC  and commence treatment as appropriate')
+                if ~df.at[person_id, 'de_ever_diagnosed_depression']:
+                    self.sim.modules['Depression'].do_when_suspected_depression(person_id, hsi_event)
 
     def interventions_initiated_at_first_contact(self, hsi_event):
         """
@@ -1146,7 +1152,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If the woman is an inpatient when ANC1 is scheduled, she will try and return at the next appropriate
         # gestational age
-        elif df.at[individual_id, 'ac_inpatient']:
+        elif df.at[individual_id, 'hs_is_inpatient']:
             # We assume that she will return for her first appointment at the next gestation in the schedule
             logger.debug(key='msg', data=f'mother {individual_id} is scheduled to attend ANC today but is currently an '
                                          f'inpatient- she will be scheduled to arrive at her next visit instead and'
@@ -1205,7 +1211,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If the woman is currently an inpatient then she will return at the next point in the contact schedule but
         # receive the care she has missed in this visit
-        elif df.at[individual_id, 'ac_inpatient']:
+        elif df.at[individual_id, 'hs_is_inpatient']:
             logger.debug(key='msg', data=f'Mother {individual_id} was due to receive ANC today but she is an inpatient'
                                          f'- we will now determine if she will return for this visit in the future')
             self.antenatal_care_scheduler(individual_id, visit_to_be_scheduled=this_visit_number,
@@ -1685,6 +1691,32 @@ class CareOfWomenDuringPregnancy(Module):
             self.sim.schedule_event(EctopicPregnancyRuptureEvent(
                 self.sim.modules['PregnancySupervisor'], individual_id), self.sim.date + DateOffset(days=7))
 
+    def calculate_beddays(self, individual_id):
+        df = self.sim.population.props
+        mother = df.loc[individual_id]
+
+        if (mother.ps_htn_disorders == 'severe_pre_eclamp') or \
+            (mother.ps_htn_disorders == 'eclampsia') or \
+            mother.ps_placental_abruption or \
+            (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'severe')) or \
+            (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'mild_moderate') and
+             (mother.ps_gestational_age_in_weeks >= 37)) or\
+            (mother.ps_premature_rupture_of_membranes and mother.ps_chorioamnionitis) or \
+            (mother.ps_premature_rupture_of_membranes and ~mother.ps_chorioamnionitis and
+             (mother.ps_gestational_age_in_weeks >= 34)):
+            beddays = 1
+
+        elif (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'mild_moderate') and
+              (mother.ps_gestational_age_in_weeks < 37)) or (mother.ps_premature_rupture_of_membranes and
+                                                             ~mother.ps_chorioamnionitis and
+                                                             (mother.ps_gestational_age_in_weeks < 34)):
+
+            beddays = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
+
+        else:
+            beddays = 1
+
+        return beddays
 
 class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
     """ This is the  HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact which represents the first routine
@@ -2428,7 +2460,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_MaternalEmergencyAssessment'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['InpatientDays'] = 1
+        the_appt_footprint['Over5OPD'] = 1
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         self.ACCEPTED_FACILITY_LEVEL = 1
@@ -2442,7 +2474,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant']:
             return
 
-        if ~df.at[person_id, 'ac_inpatient'] and ~df.at[person_id, 'la_currently_in_labour']:
+        if ~df.at[person_id, 'hs_is_inpatient'] and ~df.at[person_id, 'la_currently_in_labour']:
             logger.debug(key='msg', data=f'Mother {person_id} has presented at HSI_CareOfWomenDuringPregnancy_Maternal'
                                          f'EmergencyAssessment to seek care for a complication ')
 
@@ -2482,14 +2514,12 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_AntenatalWardInpatientCare'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['InpatientDays'] = 1  # TODO: replace with THs inpatient function
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_this_hsi
         self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
+
+        beddays = self.module.calculate_beddays(person_id)
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': beddays})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -2498,11 +2528,12 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         logger.debug(key='msg', data=f'Bed-days allocated to this event:'
                                      f' {self.bed_days_allocated_to_this_event}')
 
+        # todo: effect of incomplete beddays function?
+
         if not mother.is_alive:
             return
 
-        if mother.is_pregnant and ~mother.la_currently_in_labour and ~mother.ac_inpatient:
-            df.at[person_id, 'ac_inpatient'] = True
+        if mother.is_pregnant and ~mother.la_currently_in_labour and ~mother.hs_is_inpatient:
 
             logger.debug(key='message', data=f'Mother {person_id} has been admitted for treatment of a complication of '
                                              f'her pregnancy ')
@@ -2757,9 +2788,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
                                         admission_date)
 
-            # Women who do not need admission for delivery are discharged
-            else:
-                df.at[person_id, 'ac_inpatient'] = False
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare: did not run')
@@ -2798,7 +2826,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
             return
 
         # We only run the event if the woman is not already in labour or already admitted due to something else
-        if ~mother.la_currently_in_labour and ~mother.ac_inpatient:
+        if ~mother.la_currently_in_labour and ~mother.hs_is_inpatient:
 
             # Health care worker performs a full blood count
             fbc_result = self.module.full_blood_count_testing(self)
@@ -2869,7 +2897,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
         if not mother.is_alive or not mother.is_pregnant:
             return
 
-        if ~mother.la_currently_in_labour and ~mother.ac_inpatient and mother.ps_gest_diab != 'none' \
+        if ~mother.la_currently_in_labour and ~mother.hs_is_inpatient and mother.ps_gest_diab != 'none' \
                 and mother.ac_gest_diab_on_treatment != 'none' and mother.ps_gestational_age_in_weeks > 21:
             logger.debug(key='msg', data=f'Mother {person_id} has presented for review of her GDM')
 
@@ -2996,12 +3024,10 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PostAbortionCaseManagement'
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['InpatientDays'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1  # any hospital?
         self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})  # todo:vary by severity?
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -3009,6 +3035,8 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         params = self.module.parameters
         abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        # todo: effect of incomplete beddays function?
 
         # TODO: TC - do you think, for the moment, its fine just to use one treatment effect that reduces the risk of
         #  death following abortion complications (as I dont apply individual CFRs for sepsis post abortion,
@@ -3067,18 +3095,18 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['MajorSurg'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})  # todo:vary by severity?
+
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         mother = df.loc[person_id]
+
+        # todo: effect of incomplete beddays function?
 
         if not mother.is_alive:
             return
