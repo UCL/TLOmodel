@@ -10,6 +10,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
+    depression,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
@@ -34,8 +35,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2012, 1, 2)
-    popsize = 1000
+    end_date = Date(2020, 1, 2)
+    popsize = 10000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -50,6 +51,7 @@ def runsim(seed=0):
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  ncds.Ncds(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
 
@@ -115,8 +117,11 @@ for condition in conditions:
     data = data[~(data["parameter_name"].isin(['m_85-89', 'm_90-94', 'm_95-99', 'm_100+', 'f_85-89', 'f_90-94',
                                                'f_95-99', 'f_100+']))]
     prev_df['data_prevalence'] = data['value'].values
+    prev_df['data_lower'] = data['lower'].values
+    prev_df['data_upper'] = data['upper'].values
+    asymptomatic_error = [prev_df['data_lower'], prev_df['data_upper']]
 
-    bar_width = 0.5
+    bar_width = 0.75
     opacity = 0.25
 
     bar = plt.bar(prev_df.index, prev_df['model_prevalence'], bar_width,
@@ -126,11 +131,12 @@ for condition in conditions:
     scatter = plt.scatter(prev_df.index, prev_df['data_prevalence'], s=20,
                 alpha=1.0,
                 color='black',
-                label="Denaxas et al.")
+                label="Data")
     plt.xticks(rotation=90)
+    plt.errorbar(prev_df.index, prev_df['data_prevalence'], yerr=asymptomatic_error, fmt='o', c='gray')
     plt.ylabel(f'Proportion With {condition_title}')
     plt.title(f'Prevalence of {condition_title} by Age and Sex')
-    plt.legend([bar, scatter], ['Model', 'Denaxas et al.'])
+    plt.legend([bar, scatter], ['Model', 'Data'])
     plt.savefig(outputpath / f'prevalence_{condition_title}_by_age_sex.pdf')
     #plt.ylim([0, 1])
     plt.tight_layout()
@@ -218,6 +224,57 @@ plt.xticks(rotation=90)
 plt.legend(loc=(1.04,0))
 plt.tight_layout()
 plt.savefig(outputpath / ("N_comorbidities_by_age_all" + datestamp + ".pdf"), format='pdf')
+plt.show()
+
+# ----------------------------------------------- CREATE DEATH PLOTS --------------------------------------------------
+# calculate death rate
+deaths_df = output['tlo.methods.demography']['death']
+deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
+
+pop_df = output['tlo.methods.demography']['population']
+pop_df['year'] = pd.to_datetime(pop_df['date']).dt.year
+
+deaths = pd.DataFrame(index=deaths_df['year'].unique(), columns=conditions)
+rate_deaths = pd.DataFrame(index=deaths_df['year'].unique(), columns=conditions)
+
+total_deaths = pd.DataFrame(index=deaths_df['year'].unique())
+total_deaths['total_deaths'] = deaths_df.groupby('year')['cause'].count()
+
+total_pop = pd.DataFrame(index=pop_df['year'].unique())
+total_pop['total_pop'] = pop_df.groupby('year')['total'].sum()
+total_pop['total_pop_adjustment_factor'] = 100000 / total_pop['total_pop']
+
+for condition in conditions:
+    condition_name = condition.replace('nc_', '')
+    deaths[condition] = deaths_df.loc[deaths_df['cause'].str.startswith(f'{condition_name}')].groupby('year').size()
+    rate_deaths[condition] = deaths[condition] * total_pop['total_pop_adjustment_factor'] # gives rate per 100k pop
+
+deaths_data = [{'nc_diabetes': 19.04, 'nc_hypertension': 0, 'nc_chronic_kidney_disease': 18.45,
+                'nc_lower_back_pain': 0, 'nc_chronic_ischemic_hd': 118.10}]
+deaths_lower = [{'nc_diabetes': 17.73, 'nc_hypertension': 0, 'nc_chronic_kidney_disease': 16.98,
+                'nc_lower_back_pain': 0, 'nc_chronic_ischemic_hd': 108.51}]
+deaths_upper = [{'nc_diabetes': 20.24, 'nc_hypertension': 0, 'nc_chronic_kidney_disease': 19.70,
+                'nc_lower_back_pain': 0, 'nc_chronic_ischemic_hd': 125.93}]
+df_death_data = pd.DataFrame(deaths_data)
+
+bar_width = 0.5
+opacity = 0.25
+
+bar = plt.bar(conditions, deaths.iloc[-1], bar_width,
+        alpha=opacity,
+        color='b',
+        label='Model')
+scatter = plt.scatter(conditions, df_death_data.iloc[-1], s=20,
+            alpha=1.0,
+            color='black',
+            label="GBD Data")
+plt.xticks(rotation=90)
+plt.ylabel('Percent of Total Deaths')
+plt.title('Percent of Deaths Due to Conditions (2020)')
+plt.legend([bar, scatter], ['Model', 'GBD'])
+plt.savefig(outputpath / 'deaths_by_condition.pdf')
+#plt.ylim([0, 1])
+plt.tight_layout()
 plt.show()
 
 # ----------------------------------------------- RETRIEVE COMBINATION OF CONDITIONS ----------------------------------
