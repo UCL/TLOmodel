@@ -34,11 +34,9 @@ class Ncds(Module):
     # save a master list of the events that are covered in this module
     conditions = ['diabetes',
                   'hypertension',
-                  'depression',
                   'chronic_kidney_disease',
                   'chronic_lower_back_pain',
-                  'chronic_ischemic_hd',
-                  'cancers']
+                  'chronic_ischemic_hd']
 
     # save a master list of the events that are covered in this module
     events = ['ever_stroke',
@@ -332,11 +330,11 @@ class Ncds(Module):
             Predictor('li_wood_burn_stove').when(True, p['rr_wood_burning_stove']),
             Predictor('nc_diabetes').when(True, p['rr_diabetes']),
             Predictor('nc_hypertension').when(True, p['rr_hypertension']),
-            Predictor('nc_depression').when(True, p['rr_depression']),
+            Predictor('de_depr').when(True, p['rr_depression']),
             Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
             Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
-            Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease']),
-            Predictor('nc_cancers').when(True, p['rr_cancers'])
+            Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease'])
+            #Predictor('nc_cancers').when(True, p['rr_cancers'])
         )
 
         return self.lms_dict[condition]
@@ -666,14 +664,14 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         condition_combos = ['di_hy', 'di_de', 'di_ck', 'di_ci', 'hy_de', 'hy_ck', 'hy_ci', 'de_ck', 'de_ci', 'ck_ci']
         df['di_hy'] = np.where(df['nc_diabetes'] & df['nc_hypertension'], True, False)
-        df['di_de'] = np.where(df['nc_diabetes'] & df['nc_depression'], True, False)
+        df['di_de'] = np.where(df['nc_diabetes'] & df['de_depr'], True, False)
         df['di_ck'] = np.where(df['nc_diabetes'] & df['nc_chronic_kidney_disease'], True, False)
         df['di_ci'] = np.where(df['nc_diabetes'] & df['nc_chronic_ischemic_hd'], True, False)
-        df['hy_de'] = np.where(df['nc_hypertension'] & df['nc_depression'], True, False)
+        df['hy_de'] = np.where(df['nc_hypertension'] & df['de_depr'], True, False)
         df['hy_ck'] = np.where(df['nc_hypertension'] & df['nc_chronic_kidney_disease'], True, False)
         df['hy_ci'] = np.where(df['nc_hypertension'] & df['nc_chronic_ischemic_hd'], True, False)
-        df['de_ck'] = np.where(df['nc_depression'] & df['nc_chronic_kidney_disease'], True, False)
-        df['de_ci'] = np.where(df['nc_depression'] & df['nc_chronic_ischemic_hd'], True, False)
+        df['de_ck'] = np.where(df['de_depr'] & df['nc_chronic_kidney_disease'], True, False)
+        df['de_ci'] = np.where(df['de_depr'] & df['nc_chronic_ischemic_hd'], True, False)
         df['ck_ci'] = np.where(df['nc_chronic_kidney_disease'] & df['nc_chronic_ischemic_hd'], True, False)
 
         n_combos = pd.DataFrame(index=df['four_age_bins'].value_counts().sort_index().index,
