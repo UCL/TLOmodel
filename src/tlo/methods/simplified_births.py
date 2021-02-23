@@ -4,6 +4,7 @@ registering of some heavy modules to do the same
 
 """
 import numpy as np
+import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
@@ -24,12 +25,10 @@ class Simplifiedbirths(Module):
     }
 
     PROPERTIES = {
-        'si_has_currently_given_birth': Property(Types.BOOL, 'whether this woman has given birth currently'),
+        'si_date_of_last_delivery': Property(Types.DATE, 'woman\'s date of last delivery')
     }
 
     # Declare the non-generic symptoms that this module will use.
-    # It will not be able to use any that are not declared here. They do not need to be unique to this module.
-    # You should not declare symptoms that are generic here (i.e. in the generic list of symptoms)
     SYMPTOMS = {}
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -37,7 +36,6 @@ class Simplifiedbirths(Module):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.store = {'Proportion_infected': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -49,11 +47,10 @@ class Simplifiedbirths(Module):
         """Set our property values for the initial population.
         :param population: the population of individuals
         """
-        df = population.props  # a shortcut to the dataframe storing data for individiuals
+        df = population.props  # a shortcut to the dataframe storing data for individuals
 
         # Assign the characteristics
-        df.loc[df.is_alive, 'mother_id'] = -1
-        df.loc[df.is_alive, 'si_has_currently_given_birth'] = False
+        df.loc[df.is_alive, 'si_date_of_last_delivery'] = pd.NaT
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -79,8 +76,8 @@ class Simplifiedbirths(Module):
         """
         df = self.sim.population.props
 
-        # Reset the mother's si_has_currently_given_birth status showing that she has just given birth
-        # df.at[mother_id, 'si_has_currently_given_birth'] = True
+        # Assign the date of last delivery to a newborn
+        df.at[child_id, 'si_date_of_last_delivery'] = pd.NaT
 
         logger.info('%s|post_birth_info|%s',
                     self.sim.date,
@@ -106,18 +103,19 @@ class SimplifiedBirthsEvent(RegularEvent, PopulationScopeEventMixin):
         self.birth_prob = module.parameters['birth_prob']
 
     def apply(self, population):
-
         df = self.sim.population.props  # get the population dataframe
 
         selected_women = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high)
 
-        # flipping the coin to determine if this woman give birth
+        # print(selected_women)
+
+        # determining which woman should give birth
         new_births = (self.module.rng.random_sample(size=len(selected_women)) < self.birth_prob)
 
         births_ids = selected_women.index[new_births]
 
-        # updating the si_has_currently_given_birth status for that women
-        df.loc[births_ids, 'si_has_currently_given_birth'] = True
+        # assigning the date of delivery to the selected women
+        df.loc[births_ids, 'si_date_of_last_delivery'] = self.sim.date
 
         for female_id in births_ids:
             # generating a  child

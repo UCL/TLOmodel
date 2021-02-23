@@ -30,7 +30,7 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 2)
 popsize = 1000
 
-sim = Simulation(start_date=start_date, seed=1, log_config={'filename': 'simple_births', 'directory': outputpath})
+sim = Simulation(start_date=start_date, seed=1, log_config={'filename': 'simplified_births', 'directory': outputpath})
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -42,7 +42,7 @@ sim.simulate(end_date=end_date)
 # %% read the results
 output = parse_log_file(sim.log_filepath)
 
-# %% Plot Contraception Use Over time:
+# %% Plot Births:
 years = mdates.YearLocator()  # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
@@ -55,13 +55,12 @@ Model_total_births = si_df.total
 
 fig, ax = plt.subplots()
 ax.plot(np.asarray(Model_Years), Model_total_births)
-# plt.plot(Data_Years, Data_Pop_Normalised)
 
 # format the ticks
 ax.xaxis.set_major_locator(years)
 ax.xaxis.set_major_formatter(years_fmt)
 
-plt.title("Simple births")
+plt.title("Total Births per Year")
 plt.xlabel("Year")
 plt.ylabel("Number of births")
 
