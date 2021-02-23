@@ -11,11 +11,9 @@ from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.labour import LabourOnsetEvent
-from tlo.methods.tb import HSI_TbScreening
-
+# from tlo.methods.tb import HSI_TbScreening
+from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.util import BitsetHandler
-
-# TODO: when HIV is updated in master include: from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -660,8 +658,7 @@ class CareOfWomenDuringPregnancy(Module):
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_pressure_measurement',
                                                                        hsi_event=hsi_event):
                 hypertension_diagnosed = True
-
-                if ~df.at[person_id, 'ac_gest_htn_on_treatment']:
+                if ~df.at[person_id, 'ac_gest_htn_on_treatment'] and (df.at[person_id, 'ps_htn_disorders'] != 'none'):
                     self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(person_id, 'hypertension_onset')
             else:
                 hypertension_diagnosed = False
@@ -669,8 +666,8 @@ class CareOfWomenDuringPregnancy(Module):
             hypertension_diagnosed = False
 
         # If either high blood pressure or proteinuria are detected (or both) we assume this woman needs to be admitted
-        # for further treatment following this ANC contact
-        if hypertension_diagnosed or proteinuria_diagnosed:
+        # for further treatment following this ANC contact (if they have not been previously diagnosed and treated)
+        if (hypertension_diagnosed or proteinuria_diagnosed) and ~df.at[person_id, 'ac_gest_htn_on_treatment']:
             df.at[person_id, 'ac_to_be_admitted'] = True
             logger.debug(key='msg', data=f'Mother {person_id} has had hypertension or proteinuria detected in ANC and '
                                          f'will now need admission')
@@ -753,20 +750,21 @@ class CareOfWomenDuringPregnancy(Module):
             df.at[person_id, 'ac_itn_provided'] = True
             logger.debug(key='msg', data=f'Mother {person_id} has been provided with a LLITN during ANC')
 
+        # TODO: include when TB is finished
         # TB screening...
         # Currently we schedule women to the TB screening HSI in the TB module, however this may over-use resources so
         # possible the TB screening should also just live in this code
-        if 'tb' in self.sim.modules.keys():
-            if self.rng.random_sample() < params['prob_intervention_delivered_tb_screen']:
-                logger.debug(key='msg', data=f'Mother {person_id} has been referred to the TB module for screening '
-                                             f'during ANC')
+        # if 'tb' in self.sim.modules.keys():
+        #    if self.rng.random_sample() < params['prob_intervention_delivered_tb_screen']:
+        #        logger.debug(key='msg', data=f'Mother {person_id} has been referred to the TB module for screening '
+        #                                     f'during ANC')
 
-                tb_screen = HSI_TbScreening(
-                    module=self.sim.modules['tb'], person_id=person_id)
+        #        tb_screen = HSI_TbScreening(
+        #            module=self.sim.modules['tb'], person_id=person_id)
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=1))
+        #        self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
+        #                                                            topen=self.sim.date,
+        #                                                            tclose=self.sim.date + DateOffset(days=1))
 
     def tetanus_vaccination(self, hsi_event):
         """
@@ -987,23 +985,23 @@ class CareOfWomenDuringPregnancy(Module):
         This function contains the scheduling for HIV testing and is provided to women during ANC.
         :param hsi_event: HSI event in which the function has been called
         """
-        pass
+        df = self.sim.population.props
+        params = self.parameters
+        person_id = hsi_event.target
 
-        # TODO: await for new HIV code in master for this to work properly
-
-    #    if 'hiv' in self.sim.modules.keys():
-    #        if self.rng.random_sample() < params['prob_intervention_delivered_hiv_test']:
-    #           self.sim.modules['HealthSystem'].schedule_hsi_event(
-    #               HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
-    #               topen=self.sim.date,
-    #               tclose=None,
-    #               priority=0
-    #               )
-    #       else:
-    #            logger.warning(key='message', data='Mother has not been referred for HIV testing')
-    #       else:
-    #        logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
-    #                                           'testing will not happen in antenatal care')
+        if 'hiv' in self.sim.modules.keys():
+            if (self.rng.random_sample() < params['prob_intervention_delivered_hiv_test']) and ~df.at[person_id,
+                                                                                                      'hv_diagnosed']:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                   HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
+                   topen=self.sim.date,
+                   tclose=None,
+                   priority=0)
+            else:
+                logger.warning(key='message', data='Mother has not been referred for HIV testing')
+        else:
+            logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
+                                               'testing will not happen in antenatal care')
 
     def iptp_administration(self, hsi_event):
         """
@@ -1275,17 +1273,15 @@ class CareOfWomenDuringPregnancy(Module):
             # Run dx_test for anaemia...
             # If a woman is not truly anaemic but the FBC returns a result of anaemia, due to tests specificity, we
             # assume the reported anaemia is mild
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                dx_tests_to_run='full_blood_count_hb', hsi_event=hsi_event) and (df.at[person_id,
-                                                                                       'ps_anaemia_'
-                                                                                       'in_pregnancy'] == 'none'):
+
+            test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                dx_tests_to_run='full_blood_count_hb', hsi_event=hsi_event)
+
+            if test_result and (df.at[person_id, 'ps_anaemia_in_pregnancy'] == 'none'):
                 return 'non_severe'
 
             # If the test correctly identifies a woman's anaemia we assume it correctly identifies its severity
-            elif self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                dx_tests_to_run='full_blood_count_hb', hsi_event=hsi_event) and (df.at[person_id,
-                                                                                       'ps_anaemia'
-                                                                                       '_in_pregnancy'] != 'none'):
+            elif test_result and (df.at[person_id, 'ps_anaemia_in_pregnancy'] != 'none'):
                 return df.at[person_id, 'ps_anaemia_in_pregnancy']
 
             # We return a none value if no anaemia was detected
@@ -1350,8 +1346,8 @@ class CareOfWomenDuringPregnancy(Module):
             if outcome_of_request_for_consumables['Item_Code'][item_code_elemental_iron]:
                 if self.rng.random_sample() < params['effect_of_iron_replacement_for_resolving_anaemia']:
                     df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
-                    for severity in df.at[individual_id, 'ps_anaemia_in_pregnancy']:
-                        store_dalys_in_mni(individual_id, f'{severity}_anaemia_resolution')
+                    store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
+                                                      f'anaemia_resolution')
 
                 if self.rng.random_sample() < params['effect_of_iron_replacement_for_resolving_iron_def']:
                     pregnancy_deficiencies.unset([individual_id], 'iron')
@@ -1359,8 +1355,8 @@ class CareOfWomenDuringPregnancy(Module):
         if pregnancy_deficiencies.has_any([individual_id], 'folate', first=True):
             if outcome_of_request_for_consumables['Item_Code'][item_code_folate]:
                 if self.rng.random_sample() < params['effect_of_folate_replacement_for_resolving_anaemia']:
-                    for severity in df.at[individual_id, 'ps_anaemia_in_pregnancy']:
-                        store_dalys_in_mni(individual_id, f'{severity}_anaemia_resolution')
+                    store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
+                                                      f'anaemia_resolution')
                     df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
                 if self.rng.random_sample() < params['effect_of_folate_replacement_for_resolving_folate_def']:
@@ -1369,8 +1365,8 @@ class CareOfWomenDuringPregnancy(Module):
         if pregnancy_deficiencies.has_any([individual_id], 'b12', first=True):
             if outcome_of_request_for_consumables['Item_Code'][item_code_b12]:
                 if self.rng.random_sample() < params['effect_of_b12_replacement_for_resolving_anaemia']:
-                    for severity in df.at[individual_id, 'ps_anaemia_in_pregnancy']:
-                        store_dalys_in_mni(individual_id, f'{severity}_anaemia_resolution')
+                    store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
+                                                      f'anaemia_resolution')
                     df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
                 if self.rng.random_sample() < params['effect_of_b12_replacement_for_resolving_b12_def']:
@@ -1416,8 +1412,8 @@ class CareOfWomenDuringPregnancy(Module):
             # starting on a course of IFA will correct anaemia prior to follow up
             if self.module.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
                 df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
-                for severity in df.at[individual_id, 'ps_anaemia_in_pregnancy']:
-                    store_dalys_in_mni(individual_id, f'{severity}_anaemia_resolution')
+                store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
+                                                  f'anaemia_resolution')
 
     def antenatal_blood_transfusion(self, individual_id, hsi_event, cause):
         """
@@ -2690,59 +2686,51 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
 
-                    elif mother.ps_antepartum_haemorrhage == 'mild_' \
-                                                             'moderate' and mother.ps_gestational_age_in_weeks >= 37:
+                    elif mother.ps_antepartum_haemorrhage != 'severe' and mother.ps_gestational_age_in_weeks >= 37:
                         # Women experiencing mild or moderate bleeding but who are around term gestation are admitted
                         # for caesarean
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
 
-                    elif mother.ps_antepartum_haemorrhage == 'mild' \
-                                                             '_moderate' and mother.ps_gestational_age_in_weeks < 37:
+                    elif mother.ps_antepartum_haemorrhage != 'severe' and mother.ps_gestational_age_in_weeks < 37:
                         # Women with more mild bleeding remain as inpatients until their gestation has increased and
-                        # then will be delivered by caesarean
+                        # then will be delivered by caesarean - (no risk of death associated with mild/moderate bleeds)
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean when her gestation '
                                                      f'has increased due to APH')
 
-                        self.module.antenatal_blood_transfusion(person_id, self, cause='antepartum_haem')
+                        # self.module.antenatal_blood_transfusion(person_id, self, cause='antepartum_haem')
 
                 assert df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none'
 
-            # ======================= INITIATE TREATMENT FOR PROM +/- CHORIOAMNIONITIS ================================
+            # ===================================== INITIATE TREATMENT FOR PROM =======================================
             # Treatment for women with premature rupture of membranes is dependent upon a womans gestational age and if
             # she also has an infection of membrane surrounding the foetus (the chorion)
 
-            if mother.ps_premature_rupture_of_membranes:
+            if mother.ps_premature_rupture_of_membranes and (mother.ps_chorioamnionitis == 'none' or
+                                                             mother.ps_chorioamnionitis == 'histological'):
+                # If the woman has PROM but no infection, she is given prophylactic antibiotics which will reduce
+                # the risk of neonatal infection
+                self.module.antibiotics_for_prom(person_id, self)
 
-                if ~mother.ps_chorioamnionitis:
-                    # If the woman has PROM but no infection, she is given prophylactic antibiotics which will reduce
-                    # the risk of infection during the intrapartum period
-                    self.module.antibiotics_for_prom(person_id, self)
-
-                    # Guidelines suggest women over 34 weeks of gestation should be admitted for induction to to
-                    # increased risk of morbidity and mortality
-                    if mother.ps_gestational_age_in_weeks >= 34:
-                        df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
-                        logger.debug(key='msg', data=f'{person_id} will be admitted for induction due to prom/chorio')
-
-                    # Otherwise they may stay as an inpatient until their gestation as increased prior to delivery
-                    elif mother.ps_gestational_age_in_weeks < 34:
-                        df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_future'
-                        logger.debug(key='msg', data=f'{person_id} will be admitted for induction when her gestation'
-                                                     f' has increase due prom/chorio')
-
-                # Immediate delivery is indicated for women with PROM complicated by chorioamnionitis
-                elif mother.ps_chorioamnionitis:
-                    self.module.antibiotics_for_chorioamnionitis(person_id, self)
+                # Guidelines suggest women over 34 weeks of gestation should be admitted for induction to to
+                # increased risk of morbidity and mortality
+                if mother.ps_gestational_age_in_weeks >= 34:
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
                     logger.debug(key='msg', data=f'{person_id} will be admitted for induction due to prom/chorio')
 
-            # TODO: TC- Women who are admitted for delivery will have risk of death associated with the complication
-            #  for which they have been admitted, applied in the labour model. The treatment delivered within this HSI
-            #  will reduce the risk of death during labour. This makes sense for women who are
-            #  delivered immediately. However for women who are admitted very early but scheduled for delivery when
-            #  their gestation is greater it makes less sense. It might be too granular for now but just a thought...
+                # Otherwise they may stay as an inpatient until their gestation as increased prior to delivery
+                elif mother.ps_gestational_age_in_weeks < 34:
+                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_future'
+                    logger.debug(key='msg', data=f'{person_id} will be admitted for induction when her gestation'
+                                                 f' has increase due prom/chorio')
+
+            # ============================== INITIATE TREATMENT FOR CHORIOAMNIONITIS ==================================
+            if mother.ps_chorioamnionitis == 'clinical':
+                self.module.antibiotics_for_chorioamnionitis(person_id, self)
+                df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
+                logger.debug(key='msg', data=f'{person_id} will be admitted for induction due to prom/chorio')
+                # RCOG says deliver
 
             # ======================== ADMISSION FOR DELIVERY (INDUCTION) ========================================
             # Women for whom immediate delivery is indicated are schedule to move straight to the labour model where
@@ -3099,7 +3087,6 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})  # todo:vary by severity?
-
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

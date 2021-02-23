@@ -9,6 +9,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
 from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.dxmanager import DxTest
 from tlo.util import BitsetHandler
 
@@ -165,6 +166,13 @@ class PostnatalSupervisor(Module):
             Types.REAL, 'baseline probability of emergency care seeking for women in the postnatal period'),
         'prob_care_seeking_postnatal_emergency_neonate': Parameter(
             Types.REAL, 'baseline probability care will be sought for a neonate with a complication'),
+        'odds_care_seeking_fistula_repair': Parameter(
+            Types.REAL, 'odds of a woman seeking care for treatment of obstetric fistula'),
+        'aor_cs_fistula_age_15_19': Parameter(
+            Types.REAL, 'odds ratio for care seeking for treatment of obstetric fistula in 15-19 year olds'),
+        'aor_cs_fistula_age_lowest_education': Parameter(
+            Types.REAL, 'odds ratio for care seeking for treatment of obstetric fistula in women in the lowest '
+                        'education quintile'),
         'prob_pnc1_at_day_7': Parameter(
             Types.REAL, 'baseline probability a woman will seek PNC for her and her newborn at day + 7 '),
         'multiplier_for_care_seeking_with_comps': Parameter(
@@ -202,6 +210,8 @@ class PostnatalSupervisor(Module):
             Types.REAL, 'probability a woman will receive point of care Hb testing during PNC'),
         'prob_intervention_neonatal_sepsis_pnc': Parameter(
             Types.REAL, 'probability a newborn will be assessed for sepsis during PNC'),
+        'prob_intervention_delivered_hiv_test_pnc': Parameter(
+            Types.REAL, 'probability a newborn will receive a HIV test at 6 weeks postnatal '),
     }
 
     PROPERTIES = {
@@ -259,6 +269,7 @@ class PostnatalSupervisor(Module):
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 
+        # todo: delete?
         if 'HealthBurden' in self.sim.modules.keys():
             params['pn_daly_weights'] = {
                 'haemorrhage_moderate': self.sim.modules['HealthBurden'].get_daly_weight(339),
@@ -439,6 +450,13 @@ class PostnatalSupervisor(Module):
             'care_seeking_postnatal_complication_neonate': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_care_seeking_postnatal_emergency_neonate']),
+
+            'care_seeking_for_fistula_repair': LinearModel(
+                LinearModelType.LOGISTIC,
+                params['odds_care_seeking_fistula_repair'],
+                Predictor('age_years').when('.between(14,20)', params['aor_cs_fistula_age_15_19']),
+                Predictor('li_ed_lev').when(1, params['aor_cs_fistula_age_lowest_education'])),
+                # todo: check this is no education
         }
 
     def initialise_population(self, population):
@@ -578,12 +596,31 @@ class PostnatalSupervisor(Module):
         risk_of_fistula = params['pn_linear_equations'][
             'obstetric_fistula'].predict(df.loc[[mother_id]])[mother_id]
 
+        # todo: link with PNC (assessment), allow treatment post day 42 (dalys?)
+
         if self.rng.random_sample() < risk_of_fistula:
             # We determine the specific type of fistula this woman is experiencing, to match with DALY weights
             fistula_type = self.rng.choice(['vesicovaginal', 'rectovaginal'], p=params['prevalence_type_of_fistula'])
             df.at[mother_id, 'pn_obstetric_fistula'] = fistula_type
+
+            logger.debug(key='msg', data=f'Mother {mother_id} has developed a {fistula_type} post delivery')
+
             store_dalys_in_mni(mother_id, f'{fistula_type}_fistula_onset')
             self.postnatal_tracker['fistula'] += 1
+
+            care_seeking_for_repair = params['pn_linear_equations'][
+                'care_seeking_for_fistula_repair'].predict(df.loc[[mother_id]])[mother_id]
+
+            if care_seeking_for_repair:
+                repair_hsi = HSI_PostnatalSupervisor_TreatmentForObstetricFistula(
+                    self, person_id=mother_id)
+                repair_date = self.sim.date + DateOffset(days=(self.rng.randint(0, 42)))
+
+                logger.debug(key='msg', data=f'Mother {mother_id} will seek care for fistula repair on {repair_date}')
+                self.sim.modules['HealthSystem'].schedule_hsi_event(repair_hsi,
+                                                                    priority=0,
+                                                                    topen=repair_date,
+                                                                    tclose=repair_date + DateOffset(days=7))
 
         # ======================= CONTINUATION OF COMPLICATIONS INTO THE POSTNATAL PERIOD =========================
         # Certain conditions experienced in pregnancy are liable to continue into the postnatal period
@@ -628,50 +665,10 @@ class PostnatalSupervisor(Module):
                                          f'interaction person {person_id} for: {treatment_id}')
 
     def report_daly_values(self):
-
         logger.debug(key='message', data='This is PostnatalSupervisor reporting my health values')
         df = self.sim.population.props
-        p = self.parameters['pn_daly_weights']
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        monthly_daly = dict()
-
-        # todo: add onset dates for complications
-
-        def chronic_daly_calculations(complication, daly_weight):
-            if pd.isnull(mni[person][f'{complication}_onset']):
-                return
-            else:
-                if pd.isnull(mni[person][f'{complication}_resolution']):
-                    if mni[person][f'{complication}_onset'] < (self.sim.date - DateOffset(months=1)):
-                        monthly_daly[person] += p[f'{daly_weight}']
-
-                    elif (self.sim.date - DateOffset(months=1)) < mni[person][
-                         f'{complication}_onset'] <= self.sim.date:
-                        days_since_onset = pd.Timedelta((self.sim.date - mni[person][f'{complication}_onset']),
-                                                        unit='d')
-                        daly_weight = days_since_onset.days * (p[f'{daly_weight}'] / 365)
-                        monthly_daly[person] += daly_weight
-                else:
-                    days_free_of_comp_this_month = pd.Timedelta((self.sim.date - mni[person][f'{complication}_'
-                                                                                             f'resolution']), unit='d')
-                    mid_way_calc = (self.sim.date - DateOffset(months=1)) + days_free_of_comp_this_month
-                    days_with_comp_this_month = pd.Timedelta((self.sim.date - mid_way_calc), unit='d')
-                    daly_weight = days_with_comp_this_month.days * (p[f'{daly_weight}'] / 365)
-                    monthly_daly[person] += daly_weight
-                    mni[person][f'{complication}_onset'] = pd.NaT
-                    mni[person][f'{complication}_resolution'] = pd.NaT
-
-        for person in list(mni):
-            if df.at[person, 'is_alive']:
-                monthly_daly[person] = 0
-
-                for complications_and_dalys in [['vesicovaginal_fistula', 'vv_fistula'],
-                                                ['rectovaginal_fistula', 'rv_fistula']]:
-                    chronic_daly_calculations(complication=complications_and_dalys[0],
-                                              daly_weight=complications_and_dalys[1])
 
         daly_series = pd.Series(data=0, index=df.index[df.is_alive])
-        daly_series[monthly_daly.keys()] = list(monthly_daly.values())
 
         return daly_series
 
@@ -707,6 +704,7 @@ class PostnatalSupervisor(Module):
         params = self.parameters
         apply_linear_model = self.sim.modules['PregnancySupervisor'].apply_linear_model
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         def onset(eq):
             """
@@ -773,7 +771,7 @@ class PostnatalSupervisor(Module):
 
         # And set the emergency property
         df.loc[onset_pph.loc[onset_pph].index, 'pn_emergency_event_mother'] = True
-        for person in onset_sepsis.loc[onset_sepsis].index:
+        for person in onset_pph.loc[onset_pph].index:
             store_dalys_in_mni(person, 'secondary_pph_onset')
 
         if not onset_pph.loc[onset_pph].empty:
@@ -834,8 +832,7 @@ class PostnatalSupervisor(Module):
         df.loc[onset_anaemia.loc[onset_anaemia].index, 'pn_anaemia_following_pregnancy'] = random_choice_severity
 
         for person in onset_anaemia.loc[onset_anaemia].index:
-            for severity in df.at[person, 'pn_anaemia_in_pregnancy']:
-                store_dalys_in_mni(person, f'{severity}_anaemia_onset')
+            store_dalys_in_mni(person, f'{df.at[person, "pn_anaemia_following_pregnancy"]}_anaemia_onset')
 
         if not onset_anaemia.loc[onset_anaemia].empty:
             logger.debug(key='message', data=f'The following women have developed anaemia during week {week}'
@@ -856,7 +853,8 @@ class PostnatalSupervisor(Module):
                               index=women_with_htn.index)
 
         for person in resolvers.loc[resolvers].index:
-            store_dalys_in_mni(person, 'hypertension_resolution')
+            if not pd.isnull(mni[person]['hypertension_onset']):
+                store_dalys_in_mni(person, 'hypertension_resolution')
 
         df.loc[resolvers.loc[resolvers].index, 'pn_htn_disorders'] = 'resolved'
 
@@ -1098,10 +1096,15 @@ class PostnatalSupervisor(Module):
         if self.rng.random_sample() < params['prob_intervention_delivered_bp_pnc']:
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_pressure_measurement',
                                                                        hsi_event=hsi_event):
-                if ~df.at[individual_id, 'pn_gest_htn_on_treatment']:
-                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'hypertension_onset')
-
                 hypertension_diagnosed = True
+
+                if df.at[individual_id, 'pn_htn_disorders'] == 'none' or df.at[individual_id,
+                                                                               'pn_htn_disorders'] == 'resolved':
+                    # todo: allow for incorrect diagnosis?
+                    pass
+
+                elif ~df.at[individual_id, 'pn_gest_htn_on_treatment']:
+                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'hypertension_onset')
             else:
                 hypertension_diagnosed = False
         else:
@@ -1156,6 +1159,9 @@ class PostnatalSupervisor(Module):
         :param hsi_event: HSI event in which this function is called
         """
         params = self.parameters
+        df = self.sim.population.props
+        person_id = hsi_event.target
+        mother_id = df.at[person_id, 'mother_id']
 
         # As with assessment_for_maternal_complication_during_pnc neonates are assessed for complications and admitted
         # as required (we specify which PNC visit this is occurring in due to a different property being used for the
@@ -1189,6 +1195,25 @@ class PostnatalSupervisor(Module):
                                                                     priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
+
+        if pnc_visit == 'pnc2' and (self.rng.random_sample() < params['prob_intervention_delivered_hiv_test_pnc']):
+            if 'hiv' in self.sim.modules.keys():
+                if ~df.at[person_id, 'hv_diagnosed'] and df.at[mother_id, 'hv_diagnosed']:
+
+                    logger.debug(key='message', data='Neonate of a HIV +ve mother has been referred for '
+                                                     'HIV testing during PNC at 6 weeks')
+
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
+                        topen=self.sim.date,
+                        tclose=None,
+                        priority=0)
+                else:
+                    logger.debug(key='message', data='Neonate of a HIV +ve mother has not been referred for '
+                                                     'HIV testing during PNC at 6 weeks')
+            else:
+                logger.debug(key='message',  data='HIV module is not registered in this simulation run and therefore '
+                                                  'HIV testing will not happen in postnatal care')
 
     def apply_risk_of_maternal_or_neonatal_death_postnatal(self, mother_or_child, individual_id):
         """
@@ -1344,6 +1369,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # ================================ UPDATING LENGTH OF POSTPARTUM PERIOD  IN WEEKS  ============================
         # Here we update how far into the postpartum period each woman who has recently delivered is
@@ -1388,7 +1414,8 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                                                            'severe_pre_eclamp|eclampsia'))
 
         for person in week_8_postnatal_women_htn.loc[week_8_postnatal_women_htn].index:
-            store_dalys_in_mni(person, 'hypertension_resolution')
+            if not pd.isnull(mni[person]['hypertension_onset']):
+                store_dalys_in_mni(person, 'hypertension_resolution')
 
         df.loc[week_8_postnatal_women_htn, 'pn_htn_disorders'] = 'none'
 
@@ -1543,7 +1570,8 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                                                                     p=params['prob_type_of_anaemia_pn'], size=1)
                     df.at[individual_id, 'pn_anaemia_following_pregnancy'] = random_choice_severity
 
-                    store_dalys_in_mni(individual_id, f'{random_choice_severity}_anaemia_onset')
+                    store_dalys_in_mni(individual_id, f'{ df.at[individual_id, "pn_anaemia_following_pregnancy"] }_'
+                                                      f'anaemia_onset')
 
             # -------------------------------------------- HYPERTENSION -----------------------------------------------
             # For women who remain hypertensive after delivery we apply a probability that this will resolve in the
@@ -1554,7 +1582,8 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                 if 'resolved' in mother.pn_htn_disorders:
                     pass
                 elif self.module.rng.random_sample() < params['prob_htn_resolves']:
-                    store_dalys_in_mni(individual_id, 'hypertension_resolution')
+                    if not pd.isnull(mni[individual_id]['hypertension_onset']):
+                        store_dalys_in_mni(individual_id, 'hypertension_resolution')
                     df.at[individual_id, 'pn_htn_disorders'] = 'resolved'
 
                 else:
@@ -1773,7 +1802,7 @@ class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScope
 class HSI_PostnatalSupervisor_PostnatalCareContactTwo(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI_PostnatalSupervisor_PostnatalCareContactTwoMaternal. It is scheduled by
     HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal This event is the second PNC visit women
-    are recommended to undertake at 6 weeks postnatal. This event is currently unfinished"""
+    are recommended to undertake at 6 weeks postnatal. """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1797,8 +1826,8 @@ class HSI_PostnatalSupervisor_PostnatalCareContactTwo(HSI_Event, IndividualScope
             assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 1
 
         # If both mother and baby have died the event doesnt run
-        if not df.at[person_id, 'is_alive'] and df.at[child_id, 'is_alive']:
-            pass
+        if ~df.at[person_id, 'is_alive'] and ~df.at[child_id, 'is_alive']:
+            return
 
         # If either are alive the event runs
         if df.at[person_id, 'is_alive'] or df.at[child_id, 'is_alive']:
@@ -1966,7 +1995,9 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
                 #todo: should reduce risk of SPE
 
         # ------------------------------------- ANAEMIA TREATMENT -----------------------------------------------
-        #  todo: review treatment with TC before copying here
+        if mother.pn_anaemia_following_pregnancy != 'none':
+            pass
+            # todo: discuss with asif r.e. pregnancy hub module
 
         # Following treatment we use this function to determine if this woman will survive
         self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother',
@@ -1992,6 +2023,37 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
         self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother',
                                                                        individual_id=person_id)
 
+
+class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, IndividualScopeEventMixin):
+    """"""
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, PostnatalSupervisor)
+
+        self.TREATMENT_ID = 'PostnatalSupervisor_TreatmentForObstetricFistula'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 5})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        mother = df.loc[person_id]
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        if not mother.is_alive:
+            return
+
+        # todo: no consumables package
+        # todo: are we only to assume women are treated prior to day 42? otherwise storing these dates in the MNI
+        #  wont work
+        # todo: treatment effectiveness
+
+        self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(
+            person_id, f'{df.at[person_id, "pn_obstetric_fistula"]}_fistula_resolution')
+
+        df.at[person_id, 'pn_obstetric_fistula'] = 'none'
+        logger.debug(key='msg', data=f'Mother {person_id} has undergone surgical correction of her obstetric fistula')
 
 class HSI_PostnatalSupervisor_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
     """This is HSI_PostnatalSupervisor_NeonatalWardInpatientCare. It is scheduled by any of the PNC HSIs for neonates
