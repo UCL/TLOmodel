@@ -47,8 +47,9 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 50000
-nsim = 2
+pop_size = 100000
+nsim = 3
+
 
 # Create a variable whether to save figures or not
 save_figures = True
@@ -168,18 +169,18 @@ for i in range(0, nsim):
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
         dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath),
-        contraception.Contraception(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        # contraception.Contraception(resourcefilepath=resourcefilepath),
+        # labour.Labour(resourcefilepath=resourcefilepath),
+        # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
     )
     logfile = sim.configure_logging(filename="LogFile")
     # create and run the simulation

@@ -19,11 +19,14 @@ import pandas as pd
 import ast
 # =============================== Analysis description ========================================================
 # What I am doing here is modelling the what would happen if we included a number of different intervention strategies.
-# I include two here, the first is the enforcements of speed limits, which should result in a 6% reduction in incidence
+# I include three here, the first is the enforcements of speed limits, which should result in a 6% reduction in incidence
 # and a 15% reduction in mortality according to https://www.bmj.com/content/bmj/344/bmj.e612.full.pdf
 # The second is the enforcement of blood alcohol content laws, which should result in a 15% reduction in incidence and
 # a 25% reduction in mortality, according to the above source.
-# In both these scenarios, there is an asymetric reduction in incidence and mortality, I make the assumption that
+# The third scenario considered is the use of rumble strips. In Ghana, they reduced chrashes on the highway by 35% and
+# fatalities by 55%: https://doi.org/10.1076/icsp.10.1.77.14113. Currently I am just extrapolating these values to the whole country...
+# TODO: Redo the analysis with a more sophisticated approach
+# In all these scenarios, there is an asymetric reduction in incidence and mortality, I make the assumption that
 # further to the deaths resulting from a percent reduction in incidence, the remaining deaths will be reduced from pre-
 # hospital mortality.
 
@@ -42,8 +45,8 @@ resourcefilepath = Path('./resources')
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 100000
-nsim = 5
+pop_size = 10000
+nsim = 3
 output_for_different_incidence = dict()
 # Store the incidence, deaths and DALYs in each simulation
 incidence_average = []
@@ -52,6 +55,7 @@ list_tot_dalys_average = []
 scenarios = {'None': [1, 1],
              'Speed limit \n enforcement': [(1 - 0.06), (1 - 0.204)],
              'Drink-driving \n law enforcement': [(1 - 0.15), (1 - 0.169)],
+             'Rumble strips': [(1 - 0.35), (1 - 0.204)]
              }
 # Get the parameters
 params = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
@@ -183,15 +187,15 @@ plt.title(f"The effect of reducing incidence on Average Deaths/DALYS"
 plt.savefig('outputs/ReducingIncidence/incidence_vs_deaths_DALYS.png', bbox_inches='tight')
 plt.clf()
 # Plot the percent reduction of deaths and DALYs in each simulation
-w = 0.15
-plt.bar(np.arange(3), percent_inc_reduction, color='lightsteelblue', width=w, label='% change in incidence')
-plt.bar(np.arange(3) + 0.15, percent_deaths_reduction, color='lightsalmon', width=w, label='% change in deaths')
-plt.bar(np.arange(3) + 0.3, percent_dalys_reduction, color='wheat', width=w, label='% change in DALYs')
-plt.bar(np.arange(3) + 0.45, percent_inpatient_day_reduction, color='olive', width=w,
+w = 0.8 / len(scenarios)
+plt.bar(np.arange(len(scenarios)), percent_inc_reduction, color='lightsteelblue', width=w, label='% change in incidence')
+plt.bar(np.arange(len(scenarios)) + w, percent_deaths_reduction, color='lightsalmon', width=w, label='% change in deaths')
+plt.bar(np.arange(len(scenarios)) + 2 * w, percent_dalys_reduction, color='wheat', width=w, label='% change in DALYs')
+plt.bar(np.arange(len(scenarios)) + 3 * w, percent_inpatient_day_reduction, color='olive', width=w,
         label='% change in inpatient days')
-plt.bar(np.arange(3) + 0.6, percent_consumable_reduction, color='lemonchiffon', width=w, label='% change in '
+plt.bar(np.arange(len(scenarios)) + 4 * w, percent_consumable_reduction, color='lemonchiffon', width=w, label='% change in '
                                                                                                  'consumables')
-plt.xticks(np.arange(3) + 0.3, scenarios.keys())
+plt.xticks(np.arange(len(scenarios)) + 2 * w, scenarios.keys())
 plt.legend()
 plt.ylabel('Percent')
 plt.title(f"The percent change of incidence, average deaths and DALYS under different scenarios"
