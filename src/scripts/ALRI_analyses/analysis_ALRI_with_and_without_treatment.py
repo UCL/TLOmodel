@@ -1,5 +1,6 @@
 """
-This will demonstrate the effect of different treatment
+This will demonstrate the effect of different treatment,
+adapted from analysis_diarrhoea_with_and_without_treatment
 """
 
 # %% Import Statements and initial declarations
@@ -50,13 +51,14 @@ popsize = 1000
 seed = 123
 
 for label, service_avail in scenarios.items():
-    log_config = {
-        "filename": "one_child",  # The name of the output file (a timestamp will be appended).
-        "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
-        "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
-            "*": logging.CRITICAL,  # Asterisk matches all loggers - we set the default level to WARNING
-        }
-    }
+    # log_config = {
+    #     "filename": "ALRI_LogFile",  # The name of the output file (a timestamp will be appended).
+    #     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    #     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+    #         "*": logging.CRITICAL,  # Asterisk matches all loggers - we set the default level to WARNING
+    #     }
+    # }
+    log_config = {'filename': 'LogFile'}
     # add file handler for the purpose of logging
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
@@ -64,7 +66,7 @@ for label, service_avail in scenarios.items():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_avail),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -83,10 +85,11 @@ for label, service_avail in scenarios.items():
 
 # %% Extract the relevant outputs and make a graph:
 def get_incidence_rate_and_death_numbers_from_logfile(logfile):
+    # parse the simulation logfile to get the output dataframes
     output = parse_log_file(logfile)
 
     # Calculate the "incidence rate" from the output counts of incidence
-    counts = output['tlo.methods.pneumonia']['incidence_count_by_pathogen']
+    counts = output['tlo.methods.ALRI']['incidence_count_by_pathogen']
     counts['year'] = pd.to_datetime(counts['date']).dt.year
     counts.drop(columns='date', inplace=True)
     counts.set_index(
@@ -150,13 +153,11 @@ def plot_for_column_of_interest(results, column_of_interest):
 for column_of_interest in inc_by_pathogen[list(inc_by_pathogen.keys())[0]].columns:
     plot_for_column_of_interest(inc_by_pathogen, column_of_interest)
 
-
 # Plot death rates by year: across the scenarios
-data = dict()
+data = {}
 for label in deaths.keys():
     data.update({label: deaths[label]})
-data_df = pd.DataFrame(data)
-pd.concat(data_df, axis=1).plot.bar()
+pd.concat(data, axis=1).plot.bar()
 plt.title('Number of Deaths Due to ALRI')
 plt.savefig(outputpath / ("ALRI_deaths_by_scenario" + datestamp + ".pdf"), format='pdf')
 plt.show()

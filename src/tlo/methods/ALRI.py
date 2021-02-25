@@ -741,16 +741,6 @@ class ALRI(Module):
             '5+y': copy.deepcopy(zeros_counter)
         }
 
-        # dict to hold counters for the number of ALRI cases, recovery, treatment and death
-        blank_outcome_counter = dict(zip(self.outcome, [list() for _ in self.outcome]))
-        self.outcome_counter_blank = {'outcome': copy.deepcopy(blank_outcome_counter)}
-
-        self.recovery_treatment_death_counter = copy.deepcopy(self.outcome_counter_blank)
-
-        zeros_outcome_counter = dict(zip(self.outcome, [0] * len(self.outcome)))
-        self.outcome_tracker_zeros = {'outcome': copy.deepcopy(zeros_outcome_counter)}
-        # ----------------------------------
-
         # Store the symptoms that this module will use:
         self.symptoms = {
             'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain',
@@ -1406,7 +1396,6 @@ class ALRI(Module):
         """
         df = self.sim.population.props
         person = df.loc[person_id]
-        self.outcome = 'treated'
 
         if not person.is_alive:
             return
@@ -1420,8 +1409,7 @@ class ALRI(Module):
 
         # Log that the treatment is provided:
         df.at[person_id, 'ri_ALRI_tx_start_date'] = self.sim.date
-        df.at[person_id, 'ri_ALRI_treatment_counter'] +=1
-        self.recovery_treatment_death_counter['outcome'][self.outcome].append(self.sim.date)
+        df.at[person_id, 'ri_ALRI_treatment_counter'] += 1
 
         # Determine if the treatment is effective
         if prob_of_cure > self.rng.rand():
@@ -1600,7 +1588,6 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         self.bacterial_pathogen = co_bacterial_patho
         self.disease = disease_type
         self.duration_in_days = duration_in_days
-        self.outcome = 'cases'
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -1703,7 +1690,6 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         else:
             age_grp = '5+y'
         self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
-        self.module.recovery_treatment_death_counter['outcome'][self.outcome].append(self.sim.date)
 
 
 class AlriComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
@@ -1813,7 +1799,6 @@ class ALRINaturalRecoveryEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        self.outcome ='recovered'
 
     def apply(self, person_id):
         df = self.sim.population.props
@@ -1835,7 +1820,6 @@ class ALRINaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         # set recovery date for this current episode
         df.at[person_id, 'ri_ALRI_event_recovered_date'] = self.sim.date
         df.at[person_id, 'ri_ALRI_recovery_counter'] += 1
-        self.module.recovery_treatment_death_counter['outcome'][self.outcome].append(self.sim.date)
 
         # clear properties to inital state
         df.at[person_id, 'ri_current_ALRI_status'] = False
@@ -1868,7 +1852,6 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        self.outcome = 'recovered'
 
     def apply(self, person_id):
         logger.debug("ALRICureEvent: Stopping ALRI treatment and curing person %d", person_id)
@@ -1905,7 +1888,6 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
 
         df.at[person_id, 'ri_ALRI_recovery_counter'] += 1
-        self.module.recovery_treatment_death_counter['outcome'][self.outcome].append(self.sim.date)
 
         # clear properties to inital state
         # df.at[person_id, 'ri_ALRI_event_date_of_onset'] = pd.NaT
@@ -1933,7 +1915,6 @@ class ALRIDeathEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        self.outcome = 'died'
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -1960,7 +1941,6 @@ class ALRIDeathEvent(Event, IndividualScopeEventMixin):
                                                                       person_id, 'ri_primary_ALRI_pathogen']
                                                                   ), self.sim.date)
             df.at[person_id, 'ri_ALRI_death_counter'] += 1
-            self.module.recovery_treatment_death_counter['outcome'][self.outcome].append(self.sim.date)
 
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ==================================== HEALTH SYSTEM INTERACTION EVENTS ====================================
@@ -2501,6 +2481,7 @@ class HSI_IMCI_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin)
 class HSI_IMCI_Severe_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, ALRI)
 
         # Define the necessary information for an HSI - interventions for severe pneumonia at facility level 2
         # (These are blank when created; but these should be filled-in by the module that calls it)
@@ -2642,53 +2623,23 @@ class PathogenIncidentCountLoggingEvent(RegularEvent, PopulationScopeEventMixin)
         # and check that all the dates have occurred since self.date_last_run
         counts = copy.deepcopy(self.module.incident_case_tracker_zeros)
 
-        # for age_grp in self.module.incident_case_tracker.keys():
-        #     for pathogen in self.module.pathogens:
-        #         list_of_times = self.module.incident_case_tracker[age_grp][pathogen]
-        #         counts[age_grp][pathogen] = len(list_of_times)
-        #         for t in list_of_times:
-        #             assert self.date_last_run <= t <= self.sim.date
-
-        # logger.info(key='incidence_count_by_pathogen', data=counts)
-
-        outcome_counts = copy.deepcopy(self.module.outcome_tracker_zeros)
-
-        for key in self.module.recovery_treatment_death_counter.keys():
-            for outcome in self.module.outcome:
-                list_of_times = self.module.recovery_treatment_death_counter[key][outcome]
-                outcome_counts[key][outcome] = len(list_of_times)
+        for age_grp in self.module.incident_case_tracker.keys():
+            for pathogen in self.module.pathogens:
+                list_of_times = self.module.incident_case_tracker[age_grp][pathogen]
+                counts[age_grp][pathogen] = len(list_of_times)
                 for t in list_of_times:
                     assert self.date_last_run <= t <= self.sim.date
 
-        logger.info(key='incidence_count_by_pathogen', data=outcome_counts)
+        logger.info(key='incidence_count_by_pathogen', data=counts)
 
         # Reset the counters and the date_last_run --------------------
         self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
-        self.module.recovery_treatment_death_counter = copy.deepcopy(self.module.outcome_tracker_zeros)
         self.date_last_run = self.sim.date
-
-
-class AlriResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    This regular event resets the counts ALRI episodes, recovery, treatment and death
-    """
-    def __init__(self, module):
-        # This event to occur every year
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-
-    def apply(self, population):
-        df = self.sim.population.props
-
-        df['ri_ALRI_cases_counter'] = 0
-        df['ri_ALRI_recovery_counter'] = 0
-        df['ri_ALRI_treatment_counter'] = 0
-        df['ri_ALRI_death_counter'] = 0
 
 
 class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    Other analysis
+    Count the number of ALRI cases, number of recovered, treated and died every year
     """
     def __init__(self, module):
         # This event to occur every year
@@ -2716,7 +2667,6 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             data=counter,
             description='Counts of cases, recovery, treatment and death'
         )
-
 
         # start_date = Date(2010, 1, 1)
         # end_date = Date(2015, 1, 1)
@@ -2830,3 +2780,19 @@ class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     ]].to_dict())
 
 
+class AlriResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    This regular event resets the counts ALRI episodes, recovery, treatment and death
+    """
+    def __init__(self, module):
+        # This event to occur every year
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        df = self.sim.population.props
+
+        df['ri_ALRI_cases_counter'] = 0
+        df['ri_ALRI_recovery_counter'] = 0
+        df['ri_ALRI_treatment_counter'] = 0
+        df['ri_ALRI_death_counter'] = 0

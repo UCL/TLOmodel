@@ -36,7 +36,7 @@ log_config = {
 }
 
 # Used to configure health system behaviour
-# service_availability = ["*"]
+service_availability = ["*"]
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -44,7 +44,7 @@ sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))  # disable=True
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(labour.Labour(resourcefilepath=resourcefilepath))

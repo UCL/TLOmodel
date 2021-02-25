@@ -32,8 +32,7 @@ log_config = {
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.pneumonia": logging.INFO,
-        # "tlo.methods.dx_algorithm_child": logging.INFO
+        "tlo.methods.ALRI": logging.INFO,
     }
 }
 
@@ -81,7 +80,7 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(sim.log_filepath)
 
 # model outputs -----------------------
-complications_per_year = output['tlo.methods.pneumonia']['alri_complications']['count']
+complications_per_year = output['tlo.methods.ALRI']['alri_complications']['count']
 print(complications_per_year)
 # temp_df = pd.DataFrame()
 # for k, v in complications_per_year.items():
