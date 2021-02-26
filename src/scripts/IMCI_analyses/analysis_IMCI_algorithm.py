@@ -154,7 +154,8 @@ hw_mean_class_for_imci_no_pneum.set_index(
 # health worker's classification for IMCI-defined non-severe pneumonia
 hw_classification_for_imci_nonsev_pneum = \
     output['tlo.methods.dx_algorithm_child']['hw_classification_for_non-sev_pneumonia_by_IMCI']
-hw_classification_for_imci_nonsev_pneum['date'] = pd.to_datetime(hw_classification_for_imci_nonsev_pneum['date']).dt.year
+hw_classification_for_imci_nonsev_pneum['date'] = \
+    pd.to_datetime(hw_classification_for_imci_nonsev_pneum['date']).dt.year
 hw_classification_for_imci_nonsev_pneum = hw_classification_for_imci_nonsev_pneum.set_index('date')
 
 # ----- Format the data -----
@@ -299,11 +300,11 @@ mean_imci_class_for_bronchiolitis.set_index(
     )
 
 
-# join all dataframes
+# join all dataframes (rotated index is now columns)
 joined_underlying_condition_df = pd.concat([mean_imci_class_for_viral_pneumonia.T,
                                             mean_imci_class_for_bacterial_pneumonia.T,
                                             mean_imci_class_for_fungal_pneumonia.T,
-                                            mean_imci_class_for_bronchiolitis.T], axis=1) #rotated index is now columns
+                                            mean_imci_class_for_bronchiolitis.T], axis=1)
 
 # ----- Plotting -----
 plt.style.use('ggplot')
@@ -411,11 +412,11 @@ mean_hw_class_for_bronchiolitis.set_index(
     )
 
 
-# join all dataframes
+# join all dataframes (rotated index is now columns)
 joined_underlying_condition_hw_df = pd.concat([mean_hw_class_for_viral_pneumonia.T,
                                                mean_hw_class_for_bacterial_pneumonia.T,
                                                mean_hw_class_for_fungal_pneumonia.T,
-                                               mean_hw_class_for_bronchiolitis.T], axis=1) #rotated index is now columns
+                                               mean_hw_class_for_bronchiolitis.T], axis=1)
 
 # ----- Plotting -----
 plt.style.use('ggplot')

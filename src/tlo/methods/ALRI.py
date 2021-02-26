@@ -1775,8 +1775,8 @@ class AlriSystemicComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
             return
 
         # cancel the schedules onset of complication if treatment was administered for this episode
-        if df.at[person_id, 'ri_ALRI_event_date_of_onset'] <=\
-            df.at[person_id, 'ri_ALRI_tx_start_date'] <= self.sim.date:
+        if df.at[person_id,
+                 'ri_ALRI_event_date_of_onset'] <= df.at[person_id, 'ri_ALRI_tx_start_date'] <= self.sim.date:
             self.module.cancel_complication_onset(person_id=person_id, complication=self.complication)
             return
 
@@ -1864,13 +1864,13 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
             return
 
         # Cure should not happen if the person has already recovered for the current episode
-        if df.at[person_id, 'ri_ALRI_event_date_of_onset'] <=\
-            df.at[person_id, 'ri_ALRI_event_recovered_date'] <= self.sim.date:
+        if df.at[person_id,
+                 'ri_ALRI_event_date_of_onset'] <= df.at[person_id, 'ri_ALRI_event_recovered_date'] <= self.sim.date:
             return
 
         # Confirm that this is event is occurring during a current episode of ALRI
-        if not (df.at[person_id, 'ri_ALRI_event_date_of_onset']) <=\
-               self.sim.date <= (df.at[person_id, 'ri_end_of_last_alri_episode']):
+        if not (df.at[person_id, 'ri_ALRI_event_date_of_onset']
+               ) <= self.sim.date <= (df.at[person_id, 'ri_end_of_last_alri_episode']):
             return
 
         # This event should only run after the person has received a treatment during this episode
@@ -2333,18 +2333,19 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEven
         # todo: follow-up in 2 days
 
         # check to see if all consumables returned (for demonstration purposes):
-        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code1]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code2]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code3]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code4]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code5]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code6]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code7]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code8]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code9]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code10]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code11])
+        all_available = \
+            (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code1]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code2]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code3]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code4]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code5]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code6]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code7]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code8]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code9]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code10]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code11])
 
         # use helper function instead (for demonstration purposes)
         all_available_using_helper_function = self.get_all_consumables(
@@ -2565,23 +2566,24 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEven
             logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
             # todo: probability of referral if no drug available
             # self.sim.modules['DxAlgorithmChild'].do_when_facility_level_3(person_id=person_id, hsi_event=self)
-            #todo: inpatient bed days
+            # todo: inpatient bed days
             care_management_info.update({
                 'treatment_plan': 'no_available_treatment', 'referral_to_level_2': True})
 
         # check to see if all consumables returned (for demonstration purposes):
-        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code1]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code2]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code3]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code4]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code5]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code6]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code7]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code8]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code9]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code10]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code11])
+        all_available = \
+            (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code1]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code2]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code3]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code4]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code5]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code6]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code7]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code8]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code9]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code10]) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code11])
 
         # use helper function instead (for demonstration purposes)
         all_available_using_helper_function = self.get_all_consumables(
@@ -2668,52 +2670,6 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             data=counter,
             description='Counts of cases, recovery, treatment and death'
         )
-
-        # log the information on complications ----------------
-#         index_alri_with_complications = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status &
-#                                                  (df.ri_ALRI_complications != 'none')]
-#         # make a df with children with alri complications as the columns
-#         df_alri_complications = pd.DataFrame(index=index_alri_with_complications,
-#                                              data=bool(),
-#                                              columns=list(self.module.complications))
-#         for i in index_alri_with_complications:
-#             if 'respiratory_failure' in df.ri_ALRI_complications[i]:
-#                 update_df = pd.DataFrame({'respiratory_failure': True}, index=[i])
-#                 df_alri_complications.update(update_df)
-#             if 'pleural_effusion' in df.ri_ALRI_complications[i]:
-#                 update_df = pd.DataFrame({'pleural_effusion': True}, index=[i])
-#                 df_alri_complications.update(update_df)
-#             if 'empyema' in df.ri_ALRI_complications[i]:
-#                 update_df = pd.DataFrame({'empyema': True}, index=[i])
-#                 df_alri_complications.update(update_df)
-#             if 'lung_abscess' in df.ri_ALRI_complications[i]:
-#                 update_df = pd.DataFrame({'lung_abscess': True}, index=[i])
-#                 df_alri_complications.update(update_df)
-#             if 'sepsis' in df.ri_ALRI_complications[i]:
-#                 update_df = pd.DataFrame({'sepsis': True}, index=[i])
-#                 df_alri_complications.update(update_df)
-#             if 'meningitis' in df.ri_ALRI_complications[i]:
-#                 update_df = pd.DataFrame({'meningitis': True}, index=[i])
-#                 df_alri_complications.update(update_df)
-#
-#         count_alri_complications = {}
-#         for complic in df_alri_complications.columns:
-#             count_complication = df_alri_complications[complic].sum()
-#             update_dict = {f'{complic}': count_complication}
-#             count_alri_complications.update(update_dict)
-#
-#         complications_summary = {
-#             'count': count_alri_complications,
-#             'number_of_children_with_complications': len(index_alri_with_complications),
-#             'number_of_children_with_and_without_complications': len(index_children_with_alri)
-#         }
-#
-#         logger.info(key='alri_complications',
-#                     data=complications_summary,
-#                     description='Summary of complications in a year')
-#
-#         alri_count = df.groupby(df.ri_ALRI_disease_type).size()
-# #         print(alri_count)
 
 
 class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):

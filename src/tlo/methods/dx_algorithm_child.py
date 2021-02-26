@@ -9,7 +9,7 @@ There should be a method here to respond to every symptom that a child could pre
 import pandas as pd
 from tlo import Module, Parameter, Property, Types, logging, DateOffset
 from tlo.methods import Metadata
-from tlo.events import IndividualScopeEventMixin, RegularEvent, PopulationScopeEventMixin
+from tlo.events import RegularEvent, PopulationScopeEventMixin
 from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Dysentery,
     HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea,
@@ -28,8 +28,6 @@ from tlo.methods.ALRI import (
     HSI_IMCI_Severe_Pneumonia_Treatment_level_2,
 )
 from tlo.methods.dxmanager import DxTest
-from tlo.methods import ALRI
-from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -156,7 +154,6 @@ class DxAlgorithmChild(Module):
         # of main signs and symptoms, and the sensitivity & specificity of the assessment by the health worker at
         # each facility level, leading to the diagnosis, treatment or referral for treatment.
         p = self.parameters
-        df = self.sim.population.props
 
         # Sensitivity of testing varies between community (level_0), health centres (level_1), and hospitals (level_2),
 
@@ -342,8 +339,8 @@ class DxAlgorithmChild(Module):
                     dx_tests_to_run='pneumonia_care_given_level_0', hsi_event=hsi_event)
 
                 # schedule the events following the correct classification and treatment assignment ---------
-                if care_plan_result and df.at[
-                    person_id, 'ri_health_worker_iCCM_classification'] == 'non-severe_pneumonia':
+                if care_plan_result and df.at[person_id,
+                                              'ri_health_worker_iCCM_classification'] == 'non-severe_pneumonia':
                     schedule_hsi(hsi_event=HSI_iCCM_Pneumonia_Treatment_level_0(person_id=person_id,
                                                                                    module=self.sim.modules['ALRI']),
                                  priority=0,
@@ -353,8 +350,7 @@ class DxAlgorithmChild(Module):
                     pneum_management_info.update(
                         {'correct_pneumonia_care': True, 'care_plan': HSI_iCCM_Severe_Pneumonia_Treatment_level_0})
 
-                if care_plan_result and df.at[
-                    person_id, 'ri_health_worker_iCCM_classification'] == 'severe_pneumonia':
+                if care_plan_result and df.at[person_id, 'ri_health_worker_iCCM_classification'] == 'severe_pneumonia':
                     schedule_hsi(hsi_event=HSI_iCCM_Severe_Pneumonia_Treatment_level_0(
                         person_id=person_id,
                         module=self.sim.modules['ALRI']),
@@ -551,11 +547,13 @@ class DxAlgorithmChild(Module):
                     dx_tests_to_run='pneumonia_care_given_level_1', hsi_event=hsi_event)
                 # todo: algorithm for the probabilities of treatment plan given
                 if care_plan_result:
-                    schedule_hsi(hsi_event=HSI_IMCI_Severe_Pneumonia_Treatment_level_1(person_id=person_id, module=self),
-                                 priority=0,
-                                 topen=self.sim.date,
-                                 tclose=None
-                                 )
+                    schedule_hsi(hsi_event=HSI_IMCI_Severe_Pneumonia_Treatment_level_1(
+                        person_id=person_id,
+                        module=self),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
                     pneum_management_level1.update(
                         {'correct_pneumonia_care': True, 'care_plan': HSI_IMCI_Severe_Pneumonia_Treatment_level_1})
             else:
@@ -629,8 +627,8 @@ class DxAlgorithmChild(Module):
                     dx_tests_to_run='pneumonia_care_given_level_2', hsi_event=hsi_event)
 
                 # # # schedule the events following the correct classification and treatment assignment # # #
-                if care_plan_result and df.at[
-                    person_id, 'ri_health_worker_IMCI_classification'] == 'non-severe_pneumonia':
+                if care_plan_result and df.at[person_id,
+                                              'ri_health_worker_IMCI_classification'] == 'non-severe_pneumonia':
                     schedule_hsi(hsi_event=HSI_IMCI_Pneumonia_Treatment_level_2(person_id=person_id, module=self),
                                  priority=0,
                                  topen=self.sim.date,
@@ -639,8 +637,7 @@ class DxAlgorithmChild(Module):
                     pneum_management_level2.update(
                         {'correct_pneumonia_care': True, 'care_plan': HSI_IMCI_Pneumonia_Treatment_level_2})
 
-                if care_plan_result and df.at[
-                    person_id, 'ri_health_worker_IMCI_classification'] == 'severe_pneumonia':
+                if care_plan_result and df.at[person_id, 'ri_health_worker_IMCI_classification'] == 'severe_pneumonia':
                     schedule_hsi(
                         hsi_event=HSI_IMCI_Severe_Pneumonia_Treatment_level_2(person_id=person_id, module=self),
                         priority=0,
@@ -860,11 +857,11 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'viral_pneumonia')].groupby(
                 'ri_IMCI_classification_as_gold').size()
         imci_classification_for_underlying_bacterial_pneumonia = \
-            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bacterial_pneumonia')
-            ].groupby('ri_IMCI_classification_as_gold').size()
+            df[df.is_alive & df.age_years.between(0, 5) & (
+                df.ri_ALRI_disease_type == 'bacterial_pneumonia')].groupby('ri_IMCI_classification_as_gold').size()
         imci_classification_for_underlying_fungal_pneumonia = \
-            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'fungal_pneumonia')
-            ].groupby('ri_IMCI_classification_as_gold').size()
+            df[df.is_alive & df.age_years.between(0, 5) & (
+                df.ri_ALRI_disease_type == 'fungal_pneumonia')].groupby('ri_IMCI_classification_as_gold').size()
         imci_classification_for_underlying_bronchiolitis = \
             df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bronchiolitis')
                ].groupby('ri_IMCI_classification_as_gold').size()
@@ -904,11 +901,11 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'viral_pneumonia')].groupby(
                 'ri_health_worker_IMCI_classification').size()
         hw_classification_for_underlying_bacterial_pneumonia = \
-            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bacterial_pneumonia')
-            ].groupby('ri_health_worker_IMCI_classification').size()
+            df[df.is_alive & df.age_years.between(0, 5) & (
+                df.ri_ALRI_disease_type == 'bacterial_pneumonia')].groupby('ri_health_worker_IMCI_classification').size()
         hw_classification_for_underlying_fungal_pneumonia = \
-            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'fungal_pneumonia')
-            ].groupby('ri_health_worker_IMCI_classification').size()
+            df[df.is_alive & df.age_years.between(0, 5) & (
+                df.ri_ALRI_disease_type == 'fungal_pneumonia')].groupby('ri_health_worker_IMCI_classification').size()
         hw_classification_for_underlying_bronchiolitis = \
             df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bronchiolitis')
                ].groupby('ri_health_worker_IMCI_classification').size()
