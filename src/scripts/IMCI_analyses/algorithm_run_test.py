@@ -27,7 +27,7 @@ log_config = {
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 2)
-pop_size = 1000
+pop_size = 500
 seed = 124
 
 # Create name for log-file

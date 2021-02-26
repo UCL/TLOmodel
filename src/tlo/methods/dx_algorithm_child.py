@@ -781,183 +781,170 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props
 
-        # imci_pneumonia_classification_count = \
-        #     df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_health_worker_IMCI_classification').size()
-        # print(imci_pneumonia_classification_count)
+        # log the IMCI classifications (Gold-standard)
+        dict_to_output = {}
+        dict_to_output.update({
+            f'total_{k}': v for k, v in df.ri_health_worker_IMCI_classification.value_counts().items()
+        })
+        print(dict_to_output)
+
+        logger.info(key='imci_classicications_count',
+                    data=dict_to_output,
+                    description='Summary of IMCI classification')
+
+        # health worker classification -----
+        health_worker_classification_count = \
+            df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_health_worker_IMCI_classification').size()
+
+        hw_df = pd.DataFrame(health_worker_classification_count)
+        hw_df_transposed = hw_df.T
+
+        logger.info(key='hw_pneumonia_classification',
+                    data=hw_df_transposed,
+                    description='health worker pneumonia classification')
+
+        # IMCI pneumonia as gold standard -----
+        imci_gold_classification_count = \
+            df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_IMCI_classification_as_gold').size()
+        imci_class_df = pd.DataFrame(imci_gold_classification_count)
+        imci_class_df_transposed = imci_class_df.T
+
+        logger.info(key='imci_gold_standard_classification',
+                    data=imci_class_df_transposed,
+                    description='IMCI pneumonia classification')
+
+        # # get single row of dataframe (but not a series) ----------------
+        # index_children_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
+        # individual_child_alri = df.loc[[index_children_alri[0]]]
         #
-        # logger.info(key='imci_classicications_count',
-        #             data=imci_pneumonia_classification_count,
-        #             description='Summary of IMCI classification')
-        #
-        # # log the IMCI classifications (Gold-standard)
-        # dict_to_output = {}
-        # dict_to_output.update({
-        #     f'total_{k}': v for k, v in df.ri_health_worker_IMCI_classification.value_counts().items()
-        # })
-        # print(dict_to_output)
-        #
-        # logger.info(key='imci_classicications_count',
-        #             data=dict_to_output,
-        #             description='Summary of IMCI classification')
-        #
-        # # Check on one child dataframe
-        # # index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
-        # # individual_child = df.loc[[index_children_with_alri[0]]]
-        # # print(individual_child)
-        #
-        # # health worker classification -----
-        # health_worker_classification_count = \
-        #     df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_health_worker_IMCI_classification').size()
-        #
-        # hw_df = pd.DataFrame(health_worker_classification_count)
-        # hw_df_transposed = hw_df.T
-        #
-        # logger.info(key='hw_pneumonia_classification',
-        #             data=hw_df_transposed,
-        #             description='health worker pneumonia classification')
-        #
-        # # IMCI pneumonia as gold standard -----
-        # imci_gold_classification_count = \
-        #     df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_IMCI_classification_as_gold').size()
-        # imci_class_df = pd.DataFrame(imci_gold_classification_count)
-        # imci_class_df_transposed = imci_class_df.T
-        #
-        # logger.info(key='imci_gold_standard_classification',
-        #             data=imci_class_df_transposed,
-        #             description='IMCI pneumonia classification')
-        #
-        # # # get single row of dataframe (but not a series) ----------------
-        # # index_children_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
-        # # individual_child_alri = df.loc[[index_children_alri[0]]]
-        # #
-        # # logger.debug(key='individual_check',
-        # #              data=individual_child_alri,
-        # #              description='following an individual child through simulation')
-        #
-        # # ------------- Cross tabulation ---------------
-        # # health worker classification -----
-        # health_worker_classification_for_imci_no_pneumonia = \
-        #     df[df.is_alive & df.age_years.between(0, 5) & (df.ri_IMCI_classification_as_gold == 'common_cold')].groupby(
-        #         'ri_health_worker_IMCI_classification').size()
-        # health_worker_classification_for_imci_nonsev_pneumonia = \
-        #     df[df.is_alive & df.age_years.between(0, 5) & (df.ri_IMCI_classification_as_gold == 'non-severe_pneumonia'
-        #                                                    )].groupby('ri_health_worker_IMCI_classification').size()
-        # health_worker_classification_for_imci_severe_pneumonia = \
-        #     df[df.is_alive & df.age_years.between(0, 5) & (df.ri_IMCI_classification_as_gold == 'severe_pneumonia'
-        #                                                    )].groupby('ri_health_worker_IMCI_classification').size()
-        #
-        # # convert into a dataframe
-        # hw_class_for_imci_no_pneumo_df = pd.DataFrame(health_worker_classification_for_imci_no_pneumonia)
-        # hw_class_for_imci_nonsev_pneumo_df = pd.DataFrame(health_worker_classification_for_imci_nonsev_pneumonia)
-        # hw_class_for_imci_severe_pneumo_df = pd.DataFrame(health_worker_classification_for_imci_severe_pneumonia)
-        #
-        # hw_class_for_imci_no_pneumo_df_transposed = hw_class_for_imci_no_pneumo_df.T
-        # hw_class_for_imci_nonsev_pneumo_df_tranposed = hw_class_for_imci_nonsev_pneumo_df.T
-        # hw_class_for_imci_severe_pneumo_df_transposed = hw_class_for_imci_severe_pneumo_df.T
-        #
-        # logger.info(key='hw_classification_for_common_cold_by_IMCI',
-        #             data=hw_class_for_imci_no_pneumo_df_transposed,
-        #             description='Health worker classification given for IMCI no pneumonia')
-        #
-        # logger.info(key='hw_classification_for_non-sev_pneumonia_by_IMCI',
-        #             data=hw_class_for_imci_nonsev_pneumo_df_tranposed,
-        #             description='Health worker classification given for IMCI pneumonia')
-        #
-        # logger.info(key='hw_classification_for_severe_pneumonia_by_IMCI',
-        #             data=hw_class_for_imci_severe_pneumo_df_transposed,
-        #             description='Health worker classification given for IMCI severe pneumonia')
-        #
-        # # -----------------------------------------------------------------------------------------------
-        # # underlying condition vs IMCI pneumonia classification -----------------------------------------
-        # imci_classification_for_underlying_viral_pneumonia = \
-        #     df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'viral_pneumonia')].groupby(
-        #         'ri_IMCI_classification_as_gold').size()
-        # imci_classification_for_underlying_bacterial_pneumonia = \
-        #     df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bacterial_pneumonia')
-        #     ].groupby('ri_IMCI_classification_as_gold').size()
-        # imci_classification_for_underlying_fungal_pneumonia = \
-        #     df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'fungal_pneumonia')
-        #     ].groupby('ri_IMCI_classification_as_gold').size()
-        # imci_classification_for_underlying_bronchiolitis = \
-        #     df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bronchiolitis')
-        #        ].groupby('ri_IMCI_classification_as_gold').size()
-        #
-        # # convert into a dataframe
-        # imci_classification_for_underlying_viral_pneumonia_df = \
-        #     pd.DataFrame(imci_classification_for_underlying_viral_pneumonia)
-        # imci_classification_for_underlying_bacterial_pneumonia_df = \
-        #     pd.DataFrame(imci_classification_for_underlying_bacterial_pneumonia)
-        # imci_classification_for_underlying_fungal_pneumonia_df = \
-        #     pd.DataFrame(imci_classification_for_underlying_fungal_pneumonia)
-        # imci_classification_for_underlying_bronchiolitis_df = \
-        #     pd.DataFrame(imci_classification_for_underlying_bronchiolitis)
-        #
-        # # swap rows to columns
-        # imci_class_for_underlying_viral_pneumonia_df_T = imci_classification_for_underlying_viral_pneumonia_df.T
-        # imci_class_for_underlying_bacterial_pneumonia_df_T = imci_classification_for_underlying_bacterial_pneumonia_df.T
-        # imci_class_for_underlying_fungal_pneumonia_df_T = imci_classification_for_underlying_fungal_pneumonia_df.T
-        # imci_class_for_underlying_bronchiolitis_df_T = imci_classification_for_underlying_bronchiolitis_df.T
-        #
-        # logger.info(key='IMCI_classification_for_underlying_viral_pneumonia',
-        #             data=imci_class_for_underlying_viral_pneumonia_df_T,
-        #             description='IMCI classification for underlying true condition - viral pneumonia')
-        # logger.info(key='IMCI_classification_for_underlying_bacterial_pneumonia',
-        #             data=imci_class_for_underlying_bacterial_pneumonia_df_T,
-        #             description='IMCI classification for underlying true condition - bacterial pneumonia')
-        # logger.info(key='IMCI_classification_for_underlying_fungal_pneumonia',
-        #             data=imci_class_for_underlying_fungal_pneumonia_df_T,
-        #             description='IMCI classification for underlying true condition - fungal pneumonia')
-        # logger.info(key='IMCI_classification_for_underlying_bronchiolitis',
-        #             data=imci_class_for_underlying_bronchiolitis_df_T,
-        #             description='IMCI classification for underlying true condition - bronchiolitis')
-        #
-        # # -----------------------------------------------------------------------------------------------
-        # # underlying condition vs health workers' classification -----------------------------------------
-        # hw_classification_for_underlying_viral_pneumonia = \
-        #     df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'viral_pneumonia')].groupby(
-        #         'ri_health_worker_IMCI_classification').size()
-        # hw_classification_for_underlying_bacterial_pneumonia = \
-        #     df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bacterial_pneumonia')
-        #     ].groupby('ri_health_worker_IMCI_classification').size()
-        # hw_classification_for_underlying_fungal_pneumonia = \
-        #     df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'fungal_pneumonia')
-        #     ].groupby('ri_health_worker_IMCI_classification').size()
-        # hw_classification_for_underlying_bronchiolitis = \
-        #     df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bronchiolitis')
-        #        ].groupby('ri_health_worker_IMCI_classification').size()
-        #
-        # # convert into a dataframe
-        # hw_classification_for_underlying_viral_pneumonia_df = \
-        #     pd.DataFrame(hw_classification_for_underlying_viral_pneumonia)
-        # hw_classification_for_underlying_bacterial_pneumonia_df = \
-        #     pd.DataFrame(hw_classification_for_underlying_bacterial_pneumonia)
-        # hw_classification_for_underlying_fungal_pneumonia_df = \
-        #     pd.DataFrame(hw_classification_for_underlying_fungal_pneumonia)
-        # hw_classification_for_underlying_bronchiolitis_df = \
-        #     pd.DataFrame(hw_classification_for_underlying_bronchiolitis)
-        #
-        # # swap rows to columns
-        # hw_class_for_underlying_viral_pneumonia_df_T = hw_classification_for_underlying_viral_pneumonia_df.T
-        # hw_class_for_underlying_bacterial_pneumonia_df_T = hw_classification_for_underlying_bacterial_pneumonia_df.T
-        # hw_class_for_underlying_fungal_pneumonia_df_T = hw_classification_for_underlying_fungal_pneumonia_df.T
-        # hw_class_for_underlying_bronchiolitis_df_T = hw_classification_for_underlying_bronchiolitis_df.T
-        #
-        # logger.info(key='hw_classification_for_underlying_viral_pneumonia',
-        #             data=hw_class_for_underlying_viral_pneumonia_df_T,
-        #             description='hw classification for underlying true condition - viral pneumonia')
-        # logger.info(key='hw_classification_for_underlying_bacterial_pneumonia',
-        #             data=hw_class_for_underlying_bacterial_pneumonia_df_T,
-        #             description='hw classification for underlying true condition - bacterial pneumonia')
-        # logger.info(key='hw_classification_for_underlying_fungal_pneumonia',
-        #             data=hw_class_for_underlying_fungal_pneumonia_df_T,
-        #             description='hw classification for underlying true condition - fungal pneumonia')
-        # logger.info(key='hw_classification_for_underlying_bronchiolitis',
-        #             data=hw_class_for_underlying_bronchiolitis_df_T,
-        #             description='hw classification for underlying true condition - bronchiolitis')
-        #
-        # # -----------------------------------------------------------------------------------------------
-        # # management of childhood illnesses -----------------------------------------
-        #
+        # logger.debug(key='individual_check',
+        #              data=individual_child_alri,
+        #              description='following an individual child through simulation')
+
+        # ------------- Cross tabulation ---------------
+        # health worker classification for IMCI gold-standard -----
+        health_worker_classification_for_imci_no_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_IMCI_classification_as_gold == 'common_cold')].groupby(
+                'ri_health_worker_IMCI_classification').size()
+        health_worker_classification_for_imci_nonsev_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_IMCI_classification_as_gold == 'non-severe_pneumonia'
+                                                           )].groupby('ri_health_worker_IMCI_classification').size()
+        health_worker_classification_for_imci_severe_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_IMCI_classification_as_gold == 'severe_pneumonia'
+                                                           )].groupby('ri_health_worker_IMCI_classification').size()
+
+        # convert into a dataframe
+        hw_class_for_imci_no_pneumo_df = pd.DataFrame(health_worker_classification_for_imci_no_pneumonia)
+        hw_class_for_imci_nonsev_pneumo_df = pd.DataFrame(health_worker_classification_for_imci_nonsev_pneumonia)
+        hw_class_for_imci_severe_pneumo_df = pd.DataFrame(health_worker_classification_for_imci_severe_pneumonia)
+
+        hw_class_for_imci_no_pneumo_df_transposed = hw_class_for_imci_no_pneumo_df.T
+        hw_class_for_imci_nonsev_pneumo_df_tranposed = hw_class_for_imci_nonsev_pneumo_df.T
+        hw_class_for_imci_severe_pneumo_df_transposed = hw_class_for_imci_severe_pneumo_df.T
+
+        logger.info(key='hw_classification_for_common_cold_by_IMCI',
+                    data=hw_class_for_imci_no_pneumo_df_transposed,
+                    description='Health worker classification given for IMCI no pneumonia')
+
+        logger.info(key='hw_classification_for_non-sev_pneumonia_by_IMCI',
+                    data=hw_class_for_imci_nonsev_pneumo_df_tranposed,
+                    description='Health worker classification given for IMCI pneumonia')
+
+        logger.info(key='hw_classification_for_severe_pneumonia_by_IMCI',
+                    data=hw_class_for_imci_severe_pneumo_df_transposed,
+                    description='Health worker classification given for IMCI severe pneumonia')
+
+        # -----------------------------------------------------------------------------------------------
+        # underlying condition vs IMCI pneumonia classification -----------------------------------------
+        imci_classification_for_underlying_viral_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'viral_pneumonia')].groupby(
+                'ri_IMCI_classification_as_gold').size()
+        imci_classification_for_underlying_bacterial_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bacterial_pneumonia')
+            ].groupby('ri_IMCI_classification_as_gold').size()
+        imci_classification_for_underlying_fungal_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'fungal_pneumonia')
+            ].groupby('ri_IMCI_classification_as_gold').size()
+        imci_classification_for_underlying_bronchiolitis = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bronchiolitis')
+               ].groupby('ri_IMCI_classification_as_gold').size()
+
+        # convert into a dataframe
+        imci_classification_for_underlying_viral_pneumonia_df = \
+            pd.DataFrame(imci_classification_for_underlying_viral_pneumonia)
+        imci_classification_for_underlying_bacterial_pneumonia_df = \
+            pd.DataFrame(imci_classification_for_underlying_bacterial_pneumonia)
+        imci_classification_for_underlying_fungal_pneumonia_df = \
+            pd.DataFrame(imci_classification_for_underlying_fungal_pneumonia)
+        imci_classification_for_underlying_bronchiolitis_df = \
+            pd.DataFrame(imci_classification_for_underlying_bronchiolitis)
+
+        # swap rows to columns
+        imci_class_for_underlying_viral_pneumonia_df_T = imci_classification_for_underlying_viral_pneumonia_df.T
+        imci_class_for_underlying_bacterial_pneumonia_df_T = imci_classification_for_underlying_bacterial_pneumonia_df.T
+        imci_class_for_underlying_fungal_pneumonia_df_T = imci_classification_for_underlying_fungal_pneumonia_df.T
+        imci_class_for_underlying_bronchiolitis_df_T = imci_classification_for_underlying_bronchiolitis_df.T
+
+        logger.info(key='IMCI_classification_for_underlying_viral_pneumonia',
+                    data=imci_class_for_underlying_viral_pneumonia_df_T,
+                    description='IMCI classification for underlying true condition - viral pneumonia')
+        logger.info(key='IMCI_classification_for_underlying_bacterial_pneumonia',
+                    data=imci_class_for_underlying_bacterial_pneumonia_df_T,
+                    description='IMCI classification for underlying true condition - bacterial pneumonia')
+        logger.info(key='IMCI_classification_for_underlying_fungal_pneumonia',
+                    data=imci_class_for_underlying_fungal_pneumonia_df_T,
+                    description='IMCI classification for underlying true condition - fungal pneumonia')
+        logger.info(key='IMCI_classification_for_underlying_bronchiolitis',
+                    data=imci_class_for_underlying_bronchiolitis_df_T,
+                    description='IMCI classification for underlying true condition - bronchiolitis')
+
+        # -----------------------------------------------------------------------------------------------
+        # underlying condition vs health workers' classification -----------------------------------------
+        hw_classification_for_underlying_viral_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'viral_pneumonia')].groupby(
+                'ri_health_worker_IMCI_classification').size()
+        hw_classification_for_underlying_bacterial_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bacterial_pneumonia')
+            ].groupby('ri_health_worker_IMCI_classification').size()
+        hw_classification_for_underlying_fungal_pneumonia = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'fungal_pneumonia')
+            ].groupby('ri_health_worker_IMCI_classification').size()
+        hw_classification_for_underlying_bronchiolitis = \
+            df[df.is_alive & df.age_years.between(0, 5) & (df.ri_ALRI_disease_type == 'bronchiolitis')
+               ].groupby('ri_health_worker_IMCI_classification').size()
+
+        # convert into a dataframe
+        hw_classification_for_underlying_viral_pneumonia_df = \
+            pd.DataFrame(hw_classification_for_underlying_viral_pneumonia)
+        hw_classification_for_underlying_bacterial_pneumonia_df = \
+            pd.DataFrame(hw_classification_for_underlying_bacterial_pneumonia)
+        hw_classification_for_underlying_fungal_pneumonia_df = \
+            pd.DataFrame(hw_classification_for_underlying_fungal_pneumonia)
+        hw_classification_for_underlying_bronchiolitis_df = \
+            pd.DataFrame(hw_classification_for_underlying_bronchiolitis)
+
+        # swap rows to columns
+        hw_class_for_underlying_viral_pneumonia_df_T = hw_classification_for_underlying_viral_pneumonia_df.T
+        hw_class_for_underlying_bacterial_pneumonia_df_T = hw_classification_for_underlying_bacterial_pneumonia_df.T
+        hw_class_for_underlying_fungal_pneumonia_df_T = hw_classification_for_underlying_fungal_pneumonia_df.T
+        hw_class_for_underlying_bronchiolitis_df_T = hw_classification_for_underlying_bronchiolitis_df.T
+
+        logger.info(key='hw_classification_for_underlying_viral_pneumonia',
+                    data=hw_class_for_underlying_viral_pneumonia_df_T,
+                    description='hw classification for underlying true condition - viral pneumonia')
+        logger.info(key='hw_classification_for_underlying_bacterial_pneumonia',
+                    data=hw_class_for_underlying_bacterial_pneumonia_df_T,
+                    description='hw classification for underlying true condition - bacterial pneumonia')
+        logger.info(key='hw_classification_for_underlying_fungal_pneumonia',
+                    data=hw_class_for_underlying_fungal_pneumonia_df_T,
+                    description='hw classification for underlying true condition - fungal pneumonia')
+        logger.info(key='hw_classification_for_underlying_bronchiolitis',
+                    data=hw_class_for_underlying_bronchiolitis_df_T,
+                    description='hw classification for underlying true condition - bronchiolitis')
+
+        # -----------------------------------------------------------------------------------------------
+        # management of childhood illnesses -----------------------------------------
+
         # # log IMCI pneumonia management received -----------------------------------
         # management_info_flattened = \
         #     [{**{'dict_key': k}, **v} for k, v in self.module.child_disease_management_information.items()]

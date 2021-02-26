@@ -1,7 +1,7 @@
 """
 Childhood Acute Lower Respiratory Infection Module
 Documentation:
-04 - Methods Repository/ALRI module - Description.docx
+04 - Methods Repository/ALRI module - Description2.docx
 04 - Methods Repository/ResourceFile_ALRI2.xlsx
 
 Overview
@@ -1385,7 +1385,7 @@ class ALRI(Module):
         else:  # append complications for this person using the BitsetHandler
             self.ALRI_complications.set([person_id], f'{complication}')
 
-    def do_treatment(self, person_id, prob_of_cure):
+    def do_alri_treatment(self, person_id, prob_of_cure):
         """Helper function that enacts the effects of a treatment to ALRI caused by a pathogen.
         It will only do something if the ALRI is caused by a pathogen (this module). It will not allow any effect
          if the respiratory infection is caused by another module.
@@ -2004,7 +2004,7 @@ class HSI_iCCM_Pneumonia_Treatment_level_0(HSI_Event, IndividualScopeEventMixin)
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.module.do_treatment(
+            self.module.do_alri_treatment(
                 person_id=person_id,
                 prob_of_cure=self.module.parameters[
                     'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment']
@@ -2184,7 +2184,7 @@ class HSI_IMCI_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEventMixin)
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.module.do_treatment(
+            self.module.do_alri_treatment(
                 person_id=person_id,
                 prob_of_cure=self.module.parameters[
                     'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment']
@@ -2309,7 +2309,7 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEven
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.module.do_treatment(
+            self.module.do_alri_treatment(
                 person_id=person_id,
                 prob_of_cure=self.module.parameters[
                     'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment']
@@ -2431,7 +2431,7 @@ class HSI_IMCI_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin)
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.module.do_treatment(
+            self.module.do_alri_treatment(
                 person_id=person_id,
                 prob_of_cure=self.module.parameters[
                     'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment']
@@ -2554,7 +2554,7 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEven
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.module.do_treatment(
+            self.module.do_alri_treatment(
                 person_id=person_id,
                 prob_of_cure=self.module.parameters[
                     'prob_of_cure_for_pneumonia_with_severe_complication_given_IMCI_severe_pneumonia_treatment']
