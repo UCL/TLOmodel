@@ -916,11 +916,19 @@ class RTI(Module):
         ),
         'mean_icu_days': Parameter(
             Types.REAL,
-            'The mean length of stay in the ICU'
+            'The mean length of stay in the ICUfor those without TBI'
         ),
         'sd_icu_days': Parameter(
             Types.REAL,
-            'The standard deviation in length of stay in the ICU'
+            'The standard deviation in length of stay in the ICU for those without TBI'
+        ),
+        'mean_tbi_icu_days': Parameter(
+            Types.REAL,
+            'The mean length of stay in the ICU for those with TBI'
+        ),
+        'sd_tbi_icu_days': Parameter(
+            Types.REAL,
+            'The standard deviation in length of stay in the ICU for those with TBI'
         ),
     }
 
@@ -1751,6 +1759,7 @@ class RTI(Module):
                 'rt_injury_7', 'rt_injury_8']
         person_injuries = df.loc[[person_id], cols]
         fracture_codes = ['712a', '712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
+        assert len(df.loc[person_id, 'rt_injuries_to_cast']) > 0
         # Check they have an injury treated by HSI_RTI_Fracture_Cast
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, fracture_codes)
         assert counts > 0, "This person has asked for fracture treatment, but doens't have appropriate fractures"
@@ -2233,22 +2242,6 @@ class RTI(Module):
         for code in codes:
             # keep track of the change in daly weights
             change_in_daly_weights = 0
-            # remove code from the list of injuries requiring treatment
-            # remove code from minor surgeries list
-            if code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
-                df.loc[person_id, 'rt_injuries_for_minor_surgery'].remove(code)
-            # remove code from major surgeries list
-            if code in df.loc[person_id, 'rt_injuries_for_major_surgery']:
-                df.loc[person_id, 'rt_injuries_for_major_surgery'].remove(code)
-            # remove code from heal with time injury list
-            if code in df.loc[person_id, 'rt_injuries_to_heal_with_time']:
-                df.loc[person_id, 'rt_injuries_to_heal_with_time'].remove(code)
-            # remove code from fracture cast list
-            if code in df.loc[person_id, 'rt_injuries_to_cast']:
-                df.loc[person_id, 'rt_injuries_to_cast'].remove(code)
-            # remove code from open fracture list
-            if code in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
-                df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'].remove(code)
             if code == '322' or code == '323':
                 change_in_daly_weights -= self.daly_wt_neck_dislocation
             if code == '822a':
@@ -4746,6 +4739,14 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # store the heal with time injuries in the dataframe
         for injury in self.heal_with_time_injuries:
             df.loc[person_id, 'rt_injuries_to_heal_with_time'].append(injury)
+
+        # Store the fractures that need treatment from casts
+        codes = ['712', '712a', '712b', '712c', '822b']
+        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        if counts > 0:
+            # determine the injuries the person has
+            actual_injury = np.intersect1d(codes, person_injuries.values)
+            df.loc[person_id, 'rt_injuries_to_cast'].append(actual_injury[0])
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'RTI_MedicalIntervention'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -4781,16 +4782,26 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Seems only one level of care above normal so adjust accordingly
         # self.icu_cut_off_iss_score = 38
         self.hdu_cut_off_iss_score = p['hdu_cut_off_iss_score']
-        # No info for length of stay in those units so take temporarily from other source:
-        # https://doi.org/10.1186/cc13976
+        # Malawi ICU data: doi: 10.1177/0003134820950282
+        # General length of stay from Malawi source, not specifically for injuries though
+        # mean = 4.8, s.d. = 6, TBI admission mean = 8.4, s.d. = 6.4
+        # mortality percentage = 51.2 overall, 50% for TBI admission and 49% for hemorrhage
         # determine the number of ICU days used to treat patient
-        mean_icu_days = p['mean_icu_days']
-        sd_icu_days = p['sd_icu_days']
-        self.icu_days = int(self.module.rng.normal(mean_icu_days, sd_icu_days, 1))
-        # if the number of ICU days is less than zero make it zero
-        if self.icu_days < 0:
-            self.icu_days = 0
+
         if df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off_iss_score:
+            mean_icu_days = p['mean_icu_days']
+            sd_icu_days = p['sd_icu_days']
+            mean_tbi_icu_days = p['mean_tbi_icu_days']
+            sd_tbi_icu_days = p['sd_tbi_icu_days']
+            codes = ['133', '133a', '133b', '133c', '133d' '134', '134a', '134b', '135']
+            idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+            if counts > 0:
+                self.icu_days = int(self.module.rng.normal(mean_tbi_icu_days, sd_tbi_icu_days, 1))
+            else:
+                self.icu_days = int(self.module.rng.normal(mean_icu_days, sd_icu_days, 1))
+            # if the number of ICU days is less than zero make it zero
+            if self.icu_days < 0:
+                self.icu_days = 0
             # update the property showing if a person is in ICU
             df.loc[person_id, 'rt_in_icu_or_hdu'] = True
             # update the bed days footprint
@@ -4991,14 +5002,17 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                     swapping_codes.remove(code)
             # drop injuries potentially treated elsewhere
             codes_to_swap = [code for code in heal_with_time_codes if code in swapping_codes]
-            for code in codes_to_swap:
-                road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, [code])
+            if len(codes_to_swap) > 0:
+                road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, codes_to_swap)
             # check every heal with time injury has a recovery date associated with it
             for code in self.heal_with_time_injuries:
                 columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [code])
                                                  [0])
                 assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
                     'no recovery date given for this injury'
+                # remove code from heal with time injury list
+                if code in df.loc[person_id, 'rt_injuries_to_heal_with_time']:
+                    df.loc[person_id, 'rt_injuries_to_heal_with_time'].remove(code)
 
         # ======================================= Schedule surgeries ==================================================
         # Schedule the surgeries by calling the functions rti_do_for_major/minor_surgeries which in turn schedules the
@@ -5036,6 +5050,17 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Schedule the fracture treatments by calling the functions rti_ask_for_fracture_casts which in turn schedules
         # the treatment
         codes = ['712', '712a', '712b', '712c', '822a', '822b']
+        treated_injury_cols = []
+        idx_for_treated_injuries = []
+        for index, time in enumerate(df.loc[person_id, 'rt_date_to_remove_daly']):
+            if ~pd.isnull(time):
+                idx_for_treated_injuries.append(index)
+        for idx in idx_for_treated_injuries:
+            treated_injury_cols.append(cols[idx])
+        person_treated_injuries = df.loc[[person_id], treated_injury_cols]
+
+        codes = [code for code in codes if
+                 road_traffic_injuries.rti_find_and_count_injuries(person_treated_injuries, code)[1] > 1]
         for injury in df.loc[person_id, 'rt_injuries_to_cast']:
             codes.append(injury)
         idx, fracturecounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
@@ -5126,7 +5151,16 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # isolate the relevant injury information
         cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                 'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        # Find the untreated injuries
+        idx_for_untreated_injuries = []
+        untreated_injury_cols = []
+        for index, time in enumerate(df.loc[person_id, 'rt_date_to_remove_daly']):
+            if pd.isnull(time):
+                idx_for_untreated_injuries.append(index)
+        for idx in idx_for_untreated_injuries:
+            untreated_injury_cols.append(cols[idx])
+        person_injuries = df.loc[[person_id], untreated_injury_cols]
+
         # check if they have a fracture that requires a cast
         codes = ['712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
         idx, fracturecastcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
@@ -5141,7 +5175,8 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         assert df.loc[person_id, 'rt_diagnosed'], 'person sent here has not been diagnosed'
         assert df.loc[person_id, 'rt_med_int'], 'person sent here has not been treated'
         # Check that the person sent here has an injury treated by this module
-        assert fracturecastcounts + slingcounts > 0
+        # assert fracturecastcounts + slingcounts > 0
+        assert len(df.loc[person_id, 'rt_injuries_to_cast']) > 0
         # If they have a fracture that needs a cast, ask for plaster of paris
         if fracturecastcounts > 0:
             plaster_of_paris_code = pd.unique(
@@ -5189,12 +5224,9 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                 if code in swapping_codes:
                    swapping_codes.remove(code)
             relevant_codes = np.intersect1d(non_empty_injuries.values, swapping_codes)
+            if len(relevant_codes) > 0:
+                road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, relevant_codes)
 
-            # iterate over the treated codes
-            for code in relevant_codes:
-                # check if the treated code is one where we have to swap the daly weights for
-                if code in swapping_codes:
-                    road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, code)
 
             # Find the injuries that have been treated and then schedule a recovery date
             columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
@@ -5203,15 +5235,22 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                 # todo: update this with recovery times for casted dislocated hip
                 df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
                                                                                 DateOffset(weeks=7)
-            else:
-                logger.debug(f"Person %d's has {fracturecastcounts + slingcounts} fractures without treatment",
-                             person_id)
-            injury_columns = non_empty_injuries.columns
+            person_injuries = df.loc[person_id, cols]
+            non_empty_injuries = person_injuries[person_injuries != "none"]
+            injury_columns = non_empty_injuries.keys()
 
-            for code in codes:
+            for code in df.loc[person_id, 'rt_injuries_to_cast']:
                 columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [code])[0])
                 assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
                     'no recovery date given for this injury'
+                # remove code from fracture cast list
+                if code in df.loc[person_id, 'rt_injuries_to_cast']:
+                    df.loc[person_id, 'rt_injuries_to_cast'].remove(code)
+        else:
+           logger.debug(f"Person %d's has {fracturecastcounts + slingcounts} fractures without treatment",
+                             person_id)
+
+
 
     def did_not_run(self, person_id):
         logger.debug('Fracture casts unavailable for person %d', person_id)
@@ -5347,6 +5386,9 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
                 'no recovery date given for this injury'
+            # remove code from open fracture list
+            if treated_code in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
+                df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'].remove(treated_code)
 
     def did_not_run(self, person_id):
         logger.debug('Open fracture treatment unavailable for person %d', person_id)
@@ -6089,7 +6131,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 # Track whether they are permanently disabled
                 df.at[person_id, 'rt_perm_disability'] = True
                 # Find the column and code where the permanent injury is stored
-                column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id, codes=self.treated_code)
+                column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id,
+                                                                            codes=[self.treated_code])
                 logger.debug('@@@@@@@@@@ Person %d had intervention for SCI on %s but still disabled!!!!!!',
                              person_id, self.sim.date)
                 df.loc[person_id, column] = "P" + self.treated_code
@@ -6114,7 +6157,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             # Track whether they are permanently disabled
             df.at[person_id, 'rt_perm_disability'] = True
             # Find the column and code where the permanent injury is stored
-            column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id, codes=self.treated_code)
+            column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id, codes=[self.treated_code])
             logger.debug('@@@@@@@@@@ Person %d had intervention for an amputation on %s but still disabled!!!!!!',
                          person_id, self.sim.date)
             # Update the code to make the injury permanent, so it will not have the associated daly weight removed
@@ -6256,6 +6299,10 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             'no recovery date given for this injury'
         logger.debug('This is RTI_Major_Surgeries supplying surgery for person %d on date %s!!!!!!, removing code %s',
                      person_id, self.sim.date)
+        # remove code from major surgeries list
+        if self.treated_code in df.loc[person_id, 'rt_injuries_for_major_surgery']:
+            df.loc[person_id, 'rt_injuries_for_major_surgery'].remove(self.treated_code)
+
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
@@ -6440,6 +6487,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         for code in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
             if code in swapping_codes:
                 swapping_codes.remove(code)
+
         if code in swapping_codes:
             road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, [code])
         logger.debug('This is RTI_Minor_Surgeries supplying minor surgeries for person %d on date %s!!!!!!',
@@ -6447,7 +6495,12 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, 'rt_med_int'] = True
         # Check if the injury has been given a recovery date['211']
         columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [treated_code])[0])
-        assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), 'no recovery date given for this injury'
+        assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
+            'no recovery date given for this injury'
+        # remove code from minor surgeries list
+        if treated_code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
+            df.loc[person_id, 'rt_injuries_for_minor_surgery'].remove(treated_code)
+
 
     def did_not_run(self, person_id):
         df = self.sim.population.props

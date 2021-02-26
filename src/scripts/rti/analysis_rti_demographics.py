@@ -47,7 +47,7 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 100000
+pop_size = 50000
 nsim = 3
 
 
@@ -176,11 +176,11 @@ for i in range(0, nsim):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath),
-        # contraception.Contraception(resourcefilepath=resourcefilepath),
-        # labour.Labour(resourcefilepath=resourcefilepath),
-        # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
     )
     logfile = sim.configure_logging(filename="LogFile")
     # create and run the simulation
