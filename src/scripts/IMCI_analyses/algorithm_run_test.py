@@ -1,5 +1,5 @@
 """
-This script is used in development. It will become the test script for diraahoea module.
+Basic run test for the dx_algorithm_child.
 """
 
 # %% Import Statements and initial declarations
