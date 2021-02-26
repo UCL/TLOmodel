@@ -13,9 +13,28 @@ attrs==20.3.0
 azure-batch==10.0.0
     # via -r base.in
 azure-common==1.1.26
-    # via azure-batch
+    # via
+    #   azure-batch
+    #   azure-keyvault-certificates
+    #   azure-keyvault-keys
+    #   azure-keyvault-secrets
 azure-core==1.11.0
-    # via azure-storage-file-share
+    # via
+    #   azure-identity
+    #   azure-keyvault-certificates
+    #   azure-keyvault-keys
+    #   azure-keyvault-secrets
+    #   azure-storage-file-share
+azure-identity==1.5.0
+    # via -r base.in
+azure-keyvault-certificates==4.2.1
+    # via azure-keyvault
+azure-keyvault-keys==4.3.1
+    # via azure-keyvault
+azure-keyvault-secrets==4.2.0
+    # via azure-keyvault
+azure-keyvault==4.1.0
+    # via -r base.in
 azure-storage-file-share==12.4.1
     # via -r base.in
 certifi==2020.12.5
@@ -30,10 +49,14 @@ click==7.1.2
     # via
     #   -r base.in
     #   pip-tools
-cryptography==3.4.5
+cryptography==3.4.6
     # via
     #   adal
+    #   azure-identity
+    #   azure-keyvault-keys
     #   azure-storage-file-share
+    #   msal
+    #   pyjwt
 cycler==0.10.0
     # via matplotlib
 distlib==0.3.1
@@ -60,9 +83,18 @@ kiwisolver==1.3.1
     # via matplotlib
 matplotlib==3.3.4
     # via -r dev.in
+msal-extensions==0.3.0
+    # via azure-identity
+msal==1.9.0
+    # via
+    #   azure-identity
+    #   msal-extensions
 msrest==0.6.21
     # via
     #   azure-batch
+    #   azure-keyvault-certificates
+    #   azure-keyvault-keys
+    #   azure-keyvault-secrets
     #   azure-storage-file-share
     #   msrestazure
 msrestazure==0.6.4
@@ -91,14 +123,18 @@ pluggy==0.13.1
     # via
     #   pytest
     #   tox
+portalocker==1.7.1
+    # via msal-extensions
 py==1.10.0
     # via
     #   pytest
     #   tox
 pycparser==2.20
     # via cffi
-pyjwt==2.0.1
-    # via adal
+pyjwt[crypto]==2.0.1
+    # via
+    #   adal
+    #   msal
 pyparsing==2.4.7
     # via
     #   matplotlib
@@ -120,13 +156,15 @@ requests==2.25.1
     # via
     #   adal
     #   azure-core
+    #   msal
     #   msrest
     #   requests-oauthlib
-scipy==1.6.0
+scipy==1.6.1
     # via -r base.in
 six==1.15.0
     # via
     #   azure-core
+    #   azure-identity
     #   cycler
     #   isodate
     #   msrestazure

@@ -1,28 +1,24 @@
-import textwrap
-from pathlib import Path
+"""The TLOmodel command-line interface"""
+
 import datetime
 import json
 import math
 import os
+from pathlib import Path
+from typing import Dict
 
 import click
-from git import Repo
 from azure import batch
-import azure.batch.batch_auth as batch_auth
-import azure.batch.models as batchmodels
-from azure.core.exceptions import (
-    ResourceExistsError,
-    ResourceNotFoundError
-)
-from azure.storage.fileshare import (
-    ShareClient,
-    ShareDirectoryClient,
-    ShareFileClient
-)
+from azure.batch import batch_auth
+from azure.batch import models as batch_models
+from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
+from azure.storage.fileshare import ShareClient, ShareDirectoryClient, ShareFileClient
+from git import Repo
 
 from tlo import logging
-from tlo.scenario import BaseScenario, SampleRunner, ScenarioLoader
-
+from tlo.scenario import SampleRunner, ScenarioLoader
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -30,7 +26,7 @@ logger.setLevel(logging.INFO)
 
 @click.group()
 def cli():
-    pass
+    """Empty `tlo` command doesn't do anything - show commands"""
 
 
 @cli.command()
@@ -56,8 +52,8 @@ def batch_submit(scenario_file, config_file):
 
     SCENARIO_FILE is path to file containing scenario class.
 
-    Your working branch must have all changes committed and pushed to the remote repository. This is to ensure that the
-    copy of the code used by Azure Batch is identical to your own.
+    Your working branch must have all changes committed and pushed to the remote repository.
+    This is to ensure that the copy of the code used by Azure Batch is identical to your own.
     """
     scenario_file = Path(scenario_file).as_posix()
 
@@ -67,86 +63,81 @@ def batch_submit(scenario_file, config_file):
         return
 
     scenario = load_scenario(scenario_file)
-    repo = Repo('.')
+    repo = Repo(".")
     commit = next(repo.iter_commits(max_count=1, paths=scenario_file))
     run_json = scenario.save_draws(commit=commit.hexsha)
 
+    # load the local configuration
     with open(Path(config_file).as_posix()) as json_file:
         config = json.load(json_file)
-
-    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
-
-    # Name of the user to be used in the storage directory
-    user_name = config["AZURE_STORAGE_ACCOUNT_NAME"]
+    # get server configuration
+    server_config = load_server_config(config["KV_URI"], config["TENANT_ID"])
 
     # ID of the Batch job.
+    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
     job_id = Path(scenario_file).stem + "-" + timestamp
-    # job_id = config["JOB_ID"] + "-" + timestamp
 
     # Path in Azure storage where to store the files for this job
-    azure_directory = f"{user_name}/{job_id}"
+    azure_directory = f"{config['USERNAME']}/{job_id}"
 
-    # Create a Batch service client.
-    credentials = batch_auth.SharedKeyCredentials(config["AZURE_BATCH_ACCOUNT_NAME"],
-                                                  config["AZURE_BATCH_ACCOUNT_KEY"],
-                                                  )
-
-    batch_client = batch.BatchServiceClient(
-        credentials,
-        batch_url=config["AZURE_BATCH_ACCOUNT_URL"],
+    batch_client = get_batch_client(
+        server_config["BATCH"]["NAME"],
+        server_config["BATCH"]["KEY"],
+        server_config["BATCH"]["URL"]
     )
 
-    create_file_share(config["AZURE_STORAGE_CONNECTION_STRING"],
-                      config["SHARE_NAME"],
-                      )
+    create_file_share(
+        server_config["STORAGE"]["CONNECTION_STRING"],
+        server_config["STORAGE"]["FILESHARE"]
+    )
 
     # Recursively create all nested directories,
     for idx in range(len(os.path.split(azure_directory))):
-        create_directory(config["AZURE_STORAGE_CONNECTION_STRING"],
-                         config["SHARE_NAME"],
-                         '/'.join(os.path.split(azure_directory)[:idx+1]),
+        create_directory(server_config["STORAGE"]["CONNECTION_STRING"],
+                         server_config["STORAGE"]["FILESHARE"],
+                         "/".join(os.path.split(azure_directory)[:idx+1]),
                          )
 
-    upload_local_file(config["AZURE_STORAGE_CONNECTION_STRING"],
+    upload_local_file(server_config["STORAGE"]["CONNECTION_STRING"],
                       run_json,
-                      config["SHARE_NAME"],
+                      server_config["STORAGE"]["FILESHARE"],
                       azure_directory + "/" + os.path.basename(run_json),
                       )
 
     # Configuration of the pool: type of machines and number of nodes.
-    vm_size = config["POOL_VM_SIZE"]
+    vm_size = server_config["BATCH"]["POOL_VM_SIZE"]
     # TODO: cap the number of nodes in the pool?  Take the number of nodes in
     # input from the user, but always at least 2?
     pool_node_count = max(2, math.ceil(scenario.number_of_draws * scenario.runs_per_draw))
 
     # User identity in the Batch tasks
-    auto_user = batchmodels.AutoUserSpecification(
-        elevation_level=batchmodels.ElevationLevel.admin,
-        scope=batchmodels.AutoUserScope.task,
+    auto_user = batch_models.AutoUserSpecification(
+        elevation_level=batch_models.ElevationLevel.admin,
+        scope=batch_models.AutoUserScope.task,
     )
 
-    user_identity = batchmodels.UserIdentity(
+    user_identity = batch_models.UserIdentity(
         auto_user=auto_user,
     )
 
     # URL of the Azure File share
     azure_file_url = "https://{}.file.core.windows.net/{}".format(
-        config["AZURE_STORAGE_ACCOUNT_NAME"],
-        config["SHARE_NAME"],
+        server_config["STORAGE"]["NAME"],
+        server_config["STORAGE"]["FILESHARE"],
     )
 
     # Specify a container registry
-    container_registry = batchmodels.ContainerRegistry(
-        registry_server=config["AZURE_REGISTRY_SERVER"],
-        user_name=config["AZURE_REGISTRY_ACCOUNT_NAME"],
-        password=config["AZURE_REGISTRY_ACCOUNT_KEY"],
+    container_registry = batch_models.ContainerRegistry(
+        registry_server=server_config["REGISTRY"]["SERVER"],
+        user_name=server_config["REGISTRY"]["NAME"],
+        password=server_config["REGISTRY"]["KEY"],
     )
 
     # Name of the image in the registry
-    image_name = config["AZURE_REGISTRY_SERVER"] + "/" + config["CONTAINER_IMAGE_NAME"]
+    image_name = server_config["REGISTRY"]["SERVER"] + "/" + server_config["REGISTRY"]["IMAGE_NAME"]
 
     # Create container configuration, prefetching Docker images from the container registry
-    container_conf = batchmodels.ContainerConfiguration(
+    container_conf = batch_models.ContainerConfiguration(
         container_image_names=[image_name],
         container_registries=[container_registry],
     )
@@ -158,15 +149,15 @@ def batch_submit(scenario_file, config_file):
     # ${AZ_BATCH_NODE_MOUNTS_DIR}.
     file_share_mount_point = "mnt"
 
-    azure_file_share_configuration = batchmodels.AzureFileShareConfiguration(
-        account_name=config["AZURE_STORAGE_ACCOUNT_NAME"],
+    azure_file_share_configuration = batch_models.AzureFileShareConfiguration(
+        account_name=server_config["STORAGE"]["NAME"],
         azure_file_url=azure_file_url,
-        account_key=config["AZURE_STORAGE_ACCOUNT_KEY"],
+        account_key=server_config["STORAGE"]["KEY"],
         relative_mount_path=file_share_mount_point,
         mount_options="-o rw",
     )
 
-    mount_configuration = batchmodels.MountConfiguration(
+    mount_configuration = batch_models.MountConfiguration(
         azure_file_share_configuration=azure_file_share_configuration,
     )
 
@@ -192,7 +183,7 @@ def batch_submit(scenario_file, config_file):
         add_tasks(batch_client, user_identity, job_id, image_name,
                   container_run_options, scenario, command)
 
-    except batchmodels.BatchErrorException as err:
+    except batch_models.BatchErrorException as err:
         print_batch_exception(err)
         raise
 
@@ -203,16 +194,51 @@ def batch_submit(scenario_file, config_file):
 @click.argument("draw", type=int)
 @click.argument("sample", type=int)
 def batch_run(path_to_json, work_directory, draw, sample):
+    """Runs the specified draw and sample for the Scenario"""
     runner = SampleRunner(path_to_json)
     output_directory = Path(work_directory) / f"{draw}/{sample}"
     output_directory.mkdir(parents=True, exist_ok=True)
     runner.run_sample_by_number(output_directory, draw, sample)
 
 
+def load_server_config(kv_uri, tenant_id) -> Dict[str, Dict]:
+    """Retrieve the server configuration for running Batch using the user"s Azure credentials
+
+    Allows user to login using credentials from Azure CLI or interactive browser
+    """
+    credential = DefaultAzureCredential(
+        interactive_browser_tenant_id=tenant_id,
+        exclude_cli_credential=False,
+        exclude_interactive_browser_credential=False,
+        exclude_environment_credential=True,
+        exclude_managed_identity_credential=True,
+        exclude_visual_studio_code_credential=True,
+        exclude_shared_token_cache_credential=True
+    )
+
+    client = SecretClient(vault_url=kv_uri, credential=credential)
+    storage_config = json.loads(client.get_secret("storageaccount").value)
+    batch_config = json.loads(client.get_secret("batchaccount").value)
+    registry_config = json.loads(client.get_secret("registryserver").value)
+
+    return {"STORAGE": storage_config, "BATCH": batch_config, "REGISTRY": registry_config}
+
+
+def get_batch_client(name, key, url):
+    """Create a Batch service client"""
+    credentials = batch_auth.SharedKeyCredentials(name, key)
+    batch_client = batch.BatchServiceClient(credentials, batch_url=url)
+    return batch_client
+
+
 def load_scenario(scenario_file):
+    """Load the Scenario class from the specified file"""
     scenario_path = Path(scenario_file)
-    scenario_class: BaseScenario = ScenarioLoader(scenario_path.parent / scenario_path.name).get_scenario()
-    logger.info(key="message", data=f"Loaded {scenario_class.__class__.__name__} from {scenario_path}")
+    scenario_class = ScenarioLoader(scenario_path.parent / scenario_path.name).get_scenario()
+    logger.info(
+        key="message",
+        data=f"Loaded {scenario_class.__class__.__name__} from {scenario_path}"
+    )
     return scenario_class
 
 
@@ -221,30 +247,34 @@ def is_file_clean(scenario_file):
 
     :returns: current branch name if all okay, False otherwise
     """
-    repo = Repo('.')  # assumes you're running tlo command from TLOmodel root directory
+    repo = Repo(".")  # assumes you're running tlo command from TLOmodel root directory
 
     if scenario_file in repo.untracked_files:
-        click.echo(f"ERROR: Untracked file {scenario_file}. Add file to repository, commit and push.")
+        click.echo(
+            f"ERROR: Untracked file {scenario_file}. Add file to repository, commit and push."
+        )
         return False
 
     if repo.is_dirty(path=scenario_file):
-        click.echo(f"ERROR: Uncommitted changes in file {scenario_file}. Rollback or commit+push changes.")
+        click.echo(
+            f"ERROR: Uncommitted changes in file {scenario_file}. Rollback or commit+push changes."
+        )
         return False
 
     current_branch = repo.head.reference
-    commits_ahead = list(repo.iter_commits(f'origin/{current_branch}..{current_branch}'))
-    commits_behind = list(repo.iter_commits(f'{current_branch}..origin/{current_branch}'))
+    commits_ahead = list(repo.iter_commits(f"origin/{current_branch}..{current_branch}"))
+    commits_behind = list(repo.iter_commits(f"{current_branch}..origin/{current_branch}"))
     if not len(commits_behind) == len(commits_ahead) == 0:
         click.echo(f"ERROR: Branch '{current_branch}' isn't in-sync with remote: "
-                   f"{len(commits_ahead)} ahead; {len(commits_behind)} behind. Push and/or pull changes.")
+                   f"{len(commits_ahead)} ahead; {len(commits_behind)} behind. "
+                   "Push and/or pull changes.")
         return False
 
     return current_branch
 
 
 def print_batch_exception(batch_exception):
-    """
-    Prints the contents of the specified Batch exception.
+    """Prints the contents of the specified Batch exception.
 
     :param batch_exception:
     """
@@ -262,9 +292,7 @@ def print_batch_exception(batch_exception):
 
 
 def create_file_share(connection_string, share_name):
-    """
-    Uses a ShareClient object to create a share if it does not exist.
-    """
+    """Uses a ShareClient object to create a share if it does not exist."""
     try:
         # Create a ShareClient from a connection string
         share_client = ShareClient.from_connection_string(
@@ -280,8 +308,7 @@ def create_file_share(connection_string, share_name):
 
 
 def create_directory(connection_string, share_name, dir_name):
-    """
-    Creates a directory in the root of the specified file share by using a
+    """Creates a directory in the root of the specified file share by using a
     ShareDirectoryClient object.
     """
     try:
@@ -297,8 +324,7 @@ def create_directory(connection_string, share_name, dir_name):
 
 
 def upload_local_file(connection_string, local_file_path, share_name, dest_file_path):
-    """
-    Uploads the contents of the specified file into the specified directory in
+    """Uploads the contents of the specified file into the specified directory in
     the specified Azure file share.
     """
     try:
@@ -321,8 +347,7 @@ def upload_local_file(connection_string, local_file_path, share_name, dest_file_
 
 def create_job(batch_service_client, vm_size, pool_node_count, job_id,
                container_conf, mount_configuration):
-    """
-    Creates a job with the specified ID, associated with the specified pool.
+    """Creates a job with the specified ID, associated with the specified pool.
 
     :param batch_service_client: A Batch service client.
     :type batch_service_client: `azure.batch.BatchServiceClient`
@@ -336,20 +361,20 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     """
     print(f"Creating job [{job_id}]...")
 
-    image_reference = batchmodels.ImageReference(
+    image_reference = batch_models.ImageReference(
         publisher="microsoft-azure-batch",
         offer="ubuntu-server-container",
         sku="16-04-lts",
         version="latest",
     )
 
-    virtual_machine_configuration = batchmodels.VirtualMachineConfiguration(
+    virtual_machine_configuration = batch_models.VirtualMachineConfiguration(
         image_reference=image_reference,
         container_configuration=container_conf,
         node_agent_sku_id="batch.node.ubuntu 16.04",
     )
 
-    pool = batchmodels.PoolSpecification(
+    pool = batch_models.PoolSpecification(
         virtual_machine_configuration=virtual_machine_configuration,
         vm_size=vm_size,
         target_dedicated_nodes=pool_node_count,
@@ -357,16 +382,16 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
         task_slots_per_node=1
     )
 
-    auto_pool_specification = batchmodels.AutoPoolSpecification(
+    auto_pool_specification = batch_models.AutoPoolSpecification(
         pool_lifetime_option="job",
         pool=pool,
     )
 
-    pool_info = batchmodels.PoolInformation(
+    pool_info = batch_models.PoolInformation(
         auto_pool_specification=auto_pool_specification,
     )
 
-    job = batchmodels.JobAddParameter(
+    job = batch_models.JobAddParameter(
         id=job_id,
         pool_info=pool_info,
         on_all_tasks_complete="terminateJob",
@@ -377,8 +402,7 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
 
 def add_tasks(batch_service_client, user_identity, job_id,
               image_name, container_run_options, scenario, command):
-    """
-    Adds the simulation tasks in the collection to the specified job.
+    """Adds the simulation tasks in the collection to the specified job.
 
     :param batch_service_client: A Batch service client.
     :type batch_service_client: `azure.batch.BatchServiceClient`
@@ -396,14 +420,14 @@ def add_tasks(batch_service_client, user_identity, job_id,
 
     tasks = list()
 
-    task_container_settings = batchmodels.TaskContainerSettings(
+    task_container_settings = batch_models.TaskContainerSettings(
         image_name=image_name,
         container_run_options=container_run_options,
     )
 
     for draw_number in range(0, scenario.number_of_draws):
         for run_number in range(0, scenario.runs_per_draw):
-            task = batchmodels.TaskAddParameter(
+            task = batch_models.TaskAddParameter(
                 id=f"draw_{draw_number}-run_{run_number}",
                 command_line=command.format(draw_number, run_number),
                 container_settings=task_container_settings,
