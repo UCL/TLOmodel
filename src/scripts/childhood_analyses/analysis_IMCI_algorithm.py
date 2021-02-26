@@ -3,12 +3,9 @@ This will run the DxAlgorithmChild Module
 """
 # %% Import Statements and initial declarations
 import datetime
-import os
 from pathlib import Path
 
-import matplotlib.dates as mdates
 import pandas as pd
-import numpy as np
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
@@ -66,6 +63,7 @@ sim.register(
     demography.Demography(resourcefilepath=resources),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
     healthsystem.HealthSystem(resourcefilepath=resources, service_availability=service_availability),
+    healthburden.HealthBurden(resourcefilepath=resources),
     symptommanager.SymptomManager(resourcefilepath=resources),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
     contraception.Contraception(resourcefilepath=resources),
@@ -114,7 +112,8 @@ imci_gold_classification_mean.set_index(
         inplace=True
     )
 
-final_df = pd.concat([hw_classification_mean.T, imci_gold_classification_mean.T], axis=1)  # rotated index is now columns
+# rotated index is now columns
+final_df = pd.concat([hw_classification_mean.T, imci_gold_classification_mean.T], axis=1)
 # ------------------------------------
 # ----- Plotting -----
 plt.style.use('ggplot')
@@ -125,7 +124,8 @@ ax1 = final_df.plot.bar(rot=0)
 plt.ylabel('average number of cases per year')
 # plt.figure(figsize=(9, 3))
 plt.title('Mean of health worker classifications vs IMCI gold standard of IMCI pneumonia ')
-plt.savefig(outputpath / ("total_health_worker_vs_IMCI_gold_classifications_mean_of_years" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / ("total_health_worker_vs_IMCI_gold_classifications_mean_of_years" + datestamp + ".pdf"),
+            format='pdf')
 plt.show()
 
 # save into an cvs file
@@ -135,7 +135,8 @@ hw_classification_df.to_csv(r'./outputs/pneum_classification.csv', index=False)
 # output of health worker classification vs IMCI classification ---------------------------
 
 # health worker's classification for IMCI-defined no pneumonia
-hw_classification_for_imci_no_pneum = output['tlo.methods.dx_algorithm_child']['hw_classification_for_common_cold_by_IMCI']
+hw_classification_for_imci_no_pneum = \
+    output['tlo.methods.dx_algorithm_child']['hw_classification_for_common_cold_by_IMCI']
 hw_classification_for_imci_no_pneum['date'] = pd.to_datetime(hw_classification_for_imci_no_pneum['date']).dt.year
 hw_classification_for_imci_no_pneum = hw_classification_for_imci_no_pneum.set_index('date')
 
@@ -151,7 +152,8 @@ hw_mean_class_for_imci_no_pneum.set_index(
     )
 
 # health worker's classification for IMCI-defined non-severe pneumonia
-hw_classification_for_imci_nonsev_pneum = output['tlo.methods.dx_algorithm_child']['hw_classification_for_non-sev_pneumonia_by_IMCI']
+hw_classification_for_imci_nonsev_pneum = \
+    output['tlo.methods.dx_algorithm_child']['hw_classification_for_non-sev_pneumonia_by_IMCI']
 hw_classification_for_imci_nonsev_pneum['date'] = pd.to_datetime(hw_classification_for_imci_nonsev_pneum['date']).dt.year
 hw_classification_for_imci_nonsev_pneum = hw_classification_for_imci_nonsev_pneum.set_index('date')
 
@@ -167,8 +169,10 @@ hw_mean_class_for_imci_nonsev_pneum.set_index(
     )
 
 # health worker's classification for IMCI-defined severe pneumonia
-hw_classification_for_imci_severe_pneum = output['tlo.methods.dx_algorithm_child']['hw_classification_for_severe_pneumonia_by_IMCI']
-hw_classification_for_imci_severe_pneum['date'] = pd.to_datetime(hw_classification_for_imci_severe_pneum['date']).dt.year
+hw_classification_for_imci_severe_pneum = \
+    output['tlo.methods.dx_algorithm_child']['hw_classification_for_severe_pneumonia_by_IMCI']
+hw_classification_for_imci_severe_pneum['date'] = pd.to_datetime(
+    hw_classification_for_imci_severe_pneum['date']).dt.year
 hw_classification_for_imci_severe_pneum = hw_classification_for_imci_severe_pneum.set_index('date')
 
 # ----- Format the data -----
@@ -213,14 +217,16 @@ underlying_bacterial_pneumonia_vs_imci_classification = \
     output['tlo.methods.dx_algorithm_child']['IMCI_classification_for_underlying_bacterial_pneumonia']
 underlying_bacterial_pneumonia_vs_imci_classification['date'] = \
     pd.to_datetime(underlying_bacterial_pneumonia_vs_imci_classification['date']).dt.year
-underlying_bacterial_pneumonia_vs_imci_classification = underlying_bacterial_pneumonia_vs_imci_classification.set_index('date')
+underlying_bacterial_pneumonia_vs_imci_classification = \
+    underlying_bacterial_pneumonia_vs_imci_classification.set_index('date')
 
 # --- for fungal pneumonia
 underlying_fungal_pneumonia_vs_imci_classification = \
     output['tlo.methods.dx_algorithm_child']['IMCI_classification_for_underlying_fungal_pneumonia']
 underlying_fungal_pneumonia_vs_imci_classification['date'] = \
     pd.to_datetime(underlying_fungal_pneumonia_vs_imci_classification['date']).dt.year
-underlying_fungal_pneumonia_vs_imci_classification = underlying_fungal_pneumonia_vs_imci_classification.set_index('date')
+underlying_fungal_pneumonia_vs_imci_classification = \
+    underlying_fungal_pneumonia_vs_imci_classification.set_index('date')
 
 # --- for bronchiolitis
 underlying_bronchiolitis_vs_imci_classification = \
@@ -246,13 +252,15 @@ mean_imci_class_for_viral_pneumonia.set_index(
     )
 
 # --- for bacterial pneumonia
-get_mean_imci_classifications_for_underlying_bacterial_pneumonia = underlying_bacterial_pneumonia_vs_imci_classification[
-    ['common_cold', 'non-severe_pneumonia', 'severe_pneumonia']].mean(axis=0)
+get_mean_imci_classifications_for_underlying_bacterial_pneumonia = \
+    underlying_bacterial_pneumonia_vs_imci_classification[[
+        'common_cold', 'non-severe_pneumonia', 'severe_pneumonia']].mean(axis=0)
 get_mean_imci_classifications_for_underlying_bacterial_pneumonia.rename(
     index={'common_cold': 'IMCI_no_pneumonia',
            'non-severe_pneumonia': 'IMCI_pneumonia',
            'severe_pneumonia': 'IMCI_severe_pneumonia'}, inplace=True)
-mean_imci_class_for_bacterial_pneumonia = pd.DataFrame(get_mean_imci_classifications_for_underlying_bacterial_pneumonia).T
+mean_imci_class_for_bacterial_pneumonia = pd.DataFrame(
+    get_mean_imci_classifications_for_underlying_bacterial_pneumonia).T
 mean_imci_class_for_bacterial_pneumonia['label'] = 'bacterial_pneumonia'
 mean_imci_class_for_bacterial_pneumonia.set_index(
         'label',
@@ -295,7 +303,7 @@ mean_imci_class_for_bronchiolitis.set_index(
 joined_underlying_condition_df = pd.concat([mean_imci_class_for_viral_pneumonia.T,
                                             mean_imci_class_for_bacterial_pneumonia.T,
                                             mean_imci_class_for_fungal_pneumonia.T,
-                                            mean_imci_class_for_bronchiolitis.T], axis=1)  # rotated index is now columns
+                                            mean_imci_class_for_bronchiolitis.T], axis=1) #rotated index is now columns
 
 # ----- Plotting -----
 plt.style.use('ggplot')
@@ -304,7 +312,8 @@ plt.style.use('ggplot')
 ax3 = joined_underlying_condition_df.T.plot.bar(rot=0)
 plt.ylabel('average number of cases per year')
 plt.title('IMCI classifications for the underlying true ALRI conditions')
-plt.savefig(outputpath / ("IMCI_classifications_for_underlying_true_conditions_mean_of_years" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / ("IMCI_classifications_for_underlying_true_conditions_mean_of_years" + datestamp + ".pdf"),
+            format='pdf')
 plt.show()
 
 # -------------------------------------------------------------------------------------------------------------------
@@ -323,7 +332,8 @@ underlying_bacterial_pneumonia_vs_hw_classification = \
     output['tlo.methods.dx_algorithm_child']['hw_classification_for_underlying_bacterial_pneumonia']
 underlying_bacterial_pneumonia_vs_hw_classification['date'] = \
     pd.to_datetime(underlying_bacterial_pneumonia_vs_hw_classification['date']).dt.year
-underlying_bacterial_pneumonia_vs_hw_classification = underlying_bacterial_pneumonia_vs_hw_classification.set_index('date')
+underlying_bacterial_pneumonia_vs_hw_classification = \
+    underlying_bacterial_pneumonia_vs_hw_classification.set_index('date')
 
 # --- for fungal pneumonia
 underlying_fungal_pneumonia_vs_hw_classification = \
@@ -405,7 +415,7 @@ mean_hw_class_for_bronchiolitis.set_index(
 joined_underlying_condition_hw_df = pd.concat([mean_hw_class_for_viral_pneumonia.T,
                                                mean_hw_class_for_bacterial_pneumonia.T,
                                                mean_hw_class_for_fungal_pneumonia.T,
-                                               mean_hw_class_for_bronchiolitis.T], axis=1)  # rotated index is now columns
+                                               mean_hw_class_for_bronchiolitis.T], axis=1) #rotated index is now columns
 
 # ----- Plotting -----
 plt.style.use('ggplot')
@@ -414,5 +424,6 @@ plt.style.use('ggplot')
 ax4 = joined_underlying_condition_hw_df.T.plot.bar(rot=0)
 plt.ylabel('average number of cases per year')
 plt.title('health worker classifications for the underlying true ALRI conditions')
-plt.savefig(outputpath / ("hw_classifications_for_underlying_true_conditions_mean_of_years" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / ("hw_classifications_for_underlying_true_conditions_mean_of_years" + datestamp + ".pdf"),
+            format='pdf')
 plt.show()

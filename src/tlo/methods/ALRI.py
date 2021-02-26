@@ -31,7 +31,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
@@ -750,17 +750,18 @@ class ALRI(Module):
     def read_parameters(self, data_folder):
         """ Setup parameters values used by the module
         """
-        p = self.parameters
         self.load_parameters_from_dataframe(
             pd.read_excel(
                 Path(self.resourcefilepath) / 'ResourceFile_ALRI2.xlsx', sheet_name='Parameter_values'))
 
         # Check that every value has been read-in successfully
         for param_name, param_type in self.PARAMETERS.items():
-            assert param_name in self.parameters, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+            assert param_name in self.parameters, f'Parameter "{param_name}" ' \
+                                                  f'is not read in correctly from the resourcefile.'
             assert param_name is not None, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
             assert isinstance(self.parameters[param_name],
-                              param_type.python_type), f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+                              param_type.python_type), f'Parameter "{param_name}" ' \
+                                                       f'is not read in correctly from the resourcefile.'
 
         # Register this disease module with the health system
         # self.sim.modules['HealthSystem'].register_disease_module(self) # TODO: NotImplementedError ??
@@ -921,7 +922,8 @@ class ALRI(Module):
             if patho in ALRI.viral_patho:
                 under_2_yo = df['is_alive'] & (df['age_years'] < 2)
                 for child in under_2_yo:  # bronchiolitis only for those under 2
-                    return 'viral_pneumonia' if self.rng.rand() < p[f'proportion_viral_pneumonia_by_{patho}'] else 'bronchiolitis'
+                    return 'viral_pneumonia' if self.rng.rand() < p[f'proportion_viral_pneumonia_by_{patho}'] \
+                        else 'bronchiolitis'
                 else:
                     return 'viral_pneumonia'
             if patho in ALRI.fungal_patho:
@@ -1295,7 +1297,6 @@ class ALRI(Module):
         pass
 
         df = self.sim.population.props
-        who_has_symptoms = self.sim.modules['SymptomManager'].who_has
 
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
 
@@ -1322,7 +1323,6 @@ class ALRI(Module):
         :param duration_in_days:
         :return:
         """
-        df = self.sim.population.props
         rng = self.rng
 
         # ----------------------- Allocate symptoms to onset of ALRI ----------------------
@@ -1461,7 +1461,8 @@ class ALRI(Module):
     #
     #     if self.parameters['prob_seek_follow_up_care_after_treatment_failure'] > self.rng.rand():
     #         # schedule follow-up event
-    #         self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self) # not working line
+    #         self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self)
+    # not working line
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1593,7 +1594,6 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         df = self.sim.population.props  # shortcut to the dataframe
         m = self.module
         rng = self.module.rng
-        p = self.module.parameters
 
         # The event should not run if the person is not currently alive
         if not df.at[person_id, 'is_alive']:
@@ -1740,8 +1740,9 @@ class AlriComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
             duration_in_days=self.duration_in_days)
         # apply the probability for progressing further in the disease
         for severe_complication in ['respiratory_failure', 'sepsis']:
-            prob_progressing_severe_complication = m.risk_of_progressing_to_severe_complications[severe_complication].predict(
-                df.loc[[person_id]]).values[0]
+            prob_progressing_severe_complication = \
+                m.risk_of_progressing_to_severe_complications[severe_complication].predict(
+                    df.loc[[person_id]]).values[0]
             if rng.rand() < prob_progressing_severe_complication:
                 self.sim.schedule_event(AlriSystemicComplicationsOnsetEvent(
                     self.module, person_id,
@@ -1774,7 +1775,8 @@ class AlriSystemicComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
             return
 
         # cancel the schedules onset of complication if treatment was administered for this episode
-        if df.at[person_id, 'ri_ALRI_event_date_of_onset'] <= df.at[person_id, 'ri_ALRI_tx_start_date'] <= self.sim.date:
+        if df.at[person_id, 'ri_ALRI_event_date_of_onset'] <=\
+            df.at[person_id, 'ri_ALRI_tx_start_date'] <= self.sim.date:
             self.module.cancel_complication_onset(person_id=person_id, complication=self.complication)
             return
 
@@ -1862,12 +1864,13 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
             return
 
         # Cure should not happen if the person has already recovered for the current episode
-        if df.at[person_id, 'ri_ALRI_event_date_of_onset'] <= df.at[person_id, 'ri_ALRI_event_recovered_date'] <= self.sim.date:
+        if df.at[person_id, 'ri_ALRI_event_date_of_onset'] <=\
+            df.at[person_id, 'ri_ALRI_event_recovered_date'] <= self.sim.date:
             return
 
         # Confirm that this is event is occurring during a current episode of ALRI
-        if not (df.at[person_id, 'ri_ALRI_event_date_of_onset']) \
-               <= self.sim.date <= (df.at[person_id, 'ri_end_of_last_alri_episode']):
+        if not (df.at[person_id, 'ri_ALRI_event_date_of_onset']) <=\
+               self.sim.date <= (df.at[person_id, 'ri_end_of_last_alri_episode']):
             return
 
         # This event should only run after the person has received a treatment during this episode
@@ -1949,6 +1952,7 @@ class ALRIDeathEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 # COMMUNITY LEVEL - iCCM delivered through HSAs -----------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------
+
 
 class HSI_iCCM_Pneumonia_Treatment_level_0(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
@@ -2310,10 +2314,8 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEven
                 prob_of_cure=self.module.parameters[
                     'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment']
             )
-            # self.sim.schedule_event(
-            #     ALRICureEvent(self.sim.modules['ALRI'], person_id),
-            #     self.sim.date + DateOffset(days=3), # todo: need to check the dates conflict with cure/ treatment/ death etc...
-            # )
+
+            # todo: need to check the dates conflict with cure/ treatment/ death etc...
             care_management_info.update({
                 'treatment_plan': 'treatment_for_severe_pneumonia'})
 
@@ -2618,7 +2620,6 @@ class PathogenIncidentCountLoggingEvent(RegularEvent, PopulationScopeEventMixin)
         self.date_last_run = self.sim.date
 
     def apply(self, population):
-        df = self.sim.population.props
         # Convert the list of timestamps into a number of timestamps
         # and check that all the dates have occurred since self.date_last_run
         counts = copy.deepcopy(self.module.incident_case_tracker_zeros)
@@ -2667,31 +2668,6 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             data=counter,
             description='Counts of cases, recovery, treatment and death'
         )
-
-        # start_date = Date(2010, 1, 1)
-        # end_date = Date(2015, 1, 1)
-        #
-        # after_start_date_recovery = df['ri_ALRI_event_recovered_date'] >= start_date
-        # before_end_date_recovery = df['ri_ALRI_event_recovered_date'] <= end_date
-        # between_two_dates_recovery = after_start_date_recovery & before_end_date_recovery
-        # recovered = df.loc[between_two_dates_recovery]
-        #
-        # after_start_date_treatment = df['ri_ALRI_tx_start_date'] >= start_date
-        # before_end_date_treatment = df['ri_ALRI_tx_start_date'] <= end_date
-        # between_two_dates_treatment = after_start_date_treatment & before_end_date_treatment
-        # treated = df.loc[between_two_dates_treatment]
-        #
-        # after_start_date_death = df['ri_ALRI_event_death_date'] >= start_date
-        # before_end_date_death = df['ri_ALRI_event_death_date'] <= end_date
-        # between_two_dates_death = after_start_date_death & before_end_date_death
-        # died = df.loc[between_two_dates_death]
-        #
-        # data_for_df = {'recovered': len(recovered), 'treated': len(treated), 'died': len(died)}
-        # percentages_df = pd.DataFrame.from_dict(data_for_df)
-
-        # logger.info(key='percentages',
-        #             data=data_for_df,
-        #             description='proportion of recovery, treated, died')
 
         # log the information on complications ----------------
 #         index_alri_with_complications = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status &
@@ -2755,10 +2731,9 @@ class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
 
         # get single row of dataframe (but not a series) ----------------
-        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
+        # index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
         index_children = df.index[df.age_exact_years < 5]
         # individual_child = df.loc[[index_children_with_alri[0]]]
-        alri_check = df.loc[index_children_with_alri]
 
         logger.info('%s|person_one|%s',
                     self.sim.date,

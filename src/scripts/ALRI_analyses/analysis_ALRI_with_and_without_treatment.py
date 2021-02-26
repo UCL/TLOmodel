@@ -6,7 +6,6 @@ adapted from analysis_diarrhoea_with_and_without_treatment
 # %% Import Statements and initial declarations
 import datetime
 from pathlib import Path
-from tlo import logging
 
 import pandas as pd
 from matplotlib import pyplot as plt

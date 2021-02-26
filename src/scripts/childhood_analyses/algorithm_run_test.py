@@ -4,10 +4,9 @@ This script is used in development. It will become the test script for diraahoea
 
 # %% Import Statements and initial declarations
 import datetime
-import os
+
 from pathlib import Path
 from tlo import Date, Simulation, logging
-from tlo import Date, Simulation
 from tlo.methods import contraception, demography, ALRI, healthsystem, enhanced_lifestyle, \
     symptommanager, healthburden, healthseekingbehaviour, dx_algorithm_child, labour, pregnancy_supervisor
 
@@ -43,10 +42,10 @@ sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-# sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 # sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
@@ -56,5 +55,3 @@ sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepa
 sim.seed_rngs(0)
 sim.make_initial_population(n=pop_size)
 sim.simulate(end_date=end_date)
-
-

@@ -3,12 +3,9 @@ This will run the ALRI Module + create analysis plots
 """
 # %% Import Statements and initial declarations
 import datetime
-import os
 from pathlib import Path
 
-import matplotlib.dates as mdates
 import pandas as pd
-import numpy as np
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
