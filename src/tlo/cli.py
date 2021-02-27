@@ -22,10 +22,7 @@ from tlo.scenario import SampleRunner, ScenarioLoader
 
 @click.group()
 def cli():
-    """The TLOmodel command line utility
-
-    - Run scenarios locally
-    - Submit scenarios to Azure Batch
+    """The TLOmodel command line utility: run scenarios locally & submit to Azure Batch
     """
 
 
@@ -404,6 +401,7 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     auto_pool_specification = batch_models.AutoPoolSpecification(
         pool_lifetime_option="job",
         pool=pool,
+        keep_alive=True,
     )
 
     pool_info = batch_models.PoolInformation(
