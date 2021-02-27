@@ -22,7 +22,11 @@ from tlo.scenario import SampleRunner, ScenarioLoader
 
 @click.group()
 def cli():
-    """Empty `tlo` command doesn't do anything - show commands"""
+    """The TLOmodel command line utility
+
+    - Run scenarios locally
+    - Submit scenarios to Azure Batch
+    """
 
 
 @cli.command()
@@ -218,7 +222,11 @@ def load_config(config_file):
 def load_server_config(kv_uri, tenant_id) -> Dict[str, Dict]:
     """Retrieve the server configuration for running Batch using the user"s Azure credentials
 
-    Allows user to login using credentials from Azure CLI or interactive browser
+    Allows user to login using credentials from Azure CLI or interactive browser.
+
+    On Windows, login might fail because pywin32 is not installed correctly. Resolve by
+    running (as Administrator) `python Scripts\pywin32_postinstall.py -install`
+    For more information, see https://github.com/mhammond/pywin32/issues/1431
     """
     credential = DefaultAzureCredential(
         interactive_browser_tenant_id=tenant_id,
