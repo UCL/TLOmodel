@@ -22,7 +22,7 @@ times. Each run for the same draw would have identical configuration except the 
 """
 import json
 import pickle
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import numpy as np
 
@@ -176,7 +176,7 @@ class DrawGenerator:
 
     def get_run_config(self, scenario_path):
         return {
-            "scenario_script_path": str(scenario_path),
+            "scenario_script_path": str(PurePosixPath(scenario_path)),
             "scenario_seed": self.scenario.seed,
             "runs_per_draw": self.runs_per_draw,
             "draws": self.draws,
