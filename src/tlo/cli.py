@@ -17,11 +17,7 @@ from azure.keyvault.secrets import SecretClient
 from azure.storage.fileshare import ShareClient, ShareDirectoryClient, ShareFileClient
 from git import Repo
 
-from tlo import logging
 from tlo.scenario import SampleRunner, ScenarioLoader
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 @click.group()
@@ -67,11 +63,7 @@ def batch_submit(scenario_file, config_file):
     commit = next(repo.iter_commits(max_count=1, paths=scenario_file))
     run_json = scenario.save_draws(commit=commit.hexsha)
 
-    # load the local configuration
-    with open(Path(config_file).as_posix()) as json_file:
-        config = json.load(json_file)
-    # get server configuration
-    server_config = load_server_config(config["KV_URI"], config["TENANT_ID"])
+    config = load_config(config_file)
 
     # ID of the Batch job.
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
@@ -81,31 +73,31 @@ def batch_submit(scenario_file, config_file):
     azure_directory = f"{config['USERNAME']}/{job_id}"
 
     batch_client = get_batch_client(
-        server_config["BATCH"]["NAME"],
-        server_config["BATCH"]["KEY"],
-        server_config["BATCH"]["URL"]
+        config["BATCH"]["NAME"],
+        config["BATCH"]["KEY"],
+        config["BATCH"]["URL"]
     )
 
     create_file_share(
-        server_config["STORAGE"]["CONNECTION_STRING"],
-        server_config["STORAGE"]["FILESHARE"]
+        config["STORAGE"]["CONNECTION_STRING"],
+        config["STORAGE"]["FILESHARE"]
     )
 
     # Recursively create all nested directories,
     for idx in range(len(os.path.split(azure_directory))):
-        create_directory(server_config["STORAGE"]["CONNECTION_STRING"],
-                         server_config["STORAGE"]["FILESHARE"],
+        create_directory(config["STORAGE"]["CONNECTION_STRING"],
+                         config["STORAGE"]["FILESHARE"],
                          "/".join(os.path.split(azure_directory)[:idx+1]),
                          )
 
-    upload_local_file(server_config["STORAGE"]["CONNECTION_STRING"],
+    upload_local_file(config["STORAGE"]["CONNECTION_STRING"],
                       run_json,
-                      server_config["STORAGE"]["FILESHARE"],
+                      config["STORAGE"]["FILESHARE"],
                       azure_directory + "/" + os.path.basename(run_json),
                       )
 
     # Configuration of the pool: type of machines and number of nodes.
-    vm_size = server_config["BATCH"]["POOL_VM_SIZE"]
+    vm_size = config["BATCH"]["POOL_VM_SIZE"]
     # TODO: cap the number of nodes in the pool?  Take the number of nodes in
     # input from the user, but always at least 2?
     pool_node_count = max(2, math.ceil(scenario.number_of_draws * scenario.runs_per_draw))
@@ -122,19 +114,19 @@ def batch_submit(scenario_file, config_file):
 
     # URL of the Azure File share
     azure_file_url = "https://{}.file.core.windows.net/{}".format(
-        server_config["STORAGE"]["NAME"],
-        server_config["STORAGE"]["FILESHARE"],
+        config["STORAGE"]["NAME"],
+        config["STORAGE"]["FILESHARE"],
     )
 
     # Specify a container registry
     container_registry = batch_models.ContainerRegistry(
-        registry_server=server_config["REGISTRY"]["SERVER"],
-        user_name=server_config["REGISTRY"]["NAME"],
-        password=server_config["REGISTRY"]["KEY"],
+        registry_server=config["REGISTRY"]["SERVER"],
+        user_name=config["REGISTRY"]["NAME"],
+        password=config["REGISTRY"]["KEY"],
     )
 
     # Name of the image in the registry
-    image_name = server_config["REGISTRY"]["SERVER"] + "/" + server_config["REGISTRY"]["IMAGE_NAME"]
+    image_name = config["REGISTRY"]["SERVER"] + "/" + config["REGISTRY"]["IMAGE_NAME"]
 
     # Create container configuration, prefetching Docker images from the container registry
     container_conf = batch_models.ContainerConfiguration(
@@ -150,9 +142,9 @@ def batch_submit(scenario_file, config_file):
     file_share_mount_point = "mnt"
 
     azure_file_share_configuration = batch_models.AzureFileShareConfiguration(
-        account_name=server_config["STORAGE"]["NAME"],
+        account_name=config["STORAGE"]["NAME"],
         azure_file_url=azure_file_url,
-        account_key=server_config["STORAGE"]["KEY"],
+        account_key=config["STORAGE"]["KEY"],
         relative_mount_path=file_share_mount_point,
         mount_options="-o rw",
     )
@@ -201,6 +193,28 @@ def batch_run(path_to_json, work_directory, draw, sample):
     runner.run_sample_by_number(output_directory, draw, sample)
 
 
+@cli.command()
+@click.argument("job_id", type=str)
+@click.argument("config_file", type=click.Path(exists=True))  # TODO: remove argument
+def batch_query(job_id, config_file):
+    config = load_config(config_file)
+    batch_client = get_batch_client(
+        config["BATCH"]["NAME"],
+        config["BATCH"]["KEY"],
+        config["BATCH"]["URL"]
+    )
+    return
+
+
+def load_config(config_file):
+    """Load configuration for accessing Batch services"""
+    with open(Path(config_file).as_posix()) as json_file:
+        config = json.load(json_file)
+    server_config = load_server_config(config["KV_URI"], config["TENANT_ID"])
+    merged_config = {**config, **server_config}
+    return merged_config
+
+
 def load_server_config(kv_uri, tenant_id) -> Dict[str, Dict]:
     """Retrieve the server configuration for running Batch using the user"s Azure credentials
 
@@ -235,10 +249,7 @@ def load_scenario(scenario_file):
     """Load the Scenario class from the specified file"""
     scenario_path = Path(scenario_file)
     scenario_class = ScenarioLoader(scenario_path.parent / scenario_path.name).get_scenario()
-    logger.info(
-        key="message",
-        data=f"Loaded {scenario_class.__class__.__name__} from {scenario_path}"
-    )
+    print(f"Loaded {scenario_class.__class__.__name__} from {scenario_path}")
     return scenario_class
 
 
