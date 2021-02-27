@@ -162,6 +162,7 @@ def batch_submit(scenario_file, config_file):
     git fetch --all
     git checkout -b {current_branch} origin/{current_branch}
     git pull
+    pip install -r requirements/base.txt
     tlo batch-run {azure_run_json} {working_dir} {{}} {{}}
     cp -r {working_dir}/* {azure_directory}/.
     """
