@@ -8,6 +8,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.lm import LinearModel
 from tlo.methods import (
+    antenatal_care,
     contraception,
     demography,
     dx_algorithm_child,
@@ -17,6 +18,8 @@ from tlo.methods import (
     hiv,
     hsi_generic_first_appts,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -55,8 +58,11 @@ def get_sim():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )
@@ -534,6 +540,7 @@ def test_art_is_initiated_for_infants():
     assert sim.population.props.at[child_id, "hv_inf"]
     assert not sim.population.props.at[child_id, "hv_diagnosed"]
 
+    # TODO: JC 26/02 - the test and refer event not scheduled via HIV anymore
     # Check that the child has a TestAndRefer event schedule
     date_event, event = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(child_id) if

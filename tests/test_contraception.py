@@ -14,7 +14,7 @@ from tlo.methods import (
     labour,
     pregnancy_supervisor,
     antenatal_care, postnatal_supervisor,
-    symptommanager, male_circumcision, newborn_outcomes, healthburden
+    symptommanager, newborn_outcomes, healthburden
 )
 
 start_date = Date(2010, 1, 1)
@@ -35,7 +35,6 @@ def simulation():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),

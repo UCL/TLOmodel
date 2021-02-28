@@ -325,9 +325,6 @@ class NewbornOutcomes(Module):
             'preterm_birth_other_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_preterm_birth'],
-                # todo: TC- I dont think this is currently detailed enough, there should be some kind of function that
-                #  you call based on week at delivery that returns the parameter meaning the CFR for the very earliest
-                #  preterms would be very high.
                 Predictor('nb_early_preterm').when(True, params['rr_preterm_death_early_preterm']),
                 Predictor('nb_kangaroo_mother_care').when(True, params['treatment_effect_kmc']),
                 Predictor('received_corticosteroids', external=True).when('True', params['treatment_effect_steroid_'
@@ -490,11 +487,6 @@ class NewbornOutcomes(Module):
         params = self.parameters
         df = self.sim.population.props
 
-        # TODO: TC- I think we discussed replacing this with a more simple linear model that considered transient
-        #  maternal factors which may influence LBW, that might be a job for version 2.0 as I dont know the best way to
-        #  capture potential risk factors that may have been present during pregnancy but arent at the time of birth
-        #  (wary I have a lot of properties already)?
-
         # Mean birth weights for each gestational age are listed in a parameter starting at 24 weeks
         # We select the correct mean birth weight from the parameter
         if gestation_at_birth < 24:
@@ -562,19 +554,21 @@ class NewbornOutcomes(Module):
 
     def apply_risk_of_encephalopathy(self, child_id, timing):
         """
-        This function uses the linear model to determines if a neonate will develop neonatal encephalopathy, at what
-        severity, and makes the appropriate changes to the data frame. It is called during the on_birth function or
-        during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant dependent on delivery setting.
+        This function determines if a neonate will develop neonatal encephalopathy on birth or after birth
+        (if they were not breathing), at what severity, and makes the appropriate changes to the data frame.
+         It is called during the on_birth function or  during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant
+         dependent on delivery setting.
         :param child_id: child_id
         :param timing: on_birth or after_birth
         """
         params = self.parameters
         df = self.sim.population.props
 
-        # The linear model calculates the individuals probability of encephalopathy
+        # We use a linear model equation to determine risk of encephalopathy on birth
         if timing == 'on_birth':
             result = self.eval(params['nb_newborn_equations']['encephalopathy'], child_id)
         else:
+            # Or, if we are applying risk to a non-encephalopathic newborn who was not breathing at birth
             result = self.rng.random_sample() < params['prob_enceph_no_resus']
 
         if result:
@@ -625,7 +619,6 @@ class NewbornOutcomes(Module):
         """
         params = self.parameters
         df = self.sim.population.props
-        nci = self.newborn_care_info
 
         # We assume all newborns with encephalopathy and respiratory distress syndrome will require some form of
         # resuscitation and will not be effectively breathing at birth
@@ -721,6 +714,7 @@ class NewbornOutcomes(Module):
         if child.nb_death_after_birth:
             self.newborn_complication_tracker['death'] += 1
             if nci[individual_id]['cause_of_death_after_birth'] == 'preterm_birth_other':
+                # If the death is associated with prematurity we scatter those deaths across the first 2 weeks
                 random_draw = self.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
                                               p=params['prob_preterm_death_by_day'])
                 death_date = self.sim.date + DateOffset(days=random_draw)
@@ -780,10 +774,7 @@ class NewbornOutcomes(Module):
                                                                              p=params[
                                                                                  'prob_severe_enceph_disabilities'])
 
-                # TODO: TC/TH- I have not yet mapped the disability associated with congenital birth anomalies as there
-                #  are approx 350 weights in the DALY file- there was some discussion about CA having its own module
-                #  but I'm not sure what the plan is there- maybe not needed for first version but may need to consider
-                #  disability?
+                # TODO: congenital anomaly disability
 
         # We now delete the MNI dictionary for mothers who have died in labour but their children have survived, this
         # is done here as we use variables from the mni as predictors in some of the above equations
@@ -879,7 +870,7 @@ class NewbornOutcomes(Module):
             # First we determine the 'type' of breastfeeding this newborn will receive
             random_draw = self.rng.choice(('none', 'non_exclusive', 'exclusive'), p=params['prob_breastfeeding_type'])
             df.at[person_id, 'nb_breastfeeding_status'] = random_draw
-            # Log that information
+            # Log that information for debugging
             if random_draw == 'none':
                 logger.debug(key='message', data=f'Neonate {person_id} will not be breastfed')
             else:
@@ -897,13 +888,15 @@ class NewbornOutcomes(Module):
                     logger.debug(key='message', data=f'Neonate {person_id} has started breastfeeding within 1 hour of '
                                                      f'birth')
                 else:
-                    logger.debug(key='message', data=f'Neonate {person_id} did not start breastfeeding within 1 hour of '
-                                                     f'birth')
+                    logger.debug(key='message', data=f'Neonate {person_id} did not start breastfeeding within 1 hour '
+                                                     f'of birth')
+            # We store the breastfeeding information of the first twin in a twin pair to ensure twins have the same
+            # breastfeeding status
             if df.at[mother_id, 'ps_multiple_pregnancy'] and mni[mother_id]['twin_count'] == 1:
                 mni[mother_id]['bf_status_twin_one'] = random_draw
                 mni[mother_id]['eibf_status_twin_one'] = df.at[person_id, 'nb_early_init_breastfeeding']
 
-        # todo: it would be really helpful if the twins were linked before the birth events ran
+        # Here we set the breastfeeding status of any second born twins
         elif df.at[mother_id, 'ps_multiple_pregnancy'] and mni[mother_id]['twin_count'] == 2:
             df.at[person_id, 'nb_breastfeeding_status'] = mni[mother_id]['bf_status_twin_one']
             df.at[person_id, 'nb_early_init_breastfeeding'] = mni[mother_id]['eibf_status_twin_one']
@@ -911,7 +904,7 @@ class NewbornOutcomes(Module):
         if df.at[person_id, 'nb_breastfeeding_status'] != 'none':
             # For breastfed neonates we schedule a future event where breastfeeding status is updated
             self.sim.schedule_event(BreastfeedingStatusUpdateEventSixMonths(self, person_id),
-                                        self.sim.date + DateOffset(months=6))
+                                    self.sim.date + DateOffset(months=6))
 
     def kangaroo_mother_care(self, hsi_event, facility_type):
         """
@@ -932,6 +925,7 @@ class NewbornOutcomes(Module):
 
             # Store treatment as a property of the newborn used to apply treatment effect
             df.at[person_id, 'nb_kangaroo_mother_care'] = True
+            # todo: should have longer inpatient stays (there are specific KMC beds)
 
             logger.debug(key='message', data=f'Neonate {person_id} has been correctly identified as being low birth '
                                              f'weight, and kangaroo mother care has been initiated')
@@ -943,15 +937,15 @@ class NewbornOutcomes(Module):
         """
         pass
 
-    def hiv_prophylaxis_and_referral(self, child_id):
+    def hiv_screening_for_at_risk_newborns(self, child_id):
         """
-        This is a placeholder. Will house/call HIV testing for exposed newborns
+        This function schedules immediate HIV screening for newborns of mothers who are HIV positive. Additional
+         treatment is managed within the HIV module
         :param child_id: child_id
         """
         df = self.sim.population.props
         mother_id = df.at[child_id, 'mother_id']
 
-        # todo: prob delivered?
         if 'Hiv' in self.sim.modules:
             if ~df.at[child_id, 'hv_diagnosed'] and df.at[mother_id, 'hv_diagnosed']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1011,10 +1005,6 @@ class NewbornOutcomes(Module):
 
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
-
-        # TODO: TC- I'm not fully sure this assumption (above) holds true, let me know what you think?
-        #  'Full supportive care' for newborns is defined in LIST as "hospital-based full supportive care,
-        #  including oxygen, IV fluids, IV antibiotics, blood transfusion, phototherapy, etc. as needed"
 
         if facility_type == 'hp':
             # Define the consumables
@@ -1085,10 +1075,14 @@ class NewbornOutcomes(Module):
                 self.apply_risk_of_preterm_respiratory_distress_syndrome(individual_id)
 
             self.apply_risk_of_not_breathing_at_birth(individual_id)
-            # todo: secondary risk of enceph here?
+            self.apply_risk_of_encephalopathy(individual_id, timing='after_birth')
             self.set_death_and_disability_status(individual_id)
 
     def link_twins(self, child_one, child_two, mother_id):
+        """
+        This function links twin pairs via sibiling IDs and is called by the BirthEvent in the Labour module
+        :param individual_id: individual_id
+        """
         df = self.sim.population.props
 
         df.at[child_one, 'nb_twin_sibling_id'] = child_two
@@ -1129,6 +1123,15 @@ class NewbornOutcomes(Module):
             m['twin_count'] = 1
         elif df.at[mother_id, 'ps_multiple_pregnancy'] & m['twin_count'] == 1:
             m['twin_count'] = 2
+
+            # If the mother has lost a baby who was part of a twin pair during labour, we schedule the death here (
+            # to monitor stillbirths)
+            if m['single_twin_still_birth']:
+                death = demography.InstantaneousDeath(self.sim.modules['Demography'],
+                                                      child_id,
+                                                      cause='intrapartum stillbirth')
+                self.sim.schedule_event(death, self.sim.date)
+                return
 
         elif ~df.at[mother_id, 'ps_multiple_pregnancy']:
             df.at[child_id, 'nb_is_twin'] = False
@@ -1273,7 +1276,37 @@ class NewbornOutcomes(Module):
             if (m['delivery_setting'] == 'home_birth') and (df.at[child_id, 'nb_not_breathing_at_birth'] or
                                                             df.at[child_id, 'nb_early_onset_neonatal_sepsis'] or
                                                             (df.at[child_id, 'nb_encephalopathy'] != 'none')):
-                if self.eval(params['nb_newborn_equations']['care_seeking_for_complication'], child_id):
+
+                # TODO: AT- this is really messy r.e. twins and care seeking (and some of the twins stuff overall)
+                #  It would be really helpful for the twins to be linked (via sibling ids) before the birth functions
+                #  run for both twins - probably not possible
+
+                # Store if the first twin in a twin pair had complications
+                if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
+                    m['twin_one_comps'] = True
+
+                # If, when this function ran for the firs twin in a twin pair, they experienced complications and the
+                # mother sought care AND now the second twin has complications- we assume careseeking will happen
+                # automatically
+                if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 2) and m['twin_one_comps'] and \
+                        m['sought_care_for_twin_one']:
+                    will_seek_care = True
+
+                # Similarly, if the mother didnt seek care for twin one, and twin two also has complications, she will
+                # not seek care
+                elif df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 2) and m['twin_one_comps'] and \
+                        not m['sought_care_for_twin_one']:
+                    will_seek_care = False
+
+                else:
+                    will_seek_care = self.eval(params['nb_newborn_equations']['care_seeking_for_complication'],
+                                               child_id)
+
+                if will_seek_care:
+
+                    if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
+                        m['sought_care_for_twin_one'] = True
+
                     nci[child_id]['sought_care_for_complication'] = True
 
                     event = HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
@@ -1287,8 +1320,6 @@ class NewbornOutcomes(Module):
                                                      f'FacilityLevel1 for child {child_id }whose mother has sought care'
                                                      f'after a complication has developed following a home_birth')
 
-                # todo: (ask tc) is it likely that careseeking would happen quick enough to prevent hypoxia --> enceph
-                #  (should  this risk just be applied to all NBAB homebirth newborns)
                 else:
                     if df.at[child_id, 'nb_not_breathing_at_birth'] and (df.at[child_id, 'nb_encephalopathy'] ==
                                                                          'none'):
@@ -1304,11 +1335,8 @@ class NewbornOutcomes(Module):
                         # changes to the data frame accordingly
                         self.set_death_and_disability_status(child_id)
 
-                        # TODO TC: I'm not sure how best to handle death from prematurity after day one? Currently
-                        #  I apply risk of death just once following birth, and whilst most of the deaths will occur
-                        #  then there needs to be some kind of spread- should i just do a random weighted draw across
-                        #  the first week/month of life?
-
+        # Finally we call the further_on_birth... functions from the other maternal health modules. They are only called
+        # once per pregnancy (hence why conditioned on single pregnancies or first birth of a twin set)
         if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
                                                           m['twin_count'] == 1):
             self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)
@@ -1331,7 +1359,7 @@ class NewbornOutcomes(Module):
 
         # TODO: AT- currently this works as all these disabilities are life long, so mapping to the property
         #  (which doesnt get reset) is perfect - however, on the month that someone is born they will only need to
-        #  accrue disability for the days theyve been alive
+        #  accrue disability for the days theyve been alive- can we discuss
 
         # Disability properties are mapped to DALY weights and stored for the health burden module
         health_values_1 = df.loc[df.is_alive, 'nb_retinopathy_prem'].map(
@@ -1463,10 +1491,7 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(HSI_Event, Individu
 
         if not df.at[person_id, 'nb_death_after_birth']:
             self.module.immunisations(person_id)
-            self.module.hiv_prophylaxis_and_referral(person_id)
-
-            # TODO: TC- I've assumed that neonates with complications will need some kind of inpatient care.
-            #  This will need to be linked to NICU when we get there
+            self.module.hiv_screening_for_at_risk_newborns(person_id)
 
             # Surviving neonates with complications on day 1 are admitted to the inpatient event which lives in the
             # Postnatal Supervisor module
@@ -1514,8 +1539,6 @@ class BreastfeedingStatusUpdateEventSixMonths(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         child = df.loc[individual_id]
 
-        # todo: twins?
-
         if not child.is_alive:
             return
 
@@ -1552,7 +1575,6 @@ class BreastfeedingStatusUpdateEventTwoYears(Event, IndividualScopeEventMixin):
 
         df.at[individual_id, 'nb_breastfeeding_status'] = 'none'
 
-        # todo: breastfeeding could continue on past this point
 
 class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is NewbornOutcomesLoggingEvent. The event runs every year and calculates yearly

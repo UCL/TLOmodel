@@ -255,6 +255,8 @@ class PregnancySupervisor(Module):
         self.load_parameters_from_dataframe(dfd)
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module
+        # TODO: AT - currently Im working all dalys (pregnancy, labour and postnatal) related to maternal outcomes of
+        #  pregnancy in this module - maybe this should be included in a central 'maternity' module - see PR comment
         if 'HealthBurden' in self.sim.modules.keys():
             params['ps_daly_weights'] = \
                 {'abortion': self.sim.modules['HealthBurden'].get_daly_weight(352),
@@ -266,8 +268,11 @@ class PregnancySupervisor(Module):
                  'severe_aph': self.sim.modules['HealthBurden'].get_daly_weight(338),
                  'chorio': self.sim.modules['HealthBurden'].get_daly_weight(340),
                  'mild_anaemia': self.sim.modules['HealthBurden'].get_daly_weight(476),
+                 'mild_anaemia_pp': self.sim.modules['HealthBurden'].get_daly_weight(476),
                  'moderate_anaemia': self.sim.modules['HealthBurden'].get_daly_weight(480),
+                 'moderate_anaemia_pp': self.sim.modules['HealthBurden'].get_daly_weight(478),
                  'severe_anaemia': self.sim.modules['HealthBurden'].get_daly_weight(478),
+                 'severe_anaemia_pp': self.sim.modules['HealthBurden'].get_daly_weight(478),
                  'eclampsia': self.sim.modules['HealthBurden'].get_daly_weight(861),
                  'hypertension': self.sim.modules['HealthBurden'].get_daly_weight(343),
                  'gest_diab': self.sim.modules['HealthBurden'].get_daly_weight(971),
@@ -330,7 +335,10 @@ class PregnancySupervisor(Module):
                 params['baseline_prob_early_labour_onset'],
                 Predictor('ps_premature_rupture_of_membranes').when(True, params['rr_preterm_labour_post_prom']),
                 Predictor('ac_receiving_calcium_supplements').when(True, params['treatment_effect_calcium_ptl'])),
-                # TODO: effect of chorio?/ ASBU
+            #   Predictor('ps_chorioamnionitis').when('histological', params['rr_preterm_labour_chorio'])
+            #                                     .when('clinical', params['rr_preterm_labour_chorio'])),
+            # TODO: finalise effect of chorioamnionitis
+
 
             # This equation calculates a womans monthly risk of developing anaemia during her pregnancy. This is
             # currently influenced by nutritional deficiencies and malaria status
@@ -347,6 +355,7 @@ class PregnancySupervisor(Module):
                     lambda x: params['rr_anaemia_if_b12_deficient']
                     if x & self.deficiencies_in_pregnancy.element_repr('b12') else 1)),
             #     Predictor('ma_is_infected').when(True, params['rr_anaemia_maternal_malaria'])),
+            # TODO: finalise effect of malaria
 
             # This equation calculates a womans monthly risk of developing pre-eclampsia during her pregnancy. This is
             # currently influenced by receipt of calcium supplementation
@@ -390,7 +399,8 @@ class PregnancySupervisor(Module):
             # pregnancy.
             'premature_rupture_of_membranes': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['prob_prom_per_month']), # TODO: effect of chorio?
+                params['prob_prom_per_month']),
+            # TODO: add the effect of chorioamnionits on PROM
 
             # This equation calculates a womans risk of developing chorioamnionitis following PROM .
             'chorioamnionitis': LinearModel(
@@ -410,6 +420,7 @@ class PregnancySupervisor(Module):
                                              .when('severe_gest_htn', params['rr_still_birth_severe_gest_htn'])
                                              .when('severe_pre_eclamp', params['rr_still_birth_severe_pre_eclamp'])),
             #    Predictor('ma_is_infected').when(True, params['rr_still_birth_maternal_malaria'])),
+            # TODO: finalise effect of malaria
 
             # This equation calculates a risk of dying after ectopic pregnancy and is mitigated by treatment
             'ectopic_pregnancy_death': LinearModel(
@@ -435,7 +446,7 @@ class PregnancySupervisor(Module):
                                                                       params['treatment_effect_post_abortion_care'])),
 
             # This equation calculates a risk of still birth following an antepartum haemorrhage
-            'antepartum_haemorrhage_stillbirth': LinearModel(
+            'antepartum_haemorrhage_still_birth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_antepartum_haem_stillbirth']),
 
@@ -568,6 +579,13 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_emergency_event'] = False
 
     def further_on_birth_pregnancy_supervisor(self, mother_id):
+        """
+        This function is called by the on_birth function of NewbornOutcomes module. This function contains additional
+        code related to the pregnancy supervisor module that should be ran on_birth for all births - it has been
+        parcelled into functions to ensure each modules (pregnancy,antenatal care, labour, newborn, postnatal) on_birth
+        code is ran in the correct sequence (as this can vary depending on how modules are registered)
+        :param mother_id: mothers individual id
+        """
         df = self.sim.population.props
         mni = self.mother_and_newborn_info
 
@@ -578,6 +596,9 @@ class PregnancySupervisor(Module):
         # We currently assume that hyperglycemia due to gestational diabetes resolves following birth
         if df.at[mother_id, 'ps_gest_diab'] != 'none':
             df.at[mother_id, 'ps_gest_diab'] = 'none'
+
+            # We store the date of resolution for women who were aware of their diabetes (as the DALY weight only
+            # occurs after diagnosis)
             if not pd.isnull(mni[mother_id]['gest_diab_onset']):
                 self.store_dalys_in_mni(mother_id, 'gest_diab_resolution')
 
@@ -593,30 +614,55 @@ class PregnancySupervisor(Module):
         logger.debug(key='message', data='This is PregnancySupervisor reporting my health values')
         monthly_daly = dict()
 
-        # todo: mni should only contain women that are alive
-        # todo: move the division of acute complications into daly definition?
-        # todo: wont now which time period of pregnancy is contributing to dalys unless we specifiy in mni
+        # TODO: AT - I hope this is close to what we discussed r.e. capturing DALYs using onset/resolution dates in the
+        #  mni dict. The store_dalys_in_mni function (below) is called whenever I want to 'onset' a maternal
+        #  complication in any of the modules. Hopefully this set up means if we need to change to a dataframe that
+        #  would be ok. Please let me know if you think we should make any changes.
 
+        # TODO: main issue at the moment is that as all the maternal DALYs are calculated here I wont know what
+        #  point is contributing dalys for the same complication occuring at different time points in pregnancy
+        #  (i.e. anaemia, sepsis etc etc)
+
+        # First we define a function that calculates disability associated with 'acute' complications of pregnancy
         def acute_daly_calculation(complication):
+            # We cycle through each complication for all women in the mni, if the condition has never ocurred then we
+            # pass
             if pd.isnull(mni[person][f'{complication}_onset']):
                 return
-            elif (self.sim.date - DateOffset(months=1)) < mni[person][f'{complication}_onset'] <= self.sim.date:
-                print(f'{person} has acrued dalys due to {complication} which is acute and last for 7 days')
 
+            # If the complication has onset within the last month...
+            elif (self.sim.date - DateOffset(months=1)) < mni[person][f'{complication}_onset'] <= self.sim.date:
+
+                # We store 7 days worth of disability associate with that complication
                 monthly_daly[person] += p[f'{complication}'] / 52
                 mni[person][f'{complication}_onset'] = pd.NaT
 
+                # Ensure some weight is assigned
+                # TODO: this may crash if the onset day is exactly one month ago (no weight)
                 assert 1 > monthly_daly[person] > 0
 
+        # Next we define a function that calculates disability associated with 'chronic' complications of pregnancy
         def chronic_daly_calculations(complication):
             if pd.isnull(mni[person][f'{complication}_onset']):
                 return
             else:
+                # TODO: this is a quick fix for complications where treatment is given, they resolve, and then
+                #  onset again before this function is called (i.e. anaemia) meaning the resolution date is less
+                #  than the onset date. needs a proper fix
+
+                if not mni[person][f'{complication}_resolution'] > mni[person][f'{complication}_onset']:
+                    mni[person][f'{complication}_resolution'] = pd.NaT
+                    return
+
                 if pd.isnull(mni[person][f'{complication}_resolution']):
-                    print(f'{person} has acrued dalys due to {complication} which has not yet resolved')
+
+                    # If the complication has not yet resolved, and started more than a month ago, the woman gets a
+                    # months disability
                     if mni[person][f'{complication}_onset'] < (self.sim.date - DateOffset(months=1)):
                         monthly_daly[person] += p[f'{complication}']
 
+                    # Otherwise, if the complication started this month she gets a daly weight relative to the number of
+                    # days she has experience the complication
                     elif (self.sim.date - DateOffset(months=1)) < mni[person][
                          f'{complication}_onset'] <= self.sim.date:
                         days_since_onset = pd.Timedelta((self.sim.date - mni[person][f'{complication}_onset']),
@@ -626,9 +672,16 @@ class PregnancySupervisor(Module):
                         assert 1 > monthly_daly[person] > 0
 
                 else:
+                    # If the complication has resolved, check the dates make sense
                     print(person)
+                    print(complication)
+                    print(mni[person][f'{complication}_onset'])
+                    print(mni[person][f'{complication}_resolution'])
+
                     assert mni[person][f'{complication}_resolution'] > mni[person][f'{complication}_onset']
 
+                    # We calculate how many days she has been free of the complication this month to determine how many
+                    # days she has suffered from the complication this month
                     days_free_of_comp_this_month = pd.Timedelta((self.sim.date - mni[person][f'{complication}_'
                                                                                              f'resolution']), unit='d')
                     mid_way_calc = (self.sim.date - DateOffset(months=1)) + days_free_of_comp_this_month
@@ -637,23 +690,28 @@ class PregnancySupervisor(Module):
                     monthly_daly[person] += daly_weight
 
                     assert 1 > monthly_daly[person] >= 0
+                    # Reset the dates to stop additional disability being applied
                     mni[person][f'{complication}_onset'] = pd.NaT
                     mni[person][f'{complication}_resolution'] = pd.NaT
 
+        # Then for each alive person in the MNI we cycle through all the complications that can lead to disability and
+        # calculate their individual daly weight for the month
         for person in list(mni):
             if df.at[person, 'is_alive']:
                 monthly_daly[person] = 0
 
-                for complication in ['abortion', 'abortion_haem', 'abortion_sep', 'ectopic_rupture',
+                for complication in ['abortion', 'abortion_haem', 'abortion_sep', 'ectopic', 'ectopic_rupture',
                                      'mild_mod_aph', 'severe_aph', 'chorio', 'eclampsia', 'obstructed_labour',
                                      'sepsis', 'uterine_rupture',  'mild_mod_pph', 'severe_pph', 'secondary_pph']:
                     acute_daly_calculation(complication=complication)
 
-                for complication in ['ectopic', 'hypertension', 'gest_diab', 'mild_anaemia', 'moderate_anaemia',
-                                     'severe_anaemia', 'vesicovaginal_fistula', 'rectovaginal_fistula']:
+                for complication in ['hypertension', 'gest_diab', 'mild_anaemia', 'moderate_anaemia',
+                                     'severe_anaemia', 'mild_anaemia_pp', 'moderate_anaemia_pp', 'severe_anaemia_pp',
+                                     'vesicovaginal_fistula', 'rectovaginal_fistula']:
                     chronic_daly_calculations(complication=complication)
 
-                print(f'DALYs for person {person}', monthly_daly[person])
+                if mni[person]['delete_mni']:
+                    del mni[person]
 
         daly_series = pd.Series(data=0, index=df.index[df.is_alive])
         daly_series[monthly_daly.keys()] = list(monthly_daly.values())
@@ -661,6 +719,17 @@ class PregnancySupervisor(Module):
         return daly_series
 
     def store_dalys_in_mni(self, individual_id, mni_variable):
+        """
+        This function is called across the maternal health modules and stores onset/resolution dates for complications
+        in an indiviudals MNI dictionary
+        :param individual_id: individual_id
+        :param mni_variable: key of mni dict being assigned
+        :return:
+        """
+        # TODO: AT- is this what you had in mind (we could easily change to dataframe in this function if needed).
+        #  We just pass a string (i.e. 'mild_anaemia_onset') to this property to store the date (all keys are defined
+        #  in the pregnancy supervisor event)
+
         mni = self.mother_and_newborn_info
 
         logger.debug(key='msg', data=f'{mni_variable} is being stored for mother {individual_id }on {self.sim.date}')
@@ -763,7 +832,6 @@ class PregnancySupervisor(Module):
         """
         df = self.sim.population.props
         params = self.parameters
-        mni = self.mother_and_newborn_info
 
         # Women who have an abortion have key pregnancy variables reset
         df.at[individual_id, 'is_pregnant'] = False
@@ -806,6 +874,7 @@ class PregnancySupervisor(Module):
             logger.debug(key='msg', data=f'Mother {individual_id} has experienced one or more complications following '
                                          f'abortion and may choose to seek care')
 
+            # We assume only women with complicated abortions will experience disability
             self.store_dalys_in_mni(individual_id, 'abortion_onset')
 
             self.care_seeking_pregnancy_loss_complications(individual_id)
@@ -822,6 +891,9 @@ class PregnancySupervisor(Module):
         """
         df = self.sim.population.props
         params = self.parameters
+
+        # TODO - AT this is an example of a block of code that is replicated within the postnatal module that could
+        #  maybe live in a central module (or combine pregnancy and postnatal supervisor events)
 
         # This function iterates through the three key anaemia causing deficiencies (iron, folate
         # and b12) and determines a the risk of onset for a subset of pregnant women. Following this, woman have a
@@ -892,6 +964,7 @@ class PregnancySupervisor(Module):
         df.loc[anaemia.loc[anaemia].index, 'ps_anaemia_in_pregnancy'] = random_choice_severity
 
         for person in anaemia.loc[anaemia].index:
+            # We store onset date of anaemia according to severity, as weights vary
             self.store_dalys_in_mni(person, f'{df.at[person, "ps_anaemia_in_pregnancy"]}_anaemia_onset')
 
         if not anaemia.loc[anaemia].empty:
@@ -907,7 +980,6 @@ class PregnancySupervisor(Module):
         """
         df = self.sim.population.props
         params = self.parameters
-        mni = self.mother_and_newborn_info
 
         gest_diab = self.apply_linear_model(
             params['ps_linear_equations']['gest_diab'], df.loc[df['is_alive'] & df['is_pregnant'] &
@@ -936,6 +1008,9 @@ class PregnancySupervisor(Module):
         df = self.sim.population.props
         params = self.parameters
 
+        # TODO - AT this is an example of a block of code that is replicated within the postnatal module that could
+        #  maybe live in a central module (or combine pregnancy and postnatal supervisor events)
+
         #  ----------------------------------- RISK OF PRE-ECLAMPSIA ----------------------------------------------
         # We assume all women must developed a mild pre-eclampsia/gestational hypertension before progressing to a more
         # severe disease - we do not apply incidence of severe pre-eclampsia/eclampsia explicitly like this - see
@@ -959,8 +1034,8 @@ class PregnancySupervisor(Module):
         gest_hypertension = self.apply_linear_model(
             params['ps_linear_equations']['gest_htn'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest)
-                   & (df['ps_htn_disorders'] == 'none') & (df['ps_ectopic_pregnancy'] == 'none') & ~df['hs_is_inpatient']
-                   & ~df['la_currently_in_labour']])
+                   & (df['ps_htn_disorders'] == 'none') & (df['ps_ectopic_pregnancy'] == 'none')
+                   & ~df['hs_is_inpatient'] & ~df['la_currently_in_labour']])
 
         df.loc[gest_hypertension.loc[gest_hypertension].index, 'ps_htn_disorders'] = 'gest_htn'
         self.pregnancy_disease_tracker['new_onset_gest_htn'] += len(gest_hypertension.loc[gest_hypertension])
@@ -977,6 +1052,9 @@ class PregnancySupervisor(Module):
         """
         df = self.sim.population.props
         params = self.parameters
+
+        # TODO - AT this is an example of a block of code that is replicated within the postnatal module that could
+        #  maybe live in a central module (or combine pregnancy and postnatal supervisor events)
 
         def apply_risk(selected, risk_of_gest_htn_progression):
 
@@ -1078,6 +1156,8 @@ class PregnancySupervisor(Module):
             for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
                 self.sim.schedule_event(demography.InstantaneousDeath(self, person,
                                                                       cause='maternal'), self.sim.date)
+
+                # TODO: I've made sure the MNI gets deleted whenever a woman dies (across the modules)
                 del mni[person]
 
     def apply_risk_of_placental_abruption(self, gestation_of_interest):
@@ -1128,6 +1208,7 @@ class PregnancySupervisor(Module):
             random_choice_severity
         df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index, 'ps_emergency_event'] = True
 
+        # Store onset to calculate daly weights
         for person in antepartum_haemorrhage.loc[antepartum_haemorrhage].index:
             if df.at[person, 'ps_antepartum_haemorrhage'] != 'severe':
                 self.store_dalys_in_mni(person, 'mild_mod_aph_onset')
@@ -1141,14 +1222,18 @@ class PregnancySupervisor(Module):
         self.pregnancy_disease_tracker['antepartum_haem'] += len(antepartum_haemorrhage.loc[antepartum_haemorrhage])
 
     def apply_risk_of_onset_and_progression_antenatal_infections(self, gestation_of_interest):
+        """
+        This function applies risk of new onset chorioamnionitis and risk of progression of chorioamnionitis state
+        to a slice of the dataframe. It is called by PregnancySupervisorEvent.
+        :param gestation_of_interest: gestation in weeks
+        """
         df = self.sim.population.props
         params = self.parameters
 
-        # todo: ? add  S/ASBU
-        # todo: increase risk of prom, increase risk of PTL (independent effects)
-        # todo: ask clinician r.e. self resolution
+        # TODO: consider adding risk of asymotompatic/symptomatic UTI
 
-        # Progression/resolution
+        # First assess if women with asymptomatic histological chorioamnionitis will develop clinical disease this
+        # month
         histo_chorio = df.loc[df['is_alive'] & df['is_pregnant'] &
                               (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
                               (df['ps_ectopic_pregnancy'] == 'none') & ~df['hs_is_inpatient'] &
@@ -1158,6 +1243,7 @@ class PregnancySupervisor(Module):
         progression = pd.Series(self.rng.random_sample(len(histo_chorio)) < params['prob_progression_to_clinical_'
                                                                                    'chorio'], index=histo_chorio.index)
 
+        # If not, we assume there infection has resolved
         df.loc[progression.loc[progression].index, 'ps_chorioamnionitis'] = 'clinical'
         df.loc[progression.loc[~progression].index, 'ps_chorioamnionitis'] = 'none'
 
@@ -1166,7 +1252,7 @@ class PregnancySupervisor(Module):
 
         df.loc[progression.loc[progression].index, 'ps_emergency_event'] = True
 
-        # Onset
+        # Here we use a linear equation to determine if women without infection will develop infection
         chorio = self.apply_linear_model(
             params['ps_linear_equations']['chorioamnionitis'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
@@ -1181,8 +1267,11 @@ class PregnancySupervisor(Module):
         type_of_chorio = pd.Series(self.rng.random_sample(len(chorio.loc[chorio])) < params['prob_clinical_chorio'],
                                    index=chorio.loc[chorio].index)
 
+        # Assume women with clinical chorioamnionitis may seek care
         df.loc[type_of_chorio.loc[type_of_chorio].index, 'ps_chorioamnionitis'] = 'clinical'
         df.loc[type_of_chorio.loc[type_of_chorio].index, 'ps_emergency_event'] = True
+
+        # Similarly assume only symptomatic infection leads to DALYs
         for person in type_of_chorio.loc[type_of_chorio].index:
             self.store_dalys_in_mni(person, 'chorio_onset')
 
@@ -1211,14 +1300,6 @@ class PregnancySupervisor(Module):
         if not prom.loc[prom].empty:
             logger.debug(key='message', data=f'The following women have experience premature rupture of membranes'
                                              f'{prom.loc[prom].index}')
-
-            # Women who have not sought care have a risk of infection applied via ChorioamnionitisEvent
-            # (Women who have sought care will have increase risk of infection during delivery which is indicated as
-            # treatment for PROM in later stages)
-            # for person in prom.loc[prom].index:
-            #    if df.at[person, 'ps_chorioamnionitis'] == 'none':
-            #        self.sim.schedule_event(ChorioamnionitisEvent(self, person),
-            #                                (self.sim.date + pd.Timedelta(days=7)))
 
     def apply_risk_of_preterm_labour(self, gestation_of_interest):
         """
@@ -1275,6 +1356,7 @@ class PregnancySupervisor(Module):
         :param women: women who are experiencing stillbirth
         """
         df = self.sim.population.props
+        mni = self.mother_and_newborn_info
 
         self.pregnancy_disease_tracker['antenatal_stillbirth'] += len(women)
 
@@ -1283,6 +1365,12 @@ class PregnancySupervisor(Module):
 
         # And reset relevant variables
         df.loc[women.index, 'is_pregnant'] = False
+
+        # We turn the 'delete_mni' key to true- so after the next daly poll this womans entry is deleted
+        for person in women.index:
+            mni[person]['delete_mni'] = True
+
+        # Call functions across the modules to ensure properties are rest
         self.sim.modules['Labour'].reset_due_date(
             ind_or_df='data_frame', id_or_index=women.index, new_due_date=pd.NaT)
 
@@ -1295,6 +1383,33 @@ class PregnancySupervisor(Module):
         if not women.empty:
             logger.debug(key='message', data=f'The following women have have experienced an antepartum'
                                              f' stillbirth,{women}')
+
+    def update_variables_post_still_birth_for_individual(self, individual_id):
+        """
+        This function is called to reset all the relevant pregnancy and treatment variables for a woman who undergoes
+        stillbirth outside of the PregnancySupervisor polling event.
+        :param individual_id: individual_id
+        """
+        df = self.sim.population.props
+        mni = self.mother_and_newborn_info
+
+        logger.debug(key='message', data=f'person {individual_id} has experience an antepartum stillbirth on '
+                                         f'date {self.sim.date}')
+
+        self.pregnancy_disease_tracker['antenatal_stillbirth'] += 1
+
+        df.at[individual_id, 'ps_prev_stillbirth'] = True
+        df.at[individual_id, 'is_pregnant'] = False
+        mni[individual_id]['delete_mni'] = True
+
+        self.sim.modules['Labour'].reset_due_date(
+            ind_or_df='individual', id_or_index=individual_id, new_due_date=pd.NaT)
+
+        self.pregnancy_supervisor_property_reset(
+            ind_or_df='individual', id_or_index=individual_id)
+
+        self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
+            ind_or_df='individual', id_or_index=individual_id)
 
     def apply_risk_of_still_birth(self, gestation_of_interest):
         """
@@ -1323,7 +1438,7 @@ class PregnancySupervisor(Module):
         # We select the appropriate women
         post_term_women = df.loc[
             df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   (df['ps_ectopic_pregnancy'] == 'none') & ~df['hs_is_inpatient'] & ~df['la_currently_in_labour']]
+            (df['ps_ectopic_pregnancy'] == 'none') & ~df['hs_is_inpatient'] & ~df['la_currently_in_labour']]
 
         # Apply a probability they will seek care for induction
         care_seekers = pd.Series(self.rng.random_sample(len(post_term_women)) < params['prob_seek_care_induction'],
@@ -1342,38 +1457,11 @@ class PregnancySupervisor(Module):
                                                                 tclose=self.sim.date + DateOffset(days=7))
 
         # We apply risk of still birth to those who dont seek care
-        # todo check this is right
         non_care_seekers = df.loc[care_seekers.loc[~care_seekers].index]
         still_birth = self.apply_linear_model(
             params['ps_linear_equations']['antenatal_stillbirth'], non_care_seekers)
 
         self.update_variables_post_still_birth_for_data_frame(still_birth.loc[still_birth])
-
-    def update_variables_post_still_birth_for_individual(self, individual_id):
-        """
-        This function is called to reset all the relevant pregnancy and treatment variables for a woman who undergoes
-        stillbirth outside of the PregnancySupervisor polling event.
-        :param individual_id: individual_id
-        """
-        df = self.sim.population.props
-        mni = self.mother_and_newborn_info
-
-        logger.debug(key='message', data=f'person {individual_id} has experience an antepartum stillbirth on '
-                                         f'date {self.sim.date}')
-
-        self.pregnancy_disease_tracker['antenatal_stillbirth'] += 1
-
-        df.at[individual_id, 'ps_prev_stillbirth'] = True
-        df.at[individual_id, 'is_pregnant'] = False
-
-        self.sim.modules['Labour'].reset_due_date(
-            ind_or_df='individual', id_or_index=individual_id, new_due_date=pd.NaT)
-
-        self.pregnancy_supervisor_property_reset(
-            ind_or_df='individual', id_or_index=individual_id)
-
-        self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
-            ind_or_df='individual', id_or_index=individual_id)
 
     def care_seeking_pregnancy_loss_complications(self, individual_id):
         """
@@ -1384,9 +1472,6 @@ class PregnancySupervisor(Module):
         """
         df = self.sim.population.props
         params = self.parameters
-
-        # TODO: TC- This is very simplified at the moment and assume that probability of care seeking is the same for
-        #  induced abortion, spontaneous abortion and ectopic pregnancy
 
         # Determine probability of care seeking via the linear model
         if self.rng.random_sample() < params['ps_linear_equations']['care_seeking_pregnancy_loss'].predict(
@@ -1453,7 +1538,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # contains information about the onset of complications in order to calculate monthly DALYs
         newly_pregnant = df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == 3)]
         for person in newly_pregnant.index:
-            mni[person] = {'abortion_onset': pd.NaT,
+            mni[person] = {'delete_mni': False,
+                           'abortion_onset': pd.NaT,
                            'abortion_haem_onset': pd.NaT,
                            'abortion_sep_onset': pd.NaT,
                            'eclampsia_onset': pd.NaT,
@@ -1462,7 +1548,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                            'chorio_onset': pd.NaT,
                            'ectopic_onset': pd.NaT,
                            'ectopic_rupture_onset': pd.NaT,
-                           'ectopic_resolution': pd.NaT,
                            'gest_diab_onset': pd.NaT,
                            'gest_diab_diagnosed_onset': pd.NaT,
                            'gest_diab_resolution': pd.NaT,
@@ -1472,15 +1557,19 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                            'moderate_anaemia_resolution': pd.NaT,
                            'severe_anaemia_onset': pd.NaT,
                            'severe_anaemia_resolution': pd.NaT,
+                           'mild_anaemia_pp_onset': pd.NaT,
+                           'mild_anaemia_pp_resolution': pd.NaT,
+                           'moderate_anaemia_pp_onset': pd.NaT,
+                           'moderate_anaemia_pp_resolution': pd.NaT,
+                           'severe_anaemia_pp_onset': pd.NaT,
+                           'severe_anaemia_pp_resolution': pd.NaT,
                            'hypertension_onset': pd.NaT,
                            'hypertension_resolution': pd.NaT,
-
                            'obstructed_labour_onset': pd.NaT,
                            'sepsis_onset': pd.NaT,
                            'uterine_rupture_onset': pd.NaT,
                            'mild_mod_pph_onset': pd.NaT,
                            'severe_pph_onset': pd.NaT,
-
                            'secondary_pph_onset': pd.NaT,
                            'vesicovaginal_fistula_onset': pd.NaT,
                            'vesicovaginal_fistula_resolution': pd.NaT,
@@ -1532,9 +1621,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         if not multiples.loc[multiples].empty:
             logger.debug(key='message', data=f'The following women are pregnant with multiples, '
                                              f'{multiples.loc[multiples].index}')
-
-        # TODO: TC- we should finalise the decision on whether we need to have multiple pregnancies in the model (happy
-        #  to discuss)
 
         #  -----------------------------APPLYING RISK OF PLACENTA PRAEVIA  -------------------------------------------
         # Next,we apply a one off risk of placenta praevia (placenta will grow to cover the cervix either partially or
@@ -1636,7 +1722,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             self.module.apply_risk_of_gestational_diabetes(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_placental_abruption(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_antepartum_haemorrhage(gestation_of_interest=gestation_of_interest)
-            self.module.apply_risk_of_onset_and_progression_antenatal_infections(gestation_of_interest=gestation_of_interest)
+            self.module.apply_risk_of_onset_and_progression_antenatal_infections(
+                gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_premature_rupture_of_membranes(gestation_of_interest=gestation_of_interest)
 
         for gestation_of_interest in [27, 31, 35, 40]:
@@ -1685,6 +1772,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # death and pregnancy loss (other wise this risk is applied following treatment in the
         # CareOfWomenDuringPregnancy module)
 
+        # TODO: AT - i couldnt think of a neater way to do this without a for loop (happy to discuss)
+
         if not care_seeking.loc[~care_seeking].empty:
             logger.debug(key='message', data=f'The following women will not seek care after experiencing a '
                                              f'pregnancy emergency: {care_seeking.loc[~care_seeking].index}')
@@ -1693,7 +1782,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                 risk_of_death = params['ps_linear_equations'][f'{complication}_death'].predict(
                     df.loc[[person]])[person]
                 risk_of_still_birth = params['ps_linear_equations'][
-                    f'{complication}_stillbirth'].predict(df.loc[[person]])[person]
+                    f'{complication}_still_birth'].predict(df.loc[[person]])[person]
 
                 if self.module.rng.random_sample() < risk_of_death:
                     return 'death'
@@ -1728,7 +1817,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                 if mother.ps_chorioamnionitis == 'clinical':
                     outcome_ch = apply_risk_of_outcomes_to_individual('chorioamnionitis')
                 else:
-                    outcome_ch = 'none' # todo: resolution - ask clinician?
+                    outcome_ch = 'none'
 
                 # For women who will die we schedule the InstantaneousDeath Event
                 if outcome_aph == 'death' or outcome_ec == 'death' or outcome_ch == 'death':
@@ -1736,7 +1825,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                  data=f'mother {person} has died following a pregnancy emergency on '
                                       f'date {self.sim.date}')
 
-                    self.sim.schedule_event(demography.InstantaneousDeath(self, person,
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, person,
                                                                           cause='maternal'), self.sim.date)
                     self.module.pregnancy_disease_tracker['antenatal_death'] += 1
                     del mni[person]
@@ -1746,6 +1835,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                     self.module.update_variables_post_still_birth_for_individual(person)
 
         # ============================ POST TERM RISK OF STILLBIRTH ==================================================
+        # Finally we determine if women who are post term will seek care for induction/experience stillbirth
         for gestation_of_interest in [41, 42, 43, 44, 45]:
             self.module.induction_care_seeking_and_still_birth_risk(gestation_of_interest=gestation_of_interest)
 
@@ -1761,7 +1851,6 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
-        mni = self.module.mother_and_newborn_info
 
         # Check only the right women have arrived here
         assert df.at[individual_id, 'ps_ectopic_pregnancy'] == 'not_ruptured'
@@ -1771,7 +1860,7 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
         if not df.at[individual_id, 'is_alive']:
             return
 
-        # reset pregnancy variables
+        # reset pregnancy variables and store onset for daly calcualtion
         df.at[individual_id, 'is_pregnant'] = False
         self.module.store_dalys_in_mni(individual_id, 'ectopic_onset')
 
@@ -1817,8 +1906,6 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
         self.module.store_dalys_in_mni(individual_id, 'ectopic_rupture_onset')
 
         # We see if this woman will now seek care following rupture
-        # TODO: I think ruptured ectopic/severe abortion complications like haemorrhage should make women more
-        #  likely to seek care but currently they dont
         self.module.care_seeking_pregnancy_loss_complications(individual_id)
 
         # We delayed the death event by three days to allow any treatment effects to mitigate risk of death
@@ -1857,19 +1944,24 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
 
             self.module.pregnancy_disease_tracker[f'{self.cause}_death'] += 1
             self.module.pregnancy_disease_tracker['antenatal_death'] += 1
-            del mni[individual_id]
+            if individual_id in mni:
+                mni[individual_id]['delete_mni'] = True
 
         else:
             # Otherwise we reset any variables
             if self.cause == 'ectopic_pregnancy':
                 df.at[individual_id, 'ps_ectopic_pregnancy'] = 'none'
-                self.module.store_dalys_in_mni(individual_id, 'ectopic_resolution')
+                if individual_id in mni:
+                    mni[individual_id]['delete_mni'] = True
+
             else:
                 self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury')
                 self.sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.unset(individual_id,
                                                                                        'mva', 'd_and_c', 'misoprostol',
                                                                                        'antibiotics', 'blood_products',
                                                                                        'injury_repair')
+                if individual_id in mni:
+                    mni[individual_id]['delete_mni'] = True
 
 
 class GestationalDiabetesGlycaemicControlEvent(Event, IndividualScopeEventMixin):
@@ -1914,6 +2006,10 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
+
+        # TODO- AT- is it better to just store the onset of each complication within the logger (i.e. a row in a DF
+        #  called 'anaemia' for each woman with anaemia) and do all the maths in analysis file after the sim run? I
+        #  dont think i actually need to use these pregnancy_disease_tracker dictionaries if I do it that way...
 
         # Previous Year...
         one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
