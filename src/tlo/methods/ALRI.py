@@ -1869,8 +1869,9 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
             return
 
         # Confirm that this is event is occurring during a current episode of ALRI
-        if not (df.at[person_id, 'ri_ALRI_event_date_of_onset']
-               ) <= self.sim.date <= (df.at[person_id, 'ri_end_of_last_alri_episode']):
+        if not (
+                   df.at[person_id, 'ri_ALRI_event_date_of_onset']) <= self.sim.date <= \
+               (df.at[person_id, 'ri_end_of_last_alri_episode']):
             return
 
         # This event should only run after the person has received a treatment during this episode
@@ -2432,9 +2433,9 @@ class HSI_IMCI_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin)
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.module.do_alri_treatment(
+            self.sim.modules['ALRI'].do_alri_treatment(
                 person_id=person_id,
-                prob_of_cure=self.module.parameters[
+                prob_of_cure=self.sim.modules['ALRI'].parameters[
                     'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment']
             )
             care_management_info.update({
@@ -2555,9 +2556,9 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEven
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.module.do_alri_treatment(
+            self.sim.modules['ALRI'].do_alri_treatment(
                 person_id=person_id,
-                prob_of_cure=self.module.parameters[
+                prob_of_cure=self.sim.modules['ALRI'].parameters[
                     'prob_of_cure_for_pneumonia_with_severe_complication_given_IMCI_severe_pneumonia_treatment']
             )
             care_management_info.update({

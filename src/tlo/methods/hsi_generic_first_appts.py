@@ -42,12 +42,9 @@ logger.setLevel(logging.INFO)
 class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
-
     It is the generic appointment that describes the first interaction with the health system following the onset of
     acute generic symptoms.
-
     It occurs at Facility_Level = 1
-
     """
 
     def __init__(self, module, person_id):
@@ -105,9 +102,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             # It's a child:
             logger.debug(key='message',
                          data='Run the ICMI algorithm for this child [dx_algorithm_child]')
-
-            # This will direct to the DxAlgorithmChild where IMCI occurs at each facility level
-            self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self)
 
             # If one of the symptoms is diarrhoea, then run the diarrhoea for a child routine:
             if 'diarrhoea' in symptoms:
@@ -273,12 +267,9 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
-
     It is the generic appointment that describes the first interaction with the health system following the onset of
     acute generic symptoms.
-
     It occurs at Facility_Level = 0
-
     """
 
     def __init__(self, module, person_id):
@@ -315,12 +306,9 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
-
     It is the generic appointment that describes the first interaction with the health system following the onset of
     acute generic symptoms.
-
     It occurs at Facility_Level = 1
-
     """
 
     def __init__(self, module, person_id):
@@ -361,15 +349,15 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             # -----  COMPLICATION DURING BIRTH  -----
             if person_id in labour_list:
                 if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                        & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
+                    & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
                     event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
                     health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
-            # -----  COMPLICATION AFTER BIRTH  -----
+                # -----  COMPLICATION AFTER BIRTH  -----
                 if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                        & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
+                    & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
                     event = HSI_Labour_ReceivesCareForPostpartumPeriod(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
@@ -432,7 +420,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                         topen=self.sim.date,
                     )
         # else:
-            # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
+        # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:
