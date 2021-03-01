@@ -1542,13 +1542,17 @@ class RTI(Module):
         # check this person is injured, search they have an injury code that isn't "none"
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries,
                                                       self.PROPERTIES.get('rt_injury_1').categories[1:])
-        assert counts > 0, 'This person has asked for medical treatment despite not being injured'
+        assert (counts > 0) or self.sim.modules['SymptomManager'].spurious_symptoms, \
+            'This person has asked for medical treatment despite not being injured'
+
         # If they meet the requirements, send them to HSI_RTI_MedicalIntervention for further treatment
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_RTI_Medical_Intervention(module=self, person_id=person_id),
-            priority=0,
-            topen=self.sim.date
-        )
+        # Using counts condition to stop spurious symptoms progressing people through the model
+        if counts > 0:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_RTI_Medical_Intervention(module=self, person_id=person_id),
+                priority=0,
+                topen=self.sim.date
+            )
 
     def rti_do_for_major_surgeries(self, person_id, count):
         """
@@ -5229,7 +5233,9 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
 
 
             # Find the injuries that have been treated and then schedule a recovery date
-            columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
+            columns, codes = \
+                road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id,
+                                                                               df.loc[person_id, 'rt_injuries_to_cast'])
             for col in columns:
                 # todo: update this with recovery times for casted broken hips/pelvis/femurs
                 # todo: update this with recovery times for casted dislocated hip

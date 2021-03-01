@@ -1,38 +1,32 @@
 import os
 import time
 from pathlib import Path
-import numpy as np
 import pytest
 import pandas as pd
 from tlo import Date, Simulation
 from tlo.methods import (
-    demography,
-    enhanced_lifestyle,
-    healthburden,
-    healthsystem,
-    rti,
-    symptommanager,
-    healthseekingbehaviour,
     contraception,
+    demography,
     depression,
+    dx_algorithm_adult,
+    dx_algorithm_child,
+    enhanced_lifestyle,
     epi,
     epilepsy,
-    dx_algorithm_child,
-    dx_algorithm_adult,
-    hiv,
-    tb,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
     labour,
     newborn_outcomes,
-    oesophagealcancer,
     pregnancy_supervisor,
-    male_circumcision,
-    Metadata,
-
+    rti,
+    symptommanager
 )
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 1000
+
 
 def check_dtypes(simulation):
     # check types of columns in dataframe, check they are the same, list those that aren't
@@ -70,6 +64,7 @@ def test_run():
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
+
 
 def test_module_properties():
     """ A test to see whether the logical flows through the module are followed"""
@@ -122,36 +117,13 @@ def test_module_properties():
     for person in those_injured_index:
         the_result_of_test.append([df.loc[person, 'rt_date_inj'] < date for date in
                                    df.loc[person, 'rt_date_to_remove_daly'] if date is not pd.NaT])
-    did_all_pass_test = [True if all(list) else False for list in the_result_of_test]
+    did_all_pass_test = [True if all(test_list) else False for test_list in the_result_of_test]
     assert all(did_all_pass_test)
 
     assert (df.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_date_inj'] < date for date in
             df.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_date_to_remove_daly'])
     check_dtypes(sim)
 
-def test_with_spurious_symptoms():
-    # Run the model with spurious symptoms
-
-    sim = Simulation(start_date=start_date)
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-                 rti.RTI(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
-                 )
-
-    sim.seed_rngs(0)
-
-    sim.make_initial_population(n=popsize)
-    params = sim.modules['RTI'].parameters
-    params['allowed_interventions'] = 'none'
-    sim.simulate(end_date=end_date)
-    check_dtypes(sim)
 
 def test_with_more_modules():
     # Run the simulation with multiple models, see if any errors or unexpected changes to the datatypes occurs,
