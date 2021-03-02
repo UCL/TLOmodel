@@ -196,7 +196,7 @@ def batch_run(path_to_json, work_directory, draw, sample):
 
 
 @cli.command()
-@click.argument("job_id", type=str)
+@click.option("job_id", "--id", type=str)
 @click.argument("config_file", type=click.Path(exists=True))  # TODO: remove argument
 def batch_query(job_id, config_file):
     config = load_config(config_file)
@@ -205,7 +205,29 @@ def batch_query(job_id, config_file):
         config["BATCH"]["KEY"],
         config["BATCH"]["URL"]
     )
-    return
+
+    job_keys = ('id', 'creation_time', 'last_modified', 'state', 'state_transition_time')
+
+    if job_id is not None:
+        job = batch_client.job.get(job_id=job_id)
+        job = job.as_dict()
+
+        for j in job_keys:
+            print(f"{j}: {job[j]}")
+    else:
+        # get list of all batch jobs
+        jobs = batch_client.job.list(
+            job_list_options=batch_models.JobListOptions(
+                expand='stats'
+            )
+        )
+        for job in jobs:
+            jad = job.as_dict()
+            for j in job_keys:
+                print(f"{j}: {jad[j]}")
+            print(f"num_succeeded_tasks: {jad['stats']['num_succeeded_tasks']}")
+            print(f"num_failed_tasks: {jad['stats']['num_failed_tasks']}")
+            print()
 
 
 def load_config(config_file):
@@ -402,7 +424,7 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     auto_pool_specification = batch_models.AutoPoolSpecification(
         pool_lifetime_option="job",
         pool=pool,
-        keep_alive=True,
+        # keep_alive=True,
     )
 
     pool_info = batch_models.PoolInformation(
