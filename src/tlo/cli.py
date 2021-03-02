@@ -225,8 +225,9 @@ def batch_query(job_id, config_file):
             jad = job.as_dict()
             for j in job_keys:
                 print(f"{j}: {jad[j]}")
-            print(f"num_succeeded_tasks: {jad['stats']['num_succeeded_tasks']}")
-            print(f"num_failed_tasks: {jad['stats']['num_failed_tasks']}")
+            if "stats" in jad:
+                print(f"num_succeeded_tasks: {jad['stats']['num_succeeded_tasks']}")
+                print(f"num_failed_tasks: {jad['stats']['num_failed_tasks']}")
             print()
 
 
