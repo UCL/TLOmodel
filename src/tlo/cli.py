@@ -1,5 +1,5 @@
 """The TLOmodel command-line interface"""
-
+import configparser
 import datetime
 import json
 import math
@@ -71,7 +71,7 @@ def batch_submit(scenario_file, config_file):
     job_id = Path(scenario_file).stem + "-" + timestamp
 
     # Path in Azure storage where to store the files for this job
-    azure_directory = f"{config['USERNAME']}/{job_id}"
+    azure_directory = f"{config['DEFAULT']['USERNAME']}/{job_id}"
 
     batch_client = get_batch_client(
         config["BATCH"]["NAME"],
@@ -232,9 +232,9 @@ def batch_query(job_id, config_file):
 
 def load_config(config_file):
     """Load configuration for accessing Batch services"""
-    with open(Path(config_file).as_posix()) as json_file:
-        config = json.load(json_file)
-    server_config = load_server_config(config["KV_URI"], config["TENANT_ID"])
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    server_config = load_server_config(config["AZURE"]["KV_URI"], config["AZURE"]["TENANT_ID"])
     merged_config = {**config, **server_config}
     return merged_config
 
