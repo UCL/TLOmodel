@@ -109,3 +109,7 @@ venv.bak/
 # TLO .rst files
 docs/reference/tlo*.rst
 
+# TLO configuration
+tlo.conf
+
+
