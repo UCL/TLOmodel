@@ -21,11 +21,16 @@ class Simplifiedbirths(Module):
 
     PARAMETERS = {
         'birth_prob': Parameter(
-            Types.REAL, 'probability of births in a month')
+            Types.REAL, 'probability of births in a month'),
+        'prob_breastfeeding_type': Parameter(
+            Types.LIST, 'probabilities for breastfeeding status: none, non_exclusive, exclusive')
+
     }
 
     PROPERTIES = {
-        'si_date_of_last_delivery': Property(Types.DATE, 'woman\'s date of last delivery')
+        'si_date_of_last_delivery': Property(Types.DATE, 'woman\'s date of last delivery'),
+        'nb_breastfeeding_status':  Property(Types.CATEGORICAL, 'Breastfeeding status of a newborn',
+                                             categories=['none', 'non_exclusive', 'exclusive']),
     }
 
     # Declare the non-generic symptoms that this module will use.
@@ -42,6 +47,7 @@ class Simplifiedbirths(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
         """
         self.parameters['birth_prob'] = 0.01
+        self.parameters['prob_breastfeeding_type'] = [0.101, 0.289, 0.61]
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -51,6 +57,7 @@ class Simplifiedbirths(Module):
 
         # Assign the characteristics
         df.loc[df.is_alive, 'si_date_of_last_delivery'] = pd.NaT
+        df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'none'
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -75,9 +82,14 @@ class Simplifiedbirths(Module):
         :param child_id: the new child
         """
         df = self.sim.population.props
+        params = self.parameters
 
         # Assign the date of last delivery to a newborn
         df.at[child_id, 'si_date_of_last_delivery'] = pd.NaT
+
+        # Assign breastfeeding status to newborns
+        random_draw = self.rng.choice(('none', 'non_exclusive', 'exclusive'), p=params['prob_breastfeeding_type'])
+        df.at[child_id, 'nb_breastfeeding_status'] = random_draw
 
         logger.info('%s|post_birth_info|%s',
                     self.sim.date,
@@ -105,12 +117,12 @@ class SimplifiedBirthsEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props  # get the population dataframe
 
-        selected_women = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high)
+        selected_women = df.loc[(df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high)]
 
         # print(selected_women)
 
         # determining which woman should give birth
-        new_births = (self.module.rng.random_sample(size=len(selected_women)) < self.birth_prob)
+        new_births = (self.module.rng.random_sample(size=len(selected_women.index)) < self.birth_prob)
 
         births_ids = selected_women.index[new_births]
 
