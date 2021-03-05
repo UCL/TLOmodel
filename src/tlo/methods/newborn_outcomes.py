@@ -1087,6 +1087,7 @@ class NewbornOutcomes(Module):
 
         df.at[child_one, 'nb_twin_sibling_id'] = child_two
         df.at[child_two, 'nb_twin_sibling_id'] = child_one
+        df.at[mother_id, 'ps_multiple_pregnancy'] = False
 
         # and log the twin pair
         twin_birth = {'twin_1_id': child_one,
@@ -1119,9 +1120,12 @@ class NewbornOutcomes(Module):
             mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
             m = mni[mother_id]
 
-        if df.at[mother_id, 'ps_multiple_pregnancy'] & m['twin_count'] == 0:
+        if df.at[mother_id, 'ps_multiple_pregnancy'] and m['twin_count'] == 0:
+            df.at[child_id, 'nb_is_twin'] = True
             m['twin_count'] = 1
-        elif df.at[mother_id, 'ps_multiple_pregnancy'] & m['twin_count'] == 1:
+
+        elif df.at[mother_id, 'ps_multiple_pregnancy'] and m['twin_count'] == 1:
+            df.at[child_id, 'nb_is_twin'] = True
             m['twin_count'] = 2
 
             # If the mother has lost a baby who was part of a twin pair during labour, we schedule the death here (

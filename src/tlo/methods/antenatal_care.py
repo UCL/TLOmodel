@@ -2333,6 +2333,8 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
                                                                gest_age_next_contact)
 
         if can_anc_run:
+            if person_id == 122:
+                x = 'h'
 
             logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
             logger.debug(key='msg', data=f'mother {person_id}presented for ANC 7 at a '
@@ -2406,7 +2408,7 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
             self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
 
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 7, squeeze_factor,
+        can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 8, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:

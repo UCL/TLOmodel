@@ -37,6 +37,12 @@ class PregnancySupervisor(Module):
         # across the length of pregnancy and the postnatal period
         self.mother_and_newborn_info = dict()
 
+        # This variable will store a Bitset handler for the property ps_deficiencies_in_pregnancy
+        self.deficiencies_in_pregnancy = None
+
+        # This variable will store a Bitset handler for the property ps_abortion_complications
+        self.abortion_complication = None
+
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHBURDEN}
 
@@ -513,8 +519,10 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = 'none'
         df.loc[df.is_alive, 'ps_placenta_praevia'] = False
         df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
+        df.loc[df.is_alive, 'ps_deficiencies_in_pregnancy'] = 0
         df.loc[df.is_alive, 'ps_anaemia_in_pregnancy'] = 'none'
         df.loc[df.is_alive, 'ps_will_attend_four_or_more_anc'] = False
+        df.loc[df.is_alive, 'ps_abortion_complications'] = 0
         df.loc[df.is_alive, 'ps_prev_spont_abortion'] = False
         df.loc[df.is_alive, 'ps_prev_stillbirth'] = False
         df.loc[df.is_alive, 'ps_htn_disorders'] = 'none'
@@ -564,8 +572,10 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_ectopic_pregnancy'] = 'none'
         df.at[child_id, 'ps_placenta_praevia'] = False
         df.at[child_id, 'ps_multiple_pregnancy'] = False
+        df.at[child_id, 'ps_deficiencies_in_pregnancy'] = 0
         df.at[child_id, 'ps_anaemia_in_pregnancy'] = 'none'
         df.at[child_id, 'ps_will_attend_four_or_more_anc'] = False
+        df.at[child_id, 'ps_abortion_complications'] = 0
         df.at[child_id, 'ps_prev_spont_abortion'] = False
         df.at[child_id, 'ps_prev_stillbirth'] = False
         df.at[child_id, 'ps_htn_disorders'] = 'none'
@@ -623,8 +633,11 @@ class PregnancySupervisor(Module):
         #  point is contributing dalys for the same complication occuring at different time points in pregnancy
         #  (i.e. anaemia, sepsis etc etc)
 
+        # TODO: TH says that if the weight is for an event (i.e. obstructed labour) then they get the whole weight,
+        #  otherwise if it is for a state then it should be daily - review weights to decide
+
         # First we define a function that calculates disability associated with 'acute' complications of pregnancy
-        def acute_daly_calculation(complication):
+        def acute_daly_calculation(person, complication):
             # We cycle through each complication for all women in the mni, if the condition has never ocurred then we
             # pass
             if pd.isnull(mni[person][f'{complication}_onset']):
@@ -642,7 +655,7 @@ class PregnancySupervisor(Module):
                 assert 1 > monthly_daly[person] > 0
 
         # Next we define a function that calculates disability associated with 'chronic' complications of pregnancy
-        def chronic_daly_calculations(complication):
+        def chronic_daly_calculations(person, complication):
             if pd.isnull(mni[person][f'{complication}_onset']):
                 return
             else:
@@ -650,20 +663,20 @@ class PregnancySupervisor(Module):
                 #  onset again before this function is called (i.e. anaemia) meaning the resolution date is less
                 #  than the onset date. needs a proper fix
 
-                if not mni[person][f'{complication}_resolution'] > mni[person][f'{complication}_onset']:
-                    mni[person][f'{complication}_resolution'] = pd.NaT
-                    return
+                #if not mni[person][f'{complication}_resolution'] > mni[person][f'{complication}_onset']:
+                #    mni[person][f'{complication}_resolution'] = pd.NaT
+                #    return
 
                 if pd.isnull(mni[person][f'{complication}_resolution']):
 
                     # If the complication has not yet resolved, and started more than a month ago, the woman gets a
                     # months disability
-                    if mni[person][f'{complication}_onset'] < (self.sim.date - DateOffset(months=1)):
+                    if mni[person][f'{complication}_onset'] <= (self.sim.date - DateOffset(months=1)):
                         monthly_daly[person] += p[f'{complication}']
 
                     # Otherwise, if the complication started this month she gets a daly weight relative to the number of
                     # days she has experience the complication
-                    elif (self.sim.date - DateOffset(months=1)) < mni[person][
+                    elif (self.sim.date - DateOffset(months=1)) <= mni[person][
                          f'{complication}_onset'] <= self.sim.date:
                         days_since_onset = pd.Timedelta((self.sim.date - mni[person][f'{complication}_onset']),
                                                         unit='d')
@@ -703,12 +716,12 @@ class PregnancySupervisor(Module):
                 for complication in ['abortion', 'abortion_haem', 'abortion_sep', 'ectopic', 'ectopic_rupture',
                                      'mild_mod_aph', 'severe_aph', 'chorio', 'eclampsia', 'obstructed_labour',
                                      'sepsis', 'uterine_rupture',  'mild_mod_pph', 'severe_pph', 'secondary_pph']:
-                    acute_daly_calculation(complication=complication)
+                    acute_daly_calculation(complication=complication, person=person)
 
                 for complication in ['hypertension', 'gest_diab', 'mild_anaemia', 'moderate_anaemia',
                                      'severe_anaemia', 'mild_anaemia_pp', 'moderate_anaemia_pp', 'severe_anaemia_pp',
                                      'vesicovaginal_fistula', 'rectovaginal_fistula']:
-                    chronic_daly_calculations(complication=complication)
+                    chronic_daly_calculations(complication=complication, person=person)
 
                 if mni[person]['delete_mni']:
                     del mni[person]
@@ -755,7 +768,6 @@ class PregnancySupervisor(Module):
         set[id_or_index, 'ps_gestational_age_in_weeks'] = 0
         set[id_or_index, 'ps_date_of_anc1'] = pd.NaT
         set[id_or_index, 'ps_placenta_praevia'] = False
-        set[id_or_index, 'ps_multiple_pregnancy'] = False
         set[id_or_index, 'ps_anaemia_in_pregnancy'] = 'none'
         set[id_or_index, 'ps_will_attend_four_or_more_anc'] = False
         set[id_or_index, 'ps_htn_disorders'] = 'none'
@@ -963,6 +975,9 @@ class PregnancySupervisor(Module):
 
         df.loc[anaemia.loc[anaemia].index, 'ps_anaemia_in_pregnancy'] = random_choice_severity
 
+        # todo: can i remove this for loop using this logic (severity will be different for each person)
+        # new_onset_eclampsia.index.to_series().apply(self.store_dalys_in_mni, mni_variable='eclampsia_onset')
+
         for person in anaemia.loc[anaemia].index:
             # We store onset date of anaemia according to severity, as weights vary
             self.store_dalys_in_mni(person, f'{df.at[person, "ps_anaemia_in_pregnancy"]}_anaemia_onset')
@@ -1095,8 +1110,7 @@ class PregnancySupervisor(Module):
 
                 self.pregnancy_disease_tracker['new_onset_severe_pe'] += len(new_onset_severe_pre_eclampsia)
 
-                for person in new_onset_severe_pre_eclampsia.index:
-                    df.at[person, 'ps_emergency_event'] = True
+                df.loc[new_onset_severe_pre_eclampsia.index, 'ps_emergency_event'] = True
 
             # This process is then repeated for women who have developed eclampsia
             assess_status_change_for_eclampsia = (current_status != "eclampsia") & (new_status == "eclampsia")
@@ -1107,9 +1121,8 @@ class PregnancySupervisor(Module):
                                                  f'pregnancy {new_onset_eclampsia.index} on {self.sim.date}')
                 self.pregnancy_disease_tracker['new_onset_eclampsia'] += len(new_onset_eclampsia)
 
-                for person in new_onset_eclampsia.index:
-                    df.at[person, 'ps_emergency_event'] = True
-                    self.store_dalys_in_mni(person, 'eclampsia_onset')
+                df.loc[new_onset_eclampsia.index, 'ps_emergency_event'] = True
+                new_onset_eclampsia.index.to_series().apply(self.store_dalys_in_mni, mni_variable='eclampsia_onset')
 
         # Here we select the women in the data frame who are at risk of progression.
         women_not_on_anti_htns = \
@@ -1206,14 +1219,15 @@ class PregnancySupervisor(Module):
         # We store the severity of the bleed and signify this woman is experiencing an emergency event
         df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index, 'ps_antepartum_haemorrhage'] = \
             random_choice_severity
-        df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index, 'ps_emergency_event'] = True
 
         # Store onset to calculate daly weights
-        for person in antepartum_haemorrhage.loc[antepartum_haemorrhage].index:
-            if df.at[person, 'ps_antepartum_haemorrhage'] != 'severe':
-                self.store_dalys_in_mni(person, 'mild_mod_aph_onset')
-            else:
-                self.store_dalys_in_mni(person, 'severe_aph_onset')
+        severe_women = (df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index, 'ps_antepartum_haemorrhage']
+                        == 'severe')
+        severe_women.index.to_series().apply(self.store_dalys_in_mni, mni_variable='severe_aph_onset')
+
+        non_severe_women = (df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index,
+                                   'ps_antepartum_haemorrhage'] != 'severe')
+        non_severe_women.index.to_series().apply(self.store_dalys_in_mni, mni_variable='mild_mod_aph_onset')
 
         if not antepartum_haemorrhage.loc[antepartum_haemorrhage].empty:
             logger.debug(key='message', data=f'The following women are experiencing an antepartum haemorrhage,'
@@ -1247,8 +1261,7 @@ class PregnancySupervisor(Module):
         df.loc[progression.loc[progression].index, 'ps_chorioamnionitis'] = 'clinical'
         df.loc[progression.loc[~progression].index, 'ps_chorioamnionitis'] = 'none'
 
-        for person in progression.loc[progression].index:
-            self.store_dalys_in_mni(person, 'chorio_onset')
+        progression.loc[progression].index.to_series().apply(self.store_dalys_in_mni, mni_variable='chorio_onset')
 
         df.loc[progression.loc[progression].index, 'ps_emergency_event'] = True
 
@@ -1272,8 +1285,8 @@ class PregnancySupervisor(Module):
         df.loc[type_of_chorio.loc[type_of_chorio].index, 'ps_emergency_event'] = True
 
         # Similarly assume only symptomatic infection leads to DALYs
-        for person in type_of_chorio.loc[type_of_chorio].index:
-            self.store_dalys_in_mni(person, 'chorio_onset')
+        type_of_chorio.loc[type_of_chorio].index.to_series().apply(self.store_dalys_in_mni,
+                                                                   mni_variable='chorio_onset')
 
         df.loc[type_of_chorio.loc[~type_of_chorio].index, 'ps_chorioamnionitis'] = 'histological'
 
@@ -1337,6 +1350,12 @@ class PregnancySupervisor(Module):
             elif df.at[person, 'ps_gestational_age_in_weeks'] == 35:
                 poss_day_onset = (37 - 35) * 7
                 onset_day = self.rng.randint(0, poss_day_onset)
+            else:
+                # If any other gestational ages are pass, the function should end
+                logger.debug(key='msg', data=f'Mother {person} was passed to the preterm birth function at'
+                                             f' {df.at[person, "ps_gestational_age_in_weeks"]}. No changes will be '
+                                             f'made')
+                return
 
             # Due date is updated
             new_due_date = self.sim.date + DateOffset(days=onset_day)
@@ -1484,9 +1503,6 @@ class PregnancySupervisor(Module):
 
             from tlo.methods.hsi_generic_first_appts import (
                 HSI_GenericEmergencyFirstApptAtFacilityLevel1)
-
-            # TODO: AT- I had a similar issue with circular dependencies when importing this event, hence why I import
-            #  here. Hope that's ok for now
 
             event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
                 module=self,

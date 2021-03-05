@@ -1494,7 +1494,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         # If the child of interest is the first born in a twin pair, we store the id number of their sibling to allow
         # application of risk to both babies
         if df.at[child_id, 'nb_is_twin']:
-            child_two_id = df.loc[df.at[child_id, 'nb_twin_sibling_id']]
+            child_two_id = df.at[child_id, 'nb_twin_sibling_id']
             child_two = df.loc[child_two_id]
 
         # Run a number of checks to ensure only the correct women/children arrive here
@@ -1502,7 +1502,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         assert (self.sim.date - mother.la_date_most_recent_delivery) < pd.to_timedelta(7, unit='d')
         assert child.age_days < 7
         if df.at[child_id, 'nb_is_twin']:
-            assert child_two_id.age_days < 7
+            assert child_two.age_days < 7
 
         # If both the mother and newborn have died then this even wont run (it is possible for one or the other to have
         # died prior to this event- hence repeat checks on is_alive throughout)
@@ -1798,7 +1798,7 @@ class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScope
                 return
 
         elif df.at[child_id, 'nb_is_twin']:
-            child_two_id = df.loc[df.at[child_id, 'nb_twin_sibling_id']]
+            child_two_id = df.at[child_id, 'nb_twin_sibling_id']
             assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 0
             assert df.at[child_two_id, 'pn_pnc_visits_neonatal'] == 0
 
@@ -1867,7 +1867,7 @@ class HSI_PostnatalSupervisor_PostnatalCareContactTwo(HSI_Event, IndividualScope
                 return
 
         elif df.at[child_id, 'nb_is_twin']:
-            child_two_id = df.loc[df.at[child_id, 'nb_twin_sibling_id']]
+            child_two_id = df.at[child_id, 'nb_twin_sibling_id']
             if df.at[child_id, 'is_alive']:
                 assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 1
             if df.at[child_two_id, 'is_alive']:
