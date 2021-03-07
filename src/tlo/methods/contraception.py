@@ -622,7 +622,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
 
         # Define the necessary information for a Population level HSI
         self.TREATMENT_ID = 'Contraception'
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = 1    # need to comment out line 285 in healthsystem.py: assert 'ACCEPTED_FACILITY_LEVEL' not in dir(hsi_event)
 
     def apply(self, population, squeeze_factor):
         df = self.sim.population.props
