@@ -55,6 +55,7 @@ class Contraception(Module):
                                     'proportional change in contraception_discontinuation rate for each year,\
                                      2010 to 2100'),
         # TODO: add relative fertility rates for HIV+ compared to HIV- by age group from Marston et al 2017
+        'contraception_consumables': Parameter(Types.DATA_FRAME, 'consumables'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -81,6 +82,7 @@ class Contraception(Module):
         'date_of_last_pregnancy': Property(Types.DATE,
                                            'Date of the last pregnancy of this individual'),
         'co_unintended_preg': Property(Types.BOOL, 'Unintended pregnancies following contraception failure'),
+        #TODO: add link to unintended preg from not using
         'male_condom_received': Property(Types.BOOL, 'Male condom consumable received')
     }
 
@@ -115,6 +117,8 @@ class Contraception(Module):
         self.parameters['r_init_year'] = workbook['r_init_year'].set_index('year')
 
         self.parameters['r_discont_year'] = workbook['r_discont_year'].set_index('year')
+
+        self.parameters['contraception_consumables'] = workbook['consumables']
 
         # =================== ARRANGE INPUTS FOR USE BY REGULAR EVENTS =============================
 
@@ -624,7 +628,81 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        # repeat the following for each contraceptive
+
+        # contraception_consumables = self.parameters['contraception_consumables']
+        # contraception_users = df.co_contraception.isin(['pill', 'IUD', 'injections', 'implant', 'male_condom',  \
+        #                                                 'female_sterilization', 'other_modern'])
+        # consumables_pkgs = self.sim.modules['HealthSystem'].parameters['Consumables'].isin(['Pill', 'IUD',  \
+        #                                                                                     'Injectable', 'Implant',  \
+        #                                                                                     'Male condomm',  \
+        #                                                                                     'Female sterilization',  \
+        #                                                                                     'Female Condom'])
+        #
+        # # loop through the following for each contraceptive
+        # for consumables_pkgs in contraception_users:
+        #   TODO: make this loop by mapping the names of the contraception packages in Consumables to the names in contraception as per above
+
+
+        # Each contraceptive done individually now pending mapping / looping as per above
+
+        # Pill
+        pill_users = df.loc[df.co_contraception == 'pill']
+        pkg_code_pill = pd.unique(consumables.loc[
+                                             consumables['Intervention_Pkg']
+                                             == 'Pill',
+                                             'Intervention_Pkg_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_pill: 0}, 'Item_Code': {}}
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_needed)
+
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pill]:
+            df.loc[pill_users.index, 'pill_received'] = True
+
+        pill_counts = df.pill_received.value_counts()
+
+
+        # IUD
+        IUD_users = df.loc[df.co_contraception == 'IUD']
+        pkg_code_IUD = pd.unique(consumables.loc[
+                                             consumables['Intervention_Pkg']
+                                             == 'IUD',
+                                             'Intervention_Pkg_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_IUD: 3}, 'Item_Code': {}}
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_needed)
+
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_IUD]:
+            df.loc[IUD_users.index, 'IUD_received'] = True
+
+        IUD_counts = df.IUD_received.value_counts()
+
+
+        # Implant
+        implant_users = df.loc[df.co_contraception == 'implant']
+        pkg_code_implant = pd.unique(consumables.loc[
+                                             consumables['Intervention_Pkg']
+                                             == 'Implant',
+                                             'Intervention_Pkg_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_implant: 4}, 'Item_Code': {}}
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_needed)
+
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_implant]:
+            df.loc[implant_users.index, 'implant_received'] = True
+
+        implant_counts = df.implant_received.value_counts()
+
+
+        # Male condoms
         male_condom_users = df.loc[df.co_contraception == 'male_condom']
         pkg_code_male_condom = pd.unique(consumables.loc[
                                          consumables['Intervention_Pkg']
@@ -642,13 +720,60 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
 
         male_condom_counts = df.male_condom_received.value_counts()
 
+
+        # Female sterilization
+        female_sterilization_users = df.loc[df.co_contraception == 'female_sterilization']
+        pkg_code_female_sterilization = pd.unique(consumables.loc[
+                                         consumables['Intervention_Pkg']
+                                         == 'Female sterilization',
+                                         'Intervention_Pkg_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_female_sterilization: 5}, 'Item_Code': {}}
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_needed)
+
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_female_sterilization]:
+            df.loc[female_sterilization_users.index, 'female_sterilization_received'] = True
+
+        female_sterilization_counts = df.female_sterilization_received.value_counts()
+
+
+        # Other modern (Female condom)
+        other_modern_users = df.loc[df.co_contraception == 'other_modern']
+        pkg_code_other_modern = pd.unique(consumables.loc[
+                                         consumables['Intervention_Pkg']
+                                         == 'Female Condom',
+                                         'Intervention_Pkg_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_other_modern: 7}, 'Item_Code': {}}
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_needed)
+
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_other_modern]:
+            df.loc[other_modern_users.index, 'female_condom_received'] = True
+
+        female_condom_counts = df.female_condom_received.value_counts()
+
+
+        # Summary and logging
         contraception_consumables_summary = {
+            'pills': sum(pill_counts),
+            'IUDs': sum(IUD_counts),
+            'implants': sum(implant_counts),
             'male_condoms': sum(male_condom_counts),
+            'female_sterilizations': sum(female_sterilization_counts),
+            'female_condoms': sum(female_condom_counts),
         }
 
         logger.info(key='contraception_consumables_summary',
                     data=contraception_consumables_summary,
                     description='contraception_consumables_summary')
+
+
 
     def did_not_run(self):
         logger.debug(key='debug', data='HSI__Contraception: did not run')
