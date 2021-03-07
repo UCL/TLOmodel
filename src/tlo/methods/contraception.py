@@ -653,7 +653,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
                                              'Intervention_Pkg_Code'])[0]
 
         consumables_needed = {'Intervention_Package_Code': {pkg_code_pill: 0}, 'Item_Code': {}}
-        cost_pill = {'Intervention_Package_Code': {pkg_code_pill: 0}, 'Unit_Cost': {}}
+        cost_pill = {'Intervention_Package_Code': {pkg_code_pill: 0}, 'Unit_Cost': {}}.values
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -661,7 +661,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
 
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pill]:
             df.loc[pill_users.index, 'pill_received'] = True
-            df.loc[pill_users.index, 'pill_cost'] = cost_pill
+            df.loc[pill_users.index, 'pill_costs'] = cost_pill
 
         pill_counts = df.pill_received.value_counts()
         pill_costs = df.pill_costs.value_counts()
