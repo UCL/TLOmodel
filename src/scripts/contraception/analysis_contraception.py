@@ -256,7 +256,7 @@ ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Contraception Consumable Costs By Method")
 plt.xlabel("Year")
-plt.ylabel("Consumables used (number using method")
+plt.ylabel("Consumable Costs")
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['pill costs', 'IUD costs', 'injection costs', 'implant costs', 'male condom costs',
             'female sterilization costs', 'female condom costs'])
