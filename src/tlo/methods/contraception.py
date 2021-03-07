@@ -739,7 +739,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
 
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_male_condom]:
             df.loc[male_condom_users.index, 'male_condom_received'] = True
-            df.loc[pill_users.index, 'male_condom_costs'] = cost_male_condom
+            df.loc[male_condom_users.index, 'male_condom_costs'] = cost_male_condom
 
         male_condom_counts = df.male_condom_received.value_counts()
         male_condom_costs = df.male_condom_costs.value_counts()
