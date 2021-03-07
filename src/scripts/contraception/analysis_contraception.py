@@ -201,6 +201,7 @@ Model_implant = com_df.implants
 Model_male_condom = com_df.male_condoms
 Model_female_sterilization = com_df.female_sterilizations
 Model_female_condom = com_df.female_condoms
+Model_pill_costs = com_df.pill_costs
 
 fig, ax = plt.subplots()
 ax.plot(np.asarray(Model_Years), Model_pill)
@@ -210,6 +211,7 @@ ax.plot(np.asarray(Model_Years), Model_implant)
 ax.plot(np.asarray(Model_Years), Model_male_condom)
 ax.plot(np.asarray(Model_Years), Model_female_sterilization)
 ax.plot(np.asarray(Model_Years), Model_female_condom)
+ax.plot(np.asarray(Model_Years), Model_pill_costs)
 
 # format the ticks
 ax.xaxis.set_major_locator(years)
@@ -220,7 +222,7 @@ plt.xlabel("Year")
 plt.ylabel("Consumables used (number using method")
 # plt.gca().set_ylim(0, 50)
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
-plt.legend(['pills', 'IUDs', 'implants', 'male_condoms', 'female_sterilizations',
-            'female condoms'])
+plt.legend(['pills', 'IUDs', 'injections', 'implants', 'male_condoms', 'female_sterilizations',
+            'female condoms', 'pill_costs'])
 plt.savefig(outputpath / ('Contraception Consumables By Method' + datestamp + '.pdf'), format='pdf')
 plt.show()
