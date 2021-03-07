@@ -683,6 +683,25 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
         IUD_counts = df.IUD_received.value_counts()
 
 
+        # injections
+        injections_users = df.loc[df.co_contraception == 'injections']
+        pkg_code_injections = pd.unique(consumables.loc[
+                                             consumables['Intervention_Pkg']
+                                             == 'Injectable',
+                                             'Intervention_Pkg_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_injections: 2}, 'Item_Code': {}}
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_needed)
+
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_injections]:
+            df.loc[injections_users.index, 'injections_received'] = True
+
+        injections_counts = df.injections_received.value_counts()
+
+
         # Implant
         implant_users = df.loc[df.co_contraception == 'implant']
         pkg_code_implant = pd.unique(consumables.loc[
@@ -763,6 +782,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
         contraception_consumables_summary = {
             'pills': sum(pill_counts),
             'IUDs': sum(IUD_counts),
+            'injections': sum(injections_counts),
             'implants': sum(implant_counts),
             'male_condoms': sum(male_condom_counts),
             'female_sterilizations': sum(female_sterilization_counts),

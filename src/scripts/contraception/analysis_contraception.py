@@ -196,7 +196,7 @@ com_df = log_df['tlo.methods.contraception']['contraception_consumables_summary'
 Model_Years = pd.to_datetime(com_df.date)
 Model_pill = com_df.pills
 Model_IUD = com_df.IUDs
-#Model_injections = com_df.injections
+Model_injections = com_df.injections
 Model_implant = com_df.implants
 Model_male_condom = com_df.male_condoms
 Model_female_sterilization = com_df.female_sterilizations
@@ -205,7 +205,7 @@ Model_female_condom = com_df.female_condoms
 fig, ax = plt.subplots()
 ax.plot(np.asarray(Model_Years), Model_pill)
 ax.plot(np.asarray(Model_Years), Model_IUD)
-#ax.plot(np.asarray(Model_Years), Model_injections)
+ax.plot(np.asarray(Model_Years), Model_injections)
 ax.plot(np.asarray(Model_Years), Model_implant)
 ax.plot(np.asarray(Model_Years), Model_male_condom)
 ax.plot(np.asarray(Model_Years), Model_female_sterilization)
