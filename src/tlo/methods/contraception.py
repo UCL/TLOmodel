@@ -731,6 +731,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
                                          'Intervention_Pkg_Code'])[0]
 
         consumables_needed = {'Intervention_Package_Code': {pkg_code_male_condom: 1}, 'Item_Code': {}}
+        cost_male_condom = {'Intervention_Package_Code': {pkg_code_male_condom: 1}, 'Unit_Cost': {}}.values
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -738,9 +739,10 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
 
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_male_condom]:
             df.loc[male_condom_users.index, 'male_condom_received'] = True
+            df.loc[pill_users.index, 'male_condom_costs'] = cost_male_condom
 
         male_condom_counts = df.male_condom_received.value_counts()
-
+        male_condom_costs = df.male_condom_costs.value_counts()
 
         # Female sterilization
         female_sterilization_users = df.loc[df.co_contraception == 'female_sterilization']
@@ -792,6 +794,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
             'female_condoms': sum(female_condom_counts),
             # costs
             'pill_costs': sum(pill_costs),
+            'male_condom_costs': sum(male_condom_costs),
         }
 
         logger.info(key='contraception_consumables_summary',
