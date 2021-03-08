@@ -73,14 +73,14 @@ def test_breastfeeding_simplified_birth_logic():
     # As we've forced all eligible women to give birth, then the the number of women who could be pregnant
     # should equal the number of newborns who have been born
     selected_women = df.loc[(df.sex == 'F') & df.is_alive & df.age_years.between(15, 49)]
-    new_borns = df.loc[df.mother_id >= 0]
-    assert len(selected_women) == (len(new_borns) - 1)
-    # TODO: ask asif about generation of blank  line at the end of the dataframe
+    new_borns = df.loc[df.is_alive & (df.mother_id >= 0)]
+    assert len(selected_women) == len(new_borns)
 
     # Finally we check to make sure all newborns have their breastfeeding status set to exclusive
     assert (df.loc[new_borns.index, 'nb_breastfeeding_status'] == 'exclusive').all().all()
 
-
-#if __name__ == '__main__':
+# TODO: i've commented this out emmanuel as i think it will slow down running your test, if you run pytest in
+#  test_simplified_births you will be able to see output
+# if __name__ == '__main__':
 #    simulation = get_sim()
 #    test_simplified_births_simulation(simulation)
