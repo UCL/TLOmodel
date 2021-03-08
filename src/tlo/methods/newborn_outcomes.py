@@ -245,7 +245,7 @@ class NewbornOutcomes(Module):
         params = self.parameters
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module
-        if 'HealthBurden' in self.sim.modules.keys():
+        if 'HealthBurden' in self.sim.modules:
             params['nb_daly_weights'] = {
                 'mild_motor_cognitive_preterm': self.sim.modules['HealthBurden'].get_daly_weight(357),
                 'mild_motor_preterm': self.sim.modules['HealthBurden'].get_daly_weight(371),
@@ -1670,26 +1670,5 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info(key='neonatal_summary_stats', data=dict_for_output, description='Yearly summary statistics output '
                                                                                     'from the neonatal outcome module')
-
-        # Reset the EventTracker
-        self.module.newborn_complication_tracker = {
-            'early_init_bf': 0,
-            'early_onset_sepsis': 0,
-            'neonatal_sepsis_death': 0,
-            'mild_enceph': 0,
-            'mild_enceph_death': 0,
-            'moderate_enceph': 0,
-            'moderate_enceph_death': 0,
-            'severe_enceph': 0,
-            'severe_enceph_death': 0,
-            'preterm_rds': 0,
-            'respiratory_distress_death': 0,
-            'congenital_anomaly_death': 0,
-            'not_breathing_at_birth': 0,
-            'not_breathing_at_birth_death': 0,
-            'preterm_birth_other_death': 0,
-            't_e_d': 0,
-            'resus': 0,
-            'sep_treatment': 0,
-            'vit_k': 0,
-            'death': 0}
+        for k in self.module.newborn_complication_tracker:
+            self.module.newborn_complication_tracker[k] = 0

@@ -1,6 +1,7 @@
 import pytest
 import os
 import pandas as pd
+import numpy as np
 from pathlib import Path
 
 from tlo import Date, Simulation, logging
@@ -536,7 +537,7 @@ def test_check_first_anc_visit_scheduling():
     assert antenatal_care.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact in hsi_events
 
 
-def test_mni_function_and_daly_calculations():
+def test_store_dalys_in_mni_function_and_daly_calculations():
     """This tesst checks how we calcualte dalys in the model."""
 
     # Set up sim and run for 0 days
@@ -636,9 +637,209 @@ def test_mni_function_and_daly_calculations():
     assert pd.isnull(mni[mother_id]['severe_anaemia_onset'])
     assert pd.isnull(mni[mother_id]['severe_anaemia_resolution'])
 
-    # todo: check expected outcome
+    # We know she has experience 15 days of complication this month, check the function returns the correct daly weight
+    sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] / 365) * 15, 3)
+    reported_weight = round(dalys_from_pregnancy.loc[mother_id], 3)
 
-test_mni_function_and_daly_calculations()
+    assert sev_anemia_weight == reported_weight
 
-def test_pregnancy_supervisor_event_application_of_complications():
+
+def test_calculation_of_gestational_age():
+    """This is a simple test to check that when called, the pregnancy supervisor event updates the age of all womens
+    gestational age correctly"""
+    sim = register_core_modules()
+    sim.make_initial_population(n=100)
+    set_all_women_as_pregnant_and_reset_baseline_parity(sim)
+
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+    sim.event_queue.queue.clear()
+    df = sim.population.props
+
+    pregnant_women = df.is_pregnant & df.is_alive
+
+    # todo: replace for loop
+    for person in pregnant_women.loc[pregnant_women].index:
+        random_days = sim.modules['PregnancySupervisor'].rng.randint(1, 274)
+        df.at[person, 'date_of_last_pregnancy'] = sim.date - pd.DateOffset(days=random_days)
+
+    pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
+    pregnancy_sup.apply(sim.population)
+
+    # todo: THIS TEST DOSENT REALY WORK, ITS LIKE THE PREGNANCY SUPERVISOR EVEN DOESNT RUN ON THE UPDATED VERSION OF
+    #  THE DATAFRAME
+
+    preg_new_slice =df.loc[df.is_pregnant & df.is_alive]
+
+    assert (df.loc[preg_new_slice.index, 'ps_gestational_age_in_weeks'] != 0).all().all()
+
+    for person in preg_new_slice.index:
+        foetal_age_weeks = np.ceil((sim.date - df.at[person, 'date_of_last_pregnancy']) / np.timedelta64(1, 'W'))
+        assert df.at[person, 'ps_gestational_age_in_weeks'] == (foetal_age_weeks + 2)
+
+
+def test_pregnancy_supervisor_anaemia():
+    sim = register_core_modules()
+    sim.make_initial_population(n=100)
+    set_all_women_as_pregnant_and_reset_baseline_parity(sim)
+    turn_off_antenatal_pregnancy_loss(sim)
+
+    # Set the risk of nutritional deficiences to 1
+    params = sim.modules['PregnancySupervisor'].parameters
+    params['prob_iron_def_per_month'] = 1
+    params['prob_folate_def_per_month'] = 1
+    params['prob_b12_def_per_month'] = 1
+
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+    sim.event_queue.queue.clear()
+    df = sim.population.props
+
+    # Move the date forward 1 week and run pregnancy supervisor event to generate mni dictionary (essential for event to
+    # run at higher gestations)
+    sim.date = sim.date + pd.DateOffset(weeks=1)
+    pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
+    pregnancy_sup.apply(sim.population)
+
+    # Move the date forward again, this will mean when the event is run women will be 4 weeks pregnant, this is the
+    # time point at which risk of anaemia is first applied
+    sim.date = sim.date + pd.DateOffset(weeks=1)
+    pregnancy_sup.apply(sim.population)
+
+    # All pregnant women should now have be deficient of iron, folate and B12 (as risk == 1)
+    pregnant_women = df.loc[df.is_pregnant]
+
+    assert (sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_all(
+        df.is_pregnant & df.is_alive, 'iron')).all().all()
+    assert (sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_all(
+        df.is_pregnant & df.is_alive, 'folate')).all().all()
+    assert (sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_all(
+        df.is_pregnant & df.is_alive, 'b12')).all().all()
+
+    # Reset anaemia status
+    df.loc[pregnant_women.index, 'ps_anaemia_in_pregnancy'] = 'none'
+
+    # Set the relative risk of anaemia due to deficiences as very high to force anaemia on all women (women have
+    # baseline risk which is increased by nutrient deficiencies)
+    params['rr_anaemia_if_iron_deficient'] = 10
+    params['rr_anaemia_if_folate_deficient'] = 10
+    params['rr_anaemia_if_b12_deficient'] = 10
+
+    # set probability that any cases of anaemia should be severe
+    params['prob_mild_mod_sev_anaemia'] = [0, 0, 1]
+
+    # Move the date so that women are now 8 weeks pregnant (next time risk of anaemia is applied in the event)
+    sim.date = sim.date + pd.DateOffset(weeks=4)
+    pregnancy_sup.apply(sim.population)
+
+    # Check all women have developed severe anaemia as they should have and that the correct dates have been stored in
+    # the mni
+    assert (df.loc[pregnant_women.index, 'ps_anaemia_in_pregnancy'] == 'severe').all().all()
+    for person in pregnant_women.index:
+        assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]['severe_anaemia_onset'] == sim.date)
+        assert pd.isnull(sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]['severe_anaemia_'
+                                                                                            'resolution'])
+
+    # Reset anaemia status in the women of interest and set that they are receiving iron and folic acid treatment, which
+    # should reduce the risk of iron or folate deficiency (which increase risk of anaemia)
+    df.loc[pregnant_women.index, 'ps_anaemia_in_pregnancy'] = 'none'
+    df.loc[pregnant_women.index, 'ac_receiving_iron_folic_acid'] = True
+
+    # Unset deficiencies
+    sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.unset(pregnant_women.index, 'iron', 'folate',
+                                                                       'b12')
+
+    # Set treatment effect to 0 - this should mean that when the even runs, despite risk of iron/folate deficiency
+    # being 1, women on treatment shoudl be prevented from experiencing deficiency
+    params['treatment_effect_iron_def_ifa'] = 0
+    params['treatment_effect_folate_def_ifa'] = 0
+
+    sim.date = sim.date + pd.DateOffset(weeks=5)
+    pregnancy_sup.apply(sim.population)
+
+    # Check no women are deficient of iron/folate i.e. treatment is working as expected
+    assert (~sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_all(
+        df.is_pregnant & df.is_alive, 'iron')).all().all()
+    assert (~sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_all(
+        df.is_pregnant & df.is_alive, 'folate')).all().all()
+
+
+def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage():
+    sim = register_core_modules()
+    sim.make_initial_population(n=100)
+    set_all_women_as_pregnant_and_reset_baseline_parity(sim)
+    turn_off_antenatal_pregnancy_loss(sim)
+
+    params = sim.modules['PregnancySupervisor'].parameters
+    params['ps_linear_equations']['placenta_praevia'] = \
+        LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1)
+    params['ps_linear_equations']['placental_abruption'] = \
+        LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1)
+    params['ps_linear_equations']['care_seeking_pregnancy_complication'] = \
+        LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1)
+
+    params['prob_aph_placenta_praevia'] = 1
+    params['prob_aph_placental_abruption'] = 1
+    params['prob_mod_sev_aph'] = [0, 1]
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
+    sim.date = sim.date + pd.DateOffset(weeks=1)
+    pregnancy_sup.apply(sim.population)
+
+    pregnant_women = df.loc[df.is_alive & df.is_pregnant]
+    assert (df.loc[pregnant_women.index, 'ps_placenta_praevia']).all().all()
+
+    sim.date = sim.date + pd.DateOffset(weeks=19)
+    pregnancy_sup.apply(sim.population)
+    assert (df.loc[pregnant_women.index, 'ps_placental_abruption']).all().all()
+    assert (df.loc[pregnant_women.index, 'ps_antepartum_haemorrhage'] == 'severe').all().all()
+    for person in pregnant_women.index:
+        assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]['severe_aph_onset'] == sim.date)
+
+    mother_id = pregnant_women.index[0]
+    health_system = sim.modules['HealthSystem']
+    hsi_events = health_system.find_events_for_person(person_id=mother_id)
+    hsi_events = [e.__class__ for d, e in hsi_events]
+    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+    sim.event_queue.queue.clear()
+
+    df.loc[pregnant_women.index, 'ps_antepartum_haemorrhage'] = 'none'
+    df.loc[pregnant_women.index, 'ps_emergency_event'] = False
+
+    params['ps_linear_equations']['care_seeking_pregnancy_complication'] = \
+        LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            0)
+    params['ps_linear_equations']['antepartum_haemorrhage_death'] = \
+        LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1)
+
+    sim.date = sim.date + pd.DateOffset(weeks=5)
+    pregnancy_sup.apply(sim.population)
+
+    mother_id = pregnant_women.index[0]
+    events = sim.find_events_for_person(person_id=mother_id)
+    events = [e.__class__ for d, e in events]
+    assert demography.InstantaneousDeath in events
+
+    # todo check mni delted
+    # todo check stillbirth
+
+test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage()
+def test_pregnancy_supervisor_hypertensive_disorders():
+    pass
+def test_pregnancy_supervisor_gdm():
+    pass
+def test_pregnancy_supervisor_chorio_and_prom():
     pass

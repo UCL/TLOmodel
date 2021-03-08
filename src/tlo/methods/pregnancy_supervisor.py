@@ -663,7 +663,7 @@ class PregnancySupervisor(Module):
                 #  onset again before this function is called (i.e. anaemia) meaning the resolution date is less
                 #  than the onset date. needs a proper fix
 
-                #if not mni[person][f'{complication}_resolution'] > mni[person][f'{complication}_onset']:
+                # if not mni[person][f'{complication}_resolution'] > mni[person][f'{complication}_onset']:
                 #    mni[person][f'{complication}_resolution'] = pd.NaT
                 #    return
 
@@ -686,11 +686,6 @@ class PregnancySupervisor(Module):
 
                 else:
                     # If the complication has resolved, check the dates make sense
-                    print(person)
-                    print(complication)
-                    print(mni[person][f'{complication}_onset'])
-                    print(mni[person][f'{complication}_resolution'])
-
                     assert mni[person][f'{complication}_resolution'] > mni[person][f'{complication}_onset']
 
                     # We calculate how many days she has been free of the complication this month to determine how many
@@ -1220,6 +1215,8 @@ class PregnancySupervisor(Module):
         df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index, 'ps_antepartum_haemorrhage'] = \
             random_choice_severity
 
+        df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index, 'ps_emergency_event'] = True
+
         # Store onset to calculate daly weights
         severe_women = (df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index, 'ps_antepartum_haemorrhage']
                         == 'severe')
@@ -1552,7 +1549,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Here we begin to populate the mni dictionary for each newly pregnant woman. Within this module this dictionary
         # contains information about the onset of complications in order to calculate monthly DALYs
-        newly_pregnant = df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == 3)]
+        newly_pregnant = df.loc[alive_and_preg & (df['ps_gestational_age_in_weeks'] == 3)]
         for person in newly_pregnant.index:
             mni[person] = {'delete_mni': False,
                            'abortion_onset': pd.NaT,
@@ -1605,9 +1602,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         #  ------------------------------APPLYING RISK OF ECTOPIC PREGNANCY -------------------------------------------
         # We use the apply_linear_model function to determine which women will develop ectopic pregnancy - this format
         # is similar to the functions which apply risk of complication
+        new_pregnancy = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == 3)
         ectopic_risk = self.module.apply_linear_model(
-            params['ps_linear_equations']['ectopic'],
-            df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == 3)])
+            params['ps_linear_equations']['ectopic'], df.loc[new_pregnancy])
 
         # Make the appropriate changes to the data frame and log the number of ectopic pregnancies
         df.loc[ectopic_risk.loc[ectopic_risk].index, 'ps_ectopic_pregnancy'] = 'not_ruptured'
@@ -1628,8 +1625,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # changes accordingly
         multiples = self.module.apply_linear_model(
             params['ps_linear_equations']['multiples'],
-            df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == 3) &
-                   (df['ps_ectopic_pregnancy'] == 'none')])
+            df.loc[new_pregnancy & (df['ps_ectopic_pregnancy'] == 'none')])
 
         df.loc[multiples.loc[multiples].index, 'ps_multiple_pregnancy'] = True
         self.module.pregnancy_disease_tracker['multiples'] += len(multiples.loc[multiples])
@@ -1643,8 +1639,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # completely) which will increase likelihood of bleeding later in pregnancy
         placenta_praevia = self.module.apply_linear_model(
             params['ps_linear_equations']['placenta_praevia'],
-            df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == 3) &
-                   (df['ps_ectopic_pregnancy'] == 'none')])
+            df.loc[new_pregnancy & (df['ps_ectopic_pregnancy'] == 'none')])
 
         df.loc[placenta_praevia.loc[placenta_praevia].index, 'ps_placenta_praevia'] = True
         self.module.pregnancy_disease_tracker['placenta_praevia'] += len(placenta_praevia.loc[placenta_praevia])
@@ -1659,8 +1654,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # pregnancy. We use a linear model to determine if women will attend four or more visits
         anc_attendance = self.module.apply_linear_model(
             params['ps_linear_equations']['four_or_more_anc_visits'],
-            df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == 3) &
-                   (df['ps_ectopic_pregnancy'] == 'none')])
+            df.loc[new_pregnancy & (df['ps_ectopic_pregnancy'] == 'none')])
 
         # This property is used  during antenatal care to ensure the right % of women attend four or more visits
         df.loc[anc_attendance.loc[anc_attendance].index, 'ps_will_attend_four_or_more_anc'] = True
@@ -2107,17 +2101,5 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='ps_summary_statistics', data=dict_for_output,
                     description='Yearly summary statistics output from the pregnancy supervisor module')
 
-        self.module.pregnancy_disease_tracker = {'ectopic_pregnancy': 0, 'multiples': 0, 'placenta_praevia': 0,
-                                                 'placental_abruption': 0, 'induced_abortion': 0,
-                                                 'spontaneous_abortion': 0,
-                                                 'ectopic_pregnancy_death': 0, 'induced_abortion_death': 0,
-                                                 'spontaneous_abortion_death': 0, 'iron_def': 0, 'folate_def': 0,
-                                                 'b12_def': 0,
-                                                 'maternal_anaemia': 0, 'antenatal_death': 0,
-                                                 'antenatal_stillbirth': 0,
-                                                 'new_onset_pre_eclampsia': 0, 'new_onset_gest_diab': 0,
-                                                 'new_onset_gest_htn': 0, 'new_onset_severe_pe': 0,
-                                                 'new_onset_eclampsia': 0,
-                                                 'antepartum_haem': 0, 'antepartum_haem_death': 0, 'prom': 0,
-                                                 'pre_term': 0,
-                                                 'women_at_6_months': 0}
+        for k in self.module.pregnancy_disease_tracker:
+            self.module.pregnancy_disease_tracker[k] = 0

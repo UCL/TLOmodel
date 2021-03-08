@@ -767,6 +767,7 @@ class Labour(Module):
         df.loc[df.is_alive, 'la_has_previously_delivered_preterm'] = False
         df.loc[df.is_alive, 'la_due_date_current_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'la_obstructed_labour'] = False
+        df.loc[df.is_alive, 'la_obstructed_labour_causes'] = 0
         df.loc[df.is_alive, 'la_placental_abruption'] = False
         df.loc[df.is_alive, 'la_antepartum_haem'] = 'none'
         df.loc[df.is_alive, 'la_antepartum_haem_treatment'] = False
@@ -774,11 +775,15 @@ class Labour(Module):
         df.loc[df.is_alive, 'la_uterine_rupture_treatment'] = False
         df.loc[df.is_alive, 'la_sepsis'] = False
         df.loc[df.is_alive, 'la_sepsis_pp'] = False
+        df.loc[df.is_alive, 'la_maternal_ip_infection'] = 0
+        df.loc[df.is_alive, 'la_maternal_pp_infection'] = 0
         df.loc[df.is_alive, 'la_sepsis_treatment'] = False
         df.loc[df.is_alive, 'la_eclampsia_treatment'] = False
         df.loc[df.is_alive, 'la_severe_pre_eclampsia_treatment'] = False
         df.loc[df.is_alive, 'la_maternal_hypertension_treatment'] = False
         df.loc[df.is_alive, 'la_postpartum_haem'] = False
+        df.loc[df.is_alive, 'la_postpartum_haem_cause'] = 0
+        df.loc[df.is_alive, 'la_postpartum_haem_treatment'] = 0
         df.loc[df.is_alive, 'la_has_had_hysterectomy'] = False
         df.loc[df.is_alive, 'la_maternal_death_in_labour'] = False
         df.loc[df.is_alive, 'la_maternal_death_in_labour_date'] = pd.NaT
@@ -952,6 +957,7 @@ class Labour(Module):
         df.at[child_id, 'la_previous_cs_delivery'] = False
         df.at[child_id, 'la_has_previously_delivered_preterm'] = False
         df.at[child_id, 'la_obstructed_labour'] = False
+        df.at[child_id, 'la_obstructed_labour_causes'] = 0
         df.at[child_id, 'la_placental_abruption'] = False
         df.at[child_id, 'la_antepartum_haem'] = 'none'
         df.at[child_id, 'la_antepartum_haem_treatment'] = False
@@ -959,11 +965,15 @@ class Labour(Module):
         df.at[child_id, 'la_uterine_rupture_treatment'] = False
         df.at[child_id, 'la_sepsis'] = False
         df.at[child_id, 'la_sepsis_pp'] = False
+        df.at[child_id, 'la_maternal_ip_infection'] = 0
+        df.at[child_id, 'la_maternal_pp_infection'] = 0
         df.at[child_id, 'la_sepsis_treatment'] = False
         df.at[child_id, 'la_eclampsia_treatment'] = False
         df.at[child_id, 'la_severe_pre_eclampsia_treatment'] = False
         df.at[child_id, 'la_maternal_hypertension_treatment'] = False
         df.at[child_id, 'la_postpartum_haem'] = False
+        df.at[child_id, 'la_postpartum_haem_cause'] = 0
+        df.at[child_id, 'la_postpartum_haem_treatment'] = 0
         df.at[child_id, 'la_has_had_hysterectomy'] = False
         df.at[child_id, 'la_maternal_death_in_labour'] = False
         df.at[child_id, 'la_maternal_death_in_labour_date'] = pd.NaT
@@ -1002,7 +1012,7 @@ class Labour(Module):
 
     def on_hsi_alert(self, person_id, treatment_id):
         """ This is called whenever there is an HSI event commissioned by one of the other disease modules."""
-        logger.info(key='message', data=f'This is Labour, being alerted about a health system interaction '
+        logger.debug(key='message', data=f'This is Labour, being alerted about a health system interaction '
                                         f'person {person_id}for: {treatment_id}')
 
     def report_daly_values(self):
@@ -1514,12 +1524,12 @@ class Labour(Module):
             df.at[individual_id, 'la_postpartum_haem'] = False
 
             # Treatment variables
-            df.loc[df.is_alive, 'la_antepartum_haem_treatment'] = False
-            df.loc[df.is_alive, 'la_uterine_rupture_treatment'] = False
-            df.loc[df.is_alive, 'la_severe_pre_eclampsia_treatment'] = False
-            df.loc[df.is_alive, 'la_maternal_hypertension_treatment'] = False
-            df.loc[df.is_alive, 'la_eclampsia_treatment'] = False
-            df.loc[df.is_alive, 'la_sepsis_treatment'] = False
+            df.at[individual_id, 'la_antepartum_haem_treatment'] = False
+            df.at[individual_id, 'la_uterine_rupture_treatment'] = False
+            df.at[individual_id,'la_severe_pre_eclampsia_treatment'] = False
+            df.at[individual_id, 'la_maternal_hypertension_treatment'] = False
+            df.at[individual_id, 'la_eclampsia_treatment'] = False
+            df.at[individual_id, 'la_sepsis_treatment'] = False
             self.pph_treatment.unset(
                 [individual_id], 'uterotonics', 'manual_removal_placenta', 'surgery', 'hysterectomy')
 
@@ -3614,11 +3624,5 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                                                'output from the labour module')
 
         # Reset the EventTracker
-        self.module.labour_tracker = {'ip_stillbirth': 0, 'maternal_death': 0, 'obstructed_labour': 0,
-                                      'antepartum_haem': 0, 'antepartum_haem_death': 0, 'sepsis': 0, 'sepsis_death': 0,
-                                      'eclampsia': 0, 'severe_pre_eclampsia': 0, 'severe_pre_eclamp_death': 0,
-                                      'eclampsia_death': 0, 'uterine_rupture': 0, 'uterine_rupture_death': 0,
-                                      'postpartum_haem': 0, 'postpartum_haem_death': 0,
-                                      'sepsis_pp': 0, 'home_birth': 0, 'health_centre_birth': 0,
-                                      'hospital_birth': 0, 'caesarean_section': 0, 'early_preterm': 0,
-                                      'late_preterm': 0, 'post_term': 0, 'term': 0}
+        for k in self.module.labour_tracker:
+            self.module.labour_tracker[k] = 0

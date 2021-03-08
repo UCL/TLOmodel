@@ -142,7 +142,3 @@ def test_run_health_system_events_wont_run():
 
     check_dtypes(sim)
 
-
-test_run()
-test_run_health_system_events_wont_run()
-test_run_health_system_high_squeeze()

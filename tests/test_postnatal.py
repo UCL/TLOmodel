@@ -75,6 +75,3 @@ def test_run():
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
-
-
-test_run()

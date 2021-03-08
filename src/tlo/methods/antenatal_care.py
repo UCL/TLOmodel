@@ -328,6 +328,10 @@ class CareOfWomenDuringPregnancy(Module):
                 sensitivity=params['sensitivity_blood_test_glucose'],
                 specificity=params['specificity_blood_test_glucose']))
 
+        if 'hiv' not in self.sim.modules:
+            logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
+                                               'testing will not happen in antenatal care')
+
     # This function is used within this and other modules to reset properties from this module when a woman is no longer
     # pregnant to ensure in future pregnancies properties arent incorrectly set to certain values
     def care_of_women_in_pregnancy_property_reset(self, ind_or_df, id_or_index):
@@ -800,9 +804,10 @@ class CareOfWomenDuringPregnancy(Module):
             pkg_codes=[pkg_code_tet])
 
         # If the consumables are available and the HCW will deliver the vaccine, the intervention is given
-        if all_available and (self.rng.random_sample() < params['prob_intervention_delivered_tt']):
-            df.at[person_id, 'ac_ttd_received'] += 1
-            logger.debug(key='msg', data=f'Mother {person_id} has received a tetanus booster during ANC')
+        if self.rng.random_sample() < params['prob_intervention_delivered_tt']:
+            if all_available:
+                df.at[person_id, 'ac_ttd_received'] += 1
+                logger.debug(key='msg', data=f'Mother {person_id} has received a tetanus booster during ANC')
 
     def calcium_supplementation(self, hsi_event):
         """This function contains the intervention calcium supplementation delivered during ANC.
@@ -999,7 +1004,7 @@ class CareOfWomenDuringPregnancy(Module):
         params = self.parameters
         person_id = hsi_event.target
 
-        if 'hiv' in self.sim.modules.keys():
+        if 'hiv' in self.sim.modules:
             if (self.rng.random_sample() < params['prob_intervention_delivered_hiv_test']) and ~df.at[person_id,
                                                                                                       'hv_diagnosed']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1007,11 +1012,6 @@ class CareOfWomenDuringPregnancy(Module):
                    topen=self.sim.date,
                    tclose=None,
                    priority=0)
-            else:
-                logger.warning(key='message', data='Mother has not been referred for HIV testing')
-        else:
-            logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
-                                               'testing will not happen in antenatal care')
 
     def iptp_administration(self, hsi_event):
         """
@@ -1038,13 +1038,14 @@ class CareOfWomenDuringPregnancy(Module):
                 all_available = hsi_event.get_all_consumables(
                     pkg_codes=[pkg_code_iptp])
 
-                if all_available and (self.rng.random_sample() < params['prob_intervention_delivered_iptp']):
-                    logger.debug(key='message', data=f'giving IPTp for person {person_id}')
+                if self.rng.random_sample() < params['prob_intervention_delivered_iptp']:
+                    if all_available:
+                        logger.debug(key='message', data=f'giving IPTp for person {person_id}')
 
-                    # IPTP is a single dose drug given at a number of time points during pregnancy. Therefore the number
-                    # of doses received during this pregnancy are stored as an integer
-                    df.at[person_id, 'ac_doses_of_iptp_received'] += 1
-                    logger.debug(key='message', data=f'Mother {person_id} has a dose of IPTP during pregnancy')
+                        # IPTP is a single dose drug given at a number of time points during pregnancy. Therefore the
+                        # number of doses received during this pregnancy are stored as an integer
+                        df.at[person_id, 'ac_doses_of_iptp_received'] += 1
+                        logger.debug(key='message', data=f'Mother {person_id} has a dose of IPTP during pregnancy')
 
     def gdm_screening(self, hsi_event):
         """This function contains intervention of gestational diabetes screening during ANC. Screening is only conducted
@@ -3073,12 +3074,14 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             self.module.pac_interventions.set(person_id, random_draw)
 
         # Women who are septic following their abortion are given antibiotics
-        if all_available and abortion_complications.has_any([person_id], 'sepsis', first=True):
-            self.module.pac_interventions.set(person_id, 'antibiotics')
+        if abortion_complications.has_any([person_id], 'sepsis', first=True):
+            if all_available:
+                self.module.pac_interventions.set(person_id, 'antibiotics')
 
         # Minor injuries following induced abortion are treated
-        if all_available and abortion_complications.has_any([person_id], 'injury', first=True):
-            self.module.pac_interventions.set(person_id, 'injury_repair')
+        if abortion_complications.has_any([person_id], 'injury', first=True):
+            if all_available:
+                self.module.pac_interventions.set(person_id, 'injury_repair')
 
         # And women who experience haemorrhage are provided with blood
         if abortion_complications.has_any([person_id], 'haemorrhage', first=True):
@@ -3208,5 +3211,5 @@ class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=dict_for_output,
                     description='Yearly summary statistics output from the antenatal care module')
 
-        self.module.anc_tracker = {'total_first_anc_visits': 0, 'cumm_ga_at_anc1': 0, 'total_anc1_first_trimester': 0,
-                                   'anc8+': 0, 'timely_ANC3': 0, 'diet_supp_6_months': 0}
+        for k in self.module.anc_tracker:
+            self.module.anc_tracker[k] = 0
