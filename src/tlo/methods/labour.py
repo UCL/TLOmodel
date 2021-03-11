@@ -2850,8 +2850,10 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         # Treatment modelled to reduce risk of intrapartum stillbirth include assisted vaginal delivery and
         # caesarean section
 
-        if (df.at[individual_id, 'ps_gestational_age_in_weeks'] < 24) or \
-           self.module.predict(params['la_labour_equations']['intrapartum_still_birth'], individual_id):
+        outcome_of_still_birth_equation = self.module.predict(params['la_labour_equations']['intrapartum_still_birth'],
+                                                              individual_id)
+
+        if (df.at[individual_id, 'ps_gestational_age_in_weeks'] < 24) or outcome_of_still_birth_equation:
             logger.debug(key='message', data=f'person {individual_id} has experienced an intrapartum still birth')
 
             random_draw = self.module.rng.random_sample()

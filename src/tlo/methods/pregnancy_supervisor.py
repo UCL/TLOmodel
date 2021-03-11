@@ -113,6 +113,23 @@ class PregnancySupervisor(Module):
         'treatment_effect_anti_htns_progression': Parameter(
             Types.REAL, 'Effect of anti hypertensive medication in reducing the risk of progression from mild to severe'
                         ' hypertension'),
+        'probs_for_mgh_matrix': Parameter(
+            Types.LIST, 'probability of mild gestational hypertension moving between states: gestational '
+                        'hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, '
+                        'eclampsia'),
+        'probs_for_sgh_matrix': Parameter(
+            Types.LIST, 'probability of severe gestational hypertension moving between states: gestational '
+                        'hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, '
+                        'eclampsia'),
+        'probs_for_mpe_matrix': Parameter(
+            Types.LIST, 'probability of mild pre-eclampsia moving between states: gestational hypertension,'
+                        ' severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia'),
+        'probs_for_spe_matrix': Parameter(
+            Types.LIST, 'probability of severe pre-eclampsia moving between states: gestational hypertension,'
+                        ' severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia'),
+        'probs_for_ec_matrix': Parameter(
+            Types.LIST, 'probability of eclampsia moving between states: gestational hypertension,'
+                        ' severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia'),
         'prob_gest_diab_per_month': Parameter(
             Types.REAL, 'underlying risk of gestational diabetes per month without the impact of risk factors'),
         'rr_gest_diab_obesity': Parameter(
@@ -659,14 +676,6 @@ class PregnancySupervisor(Module):
             if pd.isnull(mni[person][f'{complication}_onset']):
                 return
             else:
-                # TODO: this is a quick fix for complications where treatment is given, they resolve, and then
-                #  onset again before this function is called (i.e. anaemia) meaning the resolution date is less
-                #  than the onset date. needs a proper fix
-
-                # if not mni[person][f'{complication}_resolution'] > mni[person][f'{complication}_onset']:
-                #    mni[person][f'{complication}_resolution'] = pd.NaT
-                #    return
-
                 if pd.isnull(mni[person][f'{complication}_resolution']):
 
                     # If the complication has not yet resolved, and started more than a month ago, the woman gets a
@@ -685,8 +694,18 @@ class PregnancySupervisor(Module):
                         assert 1 > monthly_daly[person] > 0
 
                 else:
+
+                    # TODO: this is a quick fix for complications where treatment is given, they resolve, and then
+                    #  onset again before this function is called (i.e. anaemia) meaning the resolution date is less
+                    #  than the onset date. needs a proper fix
+
+                    if not (mni[person][f'{complication}_resolution'] > mni[person][f'{complication}_onset']):
+                        mni[person][f'{complication}_resolution'] = pd.NaT
+                        return
+
                     # If the complication has resolved, check the dates make sense
-                    assert mni[person][f'{complication}_resolution'] > mni[person][f'{complication}_onset']
+                    print(person, complication)
+                    assert mni[person][f'{complication}_resolution'] >= mni[person][f'{complication}_onset']
 
                     # We calculate how many days she has been free of the complication this month to determine how many
                     # days she has suffered from the complication this month
@@ -1079,11 +1098,14 @@ class PregnancySupervisor(Module):
             #  parameters?)
             risk_ghtn_remains_mild = (0.9 - risk_of_gest_htn_progression)
 
-            prob_matrix['gest_htn'] = [risk_ghtn_remains_mild, risk_of_gest_htn_progression, 0.1, 0.0, 0.0]
-            prob_matrix['severe_gest_htn'] = [0.0, 0.8, 0.0, 0.2, 0.0]
-            prob_matrix['mild_pre_eclamp'] = [0.0, 0.0, 0.8, 0.2, 0.0]
-            prob_matrix['severe_pre_eclamp'] = [0.0, 0.0, 0.0, 0.6, 0.4]
-            prob_matrix['eclampsia'] = [0.0, 0.0, 0.0, 0.0, 1]
+            # We reset the parameter here to allow for testing with the original parameter
+            params['probs_for_mgh_matrix'] = [risk_ghtn_remains_mild, risk_of_gest_htn_progression, 0.1, 0.0, 0.0]
+
+            prob_matrix['gest_htn'] = params['probs_for_mgh_matrix']
+            prob_matrix['severe_gest_htn'] = params['probs_for_sgh_matrix']
+            prob_matrix['mild_pre_eclamp'] = params['probs_for_mpe_matrix']
+            prob_matrix['severe_pre_eclamp'] = params['probs_for_spe_matrix']
+            prob_matrix['eclampsia'] = params['probs_for_ec_matrix']
 
             # We update the data frame with transitioned states (which may not have changed)
             current_status = df.loc[selected, "ps_htn_disorders"]
@@ -1256,11 +1278,13 @@ class PregnancySupervisor(Module):
 
         # If not, we assume there infection has resolved
         df.loc[progression.loc[progression].index, 'ps_chorioamnionitis'] = 'clinical'
-        df.loc[progression.loc[~progression].index, 'ps_chorioamnionitis'] = 'none'
+        df.loc[progression.loc[progression].index, 'ps_emergency_event'] = True
 
         progression.loc[progression].index.to_series().apply(self.store_dalys_in_mni, mni_variable='chorio_onset')
 
-        df.loc[progression.loc[progression].index, 'ps_emergency_event'] = True
+        df.loc[progression.loc[~progression].index, 'ps_chorioamnionitis'] = 'none'
+
+        # TODO: this will allow women who have just resolved to become infected again...
 
         # Here we use a linear equation to determine if women without infection will develop infection
         chorio = self.apply_linear_model(
@@ -1732,9 +1756,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             self.module.apply_risk_of_gestational_diabetes(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_placental_abruption(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_antepartum_haemorrhage(gestation_of_interest=gestation_of_interest)
+            self.module.apply_risk_of_premature_rupture_of_membranes(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_onset_and_progression_antenatal_infections(
                 gestation_of_interest=gestation_of_interest)
-            self.module.apply_risk_of_premature_rupture_of_membranes(gestation_of_interest=gestation_of_interest)
 
         for gestation_of_interest in [27, 31, 35, 40]:
             # Women with hypertension are at risk of there condition progression, this risk is applied months 6-9

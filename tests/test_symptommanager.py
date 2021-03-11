@@ -238,7 +238,24 @@ def test_baby_born_has_no_symptoms():
 
     # do a birth
     df = sim.population.props
+
+    # TODO: JC 09/03/2021- this is a quick fix so that the newborn outcomes on_birth function  runs. I imagine that
+    #  this test will use the simplified births module in the future? if so this mni logic can be removed
+
     mother_id = df.loc[df.sex == 'F'].index[0]
+
+    # Populate the mni dictionary with variables that are assessed in the on_birth function of the newborn outcomes
+    # module
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {
+        'twin_count': 0,
+        'single_twin_still_birth': False,
+        'labour_state': 'term_labour',
+        'stillbirth_in_labour': False,
+        'abx_for_prom_given': False,
+        'corticosteroids_given': False,
+        'delivery_setting': 'health_centre',
+        'clean_birth_practices': False}
+
     person_id = sim.do_birth(mother_id)
 
     # check that the new person does not have symptoms:

@@ -781,7 +781,7 @@ class NewbornOutcomes(Module):
         mother_id = df.loc[individual_id, 'mother_id']
         if df.at[mother_id, 'la_maternal_death_in_labour']:
             if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
-                                                              mni[mother_id, 'twin_count'] == 2):
+                                                              (mni[mother_id, 'twin_count'] == 2)):
                 del mni[mother_id]
 
         del nci[individual_id]
@@ -947,7 +947,7 @@ class NewbornOutcomes(Module):
         mother_id = df.at[child_id, 'mother_id']
 
         if 'Hiv' in self.sim.modules:
-            if ~df.at[child_id, 'hv_diagnosed'] and df.at[mother_id, 'hv_diagnosed']:
+            if ~df.at[child_id, 'hv_diagnosed']:  # and df.at[mother_id, 'hv_diagnosed']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
                     topen=self.sim.date,

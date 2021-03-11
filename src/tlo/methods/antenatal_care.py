@@ -478,43 +478,43 @@ class CareOfWomenDuringPregnancy(Module):
         assert df.at[individual_id, 'ps_gestational_age_in_weeks'] < recommended_gestation_next_anc
 
         # This function houses the code that schedules the next visit, it is abstracted to prevent repetition
-        def set_anc_date(visit_number):
+        def set_anc_date(visit_to_be_scheduled):
 
             # We store the ANC contacts as variables prior to scheduling. Facility level of the next contact is carried
             # forward from a womans first ANC contact (we assume she will always seek care within the same facility
             # level)
-            if visit_number == 2:
+            if visit_to_be_scheduled == 2:
                 visit = HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(
                     self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
 
-            elif visit_number == 3:
+            elif visit_to_be_scheduled == 3:
                 visit = HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(
                     self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
 
-            elif visit_number == 4:
+            elif visit_to_be_scheduled == 4:
                 visit = HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(
                     self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
 
-            elif visit_number == 5:
+            elif visit_to_be_scheduled == 5:
                 visit = HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(
                     self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
 
-            elif visit_number == 6:
+            elif visit_to_be_scheduled == 6:
                 visit = HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(
                     self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
 
-            elif visit_number == 7:
+            elif visit_to_be_scheduled == 7:
                 visit = HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(
                     self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
 
-            elif visit_number == 8:
+            elif visit_to_be_scheduled == 8:
                 visit = HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(
                     self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
 
             # If this woman has attended less than 4 visits, and is predicted to attend > 4 (as determined via the
             # PregnancySupervisor module when ANC1 is scheduled) her subsequent ANC appointment is automatically
             # scheduled
-            if visit_number < 4:
+            if visit_to_be_scheduled <= 4:
                 if df.at[individual_id, 'ps_will_attend_four_or_more_anc']:
 
                     # We subtract this womans current gestational age from the recommended gestational age for the next
@@ -527,8 +527,8 @@ class CareOfWomenDuringPregnancy(Module):
                     self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
                                                                         topen=visit_date,
                                                                         tclose=visit_date + DateOffset(days=7))
-                    logger.debug(key='message', data=f'mother {individual_id} will seek ANC {visit_number} contact on'
-                                                     f' {visit_date}')
+                    logger.debug(key='message', data=f'mother {individual_id} will seek ANC {visit_to_be_scheduled} '
+                                                     f'contact on {visit_date}')
 
                     # We store the date of her next visit and use this date as part of a check when the ANC HSIs run
                     df.at[individual_id, 'ac_date_next_contact'] = visit_date
@@ -549,8 +549,8 @@ class CareOfWomenDuringPregnancy(Module):
                                                                             topen=visit_date,
                                                                             tclose=visit_date + DateOffset(days=7))
 
-                        logger.debug(key='message', data=f'mother {individual_id} will seek ANC {visit_number} contact '
-                                                         f'on {visit_date}')
+                        logger.debug(key='message', data=f'mother {individual_id} will seek ANC {visit_to_be_scheduled} '
+                                                         f'contact on {visit_date}')
 
                         df.at[individual_id, 'ac_date_next_contact'] = visit_date
                     else:
@@ -558,7 +558,7 @@ class CareOfWomenDuringPregnancy(Module):
                         logger.debug(key='message', data=f'mother {individual_id} will not seek any additional '
                                                          f'antenatal care for this pregnancy')
 
-            elif visit_number >= 4:
+            elif visit_to_be_scheduled > 4:
                 # After 4 or more visits we use the linear model equation to determine if the woman will seek care for
                 # her next contact
 
@@ -571,8 +571,8 @@ class CareOfWomenDuringPregnancy(Module):
                     self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
                                                                         topen=visit_date,
                                                                         tclose=visit_date + DateOffset(days=7))
-                    logger.debug(key='message', data=f'mother {individual_id} will seek ANC {visit_number} contact on'
-                                                     f'{visit_date}')
+                    logger.debug(key='message', data=f'mother {individual_id} will seek ANC {visit_to_be_scheduled} '
+                                                     f'contact on {visit_date}')
                     df.at[individual_id, 'ac_date_next_contact'] = visit_date
 
                 else:
@@ -1154,9 +1154,9 @@ class CareOfWomenDuringPregnancy(Module):
         # and become pregnant again
 
         elif (date_difference > pd.to_timedelta(7, unit='D')) or \
-            df.at[individual_id, 'ac_total_anc_visits_current_pregnancy'] > 0 or df.at[individual_id,
-                                                                                       'ps_gestational_age_in_'
-                                                                                       'weeks'] < 7:
+            (df.at[individual_id, 'ac_total_anc_visits_current_pregnancy'] > 0) or (df.at[individual_id,
+                                                                                    'ps_gestational_age_in_'
+                                                                                    'weeks'] < 7):
 
             logger.debug(key='msg', data=f'mother {individual_id} has arrived at ANC1 that was scheduled in a previous '
                                          f'pregnancy and therefore the event will not run')
@@ -1218,7 +1218,7 @@ class CareOfWomenDuringPregnancy(Module):
         if ~df.at[individual_id, 'is_alive'] \
             or ~df.at[individual_id, 'is_pregnant'] \
             or df.at[individual_id, 'la_currently_in_labour']\
-            or (df.at[individual_id, 'ps_gestational_age_in_weeks'] <= ga_for_anc_dict[this_visit_number]) \
+            or (df.at[individual_id, 'ps_gestational_age_in_weeks'] < ga_for_anc_dict[this_visit_number]) \
            or (date_difference > pd.to_timedelta(7, unit='D')):
             return False
 
@@ -1360,12 +1360,14 @@ class CareOfWomenDuringPregnancy(Module):
             # resolving a womans current anaemia
             if outcome_of_request_for_consumables['Item_Code'][item_code_elemental_iron]:
                 if self.rng.random_sample() < params['effect_of_iron_replacement_for_resolving_anaemia']:
-                    df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
                     # If the woman is no longer anaemic after treatment we store a date of resolution for daly
                     # calculations
-                    store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
-                                                      f'anaemia_resolution')
+                    if df.at[individual_id, "ps_anaemia_in_pregnancy"] != 'none':
+                        store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
+                                                          f'anaemia_resolution')
+
+                        df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
                 if self.rng.random_sample() < params['effect_of_iron_replacement_for_resolving_iron_def']:
                     pregnancy_deficiencies.unset([individual_id], 'iron')
@@ -1373,9 +1375,12 @@ class CareOfWomenDuringPregnancy(Module):
         if pregnancy_deficiencies.has_any([individual_id], 'folate', first=True):
             if outcome_of_request_for_consumables['Item_Code'][item_code_folate]:
                 if self.rng.random_sample() < params['effect_of_folate_replacement_for_resolving_anaemia']:
-                    store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
-                                                      f'anaemia_resolution')
-                    df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
+
+                    if df.at[individual_id, "ps_anaemia_in_pregnancy"] != 'none':
+                        store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
+                                                          f'anaemia_resolution')
+
+                        df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
                 if self.rng.random_sample() < params['effect_of_folate_replacement_for_resolving_folate_def']:
                     pregnancy_deficiencies.unset([individual_id], 'folate')
@@ -1383,9 +1388,12 @@ class CareOfWomenDuringPregnancy(Module):
         if pregnancy_deficiencies.has_any([individual_id], 'b12', first=True):
             if outcome_of_request_for_consumables['Item_Code'][item_code_b12]:
                 if self.rng.random_sample() < params['effect_of_b12_replacement_for_resolving_anaemia']:
-                    store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
-                                                      f'anaemia_resolution')
-                    df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
+
+                    if df.at[individual_id, "ps_anaemia_in_pregnancy"] != 'none':
+                        store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
+                                                          f'anaemia_resolution')
+
+                        df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
                 if self.rng.random_sample() < params['effect_of_b12_replacement_for_resolving_b12_def']:
                     pregnancy_deficiencies.unset([individual_id], 'b12')
@@ -1429,11 +1437,12 @@ class CareOfWomenDuringPregnancy(Module):
             # Women started on IFA at this stage are already anaemic, we here apply a probability that
             # starting on a course of IFA will correct anaemia prior to follow up
             if self.module.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
-                df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
                 # Store date of resolution for daly calculations
                 store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
                                                   f'anaemia_resolution')
+
+                df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
     def antenatal_blood_transfusion(self, individual_id, hsi_event, cause):
         """
@@ -1478,8 +1487,8 @@ class CareOfWomenDuringPregnancy(Module):
                 # If the woman is receiving blood due to anaemia we apply a probability that a transfusion of 2 units
                 # RBCs will correct this woman's severe anaemia
                 if params['treatment_effect_blood_transfusion_anaemia'] < self.rng.random_sample():
-                    df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
                     store_dalys_in_mni(individual_id, 'severe_anaemia_resolution')
+                    df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
             # If the woman has experience haemorrhage post abortion we store that the intervention has been received in
             # this property which reduces her risk of death

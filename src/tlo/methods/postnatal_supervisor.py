@@ -673,6 +673,8 @@ class PostnatalSupervisor(Module):
 
         # If the infection will happen, it is stored in the bit set property and tracked
         if risk_infection < self.rng.random_sample():
+            logger.debug(key='msg', data=f'Mother {individual_id} has developed {infection} infection in week one of '
+                                         f'the postnatal period')
             self.postpartum_infections_late.set([individual_id], f'{infection}')
             self.postnatal_tracker[f'{infection}'] += 1
 
@@ -1262,9 +1264,10 @@ class PostnatalSupervisor(Module):
 
             # If the mother is septic and hasn't sought care, we calculate her risk of death
             if mother.pn_sepsis_late_postpartum:
-                assert (self.postpartum_infections_late.has_any(
-                        [individual_id], 'endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                        'other_maternal_infection', first=True))
+            #  todo: replace with test
+            #    assert (self.postpartum_infections_late.has_any(
+            #            [individual_id], 'endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
+            #            'other_maternal_infection', first=True))
 
                 risk_of_death = params['pn_linear_equations']['postnatal_sepsis_death'].predict(df.loc[[
                     individual_id]])[individual_id]
