@@ -183,9 +183,14 @@ class LinearModel(object):
     def custom(predict_function, **kwargs):
         """Define a linear model using the supplied function
 
-        The function must implement the interface:
+        The function acts as a drop-in replacement to the predict function and must implement the interface:
 
-        (df: Union[pd.DataFrame, pd.Series], rng: np.random.RandomState = None, **kwargs)
+            (df: Union[pd.DataFrame, pd.Series], rng: np.random.RandomState = None, **kwargs)
+
+        It is the responsibility of the caller of predict to ensure they pass either a dataframe or an
+        individual record as expected by the custom function.
+
+        See test_custom() in test_lm.py for a couple of examples.
         """
         # create an instance of a custom linear model
         custom_model = LinearModel(LinearModelType.CUSTOM, 0)
