@@ -151,7 +151,7 @@ class LinearModelType(Enum):
     """
     The type of model specifies how the results from the predictor are combined:
     'additive' -> adds the effect_sizes from the predictors
-    'logisitc' -> multiples the effect_sizes from the predictors and applies the transform x/(1+x)
+    'logisitic' -> multiples the effect_sizes from the predictors and applies the transform x/(1+x)
     [Thus, the intercept can be taken to be an Odds and effect_sizes Odds Ratios,
     and the prediction is a probability.]
     'multiplicative' -> multiplies the effect_sizes from the predictors
@@ -159,6 +159,8 @@ class LinearModelType(Enum):
     ADDITIVE = auto()
     LOGISTIC = auto()
     MULTIPLICATIVE = auto()
+    # the 'custom' is used internally by the custom() method
+    CUSTOM = auto()
 
 
 class LinearModel(object):
@@ -176,6 +178,26 @@ class LinearModel(object):
         for predictor in args:
             assert isinstance(predictor, Predictor)
             self.predictors.append(predictor)
+
+    @staticmethod
+    def custom(predict_function, **kwargs):
+        """Define a linear model using the supplied function
+
+        The function must implement the interface:
+
+        (df: Union[pd.DataFrame, pd.Series], rng: np.random.RandomState = None, **kwargs)
+        """
+        # create an instance of a custom linear model
+        custom_model = LinearModel(LinearModelType.CUSTOM, 0)
+        # replace this instance's predict method
+        # see https://stackoverflow.com/questions/28127874/monkey-patching-python-an-instance-method
+        custom_model.predict = predict_function.__get__(custom_model, LinearModel)
+        # save value to any keyword arguments inside of this linear model
+        for k, v in kwargs.items():
+            # check the name doesn't already exist
+            assert not hasattr(custom_model, k), f"Cannot store argument '{k}' as name already exists; change name."
+            setattr(custom_model, k, v)
+        return custom_model
 
     def predict(self, df: pd.DataFrame, rng: np.random.RandomState = None, **kwargs) -> pd.Series:
         """Will call each Predictor's `predict` methods passing the supplied dataframe"""
