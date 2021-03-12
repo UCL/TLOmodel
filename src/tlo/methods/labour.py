@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, demography
+from tlo.methods import Metadata, demography, labour_lm
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneEvent
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
@@ -471,40 +471,17 @@ class Labour(Module):
         params['la_labour_equations'] = {
 
             # This equation predicts the parity of each woman at baseline (who is of reproductive age)
-            'parity': LinearModel(
-                LinearModelType.ADDITIVE,
-                params['intercept_parity_lr2010'],
-                Predictor('age_years').apply(lambda age_years: (age_years * 0.22)),
-                Predictor('li_mar_stat').when('2', params['effect_mar_stat_2_parity_lr2010'])
-                                        .when('3', params['effect_mar_stat_3_parity_lr2010']),
-                Predictor('li_wealth').when('5', params['effect_wealth_lev_5_parity_lr2010'])
-                                      .when('4', params['effect_wealth_lev_4_parity_lr2010'])
-                                      .when('3', params['effect_wealth_lev_3_parity_lr2010'])
-                                      .when('2', params['effect_wealth_lev_2_parity_lr2010'])
-                                      .when('1', params['effect_wealth_lev_1_parity_lr2010'])),
+            'parity': LinearModel.custom(labour_lm.predict_parity, parameters=params),
 
             # This equation is used to calculate a womans risk of obstructed labour. As we assume obstructed labour can
             # only occur following on of three preceding causes, this model is additive
-            'obstructed_labour_ip': LinearModel(
-                LinearModelType.ADDITIVE,
-                0,
-                Predictor('la_obstructed_labour_causes').apply(
-                    lambda x: params['prob_obstruction_cpd']
-                    if x & self.cause_of_obstructed_labour.element_repr('cephalopelvic_dis') else 0),
-                Predictor('la_obstructed_labour_causes').apply(
-                    lambda x: params['prob_obstruction_malpos']
-                    if x & self.cause_of_obstructed_labour.element_repr('malposition') else 0),
-                Predictor('la_obstructed_labour_causes').apply(
-                    lambda x: params['prob_obstruction_malpres']
-                    if x & self.cause_of_obstructed_labour.element_repr('malpresentation') else 0)),
+            'obstructed_labour_ip': LinearModel.custom(labour_lm.predict_obstructed_labour_ip,
+                                                       module=self),
 
             # This equation is used to calculate a womans risk of developing chorioamnionitis infection during the
             # intrapartum phase of labour and is mitigated by clean delivery
-            'chorioamnionitis_ip': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_chorioamnionitis_ip'],
-                Predictor('received_clean_delivery', external=True).when(
-                    True, params['treatment_effect_maternal_infection_clean_delivery'])),
+            'chorioamnionitis_ip': LinearModel.custom(labour_lm.predict_chorioamnionitis_ip,
+                                                      parameters=params),
 
             # This equation is used to calculate a womans risk of developing other undefined infection during the
             # intrapartum phase of labour and is mitigated by clean delivery
