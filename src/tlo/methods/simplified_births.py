@@ -1,12 +1,12 @@
 """
 This is a simplified births Module. it aims at implementing some simple events to generate births thereby avoid
-registering of some heavy modules to do the same
+registering heavy modules(contraception, labour and pregnant supervisor) to do the same
 
 """
 import numpy as np
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin, Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -16,25 +16,35 @@ class Simplifiedbirths(Module):
     """
     a simplified births module responsible for generating births in a simplified way and assign mother ids to newborns
     """
-    # Declare Metadata (this is for a typical 'Disease Module')
+    # Declare Metadata
     METADATA = {}
 
+    # Here we declare module parameters. we specify the name, type and a longer description
     PARAMETERS = {
-        'birth_prob': Parameter(
-            Types.REAL, 'probability of births in a month'),
+        'pregnancy_prob': Parameter(
+            Types.REAL, 'probability of pregnancies in a month'),
+        'min_age': Parameter(
+            Types.REAL, 'minimum age of individuals'),
+        'max_age': Parameter(
+            Types.REAL, 'maximum age of individuals'),
+        'days_until_delivery': Parameter(
+            Types.DATE, 'number of days a pregnant woman has to go through until delivery'
+                        ' (assuming term delivery (37-41 weeks)), '),
         'prob_breastfeeding_type': Parameter(
             Types.LIST, 'probabilities for breastfeeding status: none, non_exclusive, exclusive')
 
     }
 
+    # Next we declare module properties. again we specify the name, type and a longer description
     PROPERTIES = {
-        'si_date_of_last_delivery': Property(Types.DATE, 'woman\'s date of last delivery'),
-        'nb_breastfeeding_status':  Property(Types.CATEGORICAL, 'Breastfeeding status of a newborn',
-                                             categories=['none', 'non_exclusive', 'exclusive']),
+        'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
+        'date_of_last_pregnancy': Property(Types.DATE,
+                                           'Date of the last pregnancy of this individual'),
+        'si_date_of_delivery': Property(Types.DATE,
+                                        'expected date of delivery for this individual'),
+        'nb_breastfeeding_status': Property(Types.CATEGORICAL, 'Breastfeeding status of a newborn',
+                                            categories=['none', 'non_exclusive', 'exclusive']),
     }
-
-    # Declare the non-generic symptoms that this module will use.
-    SYMPTOMS = {}
 
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
@@ -43,119 +53,124 @@ class Simplifiedbirths(Module):
         self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, data_folder):
-        """Read parameter values from file, if required.
-        :param data_folder: path of a folder supplied to the Simulation containing data files.
-        """
-        self.parameters['birth_prob'] = 0.01
+        # initialising our parameters
+
+        param = self.parameters
+        param['pregnancy_prob'] = 0.01
+        param['min_age'] = 15
+        param['max_age'] = 49
+        param['days_until_delivery'] = pd.DateOffset(days=7 * 37 + self.rng.randint(0, 7 * 4))
         self.parameters['prob_breastfeeding_type'] = [0.101, 0.289, 0.61]
 
     def initialise_population(self, population):
-        """Set our property values for the initial population.
-        :param population: the population of individuals
-        """
+        # Set our property values for the initial population.
+
         df = population.props  # a shortcut to the dataframe storing data for individuals
 
         # Assign the characteristics
-        df.loc[df.is_alive, 'si_date_of_last_delivery'] = pd.NaT
+        df.loc[df.is_alive, 'is_pregnant'] = False
+        df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
+        df.loc[df.is_alive, 'si_date_of_delivery'] = pd.NaT
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'none'
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
-
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
-
         """
-        # check all population to determine if birth should be triggered (repeats every month)
-        sim.schedule_event(SimplifiedBirthsEvent(self), sim.date + DateOffset(months=1))
+        # check all population to determine who will get pregnant (repeats every month)
+        sim.schedule_event(SimplifiedPregnancyEvent(self), sim.date + DateOffset(months=1))
 
         # Launch the repeating event that will store statistics about the population structure
-        sim.schedule_event(SimplifiedBirthsLoggingEvent(self), sim.date + DateOffset(days=0))
+        # sim.schedule_event(SimplifiedBirthsLoggingEvent(self), sim.date + DateOffset(years=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
-
-        This is called by the simulation whenever a new person is born.
-
-        :param mother_id: the mother for this child
-        :param child_id: the new child
         """
         df = self.sim.population.props
         params = self.parameters
 
         # Assign the date of last delivery to a newborn
-        df.at[child_id, 'si_date_of_last_delivery'] = pd.NaT
+        df.at[child_id, 'is_pregnant'] = False
+        df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
+        df.at[child_id, 'si_date_of_delivery'] = pd.NaT
 
         # Assign breastfeeding status to newborns
         random_draw = self.rng.choice(('none', 'non_exclusive', 'exclusive'), p=params['prob_breastfeeding_type'])
         df.at[child_id, 'nb_breastfeeding_status'] = random_draw
 
-        logger.info('%s|post_birth_info|%s',
-                    self.sim.date,
-                    {
-                        'woman_index': mother_id,
-                        'child_index': child_id
+        # logger.info('%s|post_birth_info|%s',
+        #             self.sim.date,
+        #             {
+        #                 'woman_index': mother_id,
+        #                 'child_index': child_id
+        #
+        #             })
 
-                    })
 
-
-class SimplifiedBirthsEvent(RegularEvent, PopulationScopeEventMixin):
-    """A Simplified births class for an event
-
-    Regular events automatically reschedule themselves at a fixed frequency,
-    and thus implement discrete timestep type behaviour. The frequency is
-    specified when calling the base class constructor in our __init__ method.
+class SimplifiedPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
+    """ A class responsible for making women pregnant and scheduling birth event at their delivery date
     """
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
-        self.age_low = 15
-        self.age_high = 49
-        self.birth_prob = module.parameters['birth_prob']
+        self.age_low = module.parameters['min_age']  # min preferred age
+        self.age_high = module.parameters['max_age']  # max preferred age
+        self.pregnancy_prob = module.parameters['pregnancy_prob']   # probability of women to get pregnant in
+        # a particular month
+        self.days_until_delivery = module.parameters['days_until_delivery']  # number of days until delivery
+        # (term delivery)
 
     def apply(self, population):
         df = self.sim.population.props  # get the population dataframe
 
-        selected_women = df.loc[(df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high)]
+        # select females from dataframe who are not pregnant and of age between 15 - 49
+        selected_women = df.loc[(df.sex == 'F') & df.is_alive & ~df.is_pregnant & df.age_years.between(self.age_low,
+                                                                                                       self.age_high)]
 
-        # print(selected_women)
+        # determining which woman should get pregnant
+        new_pregnancies = (self.module.rng.random_sample(size=len(selected_women.index)) < self.pregnancy_prob)
 
-        # determining which woman should give birth
-        new_births = (self.module.rng.random_sample(size=len(selected_women.index)) < self.birth_prob)
+        pregnant_women_ids = selected_women.index[new_pregnancies]
 
-        births_ids = selected_women.index[new_births]
+        # updating properties for selected women
+        df.loc[pregnant_women_ids, 'is_pregnant'] = True
+        df.loc[pregnant_women_ids, 'date_of_last_pregnancy'] = self.sim.date
+        df.loc[pregnant_women_ids, 'si_date_of_delivery'] = self.sim.date + self.days_until_delivery
 
-        # assigning the date of delivery to the selected women
-        df.loc[births_ids, 'si_date_of_last_delivery'] = self.sim.date
+        # print(pregnant_women_ids)
 
-        for female_id in births_ids:
-            # generating a  child
-            logger.info(f'@@@@ A Birth is now occurring, to mother {female_id} on date {self.sim.date}')
-            self.sim.do_birth(female_id)
+        for pregnant_woman_id in pregnant_women_ids:
+            self.sim.schedule_event(SimplifiedBirthsEvent(self, pregnant_woman_id), df.loc[pregnant_woman_id,
+                                                                                           'si_date_of_delivery'])
 
 
-class SimplifiedBirthsLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        """Logs outputs for simplified_births module
-        """
-        # run this event every 12 months (every year)
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
+class SimplifiedBirthsEvent(Event, IndividualScopeEventMixin):
+    """This is the BirthEvent. It is scheduled by SimplifiedBirthsEvent to allow women who have been pregnant
+    for 9 months give birth"""
+    def __init__(self, module, mother_id):
+        super().__init__(module, person_id=mother_id)
 
-    def apply(self, population):
-        df = population.props
+    def apply(self, mother_id):
 
-        one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
+        logger.debug(f'{self.sim.date} | @@@@ A Birth is now occuring, to mother {mother_id} '
+                     f' on | {self.sim.date}')
+        self.sim.do_birth(mother_id)
 
-        total_births_last_year = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
 
-        # if total_births_last_year == 0:
-        #     total_births_last_year = 1
-
-        # logger.info(f'{self.sim.date} |total_births| {total_births_last_year}')
-        logger.info('%s|total_births|%s',
-                    self.sim.date,
-                    {
-                        'total': total_births_last_year
-                    })
+# class SimplifiedBirthsLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+#     def __init__(self, module):
+#         """Logs outputs for simplified_births module
+#         """
+#         # run this event every 12 months (every year)
+#         self.repeat = 12
+#         super().__init__(module, frequency=DateOffset(months=self.repeat))
+#
+#     def apply(self, population):
+#         df = population.props
+#
+#         one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
+#
+#         total_births_last_year = len(
+#             df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])  #
+#         # logger.info(f'{self.sim.date} |total_births| {total_births_last_year}')
+#         logger.info('%s|total_births|%s',
+#                     self.sim.date - np.timedelta64(1, 'Y') , {'total': total_births_last_year})

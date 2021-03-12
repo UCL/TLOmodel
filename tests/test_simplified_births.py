@@ -5,12 +5,27 @@ import pytest
 import pandas as pd
 
 from tlo import Simulation, Date
-from tlo.methods import demography, simplified_births
+from tlo.methods import (
+    demography,
+    simplified_births,
+    enhanced_lifestyle,
+    healthsystem,
+    symptommanager,
+    healthseekingbehaviour,
+    healthburden,
+    oesophagealcancer,
+    bladder_cancer,
+    diarrhoea,
+    epilepsy,
+    hiv,
+    malaria,
+    tb
+)
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2011, 1, 1)
 popsize = 1000
 
 
@@ -23,7 +38,7 @@ def check_dtypes(simulation):
 
 def get_sim():
     start_date = Date(2010, 1, 1)
-    popsize = 1000
+    popsize = 100
     sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
@@ -36,9 +51,29 @@ def get_sim():
     return sim
 
 
-def test_simplified_births_simulation():
-    end_date = Date(2015, 12, 31)
-    sim = get_sim()
+def test_simplified_births_module_with_other_modules():
+    """this is a test to see whether we can use simplified_births module inplace of contraception, labour and
+    pregnancy supervisor modules"""
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.Simplifiedbirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
+                 bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                 epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 malaria.Malaria(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath)
+                 )
+
+    sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
@@ -50,18 +85,21 @@ def test_breastfeeding_simplified_birth_logic():
     initial_pop_size = 100
     sim.make_initial_population(n=initial_pop_size)
 
-    # Set the probability of birth at 1 to ensure births when we call SimplifiedBirthsEvent
-    sim.modules['Simplifiedbirths'].parameters['birth_prob'] = 1
+    # increasing number of women likely to get pregnant by setting pregnancy probability to 1
+    sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 1
+
+    # set delivery period to 0 days allowing pregnant women deliver same day
+    # sim.modules['Simplifiedbirths'].parameters['days_until_delivery'] = pd.DateOffset(days=0)
 
     # Force the probability of exclusive breastfeeding to 1, no other 'types' should occur from births in this sim run
     sim.modules['Simplifiedbirths'].parameters['prob_breastfeeding_type'] = [0, 0, 1]
 
-    # Run the sim for 0 days, clear event queue
-    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    # Run the sim until end date, clear event queue
+    sim.simulate(end_date=end_date)
     sim.event_queue.queue.clear()
 
-    # Run the SimplifiedBirthsEvent on the population
-    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
+    # Run the Simplified Pregnancy Event on the selected population
+    birth_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
     birth_event.apply(sim.population.props)
 
     # define the dataframe
@@ -70,17 +108,16 @@ def test_breastfeeding_simplified_birth_logic():
     # Ensure births are happening and the dataframe has grown
     assert len(df) > initial_pop_size
 
-    # As we've forced all eligible women to give birth, then the the number of women who could be pregnant
-    # should equal the number of newborns who have been born
-    selected_women = df.loc[(df.sex == 'F') & df.is_alive & df.age_years.between(15, 49)]
+    # selecting the number of women who have given birth during simulation and compare it to the number of newborn
+    selected_women = df.loc[(df.sex == 'F') & df.is_alive & df.is_pregnant & (df.si_date_of_delivery <= end_date)]
     new_borns = df.loc[df.is_alive & (df.mother_id >= 0)]
+
+    # selected_women = df.loc[(df.sex == 'F') & df.is_pregnant & (df.si_date_of_delivery <= end_date)]
+    # new_borns = df.loc[(df.mother_id >= 0)]
+    # print(selected_women)
+    # print(new_borns)
+
     assert len(selected_women) == len(new_borns)
 
     # Finally we check to make sure all newborns have their breastfeeding status set to exclusive
     assert (df.loc[new_borns.index, 'nb_breastfeeding_status'] == 'exclusive').all().all()
-
-# TODO: i've commented this out emmanuel as i think it will slow down running your test, if you run pytest in
-#  test_simplified_births you will be able to see output
-# if __name__ == '__main__':
-#    simulation = get_sim()
-#    test_simplified_births_simulation(simulation)
