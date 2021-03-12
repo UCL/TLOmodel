@@ -86,12 +86,40 @@ def register_all_modules():
 
     return sim
 
+def register_all_modules_no_consumable_constraints():
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*'],
+                                           ignore_cons_constraints=True), #check thats right
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 malaria.Malaria(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath))
+
+    return sim
+
 
 def test_daisy_chain_scheduling_from_anc_1():
     """This test checks the inbuilt daisy-chain scheduling within antenatal care contacts. The test checks that the
     correct HSI is scheduled by each proceeding HSI and on the correct date and gestational age. It ensures the correct
      maternal variables are updated in relation to scheduling
     """
+
+    # todo: neaten up with functions
+
     # Register the key modules and run the simulation for one day
     sim = register_all_modules()
     sim.make_initial_population(n=100)
@@ -253,6 +281,9 @@ def test_daisy_chain_scheduling_from_anc_1():
 
 
 def test_anc_contacts_that_should_not_run_wont_run():
+    """This test checks the inbuilt functions within ANC1 and ANC subsequent that should block, and in some cases
+     reschedule, ANC visits for women when the HSI runs and is no longer appropriate for them """
+
     # Register the key modules and run the simulation for one day
     sim = register_all_modules()
     sim.make_initial_population(n=100)
@@ -321,11 +352,14 @@ def test_anc_contacts_that_should_not_run_wont_run():
     assert date_event == (sim.date + pd.DateOffset(weeks=10))
     assert (df.at[mother_id, 'ps_date_of_anc1'] == (sim.date + pd.DateOffset(weeks=10)))
 
-    # todo: more test?
     # todo: check anc 2 doesnt run and the next event is scheduled
 
 
 def test_care_seeking_for_next_contact():
+    """This test checks the logic around care seeking for the next ANC visit in the schedule. We test that women who are
+     predicited at least 4 visits are automatically scheduled the next visit in the schedule (if that visit number is
+    below 4). We also test that women who are not predicted 4 or more visits will seek care based on the value of a
+    care seeking parameter"""
     sim = register_all_modules()
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -381,11 +415,140 @@ def test_care_seeking_for_next_contact():
     assert antenatal_care.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact not in hsi_events
 
 
-def test_anc_one_interventions_delivered_as_expected():
-    pass
+def test_anc_one_interventions_delivered_as_expected_no_cons_constraints():
+    sim = register_all_modules_no_consumable_constraints()
+    sim.make_initial_population(n=100)
+
+    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
+    params_dep = sim.modules['Depression'].parameters
+
+    # Set sensitivity/specificity of dx_tests to one
+    params_dep['sensitivity_of_assessment_of_depression'] = 1.0
+    params['sensitivity_bp_monitoring'] = 1.0
+    params['specificity_bp_monitoring'] = 1.0
+    params['sensitivity_urine_protein_1_plus'] = 1.0
+    params['specificity_urine_protein_1_plus'] = 1.0
+    params['sensitivity_poc_hb_test'] = 1.0
+    params['specificity_poc_hb_test'] = 1.0
+    params['sensitivity_fbc_hb_test'] = 1.0
+    params['specificity_fbc_hb_test'] = 1.0
+    params['sensitivity_blood_test_glucose'] = 1.0
+    params['specificity_blood_test_glucose'] = 1.0
+
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    # Select a woman from the dataframe of reproductive age
+    df = sim.population.props
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    mother_id = women_repro.index[0]
+    updated_mother_id = int(mother_id)
+
+    # Set key pregnancy variables
+    df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'date_of_last_pregnancy'] = start_date
+    df.at[mother_id, 'ps_will_attend_four_or_more_anc'] = True
+    df.at[mother_id, 'ps_date_of_anc1'] = start_date + pd.DateOffset(weeks=8)
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'hypertension_onset': pd.NaT}
+
+    # Set complication variables to be detected in ANC
+    df.at[mother_id, 'ps_htn_disorders'] = 'gest_htn'
+    df.at[mother_id, 'de_depr'] = True
+
+    # Set parameters used to determine if HCW will deliver intervention (if consumables available) to 1
+    params['prob_intervention_delivered_urine_ds'] = 1
+    params['prob_intervention_delivered_bp'] = 1
+    params['prob_intervention_delivered_depression_screen'] = 1
+    params['prob_intervention_delivered_ifa'] = 1
+    params['prob_intervention_delivered_bep'] = 1
+    params['prob_intervention_delivered_llitn'] = 1
+    params['prob_intervention_delivered_hiv_test'] = 1
+    params['prob_intervention_delivered_poct'] = 1
+    params['prob_intervention_delivered_tt'] = 1
+
+    sim.date = start_date + pd.DateOffset(weeks=8)
+
+    first_anc = antenatal_care.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi=2)
+    first_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 1)
+    assert (df.at[mother_id, 'ac_facility_type'] == 'hospital')
+
+    assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['hypertension_onset']
+            == sim.date)
+    assert (df.at[mother_id, 'ac_receiving_iron_folic_acid'])
+    assert (df.at[mother_id, 'ac_receiving_bep_supplements'])
+    assert (df.at[mother_id, 'ac_itn_provided'])
+    assert (df.at[mother_id, 'ac_ttd_received'] == 1)
+
+    health_system = sim.modules['HealthSystem']
+    hsi_events = health_system.find_events_for_person(person_id=mother_id)
+    hsi_events = [e.__class__ for d, e in hsi_events]
+    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare in hsi_events
+    assert hiv.HSI_Hiv_TestAndRefer in hsi_events
+
+    assert (df.at[mother_id, 'de_ever_diagnosed_depression'])
+    assert depression.HSI_Depression_TalkingTherapy in hsi_events
+    assert depression.HSI_Depression_Start_Antidepressant in hsi_events
+
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+
+    second_anc = antenatal_care.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi=2)
+    second_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+
+    # todo calcium
+    # todo iptp
+    # todo test GDM screening
+    # todo anaemia screening
+
+    # todo hep b - not stored as property
+    # todo syphilis - not stored as property
+
+    # test iptp
+
 
 # todo: another test that just calls the other interventions not called in ANC 1?
 # TODO: test inpatient stuff...
+# test_anc_one_interventions_delivered_as_expected_no_cons_constraints()
 
-def test_bp_monitoring():
-    pass # causing admissions it shouldnt
+def test_dx_tests():
+    sim = register_all_modules_no_consumable_constraints()
+    sim.make_initial_population(n=100)
+
+    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
+    params['sensitivity_bp_monitoring'] = 1.0
+    params['specificity_bp_monitoring'] = 1.0
+    params['sensitivity_urine_protein_1_plus'] = 1.0
+    params['specificity_urine_protein_1_plus'] = 1.0
+
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    mother_id = women_repro.index[0]
+    updated_mother_id = int(mother_id)
+
+    from tlo.methods.healthsystem import HSI_Event
+    from tlo.events import IndividualScopeEventMixin
+
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = sim.modules['HealthSystem'].get_blank_appt_footprint()
+            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ALERT_OTHER_DISEASES = []
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    hsi_event = HSI_Dummy(module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
+    result = sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='urine_dipstick_protein',
+                                                                       hsi_event=hsi_event)
+    print(result)
+
+test_dx_tests()
+

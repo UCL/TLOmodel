@@ -296,8 +296,8 @@ class CareOfWomenDuringPregnancy(Module):
             # This test represents measurement of blood pressure used in ANC screening to detect hypertension in
             # pregnancy
             blood_pressure_measurement=DxTest(
-                property='ps_htn_disorders', target_categories=['gest_htn', 'mild_pre_eclamp', 'severe_gest_htn',
-                                                                'severe_pre_eclamp', 'eclampsia'],
+                property='ps_htn_disorders',  # TODO: if target categories are split across 2 lines, returns false?
+                target_categories=['gest_htn', 'mild_pre_eclamp', 'severe_gest_htn', 'severe_pre_eclamp', 'eclampsia'],
                 sensitivity=params['sensitivity_bp_monitoring'],
                 specificity=params['specificity_bp_monitoring']),
 
@@ -328,7 +328,7 @@ class CareOfWomenDuringPregnancy(Module):
                 sensitivity=params['sensitivity_blood_test_glucose'],
                 specificity=params['specificity_blood_test_glucose']))
 
-        if 'hiv' not in self.sim.modules:
+        if 'Hiv' not in self.sim.modules:
             logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
                                                'testing will not happen in antenatal care')
 
@@ -626,6 +626,9 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.parameters
 
+        hypertension_diagnosed = False
+        proteinuria_diagnosed = False
+
         # Define the consumables
         item_code_urine_dipstick = pd.unique(
             consumables.loc[consumables['Items'] == 'Test strips, urine analysis', 'Item_Code'])[0]
@@ -652,27 +655,24 @@ class CareOfWomenDuringPregnancy(Module):
 
                 # We use a temporary variable to store if proteinuria is detected
                 proteinuria_diagnosed = True
-            else:
-                proteinuria_diagnosed = False
+                logger.debug(key='msg', data=f'Urine dip stick testing detected proteinuria for mother {person_id}')
+
         else:
             logger.debug(key='msg', data='Urine dipstick testing was not completed in this ANC visit due to '
                                          'unavailable consumables')
-            proteinuria_diagnosed = False
 
         # The process is repeated for blood pressure monitoring- although not conditioned on consumables
         if self.rng.random_sample() < params['prob_intervention_delivered_bp']:
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_pressure_measurement',
                                                                        hsi_event=hsi_event):
                 hypertension_diagnosed = True
+                logger.debug(key='msg', data=f'Blood pressure testing detected hypertension for mother {person_id}')
 
                 if ~df.at[person_id, 'ac_gest_htn_on_treatment'] and (df.at[person_id, 'ps_htn_disorders'] != 'none'):
+
                     # We store date of onset to calculate dalys- only women who are aware of diagnosis experience DALYs
                     # (see daly weight for hypertension)
                     self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(person_id, 'hypertension_onset')
-            else:
-                hypertension_diagnosed = False
-        else:
-            hypertension_diagnosed = False
 
         # If either high blood pressure or proteinuria are detected (or both) we assume this woman needs to be admitted
         # for further treatment following this ANC contact
@@ -688,7 +688,7 @@ class CareOfWomenDuringPregnancy(Module):
                                          f'will now need admission')
 
         # Here we conduct screening and initiate treatment for depression as needed
-        if 'depression' in self.sim.modules.keys():
+        if 'Depression' in self.sim.modules:
             if self.rng.random_sample() < params['prob_intervention_delivered_depression_screen']:
                 logger.debug(key='msg', data=f'Mother {person_id} will now be receive screening for depression during'
                                              f' ANC  and commence treatment as appropriate')
