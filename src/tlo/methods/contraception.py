@@ -627,6 +627,12 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
     def apply(self, population, squeeze_factor):
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # multiply each Unit_Cost by Expected_Units_Per_Case so they can be summed for all Items for each contraceptive
+        # package to get cost of each contraceptive user for each contraceptive
+        item_cost = self.sim.modules['HealthSystem'].parameters['Consumables']['Expected_Units_Per_Case']*\
+                    self.sim.modules['HealthSystem'].parameters['Consumables']['Unit_Cost']
+        consumables['item_cost'] = item_cost
+        # TODO: How long are the units of each item supposed to be for though? e.g. male condoms have 120 units.
 
         # contraception_consumables = self.parameters['contraception_consumables']
         # contraception_users = df.co_contraception.isin(['pill', 'IUD', 'injections', 'implant', 'male_condom',  \
@@ -653,10 +659,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
         cost_pill = pd.Series(consumables.loc[
                                          consumables['Intervention_Pkg']
                                          == 'Pill',
-                                         'Unit_Cost']).sum()    # adds all item costs
-        # TODO: Need to divide each Unit_Cost by Expected_Units_Per_Case and sum for all Items for each contraceptive
-        #  package to get cost of each contraceptive user for each contraceptive - how long is this supposed to be for
-        #  though? e.g. male condoms have 120 units.
+                                         'item_cost']).sum()    # adds all item costs
 
         consumables_needed = {'Intervention_Package_Code': {pkg_code_pill: 0}, 'Item_Code': {}}
 
@@ -681,7 +684,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
         cost_IUD = pd.Series(consumables.loc[
                                          consumables['Intervention_Pkg']
                                          == 'IUD',
-                                         'Unit_Cost']).sum()    # adds all item costs
+                                         'item_cost']).sum()    # adds all item costs
 
         consumables_needed = {'Intervention_Package_Code': {pkg_code_IUD: 3}, 'Item_Code': {}}
 
@@ -706,7 +709,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
         cost_injections = pd.Series(consumables.loc[
                                          consumables['Intervention_Pkg']
                                          == 'Injectable',
-                                         'Unit_Cost']).sum()    # adds all item costs
+                                         'item_cost']).sum()    # adds all item costs
 
         consumables_needed = {'Intervention_Package_Code': {pkg_code_injections: 2}, 'Item_Code': {}}
 
@@ -731,7 +734,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
         cost_implant = pd.Series(consumables.loc[
                                          consumables['Intervention_Pkg']
                                          == 'Implant',
-                                         'Unit_Cost']).sum()    # adds all item costs
+                                         'item_cost']).sum()    # adds all item costs
 
         consumables_needed = {'Intervention_Package_Code': {pkg_code_implant: 4}, 'Item_Code': {}}
 
@@ -756,7 +759,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
         cost_male_condom = pd.Series(consumables.loc[
                                          consumables['Intervention_Pkg']
                                          == 'Male condom',
-                                         'Unit_Cost']).sum()
+                                         'item_cost']).sum()
 
         consumables_needed = {'Intervention_Package_Code': {pkg_code_male_condom: 1}, 'Item_Code': {}}
 
@@ -781,7 +784,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
         cost_female_sterilization = pd.Series(consumables.loc[
                                          consumables['Intervention_Pkg']
                                          == 'Female sterilization',
-                                         'Unit_Cost']).sum()    # adds all item costs
+                                         'item_cost']).sum()    # adds all item costs
 
         consumables_needed = {'Intervention_Package_Code': {pkg_code_female_sterilization: 5}, 'Item_Code': {}}
 
@@ -806,7 +809,7 @@ class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole populati
         cost_female_condom = pd.Series(consumables.loc[
                                          consumables['Intervention_Pkg']
                                          == 'Female Condom',
-                                         'Unit_Cost']).sum()    # adds all item costs
+                                         'item_cost']).sum()    # adds all item costs
 
         consumables_needed = {'Intervention_Package_Code': {pkg_code_other_modern: 7}, 'Item_Code': {}}
 

@@ -42,7 +42,7 @@ log_config = {
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2011, 1, 1)
 pop_size = 1000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -256,7 +256,7 @@ ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Contraception Consumable Costs By Method")
 plt.xlabel("Year")
-plt.ylabel("Consumable Costs")
+plt.ylabel("Consumable Costs (Cumulative)")
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['pill costs', 'IUD costs', 'injection costs', 'implant costs', 'male condom costs',
             'female sterilization costs', 'female condom costs'])
