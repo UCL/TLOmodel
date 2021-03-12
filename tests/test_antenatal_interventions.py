@@ -381,5 +381,11 @@ def test_care_seeking_for_next_contact():
     assert antenatal_care.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact not in hsi_events
 
 
+def test_anc_one_interventions_delivered_as_expected():
+    pass
+
+# todo: another test that just calls the other interventions not called in ANC 1?
+# TODO: test inpatient stuff...
+
 def test_bp_monitoring():
     pass # causing admissions it shouldnt
