@@ -185,7 +185,8 @@ class Contraception(Module):
         c_adjusted = c_baseline.mul(c_intervention2.iloc[0])
         self.parameters['contraception_initiation2'] = c_adjusted.loc[0]
 
-        # Public health costs per year of interventions:
+        # Public health costs per year of interventions - sum these annually - in a separate new event?:
+        # doesn't seem possible to simply do it in the LoggingEvent as that doesn't have access to parameters
         cost_per_year1 = c_intervention.iloc[[1]]   # cost_per_year_multiplier for increasing r_init1
         cost_per_year2 = c_intervention.iloc[[3]]   # cost_per_year_multiplier for increasing r_init2 PPFP
 
@@ -631,7 +632,9 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'other_modern': contraception_count['other_modern'],
             'periodic_abstinence': contraception_count['periodic_abstinence'],
             'withdrawal': contraception_count['withdrawal'],
-            'other_traditional': contraception_count['other_traditional']
+            'other_traditional': contraception_count['other_traditional'],
+            #'public_health_costs1': cost_per_year1,
+            #'public_health_costs2': cost_per_year2,
         }
 
         logger.info(key='contraception',
