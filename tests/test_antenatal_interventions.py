@@ -29,9 +29,12 @@ from tlo.methods import (
 
 seed = 560
 
+
+
+
 log_config = {
     "filename": "pregnancy_supervisor_test",   # The name of the output file (a timestamp will be appended).
-    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    "directory": "../outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # warning  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.contraception": logging.DEBUG,
@@ -413,7 +416,6 @@ def test_perfect_run_of_anc_contacts_no_constraints():
     # TODO: test that other blood tests are occuring (hep b and syphilis- currently not linked to anything)
     # TODO: test albendazole
 
-test_perfect_run_of_anc_contacts_no_constraints()
 
 
 # todo hep b - not stored as property
@@ -610,3 +612,78 @@ def test_post_abortion_care():
 
 def test_ectopic_case_management():
     pass
+
+
+def test_tim_checking_bp_dx_text():
+
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*'],
+                                           ignore_cons_constraints=True),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 )
+
+    sim.make_initial_population(n=100)
+
+    params = sim.modules['PostnatalSupervisor'].parameters
+    params['sensitivity_bp_monitoring_pn'] = 1.0
+    params['specificity_bp_monitoring_pn'] = 1.0
+
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    # Confirm correct sensitivty and specificy
+    sim.modules['HealthSystem'].dx_manager.print_info_about_dx_test('blood_pressure_measurement')
+
+    # choose a woman of reproductive age
+    df = sim.population.props
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    woman_id = int(women_repro.index[0])
+
+    # Find all categories for blood pressure in the df
+    all_categories = list(df['pn_htn_disorders'].cat.categories)
+
+    # Find the target categories for blood pressure in the df:
+    target_categories = ['gest_htn', 'mild_pre_eclamp', 'severe_gest_htn', 'severe_pre_eclamp', 'eclampsia']
+
+    # check target categories has been specified correctly:
+    assert set(target_categories) == set(
+        sim.modules['HealthSystem'].dx_manager.dx_tests['blood_pressure_measurement'][0].target_categories
+    )
+    assert set(target_categories).issubset(target_categories)
+
+    # Make Dummy Event
+    from tlo.methods.healthsystem import HSI_Event
+    from tlo.events import IndividualScopeEventMixin
+
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = sim.modules['HealthSystem'].get_blank_appt_footprint()
+            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ALERT_OTHER_DISEASES = []
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    hsi_event = HSI_Dummy(module=sim.modules['PostnatalSupervisor'], person_id=woman_id)
+
+    # for each of the categories, test that DX test give the expected answer:
+
+    for true_value in all_categories:
+        sim.population.props.at[woman_id, 'pn_htn_disorders'] = true_value
+
+        # Run DxTest for 'blood_pressure_measurement'
+        test_result = sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            dx_tests_to_run='blood_pressure_measurement',
+            hsi_event=hsi_event
+        )
+
+        # check that result of dx test is as expected:
+        assert test_result is (true_value in target_categories)
+
