@@ -76,7 +76,7 @@ class Contraception(Module):
         #   'other traditional method'
         # Have replaced Age-spec fertility sheet in ResourceFile_DemographicData.xlsx (in this branch)
         # with the one in ResourceFile_Contraception.xlsx
-        # (has 11 categories and one row for each age with baseline contraceptopn prevalences for
+        # (has 11 categories and one row for each age with baseline contraception prevalence for
         # each of the 11 categories)
         'co_date_of_childbirth': Property(Types.DATE, 'Due date of child for those who become pregnant'),
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
@@ -119,8 +119,14 @@ class Contraception(Module):
         self.parameters['r_discont_year'] = workbook['r_discont_year'].set_index('year')
 
         self.parameters['contraception_consumables'] = workbook['consumables']
+        # this has data on all the contraception consumables used - currently not used as link to main consumables
+        # worksheet in health system instead
 
         self.parameters['contraception_interventions'] = workbook['interventions']
+        # this has multipliers of initiation rates to model effect of interventions to increase contraception uptake
+        # multiplier: of r_init1 by contraception type e.g. 1.2 for pill means a 20% increase in initiation of pill
+        # PPFP_multiplier: "Post Partum Family Planning" multiplier of r_init2 by contraception type e.g. 1.8 for IUD
+        #   means 80% increase in IUD initiation after pregnancy/birth.
 
         # =================== ARRANGE INPUTS FOR USE BY REGULAR EVENTS =============================
 
@@ -132,12 +138,18 @@ class Contraception(Module):
         # worksheet, results are in 'r_init1_age' sheet
         c_multiplier = workbook['r_init1_age']
 
-        # 'irate_1_' sheet created manually as a work around to address to do point on line 39
+        # 'irate_1_' sheet created manually
         c_baseline = workbook['irate1_']
         # this Excel sheet is irate1_all.csv outputs from 'initiation rates_age_stcox.do'
         # Stata analysis of DHS contraception calendar data
+        c_intervention = workbook['interventions']
+        c_intervention = pd.DataFrame(c_intervention)
+        c_intervention = c_intervention.set_index('contraception').T
+        c_intervention1 = c_intervention.iloc[[0]]  # just the first row: multiplier, double brackets for df type
+        c_intervention2 = c_intervention.iloc[[2]]  # just the third row: PPFP_multiplier
 
         c_baseline = c_baseline.drop(columns=['not_using'])
+        c_baseline = c_baseline.mul(c_intervention1.iloc[0])    # intervention1 to increase each contraception uptake
         c_baseline = pd.concat([c_baseline] * len(c_multiplier), ignore_index=True)
         c_adjusted = c_baseline.mul(c_multiplier.r_init1_age, axis='index')
         c_adjusted = c_baseline + c_adjusted
