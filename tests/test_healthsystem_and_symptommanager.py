@@ -43,14 +43,13 @@ def check_dtypes(simulation):
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
+
 def test_using_parameter_or_argument_to_set_service_availability():
     """
     Check that can set service_availability through argument or through parameter.
     Should be equal to what is specified by the parameter, but overwrite with what was provided in arguement if an
     argument was specified -- provided for backward compatibility.)
     """
-
-
 
     # No specification with argument --> everything is available
     sim = Simulation(start_date=start_date, seed=0)

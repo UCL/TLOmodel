@@ -192,7 +192,6 @@ class HealthSystem(Module):
         # Set default parameter for Service Availablity (everthing available)
         self.parameters['Service_Availability'] = ['*']
 
-
     def process_consumables_file(self):
         """Helper function for processing the consumables data (stored as self.parameters['Consumables'])
         * Creates ```parameters['Consumables']```
