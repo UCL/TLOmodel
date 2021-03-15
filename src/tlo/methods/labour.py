@@ -485,252 +485,100 @@ class Labour(Module):
 
             # This equation is used to calculate a womans risk of developing other undefined infection during the
             # intrapartum phase of labour and is mitigated by clean delivery
-            'other_maternal_infection_ip': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_other_maternal_infection_ip'],
-                Predictor('received_clean_delivery', external=True).when(
-                    True, params['treatment_effect_maternal_infection_clean_delivery'])),
+            'other_maternal_infection_ip': LinearModel.custom(labour_lm.predict_other_maternal_infections_ip,
+                                                              parameters=params),
 
             # This equation is used to calculate a womans risk of developing endometritis infection during the
             # postpartum phase of labour and is mitigated by clean delivery
-            'endometritis_pp': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_endometritis_pp'],
-                Predictor('received_clean_delivery', external=True).when(
-                    True, params['treatment_effect_maternal_infection_clean_delivery'])),
+            'endometritis_pp': LinearModel.custom(labour_lm.predict_endometritis_pp, parameters=params),
 
             # This equation is used to calculate a womans risk of developing skin or soft tissue infection during the
             # postpartum phase of labour and is mitigated by clean delivery
-            'skin_soft_tissue_inf_pp': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_skin_soft_tissue_inf_pp'],
-                Predictor('received_clean_delivery', external=True).when(
-                    True, params['treatment_effect_maternal_infection_clean_delivery'])),
+            'skin_soft_tissue_inf_pp': LinearModel.custom(labour_lm.predict_skin_soft_tissue_inf_pp, parameters=params),
 
             # This equation is used to calculate a womans risk of developing a urinary tract infection during the
             # postpartum phase of labour and is mitigated by clean delivery
-            'urinary_tract_inf_pp': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_urinary_tract_inf_pp'],
-                Predictor('received_clean_delivery', external=True).when(
-                    True, params['treatment_effect_maternal_infection_clean_delivery'])),
+            'urinary_tract_inf_pp': LinearModel.custom(labour_lm.predict_urinary_tract_inf_pp, parameters=params),
 
             # This equation is used to calculate a womans risk of developing other undefined infection during the
             # postpartum phase of labour and is mitigated by clean delivery
-            'other_maternal_infection_pp': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_other_maternal_infection_pp'],
-                Predictor('received_clean_delivery', external=True).when(
-                    True, params['treatment_effect_maternal_infection_clean_delivery'])),
+            'other_maternal_infection_pp': LinearModel.custom(labour_lm.predict_other_maternal_infection_pp,
+                                                              parameters=params),
 
             # This equation is used to calculate a womans risk risk of developing intrapartum sepsis. We assume sepsis
             # can only occur in the presence of a preceding infection therefore this model is additive
-            'sepsis_ip': LinearModel(
-                LinearModelType.ADDITIVE,
-                0,
-                Predictor('ps_chorioamnionitis').when('histological', params['prob_sepsis_chorioamnionitis']),
-                Predictor('la_maternal_ip_infection').apply(
-                    lambda x: params['prob_sepsis_chorioamnionitis']
-                    if x & self.intrapartum_infections.element_repr('chorioamnionitis') else 0),
-                Predictor('la_maternal_ip_infection').apply(
-                    lambda x: params['prob_sepsis_other_maternal_infection_ip']
-                    if x & self.intrapartum_infections.element_repr('other_maternal_infection') else 0)),
+            'sepsis_ip': LinearModel.custom(labour_lm.predict_sepsis_ip, module=self),
 
             # This equation is used to calculate a womans risk of death following sepsis during labour and is mitigated
             # by treatment
-            'sepsis_death': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['cfr_sepsis'],
-                Predictor('la_sepsis_treatment').when(True, params['sepsis_treatment_effect_md']),
-                Predictor('ac_received_abx_for_chorioamnionitis').when(True, 0.5)),
+            'sepsis_death': LinearModel.custom(labour_lm.predict_sepsis_death, parameters=params),
 
             # This equation is used to calculate a womans risk risk of developing postpartum sepsis. We assume sepsis
             # can only occur in the presence of a preceding infection therefore this model is additive
-            'sepsis_pp': LinearModel(
-                LinearModelType.ADDITIVE,
-                0,
-                Predictor('la_maternal_pp_infection').apply(
-                    lambda x: params['prob_sepsis_endometritis']
-                    if x & self.postpartum_infections.element_repr('endometritis') else 0),
-                Predictor('la_maternal_pp_infection').apply(
-                    lambda x: params['prob_sepsis_urinary_tract_inf']
-                    if x & self.postpartum_infections.element_repr('urinary_tract_inf') else 0),
-                Predictor('la_maternal_pp_infection').apply(
-                    lambda x: params['prob_sepsis_skin_soft_tissue_inf']
-                    if x & self.postpartum_infections.element_repr('skin_soft_tissue_inf') else 0),
-                Predictor('la_maternal_pp_infection').apply(
-                    lambda x: params['prob_sepsis_other_maternal_infection_pp']
-                    if x & self.postpartum_infections.element_repr('other_maternal_infection') else 0)),
+            'sepsis_pp': LinearModel.custom(labour_lm.predict_sepsis_pp, module=self),
 
             # This equation is used to calculate a womans risk of death following postpartum sepsis and is mitigated
             # by treatment
-            'sepsis_pp_death': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['cfr_pp_sepsis'],
-                Predictor('la_sepsis_treatment').when(True, params['sepsis_treatment_effect_md'])),
+            'sepsis_pp_death': LinearModel.custom(labour_lm.predict_sepsis_pp_death, parameters=params),
 
             # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
             # by treatment delivered either immediately prior to admission for delivery or during labour
-            'eclampsia_death': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['cfr_eclampsia'],
-                Predictor('la_eclampsia_treatment').when(True, params['eclampsia_treatment_effect_md']),
-                # Both these predictors represent intravenous antihypertensives- both will not be true for the same
-                # woman
-                Predictor('la_maternal_hypertension_treatment').when(True, params['anti_htns_treatment_effect_md']),
-                Predictor('ac_iv_anti_htn_treatment').when(True, params['anti_htns_treatment_effect_md'])),
+            'eclampsia_death': LinearModel.custom(labour_lm.predict_eclampsia_death, parameters=params),
 
             # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
             # by treatment delivered either immediately prior to admission for delivery or during labour
-            'eclampsia_pp_death': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['cfr_pp_eclampsia'],
-                Predictor('la_eclampsia_treatment').when(True, params['eclampsia_treatment_effect_md']),
-                Predictor('la_maternal_hypertension_treatment').when(True, params['anti_htns_treatment_effect_md']),
-                Predictor('ac_iv_anti_htn_treatment').when(True, params['anti_htns_treatment_effect_md'])),
+            'eclampsia_pp_death': LinearModel.custom(labour_lm.predict_eclampsia_pp_death, parameters=params),
 
             # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
             # by treatment delivered either immediately prior to admission for delivery or during labour
-            'severe_pre_eclamp_death': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['cfr_severe_pre_eclamp'],
-                # Predictor('la_severe_pre_eclampsia_treatment').when(True, params['eclampsia_treatment_effect_md']),
-                Predictor('la_maternal_hypertension_treatment').when(True, params['anti_htns_treatment_effect_md']),
-                Predictor('ac_iv_anti_htn_treatment').when(True, params['anti_htns_treatment_effect_md'])),
+            'severe_pre_eclamp_death': LinearModel.custom(labour_lm.predict_severe_pre_eclamp_death, parameters=params),
 
             # This equation is used to calculate a womans risk of placental abruption in labour
-            'placental_abruption_ip': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_placental_abruption_during_labour']),
+            'placental_abruption_ip': LinearModel.custom(labour_lm.predict_placental_abruption_ip, parameters=params),
 
             # This equation is used to calculate a womans risk of antepartum haemorrhage. We assume APH can only occur
             # in the presence of a preceding placental causes (abruption/praevia) therefore this model is additive
-            'antepartum_haem_ip': LinearModel(
-                LinearModelType.ADDITIVE,
-                0,
-                Predictor('ps_placenta_praevia').when(True, params['prob_aph_placenta_praevia_labour']),
-                Predictor('ps_placental_abruption').when(True, params['prob_aph_placental_abruption_labour']),
-                Predictor('la_placental_abruption').when(True, params['prob_aph_placental_abruption_labour'])),
+            'antepartum_haem_ip': LinearModel.custom(labour_lm.predict_antepartum_haem_ip, parameters=params),
 
             # This equation is used to calculate a womans risk of death following antepartum haemorrhage. Risk is
             # mitigated by treatment
-            'antepartum_haem_death': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['cfr_aph'],
-                Predictor('received_blood_transfusion', external=True).when(True, params['aph_bt_treatment_effect_md']),
-                Predictor('mode_of_delivery', external=True).when("caesarean_section",
-                                                                  params['aph_cs_treatment_effect_md'])),
+            'antepartum_haem_death': LinearModel.custom(labour_lm.predict_antepartum_haem_death, parameters=params),
 
-            # This equation is used to calculate a womans risk of postpartum haemorrhage. We assume APH can only occur
+            # This equation is used to calculate a womans risk of postpartum haemorrhage. We assume PPH can only occur
             # in the presence of a preceding causes (uterine atony/retained placenta/lacerations/other) therefore this
             # model is additive
-            'postpartum_haem_pp': LinearModel(
-                LinearModelType.ADDITIVE,
-                0,
-                Predictor('la_postpartum_haem_cause').apply(
-                    lambda x: params['prob_pph_uterine_atony']
-                    if x & self.cause_of_primary_pph.element_repr('uterine_atony') else 0),
-                Predictor('la_postpartum_haem_cause').apply(
-                    lambda x: params['prob_pph_lacerations']
-                    if x & self.cause_of_primary_pph.element_repr('lacerations') else 0),
-                Predictor('la_postpartum_haem_cause').apply(
-                    lambda x: params['prob_pph_retained_placenta']
-                    if x & self.cause_of_primary_pph.element_repr('retained_placenta') else 0),
-                Predictor('la_postpartum_haem_cause').apply(
-                    lambda x: params['prob_pph_other_causes']
-                    if x & self.cause_of_primary_pph.element_repr('other_pph_cause') else 0)),
+            'postpartum_haem_pp': LinearModel.custom(labour_lm.predict_postpartum_haem_pp, module=self),
 
             # This equation is used to calculate a womans risk of death following postpartum haemorrhage. Risk is
             # mitigated by treatment
-            'postpartum_haem_pp_death': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['cfr_pp_pph'],
-                Predictor('ps_anaemia_in_pregnancy').when(True, params['rr_pph_death_anaemia']),
-                Predictor('la_postpartum_haem_treatment').apply(
-                    lambda x: params['pph_treatment_effect_uterotonics_md']
-                    if x & self.pph_treatment.element_repr('uterotonics') else 1),
-                Predictor('la_postpartum_haem_treatment').apply(
-                    lambda x: params['pph_treatment_effect_mrp_md']
-                    if x & self.pph_treatment.element_repr('manual_removal_placenta') else 1),
-                Predictor('la_postpartum_haem_treatment').apply(
-                    lambda x: params['pph_treatment_effect_surg_md']
-                    if x & self.pph_treatment.element_repr('surgery') else 1),
-                Predictor('la_postpartum_haem_treatment').apply(
-                    lambda x: params['pph_treatment_effect_hyst_md']
-                    if x & self.pph_treatment.element_repr('hysterectomy') else 1),
-                Predictor('received_blood_transfusion', external=True).when(True, params['pph_bt_treatment_effect_md'])
-            ),
+            'postpartum_haem_pp_death': LinearModel.custom(labour_lm.predict_postpartum_haem_pp_death, module=self),
 
             # This equation is used to calculate a womans risk of uterine rupture
-            'uterine_rupture_ip': LinearModel(
-                LinearModelType.LOGISTIC,
-                params['odds_uterine_rupture'],
-                Predictor('la_parity').when('>4', params['or_ur_grand_multip']),
-                Predictor('la_previous_cs_delivery').when(True, params['or_ur_prev_cs']),
-                Predictor('la_obstructed_labour').when(True, params['or_ur_ref_ol'])),
+            'uterine_rupture_ip': LinearModel.custom(labour_lm.predict_uterine_rupture_ip, parameters=params),
 
             # This equation is used to calculate a womans risk of death following uterine rupture. Risk if reduced by
             # treatment
-            'uterine_rupture_death': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['cfr_uterine_rupture'],
-                Predictor('la_uterine_rupture_treatment').when(True, params['ur_repair_treatment_effect_md']),
-                Predictor('la_has_had_hysterectomy').when(True, params['ur_hysterectomy_treatment_effect_md']),
-                Predictor('received_blood_transfusion', external=True).when(True, params['ur_treatment_effect_bt_md'])),
+            'uterine_rupture_death': LinearModel.custom(labour_lm.predict_uterine_rupture_death, parameters=params),
 
             # This equation is used to calculate a womans risk of still birth during the intrapartum period. Assisted
             # vaginal delivery and caesarean delivery are assumed to significantly reduce risk
-            'intrapartum_still_birth': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_ip_still_birth_unk_cause'],
-                Predictor('la_maternal_death_in_labour').when(True, params['rr_still_birth_maternal_death']),
-                Predictor('la_antepartum_haem').when('mild_moderate', params['rr_still_birth_aph'])
-                                               .when('severe', params['rr_still_birth_aph']),
-                # todo: risk should modify with severity- placeholder
-                Predictor('ps_antepartum_haemorrhage').when("mild_moderate", params['rr_still_birth_aph'])
-                                                      .when("severe", params['rr_still_birth_aph']),
-                Predictor('la_obstructed_labour').when(True, params['rr_still_birth_ol']),
-                Predictor('la_uterine_rupture').when(True, params['rr_still_birth_ur']),
-                Predictor('la_sepsis').when(True, params['rr_still_birth_sepsis']),
-                # todo: chorioamnionitis
-                Predictor('ps_htn_disorders').when("severe_pre_eclamp", params['rr_still_birth_spe'])
-                                             .when("eclampsia", params['rr_still_birth_ec']),
-                Predictor('mode_of_delivery', external=True).when("instrumental",
-                                                                  params['treatment_effect_avd_still_birth'])
-                                                            .when("caesarean_section",
-                                                                  params['treatment_effect_cs_still_birth'])),
+            'intrapartum_still_birth': LinearModel.custom(labour_lm.predict_intrapartum_still_birth,
+                                                          parameters=params),
 
             # This regression equation uses data from the DHS to predict a womans probability of choosing to deliver in
             # a health centre
-            'probability_delivery_health_centre': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['odds_deliver_in_health_centre'],
-                Predictor('age_years').when('.between(24,30)', params['rrr_hc_delivery_age_25_29'])
-                                      .when('.between(29,35)', params['rrr_hc_delivery_age_30_34'])
-                                      .when('.between(34,40)', params['rrr_hc_delivery_age_35_39'])
-                                      .when('.between(39,45)', params['rrr_hc_delivery_age_40_44'])
-                                      .when('.between(44,50)', params['rrr_hc_delivery_age_45_49']),
-                Predictor('li_urban').when(False, params['rrr_hc_delivery_rural']),
-                Predictor('la_parity').when('.between(2,5)', params['rrr_hc_delivery_parity_3_to_4'])
-                                      .when('>4', params['rrr_hc_delivery_parity_>4']),
-                Predictor('li_mar_stat').when('2', params['rrr_hc_delivery_married'])),
+            'probability_delivery_health_centre': LinearModel.custom(
+                labour_lm.predict_probability_delivery_health_centre, parameters=params),
 
             # This regression equation uses data from the DHS to predict a womans probability of choosing to deliver in
             # at home
-            'probability_delivery_at_home': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['odds_deliver_at_home'],
-                Predictor('age_years').when('.between(34,40)', params['rrr_hb_delivery_age_35_39'])
-                                      .when('.between(39,45)', params['rrr_hb_delivery_age_40_44'])
-                                      .when('.between(44,50)', params['rrr_hb_delivery_age_45_49']),
-                Predictor('la_parity').when('.between(2,5)', params['rrr_hb_delivery_parity_3_to_4'])
-                                      .when('>4', params['rrr_hb_delivery_parity_>4'])),
+            'probability_delivery_at_home': LinearModel.custom(
+                labour_lm.predict_probability_delivery_at_home, parameters=params),
 
             # This equation calculates a womans probability of seeking care following a complication during labour or
             # immediately after birth
-            'care_seeking_for_complication': LinearModel(
-                LinearModelType.LOGISTIC,
-                params['odds_careseeking_for_complication']),
+            'care_seeking_for_complication': LinearModel.custom(
+                labour_lm.predict_care_seeking_for_complication, parameters=params),
         }
 
     def initialise_population(self, population):

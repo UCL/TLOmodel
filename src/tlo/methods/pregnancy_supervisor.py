@@ -1539,6 +1539,49 @@ class PregnancySupervisor(Module):
             logger.debug(key='message', data=f'Mother {individual_id} will not seek care following pregnancy loss')
             return False
 
+    def generate_mother_and_newborn_dictionary_for_individual(self, individual_id):
+        """ This function generates variables within the mni dictionary for women. It is abstracted to a function for
+        testing purposes"""
+        mni = self.mother_and_newborn_info
+
+        mni[individual_id] = {'delete_mni': False,
+                              'abortion_onset': pd.NaT,
+                              'abortion_haem_onset': pd.NaT,
+                              'abortion_sep_onset': pd.NaT,
+                              'eclampsia_onset': pd.NaT,
+                              'mild_mod_aph_onset': pd.NaT,
+                              'severe_aph_onset': pd.NaT,
+                              'chorio_onset': pd.NaT,
+                              'ectopic_onset': pd.NaT,
+                              'ectopic_rupture_onset': pd.NaT,
+                              'gest_diab_onset': pd.NaT,
+                              'gest_diab_diagnosed_onset': pd.NaT,
+                              'gest_diab_resolution': pd.NaT,
+                              'mild_anaemia_onset': pd.NaT,
+                              'mild_anaemia_resolution': pd.NaT,
+                              'moderate_anaemia_onset': pd.NaT,
+                              'moderate_anaemia_resolution': pd.NaT,
+                              'severe_anaemia_onset': pd.NaT,
+                              'severe_anaemia_resolution': pd.NaT,
+                              'mild_anaemia_pp_onset': pd.NaT,
+                              'mild_anaemia_pp_resolution': pd.NaT,
+                              'moderate_anaemia_pp_onset': pd.NaT,
+                              'moderate_anaemia_pp_resolution': pd.NaT,
+                              'severe_anaemia_pp_onset': pd.NaT,
+                              'severe_anaemia_pp_resolution': pd.NaT,
+                              'hypertension_onset': pd.NaT,
+                              'hypertension_resolution': pd.NaT,
+                              'obstructed_labour_onset': pd.NaT,
+                              'sepsis_onset': pd.NaT,
+                              'uterine_rupture_onset': pd.NaT,
+                              'mild_mod_pph_onset': pd.NaT,
+                              'severe_pph_onset': pd.NaT,
+                              'secondary_pph_onset': pd.NaT,
+                              'vesicovaginal_fistula_onset': pd.NaT,
+                              'vesicovaginal_fistula_resolution': pd.NaT,
+                              'rectovaginal_fistula_onset': pd.NaT,
+                              'rectovaginal_fistula_resolution': pd.NaT,
+                               }
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancySupervisorEvent, it is a weekly event which has two primary functions.
@@ -1575,44 +1618,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # contains information about the onset of complications in order to calculate monthly DALYs
         newly_pregnant = df.loc[alive_and_preg & (df['ps_gestational_age_in_weeks'] == 3)]
         for person in newly_pregnant.index:
-            mni[person] = {'delete_mni': False,
-                           'abortion_onset': pd.NaT,
-                           'abortion_haem_onset': pd.NaT,
-                           'abortion_sep_onset': pd.NaT,
-                           'eclampsia_onset': pd.NaT,
-                           'mild_mod_aph_onset': pd.NaT,
-                           'severe_aph_onset': pd.NaT,
-                           'chorio_onset': pd.NaT,
-                           'ectopic_onset': pd.NaT,
-                           'ectopic_rupture_onset': pd.NaT,
-                           'gest_diab_onset': pd.NaT,
-                           'gest_diab_diagnosed_onset': pd.NaT,
-                           'gest_diab_resolution': pd.NaT,
-                           'mild_anaemia_onset': pd.NaT,
-                           'mild_anaemia_resolution': pd.NaT,
-                           'moderate_anaemia_onset': pd.NaT,
-                           'moderate_anaemia_resolution': pd.NaT,
-                           'severe_anaemia_onset': pd.NaT,
-                           'severe_anaemia_resolution': pd.NaT,
-                           'mild_anaemia_pp_onset': pd.NaT,
-                           'mild_anaemia_pp_resolution': pd.NaT,
-                           'moderate_anaemia_pp_onset': pd.NaT,
-                           'moderate_anaemia_pp_resolution': pd.NaT,
-                           'severe_anaemia_pp_onset': pd.NaT,
-                           'severe_anaemia_pp_resolution': pd.NaT,
-                           'hypertension_onset': pd.NaT,
-                           'hypertension_resolution': pd.NaT,
-                           'obstructed_labour_onset': pd.NaT,
-                           'sepsis_onset': pd.NaT,
-                           'uterine_rupture_onset': pd.NaT,
-                           'mild_mod_pph_onset': pd.NaT,
-                           'severe_pph_onset': pd.NaT,
-                           'secondary_pph_onset': pd.NaT,
-                           'vesicovaginal_fistula_onset': pd.NaT,
-                           'vesicovaginal_fistula_resolution': pd.NaT,
-                           'rectovaginal_fistula_onset': pd.NaT,
-                           'rectovaginal_fistula_resolution': pd.NaT,
-                           }
+            self.module.generate_mother_and_newborn_dictionary_for_individual(person)
 
         # =========================== APPLYING RISK OF ADVERSE PREGNANCY OUTCOMES =====================================
         # The aim of this event is to apply risk of certain outcomes of pregnancy at relevant points in a womans

@@ -915,7 +915,6 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage():
     # todo check stillbirth
     # todo: treatment (anc test?)
 
-test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage()
 
 def test_pregnancy_supervisor_pre_eclampsia_and_progression():
     sim = register_core_modules()
@@ -1020,6 +1019,7 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
     # TODO: preventative treatment should reduce monthly risk
     # todo: progression to eclampsia
     # TODO: resolution/continuation on birth?
+
 
 def test_pregnancy_supervisor_gestational_hypertension_and_progression():
     sim = register_core_modules()
@@ -1217,6 +1217,7 @@ def test_pregnancy_supervisor_chorio_and_prom():
     assert (df.loc[pregnant_women.index, 'ps_prev_stillbirth']).all().all()
     for person in pregnant_women.index:
         assert sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]['delete_mni']
+
 
 def test_induction_of_labour_logic():
     sim = register_core_modules()

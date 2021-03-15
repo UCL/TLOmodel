@@ -73,6 +73,9 @@ class CareOfWomenDuringPregnancy(Module):
         'prob_intervention_delivered_bep': Parameter(
             Types.REAL, 'probability a woman will receive the intervention "Balance energy and protein supplements" '
                         'given that the HSI has ran and the consumables are available (proxy for clinical quality)'),
+        'prob_intervention_delivered_depression_screen': Parameter(
+            Types.REAL, 'probability a woman will receive the intervention "depression screen" '
+                        'given that the HSI has ran and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_llitn': Parameter(
             Types.REAL, 'probability a woman will receive the intervention "Long lasting insecticide treated net" '
                         'given that the HSI has ran and the consumables are available (proxy for clinical quality)'),
@@ -296,7 +299,7 @@ class CareOfWomenDuringPregnancy(Module):
             # This test represents measurement of blood pressure used in ANC screening to detect hypertension in
             # pregnancy
             blood_pressure_measurement=DxTest(
-                property='ps_htn_disorders',  # TODO: if target categories are split across 2 lines, returns false?
+                property='ps_htn_disorders',
                 target_categories=['gest_htn', 'mild_pre_eclamp', 'severe_gest_htn', 'severe_pre_eclamp', 'eclampsia'],
                 sensitivity=params['sensitivity_bp_monitoring'],
                 specificity=params['specificity_bp_monitoring']),
@@ -670,6 +673,8 @@ class CareOfWomenDuringPregnancy(Module):
 
                 if ~df.at[person_id, 'ac_gest_htn_on_treatment'] and (df.at[person_id, 'ps_htn_disorders'] != 'none'):
 
+                    # todo; this will change the onset date if a woman changes state whilst on treatment (mpe - spe)
+
                     # We store date of onset to calculate dalys- only women who are aware of diagnosis experience DALYs
                     # (see daly weight for hypertension)
                     self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(person_id, 'hypertension_onset')
@@ -678,14 +683,14 @@ class CareOfWomenDuringPregnancy(Module):
         # for further treatment following this ANC contact
 
         # Only women who are not on treatment OR are determined to have severe disease whilst on treatment are admitted
-        if (hypertension_diagnosed or proteinuria_diagnosed) and (~df.at[person_id, 'ac_gest_htn_on_treatment'] or
-                                                                  ((df.at[person_id, 'ps_htn_disorders'] ==
-                                                                   'severe_pre_eclampsia') or
-                                                                   ((df.at[person_id, 'ps_htn_disorders'] ==
-                                                                     'eclampsia')))):
-            df.at[person_id, 'ac_to_be_admitted'] = True
-            logger.debug(key='msg', data=f'Mother {person_id} has had hypertension or proteinuria detected in ANC and '
-                                         f'will now need admission')
+        if hypertension_diagnosed or proteinuria_diagnosed:
+            if ((df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or
+                (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia')) or \
+                ~df.at[person_id, 'ac_gest_htn_on_treatment']:
+
+                df.at[person_id, 'ac_to_be_admitted'] = True
+                logger.debug(key='msg', data=f'Mother {person_id} has had hypertension or proteinuria detected in ANC '
+                                             f'and will now need admission')
 
         # Here we conduct screening and initiate treatment for depression as needed
         if 'Depression' in self.sim.modules:
@@ -1004,7 +1009,7 @@ class CareOfWomenDuringPregnancy(Module):
         params = self.parameters
         person_id = hsi_event.target
 
-        if 'hiv' in self.sim.modules:
+        if 'Hiv' in self.sim.modules:
             if (self.rng.random_sample() < params['prob_intervention_delivered_hiv_test']) and ~df.at[person_id,
                                                                                                       'hv_diagnosed']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1024,8 +1029,8 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
-        if 'malaria' in self.sim.modules.keys():
-            if not df.at[person_id, "ma_tx"] and not df.at[person_id, "ma_tx"] and df.at[person_id, "is_alive"]:
+        if 'Malaria' in self.sim.modules:
+            if not df.at[person_id, "ma_tx"]  and df.at[person_id, "is_alive"]:
 
                 # Test to ensure only 5 doses are able to be administered
                 assert df.at[person_id, 'ac_doses_of_iptp_received'] < 6

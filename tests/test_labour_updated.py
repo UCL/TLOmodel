@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+import pandas as pd
+
 import pytest
 from tlo import Date, Simulation, logging
 from tlo.methods import (
@@ -142,3 +144,43 @@ def test_run_health_system_events_wont_run():
 
     check_dtypes(sim)
 
+def test_custom_linear_models():
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*']),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    mother_id = women_repro.index[0]
+
+    df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'la_due_date_current_pregnancy'] = sim.date
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 37
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date - pd.DateOffset(months=9)
+
+    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
+
+    labour_onset = labour.LabourOnsetEvent(module=sim.modules['Labour'], individual_id=mother_id)
+    labour_onset.apply(mother_id)
+
+    params = sim.modules['Labour'].parameters
+    params['la_labour_equations']['predict_chorioamnionitis_ip'].predict(
+        df.loc[[mother_id]])[mother_id]
+
+
+test_custom_linear_models()
