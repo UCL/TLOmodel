@@ -96,10 +96,6 @@ class Contraception(Module):
 
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
 
-        self.parameters['contraception_initiation2'] = workbook['irate2_'].loc[0]
-        # this Excel sheet is irate2_all.csv outputs from 'initiation rates_age_stcox.do'
-        # Stata analysis of DHS contraception calendar data
-
         self.parameters['contraception_failure'] = workbook['Failure'].loc[0]
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv outputs from
         # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
@@ -179,6 +175,14 @@ class Contraception(Module):
         c_adjusted = c_baseline.mul(c_multiplier.r_discont_age, axis='index')
         c_adjusted = c_baseline + c_adjusted
         self.parameters['contraception_discontinuation'] = c_adjusted.set_index(c_multiplier.age)
+
+        # For on_birth init2 post-partum family planning interventions
+        c_baseline = workbook['irate2_']
+        # this Excel sheet is irate2_all.csv outputs from 'initiation rates_age_stcox.do'
+        # Stata analysis of DHS contraception calendar data
+        c_baseline = c_baseline.drop(columns=['not_using'])
+        c_adjusted = c_baseline.mul(c_intervention2.iloc[0])
+        self.parameters['contraception_initiation2'] = c_adjusted.loc[0]
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
