@@ -44,10 +44,12 @@ log_config = {
 resourcefilepath = Path('./resources')
 # Establish the simulation object
 yearsrun = 10
+
+
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 50000
+pop_size = 5000
 nsim = 3
 
 
@@ -160,7 +162,8 @@ ICU_burn = []
 # injury severity of rural vs urban injuries
 per_sim_rural_severe = []
 per_sim_urban_severe = []
-#
+# proportion of lower extremity fractures that are open
+per_sim_average_percentage_lx_open = []
 for i in range(0, nsim):
     sim = Simulation(start_date=start_date)
     # We register all modules in a single call to the register method, calling once with multiple
@@ -451,6 +454,10 @@ for i in range(0, nsim):
     # todo: plot the urban vs rural injury severity currently produced by the model (injury_severity)
     per_sim_rural_severe.append(log_df['tlo.methods.rti']['injury_severity']['Percent_severe_rural'].tolist())
     per_sim_urban_severe.append(log_df['tlo.methods.rti']['injury_severity']['Percent_severe_urban'].tolist())
+    log_df['tlo.methods.rti']['Open_fracture_information']
+    proportions_of_open_lx_fractures_in_sim = [i for i in log_df['tlo.methods.rti']['Open_fracture_information']
+    ['Proportion_lx_fracture_open'].values if i != 'no_lx_fractures']
+    per_sim_average_percentage_lx_open.append(np.mean(proportions_of_open_lx_fractures_in_sim))
     print(i)
 
 def age_breakdown(age_array):
@@ -506,7 +513,19 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
-
+# plot the percentage of lower extremity fractures that are open
+data = [np.mean(per_sim_average_percentage_lx_open), 1 - np.mean(per_sim_average_percentage_lx_open)]
+plt.pie(data,
+        explode=None, labels=['Open lx fracture', "Closed lx fracture"], colors=['lightsteelblue', 'lightsalmon'],
+        autopct='%1.1f%%')
+plt.title(f"Average percentage of lower extremity fractures that are open"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Percent_lx_fracture_open.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 # plot the percentage of those who sought health care
 per_sim_average_health_seeking = [np.mean(i) for i in percent_sought_healthcare]
 overall_average_health_seeking_behaviour = np.mean(per_sim_average_health_seeking)
