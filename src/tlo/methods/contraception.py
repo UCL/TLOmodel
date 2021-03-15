@@ -56,6 +56,7 @@ class Contraception(Module):
                                      2010 to 2100'),
         # TODO: add relative fertility rates for HIV+ compared to HIV- by age group from Marston et al 2017
         'contraception_consumables': Parameter(Types.DATA_FRAME, 'consumables'),
+        'contraception_interventions': Parameter(Types.DATA_FRAME, 'interventions'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -83,7 +84,6 @@ class Contraception(Module):
                                            'Date of the last pregnancy of this individual'),
         'co_unintended_preg': Property(Types.BOOL, 'Unintended pregnancies following contraception failure'),
         #TODO: add link to unintended preg from not using
-        'male_condom_received': Property(Types.BOOL, 'Male condom consumable received')
     }
 
     def read_parameters(self, data_folder):
@@ -119,6 +119,8 @@ class Contraception(Module):
         self.parameters['r_discont_year'] = workbook['r_discont_year'].set_index('year')
 
         self.parameters['contraception_consumables'] = workbook['consumables']
+
+        self.parameters['contraception_interventions'] = workbook['interventions']
 
         # =================== ARRANGE INPUTS FOR USE BY REGULAR EVENTS =============================
 
@@ -180,7 +182,6 @@ class Contraception(Module):
         df.loc[df.is_alive, 'is_pregnant'] = False
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'co_unintended_preg'] = False
-        df.loc[df.is_alive, 'male_condom_received'] = False
 
         # Assign contraception method
         # 1. select females aged 15-49 from population, for current year
@@ -236,7 +237,6 @@ class Contraception(Module):
         df.at[child_id, 'is_pregnant'] = False
         df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
         df.at[child_id, 'co_unintended_preg'] = False
-        df.at[child_id, 'male_condom_received'] = False
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         df.at[mother_id, 'is_pregnant'] = False
