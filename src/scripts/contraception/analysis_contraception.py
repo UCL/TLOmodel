@@ -42,7 +42,7 @@ log_config = {
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
+end_date = Date(2012, 1, 2)
 pop_size = 1000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -261,5 +261,33 @@ plt.ylabel("Consumable Costs (Cumulative)")
 plt.legend(['pill costs', 'IUD costs', 'injection costs', 'implant costs', 'male condom costs',
             'female sterilization costs', 'female condom costs'])
 plt.savefig(outputpath / ('Contraception Consumable Costs By Method' + datestamp + '.pdf'), format='pdf')
+plt.show()
+
+# %% Plot Public Health Costs Over time:
+
+years = mdates.YearLocator()   # every year
+years_fmt = mdates.DateFormatter('%Y')
+
+# Load Model Results
+com_df = log_df['tlo.methods.contraception']['contraception']
+Model_Years = pd.to_datetime(com_df.date)
+Model_public_health_costs1 = com_df.public_health_costs1
+Model_public_health_costs2 = com_df.public_health_costs2
+
+fig, ax = plt.subplots()
+ax.plot(np.asarray(Model_Years), Model_public_health_costs1)
+ax.plot(np.asarray(Model_Years), Model_public_health_costs2)
+
+# format the ticks
+ax.xaxis.set_major_locator(years)
+ax.xaxis.set_major_formatter(years_fmt)
+
+plt.title("Public Health Costs for Contraception uptake")
+plt.xlabel("Year")
+plt.ylabel("Cost")
+#plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
+plt.legend(['population scope campaign to increase contraception initiation',
+            'post partum family planning (PPFP) campaign'])
+plt.savefig(outputpath / ('Public Health Costs' + datestamp + '.pdf'), format='pdf')
 plt.show()
 
