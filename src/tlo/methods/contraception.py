@@ -616,6 +616,13 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
 
+        c_intervention = self.module.parameters['contraception_interventions']
+        # Public health costs per year of interventions - sum these annually below:
+        c_intervention = pd.DataFrame(c_intervention)
+        c_intervention = c_intervention.set_index('contraception').T
+        cost_per_year1 = c_intervention.iloc[1]   # cost_per_year_multiplier for increasing r_init1
+        cost_per_year2 = c_intervention.iloc[3]   # cost_per_year_multiplier for increasing r_init2 PPFP
+
         contraception_count = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].groupby(
             'co_contraception').size()
 
@@ -633,8 +640,8 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'periodic_abstinence': contraception_count['periodic_abstinence'],
             'withdrawal': contraception_count['withdrawal'],
             'other_traditional': contraception_count['other_traditional'],
-            #'public_health_costs1': cost_per_year1,
-            #'public_health_costs2': cost_per_year2,
+            'public_health_costs1': sum(cost_per_year1),
+            'public_health_costs2': sum(cost_per_year2),
         }
 
         logger.info(key='contraception',
