@@ -280,8 +280,12 @@ class HealthSystem(Module):
         sim.schedule_event(RefreshInPatient(self), sim.date)
 
         # Determine service_availability
-        # (Should be equal to what is specified by the parameter, but overwrite with what was provided in arguement if
-        #  an argument was specified -- provided for backward compatibility.)
+        self.set_service_availability()
+
+    def set_service_availability(self):
+        """Set service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
+         provided in arguement if an argument was specified -- provided for backward compatibility.)"""
+
         if self.arg_service_availabily is None:
             service_availability = self.parameters['Service_Availability']
         else:
