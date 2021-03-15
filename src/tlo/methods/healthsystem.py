@@ -117,6 +117,7 @@ class HealthSystem(Module):
 
         # Store the argument provided for service_availability
         self.arg_service_availabily = service_availability
+        self.service_availability = ['*']  # provided so that there is a default even before simulation is run
 
         # Check that the capabilities coefficient is correct
         assert capabilities_coefficient >= 0
