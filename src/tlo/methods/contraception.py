@@ -122,7 +122,8 @@ class Contraception(Module):
         # this has multipliers of initiation rates to model effect of interventions to increase contraception uptake
         # multiplier: of r_init1 by contraception type e.g. 1.2 for pill means a 20% increase in initiation of pill
         # PPFP_multiplier: "Post Partum Family Planning" multiplier of r_init2 by contraception type e.g. 1.8 for IUD
-        #   means 80% increase in IUD initiation after pregnancy/birth.
+        #   means 80% increase in IUD initiation after pregnancy/birth. These are set below within read_parameters
+        #   before the simulations starts
 
         # =================== ARRANGE INPUTS FOR USE BY REGULAR EVENTS =============================
 
@@ -183,6 +184,10 @@ class Contraception(Module):
         c_baseline = c_baseline.drop(columns=['not_using'])
         c_adjusted = c_baseline.mul(c_intervention2.iloc[0])
         self.parameters['contraception_initiation2'] = c_adjusted.loc[0]
+
+        # Public health costs per year of interventions:
+        cost_per_year1 = c_intervention.iloc[[1]]   # cost_per_year_multiplier for increasing r_init1
+        cost_per_year2 = c_intervention.iloc[[3]]   # cost_per_year_multiplier for increasing r_init2 PPFP
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -274,6 +279,17 @@ class Contraception(Module):
 
         # the index of the row is the contraception type
         df.at[mother_id, 'co_contraception'] = chosen_co.index[0]
+
+        # call HSI here for init2 (post-birth contraception) as well as init1 & switching below
+        # TODO: does this result in repeat costs for the ones still using as well or only for the newly started?
+        contraception_event = HSI_Contraception(module=self)
+        # is module=self correct? (self.module) didn't work from here within on_birth
+        self.sim.modules['HealthSystem'].schedule_hsi_event(contraception_event,
+                                                            priority=1,
+                                                            topen=self.sim.date,
+                                                            tclose=self.sim.date + DateOffset(days=1))
+        logger.debug(key='debug', data='The population wide HSI event has been scheduled successfully!')
+
         post_birth_contraception_summary = {
             'woman_index': mother_id,
             'co_contraception': df.at[mother_id, 'co_contraception']
@@ -353,7 +369,6 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
 
             # only update entries for all those now using a contraceptive
             df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
-            # TODO: health system resource use will come in here - HSI at end of code below
             contraception_event = HSI_Contraception(self.module)
             self.sim.modules['HealthSystem'].schedule_hsi_event(contraception_event,
                                                                 priority=1,
@@ -395,6 +410,14 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
 
         # select new contraceptive using switching matrix
         new_co = transition_states(df.loc[switch_co, 'co_contraception'], switching_matrix, rng)
+        # call HSI here after switching as well as init1 above
+        # TODO: does this result in repeat costs for the ones still using as well or only for the newly switched?
+        contraception_event = HSI_Contraception(self.module)
+        self.sim.modules['HealthSystem'].schedule_hsi_event(contraception_event,
+                                                            priority=1,
+                                                            topen=self.sim.date,
+                                                            tclose=self.sim.date + DateOffset(days=1))
+        logger.debug(key='debug', data='The population wide HSI event has been scheduled successfully!')
 
         # log old -> new contraception types
         for woman in switch_co:
