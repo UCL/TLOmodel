@@ -42,8 +42,8 @@ log_config = {
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 2)
-pop_size = 1000
+end_date = Date(2051, 1, 2)
+pop_size = 10000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
 # `log_config` arguments, these will override the default behaviour.
@@ -96,8 +96,8 @@ ax.plot(np.asarray(Model_Years), Model_using)
 # plt.plot(Data_Years, Data_Pop_Normalised)
 
 # format the ticks
-ax.xaxis.set_major_locator(years)
-ax.xaxis.set_major_formatter(years_fmt)
+#ax.xaxis.set_major_locator(years)
+#ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Contraception Use")
 plt.xlabel("Year")
@@ -141,8 +141,8 @@ ax.plot(np.asarray(Model_Years), Model_withdrawal)
 ax.plot(np.asarray(Model_Years), Model_other_traditional)
 
 # format the ticks
-ax.xaxis.set_major_locator(years)
-ax.xaxis.set_major_formatter(years_fmt)
+#ax.xaxis.set_major_locator(years)
+#ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Contraception Use By Method")
 plt.xlabel("Year")
@@ -173,8 +173,8 @@ ax.plot(np.asarray(Model_Years), Model_pregnant)
 ax.plot(np.asarray(Model_Years), Model_not_pregnant)
 
 # format the ticks
-ax.xaxis.set_major_locator(years)
-ax.xaxis.set_major_formatter(years_fmt)
+#ax.xaxis.set_major_locator(years)
+#ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Pregnancies Over Time")
 plt.xlabel("Year")
@@ -212,8 +212,8 @@ ax.plot(np.asarray(Model_Years), Model_female_sterilization)
 ax.plot(np.asarray(Model_Years), Model_female_condom)
 
 # format the ticks
-ax.xaxis.set_major_locator(years)
-ax.xaxis.set_major_formatter(years_fmt)
+#ax.xaxis.set_major_locator(years)
+#ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Contraception Consumables By Method")
 plt.xlabel("Year")
@@ -251,8 +251,8 @@ ax.plot(np.asarray(Model_Years), Model_female_sterilization)
 ax.plot(np.asarray(Model_Years), Model_female_condom)
 
 # format the ticks
-ax.xaxis.set_major_locator(years)
-ax.xaxis.set_major_formatter(years_fmt)
+#ax.xaxis.set_major_locator(years)
+#ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Contraception Consumable Costs By Method")
 plt.xlabel("Year")
@@ -279,8 +279,8 @@ ax.plot(np.asarray(Model_Years), Model_public_health_costs1)
 ax.plot(np.asarray(Model_Years), Model_public_health_costs2)
 
 # format the ticks
-ax.xaxis.set_major_locator(years)
-ax.xaxis.set_major_formatter(years_fmt)
+#ax.xaxis.set_major_locator(years)
+#ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Public Health Costs for Contraception uptake")
 plt.xlabel("Year")
