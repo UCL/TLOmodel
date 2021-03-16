@@ -6,6 +6,7 @@ from pathlib import Path
 import pickle
 import pandas as pd
 from pandas import DataFrame
+import matplotlib.pyplot as plt
 
 # import the class used to generate the batch
 from scripts.dev.th_testing.mockitis_batch import Mockitis_Batch
@@ -65,17 +66,20 @@ log_element = {
 
 propinf = summarize(extract_results(log_element))
 
+# summarize as the value at the end of the run
+propinf_end = propinf.iloc[[-1]]
 
+height = np.c_[propinf_end.loc[:, (slice(None), "mean")].iloc[0].values]
+lower_upper = np.c_[
+    propinf_end.loc[:, (slice(None), "lower")].iloc[0].values,
+    propinf_end.loc[:, (slice(None), "upper")].iloc[0].values
+]
+yerr = lower_upper - height
 
+plt.bar(
+    x=propinf_end.columns.unique(level="draw").values,
+    height=propinf_end.loc[:, (slice(None), "mean")].iloc[0].values,
+    yerr=
+)
 
-
-
-
-
-# get number of draws
-ndrwas = bd.number_of_draws
-
-# get number of runs
-
-
-# Make summmaries of the log-component across the runs:
+plt.show()
