@@ -24,9 +24,9 @@ class Mockitis_Batch(BaseScenario):
         super().__init__()
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2011, 1, 1)
-        self.pop_size = 5000
-        self.number_of_draws = 10
+        self.end_date = Date(2020, 1, 1)
+        self.pop_size = 500
+        self.number_of_draws = 5
         self.runs_per_draw = 5
 
     def log_configuration(self):

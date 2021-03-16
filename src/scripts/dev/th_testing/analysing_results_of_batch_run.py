@@ -7,6 +7,7 @@ import pickle
 import pandas as pd
 from pandas import DataFrame
 import matplotlib.pyplot as plt
+import numpy as np
 
 # import the class used to generate the batch
 from scripts.dev.th_testing.mockitis_batch import Mockitis_Batch
@@ -40,7 +41,7 @@ def extract_results(dict: log_element):
 
 # %% Utility function to compute summary statistics that finds mean value and 95% credible intervals across the runs
 
-def summarize(DataFrame: results):
+def summarize(results):
     summary = pd.DataFrame(
         columns=pd.MultiIndex.from_product(
             [
@@ -69,17 +70,18 @@ propinf = summarize(extract_results(log_element))
 # summarize as the value at the end of the run
 propinf_end = propinf.iloc[[-1]]
 
-height = np.c_[propinf_end.loc[:, (slice(None), "mean")].iloc[0].values]
-lower_upper = np.c_[
+height = propinf_end.loc[:, (slice(None), "mean")].iloc[0].values
+lower_upper = np.array(list(zip(
     propinf_end.loc[:, (slice(None), "lower")].iloc[0].values,
     propinf_end.loc[:, (slice(None), "upper")].iloc[0].values
-]
+))).transpose()
+
 yerr = lower_upper - height
 
 plt.bar(
     x=propinf_end.columns.unique(level="draw").values,
     height=propinf_end.loc[:, (slice(None), "mean")].iloc[0].values,
-    yerr=
+    yerr=yerr
 )
 
 plt.show()
