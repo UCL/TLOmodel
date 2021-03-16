@@ -82,9 +82,9 @@ log_element = {
 # 3) Get summary of the results for that log-element
 propinf = summarize(extract_results(results_folder, log_element))
 
-# 4) Create a plot
+# 4) Create some plot
 
-# summarize as the value at the end of the run
+# i) bar plot to summarize as the value at the end of the run
 propinf_end = propinf.iloc[[-1]]
 
 height = propinf_end.loc[:, (slice(None), "mean")].iloc[0].values
@@ -100,5 +100,24 @@ plt.bar(
     height=propinf_end.loc[:, (slice(None), "mean")].iloc[0].values,
     yerr=yerr
 )
+plt.show()
 
+# ii) plot to show time-series (means)
+for draw in range(bd.number_of_draws):
+    plt.plot(propinf.loc[:, (draw, "mean")].index, propinf.loc[:, (draw, "mean")].values)
+plt.xlabel(propinf.index.name)
+plt.show()
+
+
+# iii) banded plot to show variation across runs
+draw = 0
+plt.plot(propinf.loc[:, (draw, "mean")].index, propinf.loc[:, (draw, "mean")].values, 'b')
+plt.fill_between(
+    propinf.loc[:, (draw, "mean")].index,
+    propinf.loc[:, (draw, "lower")].values,
+    propinf.loc[:, (draw, "upper")].values,
+    color = 'b',
+    alpha = 0.5
+)
+plt.xlabel(propinf.index.name)
 plt.show()
