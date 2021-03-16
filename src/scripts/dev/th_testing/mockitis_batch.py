@@ -1,5 +1,9 @@
 """
-This file defines a batch run through which the HIV module is run
+This file defines a batch run through which the HIV module is run.
+
+Run on the batch system using:
+```tlo batch-submit  src/scripts/dev/th_testing/mockitis_batch.py tlo.conf```
+
 """
 
 import numpy as np
