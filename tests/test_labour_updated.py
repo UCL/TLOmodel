@@ -184,3 +184,4 @@ def test_custom_linear_models():
 
 
 test_custom_linear_models()
+# todo: test event scheduling in all different methiods

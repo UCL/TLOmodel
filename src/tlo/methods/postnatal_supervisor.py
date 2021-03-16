@@ -501,7 +501,7 @@ class PostnatalSupervisor(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
 
             # This dx_test represents blood pressure measurement delivered during PNC
-            blood_pressure_measurement=DxTest(
+            blood_pressure_measurement_pn=DxTest(
                 property='pn_htn_disorders', target_categories=['gest_htn', 'mild_pre_eclamp', 'severe_gest_htn',
                                                                 'severe_pre_eclamp', 'eclampsia'],
                 sensitivity=params['sensitivity_bp_monitoring_pn'],
@@ -509,13 +509,13 @@ class PostnatalSupervisor(Module):
 
             # This test represents a urine dipstick which is used to measuring the presence and amount of protein in a
             # womans urine, proteinuria being indicative of pre-eclampsia/eclampsia
-            urine_dipstick_protein=DxTest(
+            urine_dipstick_protein_pn=DxTest(
                 property='pn_htn_disorders', target_categories=['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia'],
                 sensitivity=params['sensitivity_urine_protein_1_plus_pn'],
                 specificity=params['specificity_urine_protein_1_plus_pn']),
 
             # This test represents point of care haemoglobin testing used in PNC to detect anaemia (all-severity)
-            point_of_care_hb_test=DxTest(
+            point_of_care_hb_test_pn=DxTest(
                 property='pn_anaemia_following_pregnancy', target_categories=['mild', 'moderate', 'severe'],
                 sensitivity=params['sensitivity_poc_hb_test_pn'],
                 specificity=params['specificity_poc_hb_test_pn']),
@@ -1091,7 +1091,7 @@ class PostnatalSupervisor(Module):
 
             # If the consumables are available the test is ran. Urine testing in ANC is predominantly used to detected
             # protein in the urine (proteinuria) which is indicative of pre-eclampsia
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='urine_dipstick_protein',
+            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='urine_dipstick_protein_pn',
                                                                        hsi_event=hsi_event):
                 # We use a temporary variable to store if proteinuria is detected
                 proteinuria_diagnosed = True
@@ -1104,7 +1104,7 @@ class PostnatalSupervisor(Module):
 
         # The process is repeated for blood pressure monitoring- although not conditioned on consumables
         if self.rng.random_sample() < params['prob_intervention_delivered_bp_pnc']:
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_pressure_measurement',
+            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_pressure_measurement_pn',
                                                                        hsi_event=hsi_event):
                 hypertension_diagnosed = True
 
@@ -1144,7 +1144,7 @@ class PostnatalSupervisor(Module):
                 needs_admission = True
 
         if self.rng.random_sample() < params['prob_intervention_poct_pnc']:
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='point_of_care_hb_test',
+            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='point_of_care_hb_test_pn',
                                                                        hsi_event=hsi_event):
                 logger.debug(key='message',
                              data=f'Mother {individual_id} has been assessed and diagnosed with postpartum '

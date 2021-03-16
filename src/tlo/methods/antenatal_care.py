@@ -1412,7 +1412,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        params = self.module.parameters
+        params = self.parameters
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
@@ -1441,7 +1441,7 @@ class CareOfWomenDuringPregnancy(Module):
 
             # Women started on IFA at this stage are already anaemic, we here apply a probability that
             # starting on a course of IFA will correct anaemia prior to follow up
-            if self.module.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
+            if self.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
 
                 # Store date of resolution for daly calculations
                 store_dalys_in_mni(individual_id, f'{df.at[individual_id, "ps_anaemia_in_pregnancy"]}_'
@@ -1588,8 +1588,8 @@ class CareOfWomenDuringPregnancy(Module):
             # We dont assume antihypertensives convert severe pre-eclampsia/eclampsia to a more mild version of the
             # disease (as the disease is multi-system and hypertension is only one contributing factor to mortality) but
             # instead use this property to reduce risk of acute death from this episode of disease
-            if df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp' or\
-                    df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia':
+            if (df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or\
+              (df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia'):
 
                 logger.debug(key='msg', data=f'Mother {individual_id} has been given intravenous anti-hypertensive as '
                                              f'part of treatment regime for severe pre-eclampsia/eclampsia')
@@ -2348,9 +2348,6 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
                                                                gest_age_next_contact)
 
         if can_anc_run:
-            if person_id == 122:
-                x = 'h'
-
             logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
             logger.debug(key='msg', data=f'mother {person_id}presented for ANC 7 at a '
                                          f'{df.at[person_id, "ac_facility_type"]} at gestation '
@@ -2607,7 +2604,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                                                      f'will be discharged')
 
                 # If the FBC detected non severe anaemia (Hb >7) she is treated
-                elif fbc_result == 'non_severe':
+                elif fbc_result == 'mild' or fbc_result == 'moderate':
 
                     # Women are started on daily iron and folic acid supplementation (if they are not already receiving
                     # supplements) as treatment for mild/moderate anaemia
@@ -2623,10 +2620,10 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     # should receive a blood transfusion to correct her anaemia
                     self.module.antenatal_blood_transfusion(person_id, self, cause='severe_anaemia')
                     self.module.treatment_of_anaemia_causing_deficiencies(person_id, self)
-                    if mother.ac_receiving_iron_folic_acid == 'False':
+                    if ~mother.ac_receiving_iron_folic_acid:
                         self.module.start_iron_and_folic_acid(person_id, self)
 
-                if fbc_result == 'non_severe' or fbc_result == 'severe':
+                if fbc_result == 'mild' or fbc_result == 'moderate' or fbc_result == 'severe':
                     # Women treated for anaemia will need follow up to ensure the treatment has been effective. Clinical
                     # guidelines suggest follow up one month after treatment
 
@@ -2647,13 +2644,14 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     # Women who will return for ANC in less than a month are assumed to be followed-up in that
                     # appointment (via point of care Hb testing, if offered)
                     elif not pd.isnull(mother.ac_date_next_contact) and ((mother.ac_date_next_contact - self.sim.date)
-                                                                         > pd.to_timedelta(28, unit='D')):
+                                                                          < pd.to_timedelta(28, unit='D')):
                         pass
 
             # ======================== INITIATE TREATMENT FOR GESTATIONAL DIABETES (case management) ==================
             # Women admitted with gestational diabetes are given dietary and exercise advice as first line treatment
-            if mother.ps_gest_diab == 'uncontrolled' and mother.ac_gest_diab_on_treatment == 'none':
+            if (mother.ps_gest_diab == 'uncontrolled') and (mother.ac_gest_diab_on_treatment == 'none'):
                 df.at[person_id, 'ac_gest_diab_on_treatment'] = 'diet_exercise'
+                df.at[person_id, 'ps_gest_diab'] = 'controlled'
 
                 # TODO: AT - issue with circular dependencies
                 # We then schedule GestationalDiabetesGlycaemicControlEvent which determines if this treatment will be
@@ -2677,15 +2675,15 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             # hypertension are started on regular oral antihypertensives therapy (reducing risk of progression to more
             # severe hypertension)
 
-            if (mother.ps_htn_disorders == 'gest_htn' or
-                mother.ps_htn_disorders == 'mild_pre_eclamp') and \
+            if ((mother.ps_htn_disorders == 'gest_htn') or
+                (mother.ps_htn_disorders == 'mild_pre_eclamp')) and \
                ~mother.ac_gest_htn_on_treatment:
                 self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
 
             # Women with severe gestational hypertension are also started on routine oral antihypertensives (if not
             # already receiving- this will prevent progression once this episode of severe hypertension has been
             # rectified)
-            elif mother.ps_htn_disorders == 'severe_gest_htn' and ~mother.ac_gest_htn_on_treatment:
+            elif mother.ps_htn_disorders == 'severe_gest_htn':
                 if ~mother.ac_gest_htn_on_treatment:
                     self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
 
@@ -2695,7 +2693,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
             # Treatment guidelines dictate that women with severe forms of pre-eclampsia should be admitted for delivery
             # to reduce risk of death and pregnancy loss
-            elif mother.ps_htn_disorders == 'severe_pre_eclamp' or mother.ps_htn_disorders == 'eclampsia':
+            elif (mother.ps_htn_disorders == 'severe_pre_eclamp') or (mother.ps_htn_disorders == 'eclampsia'):
 
                 # This property stores what type of delivery this woman is being admitted for
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
@@ -2735,13 +2733,13 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
 
-                    elif mother.ps_antepartum_haemorrhage != 'severe' and mother.ps_gestational_age_in_weeks >= 37:
+                    elif (mother.ps_antepartum_haemorrhage != 'severe') and (mother.ps_gestational_age_in_weeks >= 37):
                         # Women experiencing mild or moderate bleeding but who are around term gestation are admitted
                         # for caesarean
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
 
-                    elif mother.ps_antepartum_haemorrhage != 'severe' and mother.ps_gestational_age_in_weeks < 37:
+                    elif (mother.ps_antepartum_haemorrhage != 'severe') and (mother.ps_gestational_age_in_weeks < 37):
                         # Women with more mild bleeding remain as inpatients until their gestation has increased and
                         # then will be delivered by caesarean - (no risk of death associated with mild/moderate bleeds)
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
@@ -2756,8 +2754,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             # Treatment for women with premature rupture of membranes is dependent upon a womans gestational age and if
             # she also has an infection of membrane surrounding the foetus (the chorion)
 
-            if mother.ps_premature_rupture_of_membranes and (mother.ps_chorioamnionitis == 'none' or
-                                                             mother.ps_chorioamnionitis == 'histological'):
+            if mother.ps_premature_rupture_of_membranes and ((mother.ps_chorioamnionitis == 'none') or
+                                                             (mother.ps_chorioamnionitis == 'histological')):
                 # If the woman has PROM but no infection, she is given prophylactic antibiotics which will reduce
                 # the risk of neonatal infection
                 self.module.antibiotics_for_prom(person_id, self)
@@ -2928,13 +2926,13 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
             return
 
         if ~mother.la_currently_in_labour and ~mother.hs_is_inpatient and mother.ps_gest_diab != 'none' \
-                and mother.ac_gest_diab_on_treatment != 'none' and mother.ps_gestational_age_in_weeks > 21:
+                and (mother.ac_gest_diab_on_treatment != 'none') and (mother.ps_gestational_age_in_weeks > 21):
             logger.debug(key='msg', data=f'Mother {person_id} has presented for review of her GDM')
 
             # Nothing happens to women who arrive at follow up with well controlled GDM (treatment is effective). We now
             # assume that the treatment they are on (started in AntenatalWardInpatientCare) remains effective for the
             # length of their pregnancy
-            if mother.ps_gest_diab == 'controlled' and mother.ac_gest_diab_on_treatment != 'none':
+            if (mother.ps_gest_diab == 'controlled') and (mother.ac_gest_diab_on_treatment != 'none'):
                 logger.debug(key='msg', data=f'Mother {person_id} has well controlled GDM on current treatment and '
                                              f'doesnt need a further check up at present')
 

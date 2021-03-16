@@ -29,21 +29,21 @@ from tlo.methods import (
 
 seed = 560
 
-log_config = {
-    "filename": "pregnancy_supervisor_test",   # The name of the output file (a timestamp will be appended).
-    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
-    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
-        "*": logging.WARNING,  # warning  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.contraception": logging.DEBUG,
-        "tlo.methods.labour": logging.DEBUG,
-        "tlo.methods.healthsystem": logging.FATAL,
-        "tlo.methods.hiv": logging.FATAL,
-        "tlo.methods.newborn_outcomes": logging.DEBUG,
-        "tlo.methods.antenatal_care": logging.DEBUG,
-        "tlo.methods.pregnancy_supervisor": logging.DEBUG,
-        "tlo.methods.postnatal_supervisor": logging.DEBUG,
-    }
-}
+#log_config = {
+#    "filename": "pregnancy_supervisor_test",   # The name of the output file (a timestamp will be appended).
+#    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+#    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+#        "*": logging.WARNING,  # warning  # Asterisk matches all loggers - we set the default level to WARNING
+#        "tlo.methods.contraception": logging.DEBUG,
+#        "tlo.methods.labour": logging.DEBUG,
+ #       "tlo.methods.healthsystem": logging.FATAL,
+ ##       "tlo.methods.hiv": logging.FATAL,
+ #       "tlo.methods.newborn_outcomes": logging.DEBUG,
+  #      "tlo.methods.antenatal_care": logging.DEBUG,
+ #       "tlo.methods.pregnancy_supervisor": logging.DEBUG,
+ #       "tlo.methods.postnatal_supervisor": logging.DEBUG,
+ #   }
+#}
 
 # The resource files
 try:
@@ -121,7 +121,7 @@ def generate_mni_dict_for_slice_of_dataframe(data_frame_slice, sim):
 
 
 def register_core_modules():
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed)# , log_config=log_config)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -141,7 +141,7 @@ def register_core_modules():
 
 
 def register_all_modules():
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed)# , log_config=log_config)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -187,6 +187,7 @@ def test_run_all_modules_normal_allocation_of_pregnancy():
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
 
+test_run_all_modules_normal_allocation_of_pregnancy()
 
 @pytest.mark.group2
 def test_run_all_modules_high_volumes_of_pregnancy():
@@ -514,12 +515,14 @@ def test_abortion_complications():
     death_event = pregnancy_supervisor.EarlyPregnancyLossDeathEvent(module=sim.modules['PregnancySupervisor'],
                                                                     individual_id=mother_id,
                                                                     cause='spontaneous_abortion')
+
     params['ps_linear_equations']['spontaneous_abortion_death'] = \
         LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1)
 
     death_event.apply(mother_id)
+
     events = sim.find_events_for_person(person_id=mother_id)
     events = [e.__class__ for d, e in events]
     assert demography.InstantaneousDeath in events
@@ -718,8 +721,7 @@ def test_check_first_anc_visit_scheduling():
 
     # Run sim and clear event queue
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
-    sim.event_queue.queue.clear()
+
     df = sim.population.props
 
     # Define and run the pregnancy supervisor event (move date forward 1 week)
