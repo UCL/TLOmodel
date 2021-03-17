@@ -60,7 +60,6 @@ class Mockitis_Batch(BaseScenario):
         return {
             'Mockitis': {
                 'p_infection': np.linspace(0, 0.1)[draw_number],
-                'p_cure': 0.52,
             },
         }
 
