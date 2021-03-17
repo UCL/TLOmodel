@@ -1006,7 +1006,7 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management():
     # Check the woman has correctly sought care via HSI_GenericEmergencyFirstApptAtFacilityLevel1
     from tlo.methods.hsi_generic_first_appts import (HSI_GenericEmergencyFirstApptAtFacilityLevel1)
     hsi_list = find_and_return_hsi_events_list(sim, mother_id)
-    # todo: scheduling not working VERY IMPORTANT, NEEDS A FIX
+    # todo: AWAIT CHANGE IN HEALTH SYSTEM
     #assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_list
 
     # Run the event

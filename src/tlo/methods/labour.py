@@ -269,6 +269,8 @@ class Labour(Module):
         'or_comp_careseeking_wealth_2': Parameter(
             Types.REAL, 'odds ratio of a woman of wealth level 2 seeking assistance after developing a complication at '
                         'a home birth '),
+        'test_care_seeking_probs': Parameter(
+            Types.LIST, 'dummy probabilities of delivery care seeking used in testing'),
 
         # ================================= TREATMENT PARAMETERS =====================================================
         'treatment_effect_maternal_infection_clean_delivery': Parameter(
@@ -1421,30 +1423,6 @@ class Labour(Module):
         assert mother.ps_gestational_age_in_weeks == 0
         assert mother.la_is_postpartum
 
-    def events_queue_checker(self, individual_id):
-        """ This function checks a womans event and hsi_event queues to ensure that she has the correct events scheduled
-         during the process of labour. It is not currently in use.
-         """
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        events = self.sim.find_events_for_person(person_id=individual_id)
-
-        # Here we iterate through each womans event queue to insure she has the correct events scheduled
-        # Firstly we check all women have the labour death event and birth event scheduled
-        events = [e.__class__ for d, e in events]
-        assert LabourDeathAndStillBirthEvent in events
-        assert BirthEvent in events
-
-        # Then we ensure that women delivering in a facility have the right HSI scheduled
-        if mni[individual_id]['delivery_setting'] != 'home_birth':
-            health_system = self.sim.modules['HealthSystem']
-            # If the health system is disabled, then the HSI event was wrapped in an HSIEventWrapper
-            # and put in the simulation event queue. Hence, we only check HSI event if the HSI queue
-            # for HSI event if the HSI event is enabled
-            if not health_system.disabled:
-                hsi_events = health_system.find_events_for_person(person_id=individual_id)
-                hsi_events = [e.__class__ for d, e in hsi_events]
-                assert HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour in hsi_events
-
     # ============================================== HSI FUNCTIONS ====================================================
     # Management of each complication is housed within its own function, defined here in the module, and all follow a
     # similar pattern ...
@@ -2214,6 +2192,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                 'single_twin_still_birth': False,  # True (T) or False (F)
                                 'cause_of_stillbirth_in_labour': [],
                                 'death_postpartum': False,  # True (T) or False (F)
+                                'test_run': False,  # T/F, used to force care seeking in test files
                                 }
 
             # TODO- AT- it made sense to just add in the keys related to labour at this point as opposed to defining
@@ -2287,7 +2266,13 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
                 # And a probability weighted random draw is used to determine where the woman will deliver
                 facility_types = ['home_birth', 'health_centre', 'hospital']
-                probabilities = [prob_hb, prob_hc, prob_hp]
+
+                # This allows us to simply manipulate care seeking during labour test file
+                if mni[individual_id]['test_run']:
+                    probabilities = params['test_care_seeking_probs']
+                else:
+                    probabilities = [prob_hb, prob_hc, prob_hp]
+
                 mni[individual_id]['delivery_setting'] = self.module.rng.choice(facility_types, p=probabilities)
 
             else:
@@ -2353,12 +2338,6 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             logger.debug(key='message', data=f'This is LabourOnsetEvent scheduling a birth on date to mother'
                                              f' {individual_id} which will occur on '
                                              f'{self.sim.date + DateOffset(days=5)}')
-
-            # ======================================== RUNNING CHECKS ON EVENT QUEUES ==============
-            # Here we run a check to ensure at the end of the preliminary labour event, women have the appropriate
-            # future events scheduled
-            # For debugging only:
-            # self.module.events_queue_checker(individual_id)
 
 
 class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
