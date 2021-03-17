@@ -21,21 +21,6 @@ from tlo.methods import (
 
 seed = 567
 
-log_config = {
-    "filename": "labour_testing",   # The name of the output file (a timestamp will be appended).
-    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
-    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
-        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.labour": logging.DEBUG,
-        "tlo.methods.healthsystem": logging.FATAL,
-        "tlo.methods.hiv": logging.FATAL,
-        "tlo.methods.newborn_outcomes": logging.DEBUG,
-        "tlo.methods.antenatal_care": logging.DEBUG,
-        "tlo.methods.pregnancy_supervisor": logging.DEBUG,
-        "tlo.methods.postnatal_supervisor": logging.DEBUG,
-    }
-}
-
 
 # The resource files
 try:
@@ -43,10 +28,6 @@ try:
 except NameError:
     # running interactively
     resourcefilepath = 'resources'
-
-start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 1000
 
 
 def check_dtypes(simulation):
@@ -56,64 +37,57 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-@pytest.mark.group2
-def test_run():
-    """This test runs a simulation with a functioning health system with full service availability and no set
-    constraints"""
+def register_modules(ignore_cons_constraints):
+    """Register all modules that are required for labour to run"""
 
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*']),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-
-    check_dtypes(sim)
-
-
-@pytest.mark.group2
-def test_run_health_system_high_squeeze():
-    """This test runs a simulation in which the contents of scheduled HSIs will not be performed because the squeeze
-    factor is too high. Therefore it tests the logic in the did_not_run functions of the Labour HSIs to ensure women
-    who want to deliver in a facility, but cant, due to lacking capacity, have the correct events scheduled to continue
-    their labour"""
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-
-    # Register the core modules
-
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           capabilities_coefficient=0.0,
-                                           mode_appt_constraints=2),
+                                           ignore_cons_constraints=ignore_cons_constraints),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    # Run the simulation
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
+    return sim
+
+
+def test_run():
+    """This test runs a simulation with a functioning health system with full service availability and no set
+    constraints"""
+
+    sim = register_modules(ignore_cons_constraints=False)
+
+    sim.make_initial_population(n=1000)
+    sim.simulate(end_date=Date(2015, 1, 1))
 
     check_dtypes(sim)
+
+
+def test_event_scheduling_for_labour_onset_and_home_birth():
+    pass
+
+def test_event_scheduling_for_labour_onset_and_facility_delivery():
+    pass
+
+
+
+
+
+
+def test_run_health_system_high_squeeze():
+    """This test runs a simulation in which the contents of scheduled HSIs will not be performed because the squeeze
+    factor is too high. Therefore it tests the logic in the did_not_run functions of the Labour HSIs to ensure women
+    who want to deliver in a facility, but cant, due to lacking capacity, have the correct events scheduled to continue
+    their labour"""
+    pass
 
 
 @pytest.mark.group2
@@ -121,31 +95,11 @@ def test_run_health_system_events_wont_run():
     """This test runs a simulation in which no scheduled HSIs will run.. Therefore it tests the logic in the
     not_available functions of the Labour HSIs to ensure women who want to deliver in a facility, but cant, due to the
     service being unavailble, have the correct events scheduled to continue their labour"""
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-
-    # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=[]),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-
-    # Run the simulation
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-
-    check_dtypes(sim)
+    pass
 
 def test_custom_linear_models():
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    pass
+    """sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -180,8 +134,7 @@ def test_custom_linear_models():
 
     params = sim.modules['Labour'].parameters
     params['la_labour_equations']['predict_chorioamnionitis_ip'].predict(
-        df.loc[[mother_id]])[mother_id]
+        df.loc[[mother_id]])[mother_id] """
 
 
-test_custom_linear_models()
 # todo: test event scheduling in all different methiods

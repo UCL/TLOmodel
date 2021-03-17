@@ -29,21 +29,6 @@ from tlo.methods import (
 
 seed = 560
 
-#log_config = {
-#    "filename": "pregnancy_supervisor_test",   # The name of the output file (a timestamp will be appended).
-#    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
-#    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
-#        "*": logging.WARNING,  # warning  # Asterisk matches all loggers - we set the default level to WARNING
-#        "tlo.methods.contraception": logging.DEBUG,
-#        "tlo.methods.labour": logging.DEBUG,
- #       "tlo.methods.healthsystem": logging.FATAL,
- ##       "tlo.methods.hiv": logging.FATAL,
- #       "tlo.methods.newborn_outcomes": logging.DEBUG,
-  #      "tlo.methods.antenatal_care": logging.DEBUG,
- #       "tlo.methods.pregnancy_supervisor": logging.DEBUG,
- #       "tlo.methods.postnatal_supervisor": logging.DEBUG,
- #   }
-#}
 
 # The resource files
 try:
@@ -69,7 +54,7 @@ def set_all_women_as_pregnant_and_reset_baseline_parity(sim):
 
     women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
     df.loc[women_repro.index, 'is_pregnant'] = True
-    df.loc[women_repro.index, 'date_of_last_pregnancy'] = start_date
+    df.loc[women_repro.index, 'date_of_last_pregnancy'] = sim.start_date
     for person in women_repro.index:
         sim.modules['Labour'].set_date_of_labour(person)
 
@@ -121,7 +106,7 @@ def generate_mni_dict_for_slice_of_dataframe(data_frame_slice, sim):
 
 
 def register_core_modules():
-    sim = Simulation(start_date=start_date, seed=seed)# , log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -141,7 +126,7 @@ def register_core_modules():
 
 
 def register_all_modules():
-    sim = Simulation(start_date=start_date, seed=seed)# , log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -187,7 +172,6 @@ def test_run_all_modules_normal_allocation_of_pregnancy():
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
 
-test_run_all_modules_normal_allocation_of_pregnancy()
 
 @pytest.mark.group2
 def test_run_all_modules_high_volumes_of_pregnancy():
@@ -627,7 +611,6 @@ def test_run_all_births_end_ectopic_no_care_seeking():
     assert (df.loc[women_still_pregnant.index, 'ps_gestational_age_in_weeks'] < 9).all().all()
 
     # TODO: check treatment before rupture completely blocks death (anc tests)
-    # TODO: check treatment after rupture reduces risk of death? (anc tests)
 
 
 def test_preterm_labour_logic():

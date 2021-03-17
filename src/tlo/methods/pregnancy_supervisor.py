@@ -1526,7 +1526,7 @@ class PregnancySupervisor(Module):
                 HSI_GenericEmergencyFirstApptAtFacilityLevel1)
 
             event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
-                module=self,
+                self.sim.modules['PregnancySupervisor'],
                 person_id=individual_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,

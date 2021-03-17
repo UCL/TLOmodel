@@ -29,22 +29,6 @@ from tlo.methods import (
 
 seed = 560
 
-#log_config = {
-#    "filename": "pregnancy_supervisor_test",   # The name of the output file (a timestamp will be appended).
-#    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
- #   "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
- #       "*": logging.WARNING,  # warning  # Asterisk matches all loggers - we set the default level to WARNING
- #       "tlo.methods.contraception": logging.DEBUG,
- #       "tlo.methods.labour": logging.DEBUG,
- #       "tlo.methods.healthsystem": logging.FATAL,
- #       "tlo.methods.hiv": logging.FATAL,
- #       "tlo.methods.newborn_outcomes": logging.DEBUG,
- #       "tlo.methods.antenatal_care": logging.DEBUG,
- #       "tlo.methods.pregnancy_supervisor": logging.DEBUG,
- #       "tlo.methods.postnatal_supervisor": logging.DEBUG,
- #   }
-#}
-
 # The resource files
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -66,8 +50,7 @@ def register_all_modules(ignore_cons_constraints):
     """Register all modules that are required for ANC to run (where we allow screening/treatment to occur for HIV,
     Malaria, Depression as part of routine ANC)"""
 
-    sim = Simulation(start_date=start_date, seed=seed,)# log_config=log_config)
-
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -995,7 +978,7 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care():
     assert not sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'blood_products')
 
 
-def test_ectopic_case_management():
+def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management():
     sim = register_all_modules(ignore_cons_constraints=True)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_mother_id = int(mother_id)
@@ -1006,15 +989,94 @@ def test_ectopic_case_management():
     df.at[mother_id, 'ps_ectopic_pregnancy'] = 'not_ruptured'
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'delete_mni': False}
 
-    # test ruptured get treatment property
-    # test unruptured doesnt go to death event/test did not run
+    # Check treatment for not ruptured ectopic pregnancy
 
-# TODO: test treatment effects work as expected?
+    # set prob care seeking to 1
+    params = sim.modules['PregnancySupervisor'].parameters
+    params['ps_linear_equations']['care_seeking_pregnancy_loss'] = \
+        LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1)
 
-# todo: another test that just calls the other interventions not called in ANC 1?
-# todo: test when probabilities are block
-# todo: test when consumables are blocked
+    # define and run ectopic event
+    ectopic_event = pregnancy_supervisor.EctopicPregnancyEvent(individual_id=mother_id,
+                                                               module=sim.modules['PregnancySupervisor'])
+    ectopic_event.apply(mother_id)
+
+    # Check the woman has correctly sought care via HSI_GenericEmergencyFirstApptAtFacilityLevel1
+    from tlo.methods.hsi_generic_first_appts import (HSI_GenericEmergencyFirstApptAtFacilityLevel1)
+    hsi_list = find_and_return_hsi_events_list(sim, mother_id)
+    # todo: scheduling not working VERY IMPORTANT, NEEDS A FIX
+    #assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_list
+
+    # Run the event
+    emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=updated_mother_id,
+                                                                   module=sim.modules['PregnancySupervisor'])
+    emergency_appt.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    # Check she has correctly been scheduled treatment for ectopic pregnancy
+    hsi_list = find_and_return_hsi_events_list(sim, mother_id)
+    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy in hsi_list
+
+    # Define and run treatment events
+    ectopic_treatment = antenatal_care.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
+    ectopic_treatment.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    # Check that this event has correctly blocked the ectopic rupture event, and therefore stopped risk of death
+    events = sim.find_events_for_person(person_id=mother_id)
+    events = [e.__class__ for d, e in events]
+    assert pregnancy_supervisor.EctopicPregnancyRuptureEvent not in events
+
+    # Check treatment for ruptured ectopic pregnancy...
+    df.at[mother_id, 'ps_ectopic_pregnancy'] = 'ruptured'
+
+    # Check sheduling through generic HSI event (as above)
+    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+    emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=updated_mother_id,
+                                                                   module=sim.modules['PregnancySupervisor'])
+    emergency_appt.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    # Check that this event correctly identified ectopic complications and scheduled the correct HSI
+    hsi_list = find_and_return_hsi_events_list(sim, mother_id)
+    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy in hsi_list
+
+    # Run ectopic treatment event
+    ectopic_treatment = antenatal_care.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
+    ectopic_treatment.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    # Check treatment is delivered
+    assert df.at[mother_id, 'ac_ectopic_pregnancy_treated']
+    assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delete_mni'])
+
+    # And That treatment averts risk of death in death event
+    params = sim.modules['PregnancySupervisor'].parameters
+    params['ps_linear_equations']['ectopic_pregnancy_death'] = \
+        LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1,
+            Predictor('ac_ectopic_pregnancy_treated').when(True, 0))
+
+    # Run the death event
+    death_event = pregnancy_supervisor.EarlyPregnancyLossDeathEvent(module=sim.modules['PregnancySupervisor'],
+                                                                    individual_id=mother_id,
+                                                                    cause='ectopic_pregnancy')
+    death_event.apply(mother_id)
+    assert (df.at[mother_id, 'ps_ectopic_pregnancy'] == 'none')
+
+    # Check that the woman survived thanks to treatment
+    events = sim.find_events_for_person(person_id=mother_id)
+    events = [e.__class__ for d, e in events]
+    assert demography.InstantaneousDeath not in events
+
+test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management()
+
+
+# TODO: test treatment effects work as expected? (some of this is done in preg sup test)
+# todo: test when probabilities/consumables are blocked/reduced
 # todo: test when women of different gestations arrive at ANC
+
 
 def test_dx_tests():
     sim = register_all_modules(ignore_cons_constraints=True)
