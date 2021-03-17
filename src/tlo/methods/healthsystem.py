@@ -1043,7 +1043,7 @@ class HealthSystem(Module):
         for ev_tuple in self.HSI_EVENT_QUEUE:
             date = ev_tuple[1]   # this is the 'topen' value
             event = ev_tuple[4]
-            if isinstance(event.target, int):
+            if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
                     list_of_events.append((date, event))
 
