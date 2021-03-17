@@ -264,7 +264,7 @@ class Labour(Module):
         'rrr_hb_delivery_parity_>4': Parameter(
             Types.REAL, 'relative risk ratio of a woman with a parity >4 delivering at home compared to a '
                         'hospital'),
-        'odds_careseeking_for_complication': Parameter(
+        'prob_careseeking_for_complication': Parameter(
             Types.REAL, 'odds of a woman seeking skilled assistance after developing a complication at a home birth'),
         'or_comp_careseeking_wealth_2': Parameter(
             Types.REAL, 'odds ratio of a woman of wealth level 2 seeking assistance after developing a complication at '
@@ -1010,24 +1010,25 @@ class Labour(Module):
         if df.at[individual_id, 'ac_admitted_for_immediate_delivery']:
 
             # Both 'la_antepartum_haem' and 'ps_antepartum_haem' will trigger treatment if identified
-            if complication == 'antepartum_haem' and (df.at[individual_id, 'ps_antepartum_haemorrhage'] != 'none'):
+            if (complication == 'antepartum_haem') and (df.at[individual_id, 'ps_antepartum_haemorrhage'] != 'none'):
                 return
 
             # Onset of placental abruption antenatally or intrapartum can lead to APH in linear model
-            if complication == 'placental_abruption' and df.at[individual_id, 'ps_placental_abruption']:
+            if (complication == 'placental_abruption') and df.at[individual_id, 'ps_placental_abruption']:
                 return
 
             # Women admitted with histological chorioamnionitis from the community are more at risk of sepsis
-            if complication == 'chorioamnionitis' and (df.at[individual_id, 'ps_chorioamnionitis'] == 'histological'):
+            if (complication == 'chorioamnionitis') and (df.at[individual_id, 'ps_chorioamnionitis'] == 'histological'):
                 return
 
             # Women admitted with clinical chorioamnionitis from the community are assumed to be septic in labour
-            if complication == 'sepsis' and (df.at[individual_id, 'ps_chorioamnionitis'] == 'clinical'):
+            if (complication == 'sepsis') and (df.at[individual_id, 'ps_chorioamnionitis'] == 'clinical'):
                 df.at[individual_id, f'la_{complication}'] = True
                 return
 
         # For the preceding complications that can cause obstructed labour, we apply risk using a set probability
-        if complication == 'cephalopelvic_dis' or complication == 'malposition' or complication == 'malpresentation':
+        if (complication == 'cephalopelvic_dis') or (complication == 'malposition') or \
+            (complication == 'malpresentation'):
             result = self.rng.random_sample() < params[f'prob_{complication}']
 
         # Otherwise we use the linear model to predict likelihood of a complication
@@ -1041,12 +1042,12 @@ class Labour(Module):
                                              f'{self.sim.date}')
 
             # For 'complications' stored in a biset property - they are set here
-            if complication == 'cephalopelvic_dis' or \
-                complication == 'malposition' or \
-               complication == 'malpresentation':
+            if (complication == 'cephalopelvic_dis') or \
+                (complication == 'malposition') or \
+                (complication == 'malpresentation'):
                 self.cause_of_obstructed_labour.set(individual_id, complication)
 
-            elif complication == 'chorioamnionitis' or complication == 'other_maternal_infection':
+            elif (complication == 'chorioamnionitis') or (complication == 'other_maternal_infection'):
                 self.intrapartum_infections.set(individual_id, complication)
 
             # Otherwise they are stored as individual properties (women with undiagnosed placental abruption may present
@@ -1097,10 +1098,10 @@ class Labour(Module):
 
             if mni[individual_id]['amtsl_given']:
                 risk_of_pph_cause = params[f'prob_{complication}'] * params['rr_pph_amtsl']
-                result = risk_of_pph_cause < self.rng.random_sample()
+                result = risk_of_pph_cause > self.rng.random_sample()
 
             else:
-                result = params[f'prob_{complication}'] < self.rng.random_sample()
+                result = params[f'prob_{complication}'] > self.rng.random_sample()
 
         # Next we determine if this woman has experienced any of the other potential preceding causes of PPH
         elif complication == 'lacerations' or complication == 'other_pph_cause':
@@ -1420,8 +1421,7 @@ class Labour(Module):
         assert mother.age_years > 14
         assert mother.age_years < 51
         assert mother.la_currently_in_labour
-        assert mother.ps_gestational_age_in_weeks == 0
-        assert mother.la_is_postpartum
+
 
     # ============================================== HSI FUNCTIONS ====================================================
     # Management of each complication is housed within its own function, defined here in the module, and all follow a
@@ -2028,7 +2028,7 @@ class Labour(Module):
                                                                                         first=True):
 
             # We apply a probability that surgical techniques will be effective
-            treatment_success_pph = params['success_rate_pph_surgery'] < self.rng.random_sample()
+            treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
 
             # And store the treatment which will dramatically reduce risk of death
             if treatment_success_pph:
@@ -3131,7 +3131,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
             # We apply a probability that repair surgery will be successful which will reduce risk of death from
             # uterine rupture
-            treatment_success_ur = params['success_rate_uterine_repair'] < self.module.rng.random_sample()
+            treatment_success_ur = params['success_rate_uterine_repair'] > self.module.rng.random_sample()
 
             if treatment_success_ur:
                 df.at[person_id, 'la_uterine_rupture_treatment'] = True

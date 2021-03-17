@@ -438,9 +438,6 @@ def predict_care_seeking_for_complication(self, df, rng=None, **externals):
     """individual level"""
     #  person = df.iloc[0]
     params = self.parameters
-    result = params['odds_careseeking_for_complication']
-
-    # convert back to probability
-    result = result / (1 + result)
+    result = params['prob_careseeking_for_complication']
 
     return pd.Series(data=[result], index=df.index)
