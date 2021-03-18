@@ -672,7 +672,7 @@ class PostnatalSupervisor(Module):
             individual_id]])[individual_id]
 
         # If the infection will happen, it is stored in the bit set property and tracked
-        if risk_infection < self.rng.random_sample():
+        if risk_infection > self.rng.random_sample():
             logger.debug(key='msg', data=f'Mother {individual_id} has developed {infection} infection in week one of '
                                          f'the postnatal period')
             self.postpartum_infections_late.set([individual_id], f'{infection}')
@@ -1529,7 +1529,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
             risk_sepsis = params['pn_linear_equations']['sepsis_late_postpartum'].predict(df.loc[[
                 individual_id]])[individual_id]
 
-            if risk_sepsis < self.module.rng.random_sample():
+            if risk_sepsis > self.module.rng.random_sample():
                 logger.debug(key='message',
                              data=f'mother {individual_id} has developed postnatal sepsis during week one of the'
                                   f' postnatal period')
@@ -1543,7 +1543,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
             risk_secondary_pph = params['pn_linear_equations']['secondary_postpartum_haem'].predict(df.loc[[
                     individual_id]])[individual_id]
 
-            if risk_secondary_pph < self.module.rng.random_sample():
+            if risk_secondary_pph > self.module.rng.random_sample():
                 logger.debug(key='message',
                              data=f'mother {individual_id} has developed a secondary postpartum haemorrhage during'
                                   f' week one of the postnatal period')
@@ -1584,7 +1584,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                 risk_anaemia_after_pregnancy = params['pn_linear_equations']['anaemia_after_pregnancy'].predict(df.loc[[
                         individual_id]])[individual_id]
 
-                if risk_anaemia_after_pregnancy < self.module.rng.random_sample():
+                if risk_anaemia_after_pregnancy > self.module.rng.random_sample():
                     random_choice_severity = self.module.rng.choice(['mild', 'moderate', 'severe'],
                                                                     p=params['prob_type_of_anaemia_pn'], size=1)
                     df.at[individual_id, 'pn_anaemia_following_pregnancy'] = random_choice_severity
@@ -1658,7 +1658,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                 risk_pe_after_pregnancy = params['pn_linear_equations']['pre_eclampsia_pn'].predict(df.loc[[
                     individual_id]])[individual_id]
 
-                if risk_pe_after_pregnancy < self.module.rng.random_sample():
+                if risk_pe_after_pregnancy > self.module.rng.random_sample():
                     df.at[individual_id, 'pn_htn_disorders'] = 'mild_pre_eclamp'
 
                     logger.debug(key='message',
@@ -1668,7 +1668,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                 else:
                     risk_gh_after_pregnancy = params['pn_linear_equations']['gest_htn_pn'].predict(df.loc[[
                         individual_id]])[individual_id]
-                    if risk_gh_after_pregnancy < self.module.rng.random_sample():
+                    if risk_gh_after_pregnancy > self.module.rng.random_sample():
                         logger.debug(key='message',
                                      data=f'mother {individual_id} has developed gestational hypertension in week one '
                                           f'of the postnatal period ')
@@ -1751,7 +1751,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         elif mother_has_complications or child_has_complications or child_two_has_complications:
             prob_care_seeking = prob_will_seek_care * params['multiplier_for_care_seeking_with_comps']
 
-            if prob_care_seeking < self.module.rng.random_sample():
+            if prob_care_seeking > self.module.rng.random_sample():
                 # And we assume they will present earlier than day 7
                 admission_event = HSI_PostnatalSupervisor_PostnatalCareContactOne(
                         self.module, person_id=individual_id)

@@ -1581,7 +1581,8 @@ class PregnancySupervisor(Module):
                               'vesicovaginal_fistula_resolution': pd.NaT,
                               'rectovaginal_fistula_onset': pd.NaT,
                               'rectovaginal_fistula_resolution': pd.NaT,
-                               }
+                              'test_run': False,  # used by labour module when running some model tests
+                              }
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancySupervisorEvent, it is a weekly event which has two primary functions.

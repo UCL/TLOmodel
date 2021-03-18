@@ -1007,7 +1007,7 @@ class Labour(Module):
         # Women may have been admitted for delivery from the antenatal ward because they have developed a complication
         # in pregnancy requiring delivery. Here we make sure women admitted due to these complications do not experience
         # the same complication again when this code runs
-        if df.at[individual_id, 'ac_admitted_for_immediate_delivery']:
+        if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] != 'none':
 
             # Both 'la_antepartum_haem' and 'ps_antepartum_haem' will trigger treatment if identified
             if (complication == 'antepartum_haem') and (df.at[individual_id, 'ps_antepartum_haemorrhage'] != 'none'):
@@ -1187,7 +1187,7 @@ class Labour(Module):
             # antenatal ward)
             if df.at[individual_id, 'la_severe_pre_eclampsia_treatment'] or \
                 (df.at[individual_id, 'ac_mag_sulph_treatment'] and
-                 df.at[individual_id, 'ac_admitted_for_immediate_delivery'] != 'none'):
+                 (df.at[individual_id, 'ac_admitted_for_immediate_delivery'] != 'none')):
                 risk_progression_spe_ec = risk_ec * params['eclampsia_treatment_effect_severe_pe']
             else:
                 risk_progression_spe_ec = risk_ec
@@ -1422,7 +1422,6 @@ class Labour(Module):
         assert mother.age_years < 51
         assert mother.la_currently_in_labour
 
-
     # ============================================== HSI FUNCTIONS ====================================================
     # Management of each complication is housed within its own function, defined here in the module, and all follow a
     # similar pattern ...
@@ -1547,7 +1546,8 @@ class Labour(Module):
 
         # Women who have been admitted for delivery due to severe pre-eclampsia AND have already received magnesium
         # before moving to the labour ward do not receive the intervention again
-        if df.at[person_id, 'ac_admitted_for_immediate_delivery'] and df.at[person_id, 'ac_mag_sulph_treatment']:
+        if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none') and \
+            df.at[person_id, 'ac_mag_sulph_treatment']:
             logger.debug(key='msg', data=f'Mother {person_id} has already received magnesium therapy following '
                                          f' to the antenatal ward prior to onset of labour ')
             return
@@ -2192,7 +2192,6 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                 'single_twin_still_birth': False,  # True (T) or False (F)
                                 'cause_of_stillbirth_in_labour': [],
                                 'death_postpartum': False,  # True (T) or False (F)
-                                'test_run': False,  # T/F, used to force care seeking in test files
                                 }
 
             # TODO- AT- it made sense to just add in the keys related to labour at this point as opposed to defining
@@ -2567,42 +2566,44 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         # Women who have come home, following a facility delivery, due to high squeeze will not try and seek care
         # for any complications
-        if not mni[individual_id]['squeeze_to_high_for_hsi_pp']:
 
-            if df.at[individual_id, 'la_sepsis_pp'] or (df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia') or \
-                (df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or df.at[individual_id,
-                                                                                           'la_postpartum_haem']:
+        if df.at[individual_id, 'la_sepsis_pp'] or (df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia') or \
+            (df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or df.at[individual_id,
+                                                                                       'la_postpartum_haem']:
 
-                if self.module.predict(params['la_labour_equations']['care_seeking_for_complication'], individual_id):
+            if not mni[individual_id]['squeeze_to_high_for_hsi_pp'] and\
+              (self.module.predict(params['la_labour_equations']['care_seeking_for_complication'], individual_id)):
 
-                    # If this woman choses to seek care, she will present to the health system via the generic emergency
-                    # system and be referred on to receive specific care
-                    mni[individual_id]['sought_care_for_complication'] = True
-                    mni[individual_id]['sought_care_labour_phase'] = 'postpartum'
+                # If this woman choses to seek care, she will present to the health system via the generic emergency
+                # system and be referred on to receive specific care
+                mni[individual_id]['sought_care_for_complication'] = True
+                mni[individual_id]['sought_care_labour_phase'] = 'postpartum'
 
-                    from tlo.methods.hsi_generic_first_appts import (
-                        HSI_GenericEmergencyFirstApptAtFacilityLevel1)
+                from tlo.methods.hsi_generic_first_appts import (
+                    HSI_GenericEmergencyFirstApptAtFacilityLevel1)
 
-                    event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
-                        module=self.module, person_id=individual_id)
+                event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
+                    module=self.module, person_id=individual_id)
 
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
                         event,
                         priority=0,
                         topen=self.sim.date,
                         tclose=self.sim.date + DateOffset(days=1))
 
-                    logger.debug(key='message',
-                                 data=f'mother {individual_id} will now seek care for a complication that'
-                                      f' has developed following labour on date {self.sim.date}')
-                else:
-                    logger.debug(key='message',
-                                 data=f'mother {individual_id} will not seek care for a complication that'
-                                      f' has developed following labour on date {self.sim.date}')
+                logger.debug(key='message',
+                             data=f'mother {individual_id} will now seek care for a complication that'
+                                  f'has developed following labour on date {self.sim.date}')
+            else:
+                logger.debug(key='message', data=f'mother {individual_id} will not seek care for a complication that'
+                                                 f'has developed following labour on date {self.sim.date}')
 
-                    # For women who dont seek care for complications following birth we immediately apply risk of death
-                    self.module.apply_risk_of_early_postpartum_death(individual_id)
+                # For women who dont seek care for complications following birth we immediately apply risk of death
+                self.module.apply_risk_of_early_postpartum_death(individual_id)
 
+        else:
+            # Women without complications still pass through this event
+            self.module.apply_risk_of_early_postpartum_death(individual_id)
 
 class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
     """
@@ -2776,6 +2777,10 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             facility_type_code = 'hc'
         else:
             facility_type_code = 'hp'
+
+        if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_now') or \
+            (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_later'):
+            mni[person_id]['referred_for_cs'] = True
 
         # LOG CONSUMABLES FOR DELIVERY...
         # We assume all deliveries require this basic package of consumables but we do not condition the event running
@@ -3009,11 +3014,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(HSI_Event, Indivi
         # we apply risk of death considering the treatment effect applied (women referred on have this risk applied
         # later)
         if not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_blood']:
-
-            if df.at[person_id, 'la_sepsis_pp'] or \
-                df.at[person_id, 'la_postpartum_haem'] or \
-               (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia'):
-                self.module.apply_risk_of_early_postpartum_death(person_id)
+            self.module.apply_risk_of_early_postpartum_death(person_id)
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
         return actual_appt_footprint
@@ -3272,14 +3273,9 @@ class HSI_Labour_ReceivesCareFollowingCaesareanSection(HSI_Event, IndividualScop
         self.module.interventions_delivered_pre_discharge(self)
 
         # ====================================== APPLY RISK OF DEATH===================================================
-        # If this woman has any complications we apply risk of death accordingly
 
-        if df.at[person_id, 'la_sepsis_pp'] or \
-            df.at[person_id, 'la_postpartum_haem'] or \
-           df.at[person_id, 'ps_htn_disorders'] == 'eclampsia':
-
-            logger.debug(key='msg', data=f'{person_id} apply_risk_of_early_postpartum_death')
-            self.module.apply_risk_of_early_postpartum_death(person_id)
+        logger.debug(key='msg', data=f'{person_id} apply_risk_of_early_postpartum_death')
+        self.module.apply_risk_of_early_postpartum_death(person_id)
 
     def did_not_run(self):
         person_id = self.target

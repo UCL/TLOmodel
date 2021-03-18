@@ -1491,7 +1491,7 @@ class CareOfWomenDuringPregnancy(Module):
             if cause == 'severe_anaemia':
                 # If the woman is receiving blood due to anaemia we apply a probability that a transfusion of 2 units
                 # RBCs will correct this woman's severe anaemia
-                if params['treatment_effect_blood_transfusion_anaemia'] < self.rng.random_sample():
+                if params['treatment_effect_blood_transfusion_anaemia'] > self.rng.random_sample():
                     store_dalys_in_mni(individual_id, 'severe_anaemia_resolution')
                     df.at[individual_id, 'ps_anaemia_in_pregnancy'] = 'none'
 
