@@ -3,13 +3,18 @@ The results of the bachrun were put into the 'outputs' results_folder
 """
 
 from pathlib import Path
-import pickle
-import pandas as pd
-from pandas import DataFrame
+
 import matplotlib.pyplot as plt
-import numpy as np
-import os
-from scripts.dev.th_testing.th_utils import *
+
+from scripts.dev.th_testing.th_utils import (
+    extract_params,
+    extract_results,
+    get_folders,
+    get_grid,
+    get_info,
+    getalog,
+    summarize,
+)
 
 outputspath = Path('./outputs')
 
@@ -29,9 +34,9 @@ params = extract_params(results_folder)
 
 # 2) Define the log-element to extract:
 log_element = {
-    "component": "tlo.methods.mockitis",    # <-- the dataframe that is output
-    "series": "['summary'].PropInf",        # <-- series in the dateframe to be extracted
-    "index": "['summary'].date",            # <-- (optional) index to use
+    "component": "tlo.methods.mockitis",  # <-- the dataframe that is output
+    "series": "['summary'].PropInf",  # <-- series in the dateframe to be extracted
+    "index": "['summary'].date",  # <-- (optional) index to use
 }
 
 # 3) Get summary of the results for that log-element (only mean and the value at then of the simulation)
@@ -53,4 +58,3 @@ plt.xlabel('Mockitis:p_cure')
 plt.ylabel('Mockitis:p_infection')
 fig.colorbar(c, ax=ax)
 plt.show()
-

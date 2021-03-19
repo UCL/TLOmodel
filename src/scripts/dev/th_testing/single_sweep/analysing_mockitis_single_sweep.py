@@ -3,13 +3,18 @@ The results of the bachrun were put into the 'outputs' results_folder
 """
 
 from pathlib import Path
-import pickle
-import pandas as pd
-from pandas import DataFrame
+
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-from scripts.dev.th_testing.th_utils import *
+
+from scripts.dev.th_testing.th_utils import (
+    extract_params,
+    extract_results,
+    get_folders,
+    get_info,
+    getalog,
+    summarize,
+)
 
 outputspath = Path('./outputs')
 
@@ -29,9 +34,9 @@ params = extract_params(results_folder)
 
 # 2) Define the log-element to extract:
 log_element = {
-    "component": "tlo.methods.mockitis",    # <-- the dataframe that is output
-    "series": "['summary'].PropInf",        # <-- series in the dateframe to be extracted
-    "index": "['summary'].date",            # <-- (optional) index to use
+    "component": "tlo.methods.mockitis",  # <-- the dataframe that is output
+    "series": "['summary'].PropInf",  # <-- series in the dateframe to be extracted
+    "index": "['summary'].date",  # <-- (optional) index to use
 }
 
 # 3) Get summary of the results for that log-element
@@ -40,11 +45,10 @@ propinf = summarize(extract_results(results_folder, log_element))
 # if only interestedd in the means
 propinf_onlymeans = summarize(extract_results(results_folder, log_element), only_mean=True)
 
-
 # 4) Create some plots:
 
 # name of parmaeter that varies
-param_name='Mockitis:p_infection'
+param_name = 'Mockitis:p_infection'
 
 # i) bar plot to summarize as the value at the end of the run
 propinf_end = propinf.iloc[[-1]]
@@ -59,9 +63,9 @@ yerr = abs(lower_upper - height)
 
 xvals = range(info['number_of_draws'])
 xlabels = [
-    round(params.loc[(params.module_param==param_name)][['value']].loc[draw].value, 3)
+    round(params.loc[(params.module_param == param_name)][['value']].loc[draw].value, 3)
     for draw in range(info['number_of_draws'])
-    ]
+]
 
 fig, ax = plt.subplots()
 ax.bar(
@@ -76,8 +80,10 @@ plt.show()
 
 # ii) plot to show time-series (means)
 for draw in range(info['number_of_draws']):
-    plt.plot(propinf.loc[:, (draw, "mean")].index, propinf.loc[:, (draw, "mean")].values,
-             label=f"{param_name}={round(params.loc[(params.module_param==param_name)][['value']].loc[draw].value, 3)}")
+    plt.plot(
+        propinf.loc[:, (draw, "mean")].index, propinf.loc[:, (draw, "mean")].values,
+        label=f"{param_name}={round(params.loc[(params.module_param == param_name)][['value']].loc[draw].value, 3)}"
+    )
 plt.xlabel(propinf.index.name)
 plt.legend()
 plt.show()
@@ -89,9 +95,9 @@ plt.fill_between(
     propinf.loc[:, (draw, "mean")].index,
     propinf.loc[:, (draw, "lower")].values,
     propinf.loc[:, (draw, "upper")].values,
-    color = 'b',
-    alpha = 0.5,
-    label=f"{param_name}={round(params.loc[(params.module_param==param_name)][['value']].loc[draw].value, 3)}"
+    color='b',
+    alpha=0.5,
+    label=f"{param_name}={round(params.loc[(params.module_param == param_name)][['value']].loc[draw].value, 3)}"
 )
 plt.xlabel(propinf.index.name)
 plt.legend()

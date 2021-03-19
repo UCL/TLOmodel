@@ -1,12 +1,11 @@
 """Collection of utilities for analysing results from the batchrun system"""
 
-from pathlib import Path
-import pickle
-import pandas as pd
-from pandas import DataFrame
-import matplotlib.pyplot as plt
-import numpy as np
 import os
+import pickle
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 
 def get_folders(batch_file_name: str, outputspath: Path) -> list:
@@ -15,6 +14,7 @@ def get_folders(batch_file_name: str, outputspath: Path) -> list:
     folders = [Path(f) for f in os.scandir(outputspath) if (f.is_dir() & f.name.startswith(stub))]
     folders.sort()
     return folders
+
 
 def get_info(results_folder: Path) -> dict:
     """Utility function to get the information on the runs (number draws, run and their paths)"""
@@ -28,17 +28,18 @@ def get_info(results_folder: Path) -> dict:
 
     return info
 
+
 def getalog(results_folder: Path) -> dict:
-     """Utility function to open one log from within a batch set."""
-     folder = results_folder / str(0) / str(0)
-     pickles = [f for f in os.scandir(folder) if f.name.endswith('.pickle')]
+    """Utility function to open one log from within a batch set."""
+    folder = results_folder / str(0) / str(0)
+    pickles = [f for f in os.scandir(folder) if f.name.endswith('.pickle')]
 
-     output = dict()
-     for p in pickles:
-         name = p.name[:-len('.pickle')]
-         output[name] = pickle.load(open(p.path, "rb"))
+    output = dict()
+    for p in pickles:
+        name = p.name[:-len('.pickle')]
+        output[name] = pickle.load(open(p.path, "rb"))
 
-     return output
+    return output
 
 
 def extract_params(results_folder: Path) -> pd.DataFrame:
@@ -55,7 +56,7 @@ def extract_params(results_folder: Path) -> pd.DataFrame:
 
     for d in draws:
         p = pickle.load(
-            open(Path(d)/ str(0) / str('tlo.scenario.pickle'), "rb")
+            open(Path(d) / str(0) / str('tlo.scenario.pickle'), "rb")
         )['override_parameter']
 
         p['module_param'] = p['module'] + ':' + p['name']
@@ -70,6 +71,7 @@ def extract_params(results_folder: Path) -> pd.DataFrame:
 
     return params
 
+
 # %%
 def extract_results(results_folder: Path, log_element: dict) -> pd.DataFrame:
     """Utility function to unpack results to produce a dataframe that summaries one series from the log, with column
@@ -78,10 +80,10 @@ def extract_results(results_folder: Path, log_element: dict) -> pd.DataFrame:
 
     if 'index' in log_element:
         # extract the index from the first log, and use this ensure that all other are exactly the same.
-        one_log_component = pickle.load(
+        __one_log_component__ = pickle.load(
             open(results_folder / str(0) / str(0) / str(log_element['component'] + '.pickle'), "rb")
         )
-        index = eval(f"one_log_component{log_element['index']}")
+        index = eval(f"__one_log_component__{log_element['index']}")
 
     # get number of draws and numbers of runs
     info = get_info(results_folder)
@@ -95,14 +97,14 @@ def extract_results(results_folder: Path, log_element: dict) -> pd.DataFrame:
         for run in range(info['runs_per_draw']):
             try:
                 log_component_file = results_folder / str(draw) / str(run) / str(log_element['component'] + '.pickle')
-                log_component = pickle.load(open(log_component_file, "rb"))
-                series = eval(f"log_component{log_element['series']}")
+                __log_component__ = pickle.load(open(log_component_file, "rb"))
+                series = eval(f"__log_component__{log_element['series']}")
                 results[draw, run] = series
 
-                idx = eval(f"log_component{log_element['index']}")
+                idx = eval(f"__log_component__{log_element['index']}")
                 assert idx.equals(index)
 
-            except:
+            except ValueError:
                 results[draw, run] = np.nan
 
     # if 'index' is provied, set this to be the index of the results
@@ -111,8 +113,9 @@ def extract_results(results_folder: Path, log_element: dict) -> pd.DataFrame:
 
     return results
 
+
 # %%
-def summarize(results: pd.DataFrame, only_mean: bool=False) -> pd.DataFrame:
+def summarize(results: pd.DataFrame, only_mean: bool = False) -> pd.DataFrame:
     """Utility function to compute summary statistics that finds mean value and 95% credible intervals across the
     runs. """
     summary = pd.DataFrame(
@@ -122,7 +125,7 @@ def summarize(results: pd.DataFrame, only_mean: bool=False) -> pd.DataFrame:
                 ["mean", "lower", "upper"]
             ],
             names=['draw', 'stat']),
-        index = results.index
+        index=results.index
     )
 
     summary.loc[:, (slice(None), "mean")] = results.groupby(axis=1, by='draw').mean().values
@@ -136,6 +139,7 @@ def summarize(results: pd.DataFrame, only_mean: bool=False) -> pd.DataFrame:
         return om
 
     return summary
+
 
 # %%
 def get_grid(params: pd.DataFrame, res: pd.DataFrame):

@@ -17,11 +17,12 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    mockitis,
     pregnancy_supervisor,
     symptommanager,
-    mockitis
 )
 from tlo.scenario import BaseScenario
+
 
 class Mockitis_Batch(BaseScenario):
     def __init__(self):
@@ -99,9 +100,7 @@ class Mockitis_Batch(BaseScenario):
         }
 
 
-
 if __name__ == '__main__':
     from tlo.cli import scenario_run
+
     scenario_run([__file__])
-
-
