@@ -64,11 +64,13 @@ sim = runsim()
 
 output = parse_log_file(sim.log_filepath)
 
-# ----------------------------------------------- CREATE PREVALENCE PLOTS ----------------------------------------------
+# ----------------------------------------------- SET UP FUNCTIONS ----------------------------------------------
 
 # list all of the conditions in the module to loop through
 conditions = sim.modules['Ncds'].conditions
+age_range = sim.modules['Demography'].AGE_RANGE_CATEGORIES
 
+# set up some functions
 transform_output = lambda x: pd.concat([
     pd.Series(name=x.iloc[i]['date'], data=x.iloc[i]['data']) for i in range(len(x))
 ], axis=1, sort=False).transpose()
@@ -94,7 +96,7 @@ def convert_output(output_path):
     )
     return output_path
 
-
+# ----------------------------------------------- CREATE PREVALENCE PLOTS ----------------------------------------------
 
 for condition in conditions:
     # Strip leading 'nc_' from condition name
@@ -240,15 +242,7 @@ plt.show()
 
 # ----------------------------------------------- RETRIEVE COMBINATION OF CONDITIONS ----------------------------------
 
-prop_combos = output['tlo.methods.ncds']['prop_combos']
-prop_combos['year'] = pd.to_datetime(prop_combos['date']).dt.year
-prop_combos.drop(columns='date', inplace=True)
-prop_combos.set_index(
-    'year',
-    drop=True,
-    inplace=True
-)
-
+prop_combos = convert_output(output['tlo.methods.ncds']['prop_combos'])
 last_year = prop_combos.iloc[-1, :].to_frame(name="props")
 age_grps = ['[0, 20)', '[20, 45)', '[45, 65)', '[65, 120)']
 props_by_age = pd.DataFrame(index=last_year.index, columns=age_grps)
@@ -257,7 +251,6 @@ for age_grp in age_grps:
 
 props_by_age.to_csv('condition_combos.csv')
 
-
 # ----------------------------------------------- CREATE INCIDENCE PLOTS ----------------------------------------------
 
 # Extract the relevant outputs and make a graph:
@@ -265,18 +258,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     output = parse_log_file(logfile)
 
     # Calculate the "incidence rate" from the output counts of incidence
-    counts = output['tlo.methods.ncds']['incidence_count_by_condition']
-    counts['year'] = pd.to_datetime(counts['date']).dt.year
-    counts.drop(columns='date', inplace=True)
-    counts.set_index(
-        'year',
-        drop=True,
-        inplace=True
-    )
-
-    # import conditions and age range from modules
-    conditions = sim.modules['Ncds'].conditions
-    age_range = sim.modules['Demography'].AGE_RANGE_CATEGORIES
+    counts = convert_output(output['tlo.methods.ncds']['incidence_count_by_condition'])
 
     # create empty dict to store incidence rates
     inc_rate = dict()
