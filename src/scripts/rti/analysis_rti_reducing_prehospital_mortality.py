@@ -36,23 +36,26 @@ resourcefilepath = Path('./resources')
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 10000
-nsim = 5
-output_for_different_incidence = dict()
+pop_size = 50000
+nsim = 2
+# Set service availability
 service_availability = ["*"]
+# create lists to store deaths and dalys for each level of reduction in prehospital mortality
 list_deaths_average = []
 list_tot_dalys_average = []
+# create np array for the percentage reduction in prehospital mortality
 prehosital_mortality_reduction = np.linspace(1, 0, 5)
+# get the parameters
 params = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
+# get origional value for prehospital mortality
 orig_prehospital_mortality = float(params.loc[params.parameter_name == 'imm_death_proportion_rti', 'value'].values)
 for i in range(0, nsim):
+    # create empty lists to store number of deaths and dalys in
     list_deaths = []
     list_tot_dalys = []
     for reduction in prehosital_mortality_reduction:
         sim = Simulation(start_date=start_date)
-        # We register all modules in a single call to the register method, calling once with multiple
-        # objects. This is preferred to registering each module in multiple calls because we will be
-        # able to handle dependencies if modules are registered together
+        # register modules
         sim.register(
             demography.Demography(resourcefilepath=resourcefilepath),
             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -64,31 +67,41 @@ for i in range(0, nsim):
             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
             rti.RTI(resourcefilepath=resourcefilepath)
         )
+        # name the logfile
         logfile = sim.configure_logging(filename="LogFile")
-        # create and run the simulation
+        # create initial population
         sim.make_initial_population(n=pop_size)
+        # reduce prehospital mortality
         params = sim.modules['RTI'].parameters
-        # Set the parameters used for this sim
-        params['allowed_interventions'] = []
         params['imm_death_proportion_rti'] = orig_prehospital_mortality * reduction
         # Run the simulation
         sim.simulate(end_date=end_date)
+        # parse the logfile
         log_df = parse_log_file(logfile)
-        # Get the deaths and DALYs from the sim
-        deaths_without_med = log_df['tlo.methods.demography']['death']
-        tot_death_without_med = len(deaths_without_med.loc[(deaths_without_med['cause'] != 'Other')])
-        list_deaths.append(tot_death_without_med)
+        # get the number of road traffic injury related deaths from the sim
+        rti_deaths = log_df['tlo.methods.demography']['death']
+        rti_causes_of_deaths = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death']
+        # calculate the total number of rti related deaths
+        tot_rti_deaths = len(rti_deaths.loc[rti_deaths['cause'].isin(rti_causes_of_deaths)])
+        # store the number of deaths in this sim
+        list_deaths.append(tot_rti_deaths)
         # Get the DALYs from the sim
         dalys_df = log_df['tlo.methods.healthburden']['dalys']
+        # get the male daly data
         males_data = dalys_df.loc[dalys_df['sex'] == 'M']
+        # get male yll
         YLL_males_data = males_data.filter(like='YLL_RTI').columns
-        males_dalys = males_data[YLL_males_data].sum(axis=1) + \
-                      males_data['YLD_RTI_rt_disability']
+        # calculate dalys in ales
+        males_dalys = males_data[YLL_males_data].sum(axis=1) + males_data['YLD_RTI_rt_disability']
+        # get female daly data
         females_data = dalys_df.loc[dalys_df['sex'] == 'F']
+        # get female yll data
         YLL_females_data = females_data.filter(like='YLL_RTI').columns
-        females_dalys = females_data[YLL_females_data].sum(axis=1) + \
-                        females_data['YLD_RTI_rt_disability']
+        # calculate female dalys
+        females_dalys = females_data[YLL_females_data].sum(axis=1) + females_data['YLD_RTI_rt_disability']
+        # calculate total dalys
         tot_dalys = males_dalys.tolist() + females_dalys.tolist()
+        # store total dalys in scenario
         list_tot_dalys.append(sum(tot_dalys))
     # Store the deaths and DALYs from the sim
     list_deaths_average.append(list_deaths)
@@ -100,7 +113,7 @@ average_deaths = [float(sum(col)) / len(col) for col in zip(*list_deaths_average
 average_tot_dalys = [float(sum(col)) / len(col) for col in zip(*list_tot_dalys_average)]
 # Create the xtick labels
 xtick_labels = [f"{np.round(1 - reduction, 2) * 100}%" for reduction in prehosital_mortality_reduction]
-# Create a dataframe of the results
+# plot data in a bar chart
 plt.bar(np.arange(len(average_deaths)), average_deaths, color='lightsteelblue', width=0.25, label='Deaths')
 plt.bar(np.arange(len(average_deaths)) + 0.25, average_tot_dalys, color='lightsalmon', width=0.25, label='DALYs')
 plt.ylabel('Deaths/DALYs')
@@ -110,4 +123,3 @@ plt.title(f"The effect of reducing pre-hospital mortality on average Deaths/DALY
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.savefig('outputs/PrehospitalMortality/PrehospitalMortality_vs_deaths_DALYS.png', bbox_inches='tight')
-

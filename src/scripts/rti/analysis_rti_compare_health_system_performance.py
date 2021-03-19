@@ -39,8 +39,8 @@ resourcefilepath = Path('./resources')
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 200000
-nsim = 10
+pop_size = 50000
+nsim = 2
 # create empty lists to store the number of deaths with a health system an without a health system and a dictionary
 # to store the log files in
 list_deaths_with_med = []
@@ -62,21 +62,23 @@ for i in range(0, nsim):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath)
     )
-    # get the logfile
+    # name the logfile
     logfile_health_sys = sim_with_health_system.configure_logging(filename="LogFile")
-    # create and run the simulation
+    # store the logfile
     outputs_for_with_health_system[i] = logfile_health_sys
-    params = sim_with_health_system.modules['RTI'].parameters
-    params['allowed_interventions'] = []
+    # make initial population
     sim_with_health_system.make_initial_population(n=pop_size)
+    # run simulation
     sim_with_health_system.simulate(end_date=end_date)
     # parse the simulation logfiles to get the output dataframes
     log_df_with_health_system = parse_log_file(logfile_health_sys)
     # get a logfile with the deaths of the the simulation with the health system
     deaths_with_med = log_df_with_health_system['tlo.methods.demography']['death']
     # count how many deaths there were in this simulation that were caused by something other than the demography
-    # module, in this simulation this corresponds to the deaths caused by RTIs
-    tot_death_with_med = len(deaths_with_med.loc[(deaths_with_med['cause'] != 'Other')])
+    rti_deaths = log_df_with_health_system['tlo.methods.demography']['death']
+    rti_causes_of_deaths = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death']
+    # calculate the total number of rti related deaths
+    tot_death_with_med = len(rti_deaths.loc[rti_deaths['cause'].isin(rti_causes_of_deaths)])
     # Store the deaths from RTI in this simulation in the list of deaths with a health system
     list_deaths_with_med.append(tot_death_with_med)
     # Get the DALYs produced in the sim
@@ -87,13 +89,11 @@ for i in range(0, nsim):
     # Get YLL data for all produced by RTI
     YLL_males_data = males_data.filter(like='YLL_RTI').columns
     # Calculate DALYs as YLD + YLL
-    males_dalys = males_data[YLL_males_data].sum(axis=1) + \
-                  males_data['YLD_RTI_rt_disability']
+    males_dalys = males_data[YLL_males_data].sum(axis=1) + males_data['YLD_RTI_rt_disability']
     # Do the above with the female data
     females_data = dalys_df.loc[dalys_df['sex'] == 'F']
     YLL_females_data = females_data.filter(like='YLL_RTI').columns
-    females_dalys = females_data[YLL_females_data].sum(axis=1) + \
-                    females_data['YLD_RTI_rt_disability']
+    females_dalys = females_data[YLL_females_data].sum(axis=1) + females_data['YLD_RTI_rt_disability']
     # Total DALYs in sim is male DALYs plus female DALYs
     tot_dalys = males_dalys.tolist() + females_dalys.tolist()
     # Append this information to the list of total DALYs with a health system
@@ -122,31 +122,28 @@ for i in range(0, nsim):
     # Get the logfile and store it
     logfile_no_health_sys = sim_without_health_system.configure_logging(filename="LogFile")
     outputs_for_without_health_system[i] = logfile_no_health_sys
-    params = sim_without_health_system.modules['RTI'].parameters
-    params['allowed_interventions'] = []
-    # run the sim
+    # make initial population
     sim_without_health_system.make_initial_population(n=pop_size)
+    # run the sim
     sim_without_health_system.simulate(end_date=end_date)
     # parse the log file
     log_df_without_health_system = parse_log_file(logfile_no_health_sys)
     # Exactly the same process as the above groups of simulations except that the results are stored in a different
     # list
-    deaths_without_med = log_df_without_health_system['tlo.methods.demography']['death']
-    tot_death_without_med = len(deaths_without_med.loc[(deaths_without_med['cause'] != 'Other')])
+    rti_deaths = log_df_without_health_system['tlo.methods.demography']['death']
+    rti_causes_of_deaths = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death']
+    # calculate the total number of rti related deaths
+    tot_death_without_med = len(rti_deaths.loc[rti_deaths['cause'].isin(rti_causes_of_deaths)])
     list_deaths_no_med.append(tot_death_without_med)
     dalys_df = log_df_without_health_system['tlo.methods.healthburden']['dalys']
     males_data = dalys_df.loc[dalys_df['sex'] == 'M']
     YLL_males_data = males_data.filter(like='YLL_RTI').columns
-    males_dalys = males_data[YLL_males_data].sum(axis=1) + \
-                  males_data['YLD_RTI_rt_disability']
+    males_dalys = males_data[YLL_males_data].sum(axis=1) + males_data['YLD_RTI_rt_disability']
     females_data = dalys_df.loc[dalys_df['sex'] == 'F']
     YLL_females_data = females_data.filter(like='YLL_RTI').columns
-    females_dalys = females_data[YLL_females_data].sum(axis=1) + \
-                    females_data['YLD_RTI_rt_disability']
-
+    females_dalys = females_data[YLL_females_data].sum(axis=1) + females_data['YLD_RTI_rt_disability']
     tot_dalys = males_dalys.tolist() + females_dalys.tolist()
     list_tot_dalys_no_med.append(tot_dalys)
-
 # ============================================ Plot results =========================================================
 # Plot the mean total DALYs with and without a health system
 # Add up all the DALYs in the sims with a health system and without

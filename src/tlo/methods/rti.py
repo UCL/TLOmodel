@@ -10,7 +10,6 @@ from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, Reg
 from tlo.methods import demography, Metadata
 from tlo.methods.healthsystem import HSI_Event
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
 from tlo.methods.symptommanager import Symptom
 
 # ---------------------------------------------------------------------------------------------------------
@@ -886,7 +885,8 @@ class RTI(Module):
             Types.REAL,
             'The probability that a person with a femur fracture will be treated with amputation via major surgery'
         ),
-        'prob_femural_fracture_require_traction': Parameter(Types.REAL,
+        'prob_femural_fracture_require_traction': Parameter(
+            Types.REAL,
             'The probability that a person with a femur fracture will be treated with skeletal traction'
         ),
         'prob_pelvis_fracture_traction': Parameter(
@@ -957,6 +957,10 @@ class RTI(Module):
             Types.REAL,
             'The probability that an open fracture will be contaminated'
         ),
+        'allowed_interventions': Parameter(
+            Types.LIST,
+            'List of additional interventions that can be included when performing model analysis'
+        )
     }
 
     # Define the module's parameters
@@ -1857,8 +1861,7 @@ class RTI(Module):
             for i in range(0, counts):
                 # shedule the treatments, say the treatments occur a day appart for now
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event=HSI_RTI_Open_Fracture_Treatment(module=self,
-                                                      person_id=person_id),
+                    hsi_event=HSI_RTI_Open_Fracture_Treatment(module=self, person_id=person_id),
                     priority=0,
                     topen=self.sim.date + DateOffset(days=0 + i),
                     tclose=self.sim.date + DateOffset(days=15 + i)
@@ -1989,8 +1992,6 @@ class RTI(Module):
                               not die on the scene of the crash
         :return: n/a
         """
-        rng = self.rng
-
         df = self.sim.population.props
         # Check that those sent here have been involved in a road traffic accident
         assert sum(df.loc[injured_index, 'rt_road_traffic_inc']) == len(injured_index)
@@ -2002,7 +2003,6 @@ class RTI(Module):
                (sum(df.loc[injured_index, 'rt_imm_death']) == 0)
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                    'rt_injury_7', 'rt_injury_8']
-        p = self.parameters
         selected_for_rti_inj = df.loc[injured_index, columns]
         # =============================== AIS region 1: head ==========================================================
         # ------ Find those with skull fractures and update rt_fracture to match and call for treatment ---------------
@@ -2213,8 +2213,8 @@ class RTI(Module):
         # Broken foot (open), currently combining the daly weight used for open wounds and the fracture
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813eo'])
         if len(idx) > 0:
-           df.loc[idx, 'rt_disability'] += self.daly_wt_patella_tibia_fibula_fracture_without_treatment + \
-                                           self.daly_wt_facial_soft_tissue_injury
+            df.loc[idx, 'rt_disability'] += self.daly_wt_patella_tibia_fibula_fracture_without_treatment + \
+                                            self.daly_wt_facial_soft_tissue_injury
         # Broken Hip, Pelvis, Femur other than femoral neck
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813a'])
         if len(idx) > 0:
@@ -2423,13 +2423,13 @@ class RTI(Module):
                                           self.daly_wt_facial_soft_tissue_injury
             if code == '813co':
                 change_in_daly_weights -= self.daly_wt_femur_fracture_short_term + \
-                                            self.daly_wt_facial_soft_tissue_injury
+                                          self.daly_wt_facial_soft_tissue_injury
             if code == '813do':
                 change_in_daly_weights -= self.daly_wt_foot_fracture_short_term_with_without_treatment + \
-                                                      self.daly_wt_facial_soft_tissue_injury
+                                          self.daly_wt_facial_soft_tissue_injury
             if code == '813eo':
                 change_in_daly_weights -= self.daly_wt_patella_tibia_fibula_fracture_without_treatment + \
-                                                      self.daly_wt_facial_soft_tissue_injury
+                                          self.daly_wt_facial_soft_tissue_injury
 
             # update the total values of the daly weights
             df.loc[person_id, 'rt_debugging_DALY_wt'] += change_in_daly_weights
@@ -2452,7 +2452,6 @@ class RTI(Module):
         assert df.loc[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
         # remover the treated injury code from the person using rti_treated_injuries
         RTI.rti_treated_injuries(self, person_id, codes)
-
 
     def rti_swap_injury_daly_upon_treatment(self, person_id, codes):
         """
@@ -2490,7 +2489,6 @@ class RTI(Module):
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, relevant_codes)
         assert counts > 0, 'This person has asked to swap an injury code, but it is not swap-able'
         # Iterate over the relevant codes
-        orig_tot_daly = df.loc[person_id, 'rt_debugging_DALY_wt']
         for code in relevant_codes:
             # swap the relevant code's daly weight, from the daly weight associated with the injury without treatment
             # and the daly weight for the disability with treatment.
@@ -2498,10 +2496,10 @@ class RTI(Module):
             change_in_daly_weights = 0
             if code == '712b':
                 change_in_daly_weights += - self.daly_wt_hand_wrist_fracture_without_treatment + \
-                                            self.daly_wt_hand_wrist_fracture_with_treatment
+                                          self.daly_wt_hand_wrist_fracture_with_treatment
             if code == '812':
                 change_in_daly_weights += - self.daly_wt_patella_tibia_fibula_fracture_without_treatment + \
-                                                      self.daly_wt_patella_tibia_fibula_fracture_with_treatment
+                                          self.daly_wt_patella_tibia_fibula_fracture_with_treatment
             if code == '3113':
                 change_in_daly_weights += \
                     - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment \
@@ -2525,46 +2523,46 @@ class RTI(Module):
                     + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
             if code == '813a':
                 change_in_daly_weights += - self.daly_wt_hip_fracture_short_term_with_without_treatment + \
-                                            self.daly_wt_hip_fracture_long_term_with_treatment
+                                          self.daly_wt_hip_fracture_long_term_with_treatment
             if code == '813b':
                 change_in_daly_weights += - self.daly_wt_pelvis_fracture_short_term + \
-                                            self.daly_wt_pelvis_fracture_long_term
+                                          self.daly_wt_pelvis_fracture_long_term
             if code == '813bo':
                 change_in_daly_weights += - self.daly_wt_pelvis_fracture_short_term + \
-                                                      self.daly_wt_pelvis_fracture_long_term
+                                          self.daly_wt_pelvis_fracture_long_term
             if code == 'P673a':
                 change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_neck_with_treatment
+                                          self.daly_wt_spinal_cord_lesion_neck_with_treatment
             if code == 'P673b':
                 change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
+                                          self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
             if code == 'P674a':
                 change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_neck_with_treatment
+                                          self.daly_wt_spinal_cord_lesion_neck_with_treatment
             if code == 'P674b':
                 change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
+                                          self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
             if code == 'P675a':
                 change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_neck_with_treatment
+                                          self.daly_wt_spinal_cord_lesion_neck_with_treatment
             if code == 'P675b':
                 change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
+                                          self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
             if code == 'P676':
                 change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_neck_with_treatment
+                                          self.daly_wt_spinal_cord_lesion_neck_with_treatment
             if code == 'P782b':
                 change_in_daly_weights += - self.daly_wt_unilateral_arm_amputation_without_treatment + \
-                                                      self.daly_wt_unilateral_arm_amputation_with_treatment
+                                          self.daly_wt_unilateral_arm_amputation_with_treatment
             if code == 'P783':
                 change_in_daly_weights += - self.daly_wt_bilateral_arm_amputation_without_treatment + \
-                                                      self.daly_wt_bilateral_arm_amputation_with_treatment
+                                          self.daly_wt_bilateral_arm_amputation_with_treatment
             if code == 'P883':
                 change_in_daly_weights += - self.daly_wt_unilateral_lower_limb_amputation_without_treatment \
-                                                      + self.daly_wt_unilateral_lower_limb_amputation_with_treatment
+                                          + self.daly_wt_unilateral_lower_limb_amputation_with_treatment
             if code == 'P884':
                 change_in_daly_weights += - self.daly_wt_bilateral_lower_limb_amputation_without_treatment \
-                                                      + self.daly_wt_bilateral_lower_limb_amputation_with_treatment
+                                          + self.daly_wt_bilateral_lower_limb_amputation_with_treatment
             # update the disability burdens
             df.loc[person_id, 'rt_debugging_DALY_wt'] += change_in_daly_weights
         # Check that the person's true disability burden is positive
@@ -3139,18 +3137,21 @@ class RTI(Module):
                         injcat.append(int(7))
                         # create probability boundaries to decide what the injury severity of the spinal cord
                         # injury will be
-                        base1 = self.spine_prob_spinal_cord_lesion_neck_level * \
-                                self.spine_prob_spinal_cord_lesion_neck_level_AIS3 + \
-                                self.spine_prob_spinal_cord_lesion_below_neck_level * \
-                                self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3
-                        base2 = self.spine_prob_spinal_cord_lesion_neck_level * \
-                                self.spine_prob_spinal_cord_lesion_neck_level_AIS4 + \
-                                self.spine_prob_spinal_cord_lesion_below_neck_level * \
-                                self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4
-                        base3 = self.spine_prob_spinal_cord_lesion_neck_level * \
-                                self.spine_prob_spinal_cord_lesion_neck_level_AIS5 + \
-                                self.spine_prob_spinal_cord_lesion_below_neck_level * \
-                                self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5
+                        base1 = \
+                            self.spine_prob_spinal_cord_lesion_neck_level * \
+                            self.spine_prob_spinal_cord_lesion_neck_level_AIS3 + \
+                            self.spine_prob_spinal_cord_lesion_below_neck_level * \
+                            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3
+                        base2 = \
+                            self.spine_prob_spinal_cord_lesion_neck_level * \
+                            self.spine_prob_spinal_cord_lesion_neck_level_AIS4 + \
+                            self.spine_prob_spinal_cord_lesion_below_neck_level * \
+                            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4
+                        base3 = \
+                            self.spine_prob_spinal_cord_lesion_neck_level * \
+                            self.spine_prob_spinal_cord_lesion_neck_level_AIS5 + \
+                            self.spine_prob_spinal_cord_lesion_below_neck_level * \
+                            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5
                         # Decide how severe the injury is
                         if severity <= base1:
                             # This spinal cord has been determined to have an AIS score of 3, store the score in
@@ -3331,8 +3332,8 @@ class RTI(Module):
                         if severity <= self.lower_ex_prob_amputation_AIS2:
                             # Toe/toes amputation have an AIS score of 2, store this in injais
                             injais.append(2)
-                        elif self.lower_ex_prob_amputation_AIS2 < severity <= \
-                            self.lower_ex_prob_amputation_AIS2 + self.lower_ex_prob_amputation_AIS3:
+                        elif self.lower_ex_prob_amputation_AIS2 < severity <= self.lower_ex_prob_amputation_AIS2 + \
+                            self.lower_ex_prob_amputation_AIS3:
                             # Unilateral limb amputation has an AIS score of 3, store this in injais
                             injais.append(3)
                         else:
@@ -3480,7 +3481,6 @@ class RTI(Module):
         # ============================ Injury category incidence ======================================================
         df = self.sim.population.props
         # log the incidence of each injury category
-        in_rti_this_month = df.loc[df.rt_road_traffic_inc]
         n_alive = len(df.is_alive)
         amputationcounts = sum(1 for i in flattened_injury_category if i == '8')
         burncounts = sum(1 for i in flattened_injury_category if i == '11')
@@ -3984,13 +3984,12 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         # symptom, those with severe injuries will have the emergency injury symptom
 
         # Create the logical conditions for each symptom
-        condition_to_be_sent_to_em = df.is_alive & df.rt_road_traffic_inc & ~df.rt_diagnosed & ~df.rt_imm_death & \
-                                     (df.rt_date_inj == now) & (df.rt_injury_1 != "none") & \
-                                     (df.rt_ISS_score >= self.rt_emergency_care_ISS_score_cut_off)
-        condition_to_be_sent_to_begin_non_emergency = df.is_alive & df.rt_road_traffic_inc & \
-                                                      ~df.rt_diagnosed & ~df.rt_imm_death & \
-                                                      (df.rt_date_inj == now) & (df.rt_injury_1 != "none") & \
-                                                      (df.rt_ISS_score < self.rt_emergency_care_ISS_score_cut_off)
+        condition_to_be_sent_to_em = \
+            df.is_alive & df.rt_road_traffic_inc & ~df.rt_diagnosed & ~df.rt_imm_death & (df.rt_date_inj == now) & \
+            (df.rt_injury_1 != "none") & (df.rt_ISS_score >= self.rt_emergency_care_ISS_score_cut_off)
+        condition_to_be_sent_to_begin_non_emergency = \
+            df.is_alive & df.rt_road_traffic_inc & ~df.rt_diagnosed & ~df.rt_imm_death & (df.rt_date_inj == now) & \
+            (df.rt_injury_1 != "none") & (df.rt_ISS_score < self.rt_emergency_care_ISS_score_cut_off)
         # check that all those who meet the conditions to try and seek healthcare have at least one injury
         assert sum(df.loc[condition_to_be_sent_to_em, 'rt_injury_1'] != "none") == \
                len(df.loc[condition_to_be_sent_to_em])
@@ -4028,8 +4027,8 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                               they survive
     3) rt_disability - if the person survives a non-fatal injury then this injury may heal and therefore the disability
                        burden is changed
-    4) rt_debugging_DALY_wt - if the person survives a non-fatal injury then this injury may heal and therefore the disability
-                              burden is changed, this property keeping track of the true disability burden
+    4) rt_debugging_DALY_wt - if the person survives a non-fatal injury then this injury may heal and therefore the
+                              disability burden is changed, this property keeping track of the true disability burden
     5) rt_date_to_remove_daly - In the event of recovering from a non-fatal injury without medical intervention
                                 a recovery date will scheduled
 
@@ -4138,6 +4137,10 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                     persons_injuries = df.loc[[person], cols]
                     for code in flattened_injuries:
                         swapable_code = np.intersect1d(code, swapping_codes)
+                        if len(swapable_code) > 0:
+                            swapable_code = swapable_code[0]
+                        else:
+                            swapable_code = 'none'
                         # check that the person has the injury code
                         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
                         assert counts > 0
@@ -4595,7 +4598,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         prob_foot_frac_require_cast = p['prob_foot_frac_require_cast']
         prob_foot_frac_require_maj_surg = p['prob_foot_frac_require_maj_surg']
         prob_foot_frac_require_min_surg = p['prob_foot_frac_require_min_surg']
-        prob_foot_frac_require_amp = p['prob_foot_frac_require_amp']
         # Check if this person has a foot fracture
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, ['811'])
         if counts > 0:
@@ -4656,7 +4658,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         prob_tib_fib_frac_require_cast = p['prob_tib_fib_frac_require_cast']
         prob_tib_fib_frac_require_maj_surg = p['prob_tib_fib_frac_require_maj_surg']
         prob_tib_fib_frac_require_min_surg = p['prob_tib_fib_frac_require_min_surg']
-        prob_tib_fib_frac_require_amp = p['prob_tib_fib_frac_require_amp']
         prob_tib_fib_frac_require_traction = p['prob_tib_fib_frac_require_traction']
         # Check if the person has a broken tibia/fibula
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, ['812'])
@@ -4689,7 +4690,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 self.major_surgery_counts += 1
             # Check if this fracture needs to be treated with traction
             elif treatment_plan < prob_tib_fib_frac_require_cast + prob_tib_fib_frac_require_min_surg + \
-                    prob_tib_fib_frac_require_maj_surg + prob_tib_fib_frac_require_traction:
+                prob_tib_fib_frac_require_maj_surg + prob_tib_fib_frac_require_traction:
                 # update the treatment plan
                 self.tib_fib_frac_traction = True
                 # update the list of heal with time injuries
@@ -4729,8 +4730,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         prob_femural_fracture_require_major_surgery = p['prob_femural_fracture_require_major_surgery']
         prob_femural_fracture_require_minor_surgery = p['prob_femural_fracture_require_minor_surgery']
         prob_femural_fracture_require_cast = p['prob_femural_fracture_require_cast']
-        prob_femural_fracture_require_amputation = p['prob_femural_fracture_require_amputation']
-        prob_femural_fracture_require_traction = p['prob_femural_fracture_require_traction']
         if counts > 0:
             # create a treatment plan
             treatment_plan = self.module.rng.random_sample(size=1)
@@ -4785,7 +4784,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         prob_pelvis_fracture_traction = p['prob_pelvis_fracture_traction']
         prob_pelvis_frac_major_surgery = p['prob_pelvis_frac_major_surgery']
         prob_pelvis_frac_minor_surgery = p['prob_pelvis_frac_minor_surgery']
-        prob_pelvis_frac_cast = p['prob_pelvis_frac_cast']
 
         # See if this person has a pelvis fracture
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, ['813b'])
@@ -4920,7 +4918,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         self.hip_dis_require_traction = False
         # load the parameters used to determine the treatment plan
         prob_dis_hip_require_maj_surg = p['prob_dis_hip_require_maj_surg']
-        prob_dis_hip_require_cast = p['prob_dis_hip_require_cast']
         prob_hip_dis_require_traction = p['prob_hip_dis_require_traction']
         # See if person has dislocated hip
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, ['822a'])
@@ -5147,7 +5144,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # 2.9% had burns
         # 3.8% had 'other' injuries
         # https://doi.org/10.1186/1757-7241-19-61
-
 
     def apply(self, person_id, squeeze_factor):
         road_traffic_injuries = self.sim.modules['RTI']
@@ -5550,19 +5546,18 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                     swapping_codes.remove(code)
             for code in df.loc[person_id, 'rt_injuries_to_heal_with_time']:
                 if code in swapping_codes:
-                   swapping_codes.remove(code)
+                    swapping_codes.remove(code)
             for code in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
                 if code in swapping_codes:
-                   swapping_codes.remove(code)
+                    swapping_codes.remove(code)
             relevant_codes = np.intersect1d(non_empty_injuries.values, swapping_codes)
             if len(relevant_codes) > 0:
                 road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, relevant_codes)
 
-
             # Find the injuries that have been treated and then schedule a recovery date
             columns, codes = \
-                road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id,
-                                                                               df.loc[person_id, 'rt_injuries_to_cast'])
+                road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, df.loc[person_id,
+                                                                                                 'rt_injuries_to_cast'])
             assert len(columns) == len(df.loc[person_id, 'rt_injuries_to_cast'])
             for col in columns:
                 # todo: update this with recovery times for casted broken hips/pelvis/femurs
@@ -5581,13 +5576,12 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                 if code in df.loc[person_id, 'rt_injuries_to_cast']:
                     df.loc[person_id, 'rt_injuries_to_cast'].remove(code)
         else:
-           logger.debug(f"Person %d's has {fracturecastcounts + slingcounts} fractures without treatment",
-                             person_id)
-
-
+            logger.debug(f"Person %d's has {fracturecastcounts + slingcounts} fractures without treatment",
+                         person_id)
 
     def did_not_run(self, person_id):
         logger.debug('Fracture casts unavailable for person %d', person_id)
+
 
 class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -5702,7 +5696,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                     swapping_codes.remove(code)
             for code in df.loc[person_id, 'rt_injuries_to_heal_with_time']:
                 if code in swapping_codes:
-                   swapping_codes.remove(code)
+                    swapping_codes.remove(code)
             relevant_codes = np.intersect1d(non_empty_injuries, swapping_codes)
             treated_code = self.module.rng.choice(relevant_codes)
             # Some TLO codes have daly weights associated with treated and non-treated injuries
@@ -5731,6 +5725,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self, person_id):
         logger.debug('Open fracture treatment unavailable for person %d', person_id)
+
 
 class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
     """
@@ -6474,14 +6469,12 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                         df.loc[person_id, 'rt_injuries_for_major_surgery'].append(injury)
                 assert len(injuries_to_be_treated) == len(df.loc[person_id, 'rt_injuries_for_major_surgery'])
 
-
             columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id,
-                                                                                                [self.treated_code])
+                                                                                            [self.treated_code])
             for col in columns:
                 # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
                 # it permanent)
-                df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + \
-                                                                                    DateOffset(days=1)
+                df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + DateOffset(days=1)
         # ------------------------------------- Perm disability from SCI ----------------------------------------------
         if 'include_spine_surgery' in self.allowed_interventions:
             codes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676']
@@ -6522,7 +6515,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             # later on
             df.loc[person_id, column] = "P" + self.treated_code
             code_to_drop_index = injuries_to_be_treated.index(self.treated_code)
-
 
             injuries_to_be_treated.pop(code_to_drop_index)
             injuries_to_be_treated.append("P" + self.treated_code)
@@ -6598,7 +6590,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(months=4)
         tbi_codes = ['133a', '133b', '133c', '133d', '134a', '134b', '135']
         if self.treated_code in tbi_codes:
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [self.treated_code])[0])
+            columns = injury_columns.get_loc(
+                road_traffic_injuries.rti_find_injury_column(person_id, [self.treated_code])[0])
             # using estimated 6 weeks to recover from brain/head injury surgery
             df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=6)
         if self.treated_code == '342':
@@ -6660,7 +6653,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # remove code from major surgeries list
         if self.treated_code in df.loc[person_id, 'rt_injuries_for_major_surgery']:
             df.loc[person_id, 'rt_injuries_for_major_surgery'].remove(self.treated_code)
-
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
@@ -6861,7 +6853,6 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # remove code from minor surgeries list
         if treated_code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
             df.loc[person_id, 'rt_injuries_for_minor_surgery'].remove(treated_code)
-
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
@@ -7415,9 +7406,9 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         burncodes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
         idx, burncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, burncodes)
         self.totburns += burncounts
-        totalinj = fraccounts + dislocationcounts + tbicounts + softtissueinjcounts + organinjurycounts + \
-                   internalbleedingcounts + spinalcordinjurycounts + amputationcounts + externallacerationcounts + \
-                   burncounts
+        totalinj = \
+            fraccounts + dislocationcounts + tbicounts + softtissueinjcounts + organinjurycounts + \
+            internalbleedingcounts + spinalcordinjurycounts + amputationcounts + externallacerationcounts + burncounts
 
         dict_to_output = {
             'total_fractures': self.totfracnumber,
@@ -7493,13 +7484,16 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         self.soughtmedcare += n_sought_care
         n_death_post_med = df.rt_post_med_death.sum()
         self.deathaftermed += n_death_post_med
-        self.deathwithoutmed += len(df.loc[df.rt_no_med_death])
+        self.deathwithoutmed += df.rt_no_med_death.sum()
         self.death_inc_numerator += n_immediate_death + n_death_post_med + len(df.loc[df.rt_no_med_death])
         self.death_in_denominator += (n_alive - (n_immediate_death + n_death_post_med + len(df.loc[df.rt_no_med_death])
                                                  )) * \
                                      (1 / 12)
-        percent_accidents_result_in_death = (self.deathonscene + self.deathaftermed + self.deathwithoutmed) / \
-                                            self.numerator
+        if self.numerator > 0:
+            percent_accidents_result_in_death = \
+                (self.deathonscene + self.deathaftermed + self.deathwithoutmed) / self.numerator
+        else:
+            percent_accidents_result_in_death = 'none injured'
         maleinrti = len(df.loc[df.rt_road_traffic_inc & (df['sex'] == 'M')])
         femaleinrti = len(df.loc[df.rt_road_traffic_inc & (df['sex'] == 'F')])
 

@@ -23,6 +23,7 @@ from tlo.methods import (
     symptommanager
 )
 
+# create simulation parameters
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 1000
@@ -35,61 +36,46 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all(), ['where dtypes are not the same:', df.dtypes != orig.dtypes]
 
 
+def create_basic_rti_sim(population_size):
+    # create the basic outline of an rti simulation object
+    sim = Simulation(start_date=start_date)
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+                 rti.RTI(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
+                 )
+
+    sim.seed_rngs(0)
+    sim.make_initial_population(n=population_size)
+    return sim
+
+
 @pytest.fixture(scope='module')
 def test_run():
     """
     This test runs a simulation with a functioning health system with full service availability and no set
     constraints
     """
-
-    sim = Simulation(start_date=start_date)
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-                 rti.RTI(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
-                 )
-
-    sim.seed_rngs(0)
-
-    sim.make_initial_population(n=popsize)
-    params = sim.modules['RTI'].parameters
-    params['allowed_interventions'] = 'none'
-
+    # create sim object
+    sim = create_basic_rti_sim(popsize)
+    # run simulation
     sim.simulate(end_date=end_date)
-
+    # check datatypes are same through sim
     check_dtypes(sim)
 
 
 def test_module_properties():
     """ A test to see whether the logical flows through the module are followed"""
-    sim = Simulation(start_date=start_date)
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-                 rti.RTI(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
-                 )
-
-    sim.seed_rngs(0)
-
-    sim.make_initial_population(n=popsize)
+    sim = create_basic_rti_sim(popsize)
     params = sim.modules['RTI'].parameters
-    params['allowed_interventions'] = 'none'
-
     # Increase the incidence so that we get more people flowing through the RTI model
     params['base_rate_injrti'] = params['base_rate_injrti'] * 5
-
     sim.simulate(end_date=end_date)
 
     df = sim.population.props
@@ -126,8 +112,7 @@ def test_module_properties():
 
 
 def test_with_more_modules():
-    # Run the simulation with multiple models, see if any errors or unexpected changes to the datatypes occurs,
-    # no particular reason for the choice of modules
+    # Run the simulation with multiple modules, see if any errors or unexpected changes to the datatypes occurs
     sim = Simulation(start_date=start_date)
 
     # Register the core modules
@@ -152,12 +137,11 @@ def test_with_more_modules():
 
     sim.seed_rngs(0)
 
-    # Run the simulation
+    # Make the population
     sim.make_initial_population(n=popsize)
-    params = sim.modules['RTI'].parameters
-    params['allowed_interventions'] = 'none'
+    # run the simulation
     sim.simulate(end_date=end_date)
-
+    # check datatypes
     check_dtypes(sim)
 
 
@@ -166,7 +150,7 @@ def test_run_health_system_high_squeeze():
     factor is too high. Therefore it tests the logic in the did_not_run functions of the RTI HSIs"""
     sim = Simulation(start_date=start_date)
 
-    # Register the core modules
+    # Register the modules and change healthsystem parameters
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -181,15 +165,13 @@ def test_run_health_system_high_squeeze():
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
-
+    # create seed
     sim.seed_rngs(0)
-
-    # Run the simulation
+    # make the initial population
     sim.make_initial_population(n=popsize)
-    params = sim.modules['RTI'].parameters
-    params['allowed_interventions'] = 'none'
+    # Run the simulation
     sim.simulate(end_date=end_date)
-
+    # check the datatypes
     check_dtypes(sim)
 
 
@@ -199,7 +181,7 @@ def test_run_health_system_events_wont_run():
     """
     sim = Simulation(start_date=start_date)
 
-    # Register the core modules
+    # Register the core modules, make service availability = []
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -211,13 +193,11 @@ def test_run_health_system_events_wont_run():
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
-
+    # create simulation seed
     sim.seed_rngs(0)
-
-    # Run the simulation
+    # make initial population
     sim.make_initial_population(n=popsize)
-    params = sim.modules['RTI'].parameters
-    params['allowed_interventions'] = 'none'
+    # Run the simulation
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
@@ -227,29 +207,17 @@ def test_sim_high_incidence():
     Run the model with a high incidence, where many people are involved in road traffic injuries
     :return:
     """
-    sim = Simulation(start_date=start_date)
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 rti.RTI(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
-                 )
-
-    sim.seed_rngs(0)
-
-    sim.make_initial_population(n=popsize)
+    # create the simulation object
+    sim = create_basic_rti_sim(popsize)
+    # get rti module parameters
     params = sim.modules['RTI'].parameters
+    # get the original incidence
     orig_inc = params['base_rate_injrti']
+    # incrase simulation incidence
     params['base_rate_injrti'] = orig_inc * 100
-    params['allowed_interventions'] = 'none'
-
+    # run simulation
     sim.simulate(end_date=end_date)
-
+    # check datatypes
     check_dtypes(sim)
 
 
@@ -258,26 +226,11 @@ def test_tiny_population():
     Run the model with a small population size
     :return:
     """
-    sim = Simulation(start_date=start_date)
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 rti.RTI(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
-                 )
-
-    sim.seed_rngs(0)
-    # Note that when n=1 an error was thrown up by the enhanced_lifestyle module when calculating bmi
-    sim.make_initial_population(n=2)
-    params = sim.modules['RTI'].parameters
-    params['allowed_interventions'] = 'none'
+    # create simulation with a population size of 2
+    sim = create_basic_rti_sim(2)
+    # run simulation
     sim.simulate(end_date=end_date)
-
+    # check datatypes
     check_dtypes(sim)
 
 
@@ -286,28 +239,27 @@ def test_no_capabilities():
     Run the model with a capabilities coefficient of 0.0
     :return:
     """
+    # Register the core modules, make capabilities coefficient = 0.0
     sim = Simulation(start_date=start_date)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           capabilities_coefficient=0.0,
-                                           service_availability=['*']),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=0.0),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
-
+    # create simulation seed
     sim.seed_rngs(0)
-    # Note that when n=1 an error was thrown up by the enhanced_lifestyle module when calculating bmi
+    # make initial population
     sim.make_initial_population(n=popsize)
-    params = sim.modules['RTI'].parameters
-    params['allowed_interventions'] = 'none'
+    # Run the simulation
     sim.simulate(end_date=end_date)
-
+    # check the datatypes
     check_dtypes(sim)
 
 
@@ -316,8 +268,11 @@ def test_health_system_disabled():
     Test the model with the health system disabled
     :return:
     """
+    # create simulation object
     sim = Simulation(start_date=start_date)
+    # get resource file path
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    # register modules, health system is disabled
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -328,14 +283,13 @@ def test_health_system_disabled():
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
-
+    # create random reed
     sim.seed_rngs(0)
-
+    # make the initial population
     sim.make_initial_population(n=popsize)
-    params = sim.modules['RTI'].parameters
-    params['allowed_interventions'] = 'none'
+    # run the simulation
     sim.simulate(end_date=end_date)
-
+    # check the datatypes
     check_dtypes(sim)
 
 

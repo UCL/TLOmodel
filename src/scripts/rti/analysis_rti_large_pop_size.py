@@ -13,7 +13,6 @@ from tlo.methods import (
     dx_algorithm_child,
     dx_algorithm_adult
 )
-import pandas as pd
 
 # In this file I run the model with a large population twice with the same seed, storing the model run as it's
 # log file and then see if the two logfiles are the same for all the logs which RTI will produce/interact with.
@@ -42,6 +41,7 @@ pop_size = 1000000
 nsim = 2
 # Create storage for logfiles
 logfiles_storage = dict()
+# create a seed to be used in every logfile
 Seed = int(np.random.uniform(1, 10000000, 1))
 for i in range(0, nsim):
     sim = Simulation(start_date=start_date, seed=Seed)
@@ -59,70 +59,82 @@ for i in range(0, nsim):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath)
     )
+    # name the logfile
     logfile = sim.configure_logging(filename="LogFile")
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
-    params = sim.modules['RTI'].parameters
-    params['allowed_interventions'] = []
-
+    # run the simulation
     sim.simulate(end_date=end_date)
+    # parse the logfile
     log_df = parse_log_file(logfile)
+    # store the logfile
     logfiles_storage[i] = log_df
 # Check the RTI logging dfs are all the same per sim
+# iterate over each output in the first simulation
 for df in logfiles_storage[0]['tlo.methods.rti'].keys():
+    # iteraring over logfiles in other runs
     for sim in logfiles_storage:
-        print(df)
+        # check if the logfiles are the same (as they should be, running with same seed)
         try:
             assert logfiles_storage[0]['tlo.methods.rti'][df].equals(
                 logfiles_storage[sim]['tlo.methods.rti'][df]), \
                 'Something went wrong in rti replicability'
         except AssertionError:
+            # Show where logfiles were not the same
             print('Something went wrong in rti replicability')
             print(df)
 
 # Check the enhanced_lifestyle logging dfs are all the same per sim
+# iterate over each output in the first simulation
 for df in logfiles_storage[0]['tlo.methods.enhanced_lifestyle'].keys():
     for sim in logfiles_storage:
-        print(df)
+        # iteraring over logfiles in other runs
         try:
             assert logfiles_storage[0]['tlo.methods.enhanced_lifestyle'][df].equals(
                 logfiles_storage[sim]['tlo.methods.enhanced_lifestyle'][df]), \
                 'Something went wrong in enhanced_lifestyle replicability'
         except AssertionError:
+            # Show where logfiles were not the same
             print('Something went wrong in enhanced_lifestyle replicability')
             print(df)
 
 # Check the healthsystem logging dfs are all the same per sim
+# iterate over each output in the first simulation
 for df in logfiles_storage[0]['tlo.methods.healthsystem'].keys():
     for sim in logfiles_storage:
-        print(df)
+        # iteraring over logfiles in other runs
         try:
             assert logfiles_storage[0]['tlo.methods.healthsystem'][df].equals(
                 logfiles_storage[sim]['tlo.methods.healthsystem'][df]), \
                 'Something went wrong in healthsystem replicability'
         except AssertionError:
+            # Show where logfiles were not the same
             print('Something went wrong in healthsystem replicability')
             print(df)
 # Check the healthburden logging dfs are all the same per sim
+# iterate over each output in the first simulation
 for df in logfiles_storage[0]['tlo.methods.healthburden'].keys():
     for sim in logfiles_storage:
-        print(df)
+        # iteraring over logfiles in other runs
         try:
             assert logfiles_storage[0]['tlo.methods.healthburden'][df].equals(
                 logfiles_storage[sim]['tlo.methods.healthburden'][df]), \
                 'Something went wrong in healthburden replicability'
         except AssertionError:
+            # Show where logfiles were not the same
             print('Something went wrong in healthburden replicability')
             print(df)
 # Check the demography logging dfs are all the same per sim
+# iterate over each output in the first simulation
 for df in logfiles_storage[0]['tlo.methods.demography'].keys():
     for sim in logfiles_storage:
-        print(df)
+        # iteraring over logfiles in other runs
         try:
             assert logfiles_storage[0]['tlo.methods.demography'][df].equals(
                 logfiles_storage[sim]['tlo.methods.demography'][df]), \
                 'Something went wrong in demography replicability'
         except AssertionError:
+            # Show where logfiles were not the same
             print('Something went wrong in demography replicability')
             print(df)
 
