@@ -136,3 +136,19 @@ def summarize(results: pd.DataFrame, only_mean: bool=False) -> pd.DataFrame:
         return om
 
     return summary
+
+# %%
+def get_grid(params: pd.DataFrame, res: pd.DataFrame):
+    """Utility function to create the arrays needed to plot a heatmap.
+    columns 0, 1: the two dimension for the heatmap axes
+    column 2: the value to plot in the heatmap
+    """
+
+    res = pd.concat([params.pivot(columns='module_param', values='value'), res], axis=1)
+    piv = res.pivot_table(index=res.columns[0], columns=res.columns[1], values=res.columns[2])
+
+    grid = dict()
+    grid[res.columns[0]], grid[res.columns[1]] = np.meshgrid(piv.index, piv.columns)
+    grid[res.columns[2]] = piv.values
+
+    return grid
