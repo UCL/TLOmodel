@@ -12,7 +12,7 @@ from scripts.dev.th_testing.th_utils import (
     get_folders,
     get_grid,
     get_info,
-    getalog,
+    get_alog,
     summarize,
 )
 
@@ -24,7 +24,7 @@ outputspath = Path('./outputs')
 results_folder = get_folders('mockitis_2D_grid.py', outputspath)[-1]
 
 # look at one log (so can decide what to extract)
-log = getalog(results_folder)
+log = get_alog(results_folder)
 
 # get basic information about the results
 info = get_info(results_folder)

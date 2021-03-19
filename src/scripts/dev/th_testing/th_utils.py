@@ -17,7 +17,7 @@ def get_folders(batch_file_name: str, outputspath: Path) -> list:
 
 
 def get_info(results_folder: Path) -> dict:
-    """Utility function to get the information on the runs (number draws, run and their paths)"""
+    """Utility function to get the the number draws and the number of runs in a batch set."""
     info = dict()
     draw_folders = [f for f in os.scandir(results_folder) if f.is_dir()]
 
@@ -29,8 +29,8 @@ def get_info(results_folder: Path) -> dict:
     return info
 
 
-def getalog(results_folder: Path) -> dict:
-    """Utility function to open one log from within a batch set."""
+def get_alog(results_folder: Path) -> dict:
+    """Utility function to create a dict contaning all the logs from the first run within a batch set."""
     folder = results_folder / str(0) / str(0)
     pickles = [f for f in os.scandir(folder) if f.name.endswith('.pickle')]
 
@@ -45,9 +45,9 @@ def getalog(results_folder: Path) -> dict:
 def extract_params(results_folder: Path) -> pd.DataFrame:
     """Utility function to unpack results to produce a dateframe that summarizes that parameters that change across
     the draws. It produces a dataframe with index of draw and columns of each parameters that is specified to be varied
-     in the batch.
-     NB. This does the extraction from run 0 in each draw, under the assumption that the over-written parameters are the
-      same in each run."""
+    in the batch.
+    NB. This does the extraction from run 0 in each draw, under the assumption that the over-written parameters are the
+    same in each run."""
 
     # Get the paths for the draws
     draws = [f for f in os.scandir(results_folder) if f.is_dir()]
@@ -72,11 +72,10 @@ def extract_params(results_folder: Path) -> pd.DataFrame:
     return params
 
 
-# %%
 def extract_results(results_folder: Path, log_element: dict) -> pd.DataFrame:
     """Utility function to unpack results to produce a dataframe that summaries one series from the log, with column
-    multi-index for draw/run. If an 'index' component of the log_element is provided, this will only work if the index
-    is the same in each run."""
+    multi-index for the draw/run. If an 'index' component of the log_element is provided, the dataframe uses that index
+    (but note that this will only work if the index is the same in each run)."""
 
     if 'index' in log_element:
         # extract the index from the first log, and use this ensure that all other are exactly the same.
@@ -114,10 +113,9 @@ def extract_results(results_folder: Path, log_element: dict) -> pd.DataFrame:
     return results
 
 
-# %%
 def summarize(results: pd.DataFrame, only_mean: bool = False) -> pd.DataFrame:
-    """Utility function to compute summary statistics that finds mean value and 95% credible intervals across the
-    runs. """
+    """Utility function to compute summary statistics that finds mean value and 95% interval across the runs for each
+    draw."""
     summary = pd.DataFrame(
         columns=pd.MultiIndex.from_product(
             [
@@ -141,11 +139,12 @@ def summarize(results: pd.DataFrame, only_mean: bool = False) -> pd.DataFrame:
     return summary
 
 
-# %%
-def get_grid(params: pd.DataFrame, res: pd.DataFrame):
+def get_grid(params: pd.DataFrame, res: pd.Series):
     """Utility function to create the arrays needed to plot a heatmap.
-    columns 0, 1: the two dimension for the heatmap axes
-    column 2: the value to plot in the heatmap
+    params:
+        This is the dataframe of parameters with index=draw (made using `extract_params()`).
+    In res:
+        results of interest with index=draw (can be made using `extract_params()`)
     """
 
     res = pd.concat([params.pivot(columns='module_param', values='value'), res], axis=1)
