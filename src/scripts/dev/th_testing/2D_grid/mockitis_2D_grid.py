@@ -62,6 +62,7 @@ class Mockitis_Batch(BaseScenario):
             'p_infection': np.linspace(0, 1.0, 5),
             'p_cure': np.linspace(0, 0.5, 5)
         })
+        self.number_of_draws = len(list(grid.values()[0]))
 
         return {
             'Mockitis': {
