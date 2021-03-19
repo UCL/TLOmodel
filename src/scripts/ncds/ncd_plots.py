@@ -35,8 +35,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2020, 1, 2)
-    popsize = 10000
+    end_date = Date(2011, 12, 31)
+    popsize = 1000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -84,6 +84,17 @@ def restore_multi_index(dat):
     dat.columns = pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
     return dat
 
+def convert_output(output_path):
+    output_path['year'] = pd.to_datetime(output_path['date']).dt.year
+    output_path.drop(columns='date', inplace=True)
+    output_path.set_index(
+        'year',
+        drop=True,
+        inplace=True
+    )
+    return output_path
+
+
 
 for condition in conditions:
     # Strip leading 'nc_' from condition name
@@ -119,7 +130,8 @@ for condition in conditions:
     prev_df['data_prevalence'] = data['value'].values
     prev_df['data_lower'] = data['lower'].values
     prev_df['data_upper'] = data['upper'].values
-    asymptomatic_error = [prev_df['data_lower'], prev_df['data_upper']]
+    asymptomatic_error = [(prev_df['data_prevalence'].values - prev_df['data_lower'].values),
+                          (prev_df['data_upper'].values-prev_df['data_prevalence'].values)]
 
     bar_width = 0.75
     opacity = 0.25
@@ -130,7 +142,7 @@ for condition in conditions:
             label='Model')
     scatter = plt.scatter(prev_df.index, prev_df['data_prevalence'], s=20,
                 alpha=1.0,
-                color='black',
+                color='gray',
                 label="Data")
     plt.xticks(rotation=90)
     plt.errorbar(prev_df.index, prev_df['data_prevalence'], yerr=asymptomatic_error, fmt='o', c='gray')
@@ -144,74 +156,17 @@ for condition in conditions:
 
     # Plot prevalence among all adults over time for each condition
     prev_condition_all = output['tlo.methods.ncds'][f'{condition_name}_prevalence']
-
-    prev_condition_all['year'] = pd.to_datetime(prev_condition_all['date']).dt.year
-    prev_condition_all.drop(columns='date', inplace=True)
-    prev_condition_all.set_index('year', drop=True, inplace=True)
-
     plt.plot(prev_condition_all)
     plt.ylabel(f'Prevalence of {condition_title} Over Time (Ages 20+)')
     plt.xlabel('Year')
-    # plt.ylim([0, 1])
+    plt.ylim([0, 0.4])
+    plt.tight_layout()
+    plt.savefig(outputpath / f'prevalence_{condition_title}_over_time.pdf')
     plt.show()
 
-# Plot prevalence of multi-morbidities
-prev_mm_age_m = output['tlo.methods.ncds']['mm_prevalence_by_age_m']
-prev_mm_age_m['year'] = pd.to_datetime(prev_mm_age_m['date']).dt.year
-prev_mm_age_m.drop(columns='date', inplace=True)
-prev_mm_age_m.set_index(
-    'year',
-    drop=True,
-    inplace=True
-)
-
+# plot prevalence of multi-morbidities
 age_range = sim.modules['Demography'].AGE_RANGE_CATEGORIES
-last_year = prev_mm_age_m.iloc[-1, :].to_frame(name="counts")
-n_conditions_by_age = pd.DataFrame(index=last_year.index, columns=age_range)
-for age_grp in age_range:
-    n_conditions_by_age[age_grp] = last_year['counts'].apply(lambda x: x.get(f'{age_grp}')).dropna()
-
-n_conditions_by_age.T.plot.bar(stacked=True)
-plt.title("Prevalence of number of co-morbidities by age (M)")
-plt.ylabel("Prevalence of number of co-morbidities")
-plt.xticks(rotation=90)
-plt.legend(loc=(1.04,0))
-plt.tight_layout()
-plt.savefig(outputpath / ("N_comorbidities_by_age_m" + datestamp + ".pdf"), format='pdf')
-plt.show()
-
-prev_mm_age_f = output['tlo.methods.ncds']['mm_prevalence_by_age_f']
-prev_mm_age_f['year'] = pd.to_datetime(prev_mm_age_f['date']).dt.year
-prev_mm_age_f.drop(columns='date', inplace=True)
-prev_mm_age_f.set_index(
-    'year',
-    drop=True,
-    inplace=True
-)
-
-last_year = prev_mm_age_f.iloc[-1, :].to_frame(name="counts")
-n_conditions_by_age = pd.DataFrame(index=last_year.index, columns=age_range)
-for age_grp in age_range:
-    n_conditions_by_age[age_grp] = last_year['counts'].apply(lambda x: x.get(f'{age_grp}')).dropna()
-
-n_conditions_by_age.T.plot.bar(stacked=True)
-plt.title("Prevalence of number of co-morbidities by age (F)")
-plt.ylabel("Prevalence of number of co-morbidities")
-plt.xticks(rotation=90)
-plt.legend(loc=(1.04,0))
-plt.tight_layout()
-plt.savefig(outputpath / ("N_comorbidities_by_age_f" + datestamp + ".pdf"), format='pdf')
-plt.show()
-
-prev_mm_age_all = output['tlo.methods.ncds']['mm_prevalence_by_age_all']
-prev_mm_age_all['year'] = pd.to_datetime(prev_mm_age_all['date']).dt.year
-prev_mm_age_all.drop(columns='date', inplace=True)
-prev_mm_age_all.set_index(
-    'year',
-    drop=True,
-    inplace=True
-)
-
+prev_mm_age_all = convert_output(output['tlo.methods.ncds']['mm_prevalence_by_age_all'])
 last_year = prev_mm_age_all.iloc[-1, :].to_frame(name="counts")
 n_conditions_by_age = pd.DataFrame(index=last_year.index, columns=age_range)
 for age_grp in age_range:
@@ -230,6 +185,7 @@ plt.show()
 # calculate death rate
 deaths_df = output['tlo.methods.demography']['death']
 deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
+deaths_df.to_csv('deaths_by_cause.csv')
 
 pop_df = output['tlo.methods.demography']['population']
 pop_df['year'] = pd.to_datetime(pop_df['date']).dt.year
@@ -249,6 +205,7 @@ for condition in conditions:
     deaths[condition] = deaths_df.loc[deaths_df['cause'].str.startswith(f'{condition_name}')].groupby('year').size()
     rate_deaths[condition] = deaths[condition] * total_pop['total_pop_adjustment_factor'] # gives rate per 100k pop
 
+# death rates for conditions from GBD
 deaths_data = [{'nc_diabetes': 19.04, 'nc_hypertension': 0, 'nc_chronic_kidney_disease': 18.45,
                 'nc_lower_back_pain': 0, 'nc_chronic_ischemic_hd': 118.10}]
 deaths_lower = [{'nc_diabetes': 17.73, 'nc_hypertension': 0, 'nc_chronic_kidney_disease': 16.98,
@@ -256,6 +213,9 @@ deaths_lower = [{'nc_diabetes': 17.73, 'nc_hypertension': 0, 'nc_chronic_kidney_
 deaths_upper = [{'nc_diabetes': 20.24, 'nc_hypertension': 0, 'nc_chronic_kidney_disease': 19.70,
                 'nc_lower_back_pain': 0, 'nc_chronic_ischemic_hd': 125.93}]
 df_death_data = pd.DataFrame(deaths_data)
+df_death_lower = pd.DataFrame(deaths_lower)
+df_death_upper = pd.DataFrame(deaths_upper)
+asymptomatic_error = [[1.31, 0, 1.47, 0, 9.59], [1.2, 0, 1.25, 0, 7.83]]
 
 bar_width = 0.5
 opacity = 0.25
@@ -266,11 +226,12 @@ bar = plt.bar(conditions, deaths.iloc[-1], bar_width,
         label='Model')
 scatter = plt.scatter(conditions, df_death_data.iloc[-1], s=20,
             alpha=1.0,
-            color='black',
+            color='gray',
             label="GBD Data")
 plt.xticks(rotation=90)
-plt.ylabel('Percent of Total Deaths')
-plt.title('Percent of Deaths Due to Conditions (2020)')
+plt.errorbar(conditions, df_death_data.iloc[-1], yerr=asymptomatic_error, fmt='o', c='gray')
+plt.ylabel('Death Rate (per 100k Population)')
+plt.title('Death Rate by Condition (2020)')
 plt.legend([bar, scatter], ['Model', 'GBD'])
 plt.savefig(outputpath / 'deaths_by_condition.pdf')
 #plt.ylim([0, 1])
@@ -295,23 +256,6 @@ for age_grp in age_grps:
     props_by_age[age_grp] = last_year['props'].apply(lambda x: x.get(f'{age_grp}')).dropna()
 
 props_by_age.to_csv('condition_combos.csv')
-
-prop_combos_adults = output['tlo.methods.ncds']['prop_combos_adults']
-prop_combos_adults['year'] = pd.to_datetime(prop_combos_adults['date']).dt.year
-prop_combos_adults.drop(columns='date', inplace=True)
-prop_combos_adults.set_index(
-    'year',
-    drop=True,
-    inplace=True
-)
-
-last_year = prop_combos_adults.iloc[-1, :].to_frame(name="props")
-age_grps = ['[0, 20)', '[20, 120)']
-props_by_age_adults = pd.DataFrame(index=last_year.index, columns=age_grps)
-for age_grp in age_grps:
-    props_by_age_adults[age_grp] = last_year['props'].apply(lambda x: x.get(f'{age_grp}')).dropna()
-
-props_by_age_adults.to_csv('condition_combos_adults.csv')
 
 
 # ----------------------------------------------- CREATE INCIDENCE PLOTS ----------------------------------------------

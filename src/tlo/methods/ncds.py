@@ -17,6 +17,8 @@ from tlo.methods import Metadata, demography
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
 
+from itertools import combinations
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -90,7 +92,14 @@ class Ncds(Module):
     event_list = {
         f"nc_{p}": Property(Types.BOOL, f"Whether or not someone has had a {p}") for p in events}
 
-    PROPERTIES = {**condition_list, **event_list}
+    PROPERTIES = {**condition_list, **event_list,
+                  'nc_depression': Property(Types.BOOL,
+                                            'whether or not the person currently has depression'
+                                            ),
+                  'nc_cancers': Property(Types.BOOL,
+                                         'whether or not the person currently has any form of cancer'
+                                         )
+                  }
 
     # TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank
     SYMPTOMS = {}
@@ -103,6 +112,10 @@ class Ncds(Module):
 
         self.conditions = list(Ncds.condition_list)
         self.events = list(Ncds.event_list)
+
+        # create list that includes conditions modelled by other modules
+        self.extended_conditions = list(Ncds.condition_list)
+        self.extended_conditions.append("nc_depression")
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -210,6 +223,10 @@ class Ncds(Module):
         """
         sim.schedule_event(Ncds_MainPollingEvent(self, self.parameters['interval_between_polls']), sim.date)
         sim.schedule_event(Ncds_LoggingEvent(self), sim.date)
+
+        df = self.sim.population.props
+        df['nc_depression'] = df['de_depr']
+        # cancers_idx = df.index[df['de_depr']]
 
         # Create Tracker for the number of different types of events
         self.eventsTracker = dict()
@@ -334,7 +351,7 @@ class Ncds(Module):
             Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
             Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
             Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease'])
-            #Predictor('nc_cancers').when(True, p['rr_cancers'])
+            # Predictor('nc_cancers').when(True, p['rr_cancers'])
         )
 
         return self.lms_dict[condition]
@@ -410,6 +427,9 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         rng = m.rng
 
         current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
+
+        # Update depression status
+        df['nc_depression'] = df['de_depr']
 
         # Determine onset/removal of conditions
         for condition in self.module.conditions:
@@ -528,6 +548,9 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
+        # update depression status
+        self.sim.population.props['nc_depression'] = self.sim.population.props['de_depr']
+
         # Convert incidence tracker to dict to pass through logger
         logger.info(key='incidence_count_by_condition', data=self.module.df_incidence_tracker.to_dict())
         # Reset the counter
@@ -557,7 +580,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             logger.info(key=f'person_years_{cond}', data=py.to_dict())
 
         # Make some summary statistics for prevalence by age/sex for each condition
-        df = population.props
+        df = self.sim.population.props
         # make custom age range cats
         df_age_cats = df
         df_age_cats['custom_age_range'] = df_age_cats['age_range']
@@ -604,48 +627,14 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
         # Counter for number of co-morbidities
-        df = population.props
-        mask = df.is_alive == True
-        df.loc[mask, 'n_conditions'] = df.loc[mask, self.module.conditions].sum(axis=1)
-        n_comorbidities_m = pd.DataFrame(index=self.module.age_index,
-                                         columns=list(range(0, len(self.module.conditions) + 1)))
-        n_comorbidities_f = pd.DataFrame(index=self.module.age_index,
-                                         columns=list(range(0, len(self.module.conditions) + 1)))
-        df_m = df.loc[df['sex'] == "M"]
-        df_m = df_m[['age_range', 'n_conditions']]
-        df_f = df.loc[df['sex'] == "F"]
-        df_f = df_f[['age_range', 'n_conditions']]
-
-        for num in range(0, len(self.module.conditions) + 1):
-            col_m = df_m.loc[df_m['n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
-                {'count': x['n_conditions'].count()}))
-            n_comorbidities_m.loc[:, num] = col_m['count']
-
-            col_f = df_f.loc[df_f['n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
-                {'count': x['n_conditions'].count()}))
-            n_comorbidities_f.loc[:, num] = col_f['count']
-
-        prop_comorbidities_m = n_comorbidities_m.div(n_comorbidities_m.sum(axis=1), axis=0)
-        prop_comorbidities_f = n_comorbidities_f.div(n_comorbidities_f.sum(axis=1), axis=0)
-
-        logger.info(key='mm_prevalence_by_age_m',
-                    description='annual summary of multi-morbidities by age for men',
-                    data=prop_comorbidities_m.to_dict()
-                    )
-
-        logger.info(key='mm_prevalence_by_age_f',
-                    description='annual summary of multi-morbidities by age for women',
-                    data=prop_comorbidities_f.to_dict()
-                    )
-
-        df = population.props
-        mask = df.is_alive == True
-        df.loc[mask, 'n_conditions'] = df.loc[mask, self.module.conditions].sum(axis=1)
+        df = self.sim.population.props
+        mask = df.is_alive
+        df.loc[mask, 'n_conditions'] = df.loc[mask, self.module.extended_conditions].sum(axis=1)
         n_comorbidities_all = pd.DataFrame(index=self.module.age_index,
-                                           columns=list(range(0, len(self.module.conditions) + 1)))
+                                           columns=list(range(0, len(self.module.extended_conditions) + 1)))
         df = df[['age_range', 'n_conditions']]
 
-        for num in range(0, len(self.module.conditions) + 1):
+        for num in range(0, len(self.module.extended_conditions) + 1):
             col = df.loc[df['n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
                 {'count': x['n_conditions'].count()}))
             n_comorbidities_all.loc[:, num] = col['count']
@@ -657,30 +646,25 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=prop_comorbidities_all.to_dict()
                     )
 
-        df = population.props
+        # output combinations of different conditions
+
+        df = self.sim.population.props
         df = df[df.is_alive]
         df['four_age_bins'] = pd.cut(x=df['age_years'], bins=[0, 20, 45, 65, 120], right=False)
         df['all_adults'] = pd.cut(x=df['age_years'], bins=[0, 20, 120], right=False)
 
-        condition_combos = ['di_hy', 'di_de', 'di_ck', 'di_ci', 'hy_de', 'hy_ck', 'hy_ci', 'de_ck', 'de_ci', 'ck_ci']
-        df['di_hy'] = np.where(df['nc_diabetes'] & df['nc_hypertension'], True, False)
-        df['di_de'] = np.where(df['nc_diabetes'] & df['de_depr'], True, False)
-        df['di_ck'] = np.where(df['nc_diabetes'] & df['nc_chronic_kidney_disease'], True, False)
-        df['di_ci'] = np.where(df['nc_diabetes'] & df['nc_chronic_ischemic_hd'], True, False)
-        df['hy_de'] = np.where(df['nc_hypertension'] & df['de_depr'], True, False)
-        df['hy_ck'] = np.where(df['nc_hypertension'] & df['nc_chronic_kidney_disease'], True, False)
-        df['hy_ci'] = np.where(df['nc_hypertension'] & df['nc_chronic_ischemic_hd'], True, False)
-        df['de_ck'] = np.where(df['de_depr'] & df['nc_chronic_kidney_disease'], True, False)
-        df['de_ci'] = np.where(df['de_depr'] & df['nc_chronic_ischemic_hd'], True, False)
-        df['ck_ci'] = np.where(df['nc_chronic_kidney_disease'] & df['nc_chronic_ischemic_hd'], True, False)
+        combos = combinations(self.module.extended_conditions, 2)
+        condition_combos = list(combos)
 
-        n_combos = pd.DataFrame(index=df['four_age_bins'].value_counts().sort_index().index,
-                                columns=condition_combos)
-        for condition_combo in condition_combos:
-            col = df.loc[df[f'{condition_combo}']].groupby(['four_age_bins']).apply(lambda x: pd.Series(
-                {'count': x[f'{condition_combo}'].count()}))
+        n_combos = pd.DataFrame(index=df['four_age_bins'].value_counts().sort_index().index)
+
+        for i in range(0, len(condition_combos)):
+            df['condition_combos'] = np.where(df[condition_combos[i][0]] & df[condition_combos[i][1]], True, False)
+            col = df.loc[df['condition_combos']].groupby(['four_age_bins'])['condition_combos'].count()
             n_combos.reset_index()
-            n_combos.loc[:, f'{condition_combo}'] = col['count'].values
+            n_combos.loc[:, (f'{condition_combos[i][0]}' + '_' + f'{condition_combos[i][1]}')] = col.values
+
+        # output proportions of different combinations of conditions
 
         prop_combos = n_combos.div(df.groupby(['four_age_bins'])['four_age_bins'].count(), axis=0)
         prop_combos.index = prop_combos.index.astype(str)
@@ -690,19 +674,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=prop_combos.to_dict()
                     )
 
-        n_combos_adults = pd.DataFrame(index=df['all_adults'].value_counts().sort_index().index,
-                                       columns=condition_combos)
-        for condition_combo in condition_combos:
-            col = df.loc[df[f'{condition_combo}']].groupby(['all_adults']).apply(lambda x: pd.Series(
-                {'count': x[f'{condition_combo}'].count()}))
-            n_combos_adults.reset_index()
-            n_combos_adults.loc[:, f'{condition_combo}'] = col['count'].values
+        # output entire dataframe for logistic regression
 
-        prop_combos_adults = n_combos_adults.div(df.groupby(['all_adults'])['all_adults'].count(), axis=0)
-        prop_combos_adults.index = prop_combos_adults.index.astype(str)
-
-        logger.info(key='prop_combos_adults',
-                    description='proportion of combinations of morbidities for all adults',
-                    data=prop_combos_adults.to_dict()
-                    )
-
+        df = self.sim.population.props
+        df.to_csv('df_for_regression.csv')
