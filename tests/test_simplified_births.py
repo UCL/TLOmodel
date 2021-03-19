@@ -1,9 +1,6 @@
 import os
 from pathlib import Path
 
-import pytest
-import pandas as pd
-
 from tlo import Simulation, Date
 from tlo.methods import (
     demography,
@@ -25,8 +22,8 @@ from tlo.methods import (
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
-popsize = 1000
+end_date = Date(2015, 1, 1)
+popsize = 100
 
 
 def check_dtypes(simulation):
@@ -38,7 +35,7 @@ def check_dtypes(simulation):
 
 def get_sim():
     start_date = Date(2010, 1, 1)
-    popsize = 100
+    popsize = 1000
     sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
@@ -88,9 +85,6 @@ def test_breastfeeding_simplified_birth_logic():
     # increasing number of women likely to get pregnant by setting pregnancy probability to 1
     sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 1
 
-    # set delivery period to 0 days allowing pregnant women deliver same day
-    # sim.modules['Simplifiedbirths'].parameters['days_until_delivery'] = pd.DateOffset(days=0)
-
     # Force the probability of exclusive breastfeeding to 1, no other 'types' should occur from births in this sim run
     sim.modules['Simplifiedbirths'].parameters['prob_breastfeeding_type'] = [0, 0, 1]
 
@@ -98,26 +92,18 @@ def test_breastfeeding_simplified_birth_logic():
     sim.simulate(end_date=end_date)
     sim.event_queue.queue.clear()
 
-    # Run the Simplified Pregnancy Event on the selected population
-    birth_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
-    birth_event.apply(sim.population.props)
-
     # define the dataframe
     df = sim.population.props
 
-    # Ensure births are happening and the dataframe has grown
-    assert len(df) > initial_pop_size
-
     # selecting the number of women who have given birth during simulation and compare it to the number of newborn
-    selected_women = df.loc[(df.sex == 'F') & df.is_alive & df.is_pregnant & (df.si_date_of_delivery <= end_date)]
-    new_borns = df.loc[df.is_alive & (df.mother_id >= 0)]
+    number_of_women_ever_pregnant = df.loc[(df.sex == 'F') & (df.si_date_of_delivery < end_date)]
+    number_of_ever_newborns = df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]
 
-    # selected_women = df.loc[(df.sex == 'F') & df.is_pregnant & (df.si_date_of_delivery <= end_date)]
-    # new_borns = df.loc[(df.mother_id >= 0)]
-    # print(selected_women)
-    # print(new_borns)
+    # check that there are births happening
+    assert len(number_of_ever_newborns) > 0
 
-    assert len(selected_women) == len(new_borns)
+    # check that the number of women hasn't exceeded the number of newborns
+    assert len(number_of_women_ever_pregnant) <= len(number_of_ever_newborns)
 
     # Finally we check to make sure all newborns have their breastfeeding status set to exclusive
-    assert (df.loc[new_borns.index, 'nb_breastfeeding_status'] == 'exclusive').all().all()
+    assert (df.loc[number_of_ever_newborns.index, 'nb_breastfeeding_status'] == 'exclusive').all().all()

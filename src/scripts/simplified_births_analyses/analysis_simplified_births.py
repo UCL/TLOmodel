@@ -8,7 +8,6 @@ from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     simplified_births
@@ -27,7 +26,7 @@ resourcefilepath = Path("./resources")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 2)
+end_date = Date(2020, 1, 1)
 popsize = 1000
 
 sim = Simulation(start_date=start_date, seed=1, log_config={'filename': 'simplified_births', 'directory': outputpath})
@@ -39,19 +38,25 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-# %% read the results
-output = parse_log_file(sim.log_filepath)
+# define the dataframe
+df = sim.population.props
+
+# select babies born during simulation
+number_of_ever_newborns = df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]
+
+# getting total number of newborns per year
+total_births_per_year = pd.DataFrame(data=number_of_ever_newborns['date_of_birth'].dt.year.value_counts())
+total_births_per_year.sort_index(inplace=True)
+total_births_per_year.rename(columns={'date_of_birth': 'total_births'}, inplace=True)
+# print(total_births)
 
 # %% Plot Births:
 years = mdates.YearLocator()  # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
-# Load Model Results
-si_df = output['tlo.methods.simplified_births']['total_births']
-Model_Years = pd.to_datetime(si_df.date)
-Model_total_births = si_df.total
-
+Model_Years = pd.to_datetime(total_births_per_year.index, format='%Y')
+Model_total_births = total_births_per_year.total_births
 
 fig, ax = plt.subplots()
 ax.plot(np.asarray(Model_Years), Model_total_births)

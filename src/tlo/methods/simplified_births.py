@@ -3,10 +3,9 @@ This is a simplified births Module. it aims at implementing some simple events t
 registering heavy modules(contraception, labour and pregnant supervisor) to do the same
 
 """
-import numpy as np
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin, Event
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -24,9 +23,9 @@ class Simplifiedbirths(Module):
         'pregnancy_prob': Parameter(
             Types.REAL, 'probability of pregnancies in a month'),
         'min_age': Parameter(
-            Types.REAL, 'minimum age of individuals'),
+            Types.REAL, 'minimum age of individuals who are at risk of becoming pregnant'),
         'max_age': Parameter(
-            Types.REAL, 'maximum age of individuals'),
+            Types.REAL, 'maximum age of individuals who are at risk of becoming pregnant'),
         'days_until_delivery': Parameter(
             Types.DATE, 'number of days a pregnant woman has to go through until delivery'
                         ' (assuming term delivery (37-41 weeks)), '),
@@ -35,7 +34,8 @@ class Simplifiedbirths(Module):
 
     }
 
-    # Next we declare module properties. again we specify the name, type and a longer description
+    """Next we declare module properties. these are properties that are produced by the
+        replaced modules(contraception, labour and pregnant supervisor) that are used by other modules"""
     PROPERTIES = {
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
         'date_of_last_pregnancy': Property(Types.DATE,
@@ -59,7 +59,7 @@ class Simplifiedbirths(Module):
         param['pregnancy_prob'] = 0.01
         param['min_age'] = 15
         param['max_age'] = 49
-        param['days_until_delivery'] = pd.DateOffset(days=7 * 37 + self.rng.randint(0, 7 * 4))
+        param['days_until_delivery'] = pd.DateOffset(months=9)
         self.parameters['prob_breastfeeding_type'] = [0.101, 0.289, 0.61]
 
     def initialise_population(self, population):
@@ -77,10 +77,10 @@ class Simplifiedbirths(Module):
         """Get ready for simulation start.
         """
         # check all population to determine who will get pregnant (repeats every month)
-        sim.schedule_event(SimplifiedPregnancyEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(SimplifiedPregnancyEvent(self), sim.date)
 
-        # Launch the repeating event that will store statistics about the population structure
-        # sim.schedule_event(SimplifiedBirthsLoggingEvent(self), sim.date + DateOffset(years=1))
+        # select all pregnant females and schedule a birth event to those who have reached their delivery date
+        sim.schedule_event(SimplifiedBirthsEvent(self), sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -97,14 +97,6 @@ class Simplifiedbirths(Module):
         random_draw = self.rng.choice(('none', 'non_exclusive', 'exclusive'), p=params['prob_breastfeeding_type'])
         df.at[child_id, 'nb_breastfeeding_status'] = random_draw
 
-        # logger.info('%s|post_birth_info|%s',
-        #             self.sim.date,
-        #             {
-        #                 'woman_index': mother_id,
-        #                 'child_index': child_id
-        #
-        #             })
-
 
 class SimplifiedPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
     """ A class responsible for making women pregnant and scheduling birth event at their delivery date
@@ -114,7 +106,7 @@ class SimplifiedPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
         self.age_low = module.parameters['min_age']  # min preferred age
         self.age_high = module.parameters['max_age']  # max preferred age
-        self.pregnancy_prob = module.parameters['pregnancy_prob']   # probability of women to get pregnant in
+        self.pregnancy_prob = module.parameters['pregnancy_prob']  # probability of women to get pregnant in
         # a particular month
         self.days_until_delivery = module.parameters['days_until_delivery']  # number of days until delivery
         # (term delivery)
@@ -136,41 +128,25 @@ class SimplifiedPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[pregnant_women_ids, 'date_of_last_pregnancy'] = self.sim.date
         df.loc[pregnant_women_ids, 'si_date_of_delivery'] = self.sim.date + self.days_until_delivery
 
-        # print(pregnant_women_ids)
 
-        for pregnant_woman_id in pregnant_women_ids:
-            self.sim.schedule_event(SimplifiedBirthsEvent(self, pregnant_woman_id), df.loc[pregnant_woman_id,
-                                                                                           'si_date_of_delivery'])
+class SimplifiedBirthsEvent(RegularEvent, PopulationScopeEventMixin):
+    """This Event checks pregnant women to see if their date of delivery has reached and implement births if true"""
 
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
 
-class SimplifiedBirthsEvent(Event, IndividualScopeEventMixin):
-    """This is the BirthEvent. It is scheduled by SimplifiedBirthsEvent to allow women who have been pregnant
-    for 9 months give birth"""
-    def __init__(self, module, mother_id):
-        super().__init__(module, person_id=mother_id)
+    def apply(self, population):
+        df = self.sim.population.props  # get the population dataframe
 
-    def apply(self, mother_id):
+        females_to_give_birth = df.loc[(df.sex == 'F') & df.is_alive & df.is_pregnant & (df.si_date_of_delivery
+                                                                                         == self.sim.date)]
+        if len(females_to_give_birth) > 0:
+            selected_females = females_to_give_birth.index
 
-        logger.debug(f'{self.sim.date} | @@@@ A Birth is now occuring, to mother {mother_id} '
-                     f' on | {self.sim.date}')
-        self.sim.do_birth(mother_id)
-
-
-# class SimplifiedBirthsLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-#     def __init__(self, module):
-#         """Logs outputs for simplified_births module
-#         """
-#         # run this event every 12 months (every year)
-#         self.repeat = 12
-#         super().__init__(module, frequency=DateOffset(months=self.repeat))
-#
-#     def apply(self, population):
-#         df = population.props
-#
-#         one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
-#
-#         total_births_last_year = len(
-#             df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])  #
-#         # logger.info(f'{self.sim.date} |total_births| {total_births_last_year}')
-#         logger.info('%s|total_births|%s',
-#                     self.sim.date - np.timedelta64(1, 'Y') , {'total': total_births_last_year})
+            for mother_id in selected_females:
+                logger.debug(f'{self.sim.date} | @@@@ A Birth is now occurring, to mother {mother_id} '
+                             f' on | {self.sim.date}')
+                self.sim.do_birth(mother_id)
+                df.loc[mother_id, 'is_pregnant'] = False
+        else:
+            pass
