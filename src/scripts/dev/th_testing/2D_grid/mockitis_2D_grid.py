@@ -31,7 +31,7 @@ class Mockitis_Batch(BaseScenario):
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 500
         self.number_of_draws = 5
-        self.runs_per_draw = 5
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
@@ -62,7 +62,7 @@ class Mockitis_Batch(BaseScenario):
             'p_infection': np.linspace(0, 1.0, 5),
             'p_cure': np.linspace(0, 0.5, 5)
         })
-        self.number_of_draws = len(list(grid.values()[0]))
+        self.number_of_draws = len(list(grid.values())[0])
 
         return {
             'Mockitis': {
