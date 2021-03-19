@@ -1,6 +1,4 @@
-"""This file uses the results of the batch file to make some summary statistics.
-The results of the bachrun were put into the 'outputs' results_folder
-"""
+"""Collection of utilities for analysing results from the batchrun system"""
 
 from pathlib import Path
 import pickle
@@ -10,22 +8,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-outputspath = Path('./outputs')
 
-
-# %%
 def get_folders(batch_file_name: str, outputspath: Path) -> list:
     """Returns paths of folders assoicated with a batch_file, in chronological order."""
-    # todo - get association with batchfile
-
     stub = batch_file_name.rstrip('.py')
-
     folders = [Path(f) for f in os.scandir(outputspath) if (f.is_dir() & f.name.startswith(stub))]
-
     folders.sort()
     return folders
 
-# %% Utility function to get the information on the runs (number draws, run and their paths)
 def get_info(results_folder: Path) -> dict:
     """Utility function to get the information on the runs (number draws, run and their paths)"""
     info = dict()
@@ -38,19 +28,19 @@ def get_info(results_folder: Path) -> dict:
 
     return info
 
-# %% Utility function to open one log from within a batch set
 def getalog(results_folder: Path) -> dict:
-    folder = results_folder / str(0) / str(0)
-    pickles = [f for f in os.scandir(folder) if f.name.endswith('.pickle')]
+     """Utility function to open one log from within a batch set."""
+     folder = results_folder / str(0) / str(0)
+     pickles = [f for f in os.scandir(folder) if f.name.endswith('.pickle')]
 
-    output = dict()
-    for p in pickles:
-        name = p.name[:-len('.pickle')]
-        output[name] = pickle.load(open(p.path, "rb"))
+     output = dict()
+     for p in pickles:
+         name = p.name[:-len('.pickle')]
+         output[name] = pickle.load(open(p.path, "rb"))
 
-    return output
+     return output
 
-# %%
+
 def extract_params(results_folder: Path) -> pd.DataFrame:
     """Utility function to unpack results to produce a dateframe that summarizes that parameters that change across
     the draws. It produces a dataframe with index of draw and columns of each parameters that is specified to be varied
@@ -146,87 +136,3 @@ def summarize(results: pd.DataFrame, only_mean: bool=False) -> pd.DataFrame:
         return om
 
     return summary
-
-# %% Typical work-flow
-
-# 0) Find results_folder associated with a given batch_file and get most recent
-results_folder = get_folders('mockitis_batch.py', outputspath)[-1]
-
-# look at one log (so can decide what to extract)
-log = getalog(results_folder)
-
-# get basic information about the results
-info = get_info(results_folder)
-
-# 1) Extract the parameters that have varied over the set of simulations
-params = extract_params(results_folder)
-
-# 2) Define the log-element to extract:
-log_element = {
-    "component": "tlo.methods.mockitis",    # <-- the dataframe that is output
-    "series": "['summary'].PropInf",        # <-- series in the dateframe to be extracted
-    "index": "['summary'].date",            # <-- (optional) index to use
-}
-
-# 3) Get summary of the results for that log-element
-propinf = summarize(extract_results(results_folder, log_element))
-
-# if only interestedd in the means
-propinf_onlymeans = summarize(extract_results(results_folder, log_element), only_mean=True)
-
-
-# 4) Create some plots:
-
-# name of parmaeter that varies
-param_name='Mockitis:p_infection'
-
-# i) bar plot to summarize as the value at the end of the run
-propinf_end = propinf.iloc[[-1]]
-
-height = propinf_end.loc[:, (slice(None), "mean")].iloc[0].values
-lower_upper = np.array(list(zip(
-    propinf_end.loc[:, (slice(None), "lower")].iloc[0].values,
-    propinf_end.loc[:, (slice(None), "upper")].iloc[0].values
-))).transpose()
-
-yerr = abs(lower_upper - height)
-
-xvals = range(info['number_of_draws'])
-xlabels = [
-    round(params.loc[(params.module_param==param_name)][['value']].loc[draw].value, 3)
-    for draw in range(info['number_of_draws'])
-    ]
-
-fig, ax = plt.subplots()
-ax.bar(
-    x=xvals,
-    height=propinf_end.loc[:, (slice(None), "mean")].iloc[0].values,
-    yerr=yerr
-)
-ax.set_xticks(xvals)
-ax.set_xticklabels(xlabels)
-plt.xlabel(param_name)
-plt.show()
-
-# ii) plot to show time-series (means)
-for draw in range(info['number_of_draws']):
-    plt.plot(propinf.loc[:, (draw, "mean")].index, propinf.loc[:, (draw, "mean")].values,
-             label=f"{param_name}={round(params.loc[(params.module_param==param_name)][['value']].loc[draw].value, 3)}")
-plt.xlabel(propinf.index.name)
-plt.legend()
-plt.show()
-
-# iii) banded plot to show variation across runs
-draw = 0
-plt.plot(propinf.loc[:, (draw, "mean")].index, propinf.loc[:, (draw, "mean")].values, 'b')
-plt.fill_between(
-    propinf.loc[:, (draw, "mean")].index,
-    propinf.loc[:, (draw, "lower")].values,
-    propinf.loc[:, (draw, "upper")].values,
-    color = 'b',
-    alpha = 0.5,
-    label=f"{param_name}={round(params.loc[(params.module_param==param_name)][['value']].loc[draw].value, 3)}"
-)
-plt.xlabel(propinf.index.name)
-plt.legend()
-plt.show()
