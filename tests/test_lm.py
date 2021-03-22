@@ -464,3 +464,62 @@ def test_outcomes():
     pred = eq.predict(df.iloc[[0]], rng=rng)
     assert not isinstance(pred, pd.Series)
     assert isinstance(pred, np.bool_)
+
+
+def test_custom():
+    import numpy as np
+
+    # example population dataframe
+    dataframe = pd.DataFrame(data={
+        'FactorX': [False, True, False, True],
+        'FactorY': [False, False, True, True]
+    }, index=['row1', 'row2', 'row3', 'row4'])
+
+    # example module parameters
+    module_params = {
+        'intercept': 1.0,
+        'rr_factorx': 20.0,
+        'rr_factory': 300.0
+    }
+
+    # a custom predict function for dataframe (including single-row dataframe) =========================================
+    def predict_on_dataframe(self, df, rng=None, **externals):
+        p = self.parameters
+        param_external = externals['other']  # another external variable passed when calling predict
+        # each row of dataframe needs a result
+        results = pd.Series(data=np.nan, index=df.index)
+        results[:] = p['intercept']
+        # note operator: this is an additive linear module
+        results[df.FactorX] += p['rr_factorx']
+        results[df.FactorY] += p['rr_factory']
+        results[df.FactorX & df.FactorY] += param_external
+        return results
+
+    # create the linear model passing the custom predict function
+    lm = LinearModel.custom(predict_on_dataframe, parameters=module_params)
+
+    pred = lm.predict(dataframe, other=4000.0)
+    assert pred['row1'] == 1.0
+    assert pred['row2'] == 21.0
+    assert pred['row3'] == 301.0
+    assert pred['row4'] == 4321.0
+
+    # a custom predict function operating on a single record ===========================================================
+    def predict_on_record(self, record, rng=None, **externals):
+        p = self.parameters
+        param_external = externals['other']  # another external variable passed when calling predict
+        result = p['intercept']
+        if record.FactorX:
+            result += p['rr_factorx']
+        if record.FactorY:
+            result += p['rr_factory']
+        if record.FactorX and record.FactorY:
+            result += param_external
+        return result
+
+    lm2 = LinearModel.custom(predict_on_record, parameters=module_params)
+
+    assert lm2.predict(dataframe.loc['row1'], other=4000.0) == 1.0
+    assert lm2.predict(dataframe.loc['row2'], other=4000.0) == 21.0
+    assert lm2.predict(dataframe.loc['row3'], other=4000.0) == 301.0
+    assert lm2.predict(dataframe.loc['row4'], other=4000.0) == 4321.0

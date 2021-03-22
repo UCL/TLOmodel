@@ -1043,7 +1043,7 @@ class HealthSystem(Module):
         for ev_tuple in self.HSI_EVENT_QUEUE:
             date = ev_tuple[1]   # this is the 'topen' value
             event = ev_tuple[4]
-            if isinstance(event.target, int):
+            if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
                     list_of_events.append((date, event))
 
@@ -1133,6 +1133,9 @@ class HealthSystem(Module):
         add_footprint: whether the footprint should be added (i.e. consume a bed), or the reversed (i.e. free a bed).
             The latter is used to when a footprint is removed when a person dies or before a new footprint is added.
         """
+        # Exit silently if bed_tracker has not been initialised
+        if 'bed_tracker' not in dir(self):
+            return
 
         # determine the facility_id
         the_facility_name = 'National Hospital'  # todo - make this specific to the district/region using person_id
@@ -1523,35 +1526,37 @@ class HSI_Event:
         self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
 
-    def get_all_consumables(self, item_codes=None, pkg_codes=None):
+    def get_all_consumables(self, item_codes=None, pkg_codes=None, footprint=None):
         """Helper function to allow for getting and checking of entire set of consumables.
         It accepts a footprint, or an item_code, or a package_code, and returns True/False for whether all the items
          are available. It avoids the use of consumables 'footprints'."""
 
-        # Turn the input arguments into the usual consumables footprint:
+        # Turn the input arguments into the usual consumables footprint if it's not already provided as a footprint:
+        if footprint is None:
+            # Item Codes provided:
+            if item_codes is not None:
+                if not isinstance(item_codes, list):
+                    item_codes = [item_codes]
+                # turn into 'consumable footprint':
+                footprint_items = dict(zip(item_codes, [1]*len(item_codes)))
+            else:
+                footprint_items = {}
 
-        # Item Codes provided:
-        if item_codes is not None:
-            if not isinstance(item_codes, list):
-                item_codes = [item_codes]
-            # turn into 'consumable footprint':
-            footprint_items = dict(zip(item_codes, [1]*len(item_codes)))
+            # Package Codes provided:
+            if pkg_codes is not None:
+                if not isinstance(pkg_codes, list):
+                    pkg_codes = [pkg_codes]
+                footprint_pkgs = dict(zip(pkg_codes, [1]*len(pkg_codes)))
+            else:
+                footprint_pkgs = {}
+
+            # Make the total footprint
+            footprint = {
+                'Item_Code': footprint_items,
+                'Intervention_Package_Code': footprint_pkgs,
+            }
         else:
-            footprint_items = {}
-
-        # Package Codes provided:
-        if pkg_codes is not None:
-            if not isinstance(pkg_codes, list):
-                pkg_codes = [pkg_codes]
-            footprint_pkgs = dict(zip(pkg_codes, [1]*len(pkg_codes)))
-        else:
-            footprint_pkgs = {}
-
-        # Make the total footprint
-        footprint = {
-            'Item_Code': footprint_items,
-            'Intervention_Package_Code': footprint_pkgs,
-        }
+            self.sim.modules['HealthSystem'].check_consumables_footprint_format(footprint)
 
         # Check availability of consumables
         rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, footprint)
