@@ -60,7 +60,7 @@ class Mockitis_Batch(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Mockitis': {
-                'p_infection': np.linspace(0, 0.1)[draw_number],
+                'p_infection': np.linspace(0, 0.1, self.number_of_draws)[draw_number],
             },
         }
 
