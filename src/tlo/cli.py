@@ -1,6 +1,7 @@
 """The TLOmodel command-line interface"""
 import configparser
 import datetime
+import dateutil.parser
 import json
 import math
 import os
@@ -196,9 +197,18 @@ def batch_run(path_to_json, work_directory, draw, sample):
 
 
 @cli.command()
-@click.option("job_id", "--id", type=str)
+@click.option("--find", "-f", type=str, default=None, help="Show jobs where identifier contains supplied string")
+@click.option("--job_id", "--id", type=str, help="Get job status for job with specified identifier")
+@click.option("--completed", "status", flag_value="completed", default=False, multiple=True,
+              help="Only display completed jobs")
+@click.option("--active", "status", flag_value="active", default=False, multiple=True,
+              help="Only display active jobs")
+@click.option("-n", default=5, type=int, help="Maximum number of jobs to list (default is 5)")
+@click.option("--raw", default=False, help="Display raw output (only when retrieving using --id)",
+              is_flag=True, hidden=True)
 @click.argument("config_file", type=click.Path(exists=True))  # TODO: remove argument
-def batch_query(job_id, config_file):
+def batch_query(job_id, status, n, find, raw, config_file):
+    """List Batch jobs currently on account"""
     config = load_config(config_file)
     batch_client = get_batch_client(
         config["BATCH"]["NAME"],
@@ -206,14 +216,31 @@ def batch_query(job_id, config_file):
         config["BATCH"]["URL"]
     )
 
-    job_keys = ('id', 'creation_time', 'last_modified', 'state', 'state_transition_time')
+    job_labels = {
+        "id": "ID",
+        "creation_time": "Creation time",
+        "state": "State",
+        "state_transition_time": "State transition time"
+    }
+
+    label_padding = len("State transition time")
+
+    def print_basic(_j: dict):
+        for _k, _v in job_labels.items():
+            if _v.endswith("time"):
+                _dt = dateutil.parser.isoparse(_j[_k])
+                _dt = _dt.strftime("%d %b %Y %H:%M")
+                print(f"{_v.ljust(label_padding)}: {_dt}")
+            else:
+                print(f"{_v.ljust(label_padding)}: {_j[_k]}")
 
     if job_id is not None:
         job = batch_client.job.get(job_id=job_id)
-        job = job.as_dict()
-
-        for j in job_keys:
-            print(f"{j}: {job[j]}")
+        if raw:
+            import json
+            print(json.dumps(job.as_dict(), sort_keys=True, indent=2))
+        else:
+            print_basic(job.as_dict())
     else:
         # get list of all batch jobs
         jobs = batch_client.job.list(
@@ -221,14 +248,28 @@ def batch_query(job_id, config_file):
                 expand='stats'
             )
         )
+        count = 0
         for job in jobs:
             jad = job.as_dict()
-            for j in job_keys:
-                print(f"{j}: {jad[j]}")
-            if "stats" in jad:
-                print(f"num_succeeded_tasks: {jad['stats']['num_succeeded_tasks']}")
-                print(f"num_failed_tasks: {jad['stats']['num_failed_tasks']}")
-            print()
+            print_job = False
+            if (status is None or
+                    ("completed" in status and jad["state"] == "completed") or
+                    ("running" in status and jad["state"] == "running")):
+                if find is not None:
+                    if find in jad["id"]:
+                        print_job = True
+                else:
+                    print_job = True
+
+            if print_job:
+                print_basic(jad)
+                if "stats" in jad:
+                    print(f"{'Succeeded tasks'.ljust(label_padding)}: {jad['stats']['num_succeeded_tasks']}")
+                    print(f"{'Failed tasks'.ljust(label_padding)}: {jad['stats']['num_failed_tasks']}")
+                print()
+                count += 1
+                if count == n:
+                    break
 
 
 def load_config(config_file):
