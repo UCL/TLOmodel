@@ -225,12 +225,14 @@ def batch_job(job_id, config_file, raw, show_tasks):
         print(e.message.value)
         return
 
+    job = job.as_dict()
+
     if raw:
-        print(json.dumps(job.as_dict(), sort_keys=True, indent=2))
+        print(json.dumps(job, sort_keys=True, indent=2))
         print(json.dumps(tasks, sort_keys=True, indent=2))
         return
 
-    print_basic_job_details(job.as_dict())
+    print_basic_job_details(job)
 
     if tasks is not None:
         print()
@@ -258,6 +260,10 @@ def batch_job(job_id, config_file, raw, show_tasks):
         status_line.append(f"total: {total}")
         print("; ".join(status_line))
 
+    if job["state"] == "completed":
+        print("\nTo download output run:\n")
+        print(f"\ttlo batch-download {job_id} tlo.conf")
+
 
 @cli.command()
 @click.option("--find", "-f", type=str, default=None, help="Show jobs where identifier contains supplied string")
@@ -267,7 +273,7 @@ def batch_job(job_id, config_file, raw, show_tasks):
               help="Only display active jobs")
 @click.option("-n", default=5, type=int, help="Maximum number of jobs to list (default is 5)")
 @click.argument("config_file", type=click.Path(exists=True))  # TODO: remove argument
-def batch_query(status, n, find, config_file):
+def batch_list(status, n, find, config_file):
     """List all jobs currently on account"""
     config = load_config(config_file)
     batch_client = get_batch_client(
@@ -321,6 +327,59 @@ def print_basic_job_details(job: dict):
             print(f"{_v.ljust(JOB_LABEL_PADDING)}: {_dt}")
         else:
             print(f"{_v.ljust(JOB_LABEL_PADDING)}: {job[_k]}")
+
+
+@cli.command()
+@click.argument("job_id", type=str)
+@click.argument("config_file", type=click.Path(exists=True))  # TODO: remove argument
+@click.option("--username", type=str, hidden=True)
+@click.option("--verbose", default=False, is_flag=True, hidden=True)
+def batch_download(job_id, config_file, username, verbose):
+    config = load_config(config_file)
+
+    def walk_fileshare(dir_name):
+        """Recursively visit directories, create local directories and download files"""
+        try:
+            directories = list(share_client.list_directories_and_files(dir_name))
+        except ResourceNotFoundError as e:
+            print("ERROR:", dir_name, "not found.")
+            print()
+            print(e.message)
+            return
+        create_dir = Path(".", "outputs", dir_name)
+        print("Creating directory", str(create_dir))
+        os.makedirs(create_dir, exist_ok=True)
+        print("Downloading", dir_name)
+        for item in directories:
+            if item["is_directory"]:
+                walk_fileshare(f"{dir_name}/{item['name']}")
+            else:
+                filepath = f"{dir_name}/{item['name']}"
+                file_client = share_client.get_file_client(filepath)
+                dest_file_name = Path(".", "outputs", dir_name, item["name"])
+                if verbose:
+                    print("File:", filepath, "\n\t->", dest_file_name)
+                with open(dest_file_name, "wb") as data:
+                    # Download the file from Azure into a stream
+                    stream = file_client.download_file()
+                    # Write the stream to the local file
+                    data.write(stream.readall())
+
+    if username is None:
+        username = config["DEFAULT"]["USERNAME"]
+
+    share_client = ShareClient.from_connection_string(config['STORAGE']['CONNECTION_STRING'],
+                                                      config['STORAGE']['FILESHARE'])
+
+    # if the job directory exist, exit with error
+    top_level = f"{username}/{job_id}"
+    destination = Path(".", "outputs", top_level)
+    if os.path.exists(destination):
+        print("ERROR: Local directory already exists. Please move or delete.")
+        print("Directory:", destination)
+        return
+
+    walk_fileshare(top_level)
 
 
 def load_config(config_file):
