@@ -21,8 +21,8 @@ class Playing22(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 1, 1)
         self.pop_size = 200
-        self.number_of_draws = 2
-        self.runs_per_draw = 2
+        self.number_of_draws = 10
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
@@ -53,7 +53,7 @@ class Playing22(BaseScenario):
             },
             'Labour': {
                 'intercept_parity_lr2010': -10 * rng.exponential(0.1),
-                'effect_age_parity_lr2010': np.linspace(0.1, 1, num=10)[draw_number]
+                'effect_age_parity_lr2010': np.linspace(0.1, 1, num=self.number_of_draws)[draw_number]
             },
         }
 
