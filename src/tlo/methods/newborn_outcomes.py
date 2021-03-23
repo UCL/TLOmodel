@@ -719,10 +719,10 @@ class NewbornOutcomes(Module):
                 if nci[individual_id]['ga_at_birth'] < 28:
                     df.at[individual_id, 'nb_preterm_birth_disab'] = choice(disability_categories,
                                                                             p=params['prob_disability_<28wks'])
-                if 27 <= nci[individual_id]['ga_at_birth'] < 33:
+                elif 27 <= nci[individual_id]['ga_at_birth'] < 33:
                     df.at[individual_id, 'nb_preterm_birth_disab'] = choice(disability_categories,
                                                                             p=params['prob_disability_28_32wks'])
-                if 32 <= nci[individual_id]['ga_at_birth'] < 37:
+                elif 33 <= nci[individual_id]['ga_at_birth'] < 37:
                     df.at[individual_id, 'nb_preterm_birth_disab'] = choice(disability_categories,
                                                                             p=params['prob_disability_33_36wks'])
                 if child.nb_early_onset_neonatal_sepsis:
@@ -731,10 +731,10 @@ class NewbornOutcomes(Module):
                 if child.nb_encephalopathy == 'mild_enceph':
                     df.at[individual_id, 'nb_encephalopathy_disab'] = choice(disability_categories,
                                                                              p=params['prob_mild_enceph_disabilities'])
-                if child.nb_encephalopathy == 'moderate_enceph':
+                elif child.nb_encephalopathy == 'moderate_enceph':
                     df.at[individual_id, 'nb_encephalopathy_disab'] = choice(disability_categories,
                                                                              p=params['prob_mod_enceph_disabilities'])
-                if child.nb_encephalopathy == 'severe_enceph':
+                elif child.nb_encephalopathy == 'severe_enceph':
                     df.at[individual_id, 'nb_encephalopathy_disab'] = choice(disability_categories,
                                                                              p=params[
                                                                                  'prob_severe_enceph_disabilities'])
