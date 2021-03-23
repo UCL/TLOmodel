@@ -1,17 +1,19 @@
 """The TLOmodel command-line interface"""
 import configparser
 import datetime
-import dateutil.parser
 import json
 import math
 import os
+from collections import defaultdict
 from pathlib import Path
 from typing import Dict
 
 import click
+import dateutil.parser
 from azure import batch
 from azure.batch import batch_auth
 from azure.batch import models as batch_models
+from azure.batch.models import BatchErrorException
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
@@ -20,11 +22,14 @@ from git import Repo
 
 from tlo.scenario import SampleRunner, ScenarioLoader
 
+JOB_LABEL_PADDING = len("State transition time")
+
 
 @click.group()
 def cli():
     """The TLOmodel command line utility: run scenarios locally & submit to Azure Batch
     """
+    pass
 
 
 @cli.command()
@@ -197,18 +202,73 @@ def batch_run(path_to_json, work_directory, draw, sample):
 
 
 @cli.command()
+@click.argument("job_id", type=str)
+@click.argument("config_file", type=click.Path(exists=True))  # TODO: remove argument
+@click.option("show_tasks", "--tasks", is_flag=True, default=False, help="Display task information")
+@click.option("--raw", default=False, help="Display raw output (only when retrieving using --id)",
+              is_flag=True, hidden=True)
+def batch_job(job_id, config_file, raw, show_tasks):
+    """Display information about a specific job"""
+    config = load_config(config_file)
+    batch_client = get_batch_client(
+        config["BATCH"]["NAME"],
+        config["BATCH"]["KEY"],
+        config["BATCH"]["URL"]
+    )
+    tasks = None
+
+    try:
+        job = batch_client.job.get(job_id=job_id)
+        if show_tasks:
+            tasks = batch_client.task.list(job_id)
+    except BatchErrorException as e:
+        print(e.message.value)
+        return
+
+    if raw:
+        print(json.dumps(job.as_dict(), sort_keys=True, indent=2))
+        print(json.dumps(tasks, sort_keys=True, indent=2))
+        return
+
+    print_basic_job_details(job.as_dict())
+
+    if tasks is not None:
+        print()
+        print("Tasks\n-----")
+        total = 0
+        state_counts = defaultdict(int)
+        for task in tasks:
+            task = task.as_dict()
+            dt = dateutil.parser.isoparse(task['state_transition_time'])
+            dt = dt.strftime("%d %b %Y %H:%M")
+            total += 1
+            state_counts[task['state']] += 1
+            if task["state"] == "completed":
+                if "execution_info" in task:
+                    start_time = dateutil.parser.isoparse(task["execution_info"]["start_time"])
+                    end_time = dateutil.parser.isoparse(task["execution_info"]["end_time"])
+                    running_time = str(end_time - start_time).split(".")[0]
+            else:
+                running_time = ""
+            print(f"{task['id']}\t\t{task['state']}\t\t{dt}\t\t{running_time}")
+        print()
+        status_line = []
+        for k, v in state_counts.items():
+            status_line.append(f"{k}: {v}")
+        status_line.append(f"total: {total}")
+        print("; ".join(status_line))
+
+
+@cli.command()
 @click.option("--find", "-f", type=str, default=None, help="Show jobs where identifier contains supplied string")
-@click.option("--job_id", "--id", type=str, help="Get job status for job with specified identifier")
 @click.option("--completed", "status", flag_value="completed", default=False, multiple=True,
               help="Only display completed jobs")
 @click.option("--active", "status", flag_value="active", default=False, multiple=True,
               help="Only display active jobs")
 @click.option("-n", default=5, type=int, help="Maximum number of jobs to list (default is 5)")
-@click.option("--raw", default=False, help="Display raw output (only when retrieving using --id)",
-              is_flag=True, hidden=True)
 @click.argument("config_file", type=click.Path(exists=True))  # TODO: remove argument
-def batch_query(job_id, status, n, find, raw, config_file):
-    """List Batch jobs currently on account"""
+def batch_query(status, n, find, config_file):
+    """List all jobs currently on account"""
     config = load_config(config_file)
     batch_client = get_batch_client(
         config["BATCH"]["NAME"],
@@ -216,60 +276,51 @@ def batch_query(job_id, status, n, find, raw, config_file):
         config["BATCH"]["URL"]
     )
 
+    # get list of all batch jobs
+    jobs = batch_client.job.list(
+        job_list_options=batch_models.JobListOptions(
+            expand='stats'
+        )
+    )
+    count = 0
+    for job in jobs:
+        jad = job.as_dict()
+        print_job = False
+        if (status is None or
+                ("completed" in status and jad["state"] == "completed") or
+                ("running" in status and jad["state"] == "running")):
+            if find is not None:
+                if find in jad["id"]:
+                    print_job = True
+            else:
+                print_job = True
+
+        if print_job:
+            print_basic_job_details(jad)
+            if "stats" in jad:
+                print(f"{'Succeeded tasks'.ljust(JOB_LABEL_PADDING)}: {jad['stats']['num_succeeded_tasks']}")
+                print(f"{'Failed tasks'.ljust(JOB_LABEL_PADDING)}: {jad['stats']['num_failed_tasks']}")
+            print()
+            count += 1
+            if count == n:
+                break
+
+
+def print_basic_job_details(job: dict):
+    """Display basic job information"""
     job_labels = {
         "id": "ID",
         "creation_time": "Creation time",
         "state": "State",
         "state_transition_time": "State transition time"
     }
-
-    label_padding = len("State transition time")
-
-    def print_basic(_j: dict):
-        for _k, _v in job_labels.items():
-            if _v.endswith("time"):
-                _dt = dateutil.parser.isoparse(_j[_k])
-                _dt = _dt.strftime("%d %b %Y %H:%M")
-                print(f"{_v.ljust(label_padding)}: {_dt}")
-            else:
-                print(f"{_v.ljust(label_padding)}: {_j[_k]}")
-
-    if job_id is not None:
-        job = batch_client.job.get(job_id=job_id)
-        if raw:
-            import json
-            print(json.dumps(job.as_dict(), sort_keys=True, indent=2))
+    for _k, _v in job_labels.items():
+        if _v.endswith("time"):
+            _dt = dateutil.parser.isoparse(job[_k])
+            _dt = _dt.strftime("%d %b %Y %H:%M")
+            print(f"{_v.ljust(JOB_LABEL_PADDING)}: {_dt}")
         else:
-            print_basic(job.as_dict())
-    else:
-        # get list of all batch jobs
-        jobs = batch_client.job.list(
-            job_list_options=batch_models.JobListOptions(
-                expand='stats'
-            )
-        )
-        count = 0
-        for job in jobs:
-            jad = job.as_dict()
-            print_job = False
-            if (status is None or
-                    ("completed" in status and jad["state"] == "completed") or
-                    ("running" in status and jad["state"] == "running")):
-                if find is not None:
-                    if find in jad["id"]:
-                        print_job = True
-                else:
-                    print_job = True
-
-            if print_job:
-                print_basic(jad)
-                if "stats" in jad:
-                    print(f"{'Succeeded tasks'.ljust(label_padding)}: {jad['stats']['num_succeeded_tasks']}")
-                    print(f"{'Failed tasks'.ljust(label_padding)}: {jad['stats']['num_failed_tasks']}")
-                print()
-                count += 1
-                if count == n:
-                    break
+            print(f"{_v.ljust(JOB_LABEL_PADDING)}: {job[_k]}")
 
 
 def load_config(config_file):
@@ -287,7 +338,7 @@ def load_server_config(kv_uri, tenant_id) -> Dict[str, Dict]:
     Allows user to login using credentials from Azure CLI or interactive browser.
 
     On Windows, login might fail because pywin32 is not installed correctly. Resolve by
-    running (as Administrator) `python Scripts\pywin32_postinstall.py -install`
+    running (as Administrator) `python Scripts\\pywin32_postinstall.py -install`
     For more information, see https://github.com/mhammond/pywin32/issues/1431
     """
     credential = DefaultAzureCredential(
@@ -518,3 +569,7 @@ def add_tasks(batch_service_client, user_identity, job_id,
             tasks.append(task)
 
     batch_service_client.task.add_collection(job_id, tasks)
+
+
+if __name__ == '__main__':
+    cli()
