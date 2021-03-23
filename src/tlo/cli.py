@@ -26,10 +26,13 @@ JOB_LABEL_PADDING = len("State transition time")
 
 
 @click.group()
-def cli():
+@click.option("--config-file", type=click.Path(exists=True), default="tlo.conf", hidden=True)
+@click.pass_context
+def cli(ctx, config_file):
     """The TLOmodel command line utility: run scenarios locally & submit to Azure Batch
     """
-    pass
+    ctx.ensure_object(dict)
+    ctx.obj["config_file"] = config_file
 
 
 @cli.command()
@@ -49,8 +52,8 @@ def scenario_run(scenario_file, draw_only):
 
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
-@click.argument("config_file", type=click.Path(exists=True))  # TODO: remove argument
-def batch_submit(scenario_file, config_file):
+@click.pass_context
+def batch_submit(ctx, scenario_file):
     """Submit a scenario to run on Azure Batch.
 
     SCENARIO_FILE is path to file containing scenario class.
@@ -70,7 +73,7 @@ def batch_submit(scenario_file, config_file):
     commit = next(repo.iter_commits(max_count=1, paths=scenario_file))
     run_json = scenario.save_draws(commit=commit.hexsha)
 
-    config = load_config(config_file)
+    config = load_config(ctx.obj['config_file'])
 
     # ID of the Batch job.
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
@@ -203,13 +206,13 @@ def batch_run(path_to_json, work_directory, draw, sample):
 
 @cli.command()
 @click.argument("job_id", type=str)
-@click.argument("config_file", type=click.Path(exists=True))  # TODO: remove argument
 @click.option("show_tasks", "--tasks", is_flag=True, default=False, help="Display task information")
 @click.option("--raw", default=False, help="Display raw output (only when retrieving using --id)",
               is_flag=True, hidden=True)
-def batch_job(job_id, config_file, raw, show_tasks):
+@click.pass_context
+def batch_job(ctx, job_id, raw, show_tasks):
     """Display information about a specific job"""
-    config = load_config(config_file)
+    config = load_config(ctx.obj['config_file'])
     batch_client = get_batch_client(
         config["BATCH"]["NAME"],
         config["BATCH"]["KEY"],
@@ -262,7 +265,7 @@ def batch_job(job_id, config_file, raw, show_tasks):
 
     if job["state"] == "completed":
         print("\nTo download output run:\n")
-        print(f"\ttlo batch-download {job_id} tlo.conf")
+        print(f"\ttlo batch-download {job_id}")
 
 
 @cli.command()
@@ -272,10 +275,10 @@ def batch_job(job_id, config_file, raw, show_tasks):
 @click.option("--active", "status", flag_value="active", default=False, multiple=True,
               help="Only display active jobs")
 @click.option("-n", default=5, type=int, help="Maximum number of jobs to list (default is 5)")
-@click.argument("config_file", type=click.Path(exists=True))  # TODO: remove argument
-def batch_list(status, n, find, config_file):
+@click.pass_context
+def batch_list(ctx, status, n, find):
     """List all jobs currently on account"""
-    config = load_config(config_file)
+    config = load_config(ctx.obj["config_file"])
     batch_client = get_batch_client(
         config["BATCH"]["NAME"],
         config["BATCH"]["KEY"],
@@ -331,11 +334,11 @@ def print_basic_job_details(job: dict):
 
 @cli.command()
 @click.argument("job_id", type=str)
-@click.argument("config_file", type=click.Path(exists=True))  # TODO: remove argument
 @click.option("--username", type=str, hidden=True)
 @click.option("--verbose", default=False, is_flag=True, hidden=True)
-def batch_download(job_id, config_file, username, verbose):
-    config = load_config(config_file)
+@click.pass_context
+def batch_download(ctx, job_id, username, verbose):
+    config = load_config(ctx.obj["config_file"])
 
     def walk_fileshare(dir_name):
         """Recursively visit directories, create local directories and download files"""
@@ -631,4 +634,4 @@ def add_tasks(batch_service_client, user_identity, job_id,
 
 
 if __name__ == '__main__':
-    cli()
+    cli(obj={})
