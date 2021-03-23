@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import pandas as pd
 from tlo import Simulation, Date
 from tlo.methods import (
     demography,
@@ -73,6 +74,184 @@ def test_simplified_births_module_with_other_modules():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
+def check_property_integrity(sim):
+    # check that the properties are as expected
+
+    # define dataframe
+    df = sim.population.props
+
+    # check that individuals who are dead do not become pregnant
+    assert not (~df.is_alive & df.is_pregnant).any(), 'a dead person can not become pregnant'
+
+    # check that a date of last pregnancy is not assigned to individuals who are not pregnant
+    assert pd.isnull(df.loc[~df.is_pregnant, 'date_of_last_pregnancy']).all(), "date of last pregnancy assigned to a " \
+                                                                               "female not pregnant"
+
+    # check that no date of delivery is assigned to individuals who are not pregnant
+    assert pd.isnull(df.loc[~df.is_pregnant, 'si_date_of_delivery']).all(), "date of delivery assigned to a " \
+                                                                            "female not pregnant"
+
+    # check that all pregnant women have been assigned a date of last pregnancy
+    assert not pd.isnull(df.loc[df.is_pregnant, 'date_of_last_pregnancy']).any(), "date of last pregnancy not " \
+                                                                                  "assigned to a pregnant woman"
+    # check that all pregnant women have been assigned a date of delivery
+    assert not pd.isnull(df.loc[df.is_pregnant, 'si_date_of_delivery']).any(), "date of delivery not " \
+                                                                               "assigned to a pregnant woman"
+
+
+def select_required_population_for_pregnancy(sim):
+    """A function to ensure correct population for pregnancy is selected"""
+
+    # define a dataframe
+    df = sim.population.props
+
+    # select a population eligible for pregnancy
+    eligible_pop = df.loc[(df.sex == 'F') & df.is_alive & df.age_years.between(15, 49)]
+
+    # check that there are eligible individuals in the population
+    assert len(eligible_pop) > 0, "no eligible females in the selected population, try increasing the population size"
+
+    return eligible_pop
+
+
+def test_pregnancy_logic_at_max_pregnancy_probability():
+    # a test to check whether pregnancies are happening as expected
+    sim = get_sim()
+    initial_pop_size = 10
+    sim.make_initial_population(n=initial_pop_size)
+
+    # increasing number of women likely to get pregnant by setting pregnancy probability to 1
+    sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 1
+
+    # select required population from the dataframe
+    eligible_pop = select_required_population_for_pregnancy(sim)
+
+    # number of eligible females before pregnancy event
+    eligible_females_before_pregnancy_event = eligible_pop
+    df = sim.population.props
+    eligible_pop = df
+
+    # check property configuration before any event is run
+    check_property_integrity(sim)
+
+    # check population to see if anyone gets pregnant before pregnancy Event is run
+    assert not eligible_females_before_pregnancy_event.is_pregnant.any()
+
+    # Run the Simplified Pregnancy Event on the selected population
+    pregnancy_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
+    pregnancy_event.apply(eligible_females_before_pregnancy_event)
+
+    # define dataframe
+    df = sim.population.props
+
+    # get the number of females who got pregnant
+    pregnant_females_after_pregnancy_event = df.loc[df.is_pregnant]
+
+    """ since we have set pregnancy probability at 1 then all eligible individuals should get pregnant
+    after Pregnancy Event has been fired """
+    assert len(eligible_females_before_pregnancy_event) == len(pregnant_females_after_pregnancy_event)
+
+    # check property configuration after an event is run
+    check_property_integrity(sim)
+
+
+def test_run_pregnancy_logic_at_zero_pregnancy_probability():
+    # running pregnancy event with zero pregnancy probability
+    sim = get_sim()
+    initial_pop_size = 1000
+    sim.make_initial_population(n=initial_pop_size)
+
+    # ensuring no pregnancies happen by setting pregnancy probability to zero
+    sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 0
+
+    # select required population from the dataframe
+    eligible_pop = select_required_population_for_pregnancy(sim)
+
+    # check property configuration before any event is run
+    check_property_integrity(sim)
+
+    # check population to see if anyone gets pregnant before pregnancy Event is run
+    assert not eligible_pop.is_pregnant.any()
+
+    # Run the Simplified Pregnancy Event on the selected population
+    pregnancy_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
+    pregnancy_event.apply(eligible_pop)
+
+    # define dataframe
+    df = sim.population.props
+
+    # get the number of females who got pregnant
+    pregnancies_after_pregnancy_event = df.loc[df.is_pregnant]
+
+    """ since we have set pregnancy probability to zero confirm we have no pregnancies"""
+    assert len(pregnancies_after_pregnancy_event) == 0
+
+    # check property configuration after an event is run
+    check_property_integrity(sim)
+
+
+def test_pregnancy_logic_on_a_dead_population():
+    # running pregnancy event on a dead population
+    sim = get_sim()
+    initial_pop_size = 10
+    sim.make_initial_population(n=initial_pop_size)
+
+    # ensuring no pregnancies happen by setting pregnancy probability to zero
+    sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 1
+
+    # select population
+    df = sim.population.props
+
+    # kill the selected population
+    df.at[df.index, 'is_alive'] = False
+
+    # check property configuration before any event is run
+    check_property_integrity(sim)
+
+    # Run the Simplified Pregnancy Event on the dead population
+    pregnancy_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
+    pregnancy_event.apply(df)
+
+    # get the number of females who got pregnant
+    pregnancies_after_pregnancy_event = df.loc[df.is_pregnant]
+
+    """ since we are running pregnancy event on a dead population, no one should get pregnant"""
+    assert len(pregnancies_after_pregnancy_event) == 0
+
+    # check property configuration after an event is run
+    check_property_integrity(sim)
+
+
+def test_pregnancy_logic_on_population_that_is_out_of_pregnancy_range():
+    sim = get_sim()
+    initial_pop_size = 100
+    sim.make_initial_population(n=initial_pop_size)
+
+    # ensuring no pregnancies happen by setting pregnancy probability to zero
+    sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 1
+
+    # select population
+    df = sim.population.props
+
+    # select population that is below or above pregnancy age limits
+    out_of_range_population = df.loc[df.is_alive & ~df.age_years.between(15, 49)]
+
+    # check property configuration before any event is run
+    check_property_integrity(sim)
+
+    # Run the Simplified Pregnancy event on population
+    pregnancy_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
+    pregnancy_event.apply(out_of_range_population)
+
+    # get the number of females who got pregnant
+    pregnancies_after_pregnancy_event = df.loc[df.is_pregnant]
+
+    # check to see if any out of range population is pregnant
+    assert not pregnancies_after_pregnancy_event.index.isin(out_of_range_population.index).any(), "out of age range " \
+                                                                                                  "individuals can not " \
+                                                                                                  "become pregnant "
+    # check property configuration after an event is run
+    check_property_integrity(sim)
 
 
 def test_breastfeeding_simplified_birth_logic():
@@ -81,9 +260,6 @@ def test_breastfeeding_simplified_birth_logic():
     sim = get_sim()
     initial_pop_size = 100
     sim.make_initial_population(n=initial_pop_size)
-
-    # increasing number of women likely to get pregnant by setting pregnancy probability to 1
-    sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 1
 
     # Force the probability of exclusive breastfeeding to 1, no other 'types' should occur from births in this sim run
     sim.modules['Simplifiedbirths'].parameters['prob_breastfeeding_type'] = [0, 0, 1]
