@@ -22,7 +22,7 @@ from tlo.methods import Metadata
 from tlo.methods.dxmanager import DxManager
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.FATAL)
+logger.setLevel(logging.INFO)
 
 
 class HealthSystem(Module):

@@ -30,15 +30,12 @@ def predict_parity(self, df, rng=None, **externals):
     result += df.age_years * 0.22
     result[df.li_mar_stat == 2] += params['effect_mar_stat_2_parity_lr2010']
     result[df.li_mar_stat == 3] += params['effect_mar_stat_3_parity_lr2010']
-    result += df.li_wealth.map(
-        {
-            1: params[f'effect_wealth_lev_1_parity_lr2010'],
-            2: params[f'effect_wealth_lev_2_parity_lr2010'],
-            3: params[f'effect_wealth_lev_3_parity_lr2010'],
-            4: params[f'effect_wealth_lev_4_parity_lr2010'],
-            5: params[f'effect_wealth_lev_5_parity_lr2010'],
-        }
-    )
+    result[df.li_wealth == 1] += params['effect_wealth_lev_1_parity_lr2010']
+    result[df.li_wealth == 2] += params['effect_wealth_lev_2_parity_lr2010']
+    result[df.li_wealth == 3] += params['effect_wealth_lev_3_parity_lr2010']
+    result[df.li_wealth == 4] += params['effect_wealth_lev_4_parity_lr2010']
+    result[df.li_wealth == 5] += params['effect_wealth_lev_5_parity_lr2010']
+
     return result
 
 
@@ -202,7 +199,7 @@ def predict_eclampsia_pp_death(self, df, rng=None, **externals):
     """individual level"""
     person = df.iloc[0]
     params = self.parameters
-    result = params['cfr_pp_eclampsia'] # todo: collapse as one eclampsia death equation
+    result = params['cfr_pp_eclampsia']  # todo: collapse as one eclampsia death equation
 
     if person['la_eclampsia_treatment']:
         result *= params['eclampsia_treatment_effect_md']

@@ -14,7 +14,7 @@ from tlo.util import BitsetHandler
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class PregnancySupervisor(Module):
@@ -277,9 +277,8 @@ class PregnancySupervisor(Module):
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 
-        # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module
-        # TODO: AT - currently Im working all dalys (pregnancy, labour and postnatal) related to maternal outcomes of
-        #  pregnancy in this module - maybe this should be included in a central 'maternity' module - see PR comment
+        # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
+        # Currently this module calculates and reports all DALY weights from all maternal modules
         if 'HealthBurden' in self.sim.modules.keys():
             params['ps_daly_weights'] = \
                 {'abortion': self.sim.modules['HealthBurden'].get_daly_weight(352),
@@ -360,7 +359,6 @@ class PregnancySupervisor(Module):
                 Predictor('ac_receiving_calcium_supplements').when(True, params['treatment_effect_calcium_ptl'])),
             #   Predictor('ps_chorioamnionitis').when('histological', params['rr_preterm_labour_chorio'])
             #                                     .when('clinical', params['rr_preterm_labour_chorio'])),
-            # TODO: finalise effect of chorioamnionitis
 
 
             # This equation calculates a womans monthly risk of developing anaemia during her pregnancy. This is
@@ -378,7 +376,6 @@ class PregnancySupervisor(Module):
                     lambda x: params['rr_anaemia_if_b12_deficient']
                     if x & self.deficiencies_in_pregnancy.element_repr('b12') else 1)),
             #     Predictor('ma_is_infected').when(True, params['rr_anaemia_maternal_malaria'])),
-            # TODO: finalise effect of malaria
 
             # This equation calculates a womans monthly risk of developing pre-eclampsia during her pregnancy. This is
             # currently influenced by receipt of calcium supplementation
@@ -423,7 +420,6 @@ class PregnancySupervisor(Module):
             'premature_rupture_of_membranes': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_prom_per_month']),
-            # TODO: add the effect of chorioamnionits on PROM
 
             # This equation calculates a womans risk of developing chorioamnionitis following PROM .
             'chorioamnionitis': LinearModel(
@@ -443,7 +439,6 @@ class PregnancySupervisor(Module):
                                              .when('severe_gest_htn', params['rr_still_birth_severe_gest_htn'])
                                              .when('severe_pre_eclamp', params['rr_still_birth_severe_pre_eclamp'])),
             #    Predictor('ma_is_infected').when(True, params['rr_still_birth_maternal_malaria'])),
-            # TODO: finalise effect of malaria
 
             # This equation calculates a risk of dying after ectopic pregnancy and is mitigated by treatment
             'ectopic_pregnancy_death': LinearModel(
@@ -646,13 +641,6 @@ class PregnancySupervisor(Module):
         #  complication in any of the modules. Hopefully this set up means if we need to change to a dataframe that
         #  would be ok. Please let me know if you think we should make any changes.
 
-        # TODO: main issue at the moment is that as all the maternal DALYs are calculated here I wont know what
-        #  point is contributing dalys for the same complication occuring at different time points in pregnancy
-        #  (i.e. anaemia, sepsis etc etc)
-
-        # TODO: TH says that if the weight is for an event (i.e. obstructed labour) then they get the whole weight,
-        #  otherwise if it is for a state then it should be daily - review weights to decide
-
         # First we define a function that calculates disability associated with 'acute' complications of pregnancy
         def acute_daly_calculation(person, complication):
             # We cycle through each complication for all women in the mni, if the condition has never ocurred then we
@@ -663,13 +651,13 @@ class PregnancySupervisor(Module):
             # If the complication has onset within the last month...
             elif (self.sim.date - DateOffset(months=1)) < mni[person][f'{complication}_onset'] <= self.sim.date:
 
-                # We store 7 days worth of disability associate with that complication
-                monthly_daly[person] += p[f'{complication}'] / 52
+                # We assume that any woman who experiences an acute event receives the whole weight for that daly
+                monthly_daly[person] += p[f'{complication}']
                 mni[person][f'{complication}_onset'] = pd.NaT
 
                 # Ensure some weight is assigned
-                # TODO: this may crash if the onset day is exactly one month ago (no weight)
-                assert 1 > monthly_daly[person] > 0
+                if mni[person][f'{complication}_onset'] != self.sim.date:
+                    assert 1 > monthly_daly[person] > 0
 
         # Next we define a function that calculates disability associated with 'chronic' complications of pregnancy
         def chronic_daly_calculations(person, complication):
@@ -681,7 +669,8 @@ class PregnancySupervisor(Module):
                     # If the complication has not yet resolved, and started more than a month ago, the woman gets a
                     # months disability
                     if mni[person][f'{complication}_onset'] <= (self.sim.date - DateOffset(months=1)):
-                        monthly_daly[person] += p[f'{complication}']
+                        weight = (p[f'{complication}'] / 365.25) * (365.25 / 12)
+                        monthly_daly[person] += weight
 
                     # Otherwise, if the complication started this month she gets a daly weight relative to the number of
                     # days she has experience the complication
@@ -689,37 +678,46 @@ class PregnancySupervisor(Module):
                          f'{complication}_onset'] <= self.sim.date:
                         days_since_onset = pd.Timedelta((self.sim.date - mni[person][f'{complication}_onset']),
                                                         unit='d')
-                        daly_weight = days_since_onset.days * (p[f'{complication}'] / 365)
+                        daly_weight = days_since_onset.days * (p[f'{complication}'] / 365.25)
                         monthly_daly[person] += daly_weight
-                        assert 1 > monthly_daly[person] > 0
+                        # assert 1 > monthly_daly[person] > 0
 
                 else:
+                    # Its possible for a condition to resolve (via treatment) and onset within the same month
+                    # (i.e. anaemia). If so, here we calculate how many days this month an individual has suffered
+                    if mni[person][f'{complication}_resolution'] < mni[person][f'{complication}_onset']:
 
-                    # TODO: this is a quick fix for complications where treatment is given, they resolve, and then
-                    #  onset again before this function is called (i.e. anaemia) meaning the resolution date is less
-                    #  than the onset date. needs a proper fix
+                        # Calculate daily weight and how many days this woman hasnt had the complication
+                        daily_weight = p[f'{complication}'] / 365.25
+                        days_without_complication = pd.Timedelta((
+                            mni[person][f'{complication}_onset'] - mni[person][f'{complication}_resolution']), unit='d')
 
-                    if not (mni[person][f'{complication}_resolution'] > mni[person][f'{complication}_onset']):
+                        # Use the average days in a month to calculate how many days shes had the complication this
+                        # month
+                        avg_days_in_month = 365.25 / 12
+                        days_with_comp = avg_days_in_month - days_without_complication.days
+                        monthly_daly[person] += daily_weight * days_with_comp
+
                         mni[person][f'{complication}_resolution'] = pd.NaT
-                        return
 
-                    # If the complication has resolved, check the dates make sense
-                    print(person, complication)
-                    assert mni[person][f'{complication}_resolution'] >= mni[person][f'{complication}_onset']
+                    else:
+                        # If the complication has truly resolved, check the dates make sense
+                        assert mni[person][f'{complication}_resolution'] >= mni[person][f'{complication}_onset']
 
-                    # We calculate how many days she has been free of the complication this month to determine how many
-                    # days she has suffered from the complication this month
-                    days_free_of_comp_this_month = pd.Timedelta((self.sim.date - mni[person][f'{complication}_'
-                                                                                             f'resolution']), unit='d')
-                    mid_way_calc = (self.sim.date - DateOffset(months=1)) + days_free_of_comp_this_month
-                    days_with_comp_this_month = pd.Timedelta((self.sim.date - mid_way_calc), unit='d')
-                    daly_weight = days_with_comp_this_month.days * (p[f'{complication}'] / 365)
-                    monthly_daly[person] += daly_weight
+                        # We calculate how many days she has been free of the complication this month to determine how
+                        # many days she has suffered from the complication this month
+                        days_free_of_comp_this_month = pd.Timedelta((self.sim.date - mni[person][f'{complication}_'
+                                                                                                 f'resolution']),
+                                                                    unit='d')
+                        mid_way_calc = (self.sim.date - DateOffset(months=1)) + days_free_of_comp_this_month
+                        days_with_comp_this_month = pd.Timedelta((self.sim.date - mid_way_calc), unit='d')
+                        daly_weight = days_with_comp_this_month.days * (p[f'{complication}'] / 365.25)
+                        monthly_daly[person] += daly_weight
 
-                    assert 1 > monthly_daly[person] >= 0
-                    # Reset the dates to stop additional disability being applied
-                    mni[person][f'{complication}_onset'] = pd.NaT
-                    mni[person][f'{complication}_resolution'] = pd.NaT
+                        assert 1 > monthly_daly[person] >= 0
+                        # Reset the dates to stop additional disability being applied
+                        mni[person][f'{complication}_onset'] = pd.NaT
+                        mni[person][f'{complication}_resolution'] = pd.NaT
 
         # Then for each alive person in the MNI we cycle through all the complications that can lead to disability and
         # calculate their individual daly weight for the month
@@ -753,9 +751,6 @@ class PregnancySupervisor(Module):
         :param mni_variable: key of mni dict being assigned
         :return:
         """
-        # TODO: AT- is this what you had in mind (we could easily change to dataframe in this function if needed).
-        #  We just pass a string (i.e. 'mild_anaemia_onset') to this property to store the date (all keys are defined
-        #  in the pregnancy supervisor event)
 
         mni = self.mother_and_newborn_info
 
@@ -791,7 +786,9 @@ class PregnancySupervisor(Module):
         set[id_or_index, 'ps_premature_rupture_of_membranes'] = False
         set[id_or_index, 'ps_chorioamnionitis'] = 'none'
         set[id_or_index, 'ps_emergency_event'] = False
-        self.deficiencies_in_pregnancy.unset(id_or_index, 'iron', 'folate', 'b12')
+        self.deficiencies_in_pregnancy.unset(id_or_index, 'iron')
+        self.deficiencies_in_pregnancy.unset(id_or_index, 'folate')
+        self.deficiencies_in_pregnancy.unset(id_or_index, 'b12')
 
     def apply_linear_model(self, lm, df):
         """
@@ -989,9 +986,6 @@ class PregnancySupervisor(Module):
 
         df.loc[anaemia.loc[anaemia].index, 'ps_anaemia_in_pregnancy'] = random_choice_severity
 
-        # todo: can i remove this for loop using this logic (severity will be different for each person)
-        # new_onset_eclampsia.index.to_series().apply(self.store_dalys_in_mni, mni_variable='eclampsia_onset')
-
         for person in anaemia.loc[anaemia].index:
             # We store onset date of anaemia according to severity, as weights vary
             self.store_dalys_in_mni(person, f'{df.at[person, "ps_anaemia_in_pregnancy"]}_anaemia_onset')
@@ -1094,8 +1088,6 @@ class PregnancySupervisor(Module):
             # Probability of moving between states is stored in a matrix. Risk of progression from mild gestational
             # hypertension to severe gestational hypertension is modified by treatment effect
 
-            # TODO: AT - Is there a tidier/neater way I could do this... (and should I make the values of this matrix
-            #  parameters?)
             risk_ghtn_remains_mild = (0.9 - risk_of_gest_htn_progression)
 
             # We reset the parameter here to allow for testing with the original parameter
@@ -1187,7 +1179,6 @@ class PregnancySupervisor(Module):
                 self.sim.schedule_event(demography.InstantaneousDeath(self, person,
                                                                       cause='maternal'), self.sim.date)
 
-                # TODO: I've made sure the MNI gets deleted whenever a woman dies (across the modules)
                 del mni[person]
 
     def apply_risk_of_placental_abruption(self, gestation_of_interest):
@@ -1262,9 +1253,6 @@ class PregnancySupervisor(Module):
         """
         df = self.sim.population.props
         params = self.parameters
-
-        # TODO: consider adding risk of asymotompatic/symptomatic UTI
-
         # First assess if women with asymptomatic histological chorioamnionitis will develop clinical disease this
         # month
         histo_chorio = df.loc[df['is_alive'] & df['is_pregnant'] &
@@ -1276,15 +1264,12 @@ class PregnancySupervisor(Module):
         progression = pd.Series(self.rng.random_sample(len(histo_chorio)) < params['prob_progression_to_clinical_'
                                                                                    'chorio'], index=histo_chorio.index)
 
-        # If not, we assume there infection has resolved
+        # We store the updated property and updated the mni dictionary (those who dont progress are assumed to have
+        # resolved, applied at the end of function to stop newlry resolved women become infected again)
         df.loc[progression.loc[progression].index, 'ps_chorioamnionitis'] = 'clinical'
         df.loc[progression.loc[progression].index, 'ps_emergency_event'] = True
 
         progression.loc[progression].index.to_series().apply(self.store_dalys_in_mni, mni_variable='chorio_onset')
-
-        df.loc[progression.loc[~progression].index, 'ps_chorioamnionitis'] = 'none'
-
-        # TODO: this will allow women who have just resolved to become infected again...
 
         # Here we use a linear equation to determine if women without infection will develop infection
         chorio = self.apply_linear_model(
@@ -1309,7 +1294,11 @@ class PregnancySupervisor(Module):
         type_of_chorio.loc[type_of_chorio].index.to_series().apply(self.store_dalys_in_mni,
                                                                    mni_variable='chorio_onset')
 
+        # Non clinical cases are assumed to be histological
         df.loc[type_of_chorio.loc[~type_of_chorio].index, 'ps_chorioamnionitis'] = 'histological'
+
+        # Women who didnt progress from histological to clinical are resolved now (see above)
+        df.loc[progression.loc[~progression].index, 'ps_chorioamnionitis'] = 'none'
 
     def apply_risk_of_premature_rupture_of_membranes(self, gestation_of_interest):
         """
@@ -1584,6 +1573,7 @@ class PregnancySupervisor(Module):
                               'test_run': False,  # used by labour module when running some model tests
                               }
 
+
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancySupervisorEvent, it is a weekly event which has two primary functions.
     1.) It updates the gestational age (in weeks) of all women who are pregnant.
@@ -1717,8 +1707,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
                 facility_level = int(self.module.rng.choice([1, 2], p=params['prob_anc_at_facility_level_1_2']))
 
-                # TODO: AT- I chose to import the event within this Event as it seemed strange to just have the first
-                #  ANC event in its own module file? we can discuss if helpful
                 from tlo.methods.antenatal_care import HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact
 
                 first_anc_appt = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
@@ -1798,7 +1786,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             logger.debug(key='message', data=f'Mother {person} will seek care following acute pregnancy'
                                              f'complications')
 
-            # TODO: AT- same issue with the circular dependencies
             from tlo.methods.antenatal_care import HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment
 
             acute_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(
@@ -1812,8 +1799,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # We select the women who have chosen not to seek care following pregnancy emergency- and we now apply risk of
         # death and pregnancy loss (other wise this risk is applied following treatment in the
         # CareOfWomenDuringPregnancy module)
-
-        # TODO: AT - i couldnt think of a neater way to do this without a for loop (happy to discuss)
 
         if not care_seeking.loc[~care_seeking].empty:
             logger.debug(key='message', data=f'The following women will not seek care after experiencing a '
@@ -2047,10 +2032,6 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
-
-        # TODO- AT- is it better to just store the onset of each complication within the logger (i.e. a row in a DF
-        #  called 'anaemia' for each woman with anaemia) and do all the maths in analysis file after the sim run? I
-        #  dont think i actually need to use these pregnancy_disease_tracker dictionaries if I do it that way...
 
         # Previous Year...
         one_year_prior = self.sim.date - np.timedelta64(1, 'Y')

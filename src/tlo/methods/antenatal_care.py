@@ -5,7 +5,7 @@ import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata
 
 from tlo.methods.healthsystem import HSI_Event
@@ -16,7 +16,7 @@ from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class CareOfWomenDuringPregnancy(Module):
@@ -233,23 +233,6 @@ class CareOfWomenDuringPregnancy(Module):
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_anc_continues']),
 
-            # TODO: these next two equations arent actually called anymore, remove
-
-            # This equation is used to determine if a woman will die following treatment for severe pre-eclampsia/
-            # eclampsia. Risk of death is reduced by treatment
-            'ec_spe_death_post_treatment': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['cfr_severe_pre_eclampsia'],
-                Predictor('ps_htn_disorders').when('eclampsia', params['multiplier_spe_cfr_eclampsia']),
-                Predictor('ac_mag_sulph_treatment').when(True, params['treatment_effect_mag_sulph']),
-                Predictor('ac_iv_anti_htn_treatment').when(True, params['treatment_effect_iv_anti_htn'])),
-
-            # This equation is used to determine if a woman will die following treatment for antepartum haemorrhage.
-            # Risk of death is reduced by treatment
-            'aph_death_post_treatment': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['cfr_aph'],
-                Predictor('ac_received_blood_transfusion').when(True, params['treatment_effect_bt_aph'])),
         }
 
     def initialise_population(self, population):
@@ -552,8 +535,8 @@ class CareOfWomenDuringPregnancy(Module):
                                                                             topen=visit_date,
                                                                             tclose=visit_date + DateOffset(days=7))
 
-                        logger.debug(key='message', data=f'mother {individual_id} will seek ANC {visit_to_be_scheduled} '
-                                                         f'contact on {visit_date}')
+                        logger.debug(key='message', data=f'mother {individual_id} will seek ANC '
+                                                         f'{visit_to_be_scheduled} contact on {visit_date}')
 
                         df.at[individual_id, 'ac_date_next_contact'] = visit_date
                     else:
@@ -628,6 +611,7 @@ class CareOfWomenDuringPregnancy(Module):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
         params = self.parameters
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         hypertension_diagnosed = False
         proteinuria_diagnosed = False
@@ -647,22 +631,21 @@ class CareOfWomenDuringPregnancy(Module):
         # Delivery of the intervention is conditioned on the availability of the consumable and a random draw against a
         # probability that the intervention would be delivered (used to calibrate to SPA data- acts as proxy for
         # clinical quality)
-        if outcome_of_request_for_consumables['Item_Code'][item_code_urine_dipstick] and (self.rng.random_sample() <
-                                                                                          params['prob_intervention_'
-                                                                                                 'delivered_urine_ds']):
+        if self.rng.random_sample() < params['prob_intervention_delivered_urine_ds']:
+            if outcome_of_request_for_consumables['Item_Code'][item_code_urine_dipstick]:
 
-            # If the consumables are available the test is ran. Urine testing in ANC is predominantly used to detected
-            # protein in the urine (proteinuria) which is indicative of pre-eclampsia
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='urine_dipstick_protein',
-                                                                       hsi_event=hsi_event):
+                # If the consumables are available the test is ran. Urine testing in ANC is predominantly used to
+                # detected protein in the urine (proteinuria) which is indicative of pre-eclampsia
+                if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='urine_dipstick_protein',
+                                                                           hsi_event=hsi_event):
 
-                # We use a temporary variable to store if proteinuria is detected
-                proteinuria_diagnosed = True
-                logger.debug(key='msg', data=f'Urine dip stick testing detected proteinuria for mother {person_id}')
-
-        else:
-            logger.debug(key='msg', data='Urine dipstick testing was not completed in this ANC visit due to '
-                                         'unavailable consumables')
+                    # We use a temporary variable to store if proteinuria is detected
+                    proteinuria_diagnosed = True
+                    logger.debug(key='msg', data=f'Urine dip stick testing detected proteinuria for mother '
+                                                 f'{person_id}')
+            else:
+                logger.debug(key='msg', data='Urine dipstick testing was not completed in this ANC visit due to '
+                                             'unavailable consumables')
 
         # The process is repeated for blood pressure monitoring- although not conditioned on consumables
         if self.rng.random_sample() < params['prob_intervention_delivered_bp']:
@@ -671,9 +654,9 @@ class CareOfWomenDuringPregnancy(Module):
                 hypertension_diagnosed = True
                 logger.debug(key='msg', data=f'Blood pressure testing detected hypertension for mother {person_id}')
 
-                if ~df.at[person_id, 'ac_gest_htn_on_treatment'] and (df.at[person_id, 'ps_htn_disorders'] != 'none'):
-
-                    # todo; this will change the onset date if a woman changes state whilst on treatment (mpe - spe)
+                if ~df.at[person_id, 'ac_gest_htn_on_treatment'] and\
+                    (df.at[person_id, 'ps_htn_disorders'] != 'none') and pd.isnull(mni[person_id]['hypertension'
+                                                                                                  '_onset']):
 
                     # We store date of onset to calculate dalys- only women who are aware of diagnosis experience DALYs
                     # (see daly weight for hypertension)
@@ -684,9 +667,9 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Only women who are not on treatment OR are determined to have severe disease whilst on treatment are admitted
         if hypertension_diagnosed or proteinuria_diagnosed:
-            if ((df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or
-                (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia')) or \
-                ~df.at[person_id, 'ac_gest_htn_on_treatment']:
+            if (df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or \
+                (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia') or not df.at[person_id,
+                                                                                   'ac_gest_htn_on_treatment']:
 
                 df.at[person_id, 'ac_to_be_admitted'] = True
                 logger.debug(key='msg', data=f'Mother {person_id} has had hypertension or proteinuria detected in ANC '
@@ -970,8 +953,6 @@ class CareOfWomenDuringPregnancy(Module):
         params = self.parameters
         person_id = hsi_event.target
 
-        # TODO This will likely need to be revisited when/if syphilis is added to the model
-
         # Define the consumables
         item_code_syphilis_test = pd.unique(
             consumables.loc[consumables['Items'] == 'Test, Rapid plasma reagin (RPR)', 'Item_Code'])[0]
@@ -1030,7 +1011,7 @@ class CareOfWomenDuringPregnancy(Module):
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
         if 'Malaria' in self.sim.modules:
-            if not df.at[person_id, "ma_tx"]  and df.at[person_id, "is_alive"]:
+            if not df.at[person_id, "ma_tx"] and df.at[person_id, "is_alive"]:
 
                 # Test to ensure only 5 doses are able to be administered
                 assert df.at[person_id, 'ac_doses_of_iptp_received'] < 6
@@ -1160,8 +1141,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         elif (date_difference > pd.to_timedelta(7, unit='D')) or \
             (df.at[individual_id, 'ac_total_anc_visits_current_pregnancy'] > 0) or (df.at[individual_id,
-                                                                                    'ps_gestational_age_in_'
-                                                                                    'weeks'] < 7):
+                                                                                    'ps_gestational_age_in_weeks'] < 7):
 
             logger.debug(key='msg', data=f'mother {individual_id} has arrived at ANC1 that was scheduled in a previous '
                                          f'pregnancy and therefore the event will not run')
@@ -1588,8 +1568,9 @@ class CareOfWomenDuringPregnancy(Module):
             # We dont assume antihypertensives convert severe pre-eclampsia/eclampsia to a more mild version of the
             # disease (as the disease is multi-system and hypertension is only one contributing factor to mortality) but
             # instead use this property to reduce risk of acute death from this episode of disease
-            if (df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or\
-              (df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia'):
+            if (df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or (df.at[individual_id,
+                                                                                           'ps_htn_disorders'] ==
+                                                                                     'eclampsia'):
 
                 logger.debug(key='msg', data=f'Mother {individual_id} has been given intravenous anti-hypertensive as '
                                              f'part of treatment regime for severe pre-eclampsia/eclampsia')
@@ -1712,7 +1693,6 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
 
-        # TODO: AT - issue with circular dependencies
         from tlo.methods.pregnancy_supervisor import EctopicPregnancyRuptureEvent
 
         # If this event cannot run we ensure all women will eventually experience rupture due to untreated ectopic
@@ -2641,19 +2621,12 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                                                                             topen=follow_up_date,
                                                                             tclose=follow_up_date + DateOffset(days=7))
 
-                    # Women who will return for ANC in less than a month are assumed to be followed-up in that
-                    # appointment (via point of care Hb testing, if offered)
-                    elif not pd.isnull(mother.ac_date_next_contact) and ((mother.ac_date_next_contact - self.sim.date)
-                                                                          < pd.to_timedelta(28, unit='D')):
-                        pass
-
             # ======================== INITIATE TREATMENT FOR GESTATIONAL DIABETES (case management) ==================
             # Women admitted with gestational diabetes are given dietary and exercise advice as first line treatment
             if (mother.ps_gest_diab == 'uncontrolled') and (mother.ac_gest_diab_on_treatment == 'none'):
                 df.at[person_id, 'ac_gest_diab_on_treatment'] = 'diet_exercise'
                 df.at[person_id, 'ps_gest_diab'] = 'controlled'
 
-                # TODO: AT - issue with circular dependencies
                 # We then schedule GestationalDiabetesGlycaemicControlEvent which determines if this treatment will be
                 # effective in controlling this womans blood sugar prior to her next check up
                 from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
@@ -2919,7 +2892,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         mother = df.loc[person_id]
 
-        # TODO: AT - issue with circular dependencies
         from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
 
         if not mother.is_alive or not mother.is_pregnant:
