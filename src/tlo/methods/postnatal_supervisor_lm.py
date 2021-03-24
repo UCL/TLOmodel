@@ -21,6 +21,7 @@ def predict_for_dataframe(self, df, rng=None, **externals):
     return result
 """
 import pandas as pd
+from tlo.util import BitsetHandler
 
 # n.b. all LMs here are coded as population level
 
@@ -84,11 +85,18 @@ def predict_other_maternal_infection(self, df, rng=None, **externals):
 
 def predict_sepsis_late_postpartum(self, df, rng=None, **externals):
     """population level"""
-    # params = self.parameters
+    m = self.module
+    p = m.parameters
+    postpartum_infections_late: BitsetHandler = m.postpartum_infections_late
     result = pd.Series(data=0, index=df.index)
-
-    # result[df.pn_sepsis_late_postpartum_treatment] *= params['treatment_effect_parenteral_antibiotics']
-
+    result[postpartum_infections_late.has_any(df.index, 'endometritis')] += p['prob_late_sepsis_endometritis']
+    result[postpartum_infections_late.has_any(df.index, 'urinary_tract_inf')] += p['prob_late_sepsis_urinary_tract_inf']
+    result[
+        postpartum_infections_late.has_any(df.index, 'skin_soft_tissue_inf')
+    ] += p['prob_late_sepsis_skin_soft_tissue_inf']
+    result[
+        postpartum_infections_late.has_any(df.index, 'other_maternal_infection')
+    ] += p['prob_late_sepsis_other_maternal_infection_pp']
     return result
 
 
@@ -135,6 +143,18 @@ def predict_death_from_hypertensive_disorder_pn(self, df, rng=None, **externals)
     return result
 
 
+def predict_anaemia_after_pregnancy(self, df, rng=None, **externals):
+    """population level"""
+    m = self.module
+    p = m.parameters
+    deficiencies_following_pregnancy = m.deficiencies_following_pregnancy
+    result = pd.Series(data=p['baseline_prob_anaemia_per_week'], index=df.index)
+    result[deficiencies_following_pregnancy.has_any(df.index, 'iron')] *= p['rr_anaemia_if_iron_deficient_pn']
+    result[deficiencies_following_pregnancy.has_any(df.index, 'folate')] *= p['rr_anaemia_if_folate_deficient_pn']
+    result[deficiencies_following_pregnancy.has_any(df.index, 'b12')] *= p['rr_anaemia_if_b12_deficient_pn']
+    return result
+
+
 def predict_early_onset_neonatal_sepsis_week_1(self, df, rng=None, **externals):
     """population level"""
     params = self.parameters
@@ -142,7 +162,9 @@ def predict_early_onset_neonatal_sepsis_week_1(self, df, rng=None, **externals):
     result[df.nb_clean_birth] *= params['treatment_effect_clean_birth']
     result[df.nb_received_cord_care] *= params['treatment_effect_cord_care']
     result[df.nb_early_init_breastfeeding] *= params['treatment_effect_early_init_bf']
-    # todo:  Predictor('received_abx_for_prom', external=True).when('True', params['treatment_effect_abx_prom'])),
+    if externals['received_abx_for_prom']:
+        result *= params['treatment_effect_abx_prom']
+
     return result
 
 

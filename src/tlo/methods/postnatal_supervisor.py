@@ -334,25 +334,8 @@ class PostnatalSupervisor(Module):
             # This equation is used to determine a mothers risk of developing sepsis following one of more of the above
             # infections
 
-            # todo: ask asif about this one
-            # 'sepsis_late_postpartum': LinearModel.custom(postnatal_supervisor_lm.predict_sepsis_late_postpartum,
-            #                                              module=self),
-
-            'sepsis_late_postpartum': LinearModel(
-                LinearModelType.ADDITIVE,
-                0,
-                Predictor('pn_maternal_pp_infection').apply(
-                    lambda x: params['prob_late_sepsis_endometritis']
-                    if x & self.postpartum_infections_late.element_repr('endometritis') else 0),
-                Predictor('pn_maternal_pp_infection').apply(
-                    lambda x: params['prob_late_sepsis_urinary_tract_inf']
-                    if x & self.postpartum_infections_late.element_repr('urinary_tract_inf') else 0),
-                Predictor('pn_maternal_pp_infection').apply(
-                    lambda x: params['prob_late_sepsis_skin_soft_tissue_inf']
-                    if x & self.postpartum_infections_late.element_repr('skin_soft_tissue_inf') else 0),
-                Predictor('pn_maternal_pp_infection').apply(
-                    lambda x: params['prob_late_sepsis_other_maternal_infection_pp']
-                    if x & self.postpartum_infections_late.element_repr('other_maternal_infection') else 0)),
+            'sepsis_late_postpartum': LinearModel.custom(postnatal_supervisor_lm.predict_sepsis_late_postpartum,
+                                                         module=self),
 
             # This equation is used to determine a mothers risk of dying due to sepsis in the postnatal period. Risk of
             # death is modified by the effect of treatment, if delivered
@@ -379,19 +362,8 @@ class PostnatalSupervisor(Module):
                 postnatal_supervisor_lm.predict_death_from_hypertensive_disorder_pn, parameters=params),
 
             # This equation is used to determine a mothers risk of developing anaemia postnatal
-            # todo: ask asif about this one
-            'anaemia_after_pregnancy': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['baseline_prob_anaemia_per_week'],
-                Predictor('pn_deficiencies_following_pregnancy').apply(
-                    lambda x: params['rr_anaemia_if_iron_deficient_pn']
-                    if x & self.deficiencies_following_pregnancy.element_repr('iron') else 1),
-                Predictor('pn_deficiencies_following_pregnancy').apply(
-                    lambda x: params['rr_anaemia_if_folate_deficient_pn']
-                    if x & self.deficiencies_following_pregnancy.element_repr('folate') else 1),
-                Predictor('pn_deficiencies_following_pregnancy').apply(
-                    lambda x: params['rr_anaemia_if_b12_deficient_pn']
-                    if x & self.deficiencies_following_pregnancy.element_repr('b12') else 1)),
+            'anaemia_after_pregnancy': LinearModel.custom(postnatal_supervisor_lm.predict_anaemia_after_pregnancy,
+                                                          module=self),
 
             # This equation is used to determine a neonates risk of developing early onset neonatal sepsis
             # (sepsis onsetting prior to day 7) in the first week of life
