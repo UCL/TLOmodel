@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 
 from tlo import Simulation, Date
-from tlo.methods import demography, contraception, labour, newborn_outcomes, pregnancy_supervisor, antenatal_care,\
-    healthseekingbehaviour, symptommanager, healthburden, healthsystem, enhanced_lifestyle
+from tlo.methods import demography, healthseekingbehaviour, symptommanager, healthburden, healthsystem, \
+    enhanced_lifestyle
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 

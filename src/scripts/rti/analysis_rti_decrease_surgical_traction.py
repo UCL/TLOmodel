@@ -236,8 +236,8 @@ average_tot_dalys = [np.mean(daly_list) for daly_list in per_scenario_dalys]
 # calculate the average total inpatient days in each scenario
 average_tot_inpatient_days = [np.mean(day_list) for day_list in per_scenario_inpatient_days]
 # calculate the percentage reduction in deaths in each scenario
-percent_deaths_reduction = [((deaths - average_deaths[0]) / average_deaths[0]) * 100 for deaths in average_deaths
-                              if average_deaths[0] != 0]
+percent_deaths_reduction = \
+    [((deaths - average_deaths[0]) / average_deaths[0]) * 100 for deaths in average_deaths if average_deaths[0] != 0]
 # calcualte the percentage reduction in dalys in each scenario
 percent_dalys_reduction = [((daly - average_tot_dalys[0]) / average_tot_dalys[0]) * 100 for daly in average_tot_dalys]
 # calculate the percentage reduction in inpatient day usage

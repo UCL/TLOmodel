@@ -925,7 +925,8 @@ class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Create dictionary for each subset, adding prefix to key name, and adding to make a flat dict for logging.
         out = {}
 
-        # Current counts, total
+        # Current counts of the population with no bladder cancer, t1 bladder cancer, t2+ bladder
+        # cancer and metastatic bladder cancer (total)
         out.update({
             f'total_{k}': v for k, v in df.loc[df.is_alive].bc_status.value_counts().items()})
 

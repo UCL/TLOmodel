@@ -1,5 +1,5 @@
 """
-A skeleton template for disease methods.
+Road traffic injury module.
 
 """
 from pathlib import Path
@@ -25,6 +25,10 @@ class RTI(Module):
     The road traffic injuries module for the TLO model, handling all injuries related to road traffic accidents.
     """
 
+    def __init__(self, name=None, resourcefilepath=None):
+        # NB. Parameters passed to the module can be inserted in the __init__ definition.
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
     # Module parameters
     PARAMETERS = {
 
@@ -471,8 +475,6 @@ class RTI(Module):
             Types.REAL,
             'Proportion of lower extremity injuries that result in amputation with AIS 4'
         ),
-        'allowed_interventions': Parameter(
-            Types.LIST, 'list of interventions allowed to run, used in analysis'),
         # Length of stay
         'mean_los_ISS_less_than_4': Parameter(
             Types.REAL,
@@ -1114,11 +1116,6 @@ class RTI(Module):
         Metadata.USES_HEALTHBURDEN  # The 'HealthBurden' module recognises modules with this label.
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
-        # NB. Parameters passed to the module can be inserted in the __init__ definition.
-        super().__init__(name)
-        self.resourcefilepath = resourcefilepath
-
     def read_parameters(self, data_folder):
         """ Reads the parameters used in the RTI module"""
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
@@ -1552,7 +1549,7 @@ class RTI(Module):
         event = RTI_Logging_Event(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         # Begin modelling road traffic injuries
-        event = RTI_Event(self)
+        event = RTIPollingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         # Begin checking whether the persons injuries are healed
         event = RTI_Recovery_Event(self)
@@ -3550,7 +3547,7 @@ class RTI(Module):
 #   that represent disease events for particular persons.
 # ---------------------------------------------------------------------------------------------------------
 
-class RTI_Event(RegularEvent, PopulationScopeEventMixin):
+class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular RTI event which handles all the initial RTI related changes to the dataframe. It can be thought of
      as the actual road traffic accident occurring. Specifically the event decides who is involved in a road traffic
      accident every month (via the linear model helper class), whether those involved in a road traffic accident die on

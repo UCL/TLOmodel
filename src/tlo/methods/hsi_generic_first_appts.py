@@ -276,8 +276,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
 
 
-
-
     def did_not_run(self):
         logger.debug(key='message',
                      data='HSI_GenericFirstApptAtFacilityLevel1: did not run')
@@ -359,16 +357,13 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         # =============================== Adjust generic first appt for RTI requirements ============================
         if 'RTI' in self.sim.modules:
             road_traffic_injuries = self.sim.modules['RTI']
-            columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                           'rt_injury_7', 'rt_injury_8']
+            columns = \
+                ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                 'rt_injury_7', 'rt_injury_8']
             df = self.sim.population.props
             if columns[0] in df.columns:  # Simple check to see if RTI module is registered
                 # Determine what this person needs from the first emergency appointment
                 road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
-
-
-
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint

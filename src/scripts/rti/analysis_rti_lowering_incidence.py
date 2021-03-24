@@ -192,8 +192,8 @@ results_df = pd.DataFrame({
 })
 # get the percent reduction in incidence, deaths, dalys, inpatient day and consumable usage for each scenario
 percent_inc_reduction = [((inc - average_incidence[0]) / average_incidence[0]) * 100 for inc in average_incidence]
-percent_deaths_reduction = [((deaths - average_deaths[0]) / average_deaths[0]) * 100 for deaths in average_deaths
-                              if average_deaths[0] != 0]
+percent_deaths_reduction = \
+    [((deaths - average_deaths[0]) / average_deaths[0]) * 100 for deaths in average_deaths if average_deaths[0] != 0]
 percent_dalys_reduction = [((daly - average_tot_dalys[0]) / average_tot_dalys[0]) * 100 for daly in average_tot_dalys]
 percent_inpatient_day_reduction = \
     [((days - average_tot_inpatient_days[0]) / average_tot_inpatient_days[0]) * 100 for days in

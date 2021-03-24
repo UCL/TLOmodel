@@ -43,12 +43,12 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 10
+yearsrun = 5
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 50000
-nsim = 3
+pop_size = 5000
+nsim = 2
 # Create a variable whether to save figures or not (used in debugging)
 save_figures = True
 # Prior to using Azure batches I have used for loops to handle longer model runs. To get the information I need
@@ -426,8 +426,9 @@ for i in range(0, nsim):
     # Store the number of injuries that occurred each year
     injuries_per_year.append(ninj_df.groupby('year').sum()['ninj'].tolist())
     # Store the per injury fatality ratio
-    diedfromrticond = log_df['tlo.methods.demography']['death']['cause'].isin(['RTI_death_without_med', 'RTI_death_with_med',
-                                                                         'RTI_unavailable_med'])
+    diedfromrticond = log_df['tlo.methods.demography']['death']['cause'].isin(['RTI_death_without_med',
+                                                                               'RTI_death_with_med',
+                                                                               'RTI_unavailable_med'])
     # Following calculation in simpler terms is the number of RTI deaths divided by the total number of RTIs
     per_injury_fatal.append(
         len(log_df['tlo.methods.demography']['death'].loc[diedfromrticond]) / np.multiply(ninj_list_sorted,
@@ -1497,7 +1498,7 @@ else:
 # Calculate the average number of injuries which fall into each injury category in the simulation
 average_inj_cat = [float(sum(col)) / len(col) for col in zip(*inj_cat_data)]
 # Calculate the distribution of average number of injuries which fall into each injury category in the simulation
-data = [np.divide(average_inj_cat, sum(average_inj_cat))]
+data = np.divide(average_inj_cat, sum(average_inj_cat))
 plt.bar(np.arange(len(average_inj_cat)), data, color='lightsteelblue')
 plt.xticks(np.arange(len(average_inj_cat)), ['Fracture', 'Dislocation', 'TBI', 'Soft Tissue Inj.', 'Int. Organ Inj.',
                                              'Int. Bleeding', 'SCI', 'Amputation', 'Eye injury', 'Laceration', 'Burn'],
@@ -1714,6 +1715,8 @@ else:
 mean_consumables_used_per_sim = np.mean(list_consumables_dict)
 # Calculate average number of inpatient days
 mean_inpatient_days = np.mean([np.mean(sim_days) for sim_days in per_sim_inpatient_days])
+# Calculate the standard deviation in each simulation, then calculate the average
+sd_inpatient_days = np.mean([np.std(sim_days) for sim_days in per_sim_inpatient_days])
 # Calculate average fraction of time used in health system
 mean_fraction_health_system_time_used = np.mean(health_system_time_usage)
 # Calculate average number of burn treatments issued
@@ -1744,15 +1747,56 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
-# plot the average total number of inpatient days taken on a bar chart
-plt.bar(np.arange(1), mean_inpatient_days, color='lightsalmon')
-plt.xticks(np.arange(1), ['Inpatient days'])
+# plot the average total number of inpatient days taken on a bar chart and compare it to reported
+# inpatient day usage in KCH, see https://doi.org/10.1016/j.ijso.2017.11.004
+kch_mean_inpatient_day_rti = 13.7
+kcd_sd_inpatient_day_rti = 19.6
+plt.bar(np.arange(2), [mean_inpatient_days, kch_mean_inpatient_day_rti],
+        yerr=[sd_inpatient_days, kcd_sd_inpatient_day_rti],
+        color=['lightsteelblue', 'lightsalmon'])
+plt.xticks(np.arange(2), ['Model', 'KCH'])
 plt.ylabel('Average total inpatient days used')
-plt.title(f"Average number of inpatient days used per sim"
+plt.title(f"Average number of inpatient days used per sim in the model compared to inpatient day usage"
+          f"\n"
+          f"in Kamuzu Central Hospital"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig('outputs/Demographics_of_RTI/Average_inpatient_days_used.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# todo: create gender specific admission data
+# Create a direct comparison between model output and the KCH trauma data for road traffic injuries
+# see https://doi.org/10.1016/j.ijso.2017.11.004
+# create variables for the summary statistics seen in the above referenced paper and calculate the
+# equivalent info for this simulation run
+kch_percentage_male = 76.4
+model_percentage_male = np.round(np.mean(male_perc), 3) * 100
+kch_mean_age = 28.6
+model_mean_age = np.mean(sim_age_range)
+kch_sd_age = 14.9
+model_sd_age = np.std(sim_age_range)
+kch_percent_under_18 = 20.1
+model_age_under_18 = [i for i in sim_age_range if i <=18]
+model_percentage_under_18 = len(model_age_under_18) / len(sim_age_range)
+kch_percent_admitted = 22.4
+model_percent_admitted = percent_admitted_in_model
+kch_mortality_percentage = 3.3
+model_inhospital_mortality_percentage = np.mean(percent_died_after_med)
+kch_summary = [kch_percentage_male, kch_mean_age, kch_percent_admitted, kch_percent_under_18, kch_mortality_percentage]
+model_data = [model_percentage_male, model_mean_age, model_percent_admitted, model_percentage_under_18,
+              model_inhospital_mortality_percentage]
+# plot the data
+plt.bar(np.arange(len(kch_summary)), kch_summary, color='lightsalmon', width=0.5, label='KCH data')
+plt.bar(np.arange(len(kch_summary)) + 0.5, model_data, color='lightsteelblue', width=0.5, label='KCH data')
+plt.xticks(np.arange(len(kch_summary)) + 0.25, ['Percent male', 'Mean age', 'Percent admitted', 'Percent under 18',
+                                                'Inhospital mortality'])
+plt.title(f"Model's performance of inhospital data compared to KCH"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Inhospital_Model_Summary.png', bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1811,6 +1855,7 @@ else:
 average_inc_in_children = np.mean([float(sum(col)) / len(col) for col in zip(*incidences_of_rti_in_children)])
 # Compare this to the weighted average referred to in Hyder et al.
 weighted_average_from_Hyder_et_al = 110.81
+# Compare estimate to GBD
 # plot data in a bar chart
 plt.bar(np.arange(2), [weighted_average_from_Hyder_et_al, average_inc_in_children])
 plt.xticks(np.arange(2), ['Weighted average', 'Model'])
