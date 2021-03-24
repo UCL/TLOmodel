@@ -7,14 +7,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from scripts.dev.th_testing.th_utils import (
-    extract_params,
-    extract_results,
-    get_folders,
-    get_info,
-    get_alog,
-    summarize,
-)
+from tlo.analysis.utils import get_folders, get_info, get_alog, extract_params, extract_results, summarize
 
 outputspath = Path('./outputs')
 
