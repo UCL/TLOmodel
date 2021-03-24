@@ -29,7 +29,12 @@ JOB_LABEL_PADDING = len("State transition time")
 @click.option("--config-file", type=click.Path(exists=True), default="tlo.conf", hidden=True)
 @click.pass_context
 def cli(ctx, config_file):
-    """The TLOmodel command line utility: run scenarios locally & submit to Azure Batch
+    """tlo - the TLOmodel command line utility.
+
+    * run scenarios locally
+    * submit scenarios to batch system
+    * query batch system about job and tasks
+    * download output results for completed job
     """
     ctx.ensure_object(dict)
     ctx.obj["config_file"] = config_file
@@ -39,7 +44,7 @@ def cli(ctx, config_file):
 @click.argument("scenario_file", type=click.Path(exists=True))
 @click.option("--draw-only", is_flag=True, help="Only generate draws; do not run the simulation")
 def scenario_run(scenario_file, draw_only):
-    """Run locally the scenario defined in SCENARIO_FILE
+    """Run the specified scenario locally.
 
     SCENARIO_FILE is path to file containing a scenario class
     """
@@ -54,7 +59,7 @@ def scenario_run(scenario_file, draw_only):
 @click.argument("scenario_file", type=click.Path(exists=True))
 @click.pass_context
 def batch_submit(ctx, scenario_file):
-    """Submit a scenario to run on Azure Batch.
+    """Submit a scenario to the batch system.
 
     SCENARIO_FILE is path to file containing scenario class.
 
@@ -211,7 +216,7 @@ def batch_run(path_to_json, work_directory, draw, sample):
               is_flag=True, hidden=True)
 @click.pass_context
 def batch_job(ctx, job_id, raw, show_tasks):
-    """Display information about a specific job"""
+    """Display information about a specific job."""
     config = load_config(ctx.obj['config_file'])
     batch_client = get_batch_client(
         config["BATCH"]["NAME"],
@@ -277,7 +282,7 @@ def batch_job(ctx, job_id, raw, show_tasks):
 @click.option("-n", default=5, type=int, help="Maximum number of jobs to list (default is 5)")
 @click.pass_context
 def batch_list(ctx, status, n, find):
-    """List all jobs currently on account"""
+    """List and find running and completed jobs."""
     config = load_config(ctx.obj["config_file"])
     batch_client = get_batch_client(
         config["BATCH"]["NAME"],
@@ -338,10 +343,14 @@ def print_basic_job_details(job: dict):
 @click.option("--verbose", default=False, is_flag=True, hidden=True)
 @click.pass_context
 def batch_download(ctx, job_id, username, verbose):
+    """Download output files for a job."""
     config = load_config(ctx.obj["config_file"])
+
+    directory_count = 0
 
     def walk_fileshare(dir_name):
         """Recursively visit directories, create local directories and download files"""
+        nonlocal directory_count
         try:
             directories = list(share_client.list_directories_and_files(dir_name))
         except ResourceNotFoundError as e:
@@ -350,12 +359,16 @@ def batch_download(ctx, job_id, username, verbose):
             print(e.message)
             return
         create_dir = Path(".", "outputs", dir_name)
-        print("Creating directory", str(create_dir))
         os.makedirs(create_dir, exist_ok=True)
-        print("Downloading", dir_name)
+        if verbose:
+            print("Creating directory", str(create_dir))
+            print("Downloading", dir_name)
+
         for item in directories:
             if item["is_directory"]:
                 walk_fileshare(f"{dir_name}/{item['name']}")
+                print(f"\r{directory_count} directories downloaded", end="")
+                directory_count += 1
             else:
                 filepath = f"{dir_name}/{item['name']}"
                 file_client = share_client.get_file_client(filepath)
@@ -382,7 +395,9 @@ def batch_download(ctx, job_id, username, verbose):
         print("Directory:", destination)
         return
 
+    print(f"Downloading {top_level}")
     walk_fileshare(top_level)
+    print("\rDownload complete.              ")
 
 
 def load_config(config_file):
