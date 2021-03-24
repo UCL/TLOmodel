@@ -66,6 +66,7 @@ def batch_submit(ctx, scenario_file):
     Your working branch must have all changes committed and pushed to the remote repository.
     This is to ensure that the copy of the code used by Azure Batch is identical to your own.
     """
+    print(">Setting up scenario\r", end="")
     scenario_file = Path(scenario_file).as_posix()
 
     current_branch = is_file_clean(scenario_file)
@@ -77,6 +78,8 @@ def batch_submit(ctx, scenario_file):
     repo = Repo(".")
     commit = next(repo.iter_commits(max_count=1, paths=scenario_file))
     run_json = scenario.save_draws(commit=commit.hexsha)
+
+    print(">Setting up batch\r", end="")
 
     config = load_config(ctx.obj['config_file'])
 
@@ -182,6 +185,8 @@ def batch_submit(ctx, scenario_file):
     """
     command = f"/bin/bash -c '{command}'"
 
+    print(">Submitting job and tasks\r", end="")
+
     try:
         # Create the job that will run the tasks.
         create_job(batch_client, vm_size, pool_node_count, job_id,
@@ -217,6 +222,7 @@ def batch_run(path_to_json, work_directory, draw, sample):
 @click.pass_context
 def batch_job(ctx, job_id, raw, show_tasks):
     """Display information about a specific job."""
+    print(">Querying batch system\r", end="")
     config = load_config(ctx.obj['config_file'])
     batch_client = get_batch_client(
         config["BATCH"]["NAME"],
@@ -283,6 +289,7 @@ def batch_job(ctx, job_id, raw, show_tasks):
 @click.pass_context
 def batch_list(ctx, status, n, find):
     """List and find running and completed jobs."""
+    print(">Querying batch system\r", end="")
     config = load_config(ctx.obj["config_file"])
     batch_client = get_batch_client(
         config["BATCH"]["NAME"],
