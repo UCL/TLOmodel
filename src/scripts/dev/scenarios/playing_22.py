@@ -53,7 +53,7 @@ class Playing22(BaseScenario):
             },
             'Labour': {
                 'intercept_parity_lr2010': -10 * rng.exponential(0.1),
-                'effect_age_parity_lr2010': np.linspace(0.1, 1, num=10)[draw_number]
+                'effect_age_parity_lr2010': np.linspace(0.1, 1, num=self.number_of_draws)[draw_number]
             },
         }
 

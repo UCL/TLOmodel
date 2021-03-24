@@ -117,6 +117,10 @@ class BaseScenario:
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 config[k] = v
+        config["commit"] = "57538f5eeae5ee9e566f862ebe75ad7bacb7f3c7"
+        if "commit" in config:
+            github_url = f"https://github.com/UCL/TLOmodel/blob/{config['commit']}/{config['scenario_script_path']}"
+            config["github"] = github_url
         generator.save_config(config, output_path)
         return output_path
 
