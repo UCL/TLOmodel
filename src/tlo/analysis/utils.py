@@ -239,18 +239,21 @@ def make_calendar_period_type():
     return pd.CategoricalIndex(categories=keys, ordered=True)
 
 
-def get_folders(batch_file_name: str, outputspath: Path) -> list:
-    """Returns paths of folders assoicated with a batch_file, in chronological order."""
-    stub = batch_file_name.rstrip('.py')
-    folders = [Path(f) for f in os.scandir(outputspath) if (f.is_dir() & f.name.startswith(stub))]
+def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
+    """Returns paths of folders associated with a batch_file, in chronological order."""
+    stub = scenario_filename.rstrip('.py')
+    folders = [Path(f) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
     folders.sort()
     return folders
 
 
-def get_info(results_folder: Path) -> dict:
-    """Utility function to get the the number draws and the number of runs in a batch set."""
+def get_scenario_info(scenario_output_dir: Path) -> dict:
+    """Utility function to get the the number draws and the number of runs in a batch set.
+
+    TODO: read the JSON file to get further information
+    """
     info = dict()
-    draw_folders = [f for f in os.scandir(results_folder) if f.is_dir()]
+    draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
 
     info['number_of_draws'] = len(draw_folders)
 
@@ -260,15 +263,18 @@ def get_info(results_folder: Path) -> dict:
     return info
 
 
-def get_alog(results_folder: Path) -> dict:
-    """Utility function to create a dict contaning all the logs from the first run within a batch set."""
-    folder = results_folder / str(0) / str(0)
-    pickles = [f for f in os.scandir(folder) if f.name.endswith('.pickle')]
+def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> dict:
+    """Utility function to create a dict contaning all the logs from the specified run within a batch set."""
+    folder = results_folder / str(draw) / str(run)
+    pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
+    if name is not None:
+        pickles = [p for p in pickles if p.name in f"{name}.pickle"]
 
     output = dict()
     for p in pickles:
-        name = p.name[:-len('.pickle')]
-        output[name] = pickle.load(open(p.path, "rb"))
+        name = os.path.splitext(p.name)[0]
+        with open(p.path, "rb") as f:
+            output[name] = pickle.load(f)
 
     return output
 
@@ -286,9 +292,8 @@ def extract_params(results_folder: Path) -> pd.DataFrame:
     list_of_param_changes = list()
 
     for d in draws:
-        p = pickle.load(
-            open(Path(d) / str(0) / str('tlo.scenario.pickle'), "rb")
-        )['override_parameter']
+        p = load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")
+        p = p["tlo.scenario"]["override_parameter"]
 
         p['module_param'] = p['module'] + ':' + p['name']
         p.index = [int(d.name)] * len(p.index)
@@ -303,20 +308,19 @@ def extract_params(results_folder: Path) -> pd.DataFrame:
     return params
 
 
-def extract_results(results_folder: Path, log_element: dict) -> pd.DataFrame:
+def extract_results(results_folder: Path, module: str, key: str, column: str, index: str = None) -> pd.DataFrame:
     """Utility function to unpack results to produce a dataframe that summaries one series from the log, with column
     multi-index for the draw/run. If an 'index' component of the log_element is provided, the dataframe uses that index
     (but note that this will only work if the index is the same in each run)."""
 
-    if 'index' in log_element:
+    if index is not None:
         # extract the index from the first log, and use this ensure that all other are exactly the same.
-        __one_log_component__ = pickle.load(
-            open(results_folder / str(0) / str(0) / str(log_element['component'] + '.pickle'), "rb")
-        )
-        index = eval(f"__one_log_component__{log_element['index']}")
+        filename = f"{module}.pickle"
+        df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
+        index = df.index
 
     # get number of draws and numbers of runs
-    info = get_info(results_folder)
+    info = get_scenario_info(results_folder)
 
     results = pd.DataFrame(columns=pd.MultiIndex.from_product(
         [range(info['number_of_draws']), range(info['runs_per_draw'])],
@@ -326,19 +330,16 @@ def extract_results(results_folder: Path, log_element: dict) -> pd.DataFrame:
     for draw in range(info['number_of_draws']):
         for run in range(info['runs_per_draw']):
             try:
-                log_component_file = results_folder / str(draw) / str(run) / str(log_element['component'] + '.pickle')
-                __log_component__ = pickle.load(open(log_component_file, "rb"))
-                series = eval(f"__log_component__{log_element['series']}")
-                results[draw, run] = series
-
-                idx = eval(f"__log_component__{log_element['index']}")
-                assert idx.equals(index)
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                results[draw, run] = df[column]
+                idx = df[column].index
+                assert idx.equals(index), "Indexes are not the same between runs"
 
             except ValueError:
                 results[draw, run] = np.nan
 
-    # if 'index' is provied, set this to be the index of the results
-    if 'index' in log_element:
+    # if 'index' is provided, set this to be the index of the results
+    if index is not None:
         results.index = index
 
     return results
