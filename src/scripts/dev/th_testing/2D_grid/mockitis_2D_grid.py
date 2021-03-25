@@ -7,6 +7,7 @@ Run on the batch system using:
 """
 
 import numpy as np
+import pandas as pd
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -31,7 +32,7 @@ class Mockitis_Batch(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 500
-        self.number_of_draws = 5
+        self.number_of_draws = 6
         self.runs_per_draw = 2
 
     def log_configuration(self):
@@ -58,12 +59,12 @@ class Mockitis_Batch(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-
-        grid = self.make_grid({
-            'p_infection': np.linspace(0, 1.0, 5),
-            'p_cure': np.linspace(0, 0.5, 5)
-        })
-        self.number_of_draws = len(list(grid.values())[0])
+        grid = self.make_grid(
+            {
+                'p_infection': np.linspace(0, 1.0, 3),
+                'p_cure': [0.25, 0.5]
+            }
+        )
 
         return {
             'Mockitis': {
@@ -72,35 +73,35 @@ class Mockitis_Batch(BaseScenario):
             },
         }
 
-    def make_grid(self, ranges: dict) -> list:
-        """utility function to flatten a 2-dimension grid of parameters for use in batch-run.
-        ?? Move to baseclass??"""
+    def make_grid(self, ranges: dict) -> pd.DataFrame:
+        """Utility function to flatten an n-dimension grid of parameters for use in scenarios
 
-        def is_iter(x):
-            try:
-                iter(x)
-                return True
-            except TypeError:
-                return False
+        Typically used in draw_parameters determining a set of parameters for a draw. This function will check that the
+        number of draws of the scenario is equal to the number of coordinates in the grid.
 
-        # check that the ranges given is a dict with two entries and that each entry is itterable
-        assert type(ranges) is dict
-        assert 2 == len(ranges)
-        assert all([is_iter(v) for v in ranges.values()])
+        Parameter 'ranges' is a dictionary of { string key: iterable }, where iterable can be, for example, an np.array
+        or list. The function will return a DataFrame where each key is a column and each row represents a single
+        coordinate in the grid.
 
-        # get the values to go on the x and y values
-        x = list(ranges.values())[0]
-        y = list(ranges.values())[1]
+        Usage (in draw_parameters):
 
-        X, Y = np.meshgrid(x, y)
-
-        return {
-            list(ranges.keys())[0]: X.ravel(),
-            list(ranges.keys())[1]: Y.ravel()
-        }
+            grid = self.make_grid({'p_one': np.linspace(0, 1.0, 5), 'p_two': np.linspace(3.0, 4.0, 2)})
+            return {
+                'Mockitis': {
+                    grid['p_one'][draw_number],
+                    grid['p_two'][draw_number]
+                }
+            }
+        """
+        grid = np.meshgrid(*ranges.values())
+        flattened = [g.ravel() for g in grid]
+        positions = np.stack(flattened, axis=1)
+        grid_lookup = pd.DataFrame(positions, columns=ranges.keys())
+        assert self.number_of_draws == len(grid_lookup), f"{len(grid_lookup)} coordinates in grid, " \
+                                                         f"but number_of_draws is {self.number_of_draws}."
+        return grid_lookup
 
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
-
     scenario_run([__file__])
