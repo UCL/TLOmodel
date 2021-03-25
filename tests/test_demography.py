@@ -142,6 +142,8 @@ def test_py_calc(simulation):
 
 
 def test_py_calc_w_mask(simulation):
+    """test that function calc_py_lived_in_last_year works to calculate PY lived without a given condition """
+
     # make population of two people
     simulation.make_initial_population(n=2)
 
