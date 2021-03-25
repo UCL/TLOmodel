@@ -189,6 +189,9 @@ class Ncds(Module):
         """Set our property values for the initial population.
         """
 
+        # retrieve age range categories from Demography module
+        self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
+
         df = population.props
         for condition in self.conditions:
             p = self.parameters[f'{condition}_initial_prev'].set_index('parameter_name').T.to_dict('records')[0]
@@ -229,7 +232,6 @@ class Ncds(Module):
         sim.schedule_event(Ncds_LoggingEvent(self), sim.date)
 
         # dict to hold counters for the number of episodes by condition-type and age-group
-        self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_index, columns=self.conditions)
         self.df_incidence_tracker = copy.deepcopy(self.df_incidence_tracker_zeros)
 
@@ -244,6 +246,9 @@ class Ncds(Module):
             self.eventsTracker.update({f'{event_name}_events': 0})
 
         # Build the LinearModel for onset/removal/deaths for each condition
+        # Baseline probability of condition onset, removal, and death are annual; in LinearModel, rates are adjusted to
+        # be consistent with the polling interval
+
         self.lms_onset = dict()
         self.lms_removal = dict()
         self.lms_death = dict()
@@ -253,31 +258,18 @@ class Ncds(Module):
         self.lms_event_death = dict()
 
         for condition in self.conditions:
-            self.lms_dict[condition] = self.build_linear_model(condition,
-                                                               self.parameters['interval_between_polls'],
-                                                               lm_type='onset')
-            self.lms_onset[condition] = self.lms_dict[condition]
-
-            self.lms_dict[condition] = self.build_linear_model(condition,
-                                                               self.parameters['interval_between_polls'],
-                                                               lm_type='removal')
-            self.lms_removal[condition] = self.lms_dict[condition]
-
-            self.lms_dict[condition] = self.build_linear_model(condition,
-                                                               self.parameters['interval_between_polls'],
-                                                               lm_type='death')
-            self.lms_death[condition] = self.lms_dict[condition]
+            self.lms_onset[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'],
+                                                           lm_type='onset')
+            self.lms_removal[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'],
+                                                             lm_type='removal')
+            self.lms_death[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'],
+                                                           lm_type='death')
 
         for event in self.events:
-            self.lms_dict[event] = self.build_linear_model(event,
-                                                           self.parameters['interval_between_polls'],
-                                                           lm_type='event')
-            self.lms_event_onset[event] = self.lms_dict[event]
-
-            self.lms_dict[event] = self.build_linear_model(event,
-                                                           self.parameters['interval_between_polls'],
-                                                           lm_type='death')
-            self.lms_event_death[event] = self.lms_dict[event]
+            self.lms_event_onset[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
+                                                             lm_type='event')
+            self.lms_event_death[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
+                                                             lm_type='death')
 
     def build_linear_model(self, condition, interval_between_polls, lm_type):
         """
@@ -287,7 +279,7 @@ class Ncds(Module):
         """
 
         # use temporary empty dict to save results
-        self.lms_dict = dict()
+        lms_dict = dict()
 
         # load parameters for correct condition/event
         p = self.parameters
@@ -302,7 +294,7 @@ class Ncds(Module):
 
         p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
 
-        self.lms_dict[condition] = LinearModel(
+        lms_dict[condition] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['baseline_annual_probability'],
             Predictor().when('(sex=="M")', p['rr_male']),
@@ -363,7 +355,7 @@ class Ncds(Module):
             # Predictor('nc_cancers').when(True, p['rr_cancers'])
         )
 
-        return self.lms_dict[condition]
+        return lms_dict[condition]
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
