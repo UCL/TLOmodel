@@ -270,10 +270,8 @@ class BladderCancer(Module):
         )
         has_pelvic_pain_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=has_pelvic_pain_at_init.index[has_pelvic_pain_at_init].tolist(),
-            symptom_string='pelvic_pain',
-            add_or_remove='+',
-            disease_module=self
+            person_id=has_pelvic_pain_at_init.index[has_pelvic_pain_at_init].tolist(), symptom_string='pelvic_pain',
+            add_or_remove='+', disease_module=self
         )
 
         # -------------------- bc_date_diagnosis -----------
