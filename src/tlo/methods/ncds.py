@@ -118,27 +118,30 @@ class Ncds(Module):
         self.extended_conditions.append("nc_depression")
 
     def read_parameters(self, data_folder):
-        """Read parameter values from file, if required.
+        """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
         To access files use: Path(self.resourcefilepath) / file_name
         """
 
         for condition in self.conditions:
             # get onset parameters
-            params_onset = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_condition_onset.xlsx",
+            params_onset = pd.read_excel(Path(self.resourcefilepath) / "ncds" /
+                                         "ResourceFile_NCDs_condition_onset.xlsx",
                                          sheet_name=f"{condition}")
             # replace NaNs with 1
             params_onset['value'] = params_onset['value'].replace(np.nan, 1)
             self.parameters[f'{condition}_onset'] = params_onset
 
             # get removal parameters
-            params_removal = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_condition_removal.xlsx",
+            params_removal = pd.read_excel(Path(self.resourcefilepath) / "ncds" /
+                                           "ResourceFile_NCDs_condition_removal.xlsx",
                                            sheet_name=f"{condition}")
             # replace NaNs with 1
             params_removal['value'] = params_removal['value'].replace(np.nan, 1)
             self.parameters[f'{condition}_removal'] = params_removal
 
             # get death parameters
-            params_death = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_condition_death.xlsx",
+            params_death = pd.read_excel(Path(self.resourcefilepath) / "ncds" /
+                                         "ResourceFile_NCDs_condition_death.xlsx",
                                          sheet_name=f"{condition}")
             # replace NaNs with 1
             params_death['value'] = params_death['value'].replace(np.nan, 1)
@@ -146,21 +149,21 @@ class Ncds(Module):
 
             # get parameters for initial prevalence by age/sex
             params_prevalence = pd.read_excel(
-                Path(self.resourcefilepath) / "ResourceFile_NCDs_condition_prevalence.xlsx",
+                Path(self.resourcefilepath) / "ncds" / "ResourceFile_NCDs_condition_prevalence.xlsx",
                 sheet_name=f"{condition}")
             params_prevalence['value'] = params_prevalence['value'].replace(np.nan, 0)
             self.parameters[f'{condition}_initial_prev'] = params_prevalence
 
         for event in self.events:
             # get onset parameters
-            params_onset = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_events.xlsx",
+            params_onset = pd.read_excel(Path(self.resourcefilepath) / "ncds" / "ResourceFile_NCDs_events.xlsx",
                                          sheet_name=f"{event}")
             # replace NaNs with 1
             params_onset['value'] = params_onset['value'].replace(np.nan, 1)
             self.parameters[f'{event}_onset'] = params_onset
 
             # get death parameters
-            params_death = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs_events_death.xlsx",
+            params_death = pd.read_excel(Path(self.resourcefilepath) / "ncds" / "ResourceFile_NCDs_events_death.xlsx",
                                          sheet_name=f"{event}")
             # replace NaNs with 1
             params_death['value'] = params_death['value'].replace(np.nan, 1)
