@@ -50,7 +50,10 @@ def scenario_run(scenario_file, draw_only):
     """
     scenario = load_scenario(scenario_file)
     run_json = scenario.save_draws()
-    if not draw_only:
+    if draw_only:
+        with open(run_json) as f:
+            print(f.read())
+    else:
         runner = SampleRunner(run_json)
         runner.run()
 
@@ -454,7 +457,7 @@ def load_scenario(scenario_file):
     """Load the Scenario class from the specified file"""
     scenario_path = Path(scenario_file)
     scenario_class = ScenarioLoader(scenario_path.parent / scenario_path.name).get_scenario()
-    print(f"Loaded {scenario_class.__class__.__name__} from {scenario_path}")
+    print(f"Found class {scenario_class.__class__.__name__} in {scenario_path}")
     return scenario_class
 
 
