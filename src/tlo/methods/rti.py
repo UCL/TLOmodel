@@ -2872,8 +2872,8 @@ class RTI(Module):
 
                 # if the injury is located in the head (injloc 1) determine what the injury is
                 if injlocs == 1:
+                    # todo: redo the assign injury function with the self.rng.choice function
                     # Decide what the injury to the head is going to be:
-
                     # determine if injury is a skin wound
                     if cat <= self.head_prob_skin_wound:
                         # determine if it is a laceration else it is a burn
