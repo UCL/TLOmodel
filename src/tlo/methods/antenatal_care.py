@@ -2575,7 +2575,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
                 # If the test is not carried out, no treatment is provided and the woman is discharged
                 if fbc_result == 'no_test':
-                    logger.debug(key='message', data=f'No FBC given due to resource constraints')
+                    logger.debug(key='message', data='No FBC given due to resource constraints')
 
                 # If the result returns none, anaemia has not been detected via an FBC and the woman is discharged
                 # without treatment
@@ -2837,7 +2837,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
 
             # If the consumables are not available the test isn't given
             if fbc_result == 'no_test':
-                logger.debug(key='message', data=f'No FBC given due to resource constraints')
+                logger.debug(key='message', data='No FBC given due to resource constraints')
 
             # If the test determines the woman is no longer anaemia then no further action is taken at this time
             elif fbc_result == 'none':
@@ -3053,7 +3053,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         # If consumables are available then individual interventions can be delivered
         if all_available:
             evac_procedures = ['d_and_c', 'mva', 'misoprostol']
-            probability_of_evac_procedure = params[f'prob_evac_procedure_pac']
+            probability_of_evac_procedure = params['prob_evac_procedure_pac']
             random_draw = self.module.rng.choice(evac_procedures, p=probability_of_evac_procedure)
             self.module.pac_interventions.set(person_id, random_draw)
 

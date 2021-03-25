@@ -5,7 +5,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.lm import LinearModel
 from tlo.methods import demography, postnatal_supervisor_lm
 from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
