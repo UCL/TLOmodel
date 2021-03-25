@@ -120,7 +120,7 @@ def make_treatment_ineffective(sim):
     return sim
 
 
-def make_treamtment_perfectly_effective(sim):
+def make_treatment_perfectly_effective(sim):
     # Treatment effect of 0.0 will stop progression
     sim.modules['OtherAdultCancer'].parameters['rr_local_ln_other_adult_ca_undergone_curative_treatment'] = 0.0
     sim.modules['OtherAdultCancer'].parameters['rr_metastatic_undergone_curative_treatment'] = 0.0
@@ -339,7 +339,7 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     sim = zero_rate_of_onset_lgd(sim)
 
     # remove effect of treatment:
-    sim = make_treamtment_perfectly_effective(sim)
+    sim = make_treatment_perfectly_effective(sim)
 
     # increase progression rates:
     sim = incr_rates_of_progression(sim)
