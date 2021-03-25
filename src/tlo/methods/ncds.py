@@ -112,14 +112,23 @@ class Ncds(Module):
 
         self.conditions = list(Ncds.condition_list)
         self.events = list(Ncds.event_list)
+        self.condition_names = [c.split('_', 1)[1] for c in list(self.conditions)]
 
         # create list that includes conditions modelled by other modules
         self.extended_conditions = list(Ncds.condition_list)
         self.extended_conditions.append("nc_depression")
+        self.extended_condition_names = [c.split('_', 1)[1] for c in list(self.extended_conditions)]
 
     def read_parameters(self, data_folder):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
-        To access files use: Path(self.resourcefilepath) / file_name
+
+        ResourceFile_NCDs_condition_onset.xlsx = parameters for onset of conditions
+        ResourceFile_NCDs_condition_removal.xlsx  = parameters for removal of conditions
+        ResourceFile_NCDs_condition_death.xlsx  = parameters for death rate from conditions
+        ResourceFile_NCDs_condition_prevalence.xlsx  = initial and target prevalence for conditions
+        ResourceFile_NCDs_events.xlsx  = parameters for occurrence of events
+        ResourceFile_NCDs_events_death.xlsx  = parameters for death rate from events
+
         """
 
         for condition in self.conditions:
@@ -170,12 +179,8 @@ class Ncds(Module):
             self.parameters[f'{event}_death'] = params_death
 
         # Check that every value has been read-in successfully
-        p = self.parameters
-        for param_name, param_type in self.PARAMETERS.items():
-            if param_name != 'interval_between_polls':  # this param is manually entered in the code
-                param_name = f'nc_{param_name}'
-                assert param_name in p, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
-                assert param_name is not None, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+        for param_name in self.PARAMETERS.items():
+            assert param_name is not None, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
 
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
@@ -183,10 +188,6 @@ class Ncds(Module):
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
-        # dict to hold counters for the number of episodes by condition-type and age-group
-        self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
-        self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_index, columns=self.conditions)
-        self.df_incidence_tracker = copy.deepcopy(self.df_incidence_tracker_zeros)
 
         df = population.props
         for condition in self.conditions:
@@ -227,9 +228,14 @@ class Ncds(Module):
         sim.schedule_event(Ncds_MainPollingEvent(self, self.parameters['interval_between_polls']), sim.date)
         sim.schedule_event(Ncds_LoggingEvent(self), sim.date)
 
+        # dict to hold counters for the number of episodes by condition-type and age-group
+        self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
+        self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_index, columns=self.conditions)
+        self.df_incidence_tracker = copy.deepcopy(self.df_incidence_tracker_zeros)
+
+        # copy NCD conditions from other modules into nc_ condition
         df = self.sim.population.props
         df['nc_depression'] = df['de_depr']
-        # cancers_idx = df.index[df['de_depr']]
 
         # Create Tracker for the number of different types of events
         self.eventsTracker = dict()
