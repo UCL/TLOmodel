@@ -63,12 +63,15 @@ sim.seed_rngs(0)
 
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to
 # begin with:
-sim.modules['BreastCancer'].parameters['r_stage1_none'] = 0.00
-sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'] = [1.0, 0.0, 0.0, 0.0]
-sim.modules['BreastCancer'].parameters["init_prop_breast_lump_discernible_breast_cancer_by_stage"] = [0.0] * 4
-sim.modules['BreastCancer'].parameters["init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage"] = [0.0] * 4
-sim.modules['BreastCancer'].parameters["init_prop_treatment_status_breast_cancer"] = [0.0] * 4
-sim.modules['BreastCancer'].parameters["init_prob_palliative_care"] = 0.0
+# create shorthand variable to manipulate module parameters
+bc_parameters = sim.modules['BreastCancer'].parameters
+# Change parameter values
+bc_parameters['r_stage1_none'] = 0.00
+bc_parameters['init_prop_breast_cancer_stage'] = [1.0, 0.0, 0.0, 0.0]
+bc_parameters["init_prop_breast_lump_discernible_breast_cancer_by_stage"] = [0.0] * 4
+bc_parameters["init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage"] = [0.0] * 4
+bc_parameters["init_prop_treatment_status_breast_cancer"] = [0.0] * 4
+bc_parameters["init_prob_palliative_care"] = 0.0
 
 # Establish the logger and look at only demography
 custom_levels = {"*": logging.WARNING,  # <--
@@ -106,16 +109,13 @@ cohort_treated['brc_date_treatment'] = pd.to_datetime(cohort_treated['brc_date_t
 cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_treated['brc_date_treatment']).dt.days
 
 # calc % of those that were alive 5 years after starting treatment (not died of any cause):
-1 - (
-    len(cohort_treated.loc[cohort_treated['days_treatment_to_death'] < (5*365.25)]) /
-    len(cohort_treated)
-)
+# Store condition in variable
+condition = cohort_treated['days_treatment_to_death'] < (5*365.25)
+1 - (len(cohort_treated.loc[condition]) / len(cohort_treated))
 
 # calc % of those that had not died of breast cancer 5 years after starting treatment (could have died of another
 # cause):
-1 - (
-    len(cohort_treated.loc[(cohort_treated['cause'] == 'BreastCancer') & (cohort_treated['days_treatment_to_death']
-                                                                               < (5*365.25))]) /
-    len(cohort_treated)
-)
 
+# Store condition in variable
+condition = (cohort_treated['cause'] == 'BreastCancer') & (cohort_treated['days_treatment_to_death'] < (5*365.25))
+1 - (len(cohort_treated.loc[condition]) / len(cohort_treated))

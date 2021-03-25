@@ -168,7 +168,6 @@ class BreastCancer(Module):
         )
     }
 
-
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
 
@@ -232,16 +231,14 @@ class BreastCancer(Module):
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of breast_
         # lump_discernible:
         # todo: note dysphagia was mis-spelled here in oesophageal cancer module in master so may not be working
+        # Create shorthand variable for the initial proportion of discernible breast cancer lumps in the population
+        bc_init_prop_discernible_lump = p['init_prop_breast_lump_discernible_breast_cancer_by_stage']
         lm_init_breast_lump_discernible = LinearModel.multiplicative(
-            Predictor('brc_status')  .when("none", 0.0)
-                                    .when("stage1",
-                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][0])
-                                    .when("stage2",
-                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][1])
-                                    .when("stage3",
-                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][2])
-                                    .when("stage4",
-                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][3])
+            Predictor('brc_status').when("none", 0.0)
+                                   .when("stage1", bc_init_prop_discernible_lump[0])
+                                   .when("stage2", bc_init_prop_discernible_lump[1])
+                                   .when("stage3", bc_init_prop_discernible_lump[2])
+                                   .when("stage4", [3])
         )
         has_breast_lump_discernible_at_init = lm_init_breast_lump_discernible.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
@@ -252,16 +249,14 @@ class BreastCancer(Module):
         )
 
         # -------------------- brc_date_diagnosis -----------
+        # Create shorthand variable for the initial proportion of the population with a discernible breast lump
+        bc_initial_prop_discernible_lump = p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage']
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor('brc_status') .when("none", 0.0)
-                                    .when("stage1",
-                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][0])
-                                    .when("stage2",
-                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][1])
-                                    .when("stage3",
-                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][2])
-                                    .when("stage4",
-                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][3])
+                                    .when("stage1", bc_initial_prop_discernible_lump[0])
+                                    .when("stage2", bc_initial_prop_discernible_lump[1])
+                                    .when("stage3", bc_initial_prop_discernible_lump[2])
+                                    .when("stage4", bc_initial_prop_discernible_lump[3])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -272,16 +267,15 @@ class BreastCancer(Module):
         df.loc[ever_diagnosed, "brc_date_diagnosis"] = self.sim.date
 
         # -------------------- brc_date_treatment -----------
+        # create short hand variable for the predicting the initial occurence of various breast
+        # cancer stages in the population
+        bc_inital_treament_status = p['init_prop_treatment_status_breast_cancer']
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
-            Predictor('brc_status')  .when("none", 0.0)
-                                    .when("stage1",
-                                          p['init_prop_treatment_status_breast_cancer'][0])
-                                    .when("stage2",
-                                          p['init_prop_treatment_status_breast_cancer'][1])
-                                    .when("stage3",
-                                          p['init_prop_treatment_status_breast_cancer'][2])
-                                    .when("stage4",
-                                          p['init_prop_treatment_status_breast_cancer'][3])
+            Predictor('brc_status').when("none", 0.0)
+                .when("stage1", bc_inital_treament_status[0])
+                .when("stage2", bc_inital_treament_status[1])
+                .when("stage3", bc_inital_treament_status[2])
+                .when("stage4", bc_inital_treament_status[3])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -371,16 +365,19 @@ class BreastCancer(Module):
         assert set(lm).union({'none'}) == set(df.brc_status.cat.categories)
 
         # Linear Model for the onset of breast_lump_discernible, in each 3 month period
-        self.lm_onset_breast_lump_discernible = LinearModel.multiplicative(
-            Predictor('brc_status').when('stage1', p['r_breast_lump_discernible_stage1'])
-                                  .when('stage2', p['rr_breast_lump_discernible_stage2'] * p['r_breast_lump_'
-                                                                                             'discernible_stage1'])
-                                  .when('stage3', p['rr_breast_lump_discernible_stage3'] * p['r_breast_lump_'
-                                                                                             'discernible_stage1'])
-                                  .when('stage4', p['rr_breast_lump_discernible_stage4'] * p['r_breast_lump_'
-                                                                                             'discernible_stage1'])
-                                  .otherwise(0.0)
-        )
+        # Create variables for used to predict the onset of discernible breast lumps at
+        # various stages of the disease
+        stage1 = p['r_breast_lump_discernible_stage1']
+        stage2 = p['rr_breast_lump_discernible_stage2'] * p['r_breast_lump_discernible_stage1']
+        stage3 = p['rr_breast_lump_discernible_stage3'] * p['r_breast_lump_discernible_stage1']
+        stage4 = p['rr_breast_lump_discernible_stage4'] * p['r_breast_lump_discernible_stage1']
+        self.lm_onset_breast_lump_discernible = LinearModel.multiplicative(Predictor('brc_status')
+                                                                           .when('stage1', stage1)
+                                                                           .when('stage2', stage2)
+                                                                           .when('stage3', stage3)
+                                                                           .when('stage4', stage4)
+                                                                           .otherwise(0.0)
+                                                                           )
 
         # ----- DX TESTS -----
         # Create the diagnostic test representing the use of a biopsy to brc_status
@@ -479,7 +476,7 @@ class BreastCancer(Module):
 
     def report_daly_values(self):
 
-    # This must send back a dataframe that reports on the HealthStates for all individuals over the past month
+        # This must send back a dataframe that reports on the HealthStates for all individuals over the past month
 
         df = self.sim.population.props  # shortcut to population properties dataframe for alive persons
 
@@ -591,6 +588,7 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event, IndividualScopeEventMixin):
     """
@@ -894,11 +892,14 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 # todo: the .between function I think includes the two dates so events on these dates counted twice
 # todo:_ I think we need to replace with date_lastlog <= x < date_now
-        n_newly_diagnosed_stage1 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage1')).sum()
-        n_newly_diagnosed_stage2 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage2')).sum()
-        n_newly_diagnosed_stage3 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage3')).sum()
-        n_newly_diagnosed_stage4 = (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage4')).sum()
-
+        n_newly_diagnosed_stage1 = \
+            (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage1')).sum()
+        n_newly_diagnosed_stage2 = \
+            (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage2')).sum()
+        n_newly_diagnosed_stage3 = \
+            (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage3')).sum()
+        n_newly_diagnosed_stage4 = \
+            (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage4')).sum()
 
         n_diagnosed_age_15_29 = (df.is_alive & (df.age_years >= 15) & (df.age_years < 30)
                                  & ~pd.isnull(df.brc_date_diagnosis)).sum()

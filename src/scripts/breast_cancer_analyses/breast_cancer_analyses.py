@@ -196,7 +196,7 @@ plt.ylabel('Total Deaths During Simulation')
 plt.show()
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
-deaths={
+deaths = {
     'No_HealthSystem': sum(results_no_healthsystem['breast_cancer_deaths']),
     'With_HealthSystem': sum(results_with_healthsystem['breast_cancer_deaths'])
 }

@@ -1,12 +1,8 @@
 import datetime
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
-
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import make_age_grp_types, parse_log_file
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
@@ -50,7 +46,7 @@ log_config = {
         'tlo.methods.pregnancy_supervisor': logging.CRITICAL
     }
 }
-sim = Simulation(start_date=start_date, seed=  1  ,  log_config=log_config)
+sim = Simulation(start_date=start_date, seed=1, log_config=log_config)
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
@@ -72,7 +68,5 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-
 # %% read the results
 output = parse_log_file(sim.log_filepath)
-

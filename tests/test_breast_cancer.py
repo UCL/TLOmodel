@@ -81,6 +81,7 @@ def zero_out_init_prev(sim):
     sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'] = [0.0, 0.0, 0.0, 0.0]
     return sim
 
+
 def seed_init_prev_in_first_stage_only(sim):
     # Set initial prevalence to zero:
     sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'] = [0.0, 0.0, 0.0, 0.0]
@@ -129,6 +130,14 @@ def make_treamtment_perfectly_effective(sim):
     return sim
 
 
+def get_population_of_interest(sim):
+    # Function to make filtering the simulation population for the population of interest easier
+    # Population of interest in this module is living females aged 15 and above
+    population_of_interest = \
+        sim.population.props.is_alive & (sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F')
+    return population_of_interest
+
+
 # %% Checks:
 def check_dtypes(sim):
     # check types of columns
@@ -161,7 +170,8 @@ def check_configuration_of_population(sim):
     assert 0 == (df.loc[~pd.isnull(df.brc_date_treatment)].brc_stage_at_which_treatment_given == 'none').sum()
 
     # check that those with symptom are a subset of those with cancer:
-    assert set(sim.modules['SymptomManager'].who_has('breast_lump_discernible')).issubset(df.index[df.brc_status != 'none'])
+    assert set(sim.modules['SymptomManager'].who_has('breast_lump_discernible')).issubset(
+        df.index[df.brc_status != 'none'])
 
     # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
     assert set(df.index[~pd.isnull(df.brc_date_diagnosis)]).issubset(df.index[df.brc_status_any_stage])
@@ -204,6 +214,7 @@ def test_initial_config_of_pop_zero_prevalence():
     check_configuration_of_population(sim)
     df = sim.population.props
     assert (df.loc[df.is_alive].brc_status == 'none').all()
+
 
 def test_initial_config_of_pop_usual_prevalence():
     """Tests of the the way the population is configured: with usual initial prevalence values"""
@@ -251,8 +262,8 @@ def test_check_progression_through_stages_is_happening():
     sim.make_initial_population(n=popsize)
 
     # force that all persons aged over 15 are in the stage 1 to begin with:
-    sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F'), "brc_status"] = 'stage1'
+    population_of_interest = get_population_of_interest(sim)
+    sim.population.props.loc[population_of_interest, "brc_status"] = 'stage1'
     check_configuration_of_population(sim)
 
     # Simulate
@@ -264,7 +275,9 @@ def test_check_progression_through_stages_is_happening():
     df = sim.population.props
     assert not pd.isnull(df.brc_status[~pd.isna(df.date_of_birth)]).any()
     # debugging on this line below and there are women alive with breast cancer so not sure why assert is not working
-#   assert (df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'F')].brc_status.value_counts().drop(index='none') > 0).all()
+    # Create variable for the condition
+    # condition = df.is_alive & (df.age_years >= 15) & (df.sex == 'F')
+    # assert (df.loc[condition].brc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of breast cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
@@ -296,8 +309,8 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     sim.make_initial_population(n=popsize)
 
     # force that all persons aged over 15 are in stage 1 to begin with:
-    sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F'), "brc_status"] = 'stage1'
+    population_of_interest = get_population_of_interest(sim)
+    sim.population.props.loc[population_of_interest, "brc_status"] = 'stage1'
     check_configuration_of_population(sim)
 
     # Simulate
@@ -342,22 +355,21 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     sim.make_initial_population(n=popsize)
 
     # force that all persons aged over 15 are in stage 1 to begin with:
-    has_lgd = sim.population.props.is_alive & (sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F')
-    sim.population.props.loc[has_lgd, "brc_status"] = 'stage1'
+    # get the population of interest
+    population_of_interest = get_population_of_interest(sim)
+    sim.population.props.loc[population_of_interest, "brc_status"] = 'stage1'
 
-    # force that they are all symptomatic, diagnosed and already on treatment:
+    # force that they are all symptomatic
     sim.modules['SymptomManager'].change_symptom(
-        person_id=has_lgd.index[has_lgd].tolist(),
+        person_id=population_of_interest.index[population_of_interest].tolist(),
         symptom_string='breast_lump_discernible',
         add_or_remove='+',
         disease_module=sim.modules['BreastCancer']
     )
-    sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F'), "brc_date_diagnosis"] = sim.date
-    sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F'), "brc_date_treatment"] = sim.date
-    sim.population.props.loc[sim.population.props.is_alive & (
-            sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F'), "brc_stage_at_which_treatment_given"] = 'stage1'
+    # force that they are all diagnosed and already on treatment:
+    sim.population.props.loc[population_of_interest, "brc_date_diagnosis"] = sim.date
+    sim.population.props.loc[population_of_interest, "brc_date_treatment"] = sim.date
+    sim.population.props.loc[population_of_interest, "brc_stage_at_which_treatment_given"] = 'stage1'
     check_configuration_of_population(sim)
 
     # Simulate
@@ -371,7 +383,7 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     df = sim.population.props
     assert len(df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'F'), "brc_status"]) > 0
     assert (df.loc[df.is_alive & (df.age_years >= 15), "brc_status"].isin(["none", "stage1"])).all()
-    assert (df.loc[has_lgd.index[has_lgd].tolist(), "brc_status"] == "stage1").all()
+    assert (df.loc[population_of_interest.index[population_of_interest].tolist(), "brc_status"] == "stage1").all()
 
     # check that no people have died of breast cancer
     # this is working in the program - I'm not sure why test is failing
