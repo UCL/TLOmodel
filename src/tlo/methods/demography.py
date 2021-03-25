@@ -140,8 +140,7 @@ class Demography(Module):
         df['region_of_residence'] = demog_char_to_assign['Region']
         df['district_of_residence'] = demog_char_to_assign['District']
         df['district_num_of_residence'] = demog_char_to_assign['District_Num']
-        df['ethnicity'] = 'None'
-        df['ethnicity'] = df.ethnicity.astype('category')
+        df.loc[df.is_alive, 'ethnicity'] = 'None'
 
         # Check for no bad values being assigned to persons in the dataframe:
         assert (not pd.isnull(df['region_of_residence']).any())
