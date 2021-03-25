@@ -24,7 +24,7 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class Mockitis_Batch(BaseScenario):
+class MockitisBatch(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 12
