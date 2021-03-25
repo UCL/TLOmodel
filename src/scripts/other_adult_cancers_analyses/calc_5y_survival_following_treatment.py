@@ -113,8 +113,8 @@ cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_tre
 
 # calc % of those that had not died of Other_Adult cancer 5 years after starting treatment (could have died of another
 # cause):
+condition = (cohort_treated['cause'] == 'OtherAdultCancer') & (cohort_treated['days_treatment_to_death'] < (5*365.25))
 1 - (
-    len(cohort_treated.loc[(cohort_treated['cause'] == 'OtherAdultCancer') & (cohort_treated['days_treatment_to_death']
-                                                                               < (5*365.25))]) /
+    len(cohort_treated.loc[cohort_treated]) /
     len(cohort_treated)
 )   # 0.87

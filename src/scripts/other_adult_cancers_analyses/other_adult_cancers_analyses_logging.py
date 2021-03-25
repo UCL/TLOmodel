@@ -1,12 +1,8 @@
 import datetime
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
-
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import make_age_grp_types, parse_log_file
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
@@ -16,7 +12,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     other_adult_cancers,
-#   bladder_cancer,
+    # bladder_cancer,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -48,7 +44,7 @@ log_config = {
         'tlo.methods.symptommanager': logging.CRITICAL,
         'tlo.methods.healthseekingbehaviour': logging.CRITICAL,
         'tlo.methods.pregnancy_supervisor': logging.CRITICAL,
-#       'tlo.methods.bladder_cancer': logging.INFO,
+        # 'tlo.methods.bladder_cancer': logging.INFO,
     }
 }
 sim = Simulation(start_date=start_date, seed=2, log_config=log_config)
@@ -67,9 +63,9 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-#            bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+             # bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
              other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
-)
+             )
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

@@ -63,7 +63,7 @@ def run_sim(service_availability):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
-    )
+                 )
 
     sim.seed_rngs(0)
 
@@ -112,7 +112,8 @@ def get_summary_stats(logfile):
     deaths = output['tlo.methods.demography']['death']
     deaths['age_group'] = deaths['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
 
-    other_adult_cancer_deaths = pd.Series(deaths.loc[deaths.cause == 'otheradultcancer'].groupby(by=['age_group']).size())
+    other_adult_cancer_deaths = pd.Series(
+        deaths.loc[deaths.cause == 'otheradultcancer'].groupby(by=['age_group']).size())
     other_adult_cancer_deaths.index = other_adult_cancer_deaths.index.astype(make_age_grp_types())
     other_adult_cancer_deaths = other_adult_cancer_deaths.sort_index()
 

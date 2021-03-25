@@ -142,7 +142,6 @@ def check_configuration_of_population(sim):
     # for convenience, define a bool for any stage of cancer
     df['oac_status_any_stage'] = df.oac_status != 'none'
 
-
     # get df for alive persons:
     df = df.loc[df.is_alive]
 
@@ -159,12 +158,16 @@ def check_configuration_of_population(sim):
     assert 0 == (df.oac_stage_at_which_treatment_given == 'metastatic').sum()
     assert 0 == (df.loc[~pd.isnull(df.oac_date_treatment)].oac_stage_at_which_treatment_given == 'none').sum()
 
+    # Create a short hand form of the symptom manager module
+    symptom_manager = sim.modules['SymptomManager']
     # check that those with symptom are a subset of those with cancer:
-    assert set(sim.modules['SymptomManager'].who_has('early_other_adult_ca_symptom')).issubset(df.index[df.oac_status != 'none'])
+    assert set(symptom_manager.who_has('early_other_adult_ca_symptom')).issubset(df.index[df.oac_status != 'none'])
 
     # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
     assert set(df.index[~pd.isnull(df.oac_date_diagnosis)]).issubset(df.index[df.oac_status_any_stage])
-    assert set(df.index[~pd.isnull(df.oac_date_diagnosis)]).issubset(sim.modules['SymptomManager'].who_has('early_other_adult_ca_symptom'))
+    assert set(df.index[~pd.isnull(df.oac_date_diagnosis)]).issubset(
+        symptom_manager.who_has('early_other_adult_ca_symptom')
+    )
     assert (df.loc[~pd.isnull(df.oac_date_diagnosis)].oac_date_diagnosis <= sim.date).all()
 
     # check that date diagnosed is consistent with the age of the person (ie. not before they were 15.0
@@ -202,6 +205,7 @@ def test_initial_config_of_pop_zero_prevalence():
     check_configuration_of_population(sim)
     df = sim.population.props
     assert (df.loc[df.is_alive].oac_status == 'none').all()
+
 
 def test_initial_config_of_pop_usual_prevalence():
     """Tests of the the way the population is configured: with usual initial prevalence values"""
