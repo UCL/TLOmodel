@@ -152,33 +152,32 @@ def test_py_calc_w_mask(simulation):
     simulation.date += pd.DateOffset(days=1)
     age_update = AgeUpdateEvent(simulation.modules['Demography'], simulation.modules['Demography'].AGE_RANGE_LOOKUP)
     now = simulation.date
+    one_year = np.timedelta64(1, 'Y')
 
     calc_py_lived_in_last_year = simulation.modules['Demography'].calc_py_lived_in_last_year
 
     # calc two people who are alive and aged 20, with birthdays on today's date and live throughout the period,
     # neither has hypertension
 
-    df.date_of_birth = now - pd.Timedelta(20, 'Y')
+    df.date_of_birth = now - (one_year * 20)
     df.date_of_death = pd.NaT
-    df.is_alive = True
     df['nc_hypertension'] = False
     mask = (df.is_alive & ~df['nc_hypertension'])
     df = df[mask]
     age_update.apply(simulation.population)
-    df_py = calc_py_lived_in_last_year(delta=pd.Timedelta(1, 'Y'), mask=mask)
+    df_py = calc_py_lived_in_last_year(delta=one_year, mask=mask)
     np.testing.assert_almost_equal(2.0, df_py['M'][19])
 
     # calc two people who are alive and aged 20, with birthdays on today's date and live throughout the period,
     # one has hypertension
 
-    df.date_of_birth = now - pd.Timedelta(20, 'Y')
+    df.date_of_birth = now - (one_year * 20)
     df.date_of_death = pd.NaT
-    df.is_alive = True
     df['nc_hypertension'].iloc[0] = True
     mask = (df.is_alive & ~df['nc_hypertension'])
     df = df[mask]
     age_update.apply(simulation.population)
-    df_py = calc_py_lived_in_last_year(delta=pd.Timedelta(1, 'Y'), mask=mask)
+    df_py = calc_py_lived_in_last_year(delta=one_year, mask=mask)
     np.testing.assert_almost_equal(1.0, df_py['M'][19])
 
 
