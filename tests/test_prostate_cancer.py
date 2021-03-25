@@ -48,8 +48,7 @@ def make_simulation_healthsystemdisabled():
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
-    )
+                 prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath))
     sim.seed_rngs(0)
     return sim
 
@@ -90,6 +89,7 @@ def seed_init_prev_in_first_stage_only(sim):
     # Put everyone in first stage ('prostate_confined')
     sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'][0] = 1.0
     return sim
+
 
 """
 init_prop_prostate_ca_stage
@@ -245,7 +245,7 @@ def test_run_sim_from_high_prevalence():
 
 def test_check_progression_through_stages_is_happeneing():
 
-# progression through stages is happening as I have checked - I'm not sure why these tests are failing
+    # progression through stages is happening as I have checked - I'm not sure why these tests are failing
 
     """Put all people into the first stage, let progression happen (with no treatment effect) and check that people end
     up in late stages and some die of this cause.
