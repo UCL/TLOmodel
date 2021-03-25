@@ -262,13 +262,12 @@ def batch_job(ctx, job_id, raw, show_tasks):
             dt = dt.strftime("%d %b %Y %H:%M")
             total += 1
             state_counts[task['state']] += 1
+            running_time = ""
             if task["state"] == "completed":
                 if "execution_info" in task:
                     start_time = dateutil.parser.isoparse(task["execution_info"]["start_time"])
                     end_time = dateutil.parser.isoparse(task["execution_info"]["end_time"])
                     running_time = str(end_time - start_time).split(".")[0]
-            else:
-                running_time = ""
             print(f"{task['id']}\t\t{task['state']}\t\t{dt}\t\t{running_time}")
         print()
         status_line = []
@@ -631,6 +630,7 @@ def add_tasks(batch_service_client, user_identity, job_id,
     :param str job_id: The ID of the job to which to add the tasks.
     :param str image_name: Name of the Docker image to mount for the task.
     :param str container_run_options: Options to pass to Docker to run the image.
+    :param scenario.Scenario scenario: instance of Scenario we're running
     :param str command: Command to run during the taks inside the Docker image.
     """
 
