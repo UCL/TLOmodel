@@ -60,8 +60,9 @@ def scenario_run(scenario_file, draw_only):
 
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
+@click.option("--keep-pool-alive", type=bool, default=False, is_flag=True, hidden=True)
 @click.pass_context
-def batch_submit(ctx, scenario_file):
+def batch_submit(ctx, scenario_file, keep_pool_alive):
     """Submit a scenario to the batch system.
 
     SCENARIO_FILE is path to file containing scenario class.
@@ -183,7 +184,7 @@ def batch_submit(ctx, scenario_file):
     git checkout -b {current_branch} origin/{current_branch}
     git pull
     pip install -r requirements/base.txt
-    tlo batch-run {azure_run_json} {working_dir} {{}} {{}}
+    tlo batch-run --config-file tlo.example.conf {azure_run_json} {working_dir} {{}} {{}}
     cp -r {working_dir}/* {azure_directory}/.
     """
     command = f"/bin/bash -c '{command}'"
@@ -193,7 +194,7 @@ def batch_submit(ctx, scenario_file):
     try:
         # Create the job that will run the tasks.
         create_job(batch_client, vm_size, pool_node_count, job_id,
-                   container_conf, [mount_configuration])
+                   container_conf, [mount_configuration], keep_pool_alive)
 
         # Add the tasks to the job.
         add_tasks(batch_client, user_identity, job_id, image_name,
@@ -564,7 +565,7 @@ def upload_local_file(connection_string, local_file_path, share_name, dest_file_
 
 
 def create_job(batch_service_client, vm_size, pool_node_count, job_id,
-               container_conf, mount_configuration):
+               container_conf, mount_configuration, keep_pool_alive):
     """Creates a job with the specified ID, associated with the specified pool.
 
     :param batch_service_client: A Batch service client.
@@ -603,7 +604,7 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     auto_pool_specification = batch_models.AutoPoolSpecification(
         pool_lifetime_option="job",
         pool=pool,
-        # keep_alive=True,
+        keep_alive=keep_pool_alive,
     )
 
     pool_info = batch_models.PoolInformation(
