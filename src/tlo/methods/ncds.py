@@ -267,14 +267,19 @@ class Ncds(Module):
 
         for event in self.events:
             self.lms_event_onset[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
-                                                             lm_type='event')
+                                                             lm_type='onset')
             self.lms_event_death[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
                                                              lm_type='death')
 
     def build_linear_model(self, condition, interval_between_polls, lm_type):
         """
-        :param_dict: the dict read in from the resourcefile
+        Build a linear model for the risk of onset, removal, or death from a condition, or occurrence or death from
+        an event.
+
+        :param condition: the condition or event to build the linear model for
         :param interval_between_polls: the duration (in months) between the polls
+        :param lm_type: whether or not the lm is for onset, removal, death, or event in order to select the correct
+        parameter set below
         :return: a linear model
         """
 
@@ -282,17 +287,9 @@ class Ncds(Module):
         lms_dict = dict()
 
         # load parameters for correct condition/event
-        p = self.parameters
-        if lm_type == 'onset':
-            p = self.parameters[f'{condition}_onset'].set_index('parameter_name').T.to_dict('records')[0]
-        elif lm_type == 'removal':
-            p = self.parameters[f'{condition}_removal'].set_index('parameter_name').T.to_dict('records')[0]
-        elif lm_type == 'event':
-            p = self.parameters[f'{condition}_onset'].set_index('parameter_name').T.to_dict('records')[0]
-        elif lm_type == 'death':
-            p = self.parameters[f'{condition}_death'].set_index('parameter_name').T.to_dict('records')[0]
+        p = self.parameters[f'{condition}_{lm_type}'].set_index('parameter_name').T.to_dict('records')[0]
 
-        p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
+        p['baseline_annual_probability'] = 1 - math.exp(-interval_between_polls / 12 * p['baseline_annual_probability'])
 
         lms_dict[condition] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -384,7 +381,7 @@ class Ncds(Module):
         df = self.sim.population.props
         any_condition = df.loc[df.is_alive, self.conditions].any(axis=1)
 
-        return any_condition * 0.1
+        return any_condition * 0.0
 
         pass
 
@@ -392,15 +389,15 @@ class Ncds(Module):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
-        raise NotImplementedError
+        pass
 
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 #
-#   These are the events which drive the simulation of the disease. It may be a regular event that updates
-#   the status of all the population of subsections of it at one time. There may also be a set of events
-#   that represent disease events for particular persons.
+#   The regular event that actually changes individuals' condition or event status, occurring every 3 months
+#   and synchronously for all persons.
+#   Individual level events (HSI, death or NCD events) may occur at other times.
 # ---------------------------------------------------------------------------------------------------------
 
 class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -442,16 +439,13 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[idx_acquires_condition, condition] = True
 
             # Add incident cases to the tracker
-            current_incidence_df[condition] = df.loc[idx_acquires_condition, :].groupby('age_range')[condition].count()
+            current_incidence_df[condition] = df.loc[idx_acquires_condition].groupby('age_range').size()
 
             # -------------------------------------------------------------------------------------------
 
             # removal:
             eligible_population = df.is_alive & df[condition]
             loses_condition = self.module.lms_removal[condition].predict(df.loc[eligible_population], rng)
-            if loses_condition.any():  # catch in case no one loses condition
-                idx_loses_condition = loses_condition[loses_condition].index
-                df.loc[idx_loses_condition, condition] = False
 
             # -------------------- DEATH FROM NCD CONDITION ---------------------------------------
             # There is a risk of death for those who have an NCD condition. Death is assumed to happen instantly.
@@ -466,8 +460,9 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
                 for person_id in idx_selected_to_die:
                     self.sim.schedule_event(
-                        InstantaneousDeath(self.module, person_id, f"{condition_name}"), self.sim.date
-                    )
+                        InstantaneousDeath(self.module, person_id, f"{condition_name}"), self.sim.date + DateOffset(
+                            days=self.module.rng.randint((self.sim.date + DateOffset(
+                                months=self.module.parameters.interval_between_polls, days=-1) -self.sim.date).days)))
 
         # add the new incidence numbers to tracker
         self.module.df_incidence_tracker = self.module.df_incidence_tracker.add(current_incidence_df)
@@ -482,7 +477,10 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
                 for person_id in idx_has_event:
                     self.sim.schedule_event(NcdEvent(self.module, person_id, event),
-                                            self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
+                                            self.sim.date + DateOffset(days=self.module.rng.randint(
+                                                (self.sim.date + DateOffset(
+                                                    months=self.module.parameters.interval_between_polls, days=-1) -
+                                                 self.sim.date).days)))
 
             # -------------------- DEATH FROM NCD EVENT ---------------------------------------
             # There is a risk of death for those who have had an NCD event. Death is assumed to happen instantly.
@@ -497,13 +495,14 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
                 for person_id in idx_selected_to_die:
                     self.sim.schedule_event(
-                        InstantaneousDeath(self.module, person_id, f"{event_name}"), self.sim.date
-                    )
+                        InstantaneousDeath(self.module, person_id, f"{event_name}"), self.sim.date + DateOffset(
+                            days=self.module.rng.randint((self.sim.date + DateOffset(
+                                months=self.module.parameters.interval_between_polls, days=-1) -self.sim.date).days)))
 
 
 class NcdEvent(Event, IndividualScopeEventMixin):
     """
-    This is a Stroke event. It has been scheduled to occur by the Ncds_MainPollingEvent.
+    This is an NCD event. It has been scheduled to occur by the Ncds_MainPollingEvent.
     """
 
     def __init__(self, module, person_id, event):
@@ -553,14 +552,15 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.sim.population.props['nc_depression'] = self.sim.population.props['de_depr']
 
         # Convert incidence tracker to dict to pass through logger
-        logger.info(key='incidence_count_by_condition', data=self.module.df_incidence_tracker.to_dict())
+        logger.info(key='incidence_count_by_condition', data=self.module.df_incidence_tracker.to_dict(),
+                    description=f"count of events occurring between each successive poll of logging event every "
+                                f"{self.repeat} months")
         # Reset the counter
         self.module.df_incidence_tracker = copy.deepcopy(self.module.df_incidence_tracker_zeros)
 
         def age_cats(ages_in_years):
-            dem = demography.Demography()
-            AGE_RANGE_CATEGORIES = dem.AGE_RANGE_CATEGORIES
-            AGE_RANGE_LOOKUP = dem.AGE_RANGE_LOOKUP
+            AGE_RANGE_CATEGORIES = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
+            AGE_RANGE_LOOKUP = self.sim.modules['Demography'].AGE_RANGE_LOOKUP
 
             age_cats = pd.Series(
                 pd.Categorical(ages_in_years.map(AGE_RANGE_LOOKUP),
