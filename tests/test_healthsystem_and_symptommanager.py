@@ -626,6 +626,16 @@ def test_use_of_helper_function_get_all_consumables():
     assert False is hsi_event.get_all_consumables(item_codes=item_code_not_available, pkg_codes=pkg_code_is_available)
     assert False is hsi_event.get_all_consumables(item_codes=item_code_is_available, pkg_codes=pkg_code_not_available)
 
+    # Test using footprints:
+    assert True is hsi_event.get_all_consumables(footprint={
+        'Item_Code': {item_code_is_available[0]: 10, item_code_is_available[1]: 20},
+        'Intervention_Package_Code': {pkg_code_is_available[0]: 1, pkg_code_is_available[1]: 10}
+    })
+    assert False is hsi_event.get_all_consumables(footprint={
+        'Item_Code': {item_code_not_available[0]: 1, item_code_is_available[1]: 20},
+        'Intervention_Package_Code': {pkg_code_is_available[0]: 1, pkg_code_is_available[1]: 10}
+    })
+
 
 def test_speeding_up_request_consumables():
 
