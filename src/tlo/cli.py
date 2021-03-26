@@ -50,15 +50,19 @@ def scenario_run(scenario_file, draw_only):
     """
     scenario = load_scenario(scenario_file)
     run_json = scenario.save_draws()
-    if not draw_only:
+    if draw_only:
+        with open(run_json) as f:
+            print(f.read())
+    else:
         runner = SampleRunner(run_json)
         runner.run()
 
 
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
+@click.option("--keep-pool-alive", type=bool, default=False, is_flag=True, hidden=True)
 @click.pass_context
-def batch_submit(ctx, scenario_file):
+def batch_submit(ctx, scenario_file, keep_pool_alive):
     """Submit a scenario to the batch system.
 
     SCENARIO_FILE is path to file containing scenario class.
@@ -175,12 +179,16 @@ def batch_submit(ctx, scenario_file):
         f"{file_share_mount_point}/{azure_directory}"
     azure_run_json = f"{azure_directory}/{os.path.basename(run_json)}"
     working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
+    task_dir = "${{AZ_BATCH_TASK_DIR}}"
+    gzip_pattern_match = "{{txt,log}}"
     command = f"""
     git fetch --all
     git checkout -b {current_branch} origin/{current_branch}
     git pull
     pip install -r requirements/base.txt
-    tlo batch-run {azure_run_json} {working_dir} {{}} {{}}
+    tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
+    cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.
+    gzip {working_dir}/{{draw_number}}/{{run_number}}/*.{gzip_pattern_match}
     cp -r {working_dir}/* {azure_directory}/.
     """
     command = f"/bin/bash -c '{command}'"
@@ -190,7 +198,7 @@ def batch_submit(ctx, scenario_file):
     try:
         # Create the job that will run the tasks.
         create_job(batch_client, vm_size, pool_node_count, job_id,
-                   container_conf, [mount_configuration])
+                   container_conf, [mount_configuration], keep_pool_alive)
 
         # Add the tasks to the job.
         add_tasks(batch_client, user_identity, job_id, image_name,
@@ -259,13 +267,12 @@ def batch_job(ctx, job_id, raw, show_tasks):
             dt = dt.strftime("%d %b %Y %H:%M")
             total += 1
             state_counts[task['state']] += 1
+            running_time = ""
             if task["state"] == "completed":
                 if "execution_info" in task:
                     start_time = dateutil.parser.isoparse(task["execution_info"]["start_time"])
                     end_time = dateutil.parser.isoparse(task["execution_info"]["end_time"])
                     running_time = str(end_time - start_time).split(".")[0]
-            else:
-                running_time = ""
             print(f"{task['id']}\t\t{task['state']}\t\t{dt}\t\t{running_time}")
         print()
         status_line = []
@@ -309,7 +316,7 @@ def batch_list(ctx, status, n, find):
         print_job = False
         if (status is None or
                 ("completed" in status and jad["state"] == "completed") or
-                ("running" in status and jad["state"] == "running")):
+                ("active" in status and jad["state"] == "active")):
             if find is not None:
                 if find in jad["id"]:
                     print_job = True
@@ -454,7 +461,7 @@ def load_scenario(scenario_file):
     """Load the Scenario class from the specified file"""
     scenario_path = Path(scenario_file)
     scenario_class = ScenarioLoader(scenario_path.parent / scenario_path.name).get_scenario()
-    print(f"Loaded {scenario_class.__class__.__name__} from {scenario_path}")
+    print(f"Found class {scenario_class.__class__.__name__} in {scenario_path}")
     return scenario_class
 
 
@@ -562,7 +569,7 @@ def upload_local_file(connection_string, local_file_path, share_name, dest_file_
 
 
 def create_job(batch_service_client, vm_size, pool_node_count, job_id,
-               container_conf, mount_configuration):
+               container_conf, mount_configuration, keep_pool_alive):
     """Creates a job with the specified ID, associated with the specified pool.
 
     :param batch_service_client: A Batch service client.
@@ -601,7 +608,7 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     auto_pool_specification = batch_models.AutoPoolSpecification(
         pool_lifetime_option="job",
         pool=pool,
-        # keep_alive=True,
+        keep_alive=keep_pool_alive,
     )
 
     pool_info = batch_models.PoolInformation(
@@ -628,6 +635,7 @@ def add_tasks(batch_service_client, user_identity, job_id,
     :param str job_id: The ID of the job to which to add the tasks.
     :param str image_name: Name of the Docker image to mount for the task.
     :param str container_run_options: Options to pass to Docker to run the image.
+    :param scenario.Scenario scenario: instance of Scenario we're running
     :param str command: Command to run during the taks inside the Docker image.
     """
 
@@ -644,9 +652,10 @@ def add_tasks(batch_service_client, user_identity, job_id,
 
     for draw_number in range(0, scenario.number_of_draws):
         for run_number in range(0, scenario.runs_per_draw):
+            cmd = command.format(draw_number=draw_number, run_number=run_number)
             task = batch_models.TaskAddParameter(
                 id=f"draw_{draw_number}-run_{run_number}",
-                command_line=command.format(draw_number, run_number),
+                command_line=cmd,
                 container_settings=task_container_settings,
                 user_identity=user_identity,
             )
