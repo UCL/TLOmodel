@@ -184,7 +184,7 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
     git checkout -b {current_branch} origin/{current_branch}
     git pull
     pip install -r requirements/base.txt
-    tlo batch-run --config-file tlo.example.conf {azure_run_json} {working_dir} {{}} {{}}
+    tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{}} {{}}
     cp -r {working_dir}/* {azure_directory}/.
     """
     command = f"/bin/bash -c '{command}'"
