@@ -311,7 +311,7 @@ def batch_list(ctx, status, n, find):
         print_job = False
         if (status is None or
                 ("completed" in status and jad["state"] == "completed") or
-                ("running" in status and jad["state"] == "running")):
+                ("active" in status and jad["state"] == "active")):
             if find is not None:
                 if find in jad["id"]:
                     print_job = True
