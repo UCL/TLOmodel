@@ -184,7 +184,8 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
     git checkout -b {current_branch} origin/{current_branch}
     git pull
     pip install -r requirements/base.txt
-    tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{}} {{}}
+    tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
+    tar -czvf {working_dir}/std_{{draw_number}}_{{run_number}}.tar.gz -C .. stderr.txt stdout.txt
     cp -r {working_dir}/* {azure_directory}/.
     """
     command = f"/bin/bash -c '{command}'"
@@ -650,7 +651,7 @@ def add_tasks(batch_service_client, user_identity, job_id,
         for run_number in range(0, scenario.runs_per_draw):
             task = batch_models.TaskAddParameter(
                 id=f"draw_{draw_number}-run_{run_number}",
-                command_line=command.format(draw_number, run_number),
+                command_line=command.format(draw_number=draw_number, run_number=run_number),
                 container_settings=task_container_settings,
                 user_identity=user_identity,
             )
