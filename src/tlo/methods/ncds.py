@@ -98,7 +98,12 @@ class Ncds(Module):
                                             ),
                   'nc_cancers': Property(Types.BOOL,
                                          'whether or not the person currently has any form of cancer'
-                                         )
+                                         ),
+                  'nc_n_conditions': Property(Types.INT,
+                                           'how many NCD conditions the person currently has'),
+                  'nc_condition_combos': Property(Types.BOOL,
+                                            'whether or not the person currently has a certain combination of conds'
+                                            ),
                   }
 
     # TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank
@@ -462,7 +467,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.schedule_event(
                         InstantaneousDeath(self.module, person_id, f"{condition_name}"), self.sim.date + DateOffset(
                             days=self.module.rng.randint((self.sim.date + DateOffset(
-                                months=self.module.parameters.interval_between_polls, days=-1) -self.sim.date).days)))
+                                months=m.parameters['interval_between_polls'], days=-1) -self.sim.date).days)))
 
         # add the new incidence numbers to tracker
         self.module.df_incidence_tracker = self.module.df_incidence_tracker.add(current_incidence_df)
@@ -479,7 +484,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.schedule_event(NcdEvent(self.module, person_id, event),
                                             self.sim.date + DateOffset(days=self.module.rng.randint(
                                                 (self.sim.date + DateOffset(
-                                                    months=self.module.parameters.interval_between_polls, days=-1) -
+                                                    months=m.parameters['interval_between_polls'], days=-1) -
                                                  self.sim.date).days)))
 
             # -------------------- DEATH FROM NCD EVENT ---------------------------------------
@@ -497,7 +502,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.schedule_event(
                         InstantaneousDeath(self.module, person_id, f"{event_name}"), self.sim.date + DateOffset(
                             days=self.module.rng.randint((self.sim.date + DateOffset(
-                                months=self.module.parameters.interval_between_polls, days=-1) -self.sim.date).days)))
+                                months=m.parameters['interval_between_polls'], days=-1) -self.sim.date).days)))
 
 
 class NcdEvent(Event, IndividualScopeEventMixin):
@@ -568,25 +573,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             )
             return age_cats
 
-        # Output the person-years lived by single year of age in the past year
-        df = self.sim.population.props
-        delta = pd.DateOffset(years=1)
-        for cond in self.module.conditions:
-            # mask is a Series restricting dataframe to individuals who do not have the condition, which is passed to
-            # demography module to calculate person-years lived without the condition
-            mask = (df.is_alive & ~df[f'{cond}'])
-            py = de.Demography.calc_py_lived_in_last_year(self, delta, mask)
-            py['age_range'] = age_cats(py.index)
-            py = py.groupby('age_range').sum()
-            logger.info(key=f'person_years_{cond}', data=py.to_dict())
-
-        # Make some summary statistics for prevalence by age/sex for each condition
-        df = self.sim.population.props
-        # make custom age range cats
-        df_age_cats = df
-        df_age_cats['custom_age_range'] = df_age_cats['age_range']
-        df_age_cats['custom_age_range'] = np.where(df_age_cats['age_years'] >= 80, '80+', df_age_cats['age_range'])
-
+        # Function to prepare a groupby for logging
         def proportion_of_something_in_a_groupby_ready_for_logging(df, something, groupbylist):
             dfx = df.groupby(groupbylist).apply(lambda dft: pd.Series(
                 {'something': dft[something].sum(), 'not_something': (~dft[something]).sum()}))
@@ -601,13 +588,28 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             pr = pr.drop(columns=groupbylist)
             return pr[0].to_dict()
 
+        # Output the person-years lived by single year of age in the past year
+        df = population.props
+        delta = pd.DateOffset(years=1)
+        for cond in self.module.conditions:
+            # mask is a Series restricting dataframe to individuals who do not have the condition, which is passed to
+            # demography module to calculate person-years lived without the condition
+            mask = (df.is_alive & ~df[f'{cond}'])
+            py = de.Demography.calc_py_lived_in_last_year(self, delta, mask)
+            py['age_range'] = age_cats(py.index)
+            py = py.groupby('age_range').sum()
+            logger.info(key=f'person_years_{cond}', data=py.to_dict())
+
+        # Make some summary statistics for prevalence by age/sex for each condition
+        df = population.props
+
         # Prevalence of conditions broken down by sex and age
 
         for condition in self.module.conditions:
             # Strip leading 'nc_' from condition name
             condition_name = condition.replace('nc_', '')
-            prev_age_sex = proportion_of_something_in_a_groupby_ready_for_logging(df_age_cats, f'{condition}',
-                                                                                  ['sex', 'custom_age_range'])
+            prev_age_sex = proportion_of_something_in_a_groupby_ready_for_logging(df, f'{condition}',
+                                                                                  ['sex', 'age_range'])
 
             # Prevalence of conditions broken down by sex and age
             logger.info(
@@ -628,16 +630,15 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
         # Counter for number of co-morbidities
-        df = self.sim.population.props
         mask = df.is_alive
-        df.loc[mask, 'n_conditions'] = df.loc[mask, self.module.extended_conditions].sum(axis=1)
+        df.loc[mask, 'nc_n_conditions'] = df.loc[mask, self.module.extended_conditions].sum(axis=1)
         n_comorbidities_all = pd.DataFrame(index=self.module.age_index,
                                            columns=list(range(0, len(self.module.extended_conditions) + 1)))
-        df = df[['age_range', 'n_conditions']]
+        df = df[['age_range', 'nc_n_conditions']]
 
         for num in range(0, len(self.module.extended_conditions) + 1):
-            col = df.loc[df['n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
-                {'count': x['n_conditions'].count()}))
+            col = df.loc[df['nc_n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
+                {'count': x['nc_n_conditions'].count()}))
             n_comorbidities_all.loc[:, num] = col['count']
 
         prop_comorbidities_all = n_comorbidities_all.div(n_comorbidities_all.sum(axis=1), axis=0)
@@ -648,26 +649,23 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     )
 
         # output combinations of different conditions
-
-        df = self.sim.population.props
+        df = population.props
         df = df[df.is_alive]
-        df['four_age_bins'] = pd.cut(x=df['age_years'], bins=[0, 20, 45, 65, 120], right=False)
-        df['all_adults'] = pd.cut(x=df['age_years'], bins=[0, 20, 120], right=False)
 
         combos = combinations(self.module.extended_conditions, 2)
         condition_combos = list(combos)
 
-        n_combos = pd.DataFrame(index=df['four_age_bins'].value_counts().sort_index().index)
+        n_combos = pd.DataFrame(index=df['age_range'].value_counts().sort_index().index)
 
         for i in range(0, len(condition_combos)):
-            df['condition_combos'] = np.where(df[condition_combos[i][0]] & df[condition_combos[i][1]], True, False)
-            col = df.loc[df['condition_combos']].groupby(['four_age_bins'])['condition_combos'].count()
+            df['nc_condition_combos'] = np.where(df[condition_combos[i][0]] & df[condition_combos[i][1]], True, False)
+            col = df.loc[df['nc_condition_combos']].groupby(['age_range'])['nc_condition_combos'].count()
             n_combos.reset_index()
             n_combos.loc[:, (f'{condition_combos[i][0]}' + '_' + f'{condition_combos[i][1]}')] = col.values
 
         # output proportions of different combinations of conditions
 
-        prop_combos = n_combos.div(df.groupby(['four_age_bins'])['four_age_bins'].count(), axis=0)
+        prop_combos = n_combos.div(df.groupby(['age_range'])['age_range'].count(), axis=0)
         prop_combos.index = prop_combos.index.astype(str)
 
         logger.info(key='prop_combos',
@@ -677,5 +675,5 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # output entire dataframe for logistic regression
 
-        df = self.sim.population.props
+        df = population.props
         df.to_csv('df_for_regression.csv')
