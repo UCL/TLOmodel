@@ -30,13 +30,13 @@ output_files = dict()
 
 def routine_checks(sim):
     """
-    Insert checks here:
+    Basic checks for the module: types of columns, onset and deaths of each condition and event
     """
 
     # Check types of columns
     df = sim.population.props
     orig = sim.population.new_row
-    #assert (df.dtypes == orig.dtypes).all()
+    assert (df.dtypes == orig.dtypes).all()
 
     # check that someone has had onset of each condition
 
@@ -117,9 +117,10 @@ def test_basic_run():
 
 
 def test_basic_run_with_high_incidence_hypertension():
-    # Create and run a short but big population simulation for use in the tests
-    """make one ncd very common and the others non-existent to check basic functions for prevalence and death"""
+    """This sim makes one ncd very common and the others non-existent to check basic functions for prevalence and
+    death"""
 
+    # Create and run a short but big population simulation for use in the tests
     sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
 
     # Register the appropriate modules
@@ -136,25 +137,31 @@ def test_basic_run_with_high_incidence_hypertension():
                  ncds.Ncds(resourcefilepath=resourcefilepath)
                  )
 
-    # Set incidence of hypertension to 1 and incidence of all other conditions to 0
+    # Set incidence of hypertension very high and incidence of all other conditions to 0, set initial prevalence of other
+    # conditions to 0
 
     p = sim.modules['Ncds'].parameters
 
     p['nc_hypertension_onset'].loc[
-        p['nc_hypertension_onset'].parameter_name == "baseline_annual_probability", "value"] = 1
+        p['nc_hypertension_onset'].parameter_name == "baseline_annual_probability", "value"] = 1000
+    p['nc_chronic_ischemic_hd_onset'].loc[
+        p['nc_chronic_ischemic_hd_onset'].parameter_name == "baseline_annual_probability", "value"] = 1000
     p['nc_diabetes_onset'].loc[
         p['nc_diabetes_onset'].parameter_name == "baseline_annual_probability", "value"] = 0
     p['nc_chronic_lower_back_pain_onset'].loc[
         p['nc_chronic_lower_back_pain_onset'].parameter_name == "baseline_annual_probability", "value"] = 0
     p['nc_chronic_kidney_disease_onset'].loc[
         p['nc_chronic_kidney_disease_onset'].parameter_name == "baseline_annual_probability", "value"] = 0
+    p['nc_diabetes_initial_prev']['value'] = 0
+    p['nc_chronic_lower_back_pain_initial_prev']['value'] = 0
+    p['nc_chronic_kidney_disease_initial_prev']['value'] = 0
 
     # Increase RR of heart disease very high if individual has hypertension
     p['nc_chronic_ischemic_hd_onset'].loc[
         p['nc_chronic_ischemic_hd_onset'].parameter_name == "rr_hypertension", "value"] = 1000
 
     sim.make_initial_population(n=2000)
-    sim.simulate(end_date=Date(year=2020, month=1, day=1))
+    sim.simulate(end_date=Date(year=2013, month=1, day=1))
 
     df = sim.population.props
 
@@ -177,11 +184,6 @@ def test_basic_run_with_high_incidence_hypertension():
     df['diff_years'] = df.diff_years / np.timedelta64(1, 'Y')
     df = df[df['diff_years'] >= 20]
     df = df[df.is_alive]
-
-    hypertension_prev = (len(df[df.nc_hypertension & df.is_alive & (df.age_years >= 20)])) / \
-                        (len(df[df.is_alive & (df.age_years >= 20)]))
-    cihd_prev = (len(df[df.nc_chronic_ischemic_hd & df.is_alive & (df.age_years >= 20)])) / \
-                (len(df[df.is_alive & (df.age_years >= 20)]))
 
     # check that everyone has hypertension and CIHD by end
     assert df.loc[df.is_alive & (df.age_years >= 20)].nc_hypertension.all()
