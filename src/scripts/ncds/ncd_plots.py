@@ -1,3 +1,8 @@
+"""
+This file runs the NCDs module and outputs graphs with data for comparison for incidence, prevalence, and deaths.
+It also produces a csv file of prevalence of different co-morbidities.
+"""
+
 import datetime
 from pathlib import Path
 
@@ -8,6 +13,7 @@ import pandas as pd
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    bladder_cancer,
     contraception,
     demography,
     depression,
@@ -18,6 +24,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     ncds,
+    oesophagealcancer,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -52,7 +59,9 @@ def runsim(seed=0):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  ncds.Ncds(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
                  )
 
     sim.make_initial_population(n=popsize)
