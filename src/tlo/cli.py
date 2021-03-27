@@ -27,8 +27,9 @@ JOB_LABEL_PADDING = len("State transition time")
 
 @click.group()
 @click.option("--config-file", type=click.Path(exists=True), default="tlo.conf", hidden=True)
+@click.option("--verbose", "-v", is_flag=True, default=False)
 @click.pass_context
-def cli(ctx, config_file):
+def cli(ctx, config_file, verbose):
     """tlo - the TLOmodel command line utility.
 
     * run scenarios locally
@@ -38,6 +39,7 @@ def cli(ctx, config_file):
     """
     ctx.ensure_object(dict)
     ctx.obj["config_file"] = config_file
+    ctx.obj["verbose"] = verbose
 
 
 @cli.command()
@@ -193,8 +195,6 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
     """
     command = f"/bin/bash -c '{command}'"
 
-    print(">Submitting job and tasks\r", end="")
-
     try:
         # Create the job that will run the tasks.
         create_job(batch_client, vm_size, pool_node_count, job_id,
@@ -207,6 +207,8 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
     except batch_models.BatchErrorException as err:
         print_batch_exception(err)
         raise
+
+    print(f"Job ID: {job_id}")
 
 
 @cli.command(hidden=True)
@@ -525,9 +527,7 @@ def create_file_share(connection_string, share_name):
         share_client.create_share()
 
     except ResourceExistsError as ex:
-        print("-------------------------------------------")
-        print("ResourceExistsError:", ex.message)
-        print("-------------------------------------------")
+        print("ResourceExistsError:", ex.message.splitlines()[0])
 
 
 def create_directory(connection_string, share_name, dir_name):
@@ -543,7 +543,7 @@ def create_directory(connection_string, share_name, dir_name):
         dir_client.create_directory()
 
     except ResourceExistsError as ex:
-        print("ResourceExistsError:", ex.message)
+        print("ResourceExistsError:", ex.message.splitlines()[0])
 
 
 def upload_local_file(connection_string, local_file_path, share_name, dest_file_path):
@@ -581,8 +581,9 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     :type container_conf: `azure.batch.models.ContainerConfiguration`
     :param mount_configuration: Configuration of the images to mount on the nodes.
     :type mount_configuration: `list[azure.batch.models.MountConfiguration]`
+    :param bool keep_pool_alive: auto pool lifetime configuration - use to debug
     """
-    print(f"Creating job [{job_id}]...")
+    print(f"Creating job.")
 
     image_reference = batch_models.ImageReference(
         publisher="microsoft-azure-batch",
@@ -639,7 +640,7 @@ def add_tasks(batch_service_client, user_identity, job_id,
     :param str command: Command to run during the taks inside the Docker image.
     """
 
-    print("Adding {} task(s) to job [{}]...".format(
+    print("Adding {} task(s) to job.".format(
         scenario.number_of_draws * scenario.runs_per_draw,
         job_id))
 
