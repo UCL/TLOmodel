@@ -25,6 +25,7 @@ import pickle
 from pathlib import Path, PurePosixPath
 
 import numpy as np
+import pandas as pd
 
 from tlo import Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -122,6 +123,34 @@ class BaseScenario:
             config["github"] = github_url
         generator.save_config(config, output_path)
         return output_path
+
+    def make_grid(self, ranges: dict) -> pd.DataFrame:
+        """Utility function to flatten an n-dimension grid of parameters for use in scenarios
+
+        Typically used in draw_parameters determining a set of parameters for a draw. This function will check that the
+        number of draws of the scenario is equal to the number of coordinates in the grid.
+
+        Parameter 'ranges' is a dictionary of { string key: iterable }, where iterable can be, for example, an np.array
+        or list. The function will return a DataFrame where each key is a column and each row represents a single
+        coordinate in the grid.
+
+        Usage (in draw_parameters):
+
+            grid = self.make_grid({'p_one': np.linspace(0, 1.0, 5), 'p_two': np.linspace(3.0, 4.0, 2)})
+            return {
+                'Mockitis': {
+                    grid['p_one'][draw_number],
+                    grid['p_two'][draw_number]
+                }
+            }
+        """
+        grid = np.meshgrid(*ranges.values())
+        flattened = [g.ravel() for g in grid]
+        positions = np.stack(flattened, axis=1)
+        grid_lookup = pd.DataFrame(positions, columns=ranges.keys())
+        assert self.number_of_draws == len(grid_lookup), f"{len(grid_lookup)} coordinates in grid, " \
+                                                         f"but number_of_draws is {self.number_of_draws}."
+        return grid_lookup
 
 
 class ScenarioLoader:
