@@ -9,13 +9,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-import tlo.methods.demography as de
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, demography
+from tlo.methods import Metadata, demography as de
 from tlo.methods.demography import InstantaneousDeath
-from tlo.methods.healthsystem import HSI_Event
+# from tlo.methods.healthsystem import HSI_Event
 
 from itertools import combinations
 
@@ -100,10 +99,10 @@ class Ncds(Module):
                                          'whether or not the person currently has any form of cancer'
                                          ),
                   'nc_n_conditions': Property(Types.INT,
-                                           'how many NCD conditions the person currently has'),
+                                              'how many NCD conditions the person currently has'),
                   'nc_condition_combos': Property(Types.BOOL,
-                                            'whether or not the person currently has a certain combination of conds'
-                                            )
+                                                  'whether or not the person currently has a combination of conds'
+                                                  )
                   }
 
     # TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank
@@ -263,17 +262,17 @@ class Ncds(Module):
 
         for condition in self.conditions:
             self.lms_onset[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'],
-                                                           lm_type='onset')
+                                                                lm_type='onset')
             self.lms_removal[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'],
-                                                             lm_type='removal')
+                                                                  lm_type='removal')
             self.lms_death[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'],
-                                                           lm_type='death')
+                                                                lm_type='death')
 
         for event in self.events:
             self.lms_event_onset[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
-                                                             lm_type='onset')
+                                                                  lm_type='onset')
             self.lms_event_death[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
-                                                             lm_type='death')
+                                                                  lm_type='death')
 
     def build_linear_model(self, condition, interval_between_polls, lm_type):
         """
@@ -300,49 +299,49 @@ class Ncds(Module):
             p['baseline_annual_probability'],
             Predictor().when('(sex=="M")', p['rr_male']),
             Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
-                .when('.between(5, 9)', p['rr_5_9'])
-                .when('.between(10, 14)', p['rr_10_14'])
-                .when('.between(15, 19)', p['rr_15_19'])
-                .when('.between(20, 24)', p['rr_20_24'])
-                .when('.between(25, 29)', p['rr_25_29'])
-                .when('.between(30, 34)', p['rr_30_34'])
-                .when('.between(35, 39)', p['rr_35_39'])
-                .when('.between(40, 44)', p['rr_40_44'])
-                .when('.between(45, 49)', p['rr_45_49'])
-                .when('.between(50, 54)', p['rr_50_54'])
-                .when('.between(55, 59)', p['rr_55_59'])
-                .when('.between(60, 64)', p['rr_60_64'])
-                .when('.between(65, 69)', p['rr_65_69'])
-                .when('.between(70, 74)', p['rr_70_74'])
-                .when('.between(75, 79)', p['rr_75_79'])
-                .when('.between(80, 84)', p['rr_80_84'])
-                .when('.between(85, 89)', p['rr_85_89'])
-                .when('.between(90, 94)', p['rr_90_94'])
-                .when('.between(95, 99)', p['rr_95_99'])
-                .otherwise(p['rr_100']),
+            .when('.between(5, 9)', p['rr_5_9'])
+            .when('.between(10, 14)', p['rr_10_14'])
+            .when('.between(15, 19)', p['rr_15_19'])
+            .when('.between(20, 24)', p['rr_20_24'])
+            .when('.between(25, 29)', p['rr_25_29'])
+            .when('.between(30, 34)', p['rr_30_34'])
+            .when('.between(35, 39)', p['rr_35_39'])
+            .when('.between(40, 44)', p['rr_40_44'])
+            .when('.between(45, 49)', p['rr_45_49'])
+            .when('.between(50, 54)', p['rr_50_54'])
+            .when('.between(55, 59)', p['rr_55_59'])
+            .when('.between(60, 64)', p['rr_60_64'])
+            .when('.between(65, 69)', p['rr_65_69'])
+            .when('.between(70, 74)', p['rr_70_74'])
+            .when('.between(75, 79)', p['rr_75_79'])
+            .when('.between(80, 84)', p['rr_80_84'])
+            .when('.between(85, 89)', p['rr_85_89'])
+            .when('.between(90, 94)', p['rr_90_94'])
+            .when('.between(95, 99)', p['rr_95_99'])
+            .otherwise(p['rr_100']),
             Predictor('li_urban').when(True, p['rr_urban']),
             Predictor('li_wealth').when('==1', p['rr_wealth_1'])
-                .when('2', p['rr_wealth_2'])
-                .when('3', p['rr_wealth_3'])
-                .when('4', p['rr_wealth_4'])
-                .when('5', p['rr_wealth_5']),
+            .when('2', p['rr_wealth_2'])
+            .when('3', p['rr_wealth_3'])
+            .when('4', p['rr_wealth_4'])
+            .when('5', p['rr_wealth_5']),
             Predictor('li_bmi').when('==1', p['rr_bmi_1'])
-                .when('2', p['rr_bmi_2'])
-                .when('3', p['rr_bmi_3'])
-                .when('4', p['rr_bmi_4'])
-                .when('5', p['rr_bmi_5']),
+            .when('2', p['rr_bmi_2'])
+            .when('3', p['rr_bmi_3'])
+            .when('4', p['rr_bmi_4'])
+            .when('5', p['rr_bmi_5']),
             Predictor('li_low_ex').when(True, p['rr_low_exercise']),
             Predictor('li_high_salt').when(True, p['rr_high_salt']),
             Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
             Predictor('li_tob').when(True, p['rr_tobacco']),
             Predictor('li_ex_alc').when(True, p['rr_alcohol']),
             Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
-                .when('2', p['rr_marital_status_2'])
-                .when('3', p['rr_marital_status_3']),
+            .when('2', p['rr_marital_status_2'])
+            .when('3', p['rr_marital_status_3']),
             Predictor('li_in_ed').when(True, p['rr_in_education']),
             Predictor('li_ed_lev').when('==1', p['rr_current_education_level_1'])
-                .when('2', p['rr_current_education_level_2'])
-                .when('3', p['rr_current_education_level_3']),
+            .when('2', p['rr_current_education_level_2'])
+            .when('3', p['rr_current_education_level_3']),
             Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
             Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
             Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
@@ -419,7 +418,6 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=interval_between_polls))
         assert isinstance(module, Ncds)
 
-
     def apply(self, population):
         """Apply this event to the population.
 
@@ -458,6 +456,8 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # removal:
             eligible_population = df.is_alive & df[f'nc_{condition}']
             loses_condition = self.module.lms_removal[condition].predict(df.loc[eligible_population], rng)
+            idx_loses_condition = loses_condition[loses_condition].index
+            df.loc[idx_loses_condition, f'nc_{condition}'] = False
 
             # -------------------- DEATH FROM NCD CONDITION ---------------------------------------
             # There is a risk of death for those who have an NCD condition. Death is assumed to happen instantly.
@@ -520,7 +520,7 @@ class NcdEvent(Event, IndividualScopeEventMixin):
 
         # TODO: @britta add functionality to add symptoms
 
-        ## Add the outward symptom to the SymptomManager. This will result in emergency care being sought
+        # Add the outward symptom to the SymptomManager. This will result in emergency care being sought
         # self.sim.modules['SymptomManager'].change_symptom(
         #    person_id=person_id,
         #    disease_module=self.module,
@@ -544,7 +544,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         self.date_last_run = self.sim.date
-        self.AGE_RANGE_LOOKUP = de.Demography.AGE_RANGE_LOOKUP
+        self.AGE_RANGE_LOOKUP = self.sim.modules['Demography'].AGE_RANGE_LOOKUP
         assert isinstance(module, Ncds)
 
     def apply(self, population):
@@ -652,7 +652,8 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_combos = pd.DataFrame(index=df['age_range'].value_counts().sort_index().index)
 
         for i in range(0, len(condition_combos)):
-            df['nc_condition_combos'] = np.where(df[f'nc_{condition_combos[i][0]}'] & df[f'nc_{condition_combos[i][1]}'], True, False)
+            df['nc_condition_combos'] = np.where(
+                df[f'nc_{condition_combos[i][0]}'] & df[f'nc_{condition_combos[i][1]}'], True, False)
             col = df.loc[df['nc_condition_combos']].groupby(['age_range'])['nc_condition_combos'].count()
             n_combos.reset_index()
             n_combos.loc[:, (f'{condition_combos[i][0]}' + '_' + f'{condition_combos[i][1]}')] = col.values
