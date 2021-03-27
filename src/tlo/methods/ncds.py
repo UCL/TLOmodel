@@ -115,14 +115,14 @@ class Ncds(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        self.conditions = list(Ncds.condition_list)
-        self.events = list(Ncds.event_list)
-        self.condition_names = [c.split('_', 1)[1] for c in list(self.conditions)]
+        self.conditions = [c.split('_', 1)[1] for c in list(Ncds.condition_list)]
+        self.events = [c.split('_', 1)[1] for c in list(Ncds.event_list)]
 
         # create list that includes conditions modelled by other modules
-        self.extended_conditions = list(Ncds.condition_list)
-        self.extended_conditions.append("nc_depression")
-        self.extended_condition_names = [c.split('_', 1)[1] for c in list(self.extended_conditions)]
+        self.extended_conditions = [c.split('_', 1)[1] for c in list(Ncds.condition_list)]
+        self.extended_conditions.append("depression")
+
+        self.condition_list = ['nc_' + cond for cond in list(self.extended_conditions)]
 
     def read_parameters(self, data_folder):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
@@ -206,20 +206,20 @@ class Ncds(Module):
             for age_grp in self.age_index:
                 # Select all eligible individuals
                 eligible_pop_m = df.index[
-                    df.is_alive & (df.age_years.between(age_min, age_max)) & (df.sex == 'M') & ~df[f'{condition}']]
+                    df.is_alive & (df.age_years.between(age_min, age_max)) & (df.sex == 'M') & ~df[f'nc_{condition}']]
                 init_prev_m = self.rng.choice([True, False], size=len(eligible_pop_m),
                                               p=[p[f'm_{age_grp}'], 1 - p[f'm_{age_grp}']])
                 eligible_pop_f = df.index[
-                    df.is_alive & (df.age_years.between(age_min, age_max)) & (df.sex == 'F') & ~df[f'{condition}']]
+                    df.is_alive & (df.age_years.between(age_min, age_max)) & (df.sex == 'F') & ~df[f'nc_{condition}']]
                 init_prev_f = self.rng.choice([True, False], size=len(eligible_pop_f),
                                               p=[p[f'f_{age_grp}'], 1 - p[f'f_{age_grp}']])
                 # if any have condition
                 if init_prev_m.sum():
                     condition_idx_m = eligible_pop_m[init_prev_m]
-                    df.loc[condition_idx_m, f'{condition}'] = True
+                    df.loc[condition_idx_m, f'nc_{condition}'] = True
                 if init_prev_f.sum():
                     condition_idx_f = eligible_pop_f[init_prev_f]
-                    df.loc[condition_idx_f, f'{condition}'] = True
+                    df.loc[condition_idx_f, f'nc_{condition}'] = True
                 if age_grp != '100+':
                     age_min = age_min + 5
                     age_max = age_max + 5
@@ -247,8 +247,7 @@ class Ncds(Module):
         # Create Tracker for the number of different types of events
         self.eventsTracker = dict()
         for event in self.events:
-            event_name = event.replace('nc_ever_', '')
-            self.eventsTracker.update({f'{event_name}_events': 0})
+            self.eventsTracker.update({f'{event}_events': 0})
 
         # Build the LinearModel for onset/removal/deaths for each condition
         # Baseline probability of condition onset, removal, and death are annual; in LinearModel, rates are adjusted to
@@ -368,7 +367,7 @@ class Ncds(Module):
         # TODO: @britta - assuming that the all children have nothing when they are born
         df = self.sim.population.props
         for condition in self.conditions:
-            df.at[child_id, condition] = False
+            df.at[child_id, f'nc_{condition}'] = False
 
     def report_daly_values(self):
         """Report DALY values to the HealthBurden module"""
@@ -384,7 +383,7 @@ class Ncds(Module):
         # TODO: @britta add in functionality to fetch daly weight from resourcefile
 
         df = self.sim.population.props
-        any_condition = df.loc[df.is_alive, self.conditions].any(axis=1)
+        any_condition = df.loc[df.is_alive, self.condition_list].any(axis=1)
 
         return any_condition * 0.0
 
@@ -446,10 +445,10 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         for condition in self.module.conditions:
 
             # onset:
-            eligible_population = df.is_alive & ~df[condition]
+            eligible_population = df.is_alive & ~df[f'nc_{condition}']
             acquires_condition = self.module.lms_onset[condition].predict(df.loc[eligible_population], rng)
             idx_acquires_condition = acquires_condition[acquires_condition].index
-            df.loc[idx_acquires_condition, condition] = True
+            df.loc[idx_acquires_condition, f'nc_{condition}'] = True
 
             # Add incident cases to the tracker
             current_incidence_df[condition] = df.loc[idx_acquires_condition].groupby('age_range').size()
@@ -457,22 +456,19 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # -------------------------------------------------------------------------------------------
 
             # removal:
-            eligible_population = df.is_alive & df[condition]
+            eligible_population = df.is_alive & df[f'nc_{condition}']
             loses_condition = self.module.lms_removal[condition].predict(df.loc[eligible_population], rng)
 
             # -------------------- DEATH FROM NCD CONDITION ---------------------------------------
             # There is a risk of death for those who have an NCD condition. Death is assumed to happen instantly.
 
-            # Strip leading 'nc_' from condition name
-            condition_name = condition.replace('nc_', '')
-
-            eligible_population = df.is_alive & df[condition]
+            eligible_population = df.is_alive & df[f'nc_{condition}']
             selected_to_die = self.module.lms_death[condition].predict(df.loc[eligible_population], rng)
             if selected_to_die.any():  # catch in case no one dies
                 idx_selected_to_die = selected_to_die[selected_to_die].index
 
                 for person_id in idx_selected_to_die:
-                    schedule_death_to_occur_before_next_poll(person_id, condition_name,
+                    schedule_death_to_occur_before_next_poll(person_id, condition,
                                                              m.parameters['interval_between_polls'])
 
         # add the new incidence numbers to tracker
@@ -496,16 +492,13 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # -------------------- DEATH FROM NCD EVENT ---------------------------------------
             # There is a risk of death for those who have had an NCD event. Death is assumed to happen instantly.
 
-            # Strip leading 'nc_' from condition name
-            event_name = event.replace('nc_ever_', '')
-
-            eligible_population = df.is_alive & df[event]
+            eligible_population = df.is_alive & df[f'nc_{event}']
             selected_to_die = self.module.lms_event_death[event].predict(df.loc[eligible_population], rng)
             if selected_to_die.any():  # catch in case no one dies
                 idx_selected_to_die = selected_to_die[selected_to_die].index
 
                 for person_id in idx_selected_to_die:
-                    schedule_death_to_occur_before_next_poll(person_id, event_name,
+                    schedule_death_to_occur_before_next_poll(person_id, event.replace('ever_', ''),
                                                              m.parameters['interval_between_polls'])
 
 
@@ -517,14 +510,13 @@ class NcdEvent(Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id, event):
         super().__init__(module, person_id=person_id)
         self.event = event
-        self.event_name = event.replace('nc_ever_', '')
 
     def apply(self, person_id):
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
-        self.module.eventsTracker[f'{self.event_name}_events'] += 1
-        self.sim.population.props.at[person_id, f'{self.event}'] = True
+        self.module.eventsTracker[f'{self.event}_events'] += 1
+        self.sim.population.props.at[person_id, f'nc_{self.event}'] = True
 
         # TODO: @britta add functionality to add symptoms
 
@@ -598,7 +590,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         for cond in self.module.conditions:
             # mask is a Series restricting dataframe to individuals who do not have the condition, which is passed to
             # demography module to calculate person-years lived without the condition
-            mask = (df.is_alive & ~df[f'{cond}'])
+            mask = (df.is_alive & ~df[f'nc_{cond}'])
             py = de.Demography.calc_py_lived_in_last_year(self, delta, mask)
             py['age_range'] = age_cats(py.index)
             py = py.groupby('age_range').sum()
@@ -610,32 +602,30 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Prevalence of conditions broken down by sex and age
 
         for condition in self.module.conditions:
-            # Strip leading 'nc_' from condition name
-            condition_name = condition.replace('nc_', '')
-            prev_age_sex = proportion_of_something_in_a_groupby_ready_for_logging(df, f'{condition}',
+            prev_age_sex = proportion_of_something_in_a_groupby_ready_for_logging(df, f'nc_{condition}',
                                                                                   ['sex', 'age_range'])
 
             # Prevalence of conditions broken down by sex and age
             logger.info(
-                key=f'{condition_name}_prevalence_by_age_and_sex',
+                key=f'{condition}_prevalence_by_age_and_sex',
                 description='current fraction of the population classified as having condition, by sex and age',
                 data={'data': prev_age_sex}
             )
 
             # Prevalence of conditions by adults aged 20 or older
             adult_prevalence = {
-                'prevalence': len(df[df[f'{condition}'] & df.is_alive & (df.age_years >= 20)]) / len(
+                'prevalence': len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)]) / len(
                     df[df.is_alive & (df.age_years >= 20)])}
 
             logger.info(
-                key=f'{condition_name}_prevalence',
+                key=f'{condition}_prevalence',
                 description='current fraction of the adult population classified as having condition',
                 data=adult_prevalence
             )
 
         # Counter for number of co-morbidities
         mask = df.is_alive
-        df.loc[mask, 'nc_n_conditions'] = df.loc[mask, self.module.extended_conditions].sum(axis=1)
+        df.loc[mask, 'nc_n_conditions'] = df.loc[mask, self.module.condition_list].sum(axis=1)
         n_comorbidities_all = pd.DataFrame(index=self.module.age_index,
                                            columns=list(range(0, len(self.module.extended_conditions) + 1)))
         df = df[['age_range', 'nc_n_conditions']]
@@ -662,7 +652,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_combos = pd.DataFrame(index=df['age_range'].value_counts().sort_index().index)
 
         for i in range(0, len(condition_combos)):
-            df['nc_condition_combos'] = np.where(df[condition_combos[i][0]] & df[condition_combos[i][1]], True, False)
+            df['nc_condition_combos'] = np.where(df[f'nc_{condition_combos[i][0]}'] & df[f'nc_{condition_combos[i][1]}'], True, False)
             col = df.loc[df['nc_condition_combos']].groupby(['age_range'])['nc_condition_combos'].count()
             n_combos.reset_index()
             n_combos.loc[:, (f'{condition_combos[i][0]}' + '_' + f'{condition_combos[i][1]}')] = col.values

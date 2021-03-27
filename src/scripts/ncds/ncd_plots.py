@@ -42,8 +42,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2020, 12, 31)
-    popsize = 10000
+    end_date = Date(2012, 12, 31)
+    popsize = 1000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -108,16 +108,14 @@ def convert_output(output_path):
 # ----------------------------------------------- CREATE PREVALENCE PLOTS ----------------------------------------------
 
 for condition in conditions:
-    # Strip leading 'nc_' from condition name
-    condition_name = condition.replace('nc_', '')
     # Capitalize and replace underscores with spaces for title
-    condition_title = condition_name.replace("_", " ")
+    condition_title = condition.replace("_", " ")
     condition_title = condition_title.title()
 
     # Plot prevalence by age and sex for each condition
     prev_condition_age_sex = restore_multi_index(
         transform_output(
-            output['tlo.methods.ncds'][f'{condition_name}_prevalence_by_age_and_sex']
+            output['tlo.methods.ncds'][f'{condition}_prevalence_by_age_and_sex']
         )
     )
 
@@ -155,7 +153,7 @@ for condition in conditions:
     plt.show()
 
     # Plot prevalence among all adults over time for each condition
-    prev_condition_all = output['tlo.methods.ncds'][f'{condition_name}_prevalence']
+    prev_condition_all = output['tlo.methods.ncds'][f'{condition}_prevalence']
     plt.plot(prev_condition_all)
     plt.ylabel(f'Prevalence of {condition_title} Over Time (Ages 20+)')
     plt.xlabel('Year')
@@ -201,8 +199,7 @@ total_pop['total_pop'] = pop_df.groupby('year')['total'].sum()
 total_pop['total_pop_adjustment_factor'] = 100000 / total_pop['total_pop']
 
 for condition in conditions:
-    condition_name = condition.replace('nc_', '')
-    deaths[condition] = deaths_df.loc[deaths_df['cause'].str.startswith(f'{condition_name}')].groupby('year').size()
+    deaths[condition] = deaths_df.loc[deaths_df['cause'].str.startswith(f'{condition}')].groupby('year').size()
     rate_deaths[condition] = deaths[condition] * total_pop['total_pop_adjustment_factor'] # gives rate per 100k pop
 
 # death rates for conditions from GBD
