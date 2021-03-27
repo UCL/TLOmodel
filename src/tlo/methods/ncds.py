@@ -103,7 +103,7 @@ class Ncds(Module):
                                            'how many NCD conditions the person currently has'),
                   'nc_condition_combos': Property(Types.BOOL,
                                             'whether or not the person currently has a certain combination of conds'
-                                            ),
+                                            )
                   }
 
     # TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank

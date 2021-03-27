@@ -42,8 +42,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2011, 12, 31)
-    popsize = 1000
+    end_date = Date(2020, 12, 31)
+    popsize = 10000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -121,42 +121,31 @@ for condition in conditions:
         )
     )
 
-    prev_df = pd.DataFrame(index=["M/0-4", "M/10-14", "M/15-19", "M/20-24", "M/25-29", "M/30-34", "M/35-39",
-                                  "M/40-44", "M/45-49", "M/5-9", "M/50-54", "M/55-59", "M/60-64", "M/65-69", "M/70-74",
-                                  "M/75-79", "M/80+", "F/0-4", "F/10-14", "F/15-19", "F/20-24", "F/25-29",
-                                  "F/30-34", "F/35-39", "F/40-44", "F/45-49", "F/5-9", "F/50-54", "F/55-59", "F/60-64",
-                                  "F/65-69", "F/70-74", "F/75-79", "F/80+"])
-    prev_df['model_prevalence'] = prev_condition_age_sex.iloc[-1].transpose().values
-    new_index = ["M/0-4", "M/5-9", "M/10-14", "M/15-19", "M/20-24", "M/25-29", "M/30-34", "M/35-39",
-                                  "M/40-44", "M/45-49", "M/50-54", "M/55-59", "M/60-64", "M/65-69", "M/70-74",
-                                  "M/75-79", "M/80+", "F/0-4", "F/5-9", "F/10-14", "F/15-19", "F/20-24", "F/25-29",
-                                  "F/30-34", "F/35-39", "F/40-44", "F/45-49", "F/50-54", "F/55-59", "F/60-64",
-                                  "F/65-69", "F/70-74", "F/75-79", "F/80+"]
-    prev_df = prev_df.reindex(new_index)
-
     # need to drop some age cats to match model
     data = sim.modules['Ncds'].parameters[f'{condition}_initial_prev']
-    data = data[~(data["parameter_name"].isin(['m_85-89', 'm_90-94', 'm_95-99', 'm_100+', 'f_85-89', 'f_90-94',
-                                               'f_95-99', 'f_100+']))]
-    prev_df['data_prevalence'] = data['value'].values
-    prev_df['data_lower'] = data['lower'].values
-    prev_df['data_upper'] = data['upper'].values
-    asymptomatic_error = [(prev_df['data_prevalence'].values - prev_df['data_lower'].values),
-                          (prev_df['data_upper'].values-prev_df['data_prevalence'].values)]
+    asymptomatic_error = [(data['value'].values - data['lower'].values),
+                          (data['upper'].values-data['value'].values)]
 
     bar_width = 0.75
     opacity = 0.25
+
+    prev_df = pd.DataFrame(index=["M/0-4", "M/5-9", "M/10-14", "M/15-19", "M/20-24", "M/25-29", "M/30-34", "M/35-39",
+                 "M/40-44", "M/45-49", "M/50-54", "M/55-59", "M/60-64", "M/65-69", "M/70-74",
+                 "M/75-79", "M/80-84", "M/85-89", "M/90-94", "M/95-99", "M/100+", "F/0-4", "F/5-9", "F/10-14", "F/15-19", "F/20-24", "F/25-29",
+                 "F/30-34", "F/35-39", "F/40-44", "F/45-49", "F/50-54", "F/55-59", "F/60-64",
+                 "F/65-69", "F/70-74", "F/75-79", "F/80-84", "F/85-89", "F/90-94", "F/95-99", "F/100+",])
+    prev_df['model_prevalence'] = prev_condition_age_sex.iloc[-1].transpose().values
 
     bar = plt.bar(prev_df.index, prev_df['model_prevalence'], bar_width,
             alpha=opacity,
             color='b',
             label='Model')
-    scatter = plt.scatter(prev_df.index, prev_df['data_prevalence'], s=20,
+    scatter = plt.scatter(data.index, data['value'].values, s=20,
                 alpha=1.0,
                 color='gray',
                 label="Data")
     plt.xticks(rotation=90)
-    plt.errorbar(prev_df.index, prev_df['data_prevalence'], yerr=asymptomatic_error, fmt='o', c='gray')
+    plt.errorbar(data.index, data['value'].values, yerr=asymptomatic_error, fmt='o', c='gray')
     plt.ylabel(f'Proportion With {condition_title}')
     plt.title(f'Prevalence of {condition_title} by Age and Sex')
     plt.legend([bar, scatter], ['Model', 'Data'])
@@ -253,9 +242,8 @@ plt.show()
 
 prop_combos = convert_output(output['tlo.methods.ncds']['prop_combos'])
 last_year = prop_combos.iloc[-1, :].to_frame(name="props")
-age_grps = ['[0, 20)', '[20, 45)', '[45, 65)', '[65, 120)']
-props_by_age = pd.DataFrame(index=last_year.index, columns=age_grps)
-for age_grp in age_grps:
+props_by_age = pd.DataFrame(index=last_year.index, columns=age_range)
+for age_grp in age_range:
     props_by_age[age_grp] = last_year['props'].apply(lambda x: x.get(f'{age_grp}')).dropna()
 
 props_by_age.to_csv('condition_combos.csv')
