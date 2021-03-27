@@ -655,7 +655,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for i in range(0, len(condition_combos)):
             df['nc_condition_combos'] = np.where(
-                df[f'nc_{condition_combos[i][0]}'] & df[f'nc_{condition_combos[i][1]}'], True, False)
+                df.loc[:, f'nc_{condition_combos[i][0]}'] & df.loc[:, f'nc_{condition_combos[i][1]}'], True, False)
             col = df.loc[df['nc_condition_combos']].groupby(['age_range'])['nc_condition_combos'].count()
             n_combos.reset_index()
             n_combos.loc[:, (f'{condition_combos[i][0]}' + '_' + f'{condition_combos[i][1]}')] = col.values
