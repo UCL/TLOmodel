@@ -420,6 +420,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=interval_between_polls))
         assert isinstance(module, Ncds)
 
+
     def apply(self, population):
         """Apply this event to the population.
 
@@ -428,6 +429,13 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         m = self.module
         rng = m.rng
+
+        # Function to schedule deaths on random day throughout polling period
+        def schedule_death_to_occur_before_next_poll(p_id, cond, interval_between_polls):
+            self.sim.schedule_event(
+                InstantaneousDeath(self.module, p_id, cond), self.sim.date + DateOffset(
+                    days=self.module.rng.randint((self.sim.date + DateOffset(
+                        months=interval_between_polls, days=-1) - self.sim.date).days)))
 
         current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
 
@@ -464,10 +472,8 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 idx_selected_to_die = selected_to_die[selected_to_die].index
 
                 for person_id in idx_selected_to_die:
-                    self.sim.schedule_event(
-                        InstantaneousDeath(self.module, person_id, f"{condition_name}"), self.sim.date + DateOffset(
-                            days=self.module.rng.randint((self.sim.date + DateOffset(
-                                months=m.parameters['interval_between_polls'], days=-1) -self.sim.date).days)))
+                    schedule_death_to_occur_before_next_poll(person_id, condition_name,
+                                                             m.parameters['interval_between_polls'])
 
         # add the new incidence numbers to tracker
         self.module.df_incidence_tracker = self.module.df_incidence_tracker.add(current_incidence_df)
@@ -499,10 +505,8 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 idx_selected_to_die = selected_to_die[selected_to_die].index
 
                 for person_id in idx_selected_to_die:
-                    self.sim.schedule_event(
-                        InstantaneousDeath(self.module, person_id, f"{event_name}"), self.sim.date + DateOffset(
-                            days=self.module.rng.randint((self.sim.date + DateOffset(
-                                months=m.parameters['interval_between_polls'], days=-1) -self.sim.date).days)))
+                    schedule_death_to_occur_before_next_poll(person_id, event_name,
+                                                             m.parameters['interval_between_polls'])
 
 
 class NcdEvent(Event, IndividualScopeEventMixin):
