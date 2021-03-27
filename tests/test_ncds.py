@@ -145,7 +145,7 @@ def test_basic_run_with_high_incidence_hypertension():
     p['nc_hypertension_onset'].loc[
         p['nc_hypertension_onset'].parameter_name == "baseline_annual_probability", "value"] = 1000
     p['nc_chronic_ischemic_hd_onset'].loc[
-        p['nc_chronic_ischemic_hd_onset'].parameter_name == "baseline_annual_probability", "value"] = 1000
+        p['nc_chronic_ischemic_hd_onset'].parameter_name == "baseline_annual_probability", "value"] = 10
     p['nc_diabetes_onset'].loc[
         p['nc_diabetes_onset'].parameter_name == "baseline_annual_probability", "value"] = 0
     p['nc_chronic_lower_back_pain_onset'].loc[
