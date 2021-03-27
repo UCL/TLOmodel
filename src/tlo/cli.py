@@ -583,7 +583,7 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     :type mount_configuration: `list[azure.batch.models.MountConfiguration]`
     :param bool keep_pool_alive: auto pool lifetime configuration - use to debug
     """
-    print(f"Creating job.")
+    print("Creating job.")
 
     image_reference = batch_models.ImageReference(
         publisher="microsoft-azure-batch",
@@ -640,9 +640,7 @@ def add_tasks(batch_service_client, user_identity, job_id,
     :param str command: Command to run during the taks inside the Docker image.
     """
 
-    print("Adding {} task(s) to job.".format(
-        scenario.number_of_draws * scenario.runs_per_draw,
-        job_id))
+    print("Adding {} task(s) to job.".format(scenario.number_of_draws * scenario.runs_per_draw))
 
     tasks = list()
 
