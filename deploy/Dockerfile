@@ -16,7 +16,7 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN git lfs install
 
 # Clone the TLOModel repository and move in it
-ARG BRANCH_NAME="mg/scenarios-batch"
+ARG BRANCH_NAME="master"
 RUN git clone --branch "${BRANCH_NAME}" git@github.com:UCL/TLOmodel.git /TLOmodel
 WORKDIR /TLOmodel
 RUN git gc --aggressive

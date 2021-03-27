@@ -76,7 +76,6 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
     scenario_file = Path(scenario_file).as_posix()
 
     current_branch = is_file_clean(scenario_file)
-    # current_branch = "mg/scenarios-batch"
     if current_branch is False:
         return
 
