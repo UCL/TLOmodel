@@ -4,8 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import Date, Simulation
 from tlo.methods import (
     contraception,
     demography,
@@ -15,8 +14,9 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    ncds,
     pregnancy_supervisor,
-    symptommanager, ncds,
+    symptommanager,
 )
 
 try:
@@ -137,8 +137,8 @@ def test_basic_run_with_high_incidence_hypertension():
                  ncds.Ncds(resourcefilepath=resourcefilepath)
                  )
 
-    # Set incidence of hypertension very high and incidence of all other conditions to 0, set initial prevalence of other
-    # conditions to 0
+    # Set incidence of hypertension very high and incidence of all other conditions to 0, set initial prevalence of
+    # other conditions to 0
 
     p = sim.modules['Ncds'].parameters
 
