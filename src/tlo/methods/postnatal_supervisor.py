@@ -367,7 +367,6 @@ class PostnatalSupervisor(Module):
 
             # This equation is used to determine a neonates risk of developing early onset neonatal sepsis
             # (sepsis onsetting prior to day 7) in the first week of life
-            # todo: ask asif r.e. externals
             'early_onset_neonatal_sepsis_week_1': LinearModel.custom(
                 postnatal_supervisor_lm.predict_early_onset_neonatal_sepsis_week_1, parameters=params),
 

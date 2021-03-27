@@ -476,6 +476,8 @@ class NewbornOutcomes(Module):
         # Make the appropriate changes to the data frame
         if birth_weight >= 2500:
             df.at[child_id, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
+            logger.debug(key='message', data=f'Child {child_id} has been born normal birth weight')
+
         elif 1500 <= birth_weight < 2500:
             df.at[child_id, 'nb_low_birth_weight_status'] = 'low_birth_weight'
             logger.debug(key='message', data=f'Child {child_id} has been born low birth weight')
@@ -746,8 +748,9 @@ class NewbornOutcomes(Module):
         mother_id = df.loc[individual_id, 'mother_id']
         if df.at[mother_id, 'la_maternal_death_in_labour']:
             if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
-                                                              (mni[mother_id, 'twin_count'] == 2)):
-                del mni[mother_id]
+                                                              (mni[mother_id]['twin_count'] == 2)):
+                if mother_id in mni:
+                    del mni[mother_id]
 
         del nci[individual_id]
 
@@ -1171,7 +1174,11 @@ class NewbornOutcomes(Module):
 
             # Check these variables are not unassigned
             assert nci[child_id]['delivery_setting'] != 'none'
-
+            if nci[child_id]['ga_at_birth'] == 0:
+                print(child_id)
+                print(mother_id)
+                print(df.at[mother_id, 'ps_gestational_age_in_weeks'])
+                x = 'y'
             # TODO: AT - this crashes when ga_at_birth doesnt equal 0 and I cant work out why...
             # assert nci[child_id]['ga_at_birth'] != 0
 

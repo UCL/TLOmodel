@@ -653,11 +653,12 @@ class PregnancySupervisor(Module):
 
                 # We assume that any woman who experiences an acute event receives the whole weight for that daly
                 monthly_daly[person] += p[f'{complication}']
-                mni[person][f'{complication}_onset'] = pd.NaT
 
                 # Ensure some weight is assigned
                 if mni[person][f'{complication}_onset'] != self.sim.date:
-                    assert 1 > monthly_daly[person] > 0
+                    assert monthly_daly[person] > 0
+
+                mni[person][f'{complication}_onset'] = pd.NaT
 
         # Next we define a function that calculates disability associated with 'chronic' complications of pregnancy
         def chronic_daly_calculations(person, complication):
@@ -734,6 +735,9 @@ class PregnancySupervisor(Module):
                                      'severe_anaemia', 'mild_anaemia_pp', 'moderate_anaemia_pp', 'severe_anaemia_pp',
                                      'vesicovaginal_fistula', 'rectovaginal_fistula']:
                     chronic_daly_calculations(complication=complication, person=person)
+
+                if monthly_daly[person] > 1:
+                    monthly_daly[person] = 1
 
                 if mni[person]['delete_mni']:
                     del mni[person]
@@ -1233,11 +1237,14 @@ class PregnancySupervisor(Module):
         # Store onset to calculate daly weights
         severe_women = (df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index, 'ps_antepartum_haemorrhage']
                         == 'severe')
-        severe_women.index.to_series().apply(self.store_dalys_in_mni, mni_variable='severe_aph_onset')
+
+        severe_women.loc[severe_women].index.to_series().apply(self.store_dalys_in_mni, mni_variable='severe_aph_onset')
 
         non_severe_women = (df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index,
                                    'ps_antepartum_haemorrhage'] != 'severe')
-        non_severe_women.index.to_series().apply(self.store_dalys_in_mni, mni_variable='mild_mod_aph_onset')
+
+        non_severe_women.loc[non_severe_women].index.to_series().apply(self.store_dalys_in_mni,
+                                                                       mni_variable='mild_mod_aph_onset')
 
         if not antepartum_haemorrhage.loc[antepartum_haemorrhage].empty:
             logger.debug(key='message', data=f'The following women are experiencing an antepartum haemorrhage,'
