@@ -6,8 +6,8 @@ Scenarios configure TLOmodel simulations. Simulations are configured as subclass
 ``tlo.scenario.BaseScenario``. The ``tlo`` command-line tool is used to submit simulation scenarios to run on
 Azure Batch.
 
-Prerequisites
-=============
+Setup
+=====
 
 1. Install Azure CLI `<https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>`_
 2. Checkout & pull TLOmodel master branch
@@ -46,7 +46,10 @@ Creating a Scenario
             self.runs_per_draw = 2
 
         def log_configuration(self):
-            return {'filename': 'my_test_scenario', 'directory': './outputs', 'custom_levels': {'*': logging.INFO}}
+            return {
+                'filename': 'my_test_scenario', 'directory': './outputs',
+                'custom_levels': {'*': logging.INFO}
+            }
 
         def modules(self):
             return [

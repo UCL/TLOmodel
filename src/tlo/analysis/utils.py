@@ -264,7 +264,7 @@ def get_scenario_info(scenario_output_dir: Path) -> dict:
 
 
 def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> dict:
-    """Utility function to create a dict contaning all the logs from the specified run within a batch set."""
+    """Utility function to create a dict contaning all the logs from the specified run within a batch set"""
     folder = results_folder / str(draw) / str(run)
     pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
     if name is not None:
@@ -280,11 +280,12 @@ def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> d
 
 
 def extract_params(results_folder: Path) -> pd.DataFrame:
-    """Utility function to unpack results to produce a dateframe that summarizes that parameters that change across
-    the draws. It produces a dataframe with index of draw and columns of each parameters that is specified to be varied
-    in the batch.
-    NB. This does the extraction from run 0 in each draw, under the assumption that the over-written parameters are the
-    same in each run."""
+    """Utility function to get overridden parameters from scenario runs
+
+    Returns dateframe summarizing parameters that change across the draws. It produces a dataframe with index of draw
+    and columns of each parameters that is specified to be varied in the batch. NB. This does the extraction from run 0
+    in each draw, under the assumption that the over-written parameters are the same in each run.
+    """
 
     # Get the paths for the draws
     draws = [f for f in os.scandir(results_folder) if f.is_dir()]
@@ -309,9 +310,12 @@ def extract_params(results_folder: Path) -> pd.DataFrame:
 
 
 def extract_results(results_folder: Path, module: str, key: str, column: str, index: str = None) -> pd.DataFrame:
-    """Utility function to unpack results to produce a dataframe that summaries one series from the log, with column
-    multi-index for the draw/run. If an 'index' component of the log_element is provided, the dataframe uses that index
-    (but note that this will only work if the index is the same in each run)."""
+    """Utility function to unpack results
+
+    Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an 'index'
+    component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
+    index is the same in each run).
+    """
 
     if index is not None:
         # extract the index from the first log, and use this ensure that all other are exactly the same.
@@ -346,8 +350,10 @@ def extract_results(results_folder: Path, module: str, key: str, column: str, in
 
 
 def summarize(results: pd.DataFrame, only_mean: bool = False) -> pd.DataFrame:
-    """Utility function to compute summary statistics that finds mean value and 95% interval across the runs for each
-    draw."""
+    """Utility function to compute summary statistics
+
+    Finds mean value and 95% interval across the runs for each draw.
+    """
     summary = pd.DataFrame(
         columns=pd.MultiIndex.from_product(
             [
@@ -373,12 +379,11 @@ def summarize(results: pd.DataFrame, only_mean: bool = False) -> pd.DataFrame:
 
 def get_grid(params: pd.DataFrame, res: pd.Series):
     """Utility function to create the arrays needed to plot a heatmap.
-    params:
-        This is the dataframe of parameters with index=draw (made using `extract_params()`).
-    In res:
-        results of interest with index=draw (can be made using `extract_params()`)
-    """
 
+    :param pd.DataFrame params: the dataframe of parameters with index=draw (made using `extract_params()`).
+    :param pd.Series res: results of interest with index=draw (can be made using `extract_params()`)
+    :returns: grid as dictionary
+    """
     res = pd.concat([params.pivot(columns='module_param', values='value'), res], axis=1)
     piv = res.pivot_table(index=res.columns[0], columns=res.columns[1], values=res.columns[2])
 
