@@ -35,13 +35,18 @@ Creating a Scenario
 2. Create a file ``src/scripts/<your directory>/<a unique filename>.py``. The filename will serve as the job identifier.
 3. In the file, create a subclass of BaseScenario. e.g.::
 
+    from tlo import Date
+    from tlo import logging
+    from tlo.scenario import BaseScenario
+    from tlo.methods import demography, enhanced_lifestyle
+
     class MyTestScenario(BaseScenario):
         def __init__(self):
             super().__init__()
             self.seed = 12
             self.start_date = Date(2010, 1, 1)
-            self.end_date = Date(2011, 1, 1)
-            self.pop_size = 200
+            self.end_date = Date(2020, 1, 1)
+            self.pop_size = 1000
             self.number_of_draws = 2
             self.runs_per_draw = 2
 
@@ -71,6 +76,10 @@ Creating a Scenario
 5. Test the scenario starts running without problems::
 
     tlo scenario-run src/scripts/dev/tlo_q1_demo.py
+
+   or execute a single run::
+
+        tlo scenario-run src/scripts/dev/tlo_q1_demo.py --draw 1 0
 
 6. Commit the scenario file and push to Github
 

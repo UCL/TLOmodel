@@ -45,18 +45,24 @@ def cli(ctx, config_file, verbose):
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
 @click.option("--draw-only", is_flag=True, help="Only generate draws; do not run the simulation")
-def scenario_run(scenario_file, draw_only):
+@click.option("--draw", "-d", nargs=2, type=int)
+def scenario_run(scenario_file, draw_only, draw: tuple):
     """Run the specified scenario locally.
 
     SCENARIO_FILE is path to file containing a scenario class
     """
+    print(draw)
     scenario = load_scenario(scenario_file)
     run_json = scenario.save_draws()
     if draw_only:
         with open(run_json) as f:
             print(f.read())
+        return
+
+    runner = SampleRunner(run_json)
+    if draw:
+        runner.run_sample_by_number(output_directory=None, draw_number=draw[0], sample_number=draw[1])
     else:
-        runner = SampleRunner(run_json)
         runner.run()
 
 

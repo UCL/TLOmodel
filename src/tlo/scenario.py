@@ -52,6 +52,7 @@ In summary:
 * A *run* is the result of running the simulation using a specific configuration. Each draw would run one or more
   times. Each run for the same draw would have identical configuration except the simulation seed.
 """
+import datetime
 import json
 import pickle
 from pathlib import Path, PurePosixPath
@@ -326,9 +327,19 @@ class SampleRunner:
                     pickle.dump(output, f)
 
     def run(self):
-        for draw in self.run_config["draws"]:
-            for sample in self.get_samples_for_draw(draw):
-                self.run_sample(sample)
+        # this method will execute all runs of each draw, so we save output in directory
+        log_config = self.scenario.log_configuration()
+        root_dir = draw_dir = None
+        if log_config["filename"]:  # i.e. save output?
+            timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
+            root_dir = Path(log_config["directory"]) / (Path(log_config["filename"]).stem + "-" + timestamp)
+
+        for draw in range(0, self.scenario.number_of_draws):
+            for sample in range(0, self.runs_per_draw):
+                if root_dir is not None:
+                    draw_dir = root_dir / f"{draw}/{sample}"
+                    draw_dir.mkdir(parents=True, exist_ok=True)
+                self.run_sample_by_number(draw_dir, draw, sample)
 
     @staticmethod
     def override_parameters(sim, overridden_params):
