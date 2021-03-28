@@ -17,7 +17,6 @@ Setup
 6. ``pip install -r requirements\base.txt``
 7. ``pip install -e .``
 8. Extra steps on Windows
-    * Open Command Prompt *as administrator*
     * Run the following command, changing the path to where the Conda environment is installed::
 
         python C:\Users\Public\miniconda3\envs\tlo\Scripts\pywin32_postinstall.py -install
