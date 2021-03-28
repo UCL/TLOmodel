@@ -4,21 +4,53 @@ Scenarios are used to specify, configure and run a single or set of TLOmodel sim
 by subclassing BaseScenario and specifying the scenario options therein. You can override parameters of the module
 in various ways in the scenario. See the BaseScenario class for more information.
 
-The subclass of BaseScenario is then used to create "draws", which can be considered a fully-specified configuration
+The subclass of BaseScenario is then used to create *draws*, which can be considered a fully-specified configuration
 of the scenario, or a parameter draw.
 
-Each "draw" is "run" one or more times - run is a single execution of the TLOmodule simulation. Each run of a draw has
+Each draw is *run* one or more times - run is a single execution of the simulation. Each run of a draw has
 a different seed but is otherwise identical. Each run has its own simulation seed, introducing randomness into each
 simulation. A collection of runs for a given draw describes the random variation in the simulation.
 
+A simple example of a subclass of BaseScenario::
+
+    class MyTestScenario(BaseScenario):
+        def __init__(self):
+            super().__init__()
+            self.seed = 12
+            self.start_date = Date(2010, 1, 1)
+            self.end_date = Date(2011, 1, 1)
+            self.pop_size = 200
+            self.number_of_draws = 2
+            self.runs_per_draw = 2
+
+        def log_configuration(self):
+            return {
+                'filename': 'my_test_scenario',
+                'directory': './outputs',
+                'custom_levels': {'*': logging.INFO}
+            }
+
+        def modules(self):
+            return [
+                demography.Demography(resourcefilepath=self.resources),
+                enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
+            ]
+
+        def draw_parameters(self, draw_number, rng):
+            return {
+                'Lifestyle': {
+                    'init_p_urban': rng.randint(10, 20) / 100.0,
+                }
+            }
+
 In summary:
 
-* A _scenario_ specifies the configuration of the TLOmodule simulation. The simulation start and end dates, initial
-population size, logging setup and registered modules. Optionally, you can also override parameters of modules.
-* A _draw_ is a realisation of a scenario configuration. A scenario can have one or more draws. Draws are uninteresting
-unless you are overriding parameters. If you do not override any model parameters, you would only have one draw.
-* A _run_ is the result of running the simulation using a specific configuration. Each draw would run one or more
-times. Each run for the same draw would have identical configuration except the simulation seed.
+* A *scenario* specifies the configuration of the simulation. The simulation start and end dates, initial population
+  size, logging setup and registered modules. Optionally, you can also override parameters of modules.
+* A *draw* is a realisation of a scenario configuration. A scenario can have one or more draws. Draws are uninteresting
+  unless you are overriding parameters. If you do not override any model parameters, you would only have one draw.
+* A *run* is the result of running the simulation using a specific configuration. Each draw would run one or more
+  times. Each run for the same draw would have identical configuration except the simulation seed.
 """
 import json
 import pickle
@@ -39,13 +71,12 @@ MAX_INT = 2**31 - 1
 class BaseScenario:
     """An abstract base class for creating Scenarios
 
-    A scenario is a configuration of a TLOmodule simulation. Users should create a subclass of this class and implement
-    the following methods:
+    A scenario is a configuration of a simulation. Users should subclass this class and implement the following methods:
 
-    * __init__ - to set scenario attributes
-    * log_configuration - to configure filename, directory and logging levels for simulation output
-    * modules - to list disease, intervention and health system modules for the simulation
-    * draw_parameters - override parameters for draws from the scenario
+    * ``__init__`` - to set scenario attributes
+    * ``log_configuration`` - to configure filename, directory and logging levels for simulation output
+    * ``modules`` - to list disease, intervention and health system modules for the simulation
+    * ``draw_parameters`` - override parameters for draws from the scenario
     """
     def __init__(self):
         """Constructor for BaseScenario
@@ -58,55 +89,62 @@ class BaseScenario:
         self.scenario_path = None
 
     def log_configuration(self, **kwargs):
-        """Implementations return a dictionary configuring logging. Example:
+        """Implementation must return a dictionary configuring logging.
 
-        return {
-            'filename': 'test_scenario',
-            'directory': './outputs',
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO
+        Example::
+
+            return {
+                'filename': 'test_scenario',
+                'directory': './outputs',
+                'custom_levels': {
+                    '*': logging.WARNING,
+                    'tlo.methods.demography': logging.INFO
+                }
             }
-        }
         """
         raise NotImplementedError
 
     def modules(self):
-        """Implementations return a list of instances of module to register in the simulation. Example:
+        """Implementation must return a list of instances of TLOmodel modules to register in the simulation.
 
-        return [
-            demography.Demography(resourcefilepath=self.resources),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True, service_availability=['*']),
-            ...
-        ]
+        Example::
+
+            return [
+                demography.Demography(resourcefilepath=self.resources),
+                enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
+                healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True, service_availability=['*']),
+                ...
+            ]
         """
         raise NotImplementedError
 
     def draw_parameters(self, draw_number, rng):
-        """Implementations return a dictionary of parameters to override for each draw.
+        """Implementation must return a dictionary of parameters to override for each draw.
 
         The overridden parameters must be scalar (i.e. float, integer or string) as the following examples demonstrate.
-        The argument `draw_number` and a random number generator are available, if required.
+        The argument ``draw_number`` and a random number generator are available, if required.
 
-        * Change a parameter to a fixed value: { 'Labour': { 'average_age_at_pregnancy': 25 } }
-        * Sample a value from a distribution: {'Lifestyle': { 'init_p_urban': rng.randint(10, 20) / 100.0 } }
-        * Set a value based on the draw number: { 'Labour': { 'average_age_at_pregnancy': [25, 30, 35][draw_number] } }
+        * Change a parameter to a fixed value: ``{'Labour': {'average_age_at_pregnancy': 25}}``
+        * Sample a value from a distribution: ``{'Lifestyle': {'init_p_urban': rng.randint(10, 20) / 100.0}}``
+        * Set a value based on the draw number: ``{'Labour': {'average_age_at_pregnancy': [25, 30, 35][draw_number]}}``
 
-        Implementing this method in a subclass is optional. If no parameters are to be overridden, returns None. If no
-        parameters are overridden, only one draw of the scenario is required.
+        Implementation of this method in a subclass is optional. If no parameters are to be overridden,
+        returns ``None``. If no parameters are overridden, only one draw of the scenario is required.
 
-        A full example for a scenario with 10 draws:
+        A full example for a scenario with 10 draws::
 
-        return {
-            'Lifestyle': {
-                'init_p_urban': rng.randint(10, 20) / 100.0,
-            },
-            'Labour': {
-                'average_age_at_pregnancy': -10 * rng.exponential(0.1),
-                'some_other_parameter': np.arange(0.1, 1.1, 0.1)[draw_number]
-            },
-        }
+            return {
+                'Lifestyle': {
+                    'init_p_urban': rng.randint(10, 20) / 100.0,
+                },
+                'Labour': {
+                    'average_age_at_pregnancy': -10 * rng.exponential(0.1),
+                    'some_other_parameter': np.arange(0.1, 1.1, 0.1)[draw_number]
+                },
+            }
+
+        :param int draw_number: the specific draw number currently being executed by the simulation engine
+        :param numpy.random.RandomState rng: the scenario's random number generator for sampling from distributions
         """
         return None
 
@@ -125,16 +163,16 @@ class BaseScenario:
         return output_path
 
     def make_grid(self, ranges: dict) -> pd.DataFrame:
-        """Utility function to flatten an n-dimension grid of parameters for use in scenarios
+        """Utility method to flatten an n-dimension grid of parameters for use in scenarios
 
         Typically used in draw_parameters determining a set of parameters for a draw. This function will check that the
         number of draws of the scenario is equal to the number of coordinates in the grid.
 
-        Parameter 'ranges' is a dictionary of { string key: iterable }, where iterable can be, for example, an np.array
-        or list. The function will return a DataFrame where each key is a column and each row represents a single
-        coordinate in the grid.
+        Parameter ``ranges`` is a dictionary of { string key: iterable }, where iterable can be, for example, an
+        np.array or list. The function will return a DataFrame where each key is a column and each row represents a
+        single coordinate in the grid.
 
-        Usage (in draw_parameters):
+        Usage (in ``draw_parameters``)::
 
             grid = self.make_grid({'p_one': np.linspace(0, 1.0, 5), 'p_two': np.linspace(3.0, 4.0, 2)})
             return {
@@ -143,6 +181,8 @@ class BaseScenario:
                     grid['p_two'][draw_number]
                 }
             }
+
+        :param dict ranges: each item of dict represents points across a single dimension
         """
         grid = np.meshgrid(*ranges.values())
         flattened = [g.ravel() for g in grid]
