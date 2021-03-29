@@ -26,9 +26,8 @@ class Simplifiedbirths(Module):
             Types.REAL, 'minimum age of individuals who are at risk of becoming pregnant'),
         'max_age': Parameter(
             Types.REAL, 'maximum age of individuals who are at risk of becoming pregnant'),
-        'days_until_delivery': Parameter(
-            Types.DATE, 'number of days a pregnant woman has to go through until delivery'
-                        ' (assuming term delivery (37-41 weeks)), '),
+        'date_of_delivery': Parameter(
+            Types.DATE, 'set date for a pregnant woman to deliver'),
         'prob_breastfeeding_type': Parameter(
             Types.LIST, 'probabilities for breastfeeding status: none, non_exclusive, exclusive')
 
@@ -59,7 +58,7 @@ class Simplifiedbirths(Module):
         param['pregnancy_prob'] = 0.01
         param['min_age'] = 15
         param['max_age'] = 49
-        param['days_until_delivery'] = pd.DateOffset(months=9)
+        param['date_of_delivery'] = pd.DateOffset(months=9)
         self.parameters['prob_breastfeeding_type'] = [0.101, 0.289, 0.61]
 
     def initialise_population(self, population):
@@ -108,7 +107,7 @@ class SimplifiedPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
         self.age_high = module.parameters['max_age']  # max preferred age
         self.pregnancy_prob = module.parameters['pregnancy_prob']  # probability of women to get pregnant in
         # a particular month
-        self.days_until_delivery = module.parameters['days_until_delivery']  # number of days until delivery
+        self.date_of_delivery = module.parameters['date_of_delivery']  # number of days until delivery
         # (term delivery)
 
     def apply(self, population):
@@ -126,7 +125,7 @@ class SimplifiedPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
         # updating properties for selected women
         df.loc[pregnant_women_ids, 'is_pregnant'] = True
         df.loc[pregnant_women_ids, 'date_of_last_pregnancy'] = self.sim.date
-        df.loc[pregnant_women_ids, 'si_date_of_delivery'] = self.sim.date + self.days_until_delivery
+        df.loc[pregnant_women_ids, 'si_date_of_delivery'] = self.sim.date + self.date_of_delivery
 
 
 class SimplifiedBirthsEvent(RegularEvent, PopulationScopeEventMixin):
@@ -139,7 +138,7 @@ class SimplifiedBirthsEvent(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props  # get the population dataframe
 
         females_to_give_birth = df.loc[(df.sex == 'F') & df.is_alive & df.is_pregnant & (df.si_date_of_delivery
-                                                                                         == self.sim.date)]
+                                                                                         <= self.sim.date)]
         if len(females_to_give_birth) > 0:
             selected_females = females_to_give_birth.index
 
@@ -148,5 +147,6 @@ class SimplifiedBirthsEvent(RegularEvent, PopulationScopeEventMixin):
                              f' on | {self.sim.date}')
                 self.sim.do_birth(mother_id)
                 df.loc[mother_id, 'is_pregnant'] = False
+                df.loc[mother_id, 'si_date_of_delivery'] = pd.NaT
         else:
             pass
