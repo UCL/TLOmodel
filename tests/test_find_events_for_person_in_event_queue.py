@@ -48,6 +48,7 @@ def test_can_look_at_future_events():
                  )
 
     sim.make_initial_population(n=10)
+    sim.modules['HealthSystem'].set_service_availability()
 
     # check can look at future events in the sim.event_queue and HSI_EVENT_QUEUE:
     person_id = 0  # select a random person
