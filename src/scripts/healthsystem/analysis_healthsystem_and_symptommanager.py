@@ -11,11 +11,11 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    mockitis,
-    symptommanager,
     labour,
+    mockitis,
     pregnancy_supervisor,
-    rti
+    rti,
+    symptommanager,
 )
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]

@@ -3,13 +3,15 @@ Road traffic injury module.
 
 """
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
-from tlo.methods import demography, Metadata
-from tlo.methods.healthsystem import HSI_Event
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.methods import Metadata, demography
+from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 # ---------------------------------------------------------------------------------------------------------
@@ -2910,8 +2912,8 @@ class RTI(Module):
                             probabilities = p['daly_dist_code_133']
                             detail_add_on = ['a', 'b', 'c', 'd']
                             detail = self.rng.choice(detail_add_on, p=probabilities)
-                        elif self.head_prob_TBI_AIS3 < severity <= self.head_prob_TBI_AIS3 + \
-                            self.head_prob_TBI_AIS4:
+                        elif (self.head_prob_TBI_AIS3 < severity <= self.head_prob_TBI_AIS3 +
+                              self.head_prob_TBI_AIS4):
                             # Moderate TBI, store the injury severity in injais
                             injais.append(4)
                             # multiple TBIs have an AIS score of 4, but have different daly weights, determine
@@ -2950,14 +2952,13 @@ class RTI(Module):
                             # Mandible and Zygomatic fractures, AIS score of 2 store severity information
                             injais.append(2)
                     # Ask if it will be a soft tissue injury
-                    elif self.face_prob_skin_wound + self.face_prob_fracture < cat < self.face_prob_skin_wound \
-                        + self.face_prob_fracture + self.face_prob_soft_tissue_injury:
+                    elif (self.face_prob_skin_wound + self.face_prob_fracture < cat < self.face_prob_skin_wound +
+                          self.face_prob_fracture + self.face_prob_soft_tissue_injury):
                         # soft tissue injury, store the injury category and injury information
                         injcat.append(int(4))
                         injais.append(1)
                     # If none of the above the injury is an eye injury
-                    elif self.face_prob_skin_wound + self.face_prob_fracture + \
-                        self.face_prob_soft_tissue_injury < cat:
+                    elif self.face_prob_skin_wound + self.face_prob_fracture + self.face_prob_soft_tissue_injury < cat:
                         # eye injury, store the injury category and injury information
                         injcat.append(int(9))
                         injais.append(1)
@@ -2975,8 +2976,8 @@ class RTI(Module):
                             injcat.append(int(11))
                             injais.append(3)
                     # determine if the injury is a soft tissue injury
-                    elif self.neck_prob_skin_wound < cat <= self.neck_prob_skin_wound + \
-                        self.neck_prob_soft_tissue_injury:
+                    elif (self.neck_prob_skin_wound < cat <= self.neck_prob_skin_wound +
+                          self.neck_prob_soft_tissue_injury):
                         # Soft tissue injuries of the neck, store the injury category information
                         injcat.append(int(4))
                         # decide how severe the injury is
@@ -2987,9 +2988,9 @@ class RTI(Module):
                             # Pharynx contusion, AIS score of 2, store information in injais
                             injais.append(3)
                     # determine if the injury is internal bleeding
-                    elif self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury < cat <= \
-                        self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury + \
-                        self.neck_prob_internal_bleeding:
+                    elif (self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury < cat <=
+                          self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury +
+                          self.neck_prob_internal_bleeding):
                         # Internal bleeding, so store injury category in injcat
                         injcat.append(int(6))
                         # Decide how severe the injury will be
@@ -3007,8 +3008,8 @@ class RTI(Module):
                             # have AIS score of 3 so store severity information in injais
                             injais.append(3)
                     # Determine if the injury is a dislocation
-                    elif self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury + \
-                        self.neck_prob_internal_bleeding < cat:
+                    elif (self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury +
+                          self.neck_prob_internal_bleeding < cat):
                         # Dislocation, store the category information in injcat
                         injcat.append(int(2))
                         # Decide how severe the injury will be
@@ -3032,8 +3033,8 @@ class RTI(Module):
                             injcat.append(int(11))
                             injais.append(3)
                     # Decide if the injury is internal bleeding
-                    elif self.thorax_prob_skin_wound < cat <= self.thorax_prob_skin_wound + \
-                        self.thorax_prob_internal_bleeding:
+                    elif (self.thorax_prob_skin_wound < cat <= self.thorax_prob_skin_wound +
+                          self.thorax_prob_internal_bleeding):
                         # Internal Bleeding, so update the injury category information
                         injcat.append(int(6))
                         # Decide how severe the injury will be
@@ -3044,9 +3045,9 @@ class RTI(Module):
                             # Haemothorax has an AIS score of 3, update injais
                             injais.append(3)
                     # Decide if the injury is an internal organ injury
-                    elif self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding < cat <= \
-                        self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
-                        self.thorax_prob_internal_organ_injury:
+                    elif (self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding < cat <=
+                          self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding +
+                          self.thorax_prob_internal_organ_injury):
                         # Internal organ injury, so update the injury category information
                         injcat.append(int(5))
                         # Lung contusion and Diaphragm rupture both have an AIS score of 3, update the injury
@@ -3059,10 +3060,10 @@ class RTI(Module):
                         # store the specific details of the injury in the variable detail
                         detail = self.rng.choice(detail_add_on, p=probabilities)
                     # Determine if the injury is a fracture/flail chest
-                    elif self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
-                        self.thorax_prob_internal_organ_injury < cat <= self.thorax_prob_skin_wound + \
-                        self.thorax_prob_internal_bleeding + self.thorax_prob_internal_organ_injury + \
-                        self.thorax_prob_fracture:
+                    elif (self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding +
+                          self.thorax_prob_internal_organ_injury < cat <= self.thorax_prob_skin_wound +
+                          self.thorax_prob_internal_bleeding + self.thorax_prob_internal_organ_injury +
+                          self.thorax_prob_fracture):
                         # Fractures to ribs and flail chest, so update the injury category information
                         injcat.append(int(1))
                         # Decide how severe the injury is
@@ -3073,19 +3074,19 @@ class RTI(Module):
                             # flail chest has an AIS score of 4, store this in injais
                             injais.append(4)
                     # Determine if the injury is a soft tissue injury
-                    elif self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
-                        self.thorax_prob_internal_organ_injury + self.thorax_prob_fracture < cat <= \
-                        self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
-                        self.thorax_prob_internal_organ_injury + self.thorax_prob_fracture + \
-                        self.thorax_prob_soft_tissue_injury:
+                    elif (self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding +
+                          self.thorax_prob_internal_organ_injury + self.thorax_prob_fracture < cat <=
+                          self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding +
+                          self.thorax_prob_internal_organ_injury + self.thorax_prob_fracture +
+                          self.thorax_prob_soft_tissue_injury):
                         # Soft tissue injury, update the injury catregory information
                         injcat.append(int(4))
                         # Decide how severe the injury is
                         if severity <= self.thorax_prob_soft_tissue_injury_AIS1:
                             # Chest wall lacerations/avulsions have an AIS score of 1, store this in injais
                             injais.append(1)
-                        elif self.thorax_prob_soft_tissue_injury_AIS1 < severity <= \
-                            self.thorax_prob_soft_tissue_injury_AIS1 + self.thorax_prob_soft_tissue_injury_AIS2:
+                        elif (self.thorax_prob_soft_tissue_injury_AIS1 < severity <=
+                              self.thorax_prob_soft_tissue_injury_AIS1 + self.thorax_prob_soft_tissue_injury_AIS2):
                             # surgical emphysema has an AIS score of 2, store this in injais
                             injais.append(2)
                         else:
@@ -3112,9 +3113,9 @@ class RTI(Module):
                         if severity <= self.abdomen_prob_internal_organ_injury_AIS2:
                             # Intestines, Stomach and colon injury have an AIS score of 2, store this in injais
                             injais.append(2)
-                        elif self.abdomen_prob_internal_organ_injury_AIS2 < severity <= \
-                            self.abdomen_prob_internal_organ_injury_AIS2 + \
-                            self.abdomen_prob_internal_organ_injury_AIS3:
+                        elif (self.abdomen_prob_internal_organ_injury_AIS2 < severity <=
+                              self.abdomen_prob_internal_organ_injury_AIS2 +
+                              self.abdomen_prob_internal_organ_injury_AIS3):
                             # Spleen, bladder, liver, urethra and diaphragm injury have an AIS score of 3, store this
                             # in injais
                             injais.append(3)
@@ -3205,8 +3206,8 @@ class RTI(Module):
                             injcat.append(int(11))
                             injais.append(3)
                     # Determine if the injury is a fracture
-                    elif self.upper_ex_prob_skin_wound < cat <= self.upper_ex_prob_skin_wound + \
-                        self.upper_ex_prob_fracture:
+                    elif (self.upper_ex_prob_skin_wound < cat <=
+                          self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture):
                         # Fracture to arm, update the injury category and severity information
                         injcat.append(int(1))
                         injais.append(2)
@@ -3217,15 +3218,15 @@ class RTI(Module):
                         # Store the specific injury details in the variable detail
                         detail = self.rng.choice(detail_add_on, p=probabilities)
                     # Determine if the injury is a dislocation
-                    elif self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture < cat <= \
-                        self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture + \
-                        self.upper_ex_prob_dislocation:
+                    elif (self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture < cat <=
+                          self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture +
+                          self.upper_ex_prob_dislocation):
                         # Dislocation to arm, update the injury category and severity information
                         injcat.append(int(2))
                         injais.append(2)
                     # Determine if the injury is an amputation
-                    elif self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture + \
-                        self.upper_ex_prob_dislocation < cat:
+                    elif (self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture +
+                          self.upper_ex_prob_dislocation < cat):
                         # Amputation in upper limb, store the injury category information
                         injcat.append(int(8))
                         # Determine how severe the injury will be
@@ -3255,8 +3256,8 @@ class RTI(Module):
                             injcat.append(int(11))
                             injais.append(3)
                     # Decide if the injury is a fracture
-                    elif self.lower_ex_prob_skin_wound < cat <= self.lower_ex_prob_skin_wound + \
-                        self.lower_ex_prob_fracture:
+                    elif (self.lower_ex_prob_skin_wound < cat <= self.lower_ex_prob_skin_wound +
+                          self.lower_ex_prob_fracture):
                         # Fracture, so update the injury category information
                         injcat.append(int(1))
                         # Decide how severe the injury will be
@@ -3272,8 +3273,8 @@ class RTI(Module):
                             else:
                                 # Foot fracture is not open so just need to store the injury information in injais
                                 injais.append(1)
-                        elif self.lower_ex_prob_fracture_AIS1 < severity <= self.lower_ex_prob_fracture_AIS1 + \
-                            self.lower_ex_prob_fracture_AIS2:
+                        elif (self.lower_ex_prob_fracture_AIS1 < severity <= self.lower_ex_prob_fracture_AIS1 +
+                              self.lower_ex_prob_fracture_AIS2):
                             # Lower leg fracture
                             # determine is the lower leg fracture is open
                             prob_tib_fib_frac_open = p['prob_patella_tibia_fibula_ankle_fracture_open']
@@ -3309,9 +3310,9 @@ class RTI(Module):
                                     # update the injury detail information to reflect the fact that the fracture is open
                                     detail = detail + 'o'
                     # Determine if the injury is a dislocation
-                    elif self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture < cat <= \
-                        self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture + \
-                        self.lower_ex_prob_dislocation:
+                    elif (self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture < cat <=
+                          self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture +
+                          self.lower_ex_prob_dislocation):
                         # dislocation of hip or knee, store the injury category information in injcat
                         injcat.append(int(2))
                         # both dislocated hips and knees have an AIS score of 2, store this in injais
@@ -3321,16 +3322,16 @@ class RTI(Module):
                         # specify whether this injury is a hip or knee dislocation in the variable detail
                         detail = self.rng.choice(detail_add_on, p=probabilities)
                     # Determine if the injury is an amputation
-                    elif self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture + \
-                        self.lower_ex_prob_dislocation < cat:
+                    elif (self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture + self.lower_ex_prob_dislocation
+                          < cat):
                         # Amputation, so store the injury category in injcat
                         injcat.append(int(8))
                         # Determine how severe the injury is
                         if severity <= self.lower_ex_prob_amputation_AIS2:
                             # Toe/toes amputation have an AIS score of 2, store this in injais
                             injais.append(2)
-                        elif self.lower_ex_prob_amputation_AIS2 < severity <= self.lower_ex_prob_amputation_AIS2 + \
-                            self.lower_ex_prob_amputation_AIS3:
+                        elif (self.lower_ex_prob_amputation_AIS2 < severity <=
+                              self.lower_ex_prob_amputation_AIS2 + self.lower_ex_prob_amputation_AIS3):
                             # Unilateral limb amputation has an AIS score of 3, store this in injais
                             injais.append(3)
                         else:
@@ -4615,8 +4616,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # put the injury in the injuries for minor surgery property to stop them being treated elsewhere
                 df.loc[person_id, 'rt_injuries_for_minor_surgery'].append('811')
             # Check if this fracture needs to be treated with open reduction internal fixation (major surg)
-            elif treatment_plan < prob_foot_frac_require_cast + prob_foot_frac_require_min_surg + \
-                prob_foot_frac_require_maj_surg:
+            elif (treatment_plan < prob_foot_frac_require_cast +
+                  prob_foot_frac_require_min_surg + prob_foot_frac_require_maj_surg):
                 # update the treatment plan
                 self.foot_frac_major_surg = True
                 # update the number of major surgeries
@@ -4668,8 +4669,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # put the injury in the injuries to be cast property to stop them being treated elsewhere
                 df.loc[person_id, 'rt_injuries_to_cast'].append('812')
             # Check if this fracture needs to be treated with external fixation (minor surgery)
-            elif treatment_plan < prob_tib_fib_frac_require_cast + \
-                prob_tib_fib_frac_require_min_surg:
+            elif (treatment_plan < prob_tib_fib_frac_require_cast + prob_tib_fib_frac_require_min_surg):
                 # update the treatment plan
                 self.tib_fib_frac_minor_surg = True
                 # put the injury in the injuries for minor surgery property to stop them being treated elsewhere
@@ -4677,8 +4677,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # update the number of minor surgeries needed
                 self.minor_surgery_counts += 1
             # Check if this fracture needs to be treated with open reduction internal fixation (major surg)
-            elif treatment_plan < prob_tib_fib_frac_require_cast + prob_tib_fib_frac_require_min_surg + \
-                prob_tib_fib_frac_require_maj_surg:
+            elif (treatment_plan < prob_tib_fib_frac_require_cast +
+                  prob_tib_fib_frac_require_min_surg + prob_tib_fib_frac_require_maj_surg):
                 # update the treatment plan
                 self.tib_fib_frac_major_surg = True
                 # put the injury in the injuries for major surgery property to stop them being treated elsewhere
@@ -4686,8 +4686,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # update the number of major surgeries needed
                 self.major_surgery_counts += 1
             # Check if this fracture needs to be treated with traction
-            elif treatment_plan < prob_tib_fib_frac_require_cast + prob_tib_fib_frac_require_min_surg + \
-                prob_tib_fib_frac_require_maj_surg + prob_tib_fib_frac_require_traction:
+            elif (treatment_plan < prob_tib_fib_frac_require_cast + prob_tib_fib_frac_require_min_surg +
+                  prob_tib_fib_frac_require_maj_surg + prob_tib_fib_frac_require_traction):
                 # update the treatment plan
                 self.tib_fib_frac_traction = True
                 # update the list of heal with time injuries
@@ -4741,8 +4741,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # store the injury in the major surgeries property so it won't be treated elsewhere
                 df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
             # check if femur fracture needs minor surgery
-            elif treatment_plan < prob_femural_fracture_require_major_surgery + \
-                prob_femural_fracture_require_minor_surgery:
+            elif (treatment_plan < prob_femural_fracture_require_major_surgery +
+                  prob_femural_fracture_require_minor_surgery):
                 # update the number of minor surgeries required
                 self.minor_surgery_counts += 1
                 # update the treatment plan
@@ -4750,8 +4750,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # store the injury in the minor surgeries property so it won't be treated elsewhere
                 df.loc[person_id, 'rt_injuries_for_minor_surgery'].append(actual_injury[0])
             # check if femur fracture needs casting
-            elif treatment_plan < prob_femural_fracture_require_major_surgery + \
-                prob_femural_fracture_require_minor_surgery + prob_femural_fracture_require_cast:
+            elif (treatment_plan < prob_femural_fracture_require_major_surgery +
+                  prob_femural_fracture_require_minor_surgery + prob_femural_fracture_require_cast):
                 # update the treatment plan
                 self.femur_cast = True
                 # put the injury in the injuries to be cast property to stop them being treated elsewhere
@@ -4802,8 +4802,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # add the injury to the injuries to be treated with minor surgeries so they aren't treated elsewhere
                 df.loc[person_id, 'rt_injuries_for_minor_surgery'].append('813b')
             # Determine if the pelvis fracture will be treated with major surgery
-            elif treatment_plan < prob_pelvis_fracture_traction + prob_pelvis_frac_minor_surgery + \
-                prob_pelvis_frac_major_surgery:
+            elif (treatment_plan < prob_pelvis_fracture_traction +
+                  prob_pelvis_frac_minor_surgery + prob_pelvis_frac_major_surgery):
                 # update the number of major surgeries required
                 self.major_surgery_counts += 1
                 # update the treatment plan

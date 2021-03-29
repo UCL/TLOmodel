@@ -1,21 +1,23 @@
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
     rti,
-    dx_algorithm_adult,
-    dx_algorithm_child
+    symptommanager,
 )
-import numpy as np
-from matplotlib import pyplot as plt
-import pandas as pd
+
 # =============================== Analysis description ========================================================
 # What I am doing here is artificially reducing the proportion of pre-hospital mortality, increasing the number of
 # people funneled into the injured sub-population, who will have to subsequently have to seek health care. At the moment

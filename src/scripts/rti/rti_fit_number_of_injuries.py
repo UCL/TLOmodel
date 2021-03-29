@@ -1,28 +1,25 @@
 from pathlib import Path
 
+import numpy as np
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    antenatal_care,
+    contraception,
     demography,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
-    rti,
-    dx_algorithm_adult,
-    dx_algorithm_child,
-    antenatal_care,
-    contraception,
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
+    rti,
+    symptommanager,
 )
-import numpy as np
-from matplotlib import pyplot as plt
-import pandas as pd
-import ast
-
 
 # =============================== Analysis description ========================================================
 # This analysis file has essentially become the model fitting analysis, seeing what happens when we run the model
@@ -190,9 +187,9 @@ for i in range(0, nsim):
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
     # alter the number of injuries given out
-    sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = \
-    [[1, 2, 3, 4, 5, 6, 7, 8], [1, 0.0, 0.0, 0.0, 0.00, 0.0, 0.0, 0.0
-                                ]]
+    sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
+        [1, 2, 3, 4, 5, 6, 7, 8], [1, 0.0, 0.0, 0.0, 0.00, 0.0, 0.0, 0.0]
+    ]
     sim.modules['RTI'].parameters['base_rate_injrti'] = \
         sim.modules['RTI'].parameters['base_rate_injrti'] * 6.9
     sim.modules['RTI'].parameters['imm_death_proportion_rti'] = \

@@ -1,28 +1,28 @@
+import ast
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    antenatal_care,
+    contraception,
     demography,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
-    rti,
-    dx_algorithm_adult,
-    dx_algorithm_child,
-    antenatal_care,
-    contraception,
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
+    rti,
+    symptommanager,
 )
-import numpy as np
-from matplotlib import pyplot as plt
-import pandas as pd
-import ast
-
 
 # =============================== Analysis description ========================================================
 # This analysis file has essentially become the model fitting analysis, seeing what happens when we run the model
@@ -1778,7 +1778,7 @@ model_mean_age = np.mean(sim_age_range)
 kch_sd_age = 14.9
 model_sd_age = np.std(sim_age_range)
 kch_percent_under_18 = 20.1
-model_age_under_18 = [i for i in sim_age_range if i <=18]
+model_age_under_18 = [i for i in sim_age_range if i <= 18]
 model_percentage_under_18 = len(model_age_under_18) / len(sim_age_range)
 kch_percent_admitted = 22.4
 model_percent_admitted = percent_admitted_in_model

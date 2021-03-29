@@ -1,26 +1,28 @@
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    antenatal_care,
+    contraception,
     demography,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
-    rti,
-    dx_algorithm_adult,
-    dx_algorithm_child,
-    antenatal_care,
-    contraception,
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
+    rti,
+    symptommanager,
 )
-import numpy as np
-from matplotlib import pyplot as plt
-import pandas as pd
+
 # =============================== Analysis description ========================================================
 # This script looks at the effect of reducing the number of lower extremity fractures that are treated
 # using skeletal traction. Initially we look at inpatient days consumed in each simulation but eventually I want
