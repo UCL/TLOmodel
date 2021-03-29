@@ -2,4 +2,4 @@
 Authors
 =======
 
-* Jonathan Cooper
+* The TLOmodel Team
