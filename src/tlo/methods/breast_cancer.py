@@ -271,11 +271,10 @@ class BreastCancer(Module):
         # cancer stages in the population
         bc_inital_treament_status = p['init_prop_treatment_status_breast_cancer']
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
-            Predictor('brc_status').when("none", 0.0)
-                .when("stage1", bc_inital_treament_status[0])
-                .when("stage2", bc_inital_treament_status[1])
-                .when("stage3", bc_inital_treament_status[2])
-                .when("stage4", bc_inital_treament_status[3])
+            Predictor('brc_status').when("none", 0.0) .when("stage1", bc_inital_treament_status[0])
+                                                      .when("stage2", bc_inital_treament_status[1])
+                                                      .when("stage3", bc_inital_treament_status[2])
+                                                      .when("stage4", bc_inital_treament_status[3])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 

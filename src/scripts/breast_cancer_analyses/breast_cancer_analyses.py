@@ -18,6 +18,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
+    breast_cancer,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -26,7 +27,6 @@ from tlo.methods import (
     healthsystem,
     labour,
     oesophagealcancer,
-    breast_cancer,
     pregnancy_supervisor,
     symptommanager,
 )
