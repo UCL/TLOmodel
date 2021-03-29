@@ -191,12 +191,11 @@ for i in range(0, nsim):
     sim.make_initial_population(n=pop_size)
     # alter the number of injuries given out
     sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = \
-    [[1, 2, 3, 4, 5, 6, 7, 8], [1, 0.0, 0.0, 0.0, 0.00, 0.0, 0.0, 0.0
-                                ]]
+    [[1, 2, 3, 4, 5, 6, 7, 8], [0.7, 0.15, 0.075, 0.0375, 0.019, 0.01, 0.005, 0.0035]]
     sim.modules['RTI'].parameters['base_rate_injrti'] = \
-        sim.modules['RTI'].parameters['base_rate_injrti'] * 6.9
-    sim.modules['RTI'].parameters['imm_death_proportion_rti'] = \
-        sim.modules['RTI'].parameters['imm_death_proportion_rti'] * 0.1
+        sim.modules['RTI'].parameters['base_rate_injrti']
+
+
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
@@ -208,8 +207,11 @@ for i in range(0, nsim):
     incidences_of_death_pre_hospital.append(
         log_df['tlo.methods.rti']['summary_1m']['incidence of prehospital death per 100,000'].tolist()
     )
+    incidences_of_injuries.append(log_df['tlo.methods.rti']['summary_1m']['injury incidence per 100,000'].tolist())
+
 print(f"Mean incidence of rti = {np.mean(incidences_of_rti)}")
 print(f"Mean incidence of rti death = {np.mean(incidences_of_death)}")
+print(f"Mean incidence of injuries = {np.mean(incidences_of_injuries)}")
 print(f"Mean incidence of pre-hospital mortality = {np.mean(incidences_of_death_pre_hospital)}")
 gbd2019nRTI = 180632.22
 gbd2019nRTIDeath = 2077.15

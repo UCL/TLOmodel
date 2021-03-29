@@ -20,7 +20,8 @@ import ast
 # =============================== Analysis description ========================================================
 # What I am doing here is modelling the what would happen if we included a number of different intervention strategies.
 # I include three here, the first is the enforcements of speed limits, which should result in a 6% reduction in
-# incidence and a 15% reduction in mortality according to https://www.bmj.com/content/bmj/344/bmj.e612.full.pdf
+# incidence and a 15% reduction in mortality according to
+
 # The second is the enforcement of blood alcohol content laws, which should result in a 15% reduction in incidence and
 # a 25% reduction in mortality, according to the above source.
 # The third scenario considered is the use of rumble strips. In Ghana, they reduced chrashes on the highway by 35% and

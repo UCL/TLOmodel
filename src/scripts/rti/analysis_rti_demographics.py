@@ -43,11 +43,11 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 2
+yearsrun = 5
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 5000
+pop_size = 50000
 nsim = 2
 # Create a variable whether to save figures or not (used in debugging)
 save_figures = True
@@ -1788,10 +1788,11 @@ kch_summary = [kch_percentage_male, kch_mean_age, kch_percent_admitted, kch_perc
 model_data = [model_percentage_male, model_mean_age, model_percent_admitted, model_percentage_under_18,
               model_inhospital_mortality_percentage]
 # plot the data
-plt.bar(np.arange(len(kch_summary)), kch_summary, color='lightsalmon', width=0.5, label='KCH data')
-plt.bar(np.arange(len(kch_summary)) + 0.5, model_data, color='lightsteelblue', width=0.5, label='KCH data')
-plt.xticks(np.arange(len(kch_summary)) + 0.25, ['Percent male', 'Mean age', 'Percent admitted', 'Percent under 18',
-                                                'Inhospital mortality'])
+plt.bar(np.arange(len(kch_summary)), kch_summary, color='lightsalmon', width=0.4, label='KCH data')
+plt.bar(np.arange(len(kch_summary)) + 0.4, model_data, color='lightsteelblue', width=0.4, label='Model data')
+plt.xticks(np.arange(len(kch_summary)) + 0.2, ['Percent\n male', 'Mean age', 'Percent\n admitted', 'Percent\n under 18',
+                                                'Inhospital\n mortality'])
+plt.legend()
 plt.title(f"Model's performance of inhospital data compared to KCH"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
