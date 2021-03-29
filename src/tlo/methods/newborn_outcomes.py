@@ -1174,11 +1174,6 @@ class NewbornOutcomes(Module):
 
             # Check these variables are not unassigned
             assert nci[child_id]['delivery_setting'] != 'none'
-            if nci[child_id]['ga_at_birth'] == 0:
-                print(child_id)
-                print(mother_id)
-                print(df.at[mother_id, 'ps_gestational_age_in_weeks'])
-                x = 'y'
             # TODO: AT - this crashes when ga_at_birth doesnt equal 0 and I cant work out why...
             # assert nci[child_id]['ga_at_birth'] != 0
 

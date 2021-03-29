@@ -149,7 +149,6 @@ def test_run_core_modules_high_volumes_of_pregnancy():
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=Date(2011, 1, 1))
 
-test_run_core_modules_high_volumes_of_pregnancy()
 
 def test_store_dalys_in_mni_function_and_daly_calculations():
     """This test checks how we calculate, store and report back individuals disability weight for the previous month
