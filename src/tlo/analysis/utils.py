@@ -317,11 +317,12 @@ def extract_results(results_folder: Path, module: str, key: str, column: str, in
     index is the same in each run).
     """
 
+    results_index = None
     if index is not None:
         # extract the index from the first log, and use this ensure that all other are exactly the same.
         filename = f"{module}.pickle"
         df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
-        index = df.index
+        results_index = df[index]
 
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
@@ -336,15 +337,17 @@ def extract_results(results_folder: Path, module: str, key: str, column: str, in
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 results[draw, run] = df[column]
-                idx = df[column].index
-                assert idx.equals(index), "Indexes are not the same between runs"
+
+                if index is not None:
+                    idx = df[index]
+                    assert idx.equals(results_index), "Indexes are not the same between runs"
 
             except ValueError:
                 results[draw, run] = np.nan
 
     # if 'index' is provided, set this to be the index of the results
     if index is not None:
-        results.index = index
+        results.index = results_index
 
     return results
 
