@@ -1,13 +1,9 @@
 import datetime
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
-
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import make_age_grp_types, parse_log_file
-from tlo.methods import (
+from tlo.analysis.utils import parse_log_file
+from tlo.methods import (  # bladder_cancer,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -15,12 +11,10 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    prostate_cancer,
-#   bladder_cancer,
     pregnancy_supervisor,
+    prostate_cancer,
     symptommanager,
 )
-
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -48,7 +42,7 @@ log_config = {
         'tlo.methods.symptommanager': logging.CRITICAL,
         'tlo.methods.healthseekingbehaviour': logging.CRITICAL,
         'tlo.methods.pregnancy_supervisor': logging.CRITICAL,
-#       'tlo.methods.bladder_cancer': logging.INFO,
+        #  'tlo.methods.bladder_cancer': logging.INFO,
     }
 }
 sim = Simulation(start_date=start_date, seed=1, log_config=log_config)
@@ -58,17 +52,18 @@ sim = Simulation(start_date=start_date, seed=1, log_config=log_config)
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             contraception.Contraception(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             labour.Labour(resourcefilepath=resourcefilepath),
-             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-#            bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-             prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
+sim.register(
+    demography.Demography(resourcefilepath=resourcefilepath),
+    contraception.Contraception(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    labour.Labour(resourcefilepath=resourcefilepath),
+    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+    #  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+    prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
 )
 
 # Run the simulation and flush the logger
@@ -78,4 +73,3 @@ sim.simulate(end_date=end_date)
 
 # %% read the results
 output = parse_log_file(sim.log_filepath)
-

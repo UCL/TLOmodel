@@ -8,10 +8,6 @@ from tlo.methods.bladder_cancer import (
     HSI_BladderCancer_Investigation_Following_Blood_Urine,
     HSI_BladderCancer_Investigation_Following_pelvic_pain,
 )
-from tlo.methods.prostate_cancer import (
-    HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms,
-    HSI_ProstateCancer_Investigation_Following_Pelvic_Pain
-)
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -28,6 +24,10 @@ from tlo.methods.malaria import (
 )
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
+from tlo.methods.prostate_cancer import (
+    HSI_ProstateCancer_Investigation_Following_Pelvic_Pain,
+    HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -238,7 +238,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         tclose=None
                     )
 
-                # If the symptoms include pelvic_pain, then begin investigation for Prostate Cancer (as well as bladder cancer):
+                # If the symptoms include pelvic_pain, then begin investigation for Prostate Cancer
+                # (as well as bladder cancer):
                 if 'pelvic_pain' in symptoms:
                     hsi_event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
                         module=self.sim.modules['ProstateCancer'],

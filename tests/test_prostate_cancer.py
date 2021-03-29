@@ -13,8 +13,8 @@ from tlo.methods import (
     healthsystem,
     labour,
     oesophagealcancer,
-    prostate_cancer,
     pregnancy_supervisor,
+    prostate_cancer,
     symptommanager,
 )
 

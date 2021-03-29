@@ -68,7 +68,9 @@ sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [1.0, 
 sim.modules['ProstateCancer'].parameters["init_prop_urinary_symptoms_by_stage"] = [0.0] * 3
 sim.modules['ProstateCancer'].parameters["init_prop_pelvic_pain_symptoms_by_stage"] = [0.0] * 3
 sim.modules['ProstateCancer'].parameters["init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage"] = [0.0] * 3
-sim.modules['ProstateCancer'].parameters["init_prop_with_pelvic_pain_symptoms_diagnosed_prostate_ca_by_stage"] = [0.0] * 3
+sim.modules['ProstateCancer'].parameters[
+    "init_prop_with_pelvic_pain_symptoms_diagnosed_prostate_ca_by_stage"
+] = [0.0] * 3
 sim.modules['ProstateCancer'].parameters["init_prop_treatment_status_prostate_cancer"] = [0.0] * 3
 sim.modules['ProstateCancer'].parameters["init_prob_palliative_care"] = 0.0
 
@@ -116,7 +118,9 @@ cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_tre
 # calc % of those that had not died of prostate cancer 5 years after starting treatment (could have died of another
 # cause):
 1 - (
-    len(cohort_treated.loc[(cohort_treated['cause'] == 'ProstateCancer') & (cohort_treated['days_treatment_to_death']
-                                                                               < (5*365.25))]) /
-    len(cohort_treated)
+    len(
+        cohort_treated.loc[
+            (cohort_treated['cause'] == 'ProstateCancer') & (cohort_treated['days_treatment_to_death'] < (5*365.25))
+            ]
+    ) / len(cohort_treated)
 )   # 0.87

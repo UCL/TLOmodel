@@ -21,6 +21,7 @@ from tlo.methods.symptommanager import Symptom
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class ProstateCancer(Module):
     """Prostate Cancer Disease Module"""
 
@@ -54,7 +55,8 @@ class ProstateCancer(Module):
             Types.LIST, "initial proportions of people with prostate ca and urinary symptoms that have been diagnosed"
         ),
         "init_prop_with_pelvic_pain_symptoms_diagnosed_prostate_ca_by_stage": Parameter(
-            Types.LIST, "initial proportions of people with prostate ca and pelvic pain symptoms that have been diagnosed"
+            Types.LIST,
+            "initial proportions of people with prostate ca and pelvic pain symptoms that have been diagnosed"
         ),
         "init_prop_treatment_status_prostate_ca": Parameter(
             Types.LIST, "initial proportions of people with prostate ca that had received treatment"
@@ -103,16 +105,17 @@ class ProstateCancer(Module):
             Types.REAL, "rate of urinary symptoms if have prostate confined prostate ca"
         ),
         "rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer": Parameter(
-            Types.REAL, "rate ratio of urinary symptoms in a person with local lymph node or metastatuc prostate cancer "
-                        "compared with prostate confined prostate ca"
+            Types.REAL,
+            "rate ratio of urinary symptoms in a person with local lymph node or metastatuc prostate cancer "
+            "compared with prostate confined prostate ca"
         ),
         "r_pelvic_pain_symptoms_local_ln_prostate_ca": Parameter(
             Types.REAL, "rate of pelvic pain or numbness symptoms if have local lymph node involved prostate cancer"
         ),
         "rr_pelvic_pain_metastatic_prostate_cancer": Parameter(
             Types.REAL,
-            "rate ratio of pelvic pain or numbness in a person with metastatic prostate cancer compared with lymph node involved"
-            "prostate cancer"
+            "rate ratio of pelvic pain or numbness in a person with metastatic prostate cancer compared with "
+            "lymph node involved prostate cancer"
         ),
         "rp_prostate_cancer_age5069": Parameter(
             Types.REAL, "stage-specific relative prevalence at baseline of prostate cancer for age 50-69"
@@ -239,10 +242,10 @@ class ProstateCancer(Module):
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have pelvic pain:
         lm_init_pelvic_pain = LinearModel.multiplicative(
-        Predictor('pc_status').when("none", 0.0)
-                            .when("prostate_confined", p['init_prop_pelvic_pain_symptoms_by_stage'][0])
-                            .when("local_ln", p['init_prop_pelvic_pain_symptoms_by_stage'][1])
-                            .when("metastatic", p['init_prop_pelvic_pain_symptoms_by_stage'][2])
+            Predictor('pc_status').when("none", 0.0)
+                                  .when("prostate_confined", p['init_prop_pelvic_pain_symptoms_by_stage'][0])
+                                  .when("local_ln", p['init_prop_pelvic_pain_symptoms_by_stage'][1])
+                                  .when("metastatic", p['init_prop_pelvic_pain_symptoms_by_stage'][2])
         )
 
         has_pelvic_pain_symptoms_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
@@ -261,7 +264,6 @@ class ProstateCancer(Module):
 #           add_or_remove='+',
 #           disease_module=self
 #       )
-
 
         # ----- Impose the symptom of random sample of those in each cancer stage to have urinary symptoms:
         lm_init_urinary = LinearModel.multiplicative(
@@ -325,7 +327,9 @@ class ProstateCancer(Module):
         df.loc[treatment_initiated, "pc_date_treatment"] = df.loc[treatment_initiated, "pc_date_diagnosis"]
 
         # -------------------- pc_date_palliative_care -----------
-        in_metastatic_diagnosed = df.index[df.is_alive & (df.pc_status == 'metastatic') & ~pd.isnull(df.pc_date_diagnosis)]
+        in_metastatic_diagnosed = df.index[
+            df.is_alive & (df.pc_status == 'metastatic') & ~pd.isnull(df.pc_date_diagnosis)
+            ]
 
         select_for_care = self.rng.random_sample(size=len(in_metastatic_diagnosed)) < p['init_prob_palliative_care']
         select_for_care = in_metastatic_diagnosed[select_for_care]
@@ -372,8 +376,6 @@ class ProstateCancer(Module):
                                   .when('.between(0,34)', 0.0)
         )
 
-
-
         lm['local_ln'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_local_ln_prostate_ca_prostate_confined'],
@@ -403,8 +405,8 @@ class ProstateCancer(Module):
                                         p['rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer']
                                         * p['r_urinary_symptoms_prostate_ca'])
                                   .when('metastatic',
-                                        p['rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer']
-                                        *p['r_urinary_symptoms_prostate_ca'])
+                                        p['rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer'] *
+                                        p['r_urinary_symptoms_prostate_ca'])
                                   .otherwise(0.0)
         )
 
@@ -438,7 +440,7 @@ class ProstateCancer(Module):
             )
         )
 
-          # ----- DISABILITY-WEIGHT -----
+        # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
             # For those with cancer (any stage prior to stage 4) and never treated
             self.daly_wts["prostate_confined_or_local_ln_untreated"] = self.sim.modules["HealthBurden"].get_daly_weight(
@@ -501,8 +503,8 @@ class ProstateCancer(Module):
 
         disability_series_for_alive_persons = pd.Series(index=df.index[df.is_alive], data=0.0)
 
-        # Assign daly_wt to those with cancer stages before metastatic and have either never been treated or are no longer
-        # in the stage in which they were treated
+        # Assign daly_wt to those with cancer stages before metastatic and have either never been treated or are no
+        # longer in the stage in which they were treated
         disability_series_for_alive_persons.loc[
             (
                 (df.pc_status == "prostate_confined") |
@@ -510,14 +512,17 @@ class ProstateCancer(Module):
             )
         ] = self.daly_wts['prostate_confined_or_local_ln_untreated']
 
-        # Assign daly_wt to those with cancer stages before metastatic and who have been treated and who are still in the
+        # Assign daly_wt to those with cancer stages before metastatic and who have been treated and who are still
+        # in the
         # stage in which they were treated.
         disability_series_for_alive_persons.loc[
             (
-                ~pd.isnull(df.pc_date_treatment) & (
-                (df.pc_status == "prostate_confined") |
-                (df.pc_status == "local_ln")
-            ) & (df.pc_status == df.pc_stage_at_which_treatment_given)
+                ~pd.isnull(df.pc_date_treatment) &
+                (
+                    (df.pc_status == "prostate_confined") |
+                    (df.pc_status == "local_ln")
+                ) &
+                (df.pc_status == df.pc_stage_at_which_treatment_given)
             )
         ] = self.daly_wts['prostate_confined_or_local_ln_treated']
 
@@ -657,19 +662,19 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
             )
 
         if dx_result:
-                # send for biopsy
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-        )
+            # send for biopsy
+            hs.schedule_hsi_event(
+                hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
 
-        def did_not_run(self):
-            pass
+    def did_not_run(self):
+        pass
 
 
 class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, IndividualScopeEventMixin):
@@ -723,8 +728,6 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
         pass
 
 
-
-
 class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -763,7 +766,8 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
 
             # Check if is in metastatic stage:
             in_metastatic = df.at[person_id, 'pc_status'] == 'metastatic'
-            # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made accurately.
+            # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made
+            # accurately.
 
             if not in_metastatic:
                 # start treatment:
@@ -776,10 +780,8 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
                     topen=self.sim.date,
                     tclose=None
                 )
-
-
             else:
-                 # start palliative care:
+                # start palliative care:
                 hs.schedule_hsi_event(
                     hsi_event=HSI_ProstateCancer_PalliativeCare(
                         module=self.module,
@@ -792,8 +794,6 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
 
     def did_not_run(self):
         pass
-
-
 
 
 class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -1037,7 +1037,6 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info('%s|summary_stats|%s', self.sim.date, out)
 
-#       logger.info('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[ 8].to_dict())
-
+        #       logger.info('%s|person_one|%s',
+        #                    self.sim.date,
+        #                    df.loc[ 8].to_dict())
