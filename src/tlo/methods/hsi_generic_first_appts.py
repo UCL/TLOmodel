@@ -8,9 +8,6 @@ from tlo.methods.bladder_cancer import (
     HSI_BladderCancer_Investigation_Following_Blood_Urine,
     HSI_BladderCancer_Investigation_Following_pelvic_pain,
 )
-from tlo.methods.other_adult_cancers import (
-    HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom
-)
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -27,6 +24,9 @@ from tlo.methods.malaria import (
 )
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
+from tlo.methods.other_adult_cancers import (
+    HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

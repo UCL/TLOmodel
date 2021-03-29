@@ -25,8 +25,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    other_adult_cancers,
     oesophagealcancer,
+    other_adult_cancers,
     pregnancy_supervisor,
     symptommanager,
 )
