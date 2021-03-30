@@ -101,7 +101,7 @@ def check_property_integrity(sim):
                                                                                "assigned to a pregnant woman"
 
 
-def test_pregnancy_logic_at_max_pregnancy_probability():
+def test_pregnancy_and_births_logic_at_max_pregnancy_probability():
     # a test to check whether pregnancies are happening as expected
     sim = get_sim()
     initial_pop_size = 1
@@ -138,8 +138,34 @@ def test_pregnancy_logic_at_max_pregnancy_probability():
     # check property configuration after an event is run
     check_property_integrity(sim)
 
-    # check woman's date of delivery if correct assert (pd.to_datetime(sim.date + pd.DateOffset(months=9)).date() ==
-    # df.loc[df.index, 'si_date_of_delivery']).all()
+    # check woman's date of delivery if correct
+    date_of_delivery = pd.to_datetime(sim.date + pd.DateOffset(months=9))
+    date_of_delivery_in_dataframe = df.loc[df.index, 'si_date_of_delivery']
+    assert (date_of_delivery_in_dataframe == date_of_delivery).all()
+
+    """the below steps tries to fire the birth event on the selected female and check property configuration"""
+
+    # modify date of delivery to prepare this woman for a birth event
+    df.at[df.index, 'si_date_of_delivery'] = sim.date
+
+    # schedule a birth event
+    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
+    birth_event.apply(df)
+
+    # check that the individual is no longer pregnant after delivery
+    assert not df.is_pregnant.all()
+
+    # check that date of delivery has been reset to Not a Time
+    assert pd.isnull(df.si_date_of_delivery).all()
+
+    """now that we have fired a birth event on an individual who is ideal for births, lets see if we have some
+    births in the dataframe """
+
+    # get population dataframe
+    df = sim.population.props
+
+    # check if we have any births
+    assert len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]) > 0
 
 
 def test_run_pregnancy_logic_at_zero_pregnancy_probability():
