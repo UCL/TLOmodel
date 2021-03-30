@@ -408,16 +408,20 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         assert not pd.isnull(df['gi_last_diarrhoea_recovered_date']).all()
 
         # Check that all of those who got diarrhoea got treatment or recovered naturally before treatment was provided
-        # and no one died of the Diarrhoea. (Limited to those whose last onset diarrhoea was one month ago to give time
-        # for outcomes to have occurred).
-        had_diarrhoea_a_month_ago = df.gi_ever_had_diarrhoea & (
-            df.gi_last_diarrhoea_date_of_onset < (sim.date - pd.DateOffset(months=1))
-        )
+        # (limited to those who did not did not die before that episode ended) and that no one died of the Diarrhoea.
+        had_diarrhoea = \
+            ~pd.isnull(df.date_of_birth) & \
+            df.gi_ever_had_diarrhoea & \
+            (df.gi_end_of_last_episode < sim.date) & \
+            (
+                pd.isnull(df.date_of_death) | (df.date_of_death > df.gi_end_of_last_episode)
+            )
+
         got_treatment = ~pd.isnull(
-            df.loc[had_diarrhoea_a_month_ago, 'gi_last_diarrhoea_treatment_date']
+            df.loc[had_diarrhoea, 'gi_last_diarrhoea_treatment_date']
         )
         recovered_naturally = ~pd.isnull(
-            df.loc[had_diarrhoea_a_month_ago & pd.isnull(df['gi_last_diarrhoea_treatment_date']),
+            df.loc[had_diarrhoea & pd.isnull(df['gi_last_diarrhoea_treatment_date']),
                    'gi_last_diarrhoea_recovered_date']
         )
         assert (got_treatment | recovered_naturally).all()
