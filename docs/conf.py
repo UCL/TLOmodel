@@ -31,8 +31,8 @@ if os.getenv('SPELLCHECK'):
 source_suffix = '.rst'
 master_doc = 'index'
 project = 'TLOmodel'
-year = '2018'
-author = 'Jonathan Cooper'
+year = '2021'
+author = 'The TLOmodel Team'
 copyright = '{0}, {1}'.format(year, author)
 version = release = '0.1.0'
 

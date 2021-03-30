@@ -367,7 +367,6 @@ class PostnatalSupervisor(Module):
 
             # This equation is used to determine a neonates risk of developing early onset neonatal sepsis
             # (sepsis onsetting prior to day 7) in the first week of life
-            # todo: ask asif r.e. externals
             'early_onset_neonatal_sepsis_week_1': LinearModel.custom(
                 postnatal_supervisor_lm.predict_early_onset_neonatal_sepsis_week_1, parameters=params),
 
@@ -541,75 +540,82 @@ class PostnatalSupervisor(Module):
         # is a twin birth, only the id of the first born child is stored
         df.at[mother_id, 'pn_id_most_recent_child'] = child_id
 
-        # Here we determine if, following childbirth, this woman will develop a fistula
-        risk_of_fistula = params['pn_linear_equations'][
-            'obstetric_fistula'].predict(df.loc[[mother_id]])[mother_id]
+        if df.at[mother_id, 'is_alive']:
+            # Here we determine if, following childbirth, this woman will develop a fistula
+            risk_of_fistula = params['pn_linear_equations'][
+                'obstetric_fistula'].predict(df.loc[[mother_id]])[mother_id]
 
-        # todo: link with PNC (assessment), allow treatment post day 42 (dalys?)
+            # todo: link with PNC (assessment), allow treatment post day 42 (dalys?)
 
-        if self.rng.random_sample() < risk_of_fistula:
-            # We determine the specific type of fistula this woman is experiencing, to match with DALY weights
-            fistula_type = self.rng.choice(['vesicovaginal', 'rectovaginal'], p=params['prevalence_type_of_fistula'])
-            df.at[mother_id, 'pn_obstetric_fistula'] = fistula_type
+            if self.rng.random_sample() < risk_of_fistula:
+                # We determine the specific type of fistula this woman is experiencing, to match with DALY weights
+                fistula_type = self.rng.choice(['vesicovaginal', 'rectovaginal'],
+                                               p=params['prevalence_type_of_fistula'])
+                df.at[mother_id, 'pn_obstetric_fistula'] = fistula_type
 
-            logger.debug(key='msg', data=f'Mother {mother_id} has developed a {fistula_type} post delivery')
+                logger.debug(key='msg', data=f'Mother {mother_id} has developed a {fistula_type} post delivery')
 
-            # Store the onset weight for daly calculations
-            store_dalys_in_mni(mother_id, f'{fistula_type}_fistula_onset')
-            self.postnatal_tracker['fistula'] += 1
+                # Store the onset weight for daly calculations
+                store_dalys_in_mni(mother_id, f'{fistula_type}_fistula_onset')
+                self.postnatal_tracker['fistula'] += 1
 
-            # Determine if she will seek care for repair
-            care_seeking_for_repair = params['pn_linear_equations'][
-                'care_seeking_for_fistula_repair'].predict(df.loc[[mother_id]])[mother_id]
+                # Determine if she will seek care for repair
+                care_seeking_for_repair = params['pn_linear_equations'][
+                    'care_seeking_for_fistula_repair'].predict(df.loc[[mother_id]])[mother_id]
 
-            # Schedule repair to occur for 1 week postnatal
-            if care_seeking_for_repair:
-                repair_hsi = HSI_PostnatalSupervisor_TreatmentForObstetricFistula(
-                    self, person_id=mother_id)
-                repair_date = self.sim.date + DateOffset(days=(self.rng.randint(7, 42)))
+                # Schedule repair to occur for 1 week postnatal
+                if care_seeking_for_repair:
+                    repair_hsi = HSI_PostnatalSupervisor_TreatmentForObstetricFistula(
+                        self, person_id=mother_id)
+                    repair_date = self.sim.date + DateOffset(days=(self.rng.randint(7, 42)))
 
-                logger.debug(key='msg', data=f'Mother {mother_id} will seek care for fistula repair on {repair_date}')
-                self.sim.modules['HealthSystem'].schedule_hsi_event(repair_hsi,
-                                                                    priority=0,
-                                                                    topen=repair_date,
-                                                                    tclose=repair_date + DateOffset(days=7))
+                    logger.debug(key='msg', data=f'Mother {mother_id} will seek care for fistula repair on '
+                                                 f'{repair_date}')
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(repair_hsi,
+                                                                        priority=0,
+                                                                        topen=repair_date,
+                                                                        tclose=repair_date + DateOffset(days=7))
 
-        # ======================= CONTINUATION OF COMPLICATIONS INTO THE POSTNATAL PERIOD =========================
-        # Certain conditions experienced in pregnancy are liable to continue into the postnatal period
+            # ======================= CONTINUATION OF COMPLICATIONS INTO THE POSTNATAL PERIOD =========================
+            # Certain conditions experienced in pregnancy are liable to continue into the postnatal period
 
-        # HYPERTENSIVE DISORDERS...
-        # The majority of hypertension related to pregnancy resolve with delivery of the foetus. However the condition
-        # may persist (and even onset within the postnatal period...)
-        if df.at[mother_id, 'ps_htn_disorders'] != 'none':
-            if self.rng.random_sample() < params['prob_htn_persists']:
-                logger.debug(key='message', data=f'mother {mother_id} will remain hypertensive despite successfully '
-                                                 f'delivering')
-                df.at[mother_id, 'pn_htn_disorders'] = df.at[mother_id, 'ps_htn_disorders']
+            # HYPERTENSIVE DISORDERS...
+            # The majority of hypertension related to pregnancy resolve with delivery of the foetus. However the
+            # condition
+            # may persist (and even onset within the postnatal period...)
+            if df.at[mother_id, 'ps_htn_disorders'] != 'none':
+                if self.rng.random_sample() < params['prob_htn_persists']:
+                    logger.debug(key='message', data=f'mother {mother_id} will remain hypertensive despite '
+                                                     f'successfully delivering')
+                    df.at[mother_id, 'pn_htn_disorders'] = df.at[mother_id, 'ps_htn_disorders']
 
-            else:
-                store_dalys_in_mni(mother_id, 'hypertension_resolution')
-                df.at[mother_id, 'pn_htn_disorders'] = 'resolved'
+                else:
+                    store_dalys_in_mni(mother_id, 'hypertension_resolution')
+                    df.at[mother_id, 'pn_htn_disorders'] = 'resolved'
 
-        # Currently we assume women who received antihypertensive in the antenatal period will continue to use them
-        if df.at[mother_id, 'ac_gest_htn_on_treatment']:
-            df.at[mother_id, 'pn_gest_htn_on_treatment'] = True
+            # Currently we assume women who received antihypertensive in the antenatal period will continue to use them
+            if df.at[mother_id, 'ac_gest_htn_on_treatment']:
+                df.at[mother_id, 'pn_gest_htn_on_treatment'] = True
 
-        #  DEFICIENCIES/ANAEMIA...
-        # We carry across any deficiencies that may increase this womans risk of postnatal anaemia
-        if self.sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_any([mother_id], 'iron', first=True):
-            self.deficiencies_following_pregnancy.set([mother_id], 'iron')
-        if self.sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_any([mother_id], 'folate', first=True):
-            self.deficiencies_following_pregnancy.set([mother_id], 'folate')
-        if self.sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_any([mother_id], 'b12', first=True):
-            self.deficiencies_following_pregnancy.set([mother_id], 'b12')
+            #  DEFICIENCIES/ANAEMIA...
+            # We carry across any deficiencies that may increase this womans risk of postnatal anaemia
+            if self.sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_any([mother_id], 'iron',
+                                                                                         first=True):
+                self.deficiencies_following_pregnancy.set([mother_id], 'iron')
+            if self.sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_any([mother_id], 'folate',
+                                                                                         first=True):
+                self.deficiencies_following_pregnancy.set([mother_id], 'folate')
+            if self.sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_any([mother_id], 'b12',
+                                                                                         first=True):
+                self.deficiencies_following_pregnancy.set([mother_id], 'b12')
 
-        # And similarly, if she is already anaemic then she remains so in the postnatal period
-        if df.at[mother_id, 'ps_anaemia_in_pregnancy'] != 'none':
-            df.at[mother_id, 'pn_anaemia_following_pregnancy'] = df.at[mother_id, 'ps_anaemia_in_pregnancy']
+            # And similarly, if she is already anaemic then she remains so in the postnatal period
+            if df.at[mother_id, 'ps_anaemia_in_pregnancy'] != 'none':
+                df.at[mother_id, 'pn_anaemia_following_pregnancy'] = df.at[mother_id, 'ps_anaemia_in_pregnancy']
 
-        # Finally we call a function in the PregnancySupervisor module to reset the variables from pregnancy
-        self.sim.modules['PregnancySupervisor'].pregnancy_supervisor_property_reset(
-            ind_or_df='individual', id_or_index=mother_id)
+            # Finally we call a function in the PregnancySupervisor module to reset the variables from pregnancy
+            self.sim.modules['PregnancySupervisor'].pregnancy_supervisor_property_reset(
+                ind_or_df='individual', id_or_index=mother_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug(key='message', data=f'This is PostnatalSupervisor, being alerted about a health system '

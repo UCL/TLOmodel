@@ -1721,15 +1721,15 @@ class CareOfWomenDuringPregnancy(Module):
             (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'severe')) or \
             (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'mild_moderate') and
              (mother.ps_gestational_age_in_weeks >= 37)) or\
-            (mother.ps_premature_rupture_of_membranes and mother.ps_chorioamnionitis) or \
-            (mother.ps_premature_rupture_of_membranes and ~mother.ps_chorioamnionitis and
+            (mother.ps_premature_rupture_of_membranes and (mother.ps_chorioamnionitis != 'none')) or \
+            (mother.ps_premature_rupture_of_membranes and (mother.ps_chorioamnionitis == 'none') and
              (mother.ps_gestational_age_in_weeks >= 34)):
             beddays = 1
 
         # Otherwise women will remain as an inpatient until their gestation is greater, to improve newborn outcomes
         elif (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'mild_moderate') and
               (mother.ps_gestational_age_in_weeks < 37)) or (mother.ps_premature_rupture_of_membranes and
-                                                             ~mother.ps_chorioamnionitis and
+                                                             (mother.ps_chorioamnionitis == 'none') and
                                                              (mother.ps_gestational_age_in_weeks < 34)):
 
             beddays = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))

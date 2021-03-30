@@ -649,15 +649,16 @@ class PregnancySupervisor(Module):
                 return
 
             # If the complication has onset within the last month...
-            elif (self.sim.date - DateOffset(months=1)) < mni[person][f'{complication}_onset'] <= self.sim.date:
+            elif (self.sim.date - DateOffset(months=1)) <= mni[person][f'{complication}_onset'] <= self.sim.date:
 
                 # We assume that any woman who experiences an acute event receives the whole weight for that daly
                 monthly_daly[person] += p[f'{complication}']
-                mni[person][f'{complication}_onset'] = pd.NaT
 
                 # Ensure some weight is assigned
                 if mni[person][f'{complication}_onset'] != self.sim.date:
-                    assert 1 > monthly_daly[person] > 0
+                    assert monthly_daly[person] > 0
+
+                mni[person][f'{complication}_onset'] = pd.NaT
 
         # Next we define a function that calculates disability associated with 'chronic' complications of pregnancy
         def chronic_daly_calculations(person, complication):
@@ -668,7 +669,7 @@ class PregnancySupervisor(Module):
 
                     # If the complication has not yet resolved, and started more than a month ago, the woman gets a
                     # months disability
-                    if mni[person][f'{complication}_onset'] <= (self.sim.date - DateOffset(months=1)):
+                    if mni[person][f'{complication}_onset'] < (self.sim.date - DateOffset(months=1)):
                         weight = (p[f'{complication}'] / 365.25) * (365.25 / 12)
                         monthly_daly[person] += weight
 
@@ -679,26 +680,35 @@ class PregnancySupervisor(Module):
                         days_since_onset = pd.Timedelta((self.sim.date - mni[person][f'{complication}_onset']),
                                                         unit='d')
                         daly_weight = days_since_onset.days * (p[f'{complication}'] / 365.25)
+
                         monthly_daly[person] += daly_weight
-                        # assert 1 > monthly_daly[person] > 0
+                        assert monthly_daly[person] >= 0
 
                 else:
                     # Its possible for a condition to resolve (via treatment) and onset within the same month
                     # (i.e. anaemia). If so, here we calculate how many days this month an individual has suffered
                     if mni[person][f'{complication}_resolution'] < mni[person][f'{complication}_onset']:
 
-                        # Calculate daily weight and how many days this woman hasnt had the complication
-                        daily_weight = p[f'{complication}'] / 365.25
-                        days_without_complication = pd.Timedelta((
-                            mni[person][f'{complication}_onset'] - mni[person][f'{complication}_resolution']), unit='d')
+                        if (mni[person][f'{complication}_resolution'] == (self.sim.date - DateOffset(months=1))) and \
+                          (mni[person][f'{complication}_onset'] == self.sim.date):
+                            return
 
-                        # Use the average days in a month to calculate how many days shes had the complication this
-                        # month
-                        avg_days_in_month = 365.25 / 12
-                        days_with_comp = avg_days_in_month - days_without_complication.days
-                        monthly_daly[person] += daily_weight * days_with_comp
+                        else:
+                            # Calculate daily weight and how many days this woman hasnt had the complication
+                            daily_weight = p[f'{complication}'] / 365.25
+                            days_without_complication = pd.Timedelta((
+                                mni[person][f'{complication}_onset'] - mni[person][f'{complication}_resolution']),
+                                unit='d')
 
-                        mni[person][f'{complication}_resolution'] = pd.NaT
+                            # Use the average days in a month to calculate how many days shes had the complication this
+                            # month
+                            avg_days_in_month = 365.25 / 12
+                            days_with_comp = avg_days_in_month - days_without_complication.days
+
+                            monthly_daly[person] += daily_weight * days_with_comp
+                            assert monthly_daly[person] >= 0
+
+                            mni[person][f'{complication}_resolution'] = pd.NaT
 
                     else:
                         # If the complication has truly resolved, check the dates make sense
@@ -714,7 +724,7 @@ class PregnancySupervisor(Module):
                         daly_weight = days_with_comp_this_month.days * (p[f'{complication}'] / 365.25)
                         monthly_daly[person] += daly_weight
 
-                        assert 1 > monthly_daly[person] >= 0
+                        assert monthly_daly[person] >= 0
                         # Reset the dates to stop additional disability being applied
                         mni[person][f'{complication}_onset'] = pd.NaT
                         mni[person][f'{complication}_resolution'] = pd.NaT
@@ -734,6 +744,9 @@ class PregnancySupervisor(Module):
                                      'severe_anaemia', 'mild_anaemia_pp', 'moderate_anaemia_pp', 'severe_anaemia_pp',
                                      'vesicovaginal_fistula', 'rectovaginal_fistula']:
                     chronic_daly_calculations(complication=complication, person=person)
+
+                if monthly_daly[person] > 1:
+                    monthly_daly[person] = 1
 
                 if mni[person]['delete_mni']:
                     del mni[person]
@@ -1233,11 +1246,14 @@ class PregnancySupervisor(Module):
         # Store onset to calculate daly weights
         severe_women = (df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index, 'ps_antepartum_haemorrhage']
                         == 'severe')
-        severe_women.index.to_series().apply(self.store_dalys_in_mni, mni_variable='severe_aph_onset')
+
+        severe_women.loc[severe_women].index.to_series().apply(self.store_dalys_in_mni, mni_variable='severe_aph_onset')
 
         non_severe_women = (df.loc[antepartum_haemorrhage.loc[antepartum_haemorrhage].index,
                                    'ps_antepartum_haemorrhage'] != 'severe')
-        non_severe_women.index.to_series().apply(self.store_dalys_in_mni, mni_variable='mild_mod_aph_onset')
+
+        non_severe_women.loc[non_severe_women].index.to_series().apply(self.store_dalys_in_mni,
+                                                                       mni_variable='mild_mod_aph_onset')
 
         if not antepartum_haemorrhage.loc[antepartum_haemorrhage].empty:
             logger.debug(key='message', data=f'The following women are experiencing an antepartum haemorrhage,'

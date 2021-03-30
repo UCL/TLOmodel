@@ -53,7 +53,8 @@ def generate_module_dict(topdir):
             # We can do this as compound-if statements are evaluated
             # left-to-right in Python:
             if (f == "__init__.py") or (f[-4:] == ".pyc") or (f[-3:] != ".py"):
-                print(f"skipping {f}")
+                # print(f"skipping {f}")
+                pass
             else:
                 (data[dirpath]).append(f)
     return data
@@ -305,7 +306,8 @@ def get_class_output_string(classinfo):
             if obj in func_objects_to_document:  # Should be always True!
                 mystr += f"{spacer}.. automethod:: {name}\n\n"
     else:
-        print(f"**DEBUG: no func_objects_to_document in class {class_name}")
+        # print(f"**DEBUG: no func_objects_to_document in class {class_name}")
+        pass
 
     # Anything else?
     # mystr += f"{name} : {obj}\n\n"
@@ -354,23 +356,26 @@ def which_functions_to_print(clazz):
                     # if the function object is the same
                     # as one defined in a base class
                     if func_obj == functions_base_class[func_name]:
-                        print(f'{func_name} in subclass is same as function in'
-                              f'{baseclass.__name__} (not overridden)')
+                        # print(f'{func_name} in subclass is same as function in'
+                        #       f'{baseclass.__name__} (not overridden)')
                         should_i_print = False
                         break
                     else:
-                        print(f'{func_name} in subclass is not the same '
-                              f'as one in baseclass {baseclass.__name__}')
+                        # print(f'{func_name} in subclass is not the same '
+                        #       f'as one in baseclass {baseclass.__name__}')
+                        pass
                 else:
-                    print(f'{func_name} is not in '
-                          f'baseclass {baseclass.__name__}')
+                    # print(f'{func_name} is not in '
+                    #       f'baseclass {baseclass.__name__}')
+                    pass
 
         if should_i_print:
-            print(f'\t✓✓✓ {func_name} is implemented in the subclass - print ')
+            # print(f'\t✓✓✓ {func_name} is implemented in the subclass - print ')
             ok_to_print.append(func_obj)
         else:
-            print(f'\txxx {func_name} has been inherited from a subclass'
-                  f'- do not print')
+            # print(f'\txxx {func_name} has been inherited from a subclass'
+            #       f'- do not print')
+            pass
 
     return ok_to_print
 
