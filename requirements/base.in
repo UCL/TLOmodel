@@ -12,3 +12,9 @@ azure-batch
 azure-identity
 azure-keyvault
 azure-storage-file-share
+
+# To submit jobs to Azure Batch
+azure-batch
+azure-identity
+azure-keyvault
+azure-storage-file-share

@@ -4622,8 +4622,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # put the injury in the injuries for minor surgery property to stop them being treated elsewhere
                 df.loc[person_id, 'rt_injuries_for_minor_surgery'].append('811')
             # Check if this fracture needs to be treated with open reduction internal fixation (major surg)
-            elif treatment_plan < prob_foot_frac_require_cast + prob_foot_frac_require_min_surg + \
-                prob_foot_frac_require_maj_surg:
+            elif (treatment_plan < prob_foot_frac_require_cast +
+                  prob_foot_frac_require_min_surg + prob_foot_frac_require_maj_surg):
                 # update the treatment plan
                 self.foot_frac_major_surg = True
                 # update the number of major surgeries
@@ -4675,8 +4675,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # put the injury in the injuries to be cast property to stop them being treated elsewhere
                 df.loc[person_id, 'rt_injuries_to_cast'].append('812')
             # Check if this fracture needs to be treated with external fixation (minor surgery)
-            elif treatment_plan < prob_tib_fib_frac_require_cast + \
-                prob_tib_fib_frac_require_min_surg:
+            elif (treatment_plan < prob_tib_fib_frac_require_cast + prob_tib_fib_frac_require_min_surg):
                 # update the treatment plan
                 self.tib_fib_frac_minor_surg = True
                 # put the injury in the injuries for minor surgery property to stop them being treated elsewhere
@@ -4684,8 +4683,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # update the number of minor surgeries needed
                 self.minor_surgery_counts += 1
             # Check if this fracture needs to be treated with open reduction internal fixation (major surg)
-            elif treatment_plan < prob_tib_fib_frac_require_cast + prob_tib_fib_frac_require_min_surg + \
-                prob_tib_fib_frac_require_maj_surg:
+            elif (treatment_plan < prob_tib_fib_frac_require_cast +
+                  prob_tib_fib_frac_require_min_surg + prob_tib_fib_frac_require_maj_surg):
                 # update the treatment plan
                 self.tib_fib_frac_major_surg = True
                 # put the injury in the injuries for major surgery property to stop them being treated elsewhere
@@ -4693,8 +4692,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # update the number of major surgeries needed
                 self.major_surgery_counts += 1
             # Check if this fracture needs to be treated with traction
-            elif treatment_plan < prob_tib_fib_frac_require_cast + prob_tib_fib_frac_require_min_surg + \
-                prob_tib_fib_frac_require_maj_surg + prob_tib_fib_frac_require_traction:
+            elif (treatment_plan < prob_tib_fib_frac_require_cast + prob_tib_fib_frac_require_min_surg +
+                  prob_tib_fib_frac_require_maj_surg + prob_tib_fib_frac_require_traction):
                 # update the treatment plan
                 self.tib_fib_frac_traction = True
                 # update the list of heal with time injuries
@@ -4748,8 +4747,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # store the injury in the major surgeries property so it won't be treated elsewhere
                 df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
             # check if femur fracture needs minor surgery
-            elif treatment_plan < prob_femural_fracture_require_major_surgery + \
-                prob_femural_fracture_require_minor_surgery:
+            elif (treatment_plan < prob_femural_fracture_require_major_surgery +
+                  prob_femural_fracture_require_minor_surgery):
                 # update the number of minor surgeries required
                 self.minor_surgery_counts += 1
                 # update the treatment plan
@@ -4757,8 +4756,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # store the injury in the minor surgeries property so it won't be treated elsewhere
                 df.loc[person_id, 'rt_injuries_for_minor_surgery'].append(actual_injury[0])
             # check if femur fracture needs casting
-            elif treatment_plan < prob_femural_fracture_require_major_surgery + \
-                prob_femural_fracture_require_minor_surgery + prob_femural_fracture_require_cast:
+            elif (treatment_plan < prob_femural_fracture_require_major_surgery +
+                  prob_femural_fracture_require_minor_surgery + prob_femural_fracture_require_cast):
                 # update the treatment plan
                 self.femur_cast = True
                 # put the injury in the injuries to be cast property to stop them being treated elsewhere
@@ -4809,8 +4808,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # add the injury to the injuries to be treated with minor surgeries so they aren't treated elsewhere
                 df.loc[person_id, 'rt_injuries_for_minor_surgery'].append('813b')
             # Determine if the pelvis fracture will be treated with major surgery
-            elif treatment_plan < prob_pelvis_fracture_traction + prob_pelvis_frac_minor_surgery + \
-                prob_pelvis_frac_major_surgery:
+            elif (treatment_plan < prob_pelvis_fracture_traction +
+                  prob_pelvis_frac_minor_surgery + prob_pelvis_frac_major_surgery):
                 # update the number of major surgeries required
                 self.major_surgery_counts += 1
                 # update the treatment plan

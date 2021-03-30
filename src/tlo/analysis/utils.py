@@ -397,3 +397,161 @@ def get_grid(params: pd.DataFrame, res: pd.Series):
     grid[res.columns[2]] = piv.values
 
     return grid
+
+
+def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
+    """Returns paths of folders associated with a batch_file, in chronological order."""
+    stub = scenario_filename.rstrip('.py')
+    folders = [Path(f) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
+    folders.sort()
+    return folders
+
+
+def get_scenario_info(scenario_output_dir: Path) -> dict:
+    """Utility function to get the the number draws and the number of runs in a batch set.
+
+    TODO: read the JSON file to get further information
+    """
+    info = dict()
+    draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
+
+    info['number_of_draws'] = len(draw_folders)
+
+    run_folders = [f for f in os.scandir(draw_folders[0]) if f.is_dir()]
+    info['runs_per_draw'] = len(run_folders)
+
+    return info
+
+
+def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> dict:
+    """Utility function to create a dict contaning all the logs from the specified run within a batch set"""
+    folder = results_folder / str(draw) / str(run)
+    pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
+    if name is not None:
+        pickles = [p for p in pickles if p.name in f"{name}.pickle"]
+
+    output = dict()
+    for p in pickles:
+        name = os.path.splitext(p.name)[0]
+        with open(p.path, "rb") as f:
+            output[name] = pickle.load(f)
+
+    return output
+
+
+def extract_params(results_folder: Path) -> pd.DataFrame:
+    """Utility function to get overridden parameters from scenario runs
+
+    Returns dateframe summarizing parameters that change across the draws. It produces a dataframe with index of draw
+    and columns of each parameters that is specified to be varied in the batch. NB. This does the extraction from run 0
+    in each draw, under the assumption that the over-written parameters are the same in each run.
+    """
+
+    # Get the paths for the draws
+    draws = [f for f in os.scandir(results_folder) if f.is_dir()]
+
+    list_of_param_changes = list()
+
+    for d in draws:
+        p = load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")
+        p = p["tlo.scenario"]["override_parameter"]
+
+        p['module_param'] = p['module'] + ':' + p['name']
+        p.index = [int(d.name)] * len(p.index)
+
+        list_of_param_changes.append(p[['module_param', 'new_value']])
+
+    params = pd.concat(list_of_param_changes)
+    params.index.name = 'draw'
+    params = params.rename(columns={'new_value': 'value'})
+    params = params.sort_index()
+
+    return params
+
+
+def extract_results(results_folder: Path, module: str, key: str, column: str, index: str = None) -> pd.DataFrame:
+    """Utility function to unpack results
+
+    Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an 'index'
+    component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
+    index is the same in each run).
+    """
+
+    results_index = None
+    if index is not None:
+        # extract the index from the first log, and use this ensure that all other are exactly the same.
+        filename = f"{module}.pickle"
+        df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
+        results_index = df[index]
+
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+
+    results = pd.DataFrame(columns=pd.MultiIndex.from_product(
+        [range(info['number_of_draws']), range(info['runs_per_draw'])],
+        names=["draw", "run"]
+    ))
+
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
+            try:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                results[draw, run] = df[column]
+
+                if index is not None:
+                    idx = df[index]
+                    assert idx.equals(results_index), "Indexes are not the same between runs"
+
+            except ValueError:
+                results[draw, run] = np.nan
+
+    # if 'index' is provided, set this to be the index of the results
+    if index is not None:
+        results.index = results_index
+
+    return results
+
+
+def summarize(results: pd.DataFrame, only_mean: bool = False) -> pd.DataFrame:
+    """Utility function to compute summary statistics
+
+    Finds mean value and 95% interval across the runs for each draw.
+    """
+    summary = pd.DataFrame(
+        columns=pd.MultiIndex.from_product(
+            [
+                results.columns.unique(level='draw'),
+                ["mean", "lower", "upper"]
+            ],
+            names=['draw', 'stat']),
+        index=results.index
+    )
+
+    summary.loc[:, (slice(None), "mean")] = results.groupby(axis=1, by='draw').mean().values
+    summary.loc[:, (slice(None), "lower")] = results.groupby(axis=1, by='draw').quantile(0.025).values
+    summary.loc[:, (slice(None), "upper")] = results.groupby(axis=1, by='draw').quantile(0.975).values
+
+    if only_mean:
+        # Remove other metrics and simplify if 'only_mean' is required:
+        om = summary.loc[:, (slice(None), "mean")]
+        om.columns = [c[0] for c in om.columns.to_flat_index()]
+        return om
+
+    return summary
+
+
+def get_grid(params: pd.DataFrame, res: pd.Series):
+    """Utility function to create the arrays needed to plot a heatmap.
+
+    :param pd.DataFrame params: the dataframe of parameters with index=draw (made using `extract_params()`).
+    :param pd.Series res: results of interest with index=draw (can be made using `extract_params()`)
+    :returns: grid as dictionary
+    """
+    res = pd.concat([params.pivot(columns='module_param', values='value'), res], axis=1)
+    piv = res.pivot_table(index=res.columns[0], columns=res.columns[1], values=res.columns[2])
+
+    grid = dict()
+    grid[res.columns[0]], grid[res.columns[1]] = np.meshgrid(piv.index, piv.columns)
+    grid[res.columns[2]] = piv.values
+
+    return grid
