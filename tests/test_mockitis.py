@@ -3,9 +3,15 @@ from pathlib import Path
 
 import pytest
 
-from tlo import Simulation, Date
-from tlo.methods import demography, healthseekingbehaviour, symptommanager, healthburden, healthsystem, \
-    enhanced_lifestyle
+from tlo import Date, Simulation
+from tlo.methods import (
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    symptommanager,
+)
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 

@@ -1,21 +1,23 @@
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
     rti,
-    dx_algorithm_adult,
-    dx_algorithm_child
+    symptommanager,
 )
-import numpy as np
-from matplotlib import pyplot as plt
-import pandas as pd
+
 # =============================== Analysis description ========================================================
 # What I am doing here is fiting the model to the various estimates of death per 100,000 person years available for
 # Malawi, starting from the estimate from hospital registry data of 5.1 per 100,000 person years to the highest

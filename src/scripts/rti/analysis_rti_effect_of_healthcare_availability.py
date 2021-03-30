@@ -1,22 +1,22 @@
+import ast
 from pathlib import Path
+
+import numpy as np
+from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
     rti,
-    dx_algorithm_child,
-    dx_algorithm_adult
+    symptommanager,
 )
-import numpy as np
-from matplotlib import pyplot as plt
-import ast
-
 
 # =============================== Analysis description ========================================================
 # What I am doing here is to see what happens when we run the model with different capability coefficients, i.e

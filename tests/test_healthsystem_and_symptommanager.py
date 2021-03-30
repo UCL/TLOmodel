@@ -44,6 +44,49 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
+def test_using_parameter_or_argument_to_set_service_availability():
+    """
+    Check that can set service_availability through argument or through parameter.
+    Should be equal to what is specified by the parameter, but overwrite with what was provided in arguement if an
+    argument was specified -- provided for backward compatibility.)
+    """
+
+    # No specification with argument --> everything is available
+    sim = Simulation(start_date=start_date, seed=0)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+    assert sim.modules['HealthSystem'].service_availability == ['*']
+
+    # Editing parameters --> that is reflected in what is used
+    sim = Simulation(start_date=start_date, seed=0)
+    service_availability_params = ['HSI_that_begin_with_A*', 'HSI_that_begin_with_B*']
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
+    )
+    sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability_params
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+    assert sim.modules['HealthSystem'].service_availability == service_availability_params
+
+    # Editing parameters, but with an argument provided to module --> argument over-writes parameter edits
+    sim = Simulation(start_date=start_date, seed=0)
+    service_availability_arg = ['HSI_that_begin_with_C*']
+    service_availability_params = ['HSI_that_begin_with_A*', 'HSI_that_begin_with_B*']
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability_arg)
+    )
+    sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability_params
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+    assert sim.modules['HealthSystem'].service_availability == service_availability_arg
+
+
 def test_run_with_healthsystem_no_disease_modules_defined():
     sim = Simulation(start_date=start_date, seed=0)
 

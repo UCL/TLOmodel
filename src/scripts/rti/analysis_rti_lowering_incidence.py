@@ -1,22 +1,24 @@
+import ast
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
     rti,
-    dx_algorithm_adult,
-    dx_algorithm_child
+    symptommanager,
 )
-import numpy as np
-from matplotlib import pyplot as plt
-import pandas as pd
-import ast
+
 # =============================== Analysis description ========================================================
 # What I am doing here is modelling the what would happen if we included a number of different intervention strategies.
 # I include three here, the first is the enforcements of speed limits, which should result in a 6% reduction in

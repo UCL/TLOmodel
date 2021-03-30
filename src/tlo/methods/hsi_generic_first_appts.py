@@ -2,6 +2,8 @@
 The file contains the event HSI_GenericFirstApptAtFacilityLevel1, which describes the first interaction with
 the health system following the onset of acute generic symptoms.
 """
+import pandas as pd
+
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.bladder_cancer import (
@@ -24,7 +26,7 @@ from tlo.methods.malaria import (
 )
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
-import pandas as pd
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -274,7 +276,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     else:
                         df.loc[person_id, 'rt_diagnosed'] = True
                         road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
-
 
     def did_not_run(self):
         logger.debug(key='message',

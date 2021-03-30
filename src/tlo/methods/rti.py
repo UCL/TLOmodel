@@ -3,13 +3,15 @@ Road traffic injury module.
 
 """
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
-from tlo.methods import demography, Metadata
-from tlo.methods.healthsystem import HSI_Event
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.methods import Metadata, demography
+from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 # ---------------------------------------------------------------------------------------------------------
@@ -2910,7 +2912,8 @@ class RTI(Module):
                             probabilities = p['daly_dist_code_133']
                             detail_add_on = ['a', 'b', 'c', 'd']
                             detail = self.rng.choice(detail_add_on, p=probabilities)
-                        elif self.head_prob_TBI_AIS3 < severity <= self.head_prob_TBI_AIS3 + self.head_prob_TBI_AIS4:
+                        elif (self.head_prob_TBI_AIS3 < severity <= self.head_prob_TBI_AIS3 +
+                              self.head_prob_TBI_AIS4):
                             # Moderate TBI, store the injury severity in injais
                             injais.append(4)
                             # multiple TBIs have an AIS score of 4, but have different daly weights, determine

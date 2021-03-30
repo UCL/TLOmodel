@@ -1,25 +1,28 @@
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    antenatal_care,
+    contraception,
     demography,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
-    rti,
-    dx_algorithm_adult,
-    dx_algorithm_child,
-    antenatal_care,
-    contraception,
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
+    rti,
+    symptommanager,
 )
-import numpy as np
-from matplotlib import pyplot as plt
-import pandas as pd
+
 # =============================== Analysis description ========================================================
 # This script looks at the effect of reducing the number of lower extremity fractures that are treated
 # using skeletal traction. Initially we look at inpatient days consumed in each simulation but eventually I want
@@ -37,10 +40,10 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 5
+yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 25000
+pop_size = 50000
 
 nsim = 2
 scenarios = {'Current': 1,

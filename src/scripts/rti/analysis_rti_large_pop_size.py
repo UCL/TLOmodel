@@ -1,17 +1,19 @@
 from pathlib import Path
+
 import numpy as np
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
     rti,
-    dx_algorithm_child,
-    dx_algorithm_adult
+    symptommanager,
 )
 
 # In this file I run the model with a large population twice with the same seed, storing the model run as it's

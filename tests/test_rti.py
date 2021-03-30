@@ -1,8 +1,10 @@
 import os
 import time
 from pathlib import Path
-import pytest
+
 import pandas as pd
+import pytest
+
 from tlo import Date, Simulation
 from tlo.methods import (
     contraception,
@@ -20,7 +22,7 @@ from tlo.methods import (
     newborn_outcomes,
     pregnancy_supervisor,
     rti,
-    symptommanager
+    symptommanager,
 )
 
 # create simulation parameters

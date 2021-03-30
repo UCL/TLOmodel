@@ -1,20 +1,22 @@
 from pathlib import Path
 
+import numpy as np
+from matplotlib import pyplot as plt
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
     rti,
-    dx_algorithm_adult,
-    dx_algorithm_child
+    symptommanager,
 )
-import numpy as np
-from matplotlib import pyplot as plt
+
 # =============================== Analysis description ========================================================
 # What I am trying to do here is to see the health benefits achieved in the population if we include additional
 # surgeries, specifically I found a few references to the lack of surgical provided for spinal cord injuries in
