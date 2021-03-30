@@ -1790,8 +1790,8 @@ model_data = [model_percentage_male, model_mean_age, model_percent_admitted, mod
 # plot the data
 plt.bar(np.arange(len(kch_summary)), kch_summary, color='lightsalmon', width=0.4, label='KCH data')
 plt.bar(np.arange(len(kch_summary)) + 0.4, model_data, color='lightsteelblue', width=0.4, label='Model data')
-plt.xticks(np.arange(len(kch_summary)) + 0.2, ['Percent\n male', 'Mean age', 'Percent\n admitted', 'Percent\n under 18',
-                                                'Inhospital\n mortality'])
+plt.xticks(np.arange(len(kch_summary)) + 0.2,
+           ['Percent\n male', 'Mean age', 'Percent\n admitted', 'Percent\n under 18', 'Inhospital\n mortality'])
 plt.legend()
 plt.title(f"Model's performance of inhospital data compared to KCH"
           f"\n"
