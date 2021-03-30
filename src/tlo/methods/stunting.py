@@ -9,6 +9,7 @@ This module applies the prevalence of stunting at the population-level, and sche
 """
 import copy
 from pathlib import Path
+from scipy.stats import norm
 
 import numpy as np
 import pandas as pd
@@ -75,14 +76,14 @@ class Stunting(Module):
             Types.REAL, 'odds ratio of stunting if mother has low BMI, ref group high BMI (overweight)'),
         'or_stunting_motherBMI_normal': Parameter(
             Types.REAL, 'odds ratio of stunting if mother has normal BMI, ref group high BMI (overweight)'),
-        'or_stunting_hhwealth_Q1': Parameter(
-            Types.REAL, 'odds ratio of stunting if household wealth is poorest Q1, ref group Q5'),
-        'or_stunting_hhwealth_Q2': Parameter(
-            Types.REAL, 'odds ratio of stunting if household wealth is poorer Q2, ref group Q5'),
-        'or_stunting_hhwealth_Q3': Parameter(
-            Types.REAL, 'odds ratio of stunting if household wealth is middle Q3, ref group Q5'),
+        'or_stunting_hhwealth_Q5': Parameter(
+            Types.REAL, 'odds ratio of stunting if household wealth is poorest Q5, ref group Q1'),
         'or_stunting_hhwealth_Q4': Parameter(
-            Types.REAL, 'odds ratio of stunting if household wealth is richer Q4, ref group Q5'),
+            Types.REAL, 'odds ratio of stunting if household wealth is poorer Q4, ref group Q1'),
+        'or_stunting_hhwealth_Q3': Parameter(
+            Types.REAL, 'odds ratio of stunting if household wealth is middle Q3, ref group Q1'),
+        'or_stunting_hhwealth_Q2': Parameter(
+            Types.REAL, 'odds ratio of stunting if household wealth is richer Q2, ref group Q1'),
         'base_inc_rate_stunting': Parameter(
             Types.REAL, 'baseline incidence of stunting'),
         'rr_stunting_preterm_and_AGA': Parameter(
@@ -95,13 +96,17 @@ class Stunting(Module):
     }
 
     PROPERTIES = {
-        'un_HAZ_score': Property(Types.REAL, 'height-for-age z-score')
+        'un_HAZ_score': Property(Types.REAL, 'height-for-age z-score'),
+        'un_HAZ_category': Property(Types.CATEGORICAL, 'height-for-age z-score group',
+                                    categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
 
     }
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+        self.prevalence_equations_by_age = dict()
 
     def read_parameters(self, data_folder):
         """
@@ -134,29 +139,86 @@ class Stunting(Module):
         """
         df = population.props
         p = self.parameters
-        rng = self.rng
+        AGE_GROUPS = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
 
-        df.loc[df.is_alive, 'ep_seiz_stat'] = '0'
-        df.loc[df.is_alive, 'ep_antiep'] = False
-        df.loc[df.is_alive, 'ep_epi_death'] = False
-        df.loc[df.is_alive, 'ep_disability'] = 0
+        def make_scaled_linear_model_stunting(agegp):
+            """Makes the unscaled linear model with intercept of baseline odds of stunting (HAZ <-2).
+            Calculates the mean odds of stunting by age group and then creates a new linear model
+            with adjusted intercept so odds in 0-year-olds matches the specified value in the model
+            when averaged across the population
+            """
+            def get_odds_stunting(agegp):
+                """
+                This function will calculate the HAZ scores by categories and return the odds of stunting
+                :param agegp: age grouped in months
+                :return:
+                """
+                # generate random numbers from N(meean, sd)
+                baseline_HAZ_prevalence_by_agegp = f'prev_HAZ_distribution_age_{agegp}'
+                HAZ_normal_distribution = norm(loc=p[baseline_HAZ_prevalence_by_agegp][0],
+                                               scale=p[baseline_HAZ_prevalence_by_agegp][1])
 
-        mean_HAZ_age_0_5mo = p['prev_HAZ_distribution_age_0_5mo'][0]
-        mean_HAZ_age_6_11mo = p['prev_HAZ_distribution_age_6_11mo'][0]
-        mean_HAZ_age_12_23mo = p['prev_HAZ_distribution_age_12_23mo'][0]
-        mean_HAZ_age_24_35mo = p['prev_HAZ_distribution_age_24_35mo'][0]
-        mean_HAZ_age_36_47mo = p['prev_HAZ_distribution_age_36_47mo'][0]
-        mean_HAZ_age_48_59mo = p['prev_HAZ_distribution_age_48_59mo'][0]
+                # get all stunting: HAZ <-2
+                probability_over_or_equal_minus2sd = HAZ_normal_distribution.sf(-2)
+                probability_less_than_minus2sd = 1 - probability_over_or_equal_minus2sd
 
-        sd_HAZ_age_0_5mo = p['prev_HAZ_distribution_age_0_5mo'][1]
-        sd_HAZ_age_6_11mo = p['prev_HAZ_distribution_age_6_11mo'][1]
-        sd_HAZ_age_12_23mo = p['prev_HAZ_distribution_age_12_23mo'][1]
-        sd_HAZ_age_24_35mo = p['prev_HAZ_distribution_age_24_35mo'][1]
-        sd_HAZ_age_36_47mo = p['prev_HAZ_distribution_age_36_47mo'][1]
-        sd_HAZ_age_48_59mo = p['prev_HAZ_distribution_age_48_59mo'][1]
+                # # get severe stunting zcores: HAZ <-3
+                # probability_over_or_equal_minus3sd = HAZ_normal_distribution.sf(-3)
+                # probability_less_than_minus3sd = 1 - probability_over_or_equal_minus3sd
+                #
+                # # get moderate stunting zcores: <=-3 HAZ <-2
+                # probability_between_minus3_minus2sd =\
+                #     probability_over_or_equal_minus3sd - probability_over_or_equal_minus2sd
+
+                # convert probability to odds
+                base_odds_of_stunting = probability_less_than_minus2sd / (1-probability_less_than_minus2sd)
+
+                return base_odds_of_stunting
+
+            def make_linear_model_stunting(agegp, intercept=1.0):
+                return LinearModel(
+                    LinearModelType.LOGISTIC,
+                    get_odds_stunting(agegp=agegp),  # base odds
+                    # Predictor('gi_last_diarrhoea_date_of_onset').when(range(self.sim.date - DateOffset(weeks=2)),
+                    #                                                   p['or_stunting_no_recent_diarrhoea']),
+                    Predictor('li_ed_lev').when(1, p['or_stunting_mother_no_education'])
+                        .when(2, p['or_stunting_mother_primary_education']),
+                    Predictor('li_wealth').when(2, p['or_stunting_hhwealth_Q2'])
+                        .when(3, p['or_stunting_hhwealth_Q3'])
+                        .when(4, p['or_stunting_hhwealth_Q4'])
+                        .when(5, p['or_stunting_hhwealth_Q5']),
+                )
+
+            unscaled_lm = make_linear_model_stunting(agegp)  # intercept=get_odds_stunting(agegp)
+            target_mean = get_odds_stunting(agegp)
+            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
+            scaled_intercept = get_odds_stunting(agegp) * (target_mean / actual_mean)
+            scaled_lm = make_linear_model_stunting(agegp, intercept=scaled_intercept)
+            # check by applying the model to mean incidence of 0-year-olds
+            return scaled_lm
+
+        for agegp in ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo']:
+            self.prevalence_equations_by_age[agegp] = make_scaled_linear_model_stunting(agegp)
+
+        prevalence_of_stunting = pd.DataFrame(index=df.loc[df.is_alive & (df.age_exact_years < 5)].index)
+
+        prevalence_of_stunting['0_5mo'] = self.prevalence_equations_by_age['0_5mo']\
+            .predict(df.loc[df.is_alive & (df.age_exact_years < 0.5)])
+        prevalence_of_stunting['6_11mo'] = self.prevalence_equations_by_age['6_11mo']\
+            .predict(df.loc[df.is_alive & ((df.age_exact_years >= 0.5) & (df.age_exact_years < 1))])
+        prevalence_of_stunting['12_23mo'] = self.prevalence_equations_by_age['12_23mo'] \
+            .predict(df.loc[df.is_alive & ((df.age_exact_years >= 1) & (df.age_exact_years < 2))])
+        prevalence_of_stunting['24_35mo'] = self.prevalence_equations_by_age['24_35mo'] \
+            .predict(df.loc[df.is_alive & ((df.age_exact_years >= 2) & (df.age_exact_years < 3))])
+        prevalence_of_stunting['36_47mo'] = self.prevalence_equations_by_age['36_47mo'] \
+            .predict(df.loc[df.is_alive & ((df.age_exact_years >= 3) & (df.age_exact_years < 4))])
+        prevalence_of_stunting['48_59mo'] = self.prevalence_equations_by_age['48_59mo'] \
+            .predict(df.loc[df.is_alive & ((df.age_exact_years >= 4) & (df.age_exact_years < 5))])
+
+        print(prevalence_of_stunting)
 
         # allocate initial prevalence of stunting at the start of the simulation
-        # apply by age group
+        # set the indexes to apply by age group
         index_children_aged_0_5mo = df.index[df.is_alive & df.age_exact_years < 0.5]
         index_children_aged_6_11mo = df.index[df.is_alive & ((df.age_exact_years >= 0.5) & (df.age_exact_years < 1))]
         index_children_aged_12_23mo = df.index[df.is_alive & ((df.age_exact_years >= 1) & (df.age_exact_years < 2))]
@@ -164,39 +226,46 @@ class Stunting(Module):
         index_children_aged_36_47mo = df.index[df.is_alive & ((df.age_exact_years >= 3) & (df.age_exact_years < 4))]
         index_children_aged_48_59mo = df.index[df.is_alive & ((df.age_exact_years >= 4) & (df.age_exact_years < 5))]
 
-        ### Random draw of HAZ scores from a normal distribution ###
-        # random draw of HAZ scores from a normal distribution for under 6 months old
-        HAZ_distribution_under_6mo = np.random.normal(loc=p['prev_HAZ_distribution_age_0_5mo'][0],
-                                                      scale=p['prev_HAZ_distribution_age_0_5mo'][1])
+        # # # Random draw of HAZ scores from a normal distribution # # #
+        # HAZ scores for under 6 months old, update the df
+        df.loc[index_children_aged_0_5mo, 'un_HAZ_score'] = \
+            np.random.normal(loc=p['prev_HAZ_distribution_age_0_5mo'][0],
+                             scale=p['prev_HAZ_distribution_age_0_5mo'][1])
 
-        HAZ_score_under6mo = pd.Series(HAZ_distribution_under_6mo, index=index_children_aged_0_5mo)
-        # update df
-        df.loc['un_HAZ_score'] = HAZ_score_under6mo
+        # HAZ scores for 6 to 11 months
+        df.loc[index_children_aged_6_11mo, 'un_HAZ_score'] = \
+            np.random.normal(loc=p['prev_HAZ_distribution_age_6_11mo'][0],
+                             scale=p['prev_HAZ_distribution_age_6_11mo'][1])
 
-        # for 6 to 11 months
-        for i in index_children_aged_6_11mo:
-            HAZ_distribution_among_6_11mo = np.random.normal(loc=p['prev_HAZ_distribution_age_6_11mo'][0],
-                                                             scale=p['prev_HAZ_distribution_age_6_11mo'][1])
-            df.at[i, 'un_HAZ_score'] = HAZ_distribution_among_6_11mo
-        # HAZ_score_among_6_11mo = pd.Series(HAZ_distribution_among_6_11mo, index=index_children_aged_6_11mo)
+        # HAZ scores for 12 to 23 months
+        df.loc[index_children_aged_12_23mo, 'un_HAZ_score'] = \
+            np.random.normal(loc=p['prev_HAZ_distribution_age_12_23mo'][0],
+                             scale=p['prev_HAZ_distribution_age_12_23mo'][1])
 
+        # HAZ scores for 24 to 35 months
+        df.loc[index_children_aged_24_35mo, 'un_HAZ_score'] = \
+            np.random.normal(loc=p['prev_HAZ_distribution_age_24_35mo'][0],
+                             scale=p['prev_HAZ_distribution_age_24_35mo'][1])
 
-        HAZ_distribution_among_1yo = np.random.normal(loc=p['prev_HAZ_distribution_age_12_23mo'][0],
-                                                      scale=p['prev_HAZ_distribution_age_12_23mo'][1])
-        df.loc[df.is_alive, 'un_HAZ_score'] = HAZ_distribution_among_1yo
-        if index_children_aged_24_35mo:
-            HAZ_distribution_among_2yo = np.random.normal(loc=p['prev_HAZ_distribution_age_24_35mo'][0],
-                                                          scale=p['prev_HAZ_distribution_age_24_35mo'][1])
-            df.loc[df.is_alive, 'un_HAZ_score'] = HAZ_distribution_among_2yo
-        if index_children_aged_36_47mo:
-            HAZ_distribution_among_3yo = np.random.normal(loc=p['prev_HAZ_distribution_age_36_47mo'][0],
-                                                          scale=p['prev_HAZ_distribution_age_36_47mo'][1])
-            df.loc[df.is_alive, 'un_HAZ_score'] = HAZ_distribution_among_3yo
-        if index_children_aged_48_59mo:
-            HAZ_distribution_among_4yo = np.random.normal(loc=p['prev_HAZ_distribution_age_48_59mo'][0],
-                                                          scale=p['prev_HAZ_distribution_age_48_59mo'][1])
-            df.loc[df.is_alive, 'un_HAZ_score'] = HAZ_distribution_among_4yo
+        # HAZ scores for 36 to 47 months
+        df.loc[index_children_aged_36_47mo, 'un_HAZ_score'] = \
+            np.random.normal(loc=p['prev_HAZ_distribution_age_36_47mo'][0],
+                             scale=p['prev_HAZ_distribution_age_36_47mo'][1])
 
+        # HAZ scores for 48 to 59 months
+        df.loc[index_children_aged_48_59mo, 'un_HAZ_score'] = \
+            np.random.normal(loc=p['prev_HAZ_distribution_age_48_59mo'][0],
+                             scale=p['prev_HAZ_distribution_age_48_59mo'][1])
+
+        # HAZ category of under-5, update df
+        under_5_index = df.index[df.is_alive & df.age_exact_years < 5]
+        severe_stunting = df.loc[under_5_index, 'un_HAZ_score'] < -3.0
+        moderate_stunting = df.loc[df.is_alive & df.age_exact_years < 5 & (df['un_HAZ_score'] >= -3.0) & (df['un_HAZ_score'] < -2.0)]
+        no_stunting = df.loc[under_5_index, 'un_HAZ_score'] >= -2.0
+
+        df.loc[severe_stunting.index, 'un_HAZ_category'] = 'HAZ<-3'
+        df.loc[moderate_stunting.index, 'un_HAZ_category'] = '-3<=HAZ<-2'
+        df.loc[no_stunting.index, 'un_HAZ_category'] = 'HAZ>=-2'
 
     def initialise_simulation(self, sim):
         pass
