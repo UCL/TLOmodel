@@ -2910,8 +2910,7 @@ class RTI(Module):
                             probabilities = p['daly_dist_code_133']
                             detail_add_on = ['a', 'b', 'c', 'd']
                             detail = self.rng.choice(detail_add_on, p=probabilities)
-                        elif self.head_prob_TBI_AIS3 < severity <= self.head_prob_TBI_AIS3 + \
-                            self.head_prob_TBI_AIS4:
+                        elif self.head_prob_TBI_AIS3 < severity <= self.head_prob_TBI_AIS3 + self.head_prob_TBI_AIS4:
                             # Moderate TBI, store the injury severity in injais
                             injais.append(4)
                             # multiple TBIs have an AIS score of 4, but have different daly weights, determine
@@ -2928,9 +2927,13 @@ class RTI(Module):
                 if injlocs == 2:
                     # Decide what the injury to the face will be
                     # determine if it is a skin wound
+                    # label probability boundaries used for assigning facial injuries
+                    boundary_1 = self.face_prob_skin_wound
+                    boundary_2 = self.face_prob_skin_wound + self.face_prob_fracture
+                    boundary_3 = self.face_prob_skin_wound + self.face_prob_fracture + self.face_prob_soft_tissue_injury
                     if cat <= self.face_prob_skin_wound:
                         # decide whether it will be a laceration or a burn
-                        if severity <= self.face_prob_skin_wound_open:
+                        if severity <= boundary_1:
                             # Open wound, store the category and severity information
                             injcat.append(int(10))
                             injais.append(1)
@@ -2939,7 +2942,7 @@ class RTI(Module):
                             injcat.append(int(11))
                             injais.append(4)
                     # Ask if it is a facial fracture
-                    elif self.face_prob_skin_wound < cat <= self.face_prob_skin_wound + self.face_prob_fracture:
+                    elif boundary_1 < cat <= boundary_2:
                         # Facial fracture, update the injury category list
                         injcat.append(int(1))
                         # decide how severe the injury will be
@@ -2950,23 +2953,25 @@ class RTI(Module):
                             # Mandible and Zygomatic fractures, AIS score of 2 store severity information
                             injais.append(2)
                     # Ask if it will be a soft tissue injury
-                    elif self.face_prob_skin_wound + self.face_prob_fracture < cat < self.face_prob_skin_wound \
-                        + self.face_prob_fracture + self.face_prob_soft_tissue_injury:
+                    elif boundary_2 < cat < boundary_3:
                         # soft tissue injury, store the injury category and injury information
                         injcat.append(int(4))
                         injais.append(1)
                     # If none of the above the injury is an eye injury
-                    elif self.face_prob_skin_wound + self.face_prob_fracture + \
-                        self.face_prob_soft_tissue_injury < cat:
+                    elif boundary_3 < cat:
                         # eye injury, store the injury category and injury information
                         injcat.append(int(9))
                         injais.append(1)
                 # Decide what the injury to the neck will be
                 if injlocs == 3:
                     # ask if the injury is a skin wound
+                    # label probability boundaries used to assign neck injuries
+                    boundary_1 = self.neck_prob_skin_wound
+                    boundary_2 = self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury
+                    boundary_3 = boundary_2 + self.neck_prob_internal_bleeding
                     if cat <= self.neck_prob_skin_wound:
                         # ask if it is a laceration, else it will be a burn
-                        if severity <= self.neck_prob_skin_wound_open:
+                        if severity <= boundary_1:
                             # Open wound, store the injury category and injury information
                             injcat.append(int(10))
                             injais.append(1)
@@ -2975,8 +2980,7 @@ class RTI(Module):
                             injcat.append(int(11))
                             injais.append(3)
                     # determine if the injury is a soft tissue injury
-                    elif self.neck_prob_skin_wound < cat <= self.neck_prob_skin_wound + \
-                        self.neck_prob_soft_tissue_injury:
+                    elif boundary_1 < cat <= boundary_2:
                         # Soft tissue injuries of the neck, store the injury category information
                         injcat.append(int(4))
                         # decide how severe the injury is
@@ -2987,9 +2991,7 @@ class RTI(Module):
                             # Pharynx contusion, AIS score of 2, store information in injais
                             injais.append(3)
                     # determine if the injury is internal bleeding
-                    elif self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury < cat <= \
-                        self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury + \
-                        self.neck_prob_internal_bleeding:
+                    elif boundary_2 < cat <= boundary_3:
                         # Internal bleeding, so store injury category in injcat
                         injcat.append(int(6))
                         # Decide how severe the injury will be
@@ -3007,8 +3009,7 @@ class RTI(Module):
                             # have AIS score of 3 so store severity information in injais
                             injais.append(3)
                     # Determine if the injury is a dislocation
-                    elif self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury + \
-                        self.neck_prob_internal_bleeding < cat:
+                    elif boundary_3 < cat:
                         # Dislocation, store the category information in injcat
                         injcat.append(int(2))
                         # Decide how severe the injury will be
@@ -3021,9 +3022,15 @@ class RTI(Module):
                 # If the injury is a thorax injury, determine what the injury is
                 if injlocs == 4:
                     # Determine if the injury is a skin wound
+                    # label probability boundaries used to assign neck injuries
+                    boundary_1 = self.thorax_prob_skin_wound
+                    boundary_2 = self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding
+                    boundary_3 = boundary_2 + self.thorax_prob_internal_organ_injury
+                    boundary_4 = boundary_3 + self.thorax_prob_fracture
+                    boundary_5 = boundary_4 + self.thorax_prob_soft_tissue_injury
                     if cat <= self.thorax_prob_skin_wound:
                         # Decide if the injury is a laceration or a burn
-                        if severity <= self.thorax_prob_skin_wound_open:
+                        if severity <= boundary_1:
                             # Open wound, so update the injury category and severity information
                             injcat.append(int(10))
                             injais.append(1)
@@ -3032,8 +3039,7 @@ class RTI(Module):
                             injcat.append(int(11))
                             injais.append(3)
                     # Decide if the injury is internal bleeding
-                    elif self.thorax_prob_skin_wound < cat <= self.thorax_prob_skin_wound + \
-                        self.thorax_prob_internal_bleeding:
+                    elif boundary_1 < cat <= boundary_2:
                         # Internal Bleeding, so update the injury category information
                         injcat.append(int(6))
                         # Decide how severe the injury will be
@@ -3044,9 +3050,7 @@ class RTI(Module):
                             # Haemothorax has an AIS score of 3, update injais
                             injais.append(3)
                     # Decide if the injury is an internal organ injury
-                    elif self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding < cat <= \
-                        self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
-                        self.thorax_prob_internal_organ_injury:
+                    elif boundary_2 < cat <= boundary_3:
                         # Internal organ injury, so update the injury category information
                         injcat.append(int(5))
                         # Lung contusion and Diaphragm rupture both have an AIS score of 3, update the injury
@@ -3059,10 +3063,7 @@ class RTI(Module):
                         # store the specific details of the injury in the variable detail
                         detail = self.rng.choice(detail_add_on, p=probabilities)
                     # Determine if the injury is a fracture/flail chest
-                    elif self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
-                        self.thorax_prob_internal_organ_injury < cat <= self.thorax_prob_skin_wound + \
-                        self.thorax_prob_internal_bleeding + self.thorax_prob_internal_organ_injury + \
-                        self.thorax_prob_fracture:
+                    elif boundary_3 < cat <= boundary_4:
                         # Fractures to ribs and flail chest, so update the injury category information
                         injcat.append(int(1))
                         # Decide how severe the injury is
@@ -3073,19 +3074,17 @@ class RTI(Module):
                             # flail chest has an AIS score of 4, store this in injais
                             injais.append(4)
                     # Determine if the injury is a soft tissue injury
-                    elif self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
-                        self.thorax_prob_internal_organ_injury + self.thorax_prob_fracture < cat <= \
-                        self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
-                        self.thorax_prob_internal_organ_injury + self.thorax_prob_fracture + \
-                        self.thorax_prob_soft_tissue_injury:
+                    elif boundary_4 < cat <= boundary_5:
                         # Soft tissue injury, update the injury catregory information
                         injcat.append(int(4))
                         # Decide how severe the injury is
-                        if severity <= self.thorax_prob_soft_tissue_injury_AIS1:
+                        # create boundaries used for assigning injury severity
+                        sev_boundary_1 = self.thorax_prob_soft_tissue_injury_AIS1
+                        sev_boundary_2 = sev_boundary_1 + self.thorax_prob_soft_tissue_injury_AIS2
+                        if severity <= sev_boundary_1:
                             # Chest wall lacerations/avulsions have an AIS score of 1, store this in injais
                             injais.append(1)
-                        elif self.thorax_prob_soft_tissue_injury_AIS1 < severity <= \
-                            self.thorax_prob_soft_tissue_injury_AIS1 + self.thorax_prob_soft_tissue_injury_AIS2:
+                        elif sev_boundary_1 < severity <= sev_boundary_2:
                             # surgical emphysema has an AIS score of 2, store this in injais
                             injais.append(2)
                         else:
@@ -3107,14 +3106,15 @@ class RTI(Module):
                     else:
                         # Internal organ injuries, store the injury category information
                         injcat.append(int(5))
+                        # create boundaries used for assigning injury severity
+                        sev_boundary_1 = self.abdomen_prob_internal_organ_injury_AIS2
+                        sev_boundary_2 = sev_boundary_1 + self.abdomen_prob_internal_organ_injury_AIS3
                         # Decide how severe the injury is, all abdominal injuries share the same daly weight so
                         # there is no need to specify further details beyond severity, category and location
                         if severity <= self.abdomen_prob_internal_organ_injury_AIS2:
                             # Intestines, Stomach and colon injury have an AIS score of 2, store this in injais
                             injais.append(2)
-                        elif self.abdomen_prob_internal_organ_injury_AIS2 < severity <= \
-                            self.abdomen_prob_internal_organ_injury_AIS2 + \
-                            self.abdomen_prob_internal_organ_injury_AIS3:
+                        elif sev_boundary_1 < severity <= sev_boundary_2:
                             # Spleen, bladder, liver, urethra and diaphragm injury have an AIS score of 3, store this
                             # in injais
                             injais.append(3)
@@ -3194,9 +3194,13 @@ class RTI(Module):
                 # If the injury is to the upper extermities, determine what the injury will be
                 if injlocs == 7:
                     # Decide if the injury will be a skin wound
+                    # create probability boundaries used to assign injuries
+                    boundary_1 = self.upper_ex_prob_skin_wound
+                    boundary_2 = boundary_1 + self.upper_ex_prob_fracture
+                    boundary_3 = boundary_2 + self.upper_ex_prob_dislocation
                     if cat <= self.upper_ex_prob_skin_wound:
                         # Decide if the injury will be a laceration or a burn
-                        if severity <= self.upper_ex_prob_skin_wound_open:
+                        if severity <= boundary_1:
                             # Open wound, update the injury category and severity information
                             injcat.append(int(10))
                             injais.append(1)
@@ -3205,8 +3209,7 @@ class RTI(Module):
                             injcat.append(int(11))
                             injais.append(3)
                     # Determine if the injury is a fracture
-                    elif self.upper_ex_prob_skin_wound < cat <= self.upper_ex_prob_skin_wound + \
-                        self.upper_ex_prob_fracture:
+                    elif boundary_1 < cat <= boundary_2:
                         # Fracture to arm, update the injury category and severity information
                         injcat.append(int(1))
                         injais.append(2)
@@ -3217,15 +3220,12 @@ class RTI(Module):
                         # Store the specific injury details in the variable detail
                         detail = self.rng.choice(detail_add_on, p=probabilities)
                     # Determine if the injury is a dislocation
-                    elif self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture < cat <= \
-                        self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture + \
-                        self.upper_ex_prob_dislocation:
+                    elif boundary_2 < cat <= boundary_3:
                         # Dislocation to arm, update the injury category and severity information
                         injcat.append(int(2))
                         injais.append(2)
                     # Determine if the injury is an amputation
-                    elif self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture + \
-                        self.upper_ex_prob_dislocation < cat:
+                    elif boundary_3 < cat:
                         # Amputation in upper limb, store the injury category information
                         injcat.append(int(8))
                         # Determine how severe the injury will be
@@ -3244,7 +3244,11 @@ class RTI(Module):
                 # If the injury is to the lower extermities, determine what the injury will be
                 if injlocs == 8:
                     # Determine if the injury is a skin wound
-                    if cat <= self.lower_ex_prob_skin_wound:
+                    # create probability boundaries used to assign lower extremity injuries
+                    boundary_1 = self.lower_ex_prob_skin_wound
+                    boundary_2 = boundary_1 + self.lower_ex_prob_fracture
+                    boundary_3 = boundary_2 + self.lower_ex_prob_dislocation
+                    if cat <= boundary_1:
                         # decide if the injury is a laceration or a burn
                         if severity <= self.lower_ex_prob_skin_wound_open:
                             # Open wound, store the relevant category and severity information
@@ -3255,12 +3259,14 @@ class RTI(Module):
                             injcat.append(int(11))
                             injais.append(3)
                     # Decide if the injury is a fracture
-                    elif self.lower_ex_prob_skin_wound < cat <= self.lower_ex_prob_skin_wound + \
-                        self.lower_ex_prob_fracture:
+                    elif boundary_1 < cat <= boundary_2:
                         # Fracture, so update the injury category information
                         injcat.append(int(1))
                         # Decide how severe the injury will be
-                        if severity < self.lower_ex_prob_fracture_AIS1:
+                        # create probability boundaries for assigning injury severity
+                        sev_boundary_1 = self.lower_ex_prob_fracture_AIS1
+                        sev_boundary_2 = sev_boundary_1 + self.lower_ex_prob_fracture_AIS2
+                        if severity < sev_boundary_1:
                             # Foot fracture
                             # determine if the foot fracture is open
                             prob_foot_frac_open = p['prob_foot_fracture_open']
@@ -3272,8 +3278,7 @@ class RTI(Module):
                             else:
                                 # Foot fracture is not open so just need to store the injury information in injais
                                 injais.append(1)
-                        elif self.lower_ex_prob_fracture_AIS1 < severity <= self.lower_ex_prob_fracture_AIS1 + \
-                            self.lower_ex_prob_fracture_AIS2:
+                        elif sev_boundary_1 < severity <= sev_boundary_2:
                             # Lower leg fracture
                             # determine is the lower leg fracture is open
                             prob_tib_fib_frac_open = p['prob_patella_tibia_fibula_ankle_fracture_open']
@@ -3309,9 +3314,7 @@ class RTI(Module):
                                     # update the injury detail information to reflect the fact that the fracture is open
                                     detail = detail + 'o'
                     # Determine if the injury is a dislocation
-                    elif self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture < cat <= \
-                        self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture + \
-                        self.lower_ex_prob_dislocation:
+                    elif boundary_2 < cat <= boundary_3:
                         # dislocation of hip or knee, store the injury category information in injcat
                         injcat.append(int(2))
                         # both dislocated hips and knees have an AIS score of 2, store this in injais
@@ -3321,16 +3324,17 @@ class RTI(Module):
                         # specify whether this injury is a hip or knee dislocation in the variable detail
                         detail = self.rng.choice(detail_add_on, p=probabilities)
                     # Determine if the injury is an amputation
-                    elif self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture + \
-                        self.lower_ex_prob_dislocation < cat:
+                    elif boundary_3 < cat:
                         # Amputation, so store the injury category in injcat
                         injcat.append(int(8))
                         # Determine how severe the injury is
-                        if severity <= self.lower_ex_prob_amputation_AIS2:
+                        # create probability boundaries to assign injury severity
+                        sev_boundary_1 = self.lower_ex_prob_amputation_AIS2
+                        sev_boundary_2 = sev_boundary_1 + self.lower_ex_prob_amputation_AIS3
+                        if severity <= sev_boundary_1:
                             # Toe/toes amputation have an AIS score of 2, store this in injais
                             injais.append(2)
-                        elif self.lower_ex_prob_amputation_AIS2 < severity <= self.lower_ex_prob_amputation_AIS2 + \
-                            self.lower_ex_prob_amputation_AIS3:
+                        elif sev_boundary_1 < severity <= sev_boundary_2:
                             # Unilateral limb amputation has an AIS score of 3, store this in injais
                             injais.append(3)
                         else:
