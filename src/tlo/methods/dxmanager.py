@@ -57,22 +57,18 @@ class DxManager:
                     assert all(elem in property_categories
                                for elem in d.target_categories), 'not all target_categories are valid categories'
 
-            # JC- test on dx_tests name reinstated as per discussion with TH
-
-            # Check if this tuple of DxTests is a duplicate of something already registered.
-            # if (dx_test in self.dx_tests.values()) or (name in self.dx_tests):
-
-            # Check if this tuple of DxTests is a duplicate of something already registered.
-            if name in self.dx_tests:
+            # Ensure that name is unqiue and will not over-write a test already registered
+            if name not in self.dx_tests:
+                # Add the list of DxTests to the dict of registered DxTests (name is not already used)
+                self.dx_tests[name] = dx_test
+            else:
+                # Determine whether to throw an error due to the same name being used as a test already registered
                 try:
+                    # If the name is alrady used, then the DxTest must be identical to the one already registered
                     assert self.dx_tests[name] == dx_test
-                except (KeyError, AssertionError):
+                except (AssertionError):
                     raise ValueError(
-                        "The same Dx_Test or the same name have been registered previously against a different name "
-                        "or DxTest.")
-
-            # Add the list of DxTests to the dict of registered DxTests
-            self.dx_tests[name] = dx_test
+                        "The same name have been registered previously for a different DxTest.")
 
     def print_info_about_dx_test(self, name_of_dx_test):
         assert name_of_dx_test in self.dx_tests, f'This DxTest is not recognised: {name_of_dx_test}'
