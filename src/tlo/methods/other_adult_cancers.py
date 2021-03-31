@@ -272,7 +272,6 @@ class OtherAdultCancer(Module):
         treatment_initiated.loc[pd.isnull(df.oac_date_diagnosis)] = False
 
         # assume that the stage at which treatment is begun is site_confined;
-    #   df.loc[treatment_initiated, "oac_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "site_confined"]
         df.loc[treatment_initiated, "oac_stage_at_which_treatment_given"] = "site_confined"
 
         # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
