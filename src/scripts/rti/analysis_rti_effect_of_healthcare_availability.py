@@ -43,7 +43,7 @@ pop_size = 50000
 nsim = 2
 service_availability = ["*"]
 # Create a range of capability coefficients
-capability_coeff = np.linspace(1, 0, 3)
+capability_coeff = np.linspace(0.5, 0.1, 3)
 # Create lists to store the simulation outputs in
 all_sim_deaths = []
 all_sim_dalys = []
