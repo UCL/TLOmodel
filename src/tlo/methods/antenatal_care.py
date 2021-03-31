@@ -441,7 +441,7 @@ class CareOfWomenDuringPregnancy(Module):
             recommended_gestation_next_anc = 40
 
         # We schedule women who present very late for ANC to return in two weeks
-        elif mother.ps_gestational_age_in_weeks >= 40:
+        elif 42 > mother.ps_gestational_age_in_weeks >= 40:
             recommended_gestation_next_anc = 42
 
         return recommended_gestation_next_anc
@@ -459,6 +459,10 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         params = self.parameters
+
+        # Prevent women returning to ANC at very late gestations- this needs to be reviewed and linked with induction
+        if df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 42:
+            return
 
         # We check that women will only be scheduled for the next ANC contact in the schedule
         assert df.at[individual_id, 'ps_gestational_age_in_weeks'] < recommended_gestation_next_anc
