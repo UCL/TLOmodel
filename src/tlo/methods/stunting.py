@@ -139,7 +139,6 @@ class Stunting(Module):
         """
         df = population.props
         p = self.parameters
-        AGE_GROUPS = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
 
         def make_scaled_linear_model_stunting(agegp):
             """Makes the unscaled linear model with intercept of baseline odds of stunting (HAZ <-2).
@@ -162,14 +161,6 @@ class Stunting(Module):
                 probability_over_or_equal_minus2sd = HAZ_normal_distribution.sf(-2)
                 probability_less_than_minus2sd = 1 - probability_over_or_equal_minus2sd
 
-                # # get severe stunting zcores: HAZ <-3
-                # probability_over_or_equal_minus3sd = HAZ_normal_distribution.sf(-3)
-                # probability_less_than_minus3sd = 1 - probability_over_or_equal_minus3sd
-                #
-                # # get moderate stunting zcores: <=-3 HAZ <-2
-                # probability_between_minus3_minus2sd =\
-                #     probability_over_or_equal_minus3sd - probability_over_or_equal_minus2sd
-
                 # convert probability to odds
                 base_odds_of_stunting = probability_less_than_minus2sd / (1-probability_less_than_minus2sd)
 
@@ -190,13 +181,13 @@ class Stunting(Module):
                 )
 
             unscaled_lm = make_linear_model_stunting(agegp)  # intercept=get_odds_stunting(agegp)
-            target_mean = get_odds_stunting(agegp)
-            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
+            target_mean = get_odds_stunting(agegp='12_23mo')
+            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1)]).mean()
             scaled_intercept = get_odds_stunting(agegp) * (target_mean / actual_mean)
             scaled_lm = make_linear_model_stunting(agegp, intercept=scaled_intercept)
-            # check by applying the model to mean incidence of 0-year-olds
             return scaled_lm
 
+        # the linear model returns the probability that is implied by the model prob = odds / (1 + odds)
         for agegp in ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo']:
             self.prevalence_equations_by_age[agegp] = make_scaled_linear_model_stunting(agegp)
 
@@ -215,60 +206,136 @@ class Stunting(Module):
         prevalence_of_stunting['48_59mo'] = self.prevalence_equations_by_age['48_59mo'] \
             .predict(df.loc[df.is_alive & ((df.age_exact_years >= 4) & (df.age_exact_years < 5))])
 
-        print(prevalence_of_stunting)
+        def get_prob_severe_in_overall_stunting(agegp):
+            """
+            This function will calculate the HAZ scores by categories and return probability of severe stunting
+            :param agegp: age grouped in months
+            :return:
+            """
+            # generate random numbers from N(meean, sd)
+            baseline_HAZ_prevalence_by_agegp = f'prev_HAZ_distribution_age_{agegp}'
+            HAZ_normal_distribution = norm(loc=p[baseline_HAZ_prevalence_by_agegp][0],
+                                           scale=p[baseline_HAZ_prevalence_by_agegp][1])
 
-        # allocate initial prevalence of stunting at the start of the simulation
-        # set the indexes to apply by age group
-        index_children_aged_0_5mo = df.index[df.is_alive & df.age_exact_years < 0.5]
-        index_children_aged_6_11mo = df.index[df.is_alive & ((df.age_exact_years >= 0.5) & (df.age_exact_years < 1))]
-        index_children_aged_12_23mo = df.index[df.is_alive & ((df.age_exact_years >= 1) & (df.age_exact_years < 2))]
-        index_children_aged_24_35mo = df.index[df.is_alive & ((df.age_exact_years >= 2) & (df.age_exact_years < 3))]
-        index_children_aged_36_47mo = df.index[df.is_alive & ((df.age_exact_years >= 3) & (df.age_exact_years < 4))]
-        index_children_aged_48_59mo = df.index[df.is_alive & ((df.age_exact_years >= 4) & (df.age_exact_years < 5))]
+            # get all stunting: HAZ <-2
+            probability_over_or_equal_minus2sd = HAZ_normal_distribution.sf(-2)
+            probability_less_than_minus2sd = 1 - probability_over_or_equal_minus2sd
 
-        # # # Random draw of HAZ scores from a normal distribution # # #
-        # HAZ scores for under 6 months old, update the df
-        df.loc[index_children_aged_0_5mo, 'un_HAZ_score'] = \
-            np.random.normal(loc=p['prev_HAZ_distribution_age_0_5mo'][0],
-                             scale=p['prev_HAZ_distribution_age_0_5mo'][1])
+            # get severe stunting zcores: HAZ <-3
+            probability_over_or_equal_minus3sd = HAZ_normal_distribution.sf(-3)
+            probability_less_than_minus3sd = 1 - probability_over_or_equal_minus3sd
 
-        # HAZ scores for 6 to 11 months
-        df.loc[index_children_aged_6_11mo, 'un_HAZ_score'] = \
-            np.random.normal(loc=p['prev_HAZ_distribution_age_6_11mo'][0],
-                             scale=p['prev_HAZ_distribution_age_6_11mo'][1])
+            # get moderate stunting zcores: <=-3 HAZ <-2
+            probability_between_minus3_minus2sd =\
+                probability_over_or_equal_minus3sd - probability_over_or_equal_minus2sd
 
-        # HAZ scores for 12 to 23 months
-        df.loc[index_children_aged_12_23mo, 'un_HAZ_score'] = \
-            np.random.normal(loc=p['prev_HAZ_distribution_age_12_23mo'][0],
-                             scale=p['prev_HAZ_distribution_age_12_23mo'][1])
+            # make HAZ <-2 as the 100% and get the adjusted probability of severe stunting
+            proportion_severe_in_overall_stunting = probability_less_than_minus3sd * probability_less_than_minus2sd
 
-        # HAZ scores for 24 to 35 months
-        df.loc[index_children_aged_24_35mo, 'un_HAZ_score'] = \
-            np.random.normal(loc=p['prev_HAZ_distribution_age_24_35mo'][0],
-                             scale=p['prev_HAZ_distribution_age_24_35mo'][1])
+            # get a list with probability of severe stunting, and moderate stunting
+            return proportion_severe_in_overall_stunting
 
-        # HAZ scores for 36 to 47 months
-        df.loc[index_children_aged_36_47mo, 'un_HAZ_score'] = \
-            np.random.normal(loc=p['prev_HAZ_distribution_age_36_47mo'][0],
-                             scale=p['prev_HAZ_distribution_age_36_47mo'][1])
+        # # # # # allocate initial prevalence of stunting at the start of the simulation # # # # #
 
-        # HAZ scores for 48 to 59 months
-        df.loc[index_children_aged_48_59mo, 'un_HAZ_score'] = \
-            np.random.normal(loc=p['prev_HAZ_distribution_age_48_59mo'][0],
-                             scale=p['prev_HAZ_distribution_age_48_59mo'][1])
-
-        # HAZ category of under-5, update df
-        under_5_index = df.index[df.is_alive & df.age_exact_years < 5]
-        severe_stunting = df.loc[under_5_index, 'un_HAZ_score'] < -3.0
-        moderate_stunting = df.loc[df.is_alive & df.age_exact_years < 5 & (df['un_HAZ_score'] >= -3.0) & (df['un_HAZ_score'] < -2.0)]
-        no_stunting = df.loc[under_5_index, 'un_HAZ_score'] >= -2.0
-
-        df.loc[severe_stunting.index, 'un_HAZ_category'] = 'HAZ<-3'
-        df.loc[moderate_stunting.index, 'un_HAZ_category'] = '-3<=HAZ<-2'
-        df.loc[no_stunting.index, 'un_HAZ_category'] = 'HAZ>=-2'
+        # further differentiate between severe stunting and moderate stunting, and normal HAZ
+        for agegp in ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo']:
+            stunted = self.rng.random_sample(len(prevalence_of_stunting[agegp])) < prevalence_of_stunting[agegp]
+            for id in stunted[stunted].index:
+                probability_of_severe = get_prob_severe_in_overall_stunting(agegp)
+                stunted_category = self.rng.choice(['HAZ<-3', '-3<=HAZ<-2'],
+                                                   p=[probability_of_severe, 1 - probability_of_severe])
+                df.at[id, 'un_HAZ_category'] = stunted_category
+            df.loc[stunted[stunted==False].index, 'un_HAZ_category'] = 'HAZ>=-2'
 
     def initialise_simulation(self, sim):
-        pass
+        """Prepares for simulation:
+        * Schedules the main polling event
+        * Schedules the main logging event
+        * Establishes the linear models and other data structures using the parameters that have been read-in
+        * Store the consumables that are required in each of the HSI
+        """
+
+        # Schedule the main polling event
+        sim.schedule_event(StuntingPollingEvent(self), sim.date + DateOffset(months=6))
+
+        # Schedule the main logging event (to first occur in one year)
+        # sim.schedule_event(StuntingLoggingEvent(self), sim.date + DateOffset(years=1))
+
+        # Get DALY weights
+        # no DALYs for stunting directly, but cognitive impairment should be added later
+
+        # --------------------------------------------------------------------------------------------
+        p = self.parameters
+
+        # # set the indexes to apply by age group
+        # index_children_aged_0_5mo = df.index[df.is_alive & df.age_exact_years < 0.5]
+        # index_children_aged_6_11mo = df.index[df.is_alive & ((df.age_exact_years >= 0.5) & (df.age_exact_years < 1))]
+        # index_children_aged_12_23mo = df.index[df.is_alive & ((df.age_exact_years >= 1) & (df.age_exact_years < 2))]
+        # index_children_aged_24_35mo = df.index[df.is_alive & ((df.age_exact_years >= 2) & (df.age_exact_years < 3))]
+        # index_children_aged_36_47mo = df.index[df.is_alive & ((df.age_exact_years >= 3) & (df.age_exact_years < 4))]
+        # index_children_aged_48_59mo = df.index[df.is_alive & ((df.age_exact_years >= 4) & (df.age_exact_years < 5))]
+        #
+        # # # # Random draw of HAZ scores from a normal distribution # # #
+        # # HAZ scores for under 6 months old, update the df
+        # df.loc[index_children_aged_0_5mo, 'un_HAZ_score'] = \
+        #     np.random.normal(loc=p['prev_HAZ_distribution_age_0_5mo'][0],
+        #                      scale=p['prev_HAZ_distribution_age_0_5mo'][1])
+        #
+        # # HAZ scores for 6 to 11 months
+        # df.loc[index_children_aged_6_11mo, 'un_HAZ_score'] = \
+        #     np.random.normal(loc=p['prev_HAZ_distribution_age_6_11mo'][0],
+        #                      scale=p['prev_HAZ_distribution_age_6_11mo'][1])
+        #
+        # # HAZ scores for 12 to 23 months
+        # df.loc[index_children_aged_12_23mo, 'un_HAZ_score'] = \
+        #     np.random.normal(loc=p['prev_HAZ_distribution_age_12_23mo'][0],
+        #                      scale=p['prev_HAZ_distribution_age_12_23mo'][1])
+        #
+        # # HAZ scores for 24 to 35 months
+        # df.loc[index_children_aged_24_35mo, 'un_HAZ_score'] = \
+        #     np.random.normal(loc=p['prev_HAZ_distribution_age_24_35mo'][0],
+        #                      scale=p['prev_HAZ_distribution_age_24_35mo'][1])
+        #
+        # # HAZ scores for 36 to 47 months
+        # df.loc[index_children_aged_36_47mo, 'un_HAZ_score'] = \
+        #     np.random.normal(loc=p['prev_HAZ_distribution_age_36_47mo'][0],
+        #                      scale=p['prev_HAZ_distribution_age_36_47mo'][1])
+        #
+        # # HAZ scores for 48 to 59 months
+        # df.loc[index_children_aged_48_59mo, 'un_HAZ_score'] = \
+        #     np.random.normal(loc=p['prev_HAZ_distribution_age_48_59mo'][0],
+        #                      scale=p['prev_HAZ_distribution_age_48_59mo'][1])
+        #
+        # # HAZ category of under-5, update df
+        # under_5_index = df.index[df.is_alive & df.age_exact_years < 5]
+        # severe_stunting = df.loc[under_5_index, 'un_HAZ_score'] < -3.0
+        # moderate_stunting = df.loc[df.is_alive & df.age_exact_years < 5 & (df['un_HAZ_score'] >= -3.0) & (df['un_HAZ_score'] < -2.0)]
+        # no_stunting = df.loc[under_5_index, 'un_HAZ_score'] >= -2.0
+        #
+        # df.loc[severe_stunting.index, 'un_HAZ_category'] = 'HAZ<-3'
+        # df.loc[moderate_stunting.index, 'un_HAZ_category'] = '-3<=HAZ<-2'
+        # df.loc[no_stunting.index, 'un_HAZ_category'] = 'HAZ>=-2'
 
     def on_birth(self, mother_id, child_id):
         pass
+
+
+class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    This is the main event that runs the acquisition of pathogens that cause Diarrhoea.
+    It determines who is infected and schedules individual IncidentCase events to represent onset.
+
+    A known issue is that diarrhoea events are scheduled based on the risk of current age but occur a short time
+     later when the children will be slightly older. This means that when comparing the model output with data, the
+     model slightly under-represents incidence among younger age-groups and over-represents incidence among older
+     age-groups. This is a small effect when the frequency of the polling event is high.
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=6))
+        # NB. The frequency of the occurrences of this event can be edited safely.
+
+    def apply(self, population):
+        df = population.props
+        rng = self.module.rng
+        m = self.module
