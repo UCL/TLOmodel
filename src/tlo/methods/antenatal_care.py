@@ -444,6 +444,12 @@ class CareOfWomenDuringPregnancy(Module):
         elif 42 > mother.ps_gestational_age_in_weeks >= 40:
             recommended_gestation_next_anc = 42
 
+        # Return a gestation beyond the normal length of pregnancy. This wont be used for scheduling because women
+        # arent scheduled ANC past 42 weeks (see next function)
+        # TODO: replace with cleaner fix for next version
+        else:
+            recommended_gestation_next_anc = 50
+
         return recommended_gestation_next_anc
 
     def antenatal_care_scheduler(self, individual_id, visit_to_be_scheduled, recommended_gestation_next_anc,
