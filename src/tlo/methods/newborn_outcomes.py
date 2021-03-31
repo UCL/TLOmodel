@@ -10,8 +10,8 @@ from tlo.lm import LinearModel
 from tlo.methods import Metadata, demography, newborn_outcomes_lm
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.postnatal_supervisor import HSI_PostnatalSupervisor_NeonatalWardInpatientCare
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
+from tlo.methods.postnatal_supervisor import HSI_PostnatalSupervisor_NeonatalWardInpatientCare
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

@@ -14,9 +14,9 @@ from tlo.methods import (
     healthsystem,
     labour,
     newborn_outcomes,
-    pregnancy_supervisor,
     postnatal_supervisor,
-    symptommanager
+    pregnancy_supervisor,
+    symptommanager,
 )
 
 seed = 567

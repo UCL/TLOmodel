@@ -1,18 +1,17 @@
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata
-
-from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.labour import LabourOnsetEvent
+from tlo.methods.healthsystem import HSI_Event
 # from tlo.methods.tb import HSI_TbScreening
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
+from tlo.methods.labour import LabourOnsetEvent
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -2639,7 +2638,9 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
                 # We then schedule GestationalDiabetesGlycaemicControlEvent which determines if this treatment will be
                 # effective in controlling this womans blood sugar prior to her next check up
-                from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
+                from tlo.methods.pregnancy_supervisor import (
+                    GestationalDiabetesGlycaemicControlEvent,
+                )
                 self.sim.schedule_event(GestationalDiabetesGlycaemicControlEvent(
                     self.sim.modules['PregnancySupervisor'], person_id), self.sim.date + DateOffset(days=7))
 

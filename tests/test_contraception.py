@@ -6,15 +6,18 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    antenatal_care,
     contraception,
     demography,
     enhanced_lifestyle,
+    healthburden,
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
-    antenatal_care, postnatal_supervisor,
-    symptommanager, newborn_outcomes, healthburden
+    symptommanager,
 )
 
 start_date = Date(2010, 1, 1)

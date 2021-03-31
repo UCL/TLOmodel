@@ -8,6 +8,7 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
+    antenatal_care,
     contraception,
     demography,
     depression,
@@ -16,7 +17,9 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    pregnancy_supervisor, antenatal_care, newborn_outcomes, postnatal_supervisor,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
     symptommanager,
 )
 

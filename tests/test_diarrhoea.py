@@ -10,6 +10,7 @@ import pytest
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
+    antenatal_care,
     contraception,
     demography,
     diarrhoea,
@@ -18,8 +19,10 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour, antenatal_care,
-    pregnancy_supervisor, newborn_outcomes, postnatal_supervisor,
+    labour,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
     symptommanager,
 )
 from tlo.methods.diarrhoea import (

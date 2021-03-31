@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 
 import pandas as pd
-from tlo.lm import LinearModel, LinearModelType
 
 from tlo import Date, Simulation
+from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
     antenatal_care,
     contraception,
@@ -17,8 +17,8 @@ from tlo.methods import (
     hiv,
     labour,
     newborn_outcomes,
-    pregnancy_supervisor,
     postnatal_supervisor,
+    pregnancy_supervisor,
     symptommanager,
 )
 

@@ -13,10 +13,14 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
+    male_circumcision,
     newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
-    symptommanager, male_circumcision, hiv, tb, postnatal_supervisor
+    symptommanager,
+    tb,
 )
 
 seed = 567

@@ -9,6 +9,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
     Metadata,
+    antenatal_care,
     chronicsyndrome,
     contraception,
     demography,
@@ -18,8 +19,10 @@ from tlo.methods import (
     healthsystem,
     labour,
     mockitis,
-    pregnancy_supervisor, antenatal_care,
-    symptommanager,  newborn_outcomes, postnatal_supervisor
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
+    symptommanager,
 )
 from tlo.methods.healthsystem import HSI_Event
 
