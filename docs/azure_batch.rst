@@ -27,6 +27,9 @@ Setup
 11. Login to Azure with ``az login --tenant 1faf88fe-a998-4c5b-93c9-210a11d9a5c2``
 12. In Terminal/Anaconda Prompt run: ``tlo batch-list``
 
+[NB. step 9: not clear what to fill in and how]
+
+
 Creating a Scenario
 ===================
 
