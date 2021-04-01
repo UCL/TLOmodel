@@ -1,9 +1,10 @@
 import os
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
+
 from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType, Predictor
-
 from tlo.methods import (
     antenatal_care,
     contraception,
@@ -1011,7 +1012,7 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management():
     ectopic_event.apply(mother_id)
 
     # Check the woman has correctly sought care via HSI_GenericEmergencyFirstApptAtFacilityLevel1
-    from tlo.methods.hsi_generic_first_appts import (HSI_GenericEmergencyFirstApptAtFacilityLevel1)
+    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
     hsi_list = find_and_return_hsi_events_list(sim, mother_id)
     assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_list
 

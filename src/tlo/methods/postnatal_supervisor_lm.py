@@ -21,6 +21,7 @@ def predict_for_dataframe(self, df, rng=None, **externals):
     return result
 """
 import pandas as pd
+
 from tlo.util import BitsetHandler
 
 # n.b. all LMs here are coded as population level

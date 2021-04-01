@@ -4,6 +4,10 @@ the health system following the onset of acute generic symptoms.
 """
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
+from tlo.methods.antenatal_care import (
+    HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
+    HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
+)
 from tlo.methods.bladder_cancer import (
     HSI_BladderCancer_Investigation_Following_Blood_Urine,
     HSI_BladderCancer_Investigation_Following_pelvic_pain,
@@ -14,10 +18,6 @@ from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import (
     HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour,
     HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour,
-)
-from tlo.methods.antenatal_care import (
-    HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
-    HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement
 )
 from tlo.methods.malaria import (
     HSI_Malaria_complicated_treatment_adult,

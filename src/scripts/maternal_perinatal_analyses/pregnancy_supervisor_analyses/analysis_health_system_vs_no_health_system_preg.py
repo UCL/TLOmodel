@@ -11,12 +11,14 @@ from tlo.methods import (
     contraception,
     demography,
     enhanced_lifestyle,
-    healthseekingbehaviour, healthburden,
+    healthburden,
+    healthseekingbehaviour,
     healthsystem,
     labour,
     newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
-    symptommanager, postnatal_supervisor
+    symptommanager,
 )
 
 seed = 567

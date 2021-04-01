@@ -7,10 +7,10 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, demography, labour_lm
-from tlo.methods.postnatal_supervisor import PostnatalWeekOneEvent
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
+from tlo.methods.postnatal_supervisor import PostnatalWeekOneEvent
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -2397,7 +2397,8 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
                     # We assume women present to the health system through the generic a&e appointment
                     from tlo.methods.hsi_generic_first_appts import (
-                        HSI_GenericEmergencyFirstApptAtFacilityLevel1)
+                        HSI_GenericEmergencyFirstApptAtFacilityLevel1,
+                    )
 
                     event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
                         module=self.module,
@@ -2578,7 +2579,8 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
                 mni[individual_id]['sought_care_labour_phase'] = 'postpartum'
 
                 from tlo.methods.hsi_generic_first_appts import (
-                    HSI_GenericEmergencyFirstApptAtFacilityLevel1)
+                    HSI_GenericEmergencyFirstApptAtFacilityLevel1,
+                )
 
                 event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
                     module=self.module, person_id=individual_id)

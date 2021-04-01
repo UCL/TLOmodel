@@ -19,8 +19,8 @@ from tlo.methods import (
     labour,
     malaria,
     newborn_outcomes,
-    pregnancy_supervisor,
     postnatal_supervisor,
+    pregnancy_supervisor,
     symptommanager,
 )
 from tlo.methods.healthsystem import HSI_Event

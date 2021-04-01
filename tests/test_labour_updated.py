@@ -14,8 +14,9 @@ from tlo.methods import (
     healthsystem,
     labour,
     newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
-    symptommanager, postnatal_supervisor
+    symptommanager,
 )
 
 seed = 567
@@ -233,7 +234,7 @@ def test_event_scheduling_for_care_seeking_during_home_birth():
     assert (mni[mother_id]['sought_care_labour_phase'] == 'intrapartum')
 
     # Check that the woman will correctly seek care through HSI_GenericEmergencyFirstApptAtFacilityLevel1
-    from tlo.methods.hsi_generic_first_appts import (HSI_GenericEmergencyFirstApptAtFacilityLevel1)
+    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
     assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_events
 
@@ -271,7 +272,7 @@ def test_event_scheduling_for_care_seeking_during_home_birth():
 
     # Check the correct scheduling sequence occurs for women seeking care after birth via
     # HSI_GenericEmergencyFirstApptAtFacilityLevel1
-    from tlo.methods.hsi_generic_first_appts import (HSI_GenericEmergencyFirstApptAtFacilityLevel1)
+    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
     assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_events
 
@@ -643,8 +644,8 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     df = sim.population.props
 
     # create a dummy hsi event that the treatment functions will call
-    from tlo.methods.healthsystem import HSI_Event
     from tlo.events import IndividualScopeEventMixin
+    from tlo.methods.healthsystem import HSI_Event
 
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
@@ -903,8 +904,8 @@ def test_to_check_similarly_named_and_functioning_dx_tests_work_as_expected():
     assert set(target_categories).issubset(target_categories)
 
     # Make Dummy Event
-    from tlo.methods.healthsystem import HSI_Event
     from tlo.events import IndividualScopeEventMixin
+    from tlo.methods.healthsystem import HSI_Event
 
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):

@@ -1,11 +1,11 @@
 import os
-import pandas as pd
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType, Predictor
-
 from tlo.methods import (
     antenatal_care,
     contraception,

@@ -5,6 +5,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    antenatal_care,
     bladder_cancer,
     contraception,
     demography,
@@ -12,7 +13,10 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    antenatal_care, pregnancy_supervisor, labour, newborn_outcomes, postnatal_supervisor,
+    labour,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
     symptommanager,
 )
 

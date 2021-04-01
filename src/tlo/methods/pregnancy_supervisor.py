@@ -6,12 +6,9 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography
+from tlo.methods import Metadata, demography
 from tlo.methods.labour import LabourOnsetEvent
-
-from tlo.methods import Metadata
 from tlo.util import BitsetHandler
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1492,7 +1489,9 @@ class PregnancySupervisor(Module):
         # If they do, we scheduled them to preset to a health facility immediately (this HSI schedules the correct
         # labour modules)
         for person in care_seekers.loc[care_seekers].index:
-            from tlo.methods.antenatal_care import HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour
+            from tlo.methods.antenatal_care import (
+                HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour,
+            )
 
             induction = HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person)
@@ -1528,7 +1527,8 @@ class PregnancySupervisor(Module):
             # care in CareOfWomenDuringPregnancy module
 
             from tlo.methods.hsi_generic_first_appts import (
-                HSI_GenericEmergencyFirstApptAtFacilityLevel1)
+                HSI_GenericEmergencyFirstApptAtFacilityLevel1,
+            )
 
             event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
                 self.sim.modules['PregnancySupervisor'],
@@ -1723,7 +1723,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
                 facility_level = int(self.module.rng.choice([1, 2], p=params['prob_anc_at_facility_level_1_2']))
 
-                from tlo.methods.antenatal_care import HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact
+                from tlo.methods.antenatal_care import (
+                    HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact,
+                )
 
                 first_anc_appt = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person,
@@ -1802,7 +1804,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             logger.debug(key='message', data=f'Mother {person} will seek care following acute pregnancy'
                                              f'complications')
 
-            from tlo.methods.antenatal_care import HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment
+            from tlo.methods.antenatal_care import (
+                HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment,
+            )
 
             acute_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person)
