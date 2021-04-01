@@ -494,10 +494,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 person_id=person_id
             )
             health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=1,
-                                                                topen=self.sim.date
-                                                                )
+
         if 'RTI' in self.sim.modules:
             if 'severe_trauma' in symptoms:
 
