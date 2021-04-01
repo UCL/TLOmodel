@@ -43,7 +43,7 @@ pop_size = 50000
 nsim = 2
 service_availability = ["*"]
 # Create a range of capability coefficients
-capability_coeff = np.linspace(0.5, 0.1, 3)
+capability_coeff = np.linspace(1, 0, 3)
 # Create lists to store the simulation outputs in
 all_sim_deaths = []
 all_sim_dalys = []
@@ -161,5 +161,5 @@ plt.xlabel('Capability')
 plt.title(f"Average number of consumables used in simulations for different capability coefficients"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/CapabilityAnalysis/compare_mean_total_consumables_per_capability_coefficient.png',
-            bbox_inches='tight')
+# plt.savefig('outputs/CapabilityAnalysis/compare_mean_total_consumables_per_capability_coefficient.png',
+#             bbox_inches='tight')
