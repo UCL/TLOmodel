@@ -18,6 +18,7 @@ from tlo.analysis.utils import (
     parse_log_file,
 )
 from tlo.methods import (
+    antenatal_care,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -25,6 +26,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -70,8 +73,11 @@ def run():
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
         healthburden.HealthBurden(resourcefilepath=resources),
         contraception.Contraception(resourcefilepath=resources),
-        labour.Labour(resourcefilepath=resources),
+        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resources),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+        labour.Labour(resourcefilepath=resources),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
     )
 
     sim.make_initial_population(n=pop_size)
@@ -146,7 +152,7 @@ plt.show()
 # %% Population Pyramid
 # Population Pyramid at two time points
 
-for year in [2018, 2030]:
+for year in [2010]:
 
     # Import and model:
     model_m = scaled_output["tlo.methods.demography"]["age_range_m"]
@@ -230,17 +236,23 @@ births['Census'] = np.nan
 births.at[cens['Period'][0], 'Census'] = cens_per_5y_per
 
 # Plot:
-ax = births.plot.line(y=['Model', 'Census', 'WPP_Estimates', 'WPP_Medium variant'])
-plt.scatter(x=np.arange(len(births.index))[births.index == [cens['Period'][0]]],
-            y=births.loc[cens['Period'][0], 'Census'], marker='^', color='orange')
+cens_period = cens['Period'][0]
+ax = births.plot.line(y=['Model',  'WPP_Estimates', 'WPP_Medium variant'])
+births.plot.line(
+    y=['Census'],
+    marker='^',
+    color='red',
+    ax=ax
+)
 plt.xticks(np.arange(len(births.index)), births.index)
-ax.fill_between(births.index, births['WPP_Low variant'], births['WPP_High variant'], facecolor='red', alpha=0.2)
+ax.fill_between(births.index, births['WPP_Low variant'], births['WPP_High variant'], facecolor='green', alpha=0.2)
 plt.xticks(rotation=90)
 ax.set_title('Number of Births Per Calendar Period')
 ax.legend(loc='upper left')
 ax.set_xlabel('Calendar Period')
 ax.set_ylabel('Number per period')
 plt.savefig(outputpath / ("Births_Over_Time_" + datestamp + ".pdf"), format='pdf')
+plt.tight_layout()
 plt.show()
 
 # %% Deaths
