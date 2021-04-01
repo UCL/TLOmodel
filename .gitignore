@@ -113,7 +113,3 @@ docs/reference/tlo*.rst
 tlo.conf
 
 
-# TLO configuration
-tlo.conf
-
-

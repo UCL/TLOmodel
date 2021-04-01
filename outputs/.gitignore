@@ -1,0 +1,4 @@
+# Ignore all except gitignore
+*
+!.gitignore
+!README

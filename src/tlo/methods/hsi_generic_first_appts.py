@@ -348,6 +348,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         # Confirm that this appointment has been created by the HealthSeekingBehaviour module, the Labour module or the
         # RTI module
+        # TODO: pregnancy supervisor added as per discussions with TH, eventually will combine with HSB
         assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor', 'RTI']
 
         # Work out if this is for a child or an adult
