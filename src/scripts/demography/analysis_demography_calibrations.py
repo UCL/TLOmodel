@@ -18,6 +18,7 @@ from tlo.analysis.utils import (
     parse_log_file,
 )
 from tlo.methods import (
+    antenatal_care,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -25,7 +26,9 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
     pregnancy_supervisor,
+    postnatal_supervisor,
     symptommanager,
 )
 from tlo.util import create_age_range_lookup
@@ -70,8 +73,11 @@ def run():
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
         healthburden.HealthBurden(resourcefilepath=resources),
         contraception.Contraception(resourcefilepath=resources),
-        labour.Labour(resourcefilepath=resources),
+        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resources),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+        labour.Labour(resourcefilepath=resources),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
     )
 
     sim.make_initial_population(n=pop_size)
