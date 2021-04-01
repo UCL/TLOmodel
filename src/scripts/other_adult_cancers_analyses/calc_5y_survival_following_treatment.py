@@ -38,7 +38,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2080, 1, 1)
+end_date = Date(2020, 1, 1)
 popsize = 1000
 
 # Establish the simulation object and set the seed
@@ -46,15 +46,12 @@ sim = Simulation(start_date=start_date)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             # contraception.Contraception(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        disable=True),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             # labour.Labour(resourcefilepath=resourcefilepath),
-             # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
              oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
              other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
              )
@@ -63,16 +60,18 @@ sim.seed_rngs(0)
 
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to
 # begin with:
-sim.modules['OtherAdultCancer'].parameters['r_site_confined_none'] = 0.00
-sim.modules['OtherAdultCancer'].parameters['init_prop_other_adult_cancer_stage'] = [0.0, 0.0, 0.0]
-sim.modules['OtherAdultCancer'].parameters["init_prop_early_other_adult_cancer_symptom_by_stage"] = [0.0] * 3
-sim.modules['OtherAdultCancer'].parameters["init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage"] = [0.0] * 3
-sim.modules['OtherAdultCancer'].parameters["init_prop_treatment_status_other_adult_cancer"] = [0.0] * 3
-sim.modules['OtherAdultCancer'].parameters["init_prob_palliative_care"] = 0.0
+# sim.modules['OtherAdultCancer'].parameters['r_site_confined_none'] = 0.00
+# sim.modules['OtherAdultCancer'].parameters['init_prop_other_adult_cancer_stage'] = [0.0, 0.0, 0.0]
+# sim.modules['OtherAdultCancer'].parameters["init_prop_early_other_adult_cancer_symptom_by_stage"] = [0.0] * 3
+# sim.modules['OtherAdultCancer'].parameters["init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage"] = [0.0] * 3
+# sim.modules['OtherAdultCancer'].parameters["init_prop_treatment_status_other_adult_cancer"] = [0.0] * 3
+# sim.modules['OtherAdultCancer'].parameters["init_prob_palliative_care"] = 0.0
 
 # Establish the logger and look at only demography
 custom_levels = {"*": logging.WARNING,  # <--
-                 "tlo.methods.demography": logging.INFO
+                 "tlo.methods.demography": logging.INFO,
+                 "tlo.methods.other_adult_cancers": logging.INFO,
+                 'tlo.methods.healthsystem': logging.INFO,
                  }
 logfile = sim.configure_logging(filename="LogFile", custom_levels=custom_levels)
 
@@ -91,7 +90,7 @@ df = sim.population.props
 cohort = df.iloc[1:popsize].index
 
 # get the person_ids of the original cohort who started treatment
-treated = pd.DataFrame(df.loc[df.index.isin(cohort) & ~pd.isnull(df.oc_date_treatment), 'oac_date_treatment'].copy())
+treated = pd.DataFrame(df.loc[df.index.isin(cohort) & ~pd.isnull(df.oac_date_treatment), 'oac_date_treatment'].copy())
 
 # for each person that started treatment, get their date of starting treatment
 deaths = pd.DataFrame(output['tlo.methods.demography']['death']).copy()
@@ -110,11 +109,18 @@ cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_tre
     len(cohort_treated.loc[cohort_treated['days_treatment_to_death'] < (5*365.25)]) /
     len(cohort_treated)
 )  # 0.77
-
+print(1 - (
+    len(cohort_treated.loc[cohort_treated['days_treatment_to_death'] < (5*365.25)]) /
+    len(cohort_treated)
+))
 # calc % of those that had not died of Other_Adult cancer 5 years after starting treatment (could have died of another
 # cause):
 condition = (cohort_treated['cause'] == 'OtherAdultCancer') & (cohort_treated['days_treatment_to_death'] < (5*365.25))
 1 - (
-    len(cohort_treated.loc[cohort_treated]) /
+    len(cohort_treated.loc[condition]) /
     len(cohort_treated)
 )   # 0.87
+print(1 - (
+    len(cohort_treated.loc[condition ]) /
+    len(cohort_treated)
+))
