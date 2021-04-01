@@ -230,7 +230,7 @@ def make_age_grp_types():
     Returns CategoricalDType
     """
     keys, _ = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
-    return pd.CategoricalIndex(categories=keys, ordered=True)
+    return pd.CategoricalDtype(categories=keys, ordered=True)
 
 
 def make_calendar_period_type():
@@ -239,7 +239,7 @@ def make_calendar_period_type():
     Returns CategoricalDType
     """
     keys, _ = make_calendar_period_lookup()
-    return pd.CategoricalIndex(categories=keys, ordered=True)
+    return pd.CategoricalDtype(categories=keys, ordered=True)
 
 
 def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
