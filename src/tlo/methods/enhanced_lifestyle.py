@@ -1303,3 +1303,8 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                              )
                 )]
             )
+        else:
+            logger.info(
+                key='proportion_1549_women_sexworker',
+                data=[0]
+            )
