@@ -42,8 +42,8 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 10000
+end_date = Date(2015, 1, 1)
+popsize = 1000
 
 
 def run_sim(service_availability):
@@ -81,7 +81,7 @@ def get_summary_stats(logfile):
     output = parse_log_file(logfile)
 
     # 1) TOTAL COUNTS BY STAGE OVER TIME
-    counts_by_stage = output['tlo.methods.otheradultcancer']['summary_stats']
+    counts_by_stage = output['tlo.methods.other_adult_cancers']['summary_stats']
     counts_by_stage['date'] = pd.to_datetime(counts_by_stage['date'])
     counts_by_stage = counts_by_stage.set_index('date', drop=True)
 
@@ -103,19 +103,23 @@ def get_summary_stats(logfile):
     counts_by_cascade = pd.DataFrame(summary)
 
     # 3) DALYS wrt age (total over whole simulation)
-    dalys = output['tlo.methods.healthburden']['DALYS']
-    dalys = dalys.groupby(by=['age_range']).sum()
-    dalys.index = dalys.index.astype(make_age_grp_types())
-    dalys = dalys.sort_index()
+    dalys = output['tlo.methods.healthburden']['dalys']
+    dalys = dalys.groupby(by=dalys['age_range']).sum()
+    dalys = dalys.set_index(make_age_grp_types().categories)
 
     # 4) DEATHS wrt age (total over whole simulation)
+    # get the deaths dataframe
     deaths = output['tlo.methods.demography']['death']
+    # sort deaths by age group
     deaths['age_group'] = deaths['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
+    # isolate other adult cancer deaths
+    deaths = deaths.loc[deaths.cause == 'OtherAdultCancer']
+    # group deaths by age group
+    death_counts_by_age_group = deaths.groupby(by=deaths['age_group']).size()
+    # index the death counts by age group
+    death_counts_by_age_group = death_counts_by_age_group.reindex(
+        pd.Index.intersection(make_age_grp_types().categories, death_counts_by_age_group.index))
 
-    other_adult_cancer_deaths = pd.Series(
-        deaths.loc[deaths.cause == 'otheradultcancer'].groupby(by=['age_group']).size())
-    other_adult_cancer_deaths.index = other_adult_cancer_deaths.index.astype(make_age_grp_types())
-    other_adult_cancer_deaths = other_adult_cancer_deaths.sort_index()
 
     # 5) Rates of diagnosis per year:
     counts_by_stage['year'] = counts_by_stage.index.year
@@ -128,7 +132,7 @@ def get_summary_stats(logfile):
         'counts_by_cascade': counts_by_cascade,
         'dalys': dalys,
         'deaths': deaths,
-        'other_adult_cancer_deaths': other_adult_cancer_deaths,
+        'other_adult_cancer_deaths': death_counts_by_age_group,
         'annual_count_of_dxtr': annual_count_of_dxtr
     }
 
@@ -173,7 +177,7 @@ plt.show()
 
 # Examine DALYS (summed over whole simulation)
 results_no_healthsystem['dalys'].plot.bar(
-    y=['YLD_otheradultcancer_0', 'YLL_otheradultcancer'],
+    y=['YLD_OtherAdultCancer_0', 'YLL_OtherAdultCancer_OtherAdultCancer'],
     stacked=True)
 plt.xlabel('Age-group')
 plt.ylabel('DALYS')
@@ -183,11 +187,10 @@ plt.show()
 
 # Examine Deaths (summed over whole simulation)
 deaths = results_no_healthsystem['other_adult_cancer_deaths']
-deaths.index = deaths.index.astype(make_age_grp_types())
+deaths.reindex(pd.Index.intersection(make_age_grp_types().categories, deaths.index))
 # # make a series with the right categories and zero so formats nicely in the grapsh:
 agegrps = demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_CATEGORIES
-totdeaths = pd.Series(index=agegrps, data=np.nan)
-totdeaths.index = totdeaths.index.astype(make_age_grp_types())
+totdeaths = pd.Series(index=pd.Index.intersection(make_age_grp_types().categories, deaths.index), data=np.nan)
 totdeaths = totdeaths.combine_first(deaths).fillna(0.0)
 totdeaths.plot.bar()
 plt.title('Deaths due to Other Adult Cancer')
@@ -197,12 +200,13 @@ plt.ylabel('Total Deaths During Simulation')
 plt.show()
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
-deaths = pd.concat({
-    'No_HealthSystem': sum(results_no_healthsystem['other_adult_cancer_deaths'][0]),
-    'With_HealthSystem': sum(results_with_healthsystem['other_adult_cancer_deaths'][0])
-}, axis=1, sort=True)
+results_dict = {
+    'No_HealthSystem': sum(results_no_healthsystem['other_adult_cancer_deaths']),
+    'With_HealthSystem': sum(results_with_healthsystem['other_adult_cancer_deaths'])
+}
+results_df = pd.DataFrame(results_dict, index=[''])
 
-deaths.plot.bar()
+results_df.plot.bar()
 plt.title('Deaths due to OtherAdult Cancer')
 plt.xlabel('Scenario')
 plt.ylabel('Total Deaths During Simulation')
