@@ -120,7 +120,6 @@ def get_summary_stats(logfile):
     death_counts_by_age_group = death_counts_by_age_group.reindex(
         pd.Index.intersection(make_age_grp_types().categories, death_counts_by_age_group.index))
 
-
     # 5) Rates of diagnosis per year:
     counts_by_stage['year'] = counts_by_stage.index.year
     annual_count_of_dxtr = counts_by_stage.groupby(by='year')[['diagnosed_since_last_log',
