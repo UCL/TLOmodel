@@ -20,7 +20,7 @@ from tlo.methods import (
 )
 
 # Path to the resource files
-resources = "./resources"
+resources = Path("./resources")
 
 
 def run():
@@ -96,15 +96,21 @@ births['Census'] = np.nan
 births.at[cens['Period'][0], 'Census'] = cens_per_5y_per
 
 # Plot:
-ax = births.plot.line(y=['Model', 'Census', 'WPP_Estimates', 'WPP_Medium variant'])
-plt.scatter(x=np.arange(len(births.index))[births.index == births.loc[cens['Period'][0]]],
-            y=births.loc[cens['Period'][0], 'Census'], marker='^', color='orange')
+cens_period = cens['Period'][0]
+ax = births.plot.line(y=['Model',  'WPP_Estimates', 'WPP_Medium variant'])
+births.plot.line(
+    y=['Census'],
+    marker='^',
+    color='red',
+    ax=ax
+)
 plt.xticks(np.arange(len(births.index)), births.index)
-ax.fill_between(births.index, births['WPP_Low variant'], births['WPP_High variant'], facecolor='red', alpha=0.2)
+ax.fill_between(births.index, births['WPP_Low variant'], births['WPP_High variant'], facecolor='green', alpha=0.2)
 plt.xticks(rotation=90)
 ax.set_title('Number of Births Per Calendar Period')
 ax.legend(loc='upper left')
 ax.set_xlabel('Calendar Period')
 ax.set_ylabel('Number per period')
 plt.savefig(outputpath / ("Births_Over_Time_" + datestamp + ".pdf"), format='pdf')
+plt.tight_layout()
 plt.show()
