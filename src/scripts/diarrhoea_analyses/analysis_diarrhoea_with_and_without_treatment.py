@@ -9,8 +9,11 @@ from pathlib import Path
 
 import pandas as pd
 from matplotlib import pyplot as plt
-from scripts.utils.helper_funcs_for_processing_data_files import get_scaling_factor, load_gbd_deaths_and_dalys_data
 
+from scripts.utils.helper_funcs_for_processing_data_files import (
+    get_scaling_factor,
+    load_gbd_deaths_and_dalys_data,
+)
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (

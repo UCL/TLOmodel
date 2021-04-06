@@ -7,20 +7,20 @@ from datetime import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 from scripts.utils.helper_funcs_for_processing_data_files import (
-    get_causes_mappers,
     age_cats,
     get_age_range_categories,
-    load_gbd_deaths_and_dalys_data
+    get_causes_mappers,
+    load_gbd_deaths_and_dalys_data,
 )
-
+# Define the particular year for the focus of this analysis
+from tlo.methods.demography import get_scaling_factor
 
 # %% Set file paths etc
 
-# Define the particular year for the focus of this analysis
-from tlo.methods.demography import get_scaling_factor
 
 year = 2010
 

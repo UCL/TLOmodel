@@ -23,11 +23,12 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
     malaria,
     oesophagealcancer,
     pregnancy_supervisor,
-    symptommanager, hiv,
+    symptommanager,
 )
 
 # Define path and filenames

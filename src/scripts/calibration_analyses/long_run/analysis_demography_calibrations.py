@@ -15,11 +15,8 @@ from tlo.analysis.utils import (
     make_calendar_period_type,
     parse_log_file,
 )
-from tlo.methods import (
-    demography,
-)
+from tlo.methods import demography
 from tlo.util import create_age_range_lookup
-
 
 # %% Filename etc
 
