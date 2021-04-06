@@ -17,6 +17,7 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
+    postnatal_supervisor,
     rti,
     symptommanager,
 )
@@ -180,6 +181,7 @@ for i in range(0, nsim):
         labour.Labour(resourcefilepath=resourcefilepath),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
     )
     # Get the log file
