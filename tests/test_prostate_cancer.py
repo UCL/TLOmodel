@@ -5,6 +5,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    antenatal_care,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -12,8 +13,10 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
     oesophagealcancer,
     pregnancy_supervisor,
+    postnatal_supervisor,
     prostate_cancer,
     symptommanager,
 )
@@ -38,7 +41,8 @@ def make_simulation_healthsystemdisabled():
     sim = Simulation(start_date=start_date)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+    sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
@@ -46,7 +50,9 @@ def make_simulation_healthsystemdisabled():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
                  prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath))
     sim.seed_rngs(0)
@@ -60,7 +66,8 @@ def make_simulation_nohsi():
     sim = Simulation(start_date=start_date)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+    sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
@@ -68,6 +75,8 @@ def make_simulation_nohsi():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
                  prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
