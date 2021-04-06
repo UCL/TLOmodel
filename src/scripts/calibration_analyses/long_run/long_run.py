@@ -1,5 +1,6 @@
 """
-This file defines a batch run through which the Mockitis module is run across a sweep of a single parameter.
+This file defines a batch run of a large population for a long time. It's used for calibrations (demographic patterns,
+health burdens and healthsytstem usage)
 
 Run on the batch system using:
 ```tlo batch-submit src/scripts/calibration_analyses/long_run/long_run.py```
