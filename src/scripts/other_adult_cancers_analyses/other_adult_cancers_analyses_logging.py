@@ -13,6 +13,9 @@ from tlo.methods import (  # bladder_cancer,
     labour,
     other_adult_cancers,
     pregnancy_supervisor,
+    antenatal_care,
+    postnatal_supervisor,
+    newborn_outcomes,
     symptommanager,
 )
 
@@ -61,6 +64,9 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+             antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+             newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
              # bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
              other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
              )
