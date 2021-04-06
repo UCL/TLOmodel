@@ -18,6 +18,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
+    antenatal_care,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -25,8 +26,10 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
     oesophagealcancer,
     pregnancy_supervisor,
+    postnatal_supervisor,
     prostate_cancer,
     symptommanager,
 )
@@ -51,7 +54,8 @@ def run_sim(service_availability):
     sim = Simulation(start_date=start_date)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+    sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
@@ -60,9 +64,11 @@ def run_sim(service_availability):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
+                 prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
@@ -103,7 +109,7 @@ def get_summary_stats(logfile):
     counts_by_cascade = pd.DataFrame(summary)
 
     # 3) DALYS wrt age (total over whole simulation)
-    dalys = output['tlo.methods.healthburden']['DALYS']
+    dalys = output['tlo.methods.healthburden']['dalys']
     dalys = dalys.groupby(by=['age_range']).sum()
     dalys.index = dalys.index.astype(make_age_grp_types())
     dalys = dalys.sort_index()
@@ -200,11 +206,6 @@ plt.ylabel('Total Deaths During Simulation')
 plt.show()
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
-deaths = pd.concat({
-    'No_HealthSystem': sum(results_no_healthsystem['prostate_cancer_deaths']),
-    'With_HealthSystem': sum(results_with_healthsystem['prostate_cancer_deaths'])
-}, axis=1, sort=True)
-
 deaths = {
     'No_HealthSystem': sum(results_no_healthsystem['prostate_cancer_deaths']),
     'With_HealthSystem': sum(results_with_healthsystem['prostate_cancer_deaths'])

@@ -294,7 +294,7 @@ class ProstateCancer(Module):
 #       )
 
 
-# -------------------- pc_date_diagnosis -----------
+        # -------------------- pc_date_diagnosis -----------
 
         # for those with symptoms set to initially diagnosed
         # For those that have been diagnosed, set data of diagnosis to today's date

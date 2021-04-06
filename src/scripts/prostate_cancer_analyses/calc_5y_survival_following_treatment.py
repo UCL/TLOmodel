@@ -38,7 +38,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2080, 1, 1)
+end_date = Date(2020, 1, 1)
 popsize = 1000
 
 # Establish the simulation object and set the seed
@@ -63,16 +63,16 @@ sim.seed_rngs(0)
 
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to
 # begin with:
-sim.modules['ProstateCancer'].parameters['r_prostate_confined_prostate_ca_none'] = 0.00
-sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [1.0, 0.0, 0.0]
-sim.modules['ProstateCancer'].parameters["init_prop_urinary_symptoms_by_stage"] = [0.0] * 3
-sim.modules['ProstateCancer'].parameters["init_prop_pelvic_pain_symptoms_by_stage"] = [0.0] * 3
-sim.modules['ProstateCancer'].parameters["init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage"] = [0.0] * 3
-sim.modules['ProstateCancer'].parameters[
-    "init_prop_with_pelvic_pain_symptoms_diagnosed_prostate_ca_by_stage"
-] = [0.0] * 3
-sim.modules['ProstateCancer'].parameters["init_prop_treatment_status_prostate_cancer"] = [0.0] * 3
-sim.modules['ProstateCancer'].parameters["init_prob_palliative_care"] = 0.0
+# sim.modules['ProstateCancer'].parameters['r_prostate_confined_prostate_ca_none'] = 0.00
+# sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [1.0, 0.0, 0.0]
+# sim.modules['ProstateCancer'].parameters["init_prop_urinary_symptoms_by_stage"] = [0.0] * 3
+# sim.modules['ProstateCancer'].parameters["init_prop_pelvic_pain_symptoms_by_stage"] = [0.0] * 3
+# sim.modules['ProstateCancer'].parameters["init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage"] = [0.0] * 3
+# sim.modules['ProstateCancer'].parameters[
+#     "init_prop_with_pelvic_pain_symptoms_diagnosed_prostate_ca_by_stage"
+# ] = [0.0] * 3
+# sim.modules['ProstateCancer'].parameters["init_prop_treatment_status_prostate_cancer"] = [0.0] * 3
+# sim.modules['ProstateCancer'].parameters["init_prob_palliative_care"] = 0.0
 
 # Establish the logger and look at only demography
 custom_levels = {"*": logging.WARNING,  # <--
