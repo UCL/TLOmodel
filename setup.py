@@ -43,4 +43,8 @@ setup(
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     python_requires='>=3',
+    entry_points='''
+        [console_scripts]
+        tlo=tlo.cli:cli
+    '''
 )

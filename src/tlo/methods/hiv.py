@@ -94,8 +94,6 @@ class Hiv(Module):
         # --- Dates on which things have happened:
         "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
 
-        # -- Temporary variable for breastfeeding:
-        "tmp_hv_breastfed": Property(Types.BOOL, "Is the person currently receiving breast milk from mother")
     }
 
     PARAMETERS = {
@@ -395,9 +393,6 @@ class Hiv(Module):
         # --- Dates on which things have happened
         df.loc[df.is_alive, "hv_date_inf"] = pd.NaT
         df.loc[df.is_alive, "hv_last_test_date"] = pd.NaT
-
-        # -- Temporary --
-        df.loc[df.is_alive, "tmp_hv_breastfed"] = False
 
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
@@ -766,19 +761,6 @@ class Hiv(Module):
         df.at[child_id, "hv_date_inf"] = pd.NaT
         df.at[child_id, "hv_last_test_date"] = pd.NaT
 
-        # -- Temporary
-        df.at[child_id, "tmp_hv_breastfed"] = True
-
-        # ----- Schedule routine HIV test for those born to mothers that are HIV-positive (a time of giving birth)
-        # TODO: this to be subsumed into post-natal care
-        if df.at[mother_id, 'hv_inf']:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self),
-                topen=self.sim.date + pd.DateOffset(months=1),
-                tclose=self.sim.date + pd.DateOffset(months=2),
-                priority=1
-            )
-
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
         mother = df.loc[mother_id]
@@ -807,7 +789,10 @@ class Hiv(Module):
 
         # ----------------------------------- MTCT - DURING BREASTFEEDING --------------------------
         # If child is not infected and is being breastfed, then expose them to risk of MTCT through breastfeeding
-        if not child_infected and df.at[child_id, "tmp_hv_breastfed"] and mother.hv_inf:
+        # TODO: note for AT/TH - neonatal breastfeeding property replaced HIV temp property as discussed 19/02/21.
+        #  We need to make sure newborn outcomes on_birth is always called before HIV so breastfeeding status is set
+        #  prior to this function being called
+        if not child_infected and df.at[child_id, "nb_breastfeeding_status"] != 'none' and mother.hv_inf:
             self.mtct_during_breastfeeding(mother_id, child_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -1106,7 +1091,8 @@ class HivInfectionEvent(Event, IndividualScopeEventMixin):
         self.module.do_new_infection(person_id)
 
         # Consider mother-to-child-transmission (MTCT) from this person to their children:
-        children_of_this_person_being_breastfed = df.loc[(df.mother_id == person_id) & df.tmp_hv_breastfed].index
+        children_of_this_person_being_breastfed = df.loc[(df.mother_id == person_id) &
+                                                         (df.nb_breastfeeding_status != 'none')].index
         # - Do the MTCT routine for each child:
         for child_id in children_of_this_person_being_breastfed:
             self.module.mtct_during_breastfeeding(person_id, child_id)
@@ -1128,7 +1114,7 @@ class HivInfectionDuringBreastFeedingEvent(Event, IndividualScopeEventMixin):
             return
 
         # Check person is breastfed currently
-        if not df.at[person_id, "tmp_hv_breastfed"]:
+        if df.at[person_id, "nb_breastfeeding_status"] == 'none':
             return
 
         # Onset the infection for this person (which will schedule progression etc)

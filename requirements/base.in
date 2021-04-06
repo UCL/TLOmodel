@@ -1,6 +1,14 @@
 # Base requirements file - common packages we use directly
 
+GitPython
+click
 numpy
 pandas
 scipy
 openpyxl
+
+# To submit jobs to Azure Batch
+azure-batch
+azure-identity
+azure-keyvault
+azure-storage-file-share

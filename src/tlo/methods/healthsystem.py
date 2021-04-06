@@ -61,6 +61,7 @@ class HealthSystem(Module):
         'BedCapacity': Parameter(Types.DATA_FRAME, 'Bed-days capacity by facility'),
         'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
         'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
+        'Service_Availability': Parameter(Types.LIST, 'List of services to be available.')
     }
 
     PROPERTIES = {
@@ -114,12 +115,9 @@ class HealthSystem(Module):
 
         self.ignore_priority = ignore_priority
 
-        # Check that the service_availability list is specified correctly
-        if service_availability is None:
-            self.service_availability = ['*']
-        else:
-            assert type(service_availability) is list
-            self.service_availability = service_availability
+        # Store the argument provided for service_availability
+        self.arg_service_availabily = service_availability
+        self.service_availability = ['*']  # provided so that there is a default even before simulation is run
 
         # Check that the capabilities coefficient is correct
         assert capabilities_coefficient >= 0
@@ -148,13 +146,6 @@ class HealthSystem(Module):
             f"hs_next_last_day_in_bed_{bed_type}" for bed_type in self.bed_types]
         self.list_of_cols_with_internal_dates['all'] = \
             self.list_of_cols_with_internal_dates['entries'] + self.list_of_cols_with_internal_dates['exits']
-
-        logger.info(key="message",
-                    data=f"----------------------------------------------------------------------"
-                         f"Setting up the Health System With the Following Service Availability: "
-                         f"{self.service_availability}"
-                         f"----------------------------------------------------------------------"
-                    )
 
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
         self.dx_manager = DxManager(self)
@@ -198,6 +189,9 @@ class HealthSystem(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Bed_Capacity.csv'
         ).iloc[:, 1:].set_index('Facility_Name')
         assert all([bed_type in self.parameters['BedCapacity'].columns for bed_type in self.bed_types])
+
+        # Set default parameter for Service Availablity (everthing available)
+        self.parameters['Service_Availability'] = ['*']
 
     def process_consumables_file(self):
         """Helper function for processing the consumables data (stored as self.parameters['Consumables'])
@@ -285,6 +279,27 @@ class HealthSystem(Module):
 
         # Schedule the first (repeating) event to update status of hs_is_in_patient
         sim.schedule_event(RefreshInPatient(self), sim.date)
+
+        # Determine service_availability
+        self.set_service_availability()
+
+    def set_service_availability(self):
+        """Set service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
+         provided in arguement if an argument was specified -- provided for backward compatibility.)"""
+
+        if self.arg_service_availabily is None:
+            service_availability = self.parameters['Service_Availability']
+        else:
+            service_availability = self.arg_service_availabily
+
+        assert type(service_availability) is list
+        self.service_availability = service_availability
+
+        # Log the service_availability
+        logger.info(key="message",
+                    data=f"Running Health System With the Following Service Availability: "
+                         f"{self.service_availability}"
+                    )
 
     def on_birth(self, mother_id, child_id):
 
@@ -1043,7 +1058,7 @@ class HealthSystem(Module):
         for ev_tuple in self.HSI_EVENT_QUEUE:
             date = ev_tuple[1]   # this is the 'topen' value
             event = ev_tuple[4]
-            if isinstance(event.target, int):
+            if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
                     list_of_events.append((date, event))
 
