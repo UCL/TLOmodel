@@ -1814,10 +1814,12 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         plhiv_children = len(df.loc[df.is_alive & df.hv_inf & (df.age_years < 15)])
 
         # proportion of adults (15+) living with HIV that are diagnosed:
-        dx_adult = len(df.loc[df.is_alive & df.hv_inf & df.hv_diagnosed & (df.age_years >= 15)]) / plhiv_adult
+        dx_adult = len(df.loc[df.is_alive & df.hv_inf & df.hv_diagnosed & (df.age_years >= 15)]) / plhiv_adult \
+            if plhiv_adult > 0 else 0
 
         # proportion of children (15+) living with HIV that are diagnosed:
-        dx_children = len(df.loc[df.is_alive & df.hv_inf & df.hv_diagnosed & (df.age_years >= 15)]) / plhiv_children
+        dx_children = len(df.loc[df.is_alive & df.hv_inf & df.hv_diagnosed & (df.age_years >= 15)]) / plhiv_children \
+            if plhiv_children > 0 else 0
 
         # proportions of adults (15+) living with HIV on treatment:
         art_adult = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art != "not") & (df.age_years >= 15)])
