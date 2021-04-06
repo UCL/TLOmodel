@@ -1,6 +1,10 @@
 """
 Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths.
+
+This uses Scenario file: src/scripts/long_run/long_run.py
+
 """
+
 import pickle
 from datetime import datetime
 from pathlib import Path
@@ -15,8 +19,40 @@ from tlo.analysis.utils import (
     make_calendar_period_type,
     parse_log_file,
 )
+from tlo.analysis.utils import (
+    extract_params,
+    extract_results,
+    get_scenario_info,
+    get_scenario_outputs,
+    load_pickled_dataframes,
+    summarize,
+)
+
+
 from tlo.methods import demography
 from tlo.util import create_age_range_lookup
+
+outputspath = Path('./outputs')
+results_folder = get_scenario_outputs('long_run.py', outputspath)[-1]
+
+# look at one log (so can decide what to extract)
+log = load_pickled_dataframes(results_folder, draw=0, run=3)
+
+# get basic information about the results
+info = get_scenario_info(results_folder)
+
+# 1) Extract the parameters that have varied over the set of simulations
+params = extract_params(results_folder)
+
+# TODO -- When the long-runs work, finish off converting this script to use the results from the batchrun system
+
+# 2) Extract a specific log series for all runs:
+extracted = extract_results(results_folder,
+                            module="tlo.methods.mockitis",
+                            key="summary",
+                            column="PropInf",
+                            index="date")
+
 
 # %% Filename etc
 
