@@ -12,14 +12,27 @@ from tlo import Date, logging
 from tlo.methods import (
     contraception,
     demography,
+    dx_algorithm_adult,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
+    healthburden,
     healthsystem,
     labour,
     mockitis,
     pregnancy_supervisor,
     symptommanager,
+    newborn_outcomes,
+    postnatal_supervisor,
+    antenatal_care,
+    postnatal_supervisor_lm,
+    diarrhoea,
+    malaria,
+    hiv,
+    epi,
+    depression,
+    oesophagealcancer,
+    epilepsy
 )
 from tlo.scenario import BaseScenario
 
