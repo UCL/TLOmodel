@@ -34,7 +34,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
@@ -61,6 +61,10 @@ class Hiv(Module):
 
         self.stored_test_numbers = []  # create empty list for storing hiv test numbers
 
+        self.daly_wts = dict()
+        self.lm = dict()
+        self.footprints_for_consumables_required = dict()
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
@@ -70,216 +74,164 @@ class Hiv(Module):
 
     PROPERTIES = {
         # --- Core Properties
-        "hv_inf": Property(Types.BOOL,
-                           "Is person currently infected with HIV (NB. AIDS status is determined by prescence of the "
-                           "AIDS Symptom."),
-        "hv_art": Property(Types.CATEGORICAL,
-                           "ART status of person, whether on ART or not; and whether viral load is suppressed or not if"
-                           " on ART.",
-                           categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
-        'hv_is_on_prep': Property(Types.BOOL,
-                                  'Whether or not the person is currently taking and receiving a protective effect from'
-                                  ' Pre-Exposure Prophylaxsis.'),
-        "hv_behaviour_change": Property(Types.BOOL,
-                                        "Has this person been exposed to HIV prevention counselling following a "
-                                        "negative HIV test result"),
-        "hv_diagnosed": Property(Types.BOOL, "knows that they are hiv+: i.e. is hiv+ and tested as hiv+"),
-        "hv_number_tests": Property(Types.INT, "number of hiv tests ever taken"),
-        "hv_last_test_date": Property(Types.DATE, "date of last hiv test"),
+        "hv_inf": Property(
+            Types.BOOL,
+            "Is person currently infected with HIV (NB. AIDS status is determined by prescence of the AIDS Symptom."),
+        "hv_art": Property(
+            Types.CATEGORICAL,
+            "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
+            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
+        "hv_is_on_prep": Property(
+            Types.BOOL,
+            "Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis."),
+        "hv_behaviour_change": Property(
+            Types.BOOL,
+            "Has this person been exposed to HIV prevention counselling following a negative HIV test result"),
+        "hv_diagnosed": Property(Types.BOOL, "Knows that they are HIV+: i.e. is HIV+ and tested as HIV+"),
+        "hv_number_tests": Property(Types.INT, "Number of HIV tests ever taken"),
+        "hv_last_test_date": Property(Types.DATE, "Date of last HIV test"),
 
-        # # --- Dates on which things have happened:
-        "hv_date_inf": Property(Types.DATE, "Date infected with hiv"),
+        # --- Dates on which things have happened:
+        "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
 
-        # -- Temporary variable for breastfeeding:
-        "tmp_breastfed": Property(Types.BOOL, "Is the person currently receiving breast milk from mother")
     }
 
     PARAMETERS = {
-        # baseline characteristics
+        # Baseline characteristics
         "time_inf": Parameter(Types.DATA_FRAME, "prob of time since infection for baseline adult pop"),
         "art_coverage": Parameter(Types.DATA_FRAME, "coverage of ART at baseline"),
 
-        "fraction_of_those_infected_that_have_aids_at_initiation": Parameter(Types.REAL,
-                                                                             "Fraction of persons living with HIV at "
-                                                                             "baseline that have developed AIDS"),
-        "testing_coverage_male": Parameter(
-            Types.REAL, "proportion of adult male population tested"),
-        "testing_coverage_female": Parameter(
-            Types.REAL, "proportion of adult female population tested"),
+        "fraction_of_those_infected_that_have_aids_at_initiation": Parameter(
+            Types.REAL, "Fraction of persons living with HIV at baseline that have developed AIDS"),
+        "testing_coverage_male": Parameter(Types.REAL, "proportion of adult male population tested"),
+        "testing_coverage_female": Parameter(Types.REAL, "proportion of adult female population tested"),
 
-        # natural history - transmission - overall rates
-        "beta": Parameter(
-            Types.REAL, "transmission rate"),
-        "prob_mtct_untreated": Parameter(
-            Types.REAL, "probability of mother to child transmission"),
-        "prob_mtct_treated": Parameter(
-            Types.REAL, "probability of mother to child transmission, mother on ART"),
+        # Natural history - transmission - overall rates
+        "beta": Parameter(Types.REAL, "Transmission rate"),
+        "prob_mtct_untreated": Parameter(Types.REAL, "Probability of mother to child transmission"),
+        "prob_mtct_treated": Parameter(Types.REAL, "Probability of mother to child transmission, mother on ART"),
         "prob_mtct_incident_preg": Parameter(
-            Types.REAL,
-            "probability of mother to child transmission, mother infected during pregnancy"),
+            Types.REAL, "Probability of mother to child transmission, mother infected during pregnancy"),
         "monthly_prob_mtct_bf_untreated": Parameter(
-            Types.REAL,
-            "probability of mother to child transmission during breastfeeding"),
+            Types.REAL, "Probability of mother to child transmission during breastfeeding"),
         "monthly_prob_mtct_bf_treated": Parameter(
-            Types.REAL,
-            "probability of mother to child transmission, mother infected during breastfeeding"),
+            Types.REAL, "Probability of mother to child transmission, mother infected during breastfeeding"),
 
-        # natural history - transmission - relative risk of HIV acquisition (non-intervention)
-        "rr_fsw": Parameter(Types.REAL, "relative risk of hiv with female sex work"),
-        "rr_circumcision": Parameter(
-            Types.REAL, "relative risk of hiv with circumcision"
-        ),
-        "rr_rural": Parameter(Types.REAL, "relative risk of hiv in rural location"),
-        "rr_windex_poorer": Parameter(
-            Types.REAL, "relative risk of hiv with wealth level poorer"
-        ),
-        "rr_windex_middle": Parameter(
-            Types.REAL, "relative risk of hiv with wealth level middle"
-        ),
-        "rr_windex_richer": Parameter(
-            Types.REAL, "relative risk of hiv with wealth level richer"
-        ),
-        "rr_windex_richest": Parameter(
-            Types.REAL, "relative risk of hiv with wealth level richest"
-        ),
-        "rr_sex_f": Parameter(Types.REAL, "relative risk of hiv if female"),
-        "rr_age_gp20": Parameter(
-            Types.REAL, "relative risk of hiv if age 20-24 compared with 15-19"
-        ),
-        "rr_age_gp25": Parameter(Types.REAL, "relative risk of hiv if age 25-29"),
-        "rr_age_gp30": Parameter(Types.REAL, "relative risk of hiv if age 30-34"),
-        "rr_age_gp35": Parameter(Types.REAL, "relative risk of hiv if age 35-39"),
-        "rr_age_gp40": Parameter(Types.REAL, "relative risk of hiv if age 40-44"),
-        "rr_age_gp45": Parameter(Types.REAL, "relative risk of hiv if age 45-49"),
-        "rr_age_gp50": Parameter(Types.REAL, "relative risk of hiv if age 50+"),
-        "rr_edlevel_primary": Parameter(
-            Types.REAL, "relative risk of hiv with primary education"
-        ),
-        "rr_edlevel_secondary": Parameter(
-            Types.REAL, "relative risk of hiv with secondary education"
-        ),
-        "rr_edlevel_higher": Parameter(
-            Types.REAL, "relative risk of hiv with higher education"
-        ),
+        # Natural history - transmission - relative risk of HIV acquisition (non-intervention)
+        "rr_fsw": Parameter(Types.REAL, "Relative risk of HIV with female sex work"),
+        "rr_circumcision": Parameter(Types.REAL, "Relative risk of HIV with circumcision"),
+        "rr_rural": Parameter(Types.REAL, "Relative risk of HIV in rural location"),
+        "rr_windex_poorer": Parameter(Types.REAL, "Relative risk of HIV with wealth level poorer"),
+        "rr_windex_middle": Parameter(Types.REAL, "Relative risk of HIV with wealth level middle"),
+        "rr_windex_richer": Parameter(Types.REAL, "Relative risk of HIV with wealth level richer"),
+        "rr_windex_richest": Parameter(Types.REAL, "Relative risk of HIV with wealth level richest"),
+        "rr_sex_f": Parameter(Types.REAL, "Relative risk of HIV if female"),
+        "rr_age_gp20": Parameter(Types.REAL, "Relative risk of HIV if age 20-24 compared with 15-19"),
+        "rr_age_gp25": Parameter(Types.REAL, "Relative risk of HIV if age 25-29"),
+        "rr_age_gp30": Parameter(Types.REAL, "Relative risk of HIV if age 30-34"),
+        "rr_age_gp35": Parameter(Types.REAL, "Relative risk of HIV if age 35-39"),
+        "rr_age_gp40": Parameter(Types.REAL, "Relative risk of HIV if age 40-44"),
+        "rr_age_gp45": Parameter(Types.REAL, "Relative risk of HIV if age 45-49"),
+        "rr_age_gp50": Parameter(Types.REAL, "Relative risk of HIV if age 50+"),
+        "rr_edlevel_primary": Parameter(Types.REAL, "Relative risk of HIV with primary education"),
+        "rr_edlevel_secondary": Parameter(Types.REAL, "Relative risk of HIV with secondary education"),
+        "rr_edlevel_higher": Parameter(Types.REAL, "Relative risk of HIV with higher education"),
 
-        # natural history - transmission - relative risk of HIV acquisition (interventions)
-        "rr_behaviour_change": Parameter(
-            Types.REAL, "relative risk of hiv with behaviour modification"
-        ),
+        # Natural history - transmission - relative risk of HIV acquisition (interventions)
+        "rr_behaviour_change": Parameter(Types.REAL, "Relative risk of HIV with behaviour modification"),
         "proportion_reduction_in_risk_of_hiv_aq_if_on_prep": Parameter(
-            Types.REAL, "proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; "
-                        "1.0 for perfect efficacy."),
+            Types.REAL,
+            "Proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; 1.0 for perfect efficacy."),
 
-        # natural history - survival (adults)
-        "mean_months_between_aids_and_death": Parameter(Types.REAL,
-                                                        "Mean number of months (distributed exponentially) for the "
-                                                        "time between AIDS and AIDS Death"),
-        "infection_to_death_weibull_shape_1519": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 15-19"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_shape_2024": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 20-24"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_shape_2529": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 25-29"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_shape_3034": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 30-34"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_shape_3539": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 35-39"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_shape_4044": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 40-44"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_shape_4549": Parameter(Types.REAL,
-                                                           "Shape parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 45-49"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_scale_1519": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 15-19"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_scale_2024": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 20-24"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_scale_2529": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 25-29"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_scale_3034": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 30-34"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_scale_3539": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 35-39"
-                                                           " years (units: years)"),
-        "infection_to_death_weibull_scale_4044": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 40-44"
-                                                           " years"),
-        "infection_to_death_weibull_scale_4549": Parameter(Types.REAL,
-                                                           "Scale parameters for the weibill distribution describing"
-                                                           " time between infection and death for those aged 45-49"
-                                                           " years (units: years)"),
+        # Natural history - survival (adults)
+        "mean_months_between_aids_and_death": Parameter(
+            Types.REAL, "Mean number of months (distributed exponentially) for the time between AIDS and AIDS Death"),
+        "infection_to_death_weibull_shape_1519": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 15-19 yo (units: years)"),
+        "infection_to_death_weibull_shape_2024": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 20-24 yo (units: years)"),
+        "infection_to_death_weibull_shape_2529": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 25-29 yo (units: years)"),
+        "infection_to_death_weibull_shape_3034": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 30-34 yo (units: years)"),
+        "infection_to_death_weibull_shape_3539": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 35-39 yo (units: years)"),
+        "infection_to_death_weibull_shape_4044": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 40-44 yo (units: years)"),
+        "infection_to_death_weibull_shape_4549": Parameter(
+            Types.REAL,
+            "Shape parameter for Weibull describing time between infection and death for 45-49 yo (units: years)"),
+        "infection_to_death_weibull_scale_1519": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 15-19 yo (units: years)"),
+        "infection_to_death_weibull_scale_2024": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 20-24 yo (units: years)"),
+        "infection_to_death_weibull_scale_2529": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 25-29 yo (units: years)"),
+        "infection_to_death_weibull_scale_3034": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 30-34 yo (units: years)"),
+        "infection_to_death_weibull_scale_3539": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 35-39 yo (units: years)"),
+        "infection_to_death_weibull_scale_4044": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 40-44 yo (units: years)"),
+        "infection_to_death_weibull_scale_4549": Parameter(
+            Types.REAL,
+            "Scale parameter for Weibull describing time between infection and death for 45-49 yo (units: years)"),
         "art_default_to_aids_mean_years": Parameter(
-            Types.REAL, "Mean years between when a person (any change) stops being on treatment to when AIDS is onset "
-                        "(if the abscence of resuming treatment)."),
+            Types.REAL,
+            "Mean years between when a person (any change) stops being on treatment to when AIDS is onset (if the "
+            "absence of resuming treatment)."),
 
-        # natural history - survival (children)
+        # Natural history - survival (children)
         "mean_survival_for_infants_infected_prior_to_birth": Parameter(
-            Types.REAL,
-            "Exponential rate parameter for mortality in infants who are infected before birth"),
+            Types.REAL, "Exponential rate parameter for mortality in infants who are infected before birth"),
         "infection_to_death_infant_infection_after_birth_weibull_scale": Parameter(
-            Types.REAL,
-            "Weibull scale parameter for mortality in infants who are infected after birth"),
+            Types.REAL, "Weibull scale parameter for mortality in infants who are infected after birth"),
         "infection_to_death_infant_infection_after_birth_weibull_shape": Parameter(
-            Types.REAL,
-            "Weibull shape parameter for mortality in infants who are infected after birth"),
+            Types.REAL, "Weibull shape parameter for mortality in infants who are infected after birth"),
 
         # Uptake of Interventions
         "prob_spontaneous_test_12m": Parameter(
-            Types.REAL, "probability that a person will seek HIV testing per 12 month period."),
+            Types.REAL, "Probability that a person will seek HIV testing per 12 month period."),
         "prob_start_art_after_hiv_test": Parameter(
-            Types.REAL, "probability that a person will start treatment, if HIV-positive, following testing"),
+            Types.REAL, "Probability that a person will start treatment, if HIV-positive, following testing"),
         "rr_start_art_if_aids_symptoms": Parameter(
-            Types.REAL, "relative probability of a person starting treatment if they have aids_symptoms compared to if"
+            Types.REAL, "Relative probability of a person starting treatment if they have aids_symptoms compared to if"
                         "they do not."
         ),
         "prob_behav_chg_after_hiv_test": Parameter(
-            Types.REAL, "probability that a person will change risk behaviours, if HIV-negative, following testing"),
+            Types.REAL, "Probability that a person will change risk behaviours, if HIV-negative, following testing"),
         "prob_prep_for_fsw_after_hiv_test": Parameter(
-            Types.REAL, "probability that a FSW will start PrEP, if HIV-negative, following testing"),
+            Types.REAL, "Probability that a FSW will start PrEP, if HIV-negative, following testing"),
         "prob_circ_after_hiv_test": Parameter(
-            Types.REAL, "probability that a male will be circumcised, if HIV-negative, following testing"),
+            Types.REAL, "Probability that a male will be circumcised, if HIV-negative, following testing"),
         "probability_of_being_retained_on_prep_every_3_months": Parameter(
-            Types.REAL, "probability that someone who has initiated on prep will attend an appointment and be on prep "
+            Types.REAL, "Probability that someone who has initiated on prep will attend an appointment and be on prep "
                         "for the next 3 months, until the next appointment."),
         "probability_of_being_retained_on_art_every_6_months": Parameter(
-            Types.REAL, "probability that someone who has initiated on treatment will attend an appointment and be on "
+            Types.REAL, "Probability that someone who has initiated on treatment will attend an appointment and be on "
                         "treatment for next 6 months, until the next appointment."),
         "probability_of_seeking_further_art_appointment_if_drug_not_available": Parameter(
-            Types.REAL, "probability that a person who 'should' be on art will seek another appointment (the following "
+            Types.REAL, "Probability that a person who 'should' be on art will seek another appointment (the following "
                         "day and try for each of the next 7 days) if drugs were not available."),
         "probability_of_seeking_further_art_appointment_if_appointment_not_available": Parameter(
-            Types.REAL, "probability that a person who 'should' be on art will seek another appointment if the health-"
+            Types.REAL, "Probability that a person who 'should' be on art will seek another appointment if the health-"
                         "system has not been able to provide them with an appointment"),
-        "vls_m": Parameter(
-            Types.REAL, "rates of viral load suppression males"),
-        "vls_f": Parameter(
-            Types.REAL, "rates of viral load suppression males"),
-        "vls_child": Parameter(
-            Types.REAL, "rates of viral load suppression in children 0-14 years"),
-        "prep_start_year": Parameter(
-            Types.REAL, "year from which PrEP is available")
+        "vls_m": Parameter(Types.REAL, "Rates of viral load suppression males"),
+        "vls_f": Parameter(Types.REAL, "Rates of viral load suppression males"),
+        "vls_child": Parameter(Types.REAL, "Rates of viral load suppression in children 0-14 years"),
+        "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available")
     }
 
     def read_parameters(self, data_folder):
@@ -313,7 +265,6 @@ class Hiv(Module):
         if "HealthBurden" in self.sim.modules.keys():
             # Chronic infection but not AIDS (including if on ART)
             # (taken to be equal to "Symptomatic HIV without anaemia")
-            self.daly_wts = dict()
             self.daly_wts['hiv_infection_but_not_aids'] = self.sim.modules["HealthBurden"].get_daly_weight(17)
 
             #  AIDS without anti-retroviral treatment without anemia
@@ -335,7 +286,7 @@ class Hiv(Module):
 
         # ---- LINEAR MODELS -----
         # LinearModel for the relative risk of becoming infected during the simulation
-        self.rr_of_infection = LinearModel.multiplicative(
+        self.lm['rr_of_infection'] = LinearModel.multiplicative(
             Predictor('age_years')  .when('<15', 0.0)
                                     .when('<20', 1.0)
                                     .when('<25', p["rr_age_gp20"])
@@ -361,7 +312,7 @@ class Hiv(Module):
         )
 
         # LinearModels to give the shape and scale for the Weibull distribution describing time from infection to death
-        self.scale_parameter_for_infection_to_death = LinearModel.multiplicative(
+        self.lm['scale_parameter_for_infection_to_death'] = LinearModel.multiplicative(
             Predictor('age_years')  .when('<20', p["infection_to_death_weibull_scale_1519"])
                                     .when('<25', p["infection_to_death_weibull_scale_2024"])
                                     .when('<30', p["infection_to_death_weibull_scale_2529"])
@@ -372,7 +323,7 @@ class Hiv(Module):
                                     .otherwise(p["infection_to_death_weibull_scale_4549"])
         )
 
-        self.shape_parameter_for_infection_to_death = LinearModel.multiplicative(
+        self.lm['shape_parameter_for_infection_to_death'] = LinearModel.multiplicative(
             Predictor('age_years')  .when('<20', p["infection_to_death_weibull_shape_1519"])
                                     .when('<25', p["infection_to_death_weibull_shape_2024"])
                                     .when('<30', p["infection_to_death_weibull_shape_2529"])
@@ -387,14 +338,14 @@ class Hiv(Module):
         # Linear model that give the probability of seeking a 'Spontaneous' Test for HIV
         # (= sum of probabilities for accessing any HIV service when not ill)
 
-        self.lm_spontaneous_test_12m = LinearModel(
+        self.lm['lm_spontaneous_test_12m'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prob_spontaneous_test_12m"],
             Predictor('hv_diagnosed').when(True, 0.0).otherwise(1.0)
         )
 
         # Linear model if the person will start ART, following when the person has been diagnosed:
-        self.lm_art = LinearModel(
+        self.lm['lm_art'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prob_start_art_after_hiv_test"],
             Predictor('hv_inf').when(True, 1.0).otherwise(0.0),
@@ -402,14 +353,14 @@ class Hiv(Module):
         )
 
         # Linear model for changing behaviour following an HIV-negative test
-        self.lm_behavchg = LinearModel(
+        self.lm['lm_behavchg'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prob_behav_chg_after_hiv_test"],
             Predictor('hv_inf').when(False, 1.0).otherwise(0.0)
         )
 
         # Linear model for starting PrEP (if F/sex-workers), following when the person has tested HIV -ve:
-        self.lm_prep = LinearModel(
+        self.lm['lm_prep'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prob_prep_for_fsw_after_hiv_test"],
             Predictor('hv_inf').when(False, 1.0).otherwise(0.0),
@@ -418,7 +369,7 @@ class Hiv(Module):
         )
 
         # Linear model for circumcision (if M) following when the person has been diagnosed:
-        self.lm_circ = LinearModel(
+        self.lm['lm_circ'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prob_circ_after_hiv_test"],
             Predictor('hv_inf').when(False, 1.0).otherwise(0.0),
@@ -432,19 +383,16 @@ class Hiv(Module):
         df = population.props
 
         # --- Current status
-        df["hv_inf"] = False
-        df["hv_art"].values[:] = "not"
-        df["hv_is_on_prep"] = False
-        df["hv_behaviour_change"] = False
-        df["hv_diagnosed"] = False
-        df["hv_number_tests"] = 0
+        df.loc[df.is_alive, "hv_inf"] = False
+        df.loc[df.is_alive, "hv_art"] = "not"
+        df.loc[df.is_alive, "hv_is_on_prep"] = False
+        df.loc[df.is_alive, "hv_behaviour_change"] = False
+        df.loc[df.is_alive, "hv_diagnosed"] = False
+        df.loc[df.is_alive, "hv_number_tests"] = 0
 
         # --- Dates on which things have happened
-        df["hv_date_inf"] = pd.NaT
-        df["hv_last_test_date"] = pd.NaT
-
-        # -- Temporary --
-        df["tmp_breastfed"] = False
+        df.loc[df.is_alive, "hv_date_inf"] = pd.NaT
+        df.loc[df.is_alive, "hv_last_test_date"] = pd.NaT
 
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
@@ -492,7 +440,7 @@ class Hiv(Module):
             'rel_prob_by_risk_factor'].transform('mean')
         p['scaled_rel_prob_by_risk_factor'] = p['rel_prob_by_risk_factor'] / p['mean_of_rel_prob_within_age_sex_group']
         p['overall_prob_of_infec'] = p['scaled_rel_prob_by_risk_factor'] * p['prob_of_infec']
-        infec = self.rng.rand(len(p['overall_prob_of_infec'])) < p['overall_prob_of_infec']
+        infec = self.rng.random_sample(len(p['overall_prob_of_infec'])) < p['overall_prob_of_infec']
 
         # Assign the designated person as infected in the population.props dataframe:
         df.loc[infec, 'hv_inf'] = True
@@ -506,7 +454,7 @@ class Hiv(Module):
             p=self.time_inf["scaled_prob"],
         )
 
-        hv_date_inf = pd.Series(self.sim.date - pd.to_timedelta(years_ago_inf, unit="y"))
+        hv_date_inf = pd.Series(self.sim.date - pd.to_timedelta(years_ago_inf * DAYS_IN_YEAR, unit="d"))
         df.loc[infec, "hv_date_inf"] = hv_date_inf.clip(lower=df.date_of_birth)
 
     def initialise_baseline_art(self, population):
@@ -532,7 +480,7 @@ class Hiv(Module):
         prob_art = prob_art.fillna(0)
 
         art_idx = prob_art.index[
-            (self.rng.rand(len(prob_art)) < prob_art)
+            (self.rng.random_sample(len(prob_art)) < prob_art)
             & df.is_alive
             & df.hv_inf
             ]
@@ -546,7 +494,7 @@ class Hiv(Module):
         notsuppr = list()  # list of all indices for persons on ART and not suppressed
 
         def split_into_vl_and_notvl(all_idx, prob):
-            vl_suppr = self.rng.rand(len(all_idx)) < prob
+            vl_suppr = self.rng.random_sample(len(all_idx)) < prob
             suppr.extend(all_idx[vl_suppr])
             notsuppr.extend(all_idx[~vl_suppr])
 
@@ -724,7 +672,6 @@ class Hiv(Module):
 
         # 7) Look-up and store the codes for the consumables used in the interventions.
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        self.footprints_for_consumables_required = dict()
 
         # Circumcison:
         pkg_codes_for_circ = pd.unique(
@@ -814,41 +761,24 @@ class Hiv(Module):
         df.at[child_id, "hv_date_inf"] = pd.NaT
         df.at[child_id, "hv_last_test_date"] = pd.NaT
 
-        # -- Temporary
-        df.at[child_id, "tmp_breastfed"] = True
-
-        # ----- Schedule routine HIV test for those born to mothers that are HIV-positive (a time of giving birth)
-        # TODO: this to be subsumed into post-natal care
-        if df.at[mother_id, 'hv_inf']:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self),
-                topen=self.sim.date + pd.DateOffset(months=1),
-                tclose=self.sim.date + pd.DateOffset(months=2),
-                priority=1
-            )
-
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
-        mother_infected_prior_to_pregnancy = \
-            df.at[mother_id, 'hv_inf'] & (
-                df.at[mother_id, 'hv_date_inf'] <= df.at[mother_id, 'date_of_last_pregnancy']
-            )
-        mother_infected_during_pregnancy = \
-            df.at[mother_id, 'hv_inf'] & (
-                df.at[mother_id, 'hv_date_inf'] > df.at[mother_id, 'date_of_last_pregnancy']
-            )
+        mother = df.loc[mother_id]
+
+        mother_infected_prior_to_pregnancy = mother.hv_inf & (mother.hv_date_inf <= mother.date_of_last_pregnancy)
+        mother_infected_during_pregnancy = mother.hv_inf & (mother.hv_date_inf > mother.date_of_last_pregnancy)
 
         if mother_infected_prior_to_pregnancy:
-            if (df.at[mother_id, "hv_art"] == "on_VL_suppressed"):
+            if mother.hv_art == "on_VL_suppressed":
                 #  mother has existing infection, mother ON ART and VL suppressed at time of delivery
-                child_infected = self.rng.rand() < params["prob_mtct_treated"]
+                child_infected = self.rng.random_sample() < params["prob_mtct_treated"]
             else:
                 # mother was infected prior to prgenancy but is not on VL suppressed at time of delivery
-                child_infected = self.rng.rand() < params["prob_mtct_untreated"]
+                child_infected = self.rng.random_sample() < params["prob_mtct_untreated"]
 
         elif mother_infected_during_pregnancy:
             #  mother has incident infection during pregnancy, NO ART
-            child_infected = self.rng.rand() < params["prob_mtct_incident_preg"]
+            child_infected = self.rng.random_sample() < params["prob_mtct_incident_preg"]
 
         else:
             # mother is not infected
@@ -859,7 +789,10 @@ class Hiv(Module):
 
         # ----------------------------------- MTCT - DURING BREASTFEEDING --------------------------
         # If child is not infected and is being breastfed, then expose them to risk of MTCT through breastfeeding
-        if (~child_infected and df.at[child_id, "tmp_breastfed"] and df.at[mother_id, "hv_inf"]):
+        # TODO: note for AT/TH - neonatal breastfeeding property replaced HIV temp property as discussed 19/02/21.
+        #  We need to make sure newborn outcomes on_birth is always called before HIV so breastfeeding status is set
+        #  prior to this function being called
+        if not child_infected and df.at[child_id, "nb_breastfeeding_status"] != 'none' and mother.hv_inf:
             self.mtct_during_breastfeeding(mother_id, child_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -949,10 +882,10 @@ class Hiv(Module):
         else:
             # The person is infected after age 5.0
             # - get the shape parameters (unit: years)
-            scale = self.scale_parameter_for_infection_to_death.predict(
+            scale = self.lm['scale_parameter_for_infection_to_death'].predict(
                 self.sim.population.props.loc[[person_id]]).values[0]
             # - get the scale parameter (unit: years)
-            shape = self.shape_parameter_for_infection_to_death.predict(
+            shape = self.lm['shape_parameter_for_infection_to_death'].predict(
                 self.sim.population.props.loc[[person_id]]).values[0]
             # - draw from Weibull and convert to months
             months_to_death = self.rng.weibull(shape) * scale * 12
@@ -1021,11 +954,12 @@ class Hiv(Module):
 
     def check_config_of_properties(self):
         """check that the properties are currently configured correctly"""
-        df_alive = self.sim.population.props.loc[self.sim.population.props.is_alive]
+        df = self.sim.population.props
+        df_alive = df.loc[df.is_alive]
 
         # basic check types of columns and dtypes
         orig = self.sim.population.new_row
-        assert (self.sim.population.props.dtypes == orig.dtypes).all()
+        assert (df.dtypes == orig.dtypes).all()
 
         def is_subset(col_for_set, col_for_subset):
             # Confirms that the series of col_for_subset is true only for a subset of the series for col_for_set
@@ -1095,13 +1029,13 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # Compute chance that each susceptible person becomes infected:
             #  - relative chance of infection (acts like a scaling-factor on 'beta')
-            rr_of_infection = self.module.rr_of_infection.predict(df.loc[susc_idx])
+            rr_of_infection = self.module.lm['rr_of_infection'].predict(df.loc[susc_idx])
 
             #  - probability of infection = beta * I/N
             p_infection = rr_of_infection * beta * (n_infectious / (n_infectious + n_susceptible))
 
             # New infections:
-            will_be_infected = self.module.rng.rand(len(p_infection)) < p_infection
+            will_be_infected = self.module.rng.random_sample(len(p_infection)) < p_infection
             idx_new_infection = will_be_infected[will_be_infected].index
 
             # Schedule the date of infection for each new infection:
@@ -1117,9 +1051,9 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         horizontal_transmission(from_sex='F', to_sex='M')
 
         # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
-        prob_spontaneous_test = self.module.lm_spontaneous_test_12m.predict(
+        prob_spontaneous_test = self.module.lm['lm_spontaneous_test_12m'].predict(
             df.loc[df.is_alive]) * fraction_of_year_between_polls
-        will_test = self.module.rng.rand(len(prob_spontaneous_test)) < prob_spontaneous_test
+        will_test = self.module.rng.random_sample(len(prob_spontaneous_test)) < prob_spontaneous_test
         idx_will_test = will_test[will_test].index
 
         for person_id in idx_will_test:
@@ -1157,7 +1091,8 @@ class HivInfectionEvent(Event, IndividualScopeEventMixin):
         self.module.do_new_infection(person_id)
 
         # Consider mother-to-child-transmission (MTCT) from this person to their children:
-        children_of_this_person_being_breastfed = df.loc[(df.mother_id == person_id) & df.tmp_breastfed].index
+        children_of_this_person_being_breastfed = df.loc[(df.mother_id == person_id) &
+                                                         (df.nb_breastfeeding_status != 'none')].index
         # - Do the MTCT routine for each child:
         for child_id in children_of_this_person_being_breastfed:
             self.module.mtct_during_breastfeeding(person_id, child_id)
@@ -1179,7 +1114,7 @@ class HivInfectionDuringBreastFeedingEvent(Event, IndividualScopeEventMixin):
             return
 
         # Check person is breastfed currently
-        if not df.at[person_id, "tmp_breastfed"]:
+        if df.at[person_id, "nb_breastfeeding_status"] == 'none':
             return
 
         # Onset the infection for this person (which will schedule progression etc)
@@ -1256,6 +1191,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props
         person = df.loc[person_id]
+        m = self.module
 
         if not person["is_alive"]:
             return
@@ -1269,10 +1205,10 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
             logger.warning('This event should not be running')
 
         # Determine if this appointment is actually attended by the person who has already started on PrEP
-        if (self.module.rng.rand() < self.module.parameters['probability_of_being_retained_on_prep_every_3_months']):
+        if m.rng.random_sample() < m.parameters['probability_of_being_retained_on_prep_every_3_months']:
             # Continue on PrEP - and schedule an HSI for a refill appointment today
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.module),
+                HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=m),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=7),
                 priority=0
@@ -1294,6 +1230,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props
         person = df.loc[person_id]
+        m = self.module
 
         if not person["is_alive"]:
             return
@@ -1303,10 +1240,10 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             logger.warning('This event should not be running')
 
         # Determine if this appointment is actually attended by the person who has already started on PrEP
-        if (self.module.rng.rand() < self.module.parameters['probability_of_being_retained_on_art_every_6_months']):
+        if m.rng.random_sample() < m.parameters['probability_of_being_retained_on_art_every_6_months']:
             # Continue on Treatment - and schedule an HSI for a continuation appointment today
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self.module),
+                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=m),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=14),
                 priority=0
@@ -1314,7 +1251,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
 
         else:
             # Defaults to being off Treatment
-            self.module.stops_treatment(person_id)
+            m.stops_treatment(person_id)
 
 
 # ---------------------------------------------------------------------------
@@ -1400,10 +1337,9 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
                     # Consider if the person will be referred to start ART
                     has_aids_symptoms = 'aids_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
-                    if self.module.lm_art.predict(df=df.loc[[person_id]],
-                                                  rng=self.module.rng,
-                                                  has_aids_symptoms=has_aids_symptoms
-                                                  ):
+                    if self.module.lm['lm_art'].predict(df=df.loc[[person_id]],
+                                                        rng=self.module.rng,
+                                                        has_aids_symptoms=has_aids_symptoms):
                         self.sim.modules['HealthSystem'].schedule_hsi_event(
                             HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self.module),
                             topen=self.sim.date,
@@ -1419,12 +1355,14 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # The test was negative: make referrals to other services:
 
                     # Consider if the person's risk will be reduced by behaviour change counselling
-                    if self.module.lm_behavchg.predict(df.loc[[person_id]], self.module.rng):
+                    if self.module.lm['lm_behavchg'].predict(df.loc[[person_id]], self.module.rng):
                         df.at[person_id, 'hv_behaviour_change'] = True
 
                     # If person is a man, and not circumcised, then consider referring to VMMC
                     if (person['sex'] == 'M') & (~person['li_is_circ']):
-                        if self.module.lm_circ.predict(df.loc[[person_id]], self.module.rng):
+                        x = self.module.lm['lm_circ'].predict(df.loc[[person_id]], self.module.rng)
+                        print('here x=', x, type(x))  # x= False <class 'numpy.bool_'> in new thing
+                        if x:
                             self.sim.modules['HealthSystem'].schedule_hsi_event(
                                 HSI_Hiv_Circ(person_id=person_id, module=self.module),
                                 topen=self.sim.date,
@@ -1440,7 +1378,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                         ~person['hv_is_on_prep'] &
                         (self.sim.date.year >= self.module.parameters['prep_start_year'])
                     ):
-                        if self.module.lm_prep.predict(df.loc[[person_id]], self.module.rng):
+                        if self.module.lm['lm_prep'].predict(df.loc[[person_id]], self.module.rng):
                             self.sim.modules['HealthSystem'].schedule_hsi_event(
                                 HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.module),
                                 topen=self.sim.date,
@@ -1519,7 +1457,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             # label as diagnosed
             df.at[person_id, 'hv_diagnosed'] = True
             # Consider if the person will be referred to start ART
-            if self.module.lm_art.predict(df.loc[[person_id]], self.module.rng):
+            if self.module.lm['lm_art'].predict(df.loc[[person_id]], self.module.rng):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self.module),
                     topen=self.sim.date,
@@ -1612,7 +1550,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give-up coming back to
             # pick-up medication.
             if (
-                self.module.rng.rand() <
+                self.module.rng.random_sample() <
                 self.module.parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"]
             ):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1678,7 +1616,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             else:
                 prob_vs = p["vls_f"]
 
-        return "on_VL_suppressed" if (self.module.rng.rand() < prob_vs) else "on_not_VL_suppressed"
+        return "on_VL_suppressed" if (self.module.rng.random_sample() < prob_vs) else "on_not_VL_suppressed"
 
     def get_drugs(self, age_of_person):
         """Helper function to get the ART according to the age of the person being treated. Returns bool to indicate
@@ -1731,7 +1669,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # determine if will seek another HSI:
         if (
-            self.module.rng.rand() <
+            self.module.rng.random_sample() <
             self.module.parameters["probability_of_seeking_further_art_appointment_if_appointment_not_available"]
         ):
             self.sim.modules['HealthSystem'].schedule_hsi_event(

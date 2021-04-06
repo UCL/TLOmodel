@@ -7,6 +7,7 @@ from pandas import DateOffset
 from tlo import Date, Module, Simulation
 from tlo.methods import (
     Metadata,
+    antenatal_care,
     chronicsyndrome,
     contraception,
     demography,
@@ -15,6 +16,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     mockitis,
+    newborn_outcomes,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -247,9 +249,11 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules()
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation for one day
@@ -275,9 +279,11 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
                  )
 
     # Run the simulation for one day
@@ -285,6 +291,12 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only():
     popsize = 200
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
+
+    # check that some have symptoms onset recently
+    assert 0 < len(sim.modules['SymptomManager'].persons_with_newly_onset_symptoms)
+
+    # run health-care seeking event:
+    sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.apply(sim.population)
 
     # Check that Generic Non-Emergency HSI events are scheduled but not Emergency HSI
     q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
@@ -303,9 +315,11 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )

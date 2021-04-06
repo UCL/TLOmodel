@@ -5,6 +5,8 @@ on:
     branches: "master"
     tags: ["*"]
   pull_request:
+  schedule:
+    - cron: 0 0 * * *
 
 env:
   LD_PRELOAD: /lib/x86_64-linux-gnu/libSegFault.so
@@ -14,6 +16,7 @@ jobs:
 
   gen-test-matrix:
     name: Find test files
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: [self-hosted]
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -37,6 +40,7 @@ jobs:
 
   test:
     needs: gen-test-matrix
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     name: Test ${{ matrix.file }}
     runs-on: [self-hosted]
     strategy:
@@ -57,10 +61,11 @@ jobs:
           tox --version
       - name: Test with tox
         run: |
-          tox -v -e py36,report -- pytest --cov --cov-report=term-missing -vv "${{ matrix.file }}"
+          tox -v -e py38,report -- pytest --cov --cov-report=term-missing -vv "${{ matrix.file }}"
 
   check:
     name: Checks
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: [self-hosted]
     strategy:
       fail-fast: false
@@ -82,6 +87,7 @@ jobs:
 
   docs:
     name: Documentation
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: [self-hosted]
     strategy:
       fail-fast: false

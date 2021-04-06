@@ -33,8 +33,8 @@ This file to be updated in full when TB module is completed.
 # datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #
 # # The resource files
-# path_for_saved_files = Path("./resources")
-# # path_for_saved_files = Path(os.path.dirname(__file__)) / '../../../resources'
+# resourcefilepath = Path("./resources")
+# # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 #
 # start_date = Date(2010, 1, 1)
 # end_date = Date(2013, 12, 31)
@@ -49,10 +49,10 @@ This file to be updated in full when TB module is completed.
 # service_availability = ["*"]
 #
 # # Register the appropriate modules
-# sim.register(demography.Demography(path_for_saved_files=path_for_saved_files))
+# sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 # sim.register(
 #     healthsystem.HealthSystem(
-#         path_for_saved_files=path_for_saved_files,
+#         resourcefilepath=resourcefilepath,
 #         service_availability=service_availability,
 #         mode_appt_constraints=0,
 #         ignore_cons_constraints=True,
@@ -61,12 +61,12 @@ This file to be updated in full when TB module is completed.
 #         disable=True,
 #     )
 # )  # disables the health system constraints so all HSI events run
-# sim.register(symptommanager.SymptomManager(path_for_saved_files=path_for_saved_files))
-# sim.register(healthburden.HealthBurden(path_for_saved_files=path_for_saved_files))
-# sim.register(contraception.Contraception(path_for_saved_files=path_for_saved_files))
-# sim.register(enhanced_lifestyle.Lifestyle(path_for_saved_files=path_for_saved_files))
-# sim.register(hiv.Hiv(path_for_saved_files=path_for_saved_files))
-# sim.register(tb.Tb(path_for_saved_files=path_for_saved_files))
+# sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+# sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+# sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+# sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+# sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
+# sim.register(tb.Tb(resourcefilepath=resourcefilepath))
 #
 # # Sets all modules to WARNING threshold, then alters hiv and tb to INFO
 # custom_levels = {
@@ -138,7 +138,7 @@ This file to be updated in full when TB module is completed.
 # # ------------------------------------- DATA  ------------------------------------- #
 # # import HIV data
 # aidsInfo_data = pd.read_excel(
-#     Path(path_for_saved_files) / "ResourceFile_HIV.xlsx", sheet_name="aids_info",
+#     Path(resourcefilepath) / "ResourceFile_HIV.xlsx", sheet_name="aids_info",
 # )
 #
 # data_years = pd.to_datetime(aidsInfo_data.year, format="%Y")
@@ -146,11 +146,11 @@ This file to be updated in full when TB module is completed.
 #
 # # import TB data
 # tb_WHO = pd.read_excel(
-#     Path(path_for_saved_files) / "ResourceFile_TB.xlsx", sheet_name="WHO_estimates",
+#     Path(resourcefilepath) / "ResourceFile_TB.xlsx", sheet_name="WHO_estimates",
 # )
 #
 # tb_NTP = pd.read_excel(
-#     Path(path_for_saved_files) / "ResourceFile_TB.xlsx", sheet_name="TB_program",
+#     Path(resourcefilepath) / "ResourceFile_TB.xlsx", sheet_name="TB_program",
 # )
 # tb_data_years = pd.to_datetime(tb_WHO.year, format="%Y")
 # dtb = tb_data_years.values  # for fill_between command

@@ -373,7 +373,7 @@ class Tb(Module):
         pass
         """
         workbook = pd.read_excel(
-            os.path.join(self.path_for_saved_files, "ResourceFile_TB.xlsx"), sheet_name=None
+            os.path.join(self.resourcefilepath, "ResourceFile_TB.xlsx"), sheet_name=None
         )
         self.load_parameters_from_dataframe(workbook["parameters"])
 

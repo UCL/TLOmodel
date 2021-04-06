@@ -1,18 +1,19 @@
-'''The functions used by tlo_methods_rst.py.'''
+"""The functions used by tlo_methods_rst.py."""
 
 import inspect
+from inspect import isclass, iscode, isframe, isfunction, ismethod, ismodule, istraceback
 from os import walk
 
 
 def get_package_name(dirpath):
-    '''
+    """
     Given a file path to a TLO package, return the name in dot form.
 
     :param dirpath: the path to the package,
            e.g. (1) "./src/tlo/logging/sublog" or (2) "./src/tlo"
     :return: string of package name in dot form,
            e.g. (1) "tlo.logging.sublog" or (2) "tlo"
-    '''
+    """
     TLO = "/tlo/"
     if TLO not in dirpath:
         raise ValueError(f"Sorry, {TLO} isn't in dirpath ({dirpath})")
@@ -29,7 +30,7 @@ def get_package_name(dirpath):
 
 
 def generate_module_dict(topdir):
-    '''
+    """
     Given a root directory topdir, iterates recursively
     over top dir and the files and subdirectories within it.
     Returns a dictionary with each key = path to a directory
@@ -39,7 +40,7 @@ def generate_module_dict(topdir):
     :param topdir: root directory to traverse downwards from, iteratively.
     :returns: dict with key = a directory,
               value = list of Python files in dir `key`.
-    '''
+    """
     data = {}  # key = path to dir, value = list of .py files
 
     for (dirpath, dirnames, filenames) in walk(topdir):
@@ -52,19 +53,20 @@ def generate_module_dict(topdir):
             # We can do this as compound-if statements are evaluated
             # left-to-right in Python:
             if (f == "__init__.py") or (f[-4:] == ".pyc") or (f[-3:] != ".py"):
-                print(f"skipping {f}")
+                # print(f"skipping {f}")
+                pass
             else:
                 (data[dirpath]).append(f)
     return data
 
 
 def get_classes_in_module(fqn, module_obj):
-    '''
+    """
     Generate a list of lists of the classes *defined* in
     the required module (file), in the order in which they
     appear in the module file. Note that this excludes
     any other classes in the module, such as those brought
-    in by inheritance, or imported..
+    in by inheritance, or imported.
 
     Each entry in the list returned is itself a list of:
     [class name, class object, line number]
@@ -74,7 +76,7 @@ def get_classes_in_module(fqn, module_obj):
     :param module_obj: an object representing this module
     :param return: list of entries, each of the form:
                 [class name, class object, line number]
-    '''
+    """
     classes = []
     module_info = inspect.getmembers(module_obj)  # Gets everything
     for name, obj in module_info:
@@ -99,7 +101,7 @@ def get_classes_in_module(fqn, module_obj):
 
 
 def get_fully_qualified_name(filename, context):
-    '''
+    """
     Given a file name and a context
     return the fully-qualified name of the *module*
 
@@ -109,7 +111,7 @@ def get_fully_qualified_name(filename, context):
     :param filename: name of file, e.g. "mockitis.py"
     :param context: "location" of module, e.g. "tlo.methods"
     :return: a string, e.g. "tlo.methods.mockitis"
-    '''
+    """
     parts = filename.split(".")
     # print(f"getfqn: {filename}, {context}")
     if context == "":
@@ -120,13 +122,13 @@ def get_fully_qualified_name(filename, context):
 
 
 def write_rst_file(rst_dir, fqn, mobj):
-    '''
+    """
     We want to write one .rst file per module in ./src/tlo/methods
 
     :param rst_dir: directory in which to write the new .rst file
     :param fqn: fully-qualified module name, e.g. "tlo.methods.mockitis"
     :param mobj: the module object
-    '''
+    """
     filename = f"{rst_dir}/{fqn}.rst"
     with open(filename, 'w') as out:
 
@@ -147,22 +149,25 @@ def write_rst_file(rst_dir, fqn, mobj):
         classes_in_module = get_classes_in_module(fqn, mobj)
         for c in classes_in_module:
             # c is [class name, class object, line number]
-            str = get_class_output_string(c)
-            out.write(f"{str}\n")
+            mystr = get_class_output_string(c)
+            out.write(f"{mystr}\n")
         # Example of use in .rst file:
         # out.write(".. class:: Noodle\n\n")
         # out.write("   Noodle's docstring.\n")
 
 
 def get_class_output_string(classinfo):
-    '''Generate output string for a class to be written to an rst file
+    """Generate output string for a single class to be written to an rst file.
 
     :param classinfo: a list with [class name, class object, line number]
     :return: the string to output
-
-    '''
+    """
     class_name, class_obj, _ = classinfo
-    str = f"\n\n\n.. autoclass:: {class_name}\n\n"
+    # mystr = f"\n\n\n" \
+    #        f".. autoclass:: {class_name}\n" \
+    #        f"   :members:\n\n" \
+    #        f"   ..automethod:: __init__\n\n"
+    mystr = f"\n\n\n.. autoclass:: {class_name}\n\n"
 
     # This is needed to keep information neatly aligned
     # with each class.
@@ -172,87 +177,211 @@ def get_class_output_string(classinfo):
     # Now we want to add base classes, class members, comments and methods
     # Presumably in source file order.
 
-    str += extract_bases(class_name, class_obj, spacer)
-    str += "\n\n"
+    (base_str, base_objects) = extract_bases(class_name, class_obj, spacer)
+    mystr += base_str
+    mystr += "\n\n"
+
+    # if class_name == 'Matt':  #Mockitis' or class_name == "Matt":
+    #     import pdb; pdb.set_trace()
+    # class_obj.__dict__ is
+    # mappingproxy({'__module__': 'tlo.methods.mockitis',
+    #   'another_random_boolean': False, '__doc__': None})
 
     # Asif says we should probably not exclude __init__ in the following,
     # because some disease classes have custom arguments:
-    general_exclusions = ["__class__", "__dict__", "__module__",
-                          "__slots__", "__weakref__", ]
+    # general_exclusions = ["__class__", "__dict__", "__module__",
+    #                      "__slots__", "__weakref__", ]
 
-    inherited_exclusions = ["initialise_population", "initialise_simulation",
-                            "on_birth", "read_parameters", "apply",
-                            "post_apply_hook", "on_hsi_alert",
-                            "report_daly_values", "run", "did_not_run",
-                            "SYMPTOMS", ]
+    # inherited_exclusions = ["initialise_population", "initialise_simulation",
+    #                        "on_birth", "read_parameters", "apply",
+    #                        "post_apply_hook", "on_hsi_alert",
+    #                        "report_daly_values", "run", "did_not_run",
+    #                        "SYMPTOMS", ]
 
     # Return all the members of an object in a list of (name, value) pairs
     # sorted by name:
     classdat = inspect.getmembers(class_obj)  # Gets everything
 
+    # if class_name == 'Matt':  #Mockitis' or class_name == "Matt":
+    #    import pdb; pdb.set_trace()
+
+    # We want to sort classdat by line number, so that functions
+    # defined in, or overridden in, this class will be
+    # documented in source file order.
+
+    # 25/11 This is the order Asif would like:
+    # For subclasses of Module, PARAMETERS & PROPERTIES first as tables
+    # (in that order). Then for each of the subclass classes (Module, Event,
+    # HSI_Event) attributes of the class (in source-code order if possible,
+    # otherwise default) and then functions of the class
+    # (in source-code order).
+    # Like we did for functions, for attributes, if we can have the same logic
+    # (i.e. only show if defined in the subclass), that'd be great. This might
+    # be useful: https://stackoverflow.com/a/5253424
+
+    # TODO we only want to do this for descendants of classes
+    # Module, Event, and HSI_Event:
+    func_objects_to_document = which_functions_to_print(class_obj)
+    # attributes_to_document = which_attributes_to_print(class_obj)
+
+    name_func_lines = []  # List of tuples to sort later
+
+    my_attributes = []  # (name, value) pairs of class attributes.
+
+    ignored_attributes = ['__doc__', '__module__', '__weakref__']
+
+    misc = []
+
     for name, obj in classdat:
-        # We only want to document things defined in this class itself,
-        # rather than anything inherited from parent classes (including
-        # the basic "object" class).
-        # e.g. we don't want:
-        # __delattr__ = <slot wrapper '__delattr__' of 'object' objects>
-        # Skip over things inherited from object class or Module class
-        object_description = f"{obj}"
-        if ("of 'object' objects" in object_description
-                or "built-in method" in object_description
-                or "function Module." in object_description
-                or "of 'Module' objects" in object_description
-                or name in general_exclusions
-                or name in inherited_exclusions
-                or object_description == 'None'):
-            continue
-
-        # if name == "__doc__" and obj is not None:
-        #    str += f"**Description:**\n{obj}"
-        #    continue
-        # print(f"next object in class {class_name} is {name} = {obj}")
-
-        # We want nice tables for PARAMETERS and PROPERTIES
-        if name in ("PARAMETERS", "PROPERTIES"):
+        # First loop. Get PARAMETERS and PROPERTIES dictionary objects only.
+        # These are in subclasses of Module only.
+        # We want nice tables for PARAMETERS and PROPERTIES.
+        # In this case, obj is a dictionary.
+        # We want to display PARAMETERS before PROPERTIES. We should get that
+        # for free as inspect.getmembers() returns results sorted by name.
+        if name in ("PARAMETERS", "PROPERTIES") and \
+                name in class_obj.__dict__:
+            # (only included if defined/overridden in this class)
             table_list = create_table(obj)
             if table_list == []:
                 continue
-            str += f"{spacer}**{name}:**\n"
+            mystr += f"{spacer}**{name}:**\n"
             for t in table_list:
-                str += f"{spacer}{t}\n"
-            str += "\n\n"
+                mystr += f"{spacer}{t}\n"
+            mystr += "\n\n"
+
+        # Get source-code line numbering where possible.
+        elif isfunction(obj) and func_objects_to_document \
+                and obj in func_objects_to_document and \
+                name in class_obj.__dict__:
+            _, start_line_num = inspect.getsourcelines(obj)
+            name_func_lines.append((name, obj, start_line_num))
+
+        # Get source-code line numbering where possible.
+        # inspect.getsourcelines() only works for module, class, method,
+        # function, traceback, frame, or code objects
+        elif (ismodule(obj) or isclass(obj) or ismethod(obj)
+                or istraceback(obj) or isframe(obj) or iscode(obj)) \
+                and (name in class_obj.__dict__):
+            # pass  # _, start_line_num = inspect.getsourcelines(obj)
+            misc.append(name, obj, start_line_num)
+
+        elif name == "__dict__":  # Skip over mappingproxy dict.
             continue
 
-        # Interrogate the object. It's something else, maybe a
-        # function which hasn't been filtered out.
-        #
-        if inspect.isfunction(obj):
-            # print(f"DEBUG: got a function: {name}, {object}")
-            # mystr = f"\n\n**Function {name}():**\n"
-            # mydat = inspect.getmembers(obj)
-            # for the_name, the_object in mydat:
-            # print(f"{the_name}: {the_object}")
-            #    if the_name == "__doc__":
-            #        mystr += f"\n\n{the_object} \n\n"
-            # str += mystr
-            str += f"{spacer}.. automethod:: {name}\n\n"
-            continue
-        #    if "population" in class_name:
-        #        import pdb; pdb.set_trace()
+        else:
+            # We want class attributes but we can't get source code order
+            # We want only those which are defined or overridden in this class
+            # continue  #attributes.append()
+            if name in class_obj.__dict__ and name not in ignored_attributes:
+                my_attributes.append((name, obj))
 
-        # Anything else?
-        # str += f"{name} : {obj}\n\n"
-        # print(f"DEBUG: something else... {name}, {obj}")
+    # Output attributes other than functions
+    # for name, obj in classdat:
+    #    pass
+    if my_attributes:
+        mystr += f"\n{spacer}**Class attributes:**\n\n"
+        for att in my_attributes:
+            mystr += f"{spacer}{att[0]} : {att[1]}\n\n"
 
-        # getdoc, getcomments,
+    # Sort miscellaneous items:
+    if misc:
+        misc.sort(key=lambda x: x[2])
+        mystr += f"\n{spacer}**Miscellaneous:**\n\n"
+        for m in misc:
+            mystr += f"{spacer}{m[0]} : {m[1]}\n\n"
 
-    str += "\n\n\n"
+    # Sort the functions we wish to document into source-file order:
+    name_func_lines.sort(key=lambda x: x[2])
 
-    return str
+    # if class_name == "Mockitis":
+    #     import pdb; pdb.set_trace()
+
+    # New or overridden functions only.
+    if func_objects_to_document:
+        mystr += f"{spacer}**Functions (defined or overridden in " \
+                 f"class {class_name}):**\n\n"
+        for name, obj, _ in name_func_lines:  # Now in source code order
+
+            if obj in func_objects_to_document:  # Should be always True!
+                mystr += f"{spacer}.. automethod:: {name}\n\n"
+    else:
+        # print(f"**DEBUG: no func_objects_to_document in class {class_name}")
+        pass
+
+    # Anything else?
+    # mystr += f"{name} : {obj}\n\n"
+    # print(f"DEBUG: something else... {name}, {obj}")
+
+    # getdoc, getcomments,
+
+    mystr += "\n\n\n"
+
+    return mystr
+
+
+def which_functions_to_print(clazz):
+    """
+    Which functions do we want to print?
+
+    :param clazz: class object under consideration
+    :return: returns a list of function objects we want to print
+
+    Written by Asif
+    """
+    # get all the functions in this class
+    class_functions = dict(inspect.getmembers(clazz,
+                                              predicate=inspect.isfunction))
+
+    ok_to_print = []
+
+    # for each function in this class
+    for func_name, func_obj in class_functions.items():
+        # for func in func_list:
+        # func_name, func_obj, _ = func
+        # import pdb; pdb.set_trace()
+        should_i_print = True
+
+        # for each base class of this class
+        for baseclass in clazz.__mro__:
+            # skip over the class we're checking
+            if baseclass != clazz:
+                # get the functions of the base class
+                functions_base_class = dict(
+                    inspect.getmembers(baseclass,
+                                       predicate=inspect.isfunction))
+
+                # if there is a function with the same name as base class
+                if func_name in functions_base_class:
+                    # if the function object is the same
+                    # as one defined in a base class
+                    if func_obj == functions_base_class[func_name]:
+                        # print(f'{func_name} in subclass is same as function in'
+                        #       f'{baseclass.__name__} (not overridden)')
+                        should_i_print = False
+                        break
+                    else:
+                        # print(f'{func_name} in subclass is not the same '
+                        #       f'as one in baseclass {baseclass.__name__}')
+                        pass
+                else:
+                    # print(f'{func_name} is not in '
+                    #       f'baseclass {baseclass.__name__}')
+                    pass
+
+        if should_i_print:
+            # print(f'\t✓✓✓ {func_name} is implemented in the subclass - print ')
+            ok_to_print.append(func_obj)
+        else:
+            # print(f'\txxx {func_name} has been inherited from a subclass'
+            #       f'- do not print')
+            pass
+
+    return ok_to_print
 
 
 def extract_bases(class_name, class_obj, spacer=""):
-    '''
+    """
     Document which classes this class inherits from,
     except for the object class or this class itself.
 
@@ -260,9 +389,9 @@ def extract_bases(class_name, class_obj, spacer=""):
                        bases
     :param class_obj: object with information about this class
     :param spacer: string to use as whitespace padding.
-    :return: string of base(s) for this class (if any), with links to their
-             docs.
-    '''
+    :return: Tuple with (1) string of base(s) for this class (if any), with
+             links to their docs. (2) the list of base class objects
+    """
     # This next line gets the base classes including "object" class,
     # and also the class_name class itself:
     bases = inspect.getmro(class_obj)
@@ -274,6 +403,7 @@ def extract_bases(class_name, class_obj, spacer=""):
     # print(f"classtree = {classtree}")
 
     parents = []
+    relevant_bases = []
 
     for b in bases:
         # Example of this_base_string:
@@ -282,17 +412,23 @@ def extract_bases(class_name, class_obj, spacer=""):
         if this_base_string is not (None or ""):
             parents.append(this_base_string)
 
+        # We don't want to include the name of the child class.
+        # Or the "object" class, which all objects will
+        # ultimately inherit from.
+        if ("object" not in str(b) and class_name not in str(b)):
+            relevant_bases.append(b)
+
     if len(parents) > 0:
         out = f"{spacer}Bases: {', '.join(parents)}\n"
     else:
         out = ""
 
-    # print(f"DEBUG: extract_bases: str = {str}")
-    return out
+    # print(f"DEBUG: extract_bases: mystr = {mystr}")
+    return out, relevant_bases
 
 
 def get_base_string(class_name, class_obj, base_obj):
-    '''
+    """
     For this object, representing a base class,
     extract its name and add a hyperlink to it.
     Unless it is the root 'object' class, or the name of the class itself.
@@ -304,7 +440,7 @@ def get_base_string(class_name, class_obj, base_obj):
                      e.g. <class 'tlo.core.Module'> or <class 'object'>
                      or <class 'tlo.methods.mockitis.Mockitis'>
     :return: string as hyperlink
-    '''
+    """
     # Extract fully-qualified name of base (e.g. "tlo.core.Module")
     # from its object representation (e.g. "<class 'tlo.core.Module'>")
     # print (f"DEBUG: before = {class_name}, {base_obj}")
@@ -351,7 +487,7 @@ def get_base_string(class_name, class_obj, base_obj):
 
 
 def get_link(base_fqn, base_obj):
-    '''Given a name like Mockitis and a base_string like
+    """Given a name like Mockitis and a base_string like
     tlo.core.Module, create a link to the latter's doc page.
 
     :param base_fqn: fully-qualified name of the base class,
@@ -359,7 +495,7 @@ def get_link(base_fqn, base_obj):
     :param base_obj: the object representing the base class
     :return: a string with the link to the base class's place in the generated
              documentation.
-    '''
+    """
     # Example of module_defining_class: <module 'tlo.core' from '/Users/...
     module_defining_class = str(inspect.getmodule(base_obj))
     module_pieces = module_defining_class.split(" ")
@@ -383,7 +519,7 @@ def get_link(base_fqn, base_obj):
 
 
 def create_table(mydict):
-    '''
+    """
     Dynamically create a table of arbitrary length
     from a PROPERTIES or PARAMETERS dictionary.
 
@@ -395,7 +531,7 @@ def create_table(mydict):
 
     The table is returned as a list of strings.
     If there is no data, an empty list is returned.
-    '''
+    """
 
     examplestr = '''
 .. list-table::
