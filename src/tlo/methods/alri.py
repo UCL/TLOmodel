@@ -832,7 +832,7 @@ class Alri(Module):
         """
 
         # Schedule the main polling event (to first occur immediately)
-        sim.schedule_event(AcuteLowerRespiratoryInfectionPollingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(AlriPollingEvent(self), sim.date + DateOffset(days=0))
 
         # Schedule the main logging event (to first occur in one year)
         sim.schedule_event(PathogenIncidentCountLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -1363,7 +1363,7 @@ class Alri(Module):
 
     def complications_append(self, person_id, complication):
         """
-        This function is called at the onset of complications in AlriComplicationsOnsetEvent
+        This function is called at the onset of complications in AlriOnsetEvent
         and AlriSystemicComplicationsOnsetEvent.
         It adds the complication to the list of complications for the person
         :param person_id:
@@ -1406,7 +1406,7 @@ class Alri(Module):
         if prob_of_cure > self.rng.rand():
             # If treatment is successful: cancel death and schedule cure event
             self.cancel_death_date(person_id)
-            self.sim.schedule_event(ALRICureEvent(self, person_id),
+            self.sim.schedule_event(AlriCureEvent(self, person_id),
                                     self.sim.date + DateOffset(
                                         days=self.parameters['days_between_treatment_and_cure']
                                     ))
@@ -1428,7 +1428,7 @@ class Alri(Module):
         """
         Cancels the onset of complications for a person,
         when treatment was administered before the scheduled date of onset in
-        AlriComplicationsOnsetEvent and AlriSystemicComplicationsOnsetEvent.
+        AlriOnsetEvent and AlriSystemicComplicationsOnsetEvent.
         :param person_id:
         :param complication:
         :return:
@@ -1461,7 +1461,7 @@ class Alri(Module):
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
-class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEventMixin):
+class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the main event that runs the acquisition of pathogens that cause Alri.
         It determines who is infected and when and schedules individual IncidentCase events to represent onset.
 
@@ -1553,7 +1553,7 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
 
             # ----------------------- Create the event for the onset of infection -------------------
             self.sim.schedule_event(
-                event=AcuteLowerRespiratoryInfectionIncidentCase(
+                event=AlriIncidentCase(
                     module=self.module,
                     person_id=person_id,
                     pathogen=pathogen,
@@ -1565,14 +1565,14 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
             )
 
 
-class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixin):
+class AlriIncidentCase(Event, IndividualScopeEventMixin):
     """
     This Event is for the onset of the infection that causes Alri.
      * Refreshes all the properties so that they pertain to this current episode of Alri
      * Imposes the symptoms
      * Schedules relevant natural history event {(AlriWithPulmonaryComplicationsEvent) and
      (AlriWithSevereComplicationsEvent)
-       (either ALRINaturalRecoveryEvent or ALRIDeathEvent)}
+       (either AlriNaturalRecoveryEvent or AlriDeathEvent)}
      * Updates a counter for incident cases
     """
     AGE_GROUPS = {0: '0y', 1: '1y', 2: '2-4y', 3: '2-4y', 4: '2-4y'}
@@ -1643,7 +1643,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
                 date_onset_complications = self.module.sim.date + DateOffset(
                     days=np.random.randint(0, high=self.duration_in_days))
                 # schedule the complication event
-                self.sim.schedule_event(AlriComplicationsOnsetEvent(
+                self.sim.schedule_event(AlriOnsetEvent(
                     self.module, person_id,
                     duration_in_days=self.duration_in_days,
                     symptoms=uncomplicated_symptoms_for_this_person,
@@ -1655,7 +1655,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
             df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
         else:
             # if NO complications for this Alri event, schedule a natural recovery
-            self.sim.schedule_event(ALRINaturalRecoveryEvent(self.module, person_id),
+            self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id),
                                     date_of_outcome)
             df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
 
@@ -1669,10 +1669,10 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         for disease in m.disease_type:
             prob_death_from_ALRI = m.mortality_equations_by_disease[disease].predict(df.loc[[person_id]]).values[0]
             if rng.rand() < prob_death_from_ALRI:
-                self.sim.schedule_event(ALRIDeathEvent(self.module, person_id),
+                self.sim.schedule_event(AlriDeathEvent(self.module, person_id),
                                         date_of_outcome)
             else:
-                self.sim.schedule_event(ALRINaturalRecoveryEvent(self.module, person_id),
+                self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id),
                                         date_of_outcome)
 
         # Add this incident case to the tracker
@@ -1684,7 +1684,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
 
 
-class AlriComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
+class AlriOnsetEvent(Event, IndividualScopeEventMixin):
     """
            This Event is for the onset of complications from Alri. For some untreated children,
            this occurs a set number of days after onset of disease.
@@ -1744,7 +1744,7 @@ class AlriComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
             else:
                 # schedule recovery event
                 # df.at[person_id, 'ri_ALRI_event_recovered_date'] = date_of_recovery
-                self.sim.schedule_event(ALRINaturalRecoveryEvent(self.module, person_id), date_of_recovery)
+                self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_recovery)
 
 
 class AlriSystemicComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
@@ -1782,7 +1782,7 @@ class AlriSystemicComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
             duration_in_days=self.duration_in_days)
 
 
-class ALRINaturalRecoveryEvent(Event, IndividualScopeEventMixin):
+class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
     """
     This is the Natural Recovery event.
     It is part of the natural history and represents the end of an episode of Alri
@@ -1835,7 +1835,7 @@ class ALRINaturalRecoveryEvent(Event, IndividualScopeEventMixin):
                                                           disease_module=self.sim.modules['Alri'])
 
 
-class ALRICureEvent(Event, IndividualScopeEventMixin):
+class AlriCureEvent(Event, IndividualScopeEventMixin):
     """
        This is the cure event. It is scheduled by an HSI treatment event.
        It enacts the actual "cure" of the person that is caused (after some delay) by the treatment administered.
@@ -1848,7 +1848,7 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        logger.debug("ALRICureEvent: Stopping Alri treatment and curing person %d", person_id)
+        logger.debug("AlriCureEvent: Stopping Alri treatment and curing person %d", person_id)
         df = self.sim.population.props
 
         # terminate the event if the person has already died.
@@ -1904,7 +1904,7 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
                                                           disease_module=self.sim.modules['Alri'])
 
 
-class ALRIDeathEvent(Event, IndividualScopeEventMixin):
+class AlriDeathEvent(Event, IndividualScopeEventMixin):
     """
     This Event is for the death of someone that is caused by the infection with a pathogen that causes Alri.
     """
