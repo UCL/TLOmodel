@@ -33,7 +33,7 @@ sim = Simulation(start_date=start_date, seed=1, log_config={'filename': 'simplif
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             simplified_births.Simplifiedbirths(resourcefilepath=resourcefilepath))
+             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath))
 
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)

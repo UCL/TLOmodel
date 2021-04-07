@@ -24,8 +24,8 @@ from tlo.methods import (
 )
 
 
-
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+
 
 def check_dtypes(simulation):
     # check types of columns
@@ -39,7 +39,7 @@ def get_sim(popsize=1000):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.Simplifiedbirths(resourcefilepath=resourcefilepath)
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
                  )
 
     # Make the population
@@ -92,10 +92,10 @@ def test_pregnancy_and_birth_for_one_woman():
     assert pd.isnull(df.loc[0, 'si_date_of_last_delivery'])
 
     # Set the probability of becoming pregnancy to 1
-    sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 1
+    sim.modules['SimplifiedBirths'].parameters['pregnancy_prob'] = 1
 
     # Run the Simplified Pregnancy Event on the selected population
-    pregnancy_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
+    pregnancy_event = simplified_births.PregnancyEvent(module=sim.modules['SimplifiedBirths'])
     pregnancy_event.apply(sim.population.props)
 
     # Check that woman is now pregnant, has a date of pregnancy of today, and a delivery date in the future
@@ -105,7 +105,7 @@ def test_pregnancy_and_birth_for_one_woman():
 
     # Update time to after the date of delivery and run the birth event
     sim.date = df.loc[0, 'si_date_of_last_delivery'] + pd.DateOffset(days=0)
-    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
+    birth_event = simplified_births.BirthsEvent(module=sim.modules['SimplifiedBirths'])
     birth_event.apply(sim.population.props)
 
     # Check that woman's properties are updated accordingly
@@ -121,13 +121,13 @@ def test_pregnancy_and_birth_for_one_woman():
 
 
 def test_no_pregnancy_among_in_ineligible_populations():
-    """If no one in the population is pregnant, the SimplifiedPregnancyEvent should not result in any pregnancies:"""
+    """If no one in the population is pregnant, the PregnancyEvent should not result in any pregnancies:"""
 
     # running pregnancy event with zero pregnancy probability
     sim = get_sim(popsize=400)
 
     # ensuring no pregnancies happen by setting pregnancy probability to zero
-    sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 1
+    sim.modules['SimplifiedBirths'].parameters['pregnancy_prob'] = 1
 
     # define dataframe to make all women eligible
     df = sim.population.props
@@ -136,11 +136,11 @@ def test_no_pregnancy_among_in_ineligible_populations():
     df.loc[range(200, 300), 'age_years'] = 14
     df.loc[range(300, 400), 'age_years'] = 50
 
-    # make no one prengnat before the SimplifiedPregnancyEvent is run:
+    # make no one prengnat before the PregnancyEvent is run:
     df.loc[:, 'is_pregnant'] = False
 
     # Run the Simplified Pregnancy Event
-    pregnancy_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
+    pregnancy_event = simplified_births.PregnancyEvent(module=sim.modules['SimplifiedBirths'])
     pregnancy_event.apply(df)
 
     # Check that no one became pregnant
@@ -157,7 +157,7 @@ def test_no_births_if_no_one_is_pregnant():
     df.loc[:, 'is_pregnant'] = False
 
     # Run the birth event - and check that there are no births:
-    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
+    birth_event = simplified_births.BirthsEvent(module=sim.modules['SimplifiedBirths'])
     birth_event.apply(df)
 
     # get population dataframe
@@ -165,15 +165,15 @@ def test_no_births_if_no_one_is_pregnant():
     assert 0 == len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)])
 
 
-def test_breastfeeding_standard_run():
-    """Run the model using the SimplifiedPregnancyEvent and SimplifiedBirthEvent and check that properties are
+def test_standard_run_using_simplified_birth_module():
+    """Run the model using the PregnancyEvent and SimplifiedBirthEvent and check that properties are
     maintained correctly and that some number of births result."""
 
     # Get simulation object
     sim = get_sim(popsize=10_000)
 
     # Force all new borns to be given a breastfeeding status of 'exclusive'
-    sim.modules['Simplifiedbirths'].parameters['prob_breastfeeding_type'] = [0, 0, 1]
+    sim.modules['SimplifiedBirths'].parameters['prob_breastfeeding_type'] = [0, 0, 1]
 
     # Cause the 'check on configuration' of properties to run daily for each year of the simulation.
     class CheckProperties(RegularEvent, PopulationScopeEventMixin):
@@ -184,7 +184,7 @@ def test_breastfeeding_standard_run():
             print(f"Running on {self.sim.date}")
             check_property_integrity(self.module.sim)
 
-    sim.schedule_event(CheckProperties(sim.modules['Simplifiedbirths']), sim.date)
+    sim.schedule_event(CheckProperties(sim.modules['SimplifiedBirths']), sim.date)
 
     # Run the sim
     sim.simulate(end_date=Date(2015, 1, 1))
@@ -207,8 +207,7 @@ def test_breastfeeding_standard_run():
     assert (df.loc[newborns.index, 'nb_breastfeeding_status'] == 'exclusive').all()
 
 
-
-def test_simplified_births_module_with_other_modules():
+def test_other_modules_running_with_simplified_births_module():
     """Run a "full simulation" using the simplified_births module and other disease modules"""
     sim = Simulation(
         start_date=Date(2010, 1, 1),
@@ -221,7 +220,7 @@ def test_simplified_births_module_with_other_modules():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.Simplifiedbirths(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -236,7 +235,7 @@ def test_simplified_births_module_with_other_modules():
                  tb.Tb(resourcefilepath=resourcefilepath)
                  )
 
-    sim.make_initial_population(n=5_000)
-    sim.simulate(end_date=Date(2014, 12, 31))
+    sim.make_initial_population(n=1_000)
+    sim.simulate(end_date=Date(2011, 12, 31))
     check_property_integrity(sim)
     check_dtypes(sim)

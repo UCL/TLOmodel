@@ -44,7 +44,7 @@ def run():
     # registering all required modules
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        simplified_births.Simplifiedbirths(resourcefilepath=resourcefilepath)
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
     )
 
     sim.make_initial_population(n=pop_size)

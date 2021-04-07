@@ -1,6 +1,6 @@
-"""This is the SimplifiedBirths Module. It aims causes pregnancy, deliveries and births to occur to match WPP estimates of
-total births. It subsumes the functions of several other modules (contraception, labour, pregnant supervisor, postnatal
-supervisor, newborn outcomes) , allowing for faster runnning when these are not required."""
+"""This is the SimplifiedBirths Module. It aims causes pregnancy, deliveries and births to occur to match WPP estimates
+ of total births. It subsumes the functions of several other modules (contraception, labour, pregnant supervisor,
+ postnatal supervisor, newborn outcomes) , allowing for faster runnning when these are not required."""
 
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Simplifiedbirths(Module):
+class SimplifiedBirths(Module):
     """
     A simplified births module responsible for generating births in a simplified way and assign mother ids to newborns.
     """
@@ -37,13 +37,13 @@ class Simplifiedbirths(Module):
 
         # (Core property, usually handled by Contraception module)
         'date_of_last_pregnancy': Property(Types.DATE,
-                                           'Date of the onset of the last pregnancy of this individual '
-                                           '(if has ever been pregnant).'),
+                                           'Date of the onset of the last pregnancy of this individual (if has ever '
+                                           'been pregnant).'),
 
         # (Internal property)
         'si_date_of_last_delivery': Property(Types.DATE,
-                                        'Date of delivery for the most recent pregnancy for this individual '
-                                        '(if has ever been pregnant). Maybe in the future if is currently pregnant.'),
+                                             'Date of delivery for the most recent pregnancy for this individual (if '
+                                             'has ever been pregnant). Maybe in the future if is currently pregnant.'),
 
         # (Property usually managed by Newborn_outcomes module)
         'nb_breastfeeding_status': Property(Types.CATEGORICAL,
@@ -78,9 +78,9 @@ class Simplifiedbirths(Module):
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'none'
 
     def initialise_simulation(self, sim):
-        """Schedule the SimplifiedPregnancyEvent and the SimplifiedBirthEvent to occur every month."""
-        sim.schedule_event(SimplifiedPregnancyEvent(self), sim.date)
-        sim.schedule_event(SimplifiedBirthsEvent(self), sim.date)
+        """Schedule the PregnancyEvent and the SimplifiedBirthEvent to occur every month."""
+        sim.schedule_event(PregnancyEvent(self), sim.date)
+        sim.schedule_event(BirthsEvent(self), sim.date)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual."""
@@ -98,7 +98,7 @@ class Simplifiedbirths(Module):
         )
 
 
-class SimplifiedPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
+class PregnancyEvent(RegularEvent, PopulationScopeEventMixin):
     """ A event for making women pregnant"""
 
     def __init__(self, module):
@@ -129,7 +129,7 @@ class SimplifiedPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.date + pd.DateOffset(months=self.module.parameters['months_between_pregnancy_and_delivery'])
 
 
-class SimplifiedBirthsEvent(RegularEvent, PopulationScopeEventMixin):
+class BirthsEvent(RegularEvent, PopulationScopeEventMixin):
     """This event checks to see if the date-of-delivery for pregnant women has been reached and implement births where
     appropriate."""
 
@@ -141,9 +141,9 @@ class SimplifiedBirthsEvent(RegularEvent, PopulationScopeEventMixin):
 
         # find the women who are due to have delivered their babies before now
         females_to_give_birth = df.loc[
-            (df.sex == 'F') & \
-            df.is_alive &  \
-            df.is_pregnant & \
+            (df.sex == 'F') &
+            df.is_alive &
+            df.is_pregnant &
             (df.si_date_of_last_delivery <= self.sim.date)
         ].index
 
