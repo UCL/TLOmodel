@@ -168,7 +168,7 @@ def test_pregnancy_and_births_logic_at_max_pregnancy_probability():
     assert len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]) > 0
 
 
-def test_run_pregnancy_logic_at_zero_pregnancy_probability():
+def test_run_pregnancy_and_births_logic_at_zero_pregnancy_probability():
     # running pregnancy event with zero pregnancy probability
     sim = get_sim()
     initial_pop_size = 1
@@ -204,8 +204,23 @@ def test_run_pregnancy_logic_at_zero_pregnancy_probability():
     # check property configuration after an event is run
     check_property_integrity(sim)
 
+    """the below steps fires the birth event on the selected individual"""
 
-def test_pregnancy_logic_on_a_dead_individual():
+    # schedule a birth event
+    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
+    birth_event.apply(df)
+
+    """now that we have fired a birth event on an individual who is not ideal for births, lets confirm we have no
+    births in the dataframe """
+
+    # get population dataframe
+    df = sim.population.props
+
+    # confirm we have no births
+    assert len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]) == 0
+
+
+def test_pregnancy_and_births_logic_on_a_dead_individual():
     # running pregnancy event on a dead population
     sim = get_sim()
     initial_pop_size = 1
@@ -240,8 +255,23 @@ def test_pregnancy_logic_on_a_dead_individual():
     # check property configuration after an event is run
     check_property_integrity(sim)
 
+    """the below steps fires the birth event on the selected individual"""
 
-def test_pregnancy_logic_on_males():
+    # schedule a birth event
+    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
+    birth_event.apply(df)
+
+    """now that we have fired a birth event on an individual who is not ideal for births, lets confirm we have no
+    births in the dataframe """
+
+    # get population dataframe
+    df = sim.population.props
+
+    # confirm we have no births
+    assert len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]) == 0
+
+
+def test_pregnancy_and_births_logic_on_males():
     sim = get_sim()
     initial_pop_size = 1
     sim.make_initial_population(n=initial_pop_size)
@@ -271,8 +301,23 @@ def test_pregnancy_logic_on_males():
     # check property configuration after an event is run
     check_property_integrity(sim)
 
+    """the below steps fires the birth event on the selected individual"""
 
-def test_pregnancy_logic_on_an_individual_whose_age_is_outside_pregnancy_range():
+    # schedule a birth event
+    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
+    birth_event.apply(df)
+
+    """now that we have fired a birth event on an individual who is not ideal for births, lets confirm we have no
+    births in the dataframe """
+
+    # get population dataframe
+    df = sim.population.props
+
+    # confirm we have no births
+    assert len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]) == 0
+
+
+def test_pregnancy_and_births_logic_on_an_individual_whose_age_is_outside_pregnancy_range():
     sim = get_sim()
     initial_pop_size = 1
     sim.make_initial_population(n=initial_pop_size)
@@ -301,6 +346,21 @@ def test_pregnancy_logic_on_an_individual_whose_age_is_outside_pregnancy_range()
 
     # check property configuration after an event is run
     check_property_integrity(sim)
+
+    """the below steps fires the birth event on the selected individual"""
+
+    # schedule a birth event
+    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
+    birth_event.apply(df)
+
+    """now that we have fired a birth event on an individual who is not ideal for births, lets confirm we have no
+    births in the dataframe """
+
+    # get population dataframe
+    df = sim.population.props
+
+    # confirm we have no births
+    assert len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]) == 0
 
 
 def test_breastfeeding_simplified_birth_logic():
