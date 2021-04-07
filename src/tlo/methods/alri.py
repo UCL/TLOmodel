@@ -872,11 +872,10 @@ class Alri(Module):
                 return LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
-                    Predictor('age_years')
-                        .when('.between(0,0)', p[base_inc_rate][0])
-                        .when('.between(1,1)', p[base_inc_rate][1])
-                        .when('.between(2,4)', p[base_inc_rate][2])
-                        .otherwise(0.0),
+                    Predictor('age_years')  .when('.between(0,0)', p[base_inc_rate][0])
+                                            .when('.between(1,1)', p[base_inc_rate][1])
+                                            .when('.between(2,4)', p[base_inc_rate][2])
+                                            .otherwise(0.0),
                     Predictor('li_no_access_handwashing').when(False, p['rr_ALRI_HHhandwashing']),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor('tmp_hv_inf').when(True, p['rr_ALRI_HIV_untreated']),
@@ -1225,14 +1224,12 @@ class Alri(Module):
             return LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 1.0,
-                Predictor('ri_ALRI_disease_type')
-                    .when(f'{disease_type}', p[f'base_death_rate_ALRI_by_{disease_type}']),
+                Predictor('ri_ALRI_disease_type').when(f'{disease_type}', p[f'base_death_rate_ALRI_by_{disease_type}']),
                 Predictor('tmp_hv_inf').when(True, p['rr_death_ALRI_HIV']),
                 Predictor('tmp_malnutrition').when(True, p['rr_death_ALRI_SAM']),
                 Predictor('tmp_low_birth_weight').when(True, p['rr_death_ALRI_low_birth_weight']),
-                Predictor('age_years')
-                    .when('.between(1,1)', p['rr_death_ALRI_age12to23mo'])
-                    .when('.between(2,4)', p['rr_death_ALRI_age24to59mo']),
+                Predictor('age_years')  .when('.between(1,1)', p['rr_death_ALRI_age12to23mo'])
+                                        .when('.between(2,4)', p['rr_death_ALRI_age24to59mo']),
                 Predictor('ri_ALRI_complications').when('sepsis', p['rr_death_ALRI_sepsis']),
                 Predictor('ri_ALRI_complications').when('respiratory_failure', p['rr_death_ALRI_respiratory_failure']),
                 Predictor('ri_ALRI_complications').when('meningitis', p['rr_death_ALRI_meningitis']),
