@@ -1939,6 +1939,154 @@ class ALRIDeathEvent(Event, IndividualScopeEventMixin):
                                                                   ), self.sim.date)
             df.at[person_id, 'ri_ALRI_death_counter'] += 1
 
+
+# ---------------------------------------------------------------------------------------------------------
+#   LOGGING EVENTS
+# ---------------------------------------------------------------------------------------------------------
+
+class PathogenIncidentCountLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    This Event logs the number of incident cases that have occurred since the previous logging event.
+    Analysis scripts expect that the frequency of this logging event is once per year.
+    """
+
+    def __init__(self, module):
+        # This event to occur every year
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        self.date_last_run = self.sim.date
+
+    def apply(self, population):
+        # Convert the list of timestamps into a number of timestamps
+        # and check that all the dates have occurred since self.date_last_run
+        counts = copy.deepcopy(self.module.incident_case_tracker_zeros)
+
+        for age_grp in self.module.incident_case_tracker.keys():
+            for pathogen in self.module.pathogens:
+                list_of_times = self.module.incident_case_tracker[age_grp][pathogen]
+                counts[age_grp][pathogen] = len(list_of_times)
+                for t in list_of_times:
+                    assert self.date_last_run <= t <= self.sim.date
+
+        logger.info(key='incidence_count_by_pathogen', data=counts, description='pathogens incident case counts')
+
+        # Reset the counters and the date_last_run --------------------
+        self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
+        self.date_last_run = self.sim.date
+
+
+class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    Count the number of Alri cases, number of recovered, treated and died every year
+    """
+    def __init__(self, module):
+        # This event to occur every year
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        df = self.sim.population.props
+
+        # sum all the counters for previous year
+        cases_count = df['ri_ALRI_cases_counter'].sum()
+        recovery_count = df['ri_ALRI_recovery_counter'].sum()
+        tx_count = df['ri_ALRI_treatment_counter'].sum()
+        death_count = df['ri_ALRI_death_counter'].sum()
+
+        counter = {
+            'number_cases': cases_count,
+            'number_recovered': recovery_count,
+            'number_treated': tx_count,
+            'number_died': death_count
+        }
+
+        logger.info(
+            key='counter_episodes',
+            data=counter,
+            description='Counts of cases, recovery, treatment and death'
+        )
+
+
+class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    This Event logs the daily occurrence to a single individual child.
+    """
+
+    def __init__(self, module):
+        # This logging event to occur every day
+        self.repeat = 1
+        super().__init__(module, frequency=DateOffset(days=self.repeat))
+        self.date_last_run = self.sim.date
+
+    def apply(self, population):
+        df = self.sim.population.props
+
+        # get single row of dataframe (but not a series) ----------------
+        # index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
+        index_children = df.index[df.age_exact_years < 5]
+        # individual_child = df.loc[[index_children_with_alri[0]]]
+
+        # dict_to_output = df.loc[index_children[0], [
+        #     'age_exact_years',
+        #     'ri_current_ALRI_status',
+        #     'ri_primary_ALRI_pathogen',
+        #     'ri_secondary_bacterial_pathogen',
+        #     'ri_ALRI_disease_type',
+        #     'ri_ALRI_complications',
+        #     'ri_current_ALRI_symptoms',
+        #     'ri_ALRI_event_date_of_onset',
+        #     'ri_ALRI_event_recovered_date',
+        #     'ri_ALRI_tx_start_date',
+        #     'ri_ALRI_event_death_date',
+        #     'ri_end_of_last_alri_episode']].to_dict()
+        #
+        # logger.info(
+        #     key='person_one',
+        #     data=dict_to_output,
+        #     description='one person journey'
+        # )
+
+        logger.info('%s|person_one|%s',
+                    self.sim.date,
+                    df.loc[index_children[0], [
+                        'age_exact_years',
+                        'ri_current_ALRI_status',
+                        'ri_primary_ALRI_pathogen',
+                        'ri_secondary_bacterial_pathogen',
+                        'ri_ALRI_disease_type',
+                        'ri_ALRI_complications',
+                        'ri_current_ALRI_symptoms',
+                        'ri_ALRI_event_date_of_onset',
+                        'ri_ALRI_event_recovered_date',
+                        'ri_ALRI_tx_start_date',
+                        'ri_ALRI_event_death_date',
+                        'ri_end_of_last_alri_episode',
+                        # 'ri_IMCI_classification_as_gold',
+                        # 'ri_health_worker_IMCI_classification'
+                    ]].to_dict())
+
+
+class AlriResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    This regular event resets the counts Alri episodes, recovery, treatment and death
+    """
+    def __init__(self, module):
+        # This event to occur every year
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        df = self.sim.population.props
+
+        df['ri_ALRI_cases_counter'] = 0
+        df['ri_ALRI_recovery_counter'] = 0
+        df['ri_ALRI_treatment_counter'] = 0
+        df['ri_ALRI_death_counter'] = 0
+
+
+"""
+### Not looking at anything to do with HSI ###
+
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ==================================== HEALTH SYSTEM INTERACTION EVENTS ====================================
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1946,7 +2094,6 @@ class ALRIDeathEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 # COMMUNITY LEVEL - iCCM delivered through HSAs -----------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------
-
 
 class HSI_iCCM_Pneumonia_Treatment_level_0(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
@@ -2600,147 +2747,4 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEven
     def did_not_run(self):
         logger.debug(key='debug', data='HSI_IMCI_Severe_Pneumonia_Treatment_level_2: did not run')
         pass
-
-
-# ---------------------------------------------------------------------------------------------------------
-#   LOGGING EVENTS
-# ---------------------------------------------------------------------------------------------------------
-
-class PathogenIncidentCountLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    This Event logs the number of incident cases that have occurred since the previous logging event.
-    Analysis scripts expect that the frequency of this logging event is once per year.
-    """
-
-    def __init__(self, module):
-        # This event to occur every year
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-        self.date_last_run = self.sim.date
-
-    def apply(self, population):
-        # Convert the list of timestamps into a number of timestamps
-        # and check that all the dates have occurred since self.date_last_run
-        counts = copy.deepcopy(self.module.incident_case_tracker_zeros)
-
-        for age_grp in self.module.incident_case_tracker.keys():
-            for pathogen in self.module.pathogens:
-                list_of_times = self.module.incident_case_tracker[age_grp][pathogen]
-                counts[age_grp][pathogen] = len(list_of_times)
-                for t in list_of_times:
-                    assert self.date_last_run <= t <= self.sim.date
-
-        logger.info(key='incidence_count_by_pathogen', data=counts, description='pathogens incident case counts')
-
-        # Reset the counters and the date_last_run --------------------
-        self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
-        self.date_last_run = self.sim.date
-
-
-class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    Count the number of Alri cases, number of recovered, treated and died every year
-    """
-    def __init__(self, module):
-        # This event to occur every year
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-
-    def apply(self, population):
-        df = self.sim.population.props
-
-        # sum all the counters for previous year
-        cases_count = df['ri_ALRI_cases_counter'].sum()
-        recovery_count = df['ri_ALRI_recovery_counter'].sum()
-        tx_count = df['ri_ALRI_treatment_counter'].sum()
-        death_count = df['ri_ALRI_death_counter'].sum()
-
-        counter = {
-            'number_cases': cases_count,
-            'number_recovered': recovery_count,
-            'number_treated': tx_count,
-            'number_died': death_count
-        }
-
-        logger.info(
-            key='counter_episodes',
-            data=counter,
-            description='Counts of cases, recovery, treatment and death'
-        )
-
-
-class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    This Event logs the daily occurrence to a single individual child.
-    """
-
-    def __init__(self, module):
-        # This logging event to occur every day
-        self.repeat = 1
-        super().__init__(module, frequency=DateOffset(days=self.repeat))
-        self.date_last_run = self.sim.date
-
-    def apply(self, population):
-        df = self.sim.population.props
-
-        # get single row of dataframe (but not a series) ----------------
-        # index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
-        index_children = df.index[df.age_exact_years < 5]
-        # individual_child = df.loc[[index_children_with_alri[0]]]
-
-        # dict_to_output = df.loc[index_children[0], [
-        #     'age_exact_years',
-        #     'ri_current_ALRI_status',
-        #     'ri_primary_ALRI_pathogen',
-        #     'ri_secondary_bacterial_pathogen',
-        #     'ri_ALRI_disease_type',
-        #     'ri_ALRI_complications',
-        #     'ri_current_ALRI_symptoms',
-        #     'ri_ALRI_event_date_of_onset',
-        #     'ri_ALRI_event_recovered_date',
-        #     'ri_ALRI_tx_start_date',
-        #     'ri_ALRI_event_death_date',
-        #     'ri_end_of_last_alri_episode']].to_dict()
-        #
-        # logger.info(
-        #     key='person_one',
-        #     data=dict_to_output,
-        #     description='one person journey'
-        # )
-
-        logger.info('%s|person_one|%s',
-                    self.sim.date,
-                    df.loc[index_children[0], [
-                        'age_exact_years',
-                        'ri_current_ALRI_status',
-                        'ri_primary_ALRI_pathogen',
-                        'ri_secondary_bacterial_pathogen',
-                        'ri_ALRI_disease_type',
-                        'ri_ALRI_complications',
-                        'ri_current_ALRI_symptoms',
-                        'ri_ALRI_event_date_of_onset',
-                        'ri_ALRI_event_recovered_date',
-                        'ri_ALRI_tx_start_date',
-                        'ri_ALRI_event_death_date',
-                        'ri_end_of_last_alri_episode',
-                        # 'ri_IMCI_classification_as_gold',
-                        # 'ri_health_worker_IMCI_classification'
-                    ]].to_dict())
-
-
-class AlriResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    This regular event resets the counts Alri episodes, recovery, treatment and death
-    """
-    def __init__(self, module):
-        # This event to occur every year
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-
-    def apply(self, population):
-        df = self.sim.population.props
-
-        df['ri_ALRI_cases_counter'] = 0
-        df['ri_ALRI_recovery_counter'] = 0
-        df['ri_ALRI_treatment_counter'] = 0
-        df['ri_ALRI_death_counter'] = 0
+"""

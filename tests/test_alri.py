@@ -71,3 +71,6 @@ def test_basic_run():
     check_dtypes(sim)
 
 
+# TODO -- @ines: We need some tests here to make sure everything is working, like in the diarrhoea code.
+
+
