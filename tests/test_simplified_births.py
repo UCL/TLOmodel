@@ -2,7 +2,10 @@ import os
 from pathlib import Path
 
 import pandas as pd
-from tlo import Simulation, Date
+import numpy as np
+from pandas._libs.tslibs.offsets import DateOffset
+from tlo import Simulation, Date, logging
+from tlo.events import RegularEvent, PopulationScopeEventMixin
 from tlo.methods import (
     demography,
     simplified_births,
@@ -20,12 +23,9 @@ from tlo.methods import (
     tb
 )
 
+
+
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-
-start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 100
-
 
 def check_dtypes(simulation):
     # check types of columns
@@ -34,10 +34,8 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def get_sim():
-    start_date = Date(2010, 1, 1)
-    popsize = 1000
-    sim = Simulation(start_date=start_date, seed=0)
+def get_sim(popsize=1000):
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -46,349 +44,199 @@ def get_sim():
 
     # Make the population
     sim.make_initial_population(n=popsize)
+    check_property_integrity(sim)
     return sim
-
-
-# def test_simplified_births_module_with_other_modules():
-#     """this is a test to see whether we can use simplified_births module inplace of contraception, labour and
-#     pregnancy supervisor modules"""
-#     sim = Simulation(start_date=start_date, seed=0)
-#
-#     # Register the appropriate modules
-#     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-#                  simplified_births.Simplifiedbirths(resourcefilepath=resourcefilepath),
-#                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-#                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
-#                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-#                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-#                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-#                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-#                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-#                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-#                  epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
-#                  hiv.Hiv(resourcefilepath=resourcefilepath),
-#                  malaria.Malaria(resourcefilepath=resourcefilepath),
-#                  tb.Tb(resourcefilepath=resourcefilepath)
-#                  )
-#
-#     sim.make_initial_population(n=popsize)
-#     sim.simulate(end_date=end_date)
-#     check_dtypes(sim)
 
 
 def check_property_integrity(sim):
     # check that the properties are as expected
 
     # define dataframe
+    alive = sim.population.props.loc[sim.population.props.is_alive]
+
+    # For persons not currently pregnant:
+    #   - check that no date of delivery is assigned to individuals or that the date is in the past
+    np_si_date_of_last_delivery = alive.loc[~alive.is_pregnant, 'si_date_of_last_delivery']
+    assert (pd.isnull(np_si_date_of_last_delivery) | (np_si_date_of_last_delivery <= sim.date)).all()
+
+    #   - check that a date of last pregnancy is not assigned to individuals or that the date is prior to last delivery
+    np_date_of_last_pregnancy = alive.loc[~alive.is_pregnant, 'date_of_last_pregnancy']
+    assert (pd.isnull(np_date_of_last_pregnancy) | (np_date_of_last_pregnancy < np_si_date_of_last_delivery)).all()
+
+    # For persons who are currently pregnant:
+    #    - check that all pregnant women have been assigned a date of last pregnancy and that date is in the past
+    p_date_of_last_pregnancy = alive.loc[alive.is_pregnant, 'date_of_last_pregnancy']
+    assert not pd.isnull(p_date_of_last_pregnancy).any()
+    assert (p_date_of_last_pregnancy <= sim.date).all()
+
+    #   - check that all pregnant women have been assigned a date of delivery and that the date is in the future
+    p_si_date_of_last_delivery = alive.loc[alive.is_pregnant, 'si_date_of_last_delivery']
+    assert not pd.isnull(p_si_date_of_last_delivery).any()
+    assert (p_si_date_of_last_delivery > sim.date).all()
+
+
+def test_pregnancy_and_birth_for_one_woman():
+    """Test to check that properties and sequence of events work as expected, when considering a single woman."""
+
+    sim = get_sim(popsize=1)
     df = sim.population.props
 
-    # check that individuals who are dead do not become pregnant
-    assert not (~df.is_alive & df.is_pregnant).any(), 'a dead person can not become pregnant'
+    # confirm that the woman is alive and eligible to become pregnant
+    df.loc[0, 'is_alive'] = True
+    df.loc[0, 'age_exact_years'] = 17.0
+    df.loc[0, 'age_years'] = np.floor(df.loc[0].age_exact_years)
+    df.loc[0, 'age_range'] = sim.modules['Demography'].AGE_RANGE_LOOKUP[df.loc[0].age_years]
 
-    # check that a date of last pregnancy is not assigned to individuals who are not pregnant
-    assert pd.isnull(df.loc[~df.is_pregnant, 'date_of_last_pregnancy']).all(), "date of last pregnancy assigned to a " \
-                                                                               "female not pregnant"
+    assert not df.loc[0, 'is_pregnant']
+    assert pd.isnull(df.loc[0, 'date_of_last_pregnancy'])
+    assert pd.isnull(df.loc[0, 'si_date_of_last_delivery'])
 
-    # check that no date of delivery is assigned to individuals who are not pregnant
-    assert pd.isnull(df.loc[~df.is_pregnant, 'si_date_of_delivery']).all(), "date of delivery assigned to a " \
-                                                                            "female not pregnant"
-
-    # check that all pregnant women have been assigned a date of last pregnancy
-    assert not pd.isnull(df.loc[df.is_pregnant, 'date_of_last_pregnancy']).any(), "date of last pregnancy not " \
-                                                                                  "assigned to a pregnant woman"
-    # check that all pregnant women have been assigned a date of delivery
-    assert not pd.isnull(df.loc[df.is_pregnant, 'si_date_of_delivery']).any(), "date of delivery not " \
-                                                                               "assigned to a pregnant woman"
-
-
-def test_pregnancy_and_births_logic_at_max_pregnancy_probability():
-    # a test to check whether pregnancies are happening as expected
-    sim = get_sim()
-    initial_pop_size = 1
-    sim.make_initial_population(n=initial_pop_size)
-
-    # increasing number of women likely to get pregnant by setting pregnancy probability to 1
+    # Set the probability of becoming pregnancy to 1
     sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 1
-
-    # define dataframe
-    df = sim.population.props
-    df.at[df.index, 'age_years'] = 40
-    df.at[df.index, 'sex'] = 'F'
-
-    # number of eligible females before pregnancy event
-    eligible_females_before_pregnancy_event = df
-
-    # check property configuration before any event is run
-    check_property_integrity(sim)
-
-    # check population to see if anyone gets pregnant before pregnancy Event is run
-    assert not eligible_females_before_pregnancy_event.is_pregnant.any()
 
     # Run the Simplified Pregnancy Event on the selected population
     pregnancy_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
-    pregnancy_event.apply(df)
+    pregnancy_event.apply(sim.population.props)
 
-    # get the number of females who got pregnant
-    pregnant_females_after_pregnancy_event = df.loc[df.is_pregnant]
+    # Check that woman is now pregnant, has a date of pregnancy of today, and a delivery date in the future
+    assert df.loc[0, 'is_pregnant']
+    assert sim.date == df.loc[0, 'date_of_last_pregnancy']
+    assert (sim.date + pd.DateOffset(months=9)) == df.loc[0, 'si_date_of_last_delivery']
 
-    """ since we have set pregnancy probability at 1 then all eligible individuals should get pregnant
-    after Pregnancy Event has been fired """
-    assert len(eligible_females_before_pregnancy_event) == len(pregnant_females_after_pregnancy_event)
+    # Update time to after the date of delivery and run the birth event
+    sim.date = df.loc[0, 'si_date_of_last_delivery'] + pd.DateOffset(days=0)
+    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
+    birth_event.apply(sim.population.props)
 
-    # check property configuration after an event is run
+    # Check that woman's properties are updated accordingly
+    assert not df.loc[0, 'is_pregnant']
+
+    # Check that a baby is born and has an appropriate value for 'nb_breastfeeding_status'
+    df = sim.population.props
+    assert (2 == len(df.loc[~pd.isnull(df.date_of_birth)]))
+    assert (df.loc[1, 'mother_id'] >= 0) & (df.loc[1, 'date_of_birth'] == sim.date)
+    assert df.loc[0, 'nb_breastfeeding_status'] in ('none', 'non_exclusive', 'exclusive')
+
     check_property_integrity(sim)
 
-    # check woman's date of delivery if correct
-    date_of_delivery = pd.to_datetime(sim.date + pd.DateOffset(months=9))
-    date_of_delivery_in_dataframe = df.loc[df.index, 'si_date_of_delivery']
-    assert (date_of_delivery_in_dataframe == date_of_delivery).all()
 
-    """the below steps tries to fire the birth event on the selected female and check property configuration"""
+def test_no_pregnancy_among_in_ineligible_populations():
+    """If no one in the population is pregnant, the SimplifiedPregnancyEvent should not result in any pregnancies:"""
 
-    # modify date of delivery to prepare this woman for a birth event
-    df.at[df.index, 'si_date_of_delivery'] = sim.date
-
-    # schedule a birth event
-    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
-    birth_event.apply(df)
-
-    # check that the individual is no longer pregnant after delivery
-    assert not df.is_pregnant.all()
-
-    # check that date of delivery has been reset to Not a Time
-    assert pd.isnull(df.si_date_of_delivery).all()
-
-    """now that we have fired a birth event on an individual who is ideal for births, lets see if we have some
-    births in the dataframe """
-
-    # get population dataframe
-    df = sim.population.props
-
-    # check if we have any births
-    assert len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]) > 0
-
-
-def test_run_pregnancy_and_births_logic_at_zero_pregnancy_probability():
     # running pregnancy event with zero pregnancy probability
-    sim = get_sim()
-    initial_pop_size = 1
-    sim.make_initial_population(n=initial_pop_size)
-
-    # ensuring no pregnancies happen by setting pregnancy probability to zero
-    sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 0
-
-    # define dataframe
-    df = sim.population.props
-    df.at[df.index, 'age_years'] = 40
-    df.at[df.index, 'sex'] = 'F'
-
-    # number of eligible females to get pregnant
-    eligible_pop = df
-
-    # check property configuration before any event is run
-    check_property_integrity(sim)
-
-    # check population to see if anyone gets pregnant before pregnancy Event is run
-    assert not eligible_pop.is_pregnant.any(), "an individual can not become pregnant before pregnant event is run"
-
-    # Run the Simplified Pregnancy Event on the selected population
-    pregnancy_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
-    pregnancy_event.apply(df)
-
-    # get the number of females who got pregnant
-    pregnancies_after_pregnancy_event = df.loc[df.is_pregnant]
-
-    """ since we have set pregnancy probability to zero confirm we have no pregnancies"""
-    assert len(pregnancies_after_pregnancy_event) == 0, "There can not be pregnancies when probability is set to zero"
-
-    # check property configuration after an event is run
-    check_property_integrity(sim)
-
-    """the below steps fires the birth event on the selected individual"""
-
-    # schedule a birth event
-    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
-    birth_event.apply(df)
-
-    """now that we have fired a birth event on an individual who is not ideal for births, lets confirm we have no
-    births in the dataframe """
-
-    # get population dataframe
-    df = sim.population.props
-
-    # confirm we have no births
-    assert len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]) == 0
-
-
-def test_pregnancy_and_births_logic_on_a_dead_individual():
-    # running pregnancy event on a dead population
-    sim = get_sim()
-    initial_pop_size = 1
-    sim.make_initial_population(n=initial_pop_size)
+    sim = get_sim(popsize=400)
 
     # ensuring no pregnancies happen by setting pregnancy probability to zero
     sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 1
 
-    # select population
+    # define dataframe to make all women eligible
     df = sim.population.props
+    df.loc[range(0, 100), 'sex'] = 'M'
+    df.loc[range(100, 200), 'is_alive'] = False
+    df.loc[range(200, 300), 'age_years'] = 14
+    df.loc[range(300, 400), 'age_years'] = 50
 
-    # modify person's age and sex
-    df.at[df.index, 'age_years'] = 20
-    df.at[df.index, 'sex'] = 'F'
+    # make no one prengnat before the SimplifiedPregnancyEvent is run:
+    df.loc[:, 'is_pregnant'] = False
 
-    # kill the person
-    df.at[df.index, 'is_alive'] = False
-
-    # check property configuration before any event is run
-    check_property_integrity(sim)
-
-    # Run the Simplified Pregnancy Event on the dead population
+    # Run the Simplified Pregnancy Event
     pregnancy_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
     pregnancy_event.apply(df)
 
-    # get the number of females who got pregnant
-    pregnancies_after_pregnancy_event = df.loc[df.is_pregnant]
+    # Check that no one became pregnant
+    assert not df.is_pregnant.any()
 
-    """ since we are running pregnancy event on a dead population, no one should get pregnant"""
-    assert len(pregnancies_after_pregnancy_event) == 0, "a dead person can not become pregnant"
 
-    # check property configuration after an event is run
-    check_property_integrity(sim)
+def test_no_births_if_no_one_is_pregnant():
+    """If no one is pregnant, the SimplifiedBirthEvent should not result in any births:"""
+    sim = get_sim(popsize=10_000)
+    df = sim.population.props
 
-    """the below steps fires the birth event on the selected individual"""
+    # confirm that the woman is alive and eligible to become pregnant
+    df.loc[:, 'is_alive'] = True
+    df.loc[:, 'is_pregnant'] = False
 
-    # schedule a birth event
+    # Run the birth event - and check that there are no births:
     birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
     birth_event.apply(df)
 
-    """now that we have fired a birth event on an individual who is not ideal for births, lets confirm we have no
-    births in the dataframe """
-
     # get population dataframe
     df = sim.population.props
-
-    # confirm we have no births
-    assert len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]) == 0
+    assert 0 == len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)])
 
 
-def test_pregnancy_and_births_logic_on_males():
-    sim = get_sim()
-    initial_pop_size = 1
-    sim.make_initial_population(n=initial_pop_size)
+def test_breastfeeding_standard_run():
+    """Run the model using the SimplifiedPregnancyEvent and SimplifiedBirthEvent and check that properties are
+    maintained correctly and that some number of births result."""
 
-    # ensuring no pregnancies happen by setting pregnancy probability to zero
-    sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 1
+    # Get simulation object
+    sim = get_sim(popsize=10_000)
 
-    # select population
-    df = sim.population.props
-
-    # modify person's age and sex
-    df.at[df.index, 'age_years'] = 30
-    df.at[df.index, 'sex'] = 'M'
-
-    # check property configuration before any event is run
-    check_property_integrity(sim)
-
-    # Run the Simplified Pregnancy event on population
-    pregnancy_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
-    pregnancy_event.apply(df)
-
-    # get the number of females who got pregnant
-    pregnancies_after_pregnancy_event = df.loc[df.is_pregnant]
-
-    assert len(pregnancies_after_pregnancy_event) == 0, "a male person can not become pregnant"
-
-    # check property configuration after an event is run
-    check_property_integrity(sim)
-
-    """the below steps fires the birth event on the selected individual"""
-
-    # schedule a birth event
-    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
-    birth_event.apply(df)
-
-    """now that we have fired a birth event on an individual who is not ideal for births, lets confirm we have no
-    births in the dataframe """
-
-    # get population dataframe
-    df = sim.population.props
-
-    # confirm we have no births
-    assert len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]) == 0
-
-
-def test_pregnancy_and_births_logic_on_an_individual_whose_age_is_outside_pregnancy_range():
-    sim = get_sim()
-    initial_pop_size = 1
-    sim.make_initial_population(n=initial_pop_size)
-
-    # ensuring no pregnancies happen by setting pregnancy probability to zero
-    sim.modules['Simplifiedbirths'].parameters['pregnancy_prob'] = 1
-
-    # select population
-    df = sim.population.props
-
-    # modify person's age and sex
-    df.at[df.index, 'age_years'] = 10
-    df.at[df.index, 'sex'] = 'F'
-
-    # check property configuration before any event is run
-    check_property_integrity(sim)
-
-    # Run the Simplified Pregnancy event on population
-    pregnancy_event = simplified_births.SimplifiedPregnancyEvent(module=sim.modules['Simplifiedbirths'])
-    pregnancy_event.apply(df)
-
-    # get the number of females who got pregnant
-    pregnancies_after_pregnancy_event = df.loc[df.is_pregnant]
-
-    assert len(pregnancies_after_pregnancy_event) == 0, "a person of that age can not become pregnant"
-
-    # check property configuration after an event is run
-    check_property_integrity(sim)
-
-    """the below steps fires the birth event on the selected individual"""
-
-    # schedule a birth event
-    birth_event = simplified_births.SimplifiedBirthsEvent(module=sim.modules['Simplifiedbirths'])
-    birth_event.apply(df)
-
-    """now that we have fired a birth event on an individual who is not ideal for births, lets confirm we have no
-    births in the dataframe """
-
-    # get population dataframe
-    df = sim.population.props
-
-    # confirm we have no births
-    assert len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]) == 0
-
-
-def test_breastfeeding_simplified_birth_logic():
-    """This is a simple test to ensure that breastfeeding status is applied to all newly generated individuals on
-     birth"""
-    sim = get_sim()
-    initial_pop_size = 100
-    sim.make_initial_population(n=initial_pop_size)
-
-    # Force the probability of exclusive breastfeeding to 1, no other 'types' should occur from births in this sim run
+    # Force all new borns to be given a breastfeeding status of 'exclusive'
     sim.modules['Simplifiedbirths'].parameters['prob_breastfeeding_type'] = [0, 0, 1]
 
-    # Run the sim until end date, clear event queue
-    sim.simulate(end_date=end_date)
-    sim.event_queue.queue.clear()
+    # Cause the 'check on configuration' of properties to run daily for each year of the simulation.
+    class CheckProperties(RegularEvent, PopulationScopeEventMixin):
+        def __init__(self, module):
+            super().__init__(module, frequency=DateOffset(days=1))
 
-    # define the dataframe
+        def apply(self, population):
+            print(f"Running on {self.sim.date}")
+            check_property_integrity(self.module.sim)
+
+    sim.schedule_event(CheckProperties(sim.modules['Simplifiedbirths']), sim.date)
+
+    # Run the sim
+    sim.simulate(end_date=Date(2015, 1, 1))
+
+    # Check that some number of events occurred:
     df = sim.population.props
 
-    # selecting the number of women who have given birth during simulation and compare it to the number of newborn
-    number_of_women_ever_pregnant = df.loc[(df.sex == 'F') & (df.si_date_of_delivery < end_date)]
-    number_of_ever_newborns = df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]
+    # count number of new newborns
+    newborns = df.loc[~pd.isnull(df.date_of_birth) & (df.mother_id >= 0)]
 
     # check that there are births happening
-    assert len(number_of_ever_newborns) > 0
+    assert len(newborns) > 0
 
-    # check that the number of women hasn't exceeded the number of newborns
-    assert len(number_of_women_ever_pregnant) <= len(number_of_ever_newborns)
+    # check for women identified by a newborn's mother_id have all been pregnant and delivered
+    assert not df.loc[
+        set(newborns.mother_id), ['date_of_last_pregnancy', 'si_date_of_last_delivery']
+    ].isna().any().any()
 
-    # Finally we check to make sure all newborns have their breastfeeding status set to exclusive
-    assert (df.loc[number_of_ever_newborns.index, 'nb_breastfeeding_status'] == 'exclusive').all().all()
+    # check to make sure all newborns have their breastfeeding status set to exclusive
+    assert (df.loc[newborns.index, 'nb_breastfeeding_status'] == 'exclusive').all()
+
+
+
+def test_simplified_births_module_with_other_modules():
+    """Run a "full simulation" using the simplified_births module and other disease modules"""
+    sim = Simulation(
+        start_date=Date(2010, 1, 1),
+        log_config={
+            'custom_levels': {
+                '*': logging.WARNING,
+            }
+        }
+    )
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.Simplifiedbirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
+                 bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                 epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 malaria.Malaria(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath)
+                 )
+
+    sim.make_initial_population(n=5_000)
+    sim.simulate(end_date=Date(2014, 12, 31))
+    check_property_integrity(sim)
+    check_dtypes(sim)
