@@ -21,8 +21,8 @@ from tlo.methods import (
     healthsystem,
     labour,
     newborn_outcomes,
-    pregnancy_supervisor,
     postnatal_supervisor,
+    pregnancy_supervisor,
     rti,
     symptommanager,
 )
