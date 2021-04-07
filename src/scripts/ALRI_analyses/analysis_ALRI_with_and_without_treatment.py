@@ -1,6 +1,5 @@
 """
-This will demonstrate the effect of different treatment,
-adapted from analysis_diarrhoea_with_and_without_treatment
+This will demonstrate the effect of different treatment.
 """
 
 # %% Import Statements and initial declarations
@@ -13,6 +12,8 @@ from matplotlib import pyplot as plt
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    alri,
+    antenatal_care,
     contraception,
     demography,
     dx_algorithm_child,
@@ -21,9 +22,10 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
-    ALRI,
 )
 
 # %%
@@ -32,9 +34,7 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Scenarios Definitions:
-# *1: No Treatment
-# *2: Some Treatment
-
+# Define the 'service_availability' parameter for two sceanrios (without treatment, with treatment)
 scenarios = dict()
 scenarios['No_Treatment'] = []
 scenarios['Treatment'] = ['*']
@@ -43,37 +43,40 @@ scenarios['Treatment'] = ['*']
 output_files = dict()
 
 # %% Run the Simulation
-
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 2)
 popsize = 1000
-seed = 123
 
 for label, service_avail in scenarios.items():
-    # log_config = {
-    #     "filename": "ALRI_LogFile",  # The name of the output file (a timestamp will be appended).
-    #     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
-    #     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
-    #         "*": logging.CRITICAL,  # Asterisk matches all loggers - we set the default level to WARNING
-    #     }
-    # }
-    log_config = {'filename': 'LogFile'}
-    # add file handler for the purpose of logging
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+
+    log_config = {
+        "filename": "alri_with_treatment",
+        "directory": "./outputs",
+        "custom_levels": {
+            "*": logging.WARNING,
+            "tlo.methods.Alri": logging.INFO,
+            "tlo.methods.demography": logging.INFO,
+        }
+    }
+    sim = Simulation(start_date=start_date, log_config=log_config)
 
     # run the simulation
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 ALRI.Alri(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
-                 )
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_avail),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        alri.Alri(resourcefilepath=resourcefilepath)
+    )
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -157,6 +160,6 @@ data = {}
 for label in deaths.keys():
     data.update({label: deaths[label]})
 pd.concat(data, axis=1).plot.bar()
-plt.title('Number of Deaths Due to Alri')
+plt.title('Number of Deaths Due to ALRI')
 plt.savefig(outputpath / ("ALRI_deaths_by_scenario" + datestamp + ".pdf"), format='pdf')
 plt.show()

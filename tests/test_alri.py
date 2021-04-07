@@ -7,7 +7,7 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.methods import (
-    ALRI,
+    alri,
     antenatal_care,
     contraception,
     demography,
@@ -62,7 +62,7 @@ def test_basic_run():
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-        ALRI.Alri(resourcefilepath=resourcefilepath)
+        alri.Alri(resourcefilepath=resourcefilepath)
     )
 
     sim.make_initial_population(n=pop_size)

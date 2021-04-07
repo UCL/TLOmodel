@@ -15,15 +15,18 @@ from matplotlib import pyplot as plt
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    alri,
+    antenatal_care,
     contraception,
     demography,
-    ALRI,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -41,34 +44,37 @@ output_files = dict()
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
 popsize = 1000
-seed = 111
 
 log_config = {
-    "filename": "no_treatment",   # The name of the output file (a timestamp will be appended).
-    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
-    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
-        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
+    "filename": "alri_with_treatment",
+    "directory": "./outputs",
+    "custom_levels": {
+        "*": logging.WARNING,
         "tlo.methods.Alri": logging.INFO,
         "tlo.methods.demography": logging.INFO,
     }
 }
 
 # Establish the simulation object and set the seed
-sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+sim = Simulation(start_date=start_date, log_config=log_config)
 
 # run the simulation
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             contraception.Contraception(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             labour.Labour(resourcefilepath=resourcefilepath),
-             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             ALRI.Alri(resourcefilepath=resourcefilepath),
-             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
-             )
+sim.register(
+    demography.Demography(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+    contraception.Contraception(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+    antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+    labour.Labour(resourcefilepath=resourcefilepath),
+    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+    alri.Alri(resourcefilepath=resourcefilepath)
+)
 
 # Run the simulation
 sim.make_initial_population(n=popsize)
@@ -76,6 +82,16 @@ sim.simulate(end_date=end_date)
 
 # Read the output:
 output = parse_log_file(sim.log_filepath)
+
+# Save the output to a csv (if needed)
+# # parse the simulation logfile to get the output dataframes
+# output = parse_log_file(sim.log_filepath)
+# one_person = output['tlo.methods.Alri']['person_one']
+#
+#
+# # save into an cvs file
+# one_person.to_csv(r'./outputs/one_person2.csv', index=False)
+
 
 # %% ----------------------------  INCIDENCE RATE OF Alri BY PATHOGEN  ----------------------------
 # Calculate the "incidence rate" from the output counts of incidence
