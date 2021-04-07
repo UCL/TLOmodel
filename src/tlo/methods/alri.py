@@ -1,8 +1,5 @@
 """
 Childhood Acute Lower Respiratory Infection Module
-Documentation:
-04 - Methods Repository/Alri module - Description2.docx
-04 - Methods Repository/ResourceFile_ALRI2.xlsx
 
 Overview
 --------
@@ -746,7 +743,7 @@ class Alri(Module):
         """
         self.load_parameters_from_dataframe(
             pd.read_excel(
-                Path(self.resourcefilepath) / 'ResourceFile_ALRI2.xlsx', sheet_name='Parameter_values'))
+                Path(self.resourcefilepath) / 'ResourceFile_Alri.xlsx', sheet_name='Parameter_values'))
 
         # Check that every value has been read-in successfully
         for param_name, param_type in self.PARAMETERS.items():
