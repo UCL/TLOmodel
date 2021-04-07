@@ -262,6 +262,20 @@ class Lifestyle(Module):
         'start_date_campaign_alcohol_reduction': Parameter(
             Types.DATE, 'Date of campaign start for alcohol reduction'
         ),
+        'proportion_of_men_that_are_assumed_to_be_circumcised_at_birth': Parameter(
+            Types.REAL, 'Proportion of men that are assumed to be circumcised at birth.'
+                        'The men are assumed to be circumcised at birth.'
+        ),
+        'proportion_of_men_circumcised_at_initiation': Parameter(
+            Types.REAL, 'Proportion of men (of all ages) that are assumed to be circumcised at the initiation of the'
+                        'simulation.'
+        ),
+        "proportion_female_sex_workers": Parameter(
+            Types.REAL, "proportion of women aged 15-49 years who are sex workers"
+        ),
+        "fsw_transition": Parameter(
+            Types.REAL, "proportion of sex workers that stop being a sex worker each year"
+        )
     }
 
     # Properties of individuals that this module provides.
@@ -315,6 +329,8 @@ class Lifestyle(Module):
         'li_date_acquire_access_handwashing': Property(Types.DATE, 'date acquire access to handwashing'),
         'li_date_acquire_clean_drinking_water': Property(Types.DATE, 'date acquire clean drinking water'),
         'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
+        "li_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
+        "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"),
     }
 
     def read_parameters(self, data_folder):
@@ -324,7 +340,7 @@ class Lifestyle(Module):
         )
 
         self.load_parameters_from_dataframe(dfd)
-        # Manually set dates for campaign starts for now
+        # Manually set dates for campaign starts for now todo - fix this
         p['start_date_campaign_exercise_increase'] = datetime.date(2010, 7, 1)
         p['start_date_campaign_quit_smoking'] = datetime.date(2010, 7, 1)
         p['start_date_campaign_alcohol_reduction'] = datetime.date(2010, 7, 1)
@@ -367,6 +383,8 @@ class Lifestyle(Module):
         df['li_date_acquire_access_handwashing'] = pd.NaT
         df['li_date_acquire_clean_drinking_water'] = pd.NaT
         df['li_date_acquire_non_wood_burn_stove'] = pd.NaT
+        df['li_is_sexworker'] = False
+        df['li_is_circ'] = False
         # todo: express all rates per year and divide by 4 inside program
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
@@ -662,6 +680,17 @@ class Lifestyle(Module):
 
         df.loc[age_ge15_idx, 'li_bmi'] = bmi_cat
 
+        # -------------------- SEX WORKER ----------------------------------------------------------
+        # determine which women will be sex worker
+        self.determine_who_will_be_sexworker(months_since_last_poll=0)
+
+        # -------------------- MALE CIRCUMCISION ----------------------------------------------------------
+        # determine the proportion of men that are circumcised at initiation
+        # NB. this is determined with respect to any characteristics (eg. ethnicity or religion)
+        men = df.loc[df.is_alive & (df.sex == 'M')]
+        will_be_circ = self.rng.rand(len(men)) < self.parameters['proportion_of_men_circumcised_at_initiation']
+        df.loc[men[will_be_circ].index, 'li_is_circ'] = True
+
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
         """
@@ -706,6 +735,160 @@ class Lifestyle(Module):
         df.at[child_id, 'li_date_acquire_access_handwashing'] = pd.NaT
         df.at[child_id, 'li_date_acquire_clean_drinking_water'] = pd.NaT
         df.at[child_id, 'li_date_acquire_non_wood_burn_stove'] = pd.NaT
+        df.at[child_id, 'li_is_sexworker'] = False
+        df.at[child_id, 'li_is_circ'] = (
+            self.rng.rand() < self.parameters['proportion_of_men_that_are_assumed_to_be_circumcised_at_birth']
+        )
+
+    def determine_who_will_be_sexworker(self, months_since_last_poll):
+        """Determine which women will be sex workers.
+        This is called by initialise_population and the LifestyleEvent.
+        Subject to the constraints:
+        (i) Women who are in sex work may stop and there is a proportion that stop during each year.
+        (ii) New women are 'recruited' to start sex work such that the overall proportion of women who are sex workers
+            does not fall below a given level.
+        """
+
+        df = self.sim.population.props
+        params = self.parameters
+        rng = self.rng
+
+        # Select current sex workers to stop being a sex worker
+        sw_idx = df.loc[df.is_alive & df.li_is_sexworker].index
+        proportion_that_will_stop_being_sexworker = params['fsw_transition'] * months_since_last_poll / 12
+        will_stop = sw_idx[rng.rand(len(sw_idx)) < proportion_that_will_stop_being_sexworker]
+        df.loc[will_stop, 'li_is_sexworker'] = False
+
+        # Select women to start sex worker (irrespective of any characteristic)
+        # eligible to become a sex worker: alive, unmarried, women aged 15-49 who are not currently sex worker
+        eligible_idx = df.loc[
+            df.is_alive &
+            (df.sex == 'F') &
+            ~df.li_is_sexworker &
+            df.age_years.between(15, 49) &
+            (df.li_mar_stat != 2)
+            ].index
+
+        n_sw = len(df.loc[df.is_alive & df.li_is_sexworker].index)
+        target_n_sw = int(np.round(len(df.loc[
+                                           df.is_alive &
+                                           (df.sex == 'F') &
+                                           df.age_years.between(15, 49)
+                                           ].index) * params["proportion_female_sex_workers"]
+                                   ))
+        deficit = target_n_sw - n_sw
+        if deficit > 0:
+            if deficit < len(eligible_idx):
+                # randomly select women to start sex work:
+                will_start_sw_idx = rng.choice(eligible_idx, deficit, replace=False)
+            else:
+                # select all eligible women to start sex work:
+                will_start_sw_idx = eligible_idx
+            # make is_sexworker for selected women:
+            df.loc[will_start_sw_idx, 'li_is_sexworker'] = True
+
+    def compute_bmi_proportions_of_interest(self):
+        """This is called by the logger and computes summary statistics about the bmi"""
+        df = self.sim.population.props
+
+        n_agege15 = (df.is_alive & (df.age_years >= 15)).sum()
+        n_agege15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
+        n_agege15_m = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
+        n_agege15_urban = (
+            df.is_alive & (df.age_years >= 15) & df.li_urban
+        ).sum()
+        n_agege15_rural = (df.is_alive & (df.age_years >= 15) & ~df.li_urban).sum()
+        n_agege15_wealth1 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 1)).sum()
+        n_agege15_wealth5 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 5)).sum()
+
+        n_bmi_1 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 1)).sum()
+        prop_bmi_1 = n_bmi_1 / n_agege15
+        n_bmi_2 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 2)).sum()
+        prop_bmi_2 = n_bmi_2 / n_agege15
+        n_bmi_3 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 3)).sum()
+        prop_bmi_3 = n_bmi_3 / n_agege15
+        n_bmi_4 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 4)).sum()
+        prop_bmi_4 = n_bmi_4 / n_agege15
+        n_bmi_5 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 5)).sum()
+        prop_bmi_5 = n_bmi_5 / n_agege15
+
+        n_bmi_45_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.sex == 'F')).sum()
+        prop_bmi_45_f = n_bmi_45_f / n_agege15_f
+        n_bmi_45_m = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.sex == 'M')).sum()
+        prop_bmi_45_m = n_bmi_45_m / n_agege15_m
+        n_bmi_45_urban = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & df.li_urban).sum()
+        n_bmi_45_rural = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & ~df.li_urban).sum()
+        prop_bmi_45_urban = n_bmi_45_urban / n_agege15_urban
+        prop_bmi_45_rural = n_bmi_45_rural / n_agege15_rural
+        n_bmi_45_wealth1 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.li_wealth == 1)).sum()
+        prop_bmi_45_wealth1 = n_bmi_45_wealth1 / n_agege15_wealth1
+        n_bmi_45_wealth5 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.li_wealth == 5)).sum()
+        prop_bmi_45_wealth5 = n_bmi_45_wealth5 / n_agege15_wealth5
+
+        n_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
+            df.is_alive
+            & (df.sex == 'M')
+            & ~df.li_high_sugar
+            & df.age_years.between(15, 24)
+            & ~df.li_tob
+            & (df.li_wealth == 1)
+        ).sum()
+
+        n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
+            df.is_alive
+            & (df.sex == 'M')
+            & ~df.li_high_sugar
+            & df.age_years.between(15, 24)
+            & ~df.li_tob
+            & (df.li_wealth == 1)
+            & (df.li_bmi == 5)
+        ).sum()
+
+        prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
+            n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 / n_urban_m_not_high_sugar_age1529_not_tob_wealth1
+        )
+
+        if prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 > 0:
+            bmi_proportions = {
+                'prop_bmi_1': prop_bmi_1,
+                'prop_bmi_2': prop_bmi_2,
+                'prop_bmi_3': prop_bmi_3,
+                'prop_bmi_4': prop_bmi_4,
+                'prop_bmi_5': prop_bmi_5,
+                'prop_bmi_45_f': prop_bmi_45_f,
+                # prop_bmi_45_m is a rare event and is non-zero with 10,000 population sizes
+                'prop_bmi_45_m': prop_bmi_45_m,
+                'prop_bmi_45_urban': prop_bmi_45_urban,
+                'prop_bmi_45_rural': prop_bmi_45_rural,
+                'prop_bmi_45_wealth1': prop_bmi_45_wealth1,
+                'prop_bmi_45_wealth5': prop_bmi_45_wealth5,
+                'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
+                prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1
+            }
+        else:
+            bmi_proportions = {
+                'prop_bmi_1': prop_bmi_1,
+                'prop_bmi_2': prop_bmi_2,
+                'prop_bmi_3': prop_bmi_3,
+                'prop_bmi_4': prop_bmi_4,
+                'prop_bmi_5': prop_bmi_5,
+                'prop_bmi_45_f': prop_bmi_45_f,
+                # prop_bmi_45_m is a rare event and is non-zero with 10,000 population sizes
+                'prop_bmi_45_m': prop_bmi_45_m,
+                'prop_bmi_45_urban': prop_bmi_45_urban,
+                'prop_bmi_45_rural': prop_bmi_45_rural,
+                'prop_bmi_45_wealth1': prop_bmi_45_wealth1,
+                'prop_bmi_45_wealth5': prop_bmi_45_wealth5,
+                'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
+                    0
+            }
+
+        # Screen for null values before placing in the logger
+        for k, v in bmi_proportions.items():
+            if np.isnan(v):
+                bmi_proportions[k] = 0.0
+
+        return bmi_proportions
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
@@ -718,7 +901,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         note: if change this offset from 3 months need to consider code conditioning on age.years_exact
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(months=3))
+        self.repeat_months = 3
+        super().__init__(module, frequency=DateOffset(months=self.repeat_months))
         assert isinstance(module, Lifestyle)
 
     def apply(self, population):
@@ -893,7 +1077,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # probability of improved sanitation upon moving to urban from rural
         unimproved_sanitation_newly_urban_idx = df.index[
-            df.li_unimproved_sanitation & df.is_alive & df.li_date_trans_to_urban == self.sim.date
+            df.li_unimproved_sanitation & df.is_alive & (df.li_date_trans_to_urban == self.sim.date)
             ]
 
         random_draw = rng.random_sample(len(unimproved_sanitation_newly_urban_idx))
@@ -934,7 +1118,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # probability of no clean drinking water upon moving to urban from rural
         no_clean_drinking_water_newly_urban_idx = df.index[
-            df.li_no_clean_drinking_water & df.is_alive & df.li_date_trans_to_urban == self.sim.date
+            df.li_no_clean_drinking_water & df.is_alive & (df.li_date_trans_to_urban == self.sim.date)
             ]
 
         random_draw = rng.random_sample(len(no_clean_drinking_water_newly_urban_idx))
@@ -962,7 +1146,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # probability of moving to wood burn stove upon moving to urban from rural
         wood_burn_stove_newly_urban_idx = df.index[
-            df.li_wood_burn_stove & df.is_alive & df.li_date_trans_to_urban == self.sim.date
+            df.li_wood_burn_stove & df.is_alive & (df.li_date_trans_to_urban == self.sim.date)
             ]
 
         random_draw = rng.random_sample(len(wood_burn_stove_newly_urban_idx))
@@ -1052,6 +1236,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         all_idx_campaign_weight_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
         df.loc[all_idx_campaign_weight_reduction, 'li_exposed_to_campaign_weight_reduction'] = True
 
+        # --- FSW ---
+        self.module.determine_who_will_be_sexworker(months_since_last_poll=self.repeat_months)
+
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
@@ -1070,111 +1257,48 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        n_agege15 = (df.is_alive & (df.age_years >= 15)).sum()
-        n_agege15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
-        n_agege15_m = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
-        n_agege15_urban = (
-            df.is_alive & (df.age_years >= 15) & df.li_urban
-        ).sum()
-        n_agege15_rural = (df.is_alive & (df.age_years >= 15) & ~df.li_urban).sum()
-        n_agege15_wealth1 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 1)).sum()
-        n_agege15_wealth5 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 5)).sum()
-
-        n_bmi_1 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 1)).sum()
-        prop_bmi_1 = n_bmi_1 / n_agege15
-        n_bmi_2 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 2)).sum()
-        prop_bmi_2 = n_bmi_2 / n_agege15
-        n_bmi_3 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 3)).sum()
-        prop_bmi_3 = n_bmi_3 / n_agege15
-        n_bmi_4 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 4)).sum()
-        prop_bmi_4 = n_bmi_4 / n_agege15
-        n_bmi_5 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 5)).sum()
-        prop_bmi_5 = n_bmi_5 / n_agege15
-
-        n_bmi_45_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.sex == 'F')).sum()
-        prop_bmi_45_f = n_bmi_45_f / n_agege15_f
-        n_bmi_45_m = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.sex == 'M')).sum()
-        prop_bmi_45_m = n_bmi_45_m / n_agege15_m
-        n_bmi_45_urban = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & df.li_urban).sum()
-        n_bmi_45_rural = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & ~df.li_urban).sum()
-        prop_bmi_45_urban = n_bmi_45_urban / n_agege15_urban
-        prop_bmi_45_rural = n_bmi_45_rural / n_agege15_rural
-        n_bmi_45_wealth1 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.li_wealth == 1)).sum()
-        prop_bmi_45_wealth1 = n_bmi_45_wealth1 / n_agege15_wealth1
-        n_bmi_45_wealth5 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.li_wealth == 5)).sum()
-        prop_bmi_45_wealth5 = n_bmi_45_wealth5 / n_agege15_wealth5
-
-        n_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
-            df.is_alive
-            & (df.sex == 'M')
-            & ~df.li_high_sugar
-            & df.age_years.between(15, 24)
-            & ~df.li_tob
-            & (df.li_wealth == 1)
-        ).sum()
-
-        n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
-            df.is_alive
-            & (df.sex == 'M')
-            & ~df.li_high_sugar
-            & df.age_years.between(15, 24)
-            & ~df.li_tob
-            & (df.li_wealth == 1)
-            & (df.li_bmi == 5)
-        ).sum()
-
-        prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
-            n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 / n_urban_m_not_high_sugar_age1529_not_tob_wealth1
-        )
-
-        if prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 > 0:
-            bmi_proportions = {
-                'prop_bmi_1': prop_bmi_1,
-                'prop_bmi_2': prop_bmi_2,
-                'prop_bmi_3': prop_bmi_3,
-                'prop_bmi_4': prop_bmi_4,
-                'prop_bmi_5': prop_bmi_5,
-                'prop_bmi_45_f': prop_bmi_45_f,
-                # prop_bmi_45_m is a rare event and is non-zero with 10,000 population sizes
-                'prop_bmi_45_m': prop_bmi_45_m,
-                'prop_bmi_45_urban': prop_bmi_45_urban,
-                'prop_bmi_45_rural': prop_bmi_45_rural,
-                'prop_bmi_45_wealth1': prop_bmi_45_wealth1,
-                'prop_bmi_45_wealth5': prop_bmi_45_wealth5,
-                'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
-                prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1
-            }
-        else:
-            bmi_proportions = {
-                'prop_bmi_1': prop_bmi_1,
-                'prop_bmi_2': prop_bmi_2,
-                'prop_bmi_3': prop_bmi_3,
-                'prop_bmi_4': prop_bmi_4,
-                'prop_bmi_5': prop_bmi_5,
-                'prop_bmi_45_f': prop_bmi_45_f,
-                # prop_bmi_45_m is a rare event and is non-zero with 10,000 population sizes
-                'prop_bmi_45_m': prop_bmi_45_m,
-                'prop_bmi_45_urban': prop_bmi_45_urban,
-                'prop_bmi_45_rural': prop_bmi_45_rural,
-                'prop_bmi_45_wealth1': prop_bmi_45_wealth1,
-                'prop_bmi_45_wealth5': prop_bmi_45_wealth5,
-                'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
-                    0
-            }
-
-        # Screen for null values before placing in the logger
-        for k, v in bmi_proportions.items():
-            if np.isnan(v):
-                bmi_proportions[k] = 0.0
-
-        logger.info(key='bmi_proportions', data=bmi_proportions)
-
+        # TODO *** THIS HAS TROUBLE BE PARESED ON LONG RUNS BY PARSE_OUTPUT: CHANGING KEYS DUE TO GROUPBY? \
+        #  NEED TO USE UNSTACK?!?!?
         """
+        def flatten_tuples_in_keys(d1):
+            d2 = dict()
+            for k in d1.keys():
+                d2['_'.join([str(y) for y in k])] = d1[k]
+            return d2
+
         logger.info(key='li_urban', data=df[df.is_alive].groupby('li_urban').size().to_dict())
         logger.info(key='li_wealth', data=df[df.is_alive].groupby('li_wealth').size().to_dict())
-        logger.info(key='li_overwt', data=df[df.is_alive].groupby(['sex', 'li_overwt']).size().to_dict())
-        logger.info(key='li_low_ex', data=df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
-        logger.info(key='li_tob', data=df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
+        logger.info(key='li_tob', data=flatten_tuples_in_keys(
+            df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
+                    )
         logger.info(key='li_ed_lev_by_age',
-                    data=df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
+                    data=flatten_tuples_in_keys(
+                        df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
+                    )
+        logger.info(
+            key='bmi_proportions',
+            data=self.module.compute_bmi_proportions_of_interest()
+        )
+        logger.info(key='li_low_ex', data=flatten_tuples_in_keys(
+            df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
+                    )
         """
+
+        logger.info(
+            key='prop_adult_men_circumcised',
+            data=[df.loc[df.is_alive & (df.sex == 'M') & (df.age_years >= 15)].li_is_circ.mean()]
+        )
+        logger.info(
+            key='proportion_1549_women_sexworker',
+            data=[(
+                     len(df.loc[df.is_alive &
+                                df.li_is_sexworker &
+                                (df.sex == "F") &
+                                df.age_years.between(15, 49)]
+                         ) /
+                     len(df.loc[df.is_alive &
+                                (df.sex == "F") &
+                                df.age_years.between(15, 49)]
+                         )
+            )]
+        )

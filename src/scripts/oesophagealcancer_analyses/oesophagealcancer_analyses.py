@@ -41,7 +41,7 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 10000
+popsize = 5000
 
 
 def run_sim(service_availability):
@@ -109,9 +109,9 @@ def get_summary_stats(logfile):
     deaths = output['tlo.methods.demography']['death']
     deaths['age_group'] = deaths['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
 
-    oes_cancer_deaths = pd.Series(deaths.loc[deaths.cause == 'OesophagealCancer'].groupby(by=['age_group']).size())
-    oes_cancer_deaths.index = oes_cancer_deaths.index.astype(make_age_grp_types())
-    oes_cancer_deaths = oes_cancer_deaths.sort_index()
+    x = deaths.loc[deaths.cause == 'OesophagealCancer'].copy()
+    x['age_group'] = x['age_group'].astype(make_age_grp_types())
+    oes_cancer_deaths = x.groupby(by=['age_group']).size()
 
     # 5) Rates of diagnosis per year:
     counts_by_stage['year'] = counts_by_stage.index.year
@@ -196,11 +196,17 @@ plt.show()
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
 deaths = pd.concat({
-    'No_HealthSystem': sum(results_no_healthsystem['oes_cancer_deaths'][0]),
-    'With_HealthSystem': sum(results_with_healthsystem['oes_cancer_deaths'][0])
+    'No_HealthSystem': sum(results_no_healthsystem['oes_cancer_deaths']),
+    'With_HealthSystem': sum(results_with_healthsystem['oes_cancer_deaths'])
 }, axis=1, sort=True)
 
-deaths.plot.bar()
+deaths = {
+    'No_HealthSystem': sum(results_no_healthsystem['oes_cancer_deaths']),
+    'With_HealthSystem': sum(results_with_healthsystem['oes_cancer_deaths'])
+}
+
+plt.bar(range(len(deaths)), list(deaths.values()), align='center')
+plt.xticks(range(len(deaths)), list(deaths.keys()))
 plt.title('Deaths due to Oesophageal Cancer')
 plt.xlabel('Scenario')
 plt.ylabel('Total Deaths During Simulation')

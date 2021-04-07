@@ -19,13 +19,24 @@ def getLogger(name='tlo'):
     return _LOGGERS[name]
 
 
+class _MockSim:
+    # used as place holder for any logging that happens before simulation is setup!
+    class MockDate:
+        @staticmethod
+        def isoformat():
+            return "0000-00-00T00:00:00"
+    date = MockDate()
+
+
 class Logger:
     """A Logger for TLO log messages, with simplified usage. Outputs structured log messages in JSON
     format and is connected to the Simulation instance."""
     HASH_LEN = 10
 
     def __init__(self, name: str, level=_logging.NOTSET):
-        assert name.startswith('tlo'), 'Only logging of TLO modules is allowed'
+
+        assert name.startswith('tlo'), f'Only logging of tlo modules is allowed; name is {name}'
+
         # we build our logger on top of the standard python logging
         self._std_logger = _logging.getLogger(name=name)
         self._std_logger.setLevel(level)
@@ -39,7 +50,7 @@ class Logger:
         self.keys = dict()
 
         # populated by init_logging(simulation) for the top-level "tlo" logger
-        self.simulation = None
+        self.simulation = _MockSim()
 
         # a logger should only be using old-style or new-style logging, not a mixture
         self.logged_stdlib = False
@@ -76,7 +87,7 @@ class Logger:
         # clear all logger settings
         self.handlers.clear()
         self.keys.clear()
-        self.simulation = None
+        self.simulation = _MockSim()
         # boolean attributes used for now, can be removed after transition to structured logging
         self.logged_stdlib = False
         self.logged_structured = False

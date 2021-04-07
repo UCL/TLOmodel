@@ -4,9 +4,9 @@ Overview
 
 .. start-badges
 
-.. image:: https://travis-ci.com/UCL/TLOmodel.svg?token=UKPSYZnjNU6sajG8DWb9&branch=master
-    :alt: Travis-CI Build Status
-    :target: https://travis-ci.com/UCL/TLOmodel
+.. image:: https://github.com/UCL/TLOmodel/workflows/CI/badge.svg
+    :alt: GitHub Actions Build Status
+    :target: https://github.com/UCL/TLOmodel/actions?query=workflow%3ACI
 
 .. end-badges
 
@@ -34,7 +34,7 @@ you prefer, you can carry out the setup using the command line:
 
 ::
 
-    conda create -n tlo python=3.6 pip=9.0.1
+    conda create -n tlo python=3.8
     conda activate tlo
     pip install -r requirements/dev.txt
     pip install -e .
@@ -69,15 +69,11 @@ Please note that we have a `Wiki <https://github.com/UCL/TLOmodel/wiki>`_ which 
 Development
 ===========
 
-To use the software interactively in a Jupyter notebook, run::
-
-    jupyter notebook notebooks &
-
-To run just the Python code tests quickly, use::
+To run the Python code tests only::
 
     pytest
 
-To run all the tests run::
+To run all the tests::
 
     tox
 

@@ -19,6 +19,7 @@ from tlo.methods import (
     labour,
     malaria,
     newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -68,11 +69,12 @@ def test_sims(tmpdir):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         contraception.Contraception(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing, itn=None)
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
     )
 
     # Run the simulation and flush the logger
@@ -87,9 +89,7 @@ def test_sims(tmpdir):
 
     # check malaria deaths only being scheduled due to severe malaria (not clinical or asym)
     df = sim.population.props
-    assert not (
-        df.ma_date_death & ((df.ma_inf_type == "clinical") | (df.ma_inf_type == "none"))
-    ).any()
+    assert not (~df.ma_date_death.isna() & ~(df.ma_inf_type == "severe")).any()
 
     # check cases /  treatment are occurring
     assert not (df.ma_clinical_counter == 0).all()
@@ -140,11 +140,12 @@ def test_remove_malaria_test(tmpdir):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         contraception.Contraception(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing, itn=None)
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
     )
 
     # Run the simulation and flush the logger
@@ -205,11 +206,12 @@ def test_schedule_rdt_for_all(tmpdir):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         contraception.Contraception(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing, itn=None)
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
     )
 
     # Run the simulation and flush the logger
@@ -255,13 +257,14 @@ def test_dx_algorithm_for_malaria_outcomes():
                          # every symptom leads to health-care seeking
                      ),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     labour.Labour(resourcefilepath=resourcefilepath),
-                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      dx_algorithm_adult.DxAlgorithmAdult(),
+                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                     labour.Labour(resourcefilepath=resourcefilepath),
                      newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                      antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                     malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing, itn=None)
+                     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                     malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
                      )
 
         sim.make_initial_population(n=popsize)
@@ -385,12 +388,13 @@ def test_dx_algorithm_for_non_malaria_outcomes():
                          # every symptom leads to health-care seeking
                      ),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     labour.Labour(resourcefilepath=resourcefilepath),
-                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      dx_algorithm_adult.DxAlgorithmAdult(),
+                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                     labour.Labour(resourcefilepath=resourcefilepath),
                      newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                      antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                      )
 

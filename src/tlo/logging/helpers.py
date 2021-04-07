@@ -23,8 +23,7 @@ def set_output_file(log_path: Path) -> _logging.FileHandler:
 def set_logging_levels(custom_levels: Dict[str, int], modules: Iterable[str]):
     """Set custom logging levels for disease modules
 
-    :param custom_levels: Dictionary of modules and their level, '*' can be used
-    as a key for all modules
+    :param custom_levels: Dictionary of modules and their level, '*' can be used as a key for all modules
     :param modules: string values of all registered modules
     """
     for key, value in custom_levels.items():

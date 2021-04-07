@@ -5,6 +5,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    antenatal_care,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -12,7 +13,9 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
     oesophagealcancer,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -44,8 +47,11 @@ def make_simulation_healthsystemdisabled():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
     sim.seed_rngs(0)
@@ -66,8 +72,11 @@ def make_simulation_nohsi():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
     sim.seed_rngs(0)
@@ -266,7 +275,7 @@ def test_check_progression_through_stages_is_happeneing():
     # check that there are now some people in each of the later stages:
     df = sim.population.props
     assert len(df.loc[df.is_alive & (df.oc_status != 'none')]) > 0
-    assert not pd.isnull(df.oc_status).any()
+    assert not (~df.date_of_birth.isna() & df.oc_status.isna()).any()
     assert (df.loc[df.is_alive].oc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of oesophagal cancer
@@ -315,7 +324,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     # check that there are now some people in each of the later stages:
     df = sim.population.props
     assert len(df.loc[df.is_alive & (df.oc_status != 'none')]) > 0
-    assert not pd.isnull(df.oc_status).any()
+    assert not (~df.date_of_birth.isna() & df.oc_status.isna()).any()
     assert (df.loc[df.is_alive].oc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of oesophagal cancer
@@ -323,10 +332,10 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     assert yll['YLL_OesophagealCancer_OesophagealCancer'].sum() > 0
 
     # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
-    assert not (df.oc_date_diagnosis > start_date).any()
-    assert not (df.oc_date_treatment > start_date).any()
-    assert not (df.oc_stage_at_which_treatment_applied != 'none').any()
-    assert not (df.oc_date_palliative_care > start_date).any()
+    assert not (~df.date_of_birth.isna() & (df.oc_date_diagnosis > start_date)).any()
+    assert not (~df.date_of_birth.isna() & (df.oc_date_treatment > start_date)).any()
+    assert not (~df.date_of_birth.isna() & (df.oc_stage_at_which_treatment_applied != 'none')).any()
+    assert not (~df.date_of_birth.isna() & (df.oc_date_palliative_care > start_date)).any()
 
 
 def test_check_progression_through_stages_is_blocked_by_treatment():

@@ -174,25 +174,25 @@ class Demography(Module):
         :param child_id: the new child
         """
         df = self.sim.population.props
+        rng = self.rng
 
-        df.at[child_id, 'is_alive'] = True
-        df.at[child_id, 'date_of_birth'] = self.sim.date
+        fraction_of_births_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
 
-        df.at[child_id, 'date_of_death'] = pd.NaT
-        df.at[child_id, 'cause_of_death'] = ''
+        child = {
+            'is_alive': True,
+            'date_of_birth': self.sim.date,
+            'date_of_death': pd.NaT,
+            'cause_of_death': '',
+            'sex': 'M' if rng.random_sample() < fraction_of_births_male else 'F',
+            'mother_id': mother_id,
+            'age_exact_years': 0.0,
+            'age_years': 0,
+            'age_range': self.AGE_RANGE_LOOKUP[0],
+            'region_of_residence': df.at[mother_id, 'region_of_residence'],
+            'district_of_residence': df.at[mother_id, 'district_of_residence']
+        }
 
-        p_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
-        df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[p_male, 1 - p_male])
-
-        df.at[child_id, 'mother_id'] = mother_id
-
-        df.at[child_id, 'age_exact_years'] = 0.0
-        df.at[child_id, 'age_years'] = 0
-        df.at[child_id, 'age_range'] = self.AGE_RANGE_LOOKUP[0]
-
-        # Child's residence is inherited from the mother
-        df.at[child_id, 'region_of_residence'] = df.at[mother_id, 'region_of_residence']
-        df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
+        df.loc[child_id, child.keys()] = child.values()
 
         # Log the birth:
         logger.info(
@@ -217,7 +217,8 @@ class Demography(Module):
         # renaming columns for clarity
         df_py = df_py.rename({'age_exact_years': 'age_exact_end', 'age_years': 'age_years_end'}, axis=1)
 
-        df_py['age_exact_start'] = (one_year_ago - df_py.date_of_birth) / pd.Timedelta(1, 'Y')  # exact age at the start
+        # exact age at the start
+        df_py['age_exact_start'] = (one_year_ago - df_py.date_of_birth) / np.timedelta64(1, 'Y')
         df_py['age_years_start'] = np.floor(df_py.age_exact_start).astype(np.int64)  # int age at start of the period
         df_py['years_in_age_start'] = df_py.age_years_end - df_py.age_exact_start  # time spent in age at start
         df_py['years_in_age_end'] = df_py.age_exact_end - df_py.age_years_end  # time spent in age at end
@@ -354,6 +355,10 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
             df.at[individual_id, 'is_alive'] = False
             df.at[individual_id, 'date_of_death'] = self.sim.date
             df.at[individual_id, 'cause_of_death'] = self.cause
+
+            # release any beds-days that would be used by this person:
+            if 'HealthSystem' in self.sim.modules:
+                self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
 
         logger.debug(key='official_death',
                      data=(f"*******************************************The person {individual_id} "

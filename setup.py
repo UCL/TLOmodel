@@ -22,8 +22,9 @@ setup(
     description='Thanzi la Onse Epidemiology Model',
     long_description=re.compile(
         '^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
-    author='Thanzi la Onse team',
-    author_email='j.p.cooper@ucl.ac.uk',
+    long_description_content_type="text/x-rst",
+    author='The Thanzi la Onse Team',
+    author_email='a.tamuri@ucl.ac.uk',
     url='https://github.com/UCL/TLOmodel',
     packages=find_packages('src'),
     package_dir={'': 'src'},
@@ -36,10 +37,14 @@ setup(
         'License :: Other/Proprietary License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.8',
     ],
     keywords=[
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     python_requires='>=3',
+    entry_points='''
+        [console_scripts]
+        tlo=tlo.cli:cli
+    '''
 )

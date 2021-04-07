@@ -3,6 +3,7 @@
 import datetime
 import heapq
 import itertools
+import time
 from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, Union
@@ -74,16 +75,16 @@ class Simulation:
 
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                           custom_levels: Dict[str, int] = None):
-        """
-        Configure logging, can write logging to a logfile in addition the default of stdout.
+        """Configure logging, can write logging to a logfile in addition the default of stdout.
+
         Minimum custom levels for each loggers can be specified for filtering out messages.
 
         :param filename: Prefix for logfile name, final logfile will have a datetime appended
         :param directory: Path to output directory, default value is the outputs folder.
         :param custom_levels: dictionary to set logging levels, '*' can be used as a key for all registered modules.
                               This is likely to be used to disable all disease modules, and then enable one of interest
-                              e.g. {'*': logging.CRITICAL
-                                    'tlo.methods.hiv': logging.INFO}
+                              e.g. ``{'*': logging.CRITICAL 'tlo.methods.hiv': logging.INFO}``
+
         :return: Path of the log file if a filename has been given.
         """
         # clear logging environment
@@ -166,6 +167,7 @@ class Simulation:
         :param n: the number of individuals to create; must be given as
             a keyword parameter for clarity
         """
+        start = time.time()
 
         # Collect information from all modules, that is required the population dataframe
         for module in self.modules.values():
@@ -174,7 +176,12 @@ class Simulation:
         # Make the initial population
         self.population = Population(self, n)
         for module in self.modules.values():
+            start1 = time.time()
             module.initialise_population(self.population)
+            logger.debug(key='debug', data=f'{module.name}.initialise_population() {time.time() - start1} s')
+
+        end = time.time()
+        logger.info(key='info', data=f'make_initial_population() {end - start} s')
 
     def simulate(self, *, end_date):
         """Simulation until the given end date
@@ -183,6 +190,7 @@ class Simulation:
             date will be allowed to occur.
             Must be given as a keyword parameter for clarity.
         """
+        start = time.time()
         self.end_date = end_date  # store the end_date so that others can reference it
 
         for module in self.modules.values():
@@ -205,6 +213,8 @@ class Simulation:
         if self.output_file:
             self.output_file.flush()
             self.output_file.close()
+
+        logger.info(key='info', data=f'simulate() {time.time() - start} s')
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.

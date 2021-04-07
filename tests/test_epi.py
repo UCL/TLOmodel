@@ -7,6 +7,7 @@ import pytest
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    antenatal_care,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -15,6 +16,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -63,8 +66,11 @@ def test_no_health_system(tmpdir):
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         contraception.Contraception(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         epi.Epi(resourcefilepath=resourcefilepath),
     )
@@ -113,8 +119,11 @@ def test_epi_scheduling_hsi_events(tmpdir):
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         contraception.Contraception(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         epi.Epi(resourcefilepath=resourcefilepath),
     )
