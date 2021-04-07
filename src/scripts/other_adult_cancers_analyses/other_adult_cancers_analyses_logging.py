@@ -3,7 +3,8 @@ from pathlib import Path
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import (  # bladder_cancer,
+from tlo.methods import (antenatal_care,
+    # bladder_cancer,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -11,11 +12,10 @@ from tlo.methods import (  # bladder_cancer,
     healthseekingbehaviour,
     healthsystem,
     labour,
-    other_adult_cancers,
-    pregnancy_supervisor,
-    antenatal_care,
-    postnatal_supervisor,
     newborn_outcomes,
+    other_adult_cancers,
+    postnatal_supervisor,
+    pregnancy_supervisor,
     symptommanager,
 )
 
