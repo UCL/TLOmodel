@@ -5,6 +5,7 @@ from pandas import DateOffset
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    antenatal_care,
     chronicsyndrome,
     contraception,
     demography,
@@ -14,6 +15,8 @@ from tlo.methods import (
     healthsystem,
     labour,
     mockitis,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -100,9 +103,12 @@ def test_no_symptoms_if_no_diseases():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath)
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -127,9 +133,12 @@ def test_adding_quering_and_removing_symptoms():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -185,9 +194,12 @@ def test_spurious_symptoms():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath)
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -215,9 +227,12 @@ def test_baby_born_has_no_symptoms():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath)
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -226,7 +241,24 @@ def test_baby_born_has_no_symptoms():
 
     # do a birth
     df = sim.population.props
+
+    # TODO: JC 09/03/2021- this is a quick fix so that the newborn outcomes on_birth function  runs. I imagine that
+    #  this test will use the simplified births module in the future? if so this mni logic can be removed
+
     mother_id = df.loc[df.sex == 'F'].index[0]
+
+    # Populate the mni dictionary with variables that are assessed in the on_birth function of the newborn outcomes
+    # module
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {
+        'twin_count': 0,
+        'single_twin_still_birth': False,
+        'labour_state': 'term_labour',
+        'stillbirth_in_labour': False,
+        'abx_for_prom_given': False,
+        'corticosteroids_given': False,
+        'delivery_setting': 'health_centre',
+        'clean_birth_practices': False}
+
     person_id = sim.do_birth(mother_id)
 
     # check that the new person does not have symptoms:

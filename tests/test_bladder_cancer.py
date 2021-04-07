@@ -5,6 +5,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    antenatal_care,
     bladder_cancer,
     contraception,
     demography,
@@ -13,6 +14,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -44,8 +47,11 @@ def make_simulation_healthsystemdisabled():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
                  )
     return sim
@@ -65,8 +71,11 @@ def make_simulation_nohsi():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
                  )
     return sim

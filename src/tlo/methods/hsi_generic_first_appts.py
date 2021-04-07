@@ -4,6 +4,10 @@ the health system following the onset of acute generic symptoms.
 """
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
+from tlo.methods.antenatal_care import (
+    HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
+    HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
+)
 from tlo.methods.bladder_cancer import (
     HSI_BladderCancer_Investigation_Following_Blood_Urine,
     HSI_BladderCancer_Investigation_Following_pelvic_pain,
@@ -12,8 +16,8 @@ from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAn
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import (
-    HSI_Labour_PresentsForSkilledBirthAttendanceInLabour,
-    HSI_Labour_ReceivesCareForPostpartumPeriod,
+    HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour,
+    HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour,
 )
 from tlo.methods.malaria import (
     HSI_Malaria_complicated_treatment_adult,
@@ -42,9 +46,12 @@ logger.setLevel(logging.INFO)
 class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
+
     It is the generic appointment that describes the first interaction with the health system following the onset of
     acute generic symptoms.
+
     It occurs at Facility_Level = 1
+
     """
 
     def __init__(self, module, person_id):
@@ -267,9 +274,12 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
+
     It is the generic appointment that describes the first interaction with the health system following the onset of
     acute generic symptoms.
+
     It occurs at Facility_Level = 0
+
     """
 
     def __init__(self, module, person_id):
@@ -306,16 +316,20 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
+
     It is the generic appointment that describes the first interaction with the health system following the onset of
     acute generic symptoms.
+
     It occurs at Facility_Level = 1
+
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
         # Confirm that this appointment has been created by the HealthSeekingBehaviour module or Labour module
-        assert module.name in ['HealthSeekingBehaviour', 'Labour']
+        # TODO: pregnancy supervisor added as per discussions with TH, eventually will combine with HSB
+        assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor']
 
         # Work out if this is for a child or an adult
         is_child = self.sim.population.props.at[person_id, 'age_years'] < 5
@@ -338,27 +352,41 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         df = self.sim.population.props
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+        abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
         age = df.at[person_id, "age_years"]
 
         health_system = self.sim.modules["HealthSystem"]
 
+        if 'PregnancySupervisor' in self.sim.modules:
+            # -----  ECTOPIC PREGNANCY  -----
+            if df.at[person_id, 'ps_ectopic_pregnancy'] != 'none':
+                event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
+                    module=self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+                health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
+            # -----  COMPLICATIONS OF ABORTION  -----
+            if abortion_complications.has_any([person_id], 'sepsis', 'injury', 'haemorrhage', first=True):
+                event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
+                    module=self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+                health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
         if 'Labour' in self.sim.modules:
-            mni = self.sim.modules['Labour'].mother_and_newborn_info
+            mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
             labour_list = self.sim.modules['Labour'].women_in_labour
 
             # -----  COMPLICATION DURING BIRTH  -----
             if person_id in labour_list:
                 if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                    & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
-                    event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
+                        & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
+                    event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
                     health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
-                # -----  COMPLICATION AFTER BIRTH  -----
+            # -----  COMPLICATION AFTER BIRTH  -----
                 if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                    & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
-                    event = HSI_Labour_ReceivesCareForPostpartumPeriod(
+                        & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
+                    event = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
                     health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
@@ -420,7 +448,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                         topen=self.sim.date,
                     )
         # else:
-        # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
+            # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:

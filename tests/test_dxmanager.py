@@ -8,6 +8,7 @@ import pytest
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
+    antenatal_care,
     chronicsyndrome,
     contraception,
     demography,
@@ -18,6 +19,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     mockitis,
+    newborn_outcomes,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -57,6 +59,8 @@ def bundle():
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome())
@@ -147,20 +151,22 @@ def test_create_dx_test_and_register(bundle):
         my_tuple_of_tests=(my_test1, my_test2)
     )
 
-    # try to add the same test again under exactly the same name- should not throw error but not add another
+    # Try to register the same test again under exactly the same name: should not throw error but not add a duplicate
     dx_manager.register_dx_test(
         my_test1=my_test1,
     )
-
     dx_manager.print_info_about_all_dx_tests()
     assert 3 == len(dx_manager.dx_tests)
 
-    # Create duplicate of a test with a different name and same DxTest: should not fail and add a test
+    # Register the same test under a different name: should be accepted
+    # (tests of different names can be functionally identical).
     dx_manager.register_dx_test(my_test2_diff_name_should_not_be_added=my_test2)
     assert 4 == len(dx_manager.dx_tests)
 
-    # Create a duplicate of test: same name and different DxTest: should fail and not add a test
-    dx_manager.register_dx_test(my_test1=DxTest(property='is_alive'))
+    # Attempt to over-write a test: same name but different DxTest:
+    #  -> should not add a test and raise an ValueError
+    with pytest.raises(ValueError):
+        dx_manager.register_dx_test(my_test1=DxTest(property='is_alive'))
     assert 4 == len(dx_manager.dx_tests)
 
 
