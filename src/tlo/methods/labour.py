@@ -1397,6 +1397,12 @@ class Labour(Module):
         df = self.sim.population.props
         mother = df.loc[individual_id]
 
+        print('characteristics_checker_id', individual_id)
+        print('characteristics_checker_ga', mother.ps_gestational_age_in_weeks)
+        print('characteristics_checker_current_date', self.sim.date)
+        print('characteristics_checker_current_due_date', mother.la_due_date_current_pregnancy)
+        print('characteristics_checker_current_conception_date', mother.date_of_last_pregnancy)
+
         assert individual_id in self.women_in_labour
         assert mother.sex == 'F'
         assert mother.age_years > 14
@@ -2100,7 +2106,7 @@ class Labour(Module):
         :param hsi_event: HSI event in which the function has been called:
         """
         df = self.sim.population.props
-        person_id = hsi_event.target
+        person_id = int(hsi_event.target)
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         if 'hiv' in self.sim.modules.keys():

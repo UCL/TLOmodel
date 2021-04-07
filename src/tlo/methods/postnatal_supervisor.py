@@ -531,6 +531,7 @@ class PostnatalSupervisor(Module):
     def further_on_birth_postnatal_supervisor(self, mother_id, child_id):
         df = self.sim.population.props
         params = self.parameters
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
         # We store the ID number of the child this woman has most recently delivered as a property of the woman. This is
@@ -588,7 +589,8 @@ class PostnatalSupervisor(Module):
                     df.at[mother_id, 'pn_htn_disorders'] = df.at[mother_id, 'ps_htn_disorders']
 
                 else:
-                    store_dalys_in_mni(mother_id, 'hypertension_resolution')
+                    if not pd.isnull(mni[mother_id]['hypertension_onset']):
+                        store_dalys_in_mni(mother_id, 'hypertension_resolution')
                     df.at[mother_id, 'pn_htn_disorders'] = 'resolved'
 
             # Currently we assume women who received antihypertensive in the antenatal period will continue to use them
@@ -1090,7 +1092,7 @@ class PostnatalSupervisor(Module):
                                                                                            'pn_gest_htn_on_treatment']:
                     hypertension_diagnosed = True
 
-                if ~df.at[individual_id, 'pn_gest_htn_on_treatment']:
+                if not df.at[individual_id, 'pn_gest_htn_on_treatment']:
                     self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'hypertension_onset')
 
         if hypertension_diagnosed or proteinuria_diagnosed:

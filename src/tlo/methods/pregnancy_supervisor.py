@@ -633,11 +633,6 @@ class PregnancySupervisor(Module):
         logger.debug(key='message', data='This is PregnancySupervisor reporting my health values')
         monthly_daly = dict()
 
-        # TODO: AT - I hope this is close to what we discussed r.e. capturing DALYs using onset/resolution dates in the
-        #  mni dict. The store_dalys_in_mni function (below) is called whenever I want to 'onset' a maternal
-        #  complication in any of the modules. Hopefully this set up means if we need to change to a dataframe that
-        #  would be ok. Please let me know if you think we should make any changes.
-
         # First we define a function that calculates disability associated with 'acute' complications of pregnancy
         def acute_daly_calculation(person, complication):
             # We cycle through each complication for all women in the mni, if the condition has never ocurred then we
@@ -703,8 +698,14 @@ class PregnancySupervisor(Module):
                             days_with_comp = avg_days_in_month - days_without_complication.days
 
                             monthly_daly[person] += daily_weight * days_with_comp
-                            assert monthly_daly[person] >= 0
 
+                            print('daly_calc_id', person)
+                            print(monthly_daly[person])
+                            print('daly_calc_comp', complication)
+                            print('daly_calc_onset', mni[person][f'{complication}_onset'])
+                            print('daly_calc_resolution', mni[person][f'{complication}_resolution'])
+
+                            assert monthly_daly[person] >= 0
                             mni[person][f'{complication}_resolution'] = pd.NaT
 
                     else:
