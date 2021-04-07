@@ -1,10 +1,9 @@
+"""Test file for the Alri module (alri.py)"""
 
 
-# %% Import Statements and initial declarations
-import datetime
 import os
 from pathlib import Path
-from tlo import logging
+
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -63,7 +62,7 @@ def test_basic_run():
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-        ALRI.ALRI(resourcefilepath=resourcefilepath)
+        ALRI.Alri(resourcefilepath=resourcefilepath)
     )
 
     sim.make_initial_population(n=pop_size)

@@ -1,5 +1,5 @@
 """
-This script is used in development only. It produces a basic run of the ALRI module
+This script is used in development only. It produces a basic run of the Alri module
 """
 
 # %% Import Statements and initial declarations
@@ -43,7 +43,7 @@ log_config = {
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.INFO,  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.ALRI": logging.INFO,
+        "tlo.methods.Alri": logging.INFO,
     }
 }
 
@@ -65,7 +65,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
              postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-             ALRI.ALRI(resourcefilepath=resourcefilepath)
+             ALRI.Alri(resourcefilepath=resourcefilepath)
              )
 
 
@@ -75,7 +75,7 @@ sim.simulate(end_date=end_date)
 
 # # parse the simulation logfile to get the output dataframes
 # output = parse_log_file(sim.log_filepath)
-# one_person = output['tlo.methods.ALRI']['person_one']
+# one_person = output['tlo.methods.Alri']['person_one']
 #
 #
 # # save into an cvs file

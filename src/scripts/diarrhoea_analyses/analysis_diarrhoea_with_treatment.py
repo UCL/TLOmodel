@@ -296,7 +296,7 @@ all_deaths['age_grp'] = all_deaths['age'].map(
 )
 deaths = all_deaths.groupby(by=['year', 'age_grp', 'cause']).size().reset_index()
 deaths['cause_simplified'] = [x[0] for x in deaths['cause'].str.split('_')]
-deaths = deaths.drop(deaths.loc[deaths['cause_simplified'] != 'ALRI'].index)
+deaths = deaths.drop(deaths.loc[deaths['cause_simplified'] != 'Alri'].index)
 deaths = deaths.groupby(by=['age_grp', 'year']).size().reset_index()
 deaths.rename(columns={0: 'count'}, inplace=True)
 deaths.drop(deaths.index[deaths['year'] > 2010.0], inplace=True)

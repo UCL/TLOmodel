@@ -71,7 +71,7 @@ for label, service_avail in scenarios.items():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 ALRI.ALRI(resourcefilepath=resourcefilepath),
+                 ALRI.Alri(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
 
@@ -88,7 +88,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     output = parse_log_file(logfile)
 
     # Calculate the "incidence rate" from the output counts of incidence
-    counts = output['tlo.methods.ALRI']['incidence_count_by_pathogen']
+    counts = output['tlo.methods.Alri']['incidence_count_by_pathogen']
     counts['year'] = pd.to_datetime(counts['date']).dt.year
     counts.drop(columns='date', inplace=True)
     counts.set_index(
@@ -125,7 +125,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     # calculate death rate
     deaths_df = output['tlo.methods.demography']['death']
     deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
-    deaths = deaths_df.loc[deaths_df['cause'].str.startswith('ALRI')].groupby('year').size()
+    deaths = deaths_df.loc[deaths_df['cause'].str.startswith('Alri')].groupby('year').size()
 
     return inc_mean, deaths
 
@@ -157,6 +157,6 @@ data = {}
 for label in deaths.keys():
     data.update({label: deaths[label]})
 pd.concat(data, axis=1).plot.bar()
-plt.title('Number of Deaths Due to ALRI')
+plt.title('Number of Deaths Due to Alri')
 plt.savefig(outputpath / ("ALRI_deaths_by_scenario" + datestamp + ".pdf"), format='pdf')
 plt.show()

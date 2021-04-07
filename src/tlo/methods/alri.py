@@ -1,17 +1,17 @@
 """
 Childhood Acute Lower Respiratory Infection Module
 Documentation:
-04 - Methods Repository/ALRI module - Description2.docx
+04 - Methods Repository/Alri module - Description2.docx
 04 - Methods Repository/ResourceFile_ALRI2.xlsx
 
 Overview
 --------
-Individuals are exposed to the risk of onset of an acute lower respiratory infection (ALRI).
+Individuals are exposed to the risk of onset of an acute lower respiratory infection (Alri).
 The disease is manifested as viral pneumonia, bacterial pneumonia or bronchiolitis
 caused by one primary agent at a time, which can also have a co-infection or secondary bacterial infection.
 During an episode (prior to recovery - either naturally or cured with treatment),
 the symptom of cough or difficult breathing is present in addition to other possible symptoms.
-ALRI may cause associated complications, such as,
+Alri may cause associated complications, such as,
 local pulmonary complication: pleural effusuion, empyema, lung abscess, pneumothorax,
 and systemic complications: sepsis, meningitis, and respiratory failure, leading to multi-organ dysfunction and death.
 The individual may recover naturally or die.
@@ -47,7 +47,7 @@ logger.setLevel(logging.INFO)
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
-class ALRI(Module):
+class Alri(Module):
     # Declare the pathogens that this module will simulate:
     pathogens = {
         'RSV',
@@ -79,7 +79,7 @@ class ALRI(Module):
         Metadata.USES_HEALTHBURDEN  # The 'HealthBurden' module recognises modules with this label.
     }
 
-    # Declare the ALRI complications:
+    # Declare the Alri complications:
     complications = {'pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess',
                      'sepsis', 'meningitis', 'respiratory_failure'}
 
@@ -106,128 +106,128 @@ class ALRI(Module):
         # Incidence rate by pathogens  -----
         'base_inc_rate_ALRI_by_RSV':
             Parameter(Types.LIST,
-                      'baseline incidence rate of ALRI caused by RSV in age groups 0-11, 12-23, 24-59 months, '
+                      'baseline incidence rate of Alri caused by RSV in age groups 0-11, 12-23, 24-59 months, '
                       'per child per year'
                       ),
         'base_inc_rate_ALRI_by_Rhinovirus':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Rhinovirus in age groups 0-11, 12-23, 24-59 months, '
+                      'baseline incidence of Alri caused by Rhinovirus in age groups 0-11, 12-23, 24-59 months, '
                       'per child per year'
                       ),
         'base_inc_rate_ALRI_by_HMPV':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by HMPV in age groups 0-11, 12-23, 24-59 months, '
+                      'baseline incidence of Alri caused by HMPV in age groups 0-11, 12-23, 24-59 months, '
                       'per child per year'
                       ),
         'base_inc_rate_ALRI_by_Parainfluenza':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Parainfluenza 1-4 in age groups 0-11, 12-23, 24-59 months, '
+                      'baseline incidence of Alri caused by Parainfluenza 1-4 in age groups 0-11, 12-23, 24-59 months, '
                       'per child per year'
                       ),
         'base_inc_rate_ALRI_by_Strep_pneumoniae_PCV13':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Streptoccocus pneumoniae PCV13 serotype '
+                      'baseline incidence of Alri caused by Streptoccocus pneumoniae PCV13 serotype '
                       'in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_Strep_pneumoniae_non_PCV13':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Streptoccocus pneumoniae non PCV13 serotype '
+                      'baseline incidence of Alri caused by Streptoccocus pneumoniae non PCV13 serotype '
                       'in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_Hib':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Haemophilus influenzae type b '
+                      'baseline incidence of Alri caused by Haemophilus influenzae type b '
                       'in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_H.influenzae_non_type_b':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Haemophilus influenzae non-type b '
+                      'baseline incidence of Alri caused by Haemophilus influenzae non-type b '
                       'in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_Enterobacteriaceae':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Enterobacteriaceae in age groups 0-11, 12-23, 24-59 months,'
+                      'baseline incidence of Alri caused by Enterobacteriaceae in age groups 0-11, 12-23, 24-59 months,'
                       ' per child per year'
                       ),
         'base_inc_rate_ALRI_by_other_Strepto_Enterococci':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by other streptococci and Enterococci including '
+                      'baseline incidence of Alri caused by other streptococci and Enterococci including '
                       'Streptococcus pyogenes and Enterococcus faecium in age groups 0-11, 12-23, 24-59 months,'
                       ' per child per year'
                       ),
         'base_inc_rate_ALRI_by_Staph_aureus':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Staphylococcus aureus '
+                      'baseline incidence of Alri caused by Staphylococcus aureus '
                       'in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_Influenza':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Influenza type A, B, and C '
+                      'baseline incidence of Alri caused by Influenza type A, B, and C '
                       'in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_P.jirovecii':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by P. jirovecii in age groups 0-11, 12-59 months, '
+                      'baseline incidence of Alri caused by P. jirovecii in age groups 0-11, 12-59 months, '
                       'per child per year'
                       ),
         'base_inc_rate_ALRI_by_Adenovirus':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by adenovirus in age groups 0-11, 12-59 months, '
+                      'baseline incidence of Alri caused by adenovirus in age groups 0-11, 12-59 months, '
                       'per child per year'
                       ),
         'base_inc_rate_ALRI_by_Bocavirus':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by bocavirus in age groups 0-11, 12-59 months, '
+                      'baseline incidence of Alri caused by bocavirus in age groups 0-11, 12-59 months, '
                       'per child per year'
                       ),
         'base_inc_rate_ALRI_by_other_viral_pathogens':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by other viral pathogens in age groups 0-11, 12-59 months, '
+                      'baseline incidence of Alri caused by other viral pathogens in age groups 0-11, 12-59 months, '
                       'per child per year'
                       ),
         'base_inc_rate_ALRI_by_other_bacterial_pathogens':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by other viral pathogens in age groups 0-11, 12-59 months, '
+                      'baseline incidence of Alri caused by other viral pathogens in age groups 0-11, 12-59 months, '
                       'per child per year'
                       ),
 
         # Risk factors parameters -----
         'rr_ALRI_HHhandwashing':
             Parameter(Types.REAL,
-                      'relative rate of acquiring ALRI for children with household handwashing with soap '
+                      'relative rate of acquiring Alri for children with household handwashing with soap '
                       ),
         'rr_ALRI_HIV_untreated':
             Parameter(Types.REAL,
-                      'relative rate of acquiring ALRI for children with untreated HIV positive status'
+                      'relative rate of acquiring Alri for children with untreated HIV positive status'
                       ),
         'rr_ALRI_underweight':
             Parameter(Types.REAL,
-                      'relative rate of acquiring ALRI for underweight children'
+                      'relative rate of acquiring Alri for underweight children'
                       ),
         'rr_ALRI_low_birth_weight':
             Parameter(Types.REAL,
-                      'relative rate of acquiring ALRI for infants with low birth weight'
+                      'relative rate of acquiring Alri for infants with low birth weight'
                       ),
         'rr_ALRI_not_excl_breastfeeding':
             Parameter(Types.REAL,
-                      'relative rate of acquiring ALRI for not exclusive breastfeeding upto 6 months'
+                      'relative rate of acquiring Alri for not exclusive breastfeeding upto 6 months'
                       ),
         'rr_ALRI_indoor_air_pollution':
             Parameter(Types.REAL,
-                      'relative rate of acquiring ALRI for indoor air pollution'
+                      'relative rate of acquiring Alri for indoor air pollution'
                       ),
         # 'rr_ALRI_pneumococcal_vaccine': Parameter
-        # (Types.REAL, 'relative rate of acquiring ALRI for pneumonococcal vaccine'
+        # (Types.REAL, 'relative rate of acquiring Alri for pneumonococcal vaccine'
         #  ),
         # 'rr_ALRI_haemophilus_vaccine': Parameter
-        # (Types.REAL, 'relative rate of acquiring ALRI for haemophilus vaccine'
+        # (Types.REAL, 'relative rate of acquiring Alri for haemophilus vaccine'
         #  ),
         # 'rr_ALRI_influenza_vaccine': Parameter
-        # (Types.REAL, 'relative rate of acquiring ALRI for influenza vaccine'
+        # (Types.REAL, 'relative rate of acquiring Alri for influenza vaccine'
         #  ),
         # 'r_progress_to_severe_ALRI': Parameter
         # (Types.LIST,
-        #  'probability of progressing from non-severe to severe ALRI by age category '
+        #  'probability of progressing from non-severe to severe Alri by age category '
         #  'HIV negative, no SAM'
         #  ),
 
@@ -352,38 +352,38 @@ class ALRI(Module):
                       ),
         'rr_death_ALRI_sepsis':
             Parameter(Types.REAL,
-                      'relative death rate from ALRI for sepsis, base age 0-11 months'
+                      'relative death rate from Alri for sepsis, base age 0-11 months'
                       ),
         'rr_death_ALRI_respiratory_failure':
             Parameter(Types.REAL,
-                      'relative death rate from ALRI for respiratory failure, base age 0-11 months'
+                      'relative death rate from Alri for respiratory failure, base age 0-11 months'
                       ),
         'rr_death_ALRI_meningitis':
             Parameter(Types.REAL,
-                      'relative death rate from ALRI for meningitis, base age 0-11 months'
+                      'relative death rate from Alri for meningitis, base age 0-11 months'
                       ),
         'rr_death_ALRI_age12to23mo':
             Parameter(Types.REAL,
-                      'death rate of ALRI for children aged 12 to 23 months'
+                      'death rate of Alri for children aged 12 to 23 months'
                       ),
         'rr_death_ALRI_age24to59mo':
             Parameter(Types.REAL,
-                      'death rate of ALRI for children aged 24 to 59 months'
+                      'death rate of Alri for children aged 24 to 59 months'
                       ),
         'rr_death_ALRI_HIV':
             Parameter(Types.REAL,
-                      'death rate of ALRI for children with HIV not on ART'
+                      'death rate of Alri for children with HIV not on ART'
                       ),
         'rr_death_ALRI_SAM':
             Parameter(Types.REAL,
-                      'death rate of ALRI for children with severe acute malnutrition'
+                      'death rate of Alri for children with severe acute malnutrition'
                       ),
         'rr_death_ALRI_low_birth_weight':
             Parameter(Types.REAL,
-                      'death rate of ALRI for children with low birth weight (applicable to infants)'
+                      'death rate of Alri for children with low birth weight (applicable to infants)'
                       ),
 
-        # Proportions of what disease type (viral ALRI) -----
+        # Proportions of what disease type (viral Alri) -----
         'proportion_viral_pneumonia_by_RSV':
             Parameter(Types.REAL,
                       'proportion of RSV infection causing viral pneumonia'
@@ -567,15 +567,15 @@ class ALRI(Module):
                       ),
         'rr_ALRI_PCV13':
             Parameter(Types.REAL,
-                      'relative rate of ALRI with the PCV13'
+                      'relative rate of Alri with the PCV13'
                       ),
         'rr_ALRI_hib_vaccine':
             Parameter(Types.REAL,
-                      'relative rate of ALRI with the hib vaccination'
+                      'relative rate of Alri with the hib vaccination'
                       ),
         'rr_ALRI_RSV_vaccine':
             Parameter(Types.REAL,
-                      'relative rate of ALRI with the RSV vaccination'
+                      'relative rate of Alri with the RSV vaccination'
                       ),
 
         'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment':
@@ -592,60 +592,60 @@ class ALRI(Module):
                       ),
         'oxygen_therapy_effectiveness_ALRI':
             Parameter(Types.REAL,
-                      'effectiveness of oxygen therapy on death from ALRI with respiratory failure'
+                      'effectiveness of oxygen therapy on death from Alri with respiratory failure'
                       ),
         'antibiotic_therapy_effectiveness_ALRI':
             Parameter(Types.REAL,
-                      'effectiveness of antibiotic therapy on death from ALRI with bacterial cause'
+                      'effectiveness of antibiotic therapy on death from Alri with bacterial cause'
                       ),
 
     }
 
     PROPERTIES = {
-        # ---- ALRI status ----
+        # ---- Alri status ----
         'ri_current_ALRI_status':
             Property(Types.BOOL,
-                     'ALRI status (current or last episode)'
+                     'Alri status (current or last episode)'
                      ),
-        # ---- The pathogen which is the attributed cause of ALRI ----
+        # ---- The pathogen which is the attributed cause of Alri ----
         'ri_primary_ALRI_pathogen':
             Property(Types.CATEGORICAL,
-                     'Attributable pathogen for the current ALRI event',
+                     'Attributable pathogen for the current Alri event',
                      categories=list(pathogens) + ['not_applicable']
                      ),
         # ---- The bacterial pathogen which is the attributed co-/secondary infection ----
         'ri_secondary_bacterial_pathogen':
             Property(Types.CATEGORICAL,
-                     'Secondary bacterial pathogen for the current ALRI event',
+                     'Secondary bacterial pathogen for the current Alri event',
                      categories=list(bacterial_patho) + ['none'] + ['not_applicable']
                      ),
-        # ---- The underlying ALRI condition ----
+        # ---- The underlying Alri condition ----
         'ri_ALRI_disease_type':
-            Property(Types.CATEGORICAL, 'underlying ALRI condition',
+            Property(Types.CATEGORICAL, 'underlying Alri condition',
                      categories=['viral_pneumonia', 'bacterial_pneumonia', 'fungal_pneumonia',
                                  'bronchiolitis'] + ['not_applicable']
                      ),
-        # ---- Complications associated with ALRI ----
+        # ---- Complications associated with Alri ----
         'ri_ALRI_complications':
             Property(Types.INT,
-                     'bitset column, stores complications that arose from the ALRI event'
+                     'bitset column, stores complications that arose from the Alri event'
                      ),
         'ri_peripheral_oxygen_saturation':
             Property(Types.CATEGORICAL,
                      'Level of peripheral oxygen saturation to be read by a pulse oximetry',
                      categories=['SpO2<93%', 'SpO2_93-100%']),
-        # ---- Symptoms associated with ALRI ----
+        # ---- Symptoms associated with Alri ----
         'ri_current_ALRI_symptoms':
             Property(Types.INT,
-                     'bitset column, stores symptoms of current ALRI event'
+                     'bitset column, stores symptoms of current Alri event'
                      ),
 
-        # ---- Internal variables to schedule onset and deaths due to ALRI ----
-        'ri_ALRI_event_date_of_onset': Property(Types.DATE, 'date of onset of current ALRI event'),
-        'ri_ALRI_event_recovered_date': Property(Types.DATE, 'date of recovery from current ALRI event'),
-        'ri_ALRI_event_death_date': Property(Types.DATE, 'date of death caused by current ALRI event'),
+        # ---- Internal variables to schedule onset and deaths due to Alri ----
+        'ri_ALRI_event_date_of_onset': Property(Types.DATE, 'date of onset of current Alri event'),
+        'ri_ALRI_event_recovered_date': Property(Types.DATE, 'date of recovery from current Alri event'),
+        'ri_ALRI_event_death_date': Property(Types.DATE, 'date of death caused by current Alri event'),
         'ri_end_of_last_alri_episode':
-            Property(Types.DATE, 'date on which the last episode of ALRI is resolved, (including '
+            Property(Types.DATE, 'date on which the last episode of Alri is resolved, (including '
                                  'allowing for the possibility that a cure is scheduled following onset). '
                                  'This is used to determine when a new episode can begin. '
                                  'This stops successive episodes interfering with one another.'),
@@ -661,24 +661,24 @@ class ALRI(Module):
         'tmp_influenza_vaccination': Property(Types.BOOL, 'temporary property - flu vaccine'),
 
         # ---- Health System interventions / Treatment properties ----
-        'ri_ALRI_tx_start_date': Property(Types.DATE, 'start date of ALRI treatment for current event'),
+        'ri_ALRI_tx_start_date': Property(Types.DATE, 'start date of Alri treatment for current event'),
 
         # ---- Counter properties (for Logging use) ----
         'ri_ALRI_cases_counter':
             Property(Types.INT,
-                     'annual counter for ALRI cases'
+                     'annual counter for Alri cases'
                      ),
         'ri_ALRI_recovery_counter':
             Property(Types.INT,
-                     'annual counter for ALRI recovery episodes'
+                     'annual counter for Alri recovery episodes'
                      ),
         'ri_ALRI_treatment_counter':
             Property(Types.INT,
-                     'annual counter for ALRI treatment episodes'
+                     'annual counter for Alri treatment episodes'
                      ),
         'ri_ALRI_death_counter':
             Property(Types.INT,
-                     'annual counter for ALRI death episodes'
+                     'annual counter for Alri death episodes'
                      ),
 
     }
@@ -688,16 +688,16 @@ class ALRI(Module):
 
         self.resourcefilepath = resourcefilepath
 
-        # equations for the incidence of ALRI by pathogen:
+        # equations for the incidence of Alri by pathogen:
         self.incidence_equations_by_pathogen = dict()
 
-        # equations for the proportions of ALRI diseases:
+        # equations for the proportions of Alri diseases:
         self.proportions_of_ALRI_disease_types_by_pathogen = dict()
 
         # equations for the probabilities of secondary bacterial superinfection:
         self.prob_secondary_bacterial_infection = None
 
-        # equations for the development of ALRI-associated complications:
+        # equations for the development of Alri-associated complications:
         self.risk_of_decreased_peripheral_oxygen_level = None
         self.risk_of_developing_ALRI_complications = dict()
         self.risk_of_progressing_to_severe_complications = dict()
@@ -715,7 +715,7 @@ class ALRI(Module):
         # dict to hold the DALY weights
         self.daly_wts = dict()
 
-        # dict to hold counters for the number of ALRI events by pathogen and age-group
+        # dict to hold counters for the number of Alri events by pathogen and age-group
         # (0yrs, 1yrs, 2-4yrs)
         blank_counter = dict(zip(self.pathogens, [list() for _ in self.pathogens]))
 
@@ -772,7 +772,7 @@ class ALRI(Module):
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
         :param population: the population of individuals
 
-        Sets that there is no one with ALRI at initiation.
+        Sets that there is no one with Alri at initiation.
         """
         df = population.props  # a shortcut to the data-frame storing data for individuals
 
@@ -854,9 +854,9 @@ class ALRI(Module):
             self.daly_wts['daly_very_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
 
         # =====================================================================================================
-        # APPLY A LINEAR MODEL FOR THE ACQUISITION OF A PRIMARY PATHOGEN FOR ALRI
+        # APPLY A LINEAR MODEL FOR THE ACQUISITION OF A PRIMARY PATHOGEN FOR Alri
         # --------------------------------------------------------------------------------------------
-        # Make a dict to hold the equations that govern the probability that a person acquires ALRI
+        # Make a dict to hold the equations that govern the probability that a person acquires Alri
         # that is caused (primarily) by a pathogen
         p = self.parameters
         df = self.sim.population.props
@@ -898,7 +898,7 @@ class ALRI(Module):
             assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
             return scaled_lm
 
-        for patho in ALRI.pathogens:
+        for patho in Alri.pathogens:
             self.incidence_equations_by_pathogen[patho] = make_scaled_linear_model(patho)
 
         # check that equations have been declared for each pathogens
@@ -908,19 +908,19 @@ class ALRI(Module):
         # Linear models for determining the underlying condition as viral or bacterial pneumonia, and bronchiolitis
         # caused by each primary pathogen
         def determine_ALRI_type(patho):
-            if patho in ALRI.bacterial_patho:
+            if patho in Alri.bacterial_patho:
                 return 'bacterial_pneumonia'
-            if patho in ALRI.viral_patho:
+            if patho in Alri.viral_patho:
                 under_2_yo = df['is_alive'] & (df['age_years'] < 2)
                 for child in under_2_yo:  # bronchiolitis only for those under 2
                     return 'viral_pneumonia' if self.rng.rand() < p[f'proportion_viral_pneumonia_by_{patho}'] \
                         else 'bronchiolitis'
                 else:
                     return 'viral_pneumonia'
-            if patho in ALRI.fungal_patho:
+            if patho in Alri.fungal_patho:
                 return 'fungal_pneumonia'
 
-        for pathogen in ALRI.pathogens:
+        for pathogen in Alri.pathogens:
             self.proportions_of_ALRI_disease_types_by_pathogen[pathogen] = determine_ALRI_type(pathogen)
 
         # check that equations have been declared for each pathogens
@@ -976,7 +976,7 @@ class ALRI(Module):
                             p['prob_hypoxia_by_bronchiolitis']),
                         )
 
-        # Create linear models for the risk of acquiring complications from uncomplicated ALRI
+        # Create linear models for the risk of acquiring complications from uncomplicated Alri
         self.risk_of_developing_ALRI_complications.update({
             'pneumothorax':
                 LinearModel(LinearModelType.ADDITIVE,
@@ -1115,9 +1115,9 @@ class ALRI(Module):
         })
 
         # =====================================================================================================
-        # APPLY PROBABILITY OF SYMPTOMS TO EACH ALRI DISEASE TYPE (UNCOMPLICATED AND WITH COMPLICATIONS)
+        # APPLY PROBABILITY OF SYMPTOMS TO EACH Alri DISEASE TYPE (UNCOMPLICATED AND WITH COMPLICATIONS)
         # -----------------------------------------------------------------------------------------------------
-        # Make a dict containing the probability of symptoms given acquisition of (uncomplicated) ALRI,
+        # Make a dict containing the probability of symptoms given acquisition of (uncomplicated) Alri,
         # by disease type
         def make_symptom_probs(disease_type):
             if disease_type == 'bacterial_pneumonia':
@@ -1157,10 +1157,10 @@ class ALRI(Module):
                     'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][1],
                 }
 
-        for disease in ALRI.disease_type:
+        for disease in Alri.disease_type:
             self.prob_symptoms_uncomplicated_ALRI[disease] = make_symptom_probs(disease)
 
-        # Check that each ALRI type has a risk of developing each symptom
+        # Check that each Alri type has a risk of developing each symptom
         assert self.disease_type == set(list(self.prob_symptoms_uncomplicated_ALRI.keys()))
 
         # -----------------------------------------------------------------------------------------------------
@@ -1212,14 +1212,14 @@ class ALRI(Module):
                     'danger_signs': p[f'prob_danger_signs_adding_from_{complicat}'],
                 }
 
-        for complication in ALRI.complications:
+        for complication in Alri.complications:
             self.prob_extra_symptoms_complications[complication] = add_complication_symptom_probs(complication)
 
         # Check that each complication has a risk of developing each symptom
         assert self.complications == set(list(self.prob_extra_symptoms_complications.keys()))
 
         # =====================================================================================================
-        # APPLY A LINEAR MODEL FOR THE RISK OF DEATH DUE TO ALRI
+        # APPLY A LINEAR MODEL FOR THE RISK OF DEATH DUE TO Alri
         # -----------------------------------------------------------------------------------------------------
         def linear_model_for_death(disease_type):
             return LinearModel(
@@ -1241,7 +1241,7 @@ class ALRI(Module):
             )
         # TODO: can I do a scaled linear model for death at the individual level? - calibrations
 
-        for disease in ALRI.disease_type:
+        for disease in Alri.disease_type:
             self.mortality_equations_by_disease[disease] = linear_model_for_death(disease)
         # -----------------------------------------------------------------------------------------------------
 
@@ -1298,7 +1298,7 @@ class ALRI(Module):
         total_daly_values.loc[
             self.sim.modules['SymptomManager'].who_has('danger_signs')] = self.daly_wts['daly_severe_ALRI']
 
-        # Split out by pathogen that causes the ALRI
+        # Split out by pathogen that causes the Alri
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
                                                      'ri_primary_ALRI_pathogen'],
                                               dtype='float').drop(columns='not_applicable')
@@ -1308,7 +1308,7 @@ class ALRI(Module):
 
     def uncomplicated_alri_symptoms(self, disease, person_id, duration_in_days):
         """
-        Assigns clinical symptoms to uncomplicated ALRI.
+        Assigns clinical symptoms to uncomplicated Alri.
         It schedules the initial symptoms of the disease and schedules resolution
         :param disease:
         :param person_id:
@@ -1317,7 +1317,7 @@ class ALRI(Module):
         """
         rng = self.rng
 
-        # ----------------------- Allocate symptoms to onset of ALRI ----------------------
+        # ----------------------- Allocate symptoms to onset of Alri ----------------------
         prob_symptoms_uncomplicated_alri = self.prob_symptoms_uncomplicated_ALRI[disease]
 
         symptoms_for_this_person = list()
@@ -1380,11 +1380,11 @@ class ALRI(Module):
             self.ALRI_complications.set([person_id], f'{complication}')
 
     def do_alri_treatment(self, person_id, prob_of_cure):
-        """Helper function that enacts the effects of a treatment to ALRI caused by a pathogen.
-        It will only do something if the ALRI is caused by a pathogen (this module). It will not allow any effect
+        """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
+        It will only do something if the Alri is caused by a pathogen (this module). It will not allow any effect
          if the respiratory infection is caused by another module.
         * Log the treatment date
-        * Prevents this episode of ALRI
+        * Prevents this episode of Alri
          from causing a death
         * Schedules the cure event, at which symptoms are alleviated.
         """
@@ -1394,7 +1394,7 @@ class ALRI(Module):
         if not person.is_alive:
             return
 
-        # Do nothing if the ALRI has not been caused by a pathogen
+        # Do nothing if the Alri has not been caused by a pathogen
         if not (
             (person.ri_primary_ALRI_pathogen != 'not_applicable') &
             (person.ri_ALRI_event_date_of_onset <= self.sim.date <= person.ri_end_of_last_alri_episode)
@@ -1418,7 +1418,7 @@ class ALRI(Module):
 
     def cancel_death_date(self, person_id):
         """
-        Cancels a scheduled date of death due to ALRI for a person. This is called within do_treatment_alri function,
+        Cancels a scheduled date of death due to Alri for a person. This is called within do_treatment_alri function,
         and prior to the scheduling the CureEvent to prevent deaths happening in the time between
         a treatment being given and the cure event occurring.
         :param person_id:
@@ -1465,10 +1465,10 @@ class ALRI(Module):
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
 class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEventMixin):
-    """ This is the main event that runs the acquisition of pathogens that cause ALRI.
+    """ This is the main event that runs the acquisition of pathogens that cause Alri.
         It determines who is infected and when and schedules individual IncidentCase events to represent onset.
 
-        A known issue is that ALRI events are scheduled based on the risk of current age but occur a short time
+        A known issue is that Alri events are scheduled based on the risk of current age but occur a short time
         later when the children will be slightly older. This means that when comparing the model output with data, the
         model slightly under-represents incidence among younger age-groups and over-represents incidence among older
         age-groups. This is a small effect when the frequency of the polling event is high.
@@ -1488,13 +1488,13 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
         p = self.module.parameters
         rng = self.module.rng
 
-        # Compute the incidence rate for each person getting ALRI and then convert into a probability
-        # getting all children that do not currently have an ALRI episode (never had or last episode resolved)
+        # Compute the incidence rate for each person getting Alri and then convert into a probability
+        # getting all children that do not currently have an Alri episode (never had or last episode resolved)
         mask_could_get_new_alri_event = \
             df['is_alive'] & (df['age_years'] < 5) & \
             ((df.ri_end_of_last_alri_episode < self.sim.date) | pd.isnull(df.ri_end_of_last_alri_episode))
 
-        # Compute the incidence rate for each person acquiring ALRI
+        # Compute the incidence rate for each person acquiring Alri
         inc_of_acquiring_alri = pd.DataFrame(index=df.loc[mask_could_get_new_alri_event].index)
         for pathogen in m.pathogens:
             inc_of_acquiring_alri[pathogen] = m.incidence_equations_by_pathogen[pathogen] \
@@ -1524,7 +1524,7 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
             normalised_p_by_pathogen = p_by_pathogen / sum(p_by_pathogen)
             pathogen = rng.choice(probs_of_acquiring_pathogen.columns, p=normalised_p_by_pathogen)
 
-            # ----------------- Determine the ALRI disease type for this case -----------------
+            # ----------------- Determine the Alri disease type for this case -----------------
             alri_disease_type_for_this_person = m.proportions_of_ALRI_disease_types_by_pathogen[pathogen]
 
             # ------- Allocate a secondary bacterial pathogen in co-infection with primary viral pneumonia -------
@@ -1546,10 +1546,10 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
             if pathogen in self.module.fungal_patho:
                 bacterial_patho_in_ALRI_coinfection = 'none'
 
-            # ----------------------- Allocate a date of onset of ALRI ----------------------
+            # ----------------------- Allocate a date of onset of Alri ----------------------
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
 
-            # ----------------------- Duration of the ALRI event -----------------------
+            # ----------------------- Duration of the Alri event -----------------------
             duration_in_days_of_alri = max(7, int(
                 14 + (-2 + 4 * rng.rand())))  # assumes uniform interval around mean duration with range 4 days
             # TODO: find natural course of disease duration estimates
@@ -1570,8 +1570,8 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
 
 class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixin):
     """
-    This Event is for the onset of the infection that causes ALRI.
-     * Refreshes all the properties so that they pertain to this current episode of ALRI
+    This Event is for the onset of the infection that causes Alri.
+     * Refreshes all the properties so that they pertain to this current episode of Alri
      * Imposes the symptoms
      * Schedules relevant natural history event {(AlriWithPulmonaryComplicationsEvent) and
      (AlriWithSevereComplicationsEvent)
@@ -1610,12 +1610,12 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
             assert df.at[person_id, 'ri_secondary_bacterial_pathogen'] == 'not_applicable'
 
         # ----------------------------------- clinical symptoms -----------------------------------
-        # update clinical symptoms for new uncomplicated ALRI
+        # update clinical symptoms for new uncomplicated Alri
         uncomplicated_symptoms_for_this_person = self.module.uncomplicated_alri_symptoms(
             disease=self.disease, person_id=person_id,
             duration_in_days=self.duration_in_days)
 
-        # date for recovery with uncomplicated ALRI
+        # date for recovery with uncomplicated Alri
         date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
 
         # COMPLICATIONS -----------------------------------------------------------------------------------------
@@ -1639,7 +1639,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
                 if rng.rand() < prob_developing_empyema:
                     complications_for_this_person.append('empyema')
 
-        # if at least one complication developed in the ALRI event, schedule the event
+        # if at least one complication developed in the Alri event, schedule the event
         if len(complications_for_this_person) != 0:
             for complication in complications_for_this_person:
                 # if complication in self.module.lung_complications:  # schedule for pulmonary complications
@@ -1657,7 +1657,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
             df.at[person_id, 'ri_ALRI_event_recovered_date'] = pd.NaT
             df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
         else:
-            # if NO complications for this ALRI event, schedule a natural recovery
+            # if NO complications for this Alri event, schedule a natural recovery
             self.sim.schedule_event(ALRINaturalRecoveryEvent(self.module, person_id),
                                     date_of_outcome)
             df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
@@ -1689,7 +1689,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
 
 class AlriComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
     """
-           This Event is for the onset of complications from ALRI. For some untreated children,
+           This Event is for the onset of complications from Alri. For some untreated children,
            this occurs a set number of days after onset of disease.
            It sets the property 'ri_ALRI_complications' to each initial complication
            and schedules further severe complications.
@@ -1752,7 +1752,7 @@ class AlriComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
 
 class AlriSystemicComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
     """
-        This Event is for the onset of severe complications from ALRI. For some untreated children,
+        This Event is for the onset of severe complications from Alri. For some untreated children,
         this occurs a set number of days after onset of disease.
         It sets the property 'ri_ALRI_complications' to each complication and schedules the death.
     """
@@ -1778,7 +1778,7 @@ class AlriSystemicComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
         # add severe complications to ri_ALRI_complications
         self.module.complications_append(person_id=person_id, complication=self.complication)
 
-        # symptoms from severe complication, add to the initial list of ALRI symptoms
+        # symptoms from severe complication, add to the initial list of Alri symptoms
         self.module.alri_with_complications_symptoms(
             person_id=person_id,
             complication=self.complication,
@@ -1788,9 +1788,9 @@ class AlriSystemicComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
 class ALRINaturalRecoveryEvent(Event, IndividualScopeEventMixin):
     """
     This is the Natural Recovery event.
-    It is part of the natural history and represents the end of an episode of ALRI
+    It is part of the natural history and represents the end of an episode of Alri
     It does the following:
-        * resolves all symptoms caused by ALRI
+        * resolves all symptoms caused by Alri
         * resolves all ri_ properties back to 'none','not_applicable', or False
     """
 
@@ -1805,7 +1805,7 @@ class ALRINaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         if not person.is_alive:
             return
 
-        # Confirm that this is event is occurring during a current episode of ALRI
+        # Confirm that this is event is occurring during a current episode of Alri
         assert person.ri_ALRI_event_date_of_onset <= self.sim.date <= person.ri_end_of_last_alri_episode
 
         # Check that the person is not scheduled to die in this episode
@@ -1835,7 +1835,7 @@ class ALRINaturalRecoveryEvent(Event, IndividualScopeEventMixin):
 
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
-                                                          disease_module=self.sim.modules['ALRI'])
+                                                          disease_module=self.sim.modules['Alri'])
 
 
 class ALRICureEvent(Event, IndividualScopeEventMixin):
@@ -1844,14 +1844,14 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
        It enacts the actual "cure" of the person that is caused (after some delay) by the treatment administered.
        It does the following:
            * Sets the date of recovery to today's date
-           * Resolves all symptoms caused by ALRI
+           * Resolves all symptoms caused by Alri
        """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        logger.debug("ALRICureEvent: Stopping ALRI treatment and curing person %d", person_id)
+        logger.debug("ALRICureEvent: Stopping Alri treatment and curing person %d", person_id)
         df = self.sim.population.props
 
         # terminate the event if the person has already died.
@@ -1863,7 +1863,7 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
                  'ri_ALRI_event_date_of_onset'] <= df.at[person_id, 'ri_ALRI_event_recovered_date'] <= self.sim.date:
             return
 
-        # Confirm that this is event is occurring during a current episode of ALRI
+        # Confirm that this is event is occurring during a current episode of Alri
         if not (
                    df.at[person_id, 'ri_ALRI_event_date_of_onset']) <= self.sim.date <= \
                (df.at[person_id, 'ri_end_of_last_alri_episode']):
@@ -1882,7 +1882,7 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'ri_end_of_last_alri_episode']
         )
 
-        # Stop the person from dying of ALRI (if they were going to die)
+        # Stop the person from dying of Alri (if they were going to die)
         df.at[person_id, 'ri_ALRI_event_recovered_date'] = self.sim.date
         df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
 
@@ -1904,12 +1904,12 @@ class ALRICureEvent(Event, IndividualScopeEventMixin):
 
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
-                                                          disease_module=self.sim.modules['ALRI'])
+                                                          disease_module=self.sim.modules['Alri'])
 
 
 class ALRIDeathEvent(Event, IndividualScopeEventMixin):
     """
-    This Event is for the death of someone that is caused by the infection with a pathogen that causes ALRI.
+    This Event is for the death of someone that is caused by the infection with a pathogen that causes Alri.
     """
 
     def __init__(self, module, person_id):
@@ -1922,14 +1922,14 @@ class ALRIDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Confirm that this is event is occurring during a current episode of ALRI
+        # Confirm that this is event is occurring during a current episode of Alri
         assert (
             (df.at[person_id, 'ri_ALRI_event_date_of_onset']) <=
             self.sim.date <=
             (df.at[person_id, 'ri_end_of_last_alri_episode'])
         )
 
-        # Check if person should still die of ALRI
+        # Check if person should still die of Alri
         if (
             df.at[person_id, 'ri_ALRI_event_death_date'] == self.sim.date) and \
             pd.isnull(df.at[person_id, 'ri_ALRI_event_recovered_date']
@@ -2432,9 +2432,9 @@ class HSI_IMCI_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin)
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pneumonia]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.sim.modules['ALRI'].do_alri_treatment(
+            self.sim.modules['Alri'].do_alri_treatment(
                 person_id=person_id,
-                prob_of_cure=self.sim.modules['ALRI'].parameters[
+                prob_of_cure=self.sim.modules['Alri'].parameters[
                     'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment']
             )
             care_management_info.update({
@@ -2484,7 +2484,7 @@ class HSI_IMCI_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin)
 class HSI_IMCI_Severe_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, ALRI)
+        assert isinstance(module, Alri)
 
         # Define the necessary information for an HSI - interventions for severe pneumonia at facility level 2
         # (These are blank when created; but these should be filled-in by the module that calls it)
@@ -2555,9 +2555,9 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEven
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_severe_pneumonia]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.sim.modules['ALRI'].do_alri_treatment(
+            self.sim.modules['Alri'].do_alri_treatment(
                 person_id=person_id,
-                prob_of_cure=self.sim.modules['ALRI'].parameters[
+                prob_of_cure=self.sim.modules['Alri'].parameters[
                     'prob_of_cure_for_pneumonia_with_severe_complication_given_IMCI_severe_pneumonia_treatment']
             )
             care_management_info.update({
@@ -2642,7 +2642,7 @@ class PathogenIncidentCountLoggingEvent(RegularEvent, PopulationScopeEventMixin)
 
 class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    Count the number of ALRI cases, number of recovered, treated and died every year
+    Count the number of Alri cases, number of recovered, treated and died every year
     """
     def __init__(self, module):
         # This event to occur every year
@@ -2733,7 +2733,7 @@ class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class AlriResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    This regular event resets the counts ALRI episodes, recovery, treatment and death
+    This regular event resets the counts Alri episodes, recovery, treatment and death
     """
     def __init__(self, module):
         # This event to occur every year
