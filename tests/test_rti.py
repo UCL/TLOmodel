@@ -7,6 +7,7 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    antenatal_care,
     contraception,
     demography,
     depression,
@@ -19,10 +20,9 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    antenatal_care,
-    postnatal_supervisor,
     newborn_outcomes,
     pregnancy_supervisor,
+    postnatal_supervisor,
     rti,
     symptommanager,
 )
