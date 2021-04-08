@@ -22,8 +22,8 @@ from tlo.methods import (
 from tlo.methods.healthsystem import HSI_Event
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 1, 1)
-popsize = 500
+end_date = Date(2014, 1, 1)
+popsize = 100
 
 try:
     resources = Path(os.path.dirname(__file__)) / "../resources"
@@ -90,7 +90,7 @@ def test_measles_cases_and_hsi_occurring(tmpdir):
 
     # check people getting measles
     # assert df["me_has_measles"].sum > 0  # current cases of measles
-    total_inc = log_df["tlo.methods.measles"]["incidence"]["inc_1000py"]
+    total_inc = log_df["tlo.methods.measles"]["incidence"]["inc_1000people"]
     assert total_inc.sum() > 0
 
     # check people die of measles
