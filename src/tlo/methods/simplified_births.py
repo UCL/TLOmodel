@@ -4,6 +4,7 @@
  is that every pregnancy results in a birth."""
 
 import pandas as pd
+import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
@@ -105,23 +106,27 @@ class PregnancyEvent(RegularEvent, PopulationScopeEventMixin):
     that every pregnancy results in a birth."""
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        self.months_between_polls = 1
+        super().__init__(module, frequency=DateOffset(months=self.months_between_polls))
         self.asfr = self.process_asfr_data()
 
     def process_asfr_data(self):
         """Process the imported data on age-specific fertility rates into a form that can be used to quickly map
         age-ranges to an asfr."""
         dat = self.module.parameters['age_specific_fertility_rates']
-        dat = dat.loc[dat.Variant.isin(['WPP_Estimates', 'WPP_Medium variant'])]
+        dat = dat.drop(dat[~dat.Variant.isin(['WPP_Estimates', 'WPP_Medium variant'])].index)
         dat['Period-Start'] = dat['Period'].str.split('-').str[0].astype(int)
         dat['Period-End'] = dat['Period'].str.split('-').str[1].astype(int)
         years = range(min(dat['Period-Start'].values), 1 + max(dat['Period-End'].values))
+
+        # Convert the rates for asfr (rate of live-birth per year) to a rate per the frequency of this event repeating
+        dat['asfr_per_period'] = 1 - np.exp(np.log(1-dat['asfr']) * (self.months_between_polls / 12))
 
         asfr = dict()  # format is {year: {age-range: asfr}}
         for year in years:
             asfr[year] = dat.loc[
                 (year >= dat['Period-Start']) & (year <= dat['Period-End'])
-                ].set_index('Age_Grp')['asfr'].to_dict()
+                ].set_index('Age_Grp')['asfr_per_period'].to_dict()
 
         return asfr
 
