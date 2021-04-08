@@ -20,9 +20,9 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
+    postnatal_supervisor,
     epi,
-    measles
-)
+    measles)
 
 # To reproduce the results, you must set the seed for the Simulation instance. The Simulation
 # will seed the random number generators for each module when they are registered.
@@ -41,7 +41,7 @@ log_config = {
 }
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
+end_date = Date(2012, 12, 31)
 pop_size = 500
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -76,9 +76,10 @@ sim.register(
     contraception.Contraception(resourcefilepath=resources),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
     labour.Labour(resourcefilepath=resources),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
     antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resources),
     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+    newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
     epi.Epi(resourcefilepath=resources),
     measles.Measles(resourcefilepath=resources),
 )
@@ -92,7 +93,7 @@ log_df = parse_log_file(sim.log_filepath)
 
 # ------------------------------------- MODEL OUTPUTS  ------------------------------------- #
 
-model_measles = log_df["tlo.methods.measles"]["incidence"]["inc_1000py"]
+model_measles = log_df["tlo.methods.measles"]["incidence"]["inc_1000people"]
 model_date = log_df["tlo.methods.measles"]["incidence"]["date"]
 # ------------------------------------- PLOTS  ------------------------------------- #
 

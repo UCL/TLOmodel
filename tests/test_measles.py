@@ -17,8 +17,8 @@ from tlo.methods import (
     newborn_outcomes,
     pregnancy_supervisor,
     epi,
-    measles
-)
+    measles,
+    postnatal_supervisor)
 from tlo.methods.healthsystem import HSI_Event
 
 start_date = Date(2010, 1, 1)
@@ -72,9 +72,10 @@ def test_measles_cases_and_hsi_occurring(tmpdir):
         contraception.Contraception(resourcefilepath=resources),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
         labour.Labour(resourcefilepath=resources),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resources),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
         epi.Epi(resourcefilepath=resources),
         measles.Measles(resourcefilepath=resources),
     )
@@ -95,14 +96,16 @@ def test_measles_cases_and_hsi_occurring(tmpdir):
     # check people die of measles
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('measles').any()
 
-    # check symptoms assigned - all those currently with measles should have rash
-    has_symptoms = sim.modules['SymptomManager'].who_has('rash')
-    current_measles = df.index[df.is_alive & df.me_has_measles]
-    if current_measles.any():
-        assert set(current_measles) < set(has_symptoms)
-
     # check measles HSI occurring
     assert len(log_df['tlo.methods.healthsystem']['HSI_Event']['Measles_Treatment']) > 0
+
+    # check symptoms assigned - all those currently with measles should have rash
+    # there is an incubation period, so infected people may not have rash immediately
+    # if on treatment, must have rash for diagnosis
+    has_rash = sim.modules['SymptomManager'].who_has('rash')
+    current_measles_tx = df.index[df.is_alive & df.me_on_treatment]
+    if current_measles_tx.any():
+        assert set(current_measles_tx) < set(has_rash)
 
 
 def test_measles_high_death_rate(tmpdir):
@@ -137,9 +140,10 @@ def test_measles_high_death_rate(tmpdir):
         contraception.Contraception(resourcefilepath=resources),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
         labour.Labour(resourcefilepath=resources),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resources),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
         epi.Epi(resourcefilepath=resources),
         measles.Measles(resourcefilepath=resources),
     )
@@ -192,9 +196,10 @@ def test_measles_zero_death_rate(tmpdir):
         contraception.Contraception(resourcefilepath=resources),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
         labour.Labour(resourcefilepath=resources),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resources),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
         epi.Epi(resourcefilepath=resources),
         measles.Measles(resourcefilepath=resources),
     )

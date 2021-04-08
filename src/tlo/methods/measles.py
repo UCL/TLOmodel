@@ -268,7 +268,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         symptom_prob = symptom_prob.loc[symptom_prob.age == ref_age]
 
         # symptom onset
-        symp_onset = self.sim.date + DateOffset(days=rng.random_integers(low=7, high=21, size=1))
+        symp_onset = self.sim.date + DateOffset(days=rng.randint(7, 21))
 
         # everybody gets rash, fever and eye complaint, other symptoms assigned with age-specific probability
         for symptom in symptom_list:
@@ -287,13 +287,8 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
                     duration_in_days=14,  # same duration for all symptoms
                 )
 
-        # every case should have the following symptoms:
-        assert 'rash' in self.sim.modules["SymptomManager"].has_what(person_id)
-        assert 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
-        assert 'eye_complaint' in self.sim.modules["SymptomManager"].has_what(person_id)
-
         # schedule symptom resolution without treatment - this only occurs if death doesn't happen first
-        symp_resolve = symp_onset + DateOffset(days=rng.random_integers(low=7, high=14, size=1))
+        symp_resolve = symp_onset + DateOffset(days=rng.randint(7, 14))
         self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id), symp_resolve)
 
         # todo separate probability for people with HIV
@@ -309,7 +304,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
 
             # schedule the death
             self.sim.schedule_event(
-                death_event, symp_onset + DateOffset(days=rng.random_integers(low=3, high=7, size=1)))
+                death_event, symp_onset + DateOffset(days=rng.randint(3, 7)))
 
 
 class MeaslesSymptomResolveEvent(Event, IndividualScopeEventMixin):

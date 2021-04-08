@@ -94,11 +94,12 @@ class DxAlgorithmChild(Module):
 
         # Gather information that can be reported:
         # 1) Get duration of diarrhoea to date
-        duration_in_days = (self.sim.date - df.at[person_id, 'gi_last_diarrhoea_date_of_onset']).days
-        if np.isnan(duration_in_days):
-            # The dirarrhoe has been caused by something other than the the diarrhoea module, so this property is not
-            # know. Set the duration to 0 days:
-            duration_in_days = 0
+        # if the diarrhoea has been caused by something other than the the diarrhoea module, select random duration
+        duration_in_days = self.rng.randint(0, 7)
+
+        # check if diarrhoea module registered otherwise 'gi_last_diarrhoea_date_of_onset' returns KeyError
+        if 'diarrhoea' in self.sim.modules:
+            duration_in_days = (self.sim.date - df.at[person_id, 'gi_last_diarrhoea_date_of_onset']).days
 
         # 2) Get type of diarrhoea
         blood_in_stool = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'

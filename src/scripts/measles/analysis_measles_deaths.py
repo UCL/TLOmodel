@@ -21,8 +21,8 @@ from tlo.methods import (
     newborn_outcomes,
     pregnancy_supervisor,
     epi,
-    measles
-)
+    measles,
+    postnatal_supervisor)
 
 # The resource files
 resourcefilepath = Path("./resources")
@@ -68,9 +68,10 @@ def run_sim(service_availability=[]):
         contraception.Contraception(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         # epi.Epi(resourcefilepath=resourcefilepath),
         measles.Measles(resourcefilepath=resourcefilepath),
     )
@@ -89,7 +90,7 @@ def get_summary_stats(logfile):
     # incidence
     measles_output = output["tlo.methods.measles"]["incidence"]
     measles_output = measles_output.set_index('date')
-    measles_inc = measles_output["inc_1000py"]
+    measles_inc = measles_output["inc_1000people"]
 
     # deaths
     deaths = output['tlo.methods.demography']['death'].copy()
