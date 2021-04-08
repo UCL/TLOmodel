@@ -48,8 +48,14 @@ def get_sim(popsize=1000):
     return sim
 
 
+def set_prob_of_pregnancy_to_one(sim):
+    """Set the probability of pregnancy to one (for all ages and for all years)"""
+    sim.modules['SimplifiedBirths'].parameters['age_specific_fertility_rates']['asfr'] = 1.0
+    return sim
+
+
 def check_property_integrity(sim):
-    # check that the properties are as expected
+    """check that the properties are as expected"""
 
     # define dataframe
     alive = sim.population.props.loc[sim.population.props.is_alive]
@@ -74,6 +80,29 @@ def check_property_integrity(sim):
     assert not pd.isnull(p_si_date_of_last_delivery).any()
     assert (p_si_date_of_last_delivery > sim.date).all()
 
+    # Check that all women identified as a mother by a newborn have been pregnant and delivered and were alive and >15yo
+    # at the time of delivery/birth of that child.
+    df = sim.population.props
+    mothers = set(df.loc[~df.date_of_birth.isna() & (df.mother_id >= 0)].mother_id)
+
+    if len(mothers) > 0:
+        assert not df.loc[
+            mothers, ['date_of_last_pregnancy', 'si_date_of_last_delivery']
+        ].isna().any().any()
+
+        newborns = df.loc[~df.date_of_birth.isna() & (df.mother_id >= 0), ['date_of_birth', 'mother_id']]
+        newborns = newborns.merge(
+            df[['date_of_birth', 'date_of_death']],
+            left_on='mother_id',
+            right_index=True,
+            suffixes=("_nb", "_mother")
+        )
+        assert (
+            ~(newborns['date_of_birth_nb'] < (newborns['date_of_birth_mother'] + pd.DateOffset(years=15))) &
+            ~(newborns['date_of_birth_nb'] > newborns['date_of_death'])
+        ).all()
+
+
 
 def test_pregnancy_and_birth_for_one_woman():
     """Test to check that properties and sequence of events work as expected, when considering a single woman."""
@@ -84,6 +113,7 @@ def test_pregnancy_and_birth_for_one_woman():
     # confirm that the woman is alive and eligible to become pregnant
     df.loc[0, 'is_alive'] = True
     df.loc[0, 'age_exact_years'] = 17.0
+    df.loc[0, 'date_of_birth'] = sim.date - pd.DateOffset(years=17.0)
     df.loc[0, 'age_years'] = np.floor(df.loc[0].age_exact_years)
     df.loc[0, 'age_range'] = sim.modules['Demography'].AGE_RANGE_LOOKUP[df.loc[0].age_years]
 
@@ -92,7 +122,7 @@ def test_pregnancy_and_birth_for_one_woman():
     assert pd.isnull(df.loc[0, 'si_date_of_last_delivery'])
 
     # Set the probability of becoming pregnancy to 1
-    sim.modules['SimplifiedBirths'].parameters['pregnancy_prob'] = 1
+    sim = set_prob_of_pregnancy_to_one(sim)
 
     # Run the Simplified Pregnancy Event on the selected population
     pregnancy_event = simplified_births.PregnancyEvent(module=sim.modules['SimplifiedBirths'])
@@ -126,17 +156,17 @@ def test_no_pregnancy_among_in_ineligible_populations():
     # running pregnancy event with zero pregnancy probability
     sim = get_sim(popsize=400)
 
-    # ensuring no pregnancies happen by setting pregnancy probability to zero
-    sim.modules['SimplifiedBirths'].parameters['pregnancy_prob'] = 1
+    # Set the probability of becoming pregnancy to 1
+    sim = set_prob_of_pregnancy_to_one(sim)
 
     # define dataframe to make all women eligible
     df = sim.population.props
     df.loc[range(0, 100), 'sex'] = 'M'
     df.loc[range(100, 200), 'is_alive'] = False
-    df.loc[range(200, 300), 'age_years'] = 14
-    df.loc[range(300, 400), 'age_years'] = 50
+    df.loc[range(200, 300), ['age_years', 'age_range']] = (14, '10-14')
+    df.loc[range(300, 400), ['age_years', 'age_range']] = (50, '50-54')
 
-    # make no one prengnat before the PregnancyEvent is run:
+    # make no one pregnant before the PregnancyEvent is run:
     df.loc[:, 'is_pregnant'] = False
 
     # Run the Simplified Pregnancy Event
@@ -175,13 +205,12 @@ def test_standard_run_using_simplified_birth_module():
     # Force all new borns to be given a breastfeeding status of 'exclusive'
     sim.modules['SimplifiedBirths'].parameters['prob_breastfeeding_type'] = [0, 0, 1]
 
-    # Cause the 'check on configuration' of properties to run daily for each year of the simulation.
+    # Cause the 'check on configuration' of properties to run daily during the simulation.
     class CheckProperties(RegularEvent, PopulationScopeEventMixin):
         def __init__(self, module):
             super().__init__(module, frequency=DateOffset(days=1))
 
         def apply(self, population):
-            print(f"Running on {self.sim.date}")
             check_property_integrity(self.module.sim)
 
     sim.schedule_event(CheckProperties(sim.modules['SimplifiedBirths']), sim.date)
@@ -189,21 +218,12 @@ def test_standard_run_using_simplified_birth_module():
     # Run the sim
     sim.simulate(end_date=Date(2015, 1, 1))
 
-    # Check that some number of events occurred:
-    df = sim.population.props
-
-    # count number of new newborns
-    newborns = df.loc[~pd.isnull(df.date_of_birth) & (df.mother_id >= 0)]
-
     # check that there are births happening
+    df = sim.population.props
+    newborns = df.loc[~pd.isnull(df.date_of_birth) & (df.mother_id >= 0)]
     assert len(newborns) > 0
 
-    # check for women identified by a newborn's mother_id have all been pregnant and delivered
-    assert not df.loc[
-        set(newborns.mother_id), ['date_of_last_pregnancy', 'si_date_of_last_delivery']
-    ].isna().any().any()
-
-    # check to make sure all newborns have their breastfeeding status set to exclusive
+    # check that all newborns have their breastfeeding status set to exclusive
     assert (df.loc[newborns.index, 'nb_breastfeeding_status'] == 'exclusive').all()
 
 

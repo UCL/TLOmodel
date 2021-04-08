@@ -19,6 +19,9 @@ class SimplifiedBirths(Module):
     METADATA = {}
 
     PARAMETERS = {
+        'age_specific_fertility_rates': Parameter(
+            Types.DATA_FRAME, 'Data table from official source (WPP) for age-specific fertility rates and calendar '
+                              'period'),
         'months_between_pregnancy_and_delivery': Parameter(
             Types.INT, 'number of whole months that elapase betweeen pregnancy and delivery'),
         'prob_breastfeeding_type': Parameter(
@@ -54,25 +57,15 @@ class SimplifiedBirths(Module):
     def read_parameters(self, data_folder):
         """Load parameters for probability of pregnancy/birth and breastfeeding status for newborns"""
 
-        # Read in the data and format for quick look-up in simulation in self.asfr (dict(year, mapping-for-age-ranges))
-        dat = pd.read_csv(self.resourcefilepath / 'ResourceFile_ASFR_WPP.csv')
-        dat['Period-Start'] = dat['Period'].str.split('-').str[0].astype(int)
-        dat['Period-End'] = dat['Period'].str.split('-').str[1].astype(int)
+        self.parameters['age_specific_fertility_rates'] = \
+            pd.read_csv(self.resourcefilepath / 'ResourceFile_ASFR_WPP.csv')
 
-        years = range(min(dat['Period-Start'].values), 1 + max(dat['Period-End'].values))
-
-        for year in years:
-            self.asfr[year] = dat.loc[
-                (year >= dat['Period-Start']) & (year <= dat['Period-End'])
-                ].set_index('Age_Grp')['asfr'].to_dict()
-
-        # Specifiy parameters
         self.parameters['months_between_pregnancy_and_delivery'] = 9
 
         # Breastfeeding status for newborns; #todo - @mnjowe: say what is source of these parameters? and access them
         #  ... from a resourcefile directly rather than hard-coding
         self.parameters['prob_breastfeeding_type'] = [0.101, 0.289, 0.61]
-        assert 1.0 == sum(self.parameters['prob_breastfeeding_type'])
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population."""
@@ -87,6 +80,9 @@ class SimplifiedBirths(Module):
         """Schedule the PregnancyEvent and the SimplifiedBirthEvent to occur every month."""
         sim.schedule_event(PregnancyEvent(self), sim.date)
         sim.schedule_event(BirthsEvent(self), sim.date)
+
+        # Check that the parameters loaded are ok
+        assert 1.0 == sum(self.parameters['prob_breastfeeding_type'])
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual."""
@@ -110,8 +106,24 @@ class PregnancyEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
-        self.pregnancy_prob = module.parameters['pregnancy_prob']
-        self.asfr = self.module.asfr
+        self.asfr = self.process_asfr_data()
+
+    def process_asfr_data(self):
+        """Process the imported data on age-specific fertility rates into a form that can be used to quickly map
+        age-ranges to an asfr."""
+        dat = self.module.parameters['age_specific_fertility_rates']
+        dat = dat.loc[dat.Variant.isin(['WPP_Estimates', 'WPP_Medium variant'])]
+        dat['Period-Start'] = dat['Period'].str.split('-').str[0].astype(int)
+        dat['Period-End'] = dat['Period'].str.split('-').str[1].astype(int)
+        years = range(min(dat['Period-Start'].values), 1 + max(dat['Period-End'].values))
+
+        asfr = dict()  # format is {year: {age-range: asfr}}
+        for year in years:
+            asfr[year] = dat.loc[
+                (year >= dat['Period-Start']) & (year <= dat['Period-End'])
+                ].set_index('Age_Grp')['asfr'].to_dict()
+
+        return asfr
 
     def apply(self, population):
         df = self.sim.population.props  # get the population dataframe
