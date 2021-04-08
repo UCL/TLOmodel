@@ -1,6 +1,7 @@
 """This is the SimplifiedBirths Module. It aims causes pregnancy, deliveries and births to occur to match WPP estimates
  of total births. It subsumes the functions of several other modules (contraception, labour, pregnant supervisor,
- postnatal supervisor, newborn outcomes) , allowing for faster runnning when these are not required."""
+ postnatal supervisor, newborn outcomes) , allowing for faster runnning when these are not required. The main assumption
+ is that every pregnancy results in a birth."""
 
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
@@ -18,12 +19,6 @@ class SimplifiedBirths(Module):
     METADATA = {}
 
     PARAMETERS = {
-        'pregnancy_prob': Parameter(
-            Types.REAL, 'probability of pregnancies in a month'),
-        'min_age': Parameter(
-            Types.REAL, 'minimum age of individuals who are at risk of becoming pregnant'),
-        'max_age': Parameter(
-            Types.REAL, 'maximum age of individuals who are at risk of becoming pregnant'),
         'months_between_pregnancy_and_delivery': Parameter(
             Types.INT, 'number of whole months that elapase betweeen pregnancy and delivery'),
         'prob_breastfeeding_type': Parameter(
@@ -54,19 +49,30 @@ class SimplifiedBirths(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.asfr = dict()
 
     def read_parameters(self, data_folder):
         """Load parameters for probability of pregnancy/birth and breastfeeding status for newborns"""
 
-        param = self.parameters
-        param['pregnancy_prob'] = 0.01
-        param['min_age'] = 15
-        param['max_age'] = 49
+        # Read in the data and format for quick look-up in simulation in self.asfr (dict(year, mapping-for-age-ranges))
+        dat = pd.read_csv(self.resourcefilepath / 'ResourceFile_ASFR_WPP.csv')
+        dat['Period-Start'] = dat['Period'].str.split('-').str[0].astype(int)
+        dat['Period-End'] = dat['Period'].str.split('-').str[1].astype(int)
 
-        param['months_between_pregnancy_and_delivery'] = 9
+        years = range(min(dat['Period-Start'].values), 1 + max(dat['Period-End'].values))
 
-        # Breastfeeding status for newborns; #todo - @mnjowe: what is source of these parameters?
-        param['prob_breastfeeding_type'] = [0.101, 0.289, 0.61]
+        for year in years:
+            self.asfr[year] = dat.loc[
+                (year >= dat['Period-Start']) & (year <= dat['Period-End'])
+                ].set_index('Age_Grp')['asfr'].to_dict()
+
+        # Specifiy parameters
+        self.parameters['months_between_pregnancy_and_delivery'] = 9
+
+        # Breastfeeding status for newborns; #todo - @mnjowe: say what is source of these parameters? and access them
+        #  ... from a resourcefile directly rather than hard-coding
+        self.parameters['prob_breastfeeding_type'] = [0.101, 0.289, 0.61]
+        assert 1.0 == sum(self.parameters['prob_breastfeeding_type'])
 
     def initialise_population(self, population):
         """Set our property values for the initial population."""
@@ -99,27 +105,25 @@ class SimplifiedBirths(Module):
 
 
 class PregnancyEvent(RegularEvent, PopulationScopeEventMixin):
-    """ A event for making women pregnant"""
+    """A event for making women pregnant. Rate of doing so is based on age-specific fertility rates under assumption
+    that every pregnancy results in a birth."""
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
-        self.age_low = module.parameters['min_age']  # min preferred age
-        self.age_high = module.parameters['max_age']  # max preferred age
         self.pregnancy_prob = module.parameters['pregnancy_prob']
+        self.asfr = self.module.asfr
 
     def apply(self, population):
         df = self.sim.population.props  # get the population dataframe
 
-        # select females from dataframe who are not pregnant and of age between 15 - 49
-        selected_women = df.loc[(df.sex == 'F') &
-                                df.is_alive &
-                                ~df.is_pregnant &
-                                df.age_years.between(self.age_low, self.age_high)
-                                ]
+        # find probability of becoming pregnant (using asfr for the year, limiting to alive, non-pregnant females)
+        prob_preg = df.loc[
+            (df.sex == 'F') & df.is_alive & ~df.is_pregnant
+            ]['age_range'].map(self.asfr[self.sim.date.year]).fillna(0)
 
         # determine which woman will get pregnant
-        pregnant_women_ids = selected_women.index[
-            (self.module.rng.random_sample(size=len(selected_women.index)) < self.pregnancy_prob)
+        pregnant_women_ids = prob_preg.index[
+            (self.module.rng.random_sample(size=len(prob_preg)) < prob_preg)
         ]
 
         # updating properties for women who will get pregnant
