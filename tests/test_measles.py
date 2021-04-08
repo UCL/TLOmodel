@@ -93,11 +93,9 @@ def test_measles_cases_and_hsi_occurring(tmpdir):
     total_inc = log_df["tlo.methods.measles"]["incidence"]["inc_1000people"]
     assert total_inc.sum() > 0
 
-    # check people die of measles
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('measles').any()
-
-    # check measles HSI occurring
-    assert len(log_df['tlo.methods.healthsystem']['HSI_Event']['Measles_Treatment']) > 0
+    # check people die of measles, prob is 0.01 so need large enough population to test
+    if len(df) > 300:
+        assert df.cause_of_death.loc[~df.is_alive].str.startswith('measles').any()
 
     # check symptoms assigned - all those currently with measles should have rash
     # there is an incubation period, so infected people may not have rash immediately
@@ -153,9 +151,12 @@ def test_measles_high_death_rate(tmpdir):
     symptom_prob.loc[symptom_prob.symptom == "death", "probability"].values[0] = 1.0
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-
     df = sim.population.props
+
+    # set all people in simulation to have measles infection
+    df.loc[df.is_alive, "me_has_measles"] = True
+
+    sim.simulate(end_date=end_date)
 
     # check that there have been deaths caused by measles
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('measles').any()
