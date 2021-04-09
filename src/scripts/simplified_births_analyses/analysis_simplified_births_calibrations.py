@@ -24,7 +24,7 @@ resourcefilepath = Path("./resources")
 
 def run():
     # Setting the seed for the Simulation instance.
-    seed = 0
+    seed = 1
 
     # configuring outputs
     log_config = {
@@ -35,7 +35,7 @@ def run():
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
     end_date = Date(2030, 1, 2)
-    pop_size = 10_000
+    pop_size = 20_000
 
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
