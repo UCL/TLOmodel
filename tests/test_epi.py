@@ -20,6 +20,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    simplified_births
 )
 
 start_date = Date(2010, 1, 1)
@@ -65,12 +66,13 @@ def test_no_health_system(tmpdir):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        contraception.Contraception(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        # contraception.Contraception(resourcefilepath=resourcefilepath),
+        # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        # labour.Labour(resourcefilepath=resourcefilepath),
+        # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         epi.Epi(resourcefilepath=resourcefilepath),
     )
@@ -118,12 +120,13 @@ def test_epi_scheduling_hsi_events(tmpdir):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        contraception.Contraception(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        # contraception.Contraception(resourcefilepath=resourcefilepath),
+        # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        # labour.Labour(resourcefilepath=resourcefilepath),
+        # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         epi.Epi(resourcefilepath=resourcefilepath),
     )

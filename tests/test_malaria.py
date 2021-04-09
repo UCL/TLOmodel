@@ -22,6 +22,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    simplified_births
 )
 from tlo.methods.healthsystem import HSI_Event
 
@@ -53,27 +54,32 @@ def test_sims(tmpdir):
     # Register the appropriate modules
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
+        # healthsystem.HealthSystem(
+        #     resourcefilepath=resourcefilepath,
+        #     service_availability=service_availability,
+        #     mode_appt_constraints=0,
+        #     ignore_cons_constraints=True,
+        #     ignore_priority=True,
+        #     capabilities_coefficient=1.0,
+        #     disable=True,  # disables the health system constraints so all HSI events run
+        # ),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
-            service_availability=service_availability,
-            mode_appt_constraints=0,
-            ignore_cons_constraints=True,
-            ignore_priority=True,
-            capabilities_coefficient=1.0,
-            disable=True,  # disables the health system constraints so all HSI events run
+            disable_and_reject_all=True
         ),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         dx_algorithm_child.DxAlgorithmChild(),
         dx_algorithm_adult.DxAlgorithmAdult(),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        contraception.Contraception(resourcefilepath=resourcefilepath),
+        # contraception.Contraception(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        # labour.Labour(resourcefilepath=resourcefilepath),
+        # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
     )
 
@@ -138,13 +144,14 @@ def test_remove_malaria_test(tmpdir):
         dx_algorithm_child.DxAlgorithmChild(),
         dx_algorithm_adult.DxAlgorithmAdult(),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        contraception.Contraception(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        # contraception.Contraception(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        # labour.Labour(resourcefilepath=resourcefilepath),
+        # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
     )
 
@@ -190,27 +197,32 @@ def test_schedule_rdt_for_all(tmpdir):
     # Register the appropriate modules
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
+        # healthsystem.HealthSystem(
+        #     resourcefilepath=resourcefilepath,
+        #     service_availability=service_availability,
+        #     mode_appt_constraints=0,
+        #     ignore_cons_constraints=True,
+        #     ignore_priority=True,
+        #     capabilities_coefficient=1.0,
+        #     disable=True,  # disables the health system constraints so all HSI events run
+        # ),
         healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            service_availability=service_availability,
-            mode_appt_constraints=0,
-            ignore_cons_constraints=True,
-            ignore_priority=True,
-            capabilities_coefficient=1.0,
-            disable=True,  # disables the health system constraints so all HSI events run
-        ),
+                resourcefilepath=resourcefilepath,
+                disable_and_reject_all=True
+            ),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         dx_algorithm_child.DxAlgorithmChild(),
         dx_algorithm_adult.DxAlgorithmAdult(),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        contraception.Contraception(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        # contraception.Contraception(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        # labour.Labour(resourcefilepath=resourcefilepath),
+        # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
     )
 
@@ -239,7 +251,8 @@ def test_dx_algorithm_for_malaria_outcomes():
 
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     contraception.Contraception(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                     # contraception.Contraception(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
@@ -259,11 +272,11 @@ def test_dx_algorithm_for_malaria_outcomes():
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      dx_algorithm_adult.DxAlgorithmAdult(),
-                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                     labour.Labour(resourcefilepath=resourcefilepath),
-                     newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                     antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                     # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                     # labour.Labour(resourcefilepath=resourcefilepath),
+                     # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                     # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                     # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                      malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
                      )
 
@@ -370,7 +383,8 @@ def test_dx_algorithm_for_non_malaria_outcomes():
 
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     contraception.Contraception(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                     # contraception.Contraception(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
@@ -390,11 +404,11 @@ def test_dx_algorithm_for_non_malaria_outcomes():
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      dx_algorithm_adult.DxAlgorithmAdult(),
-                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                     labour.Labour(resourcefilepath=resourcefilepath),
-                     newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                     antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                     # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                     # labour.Labour(resourcefilepath=resourcefilepath),
+                     # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                     # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                     # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                      )
 
