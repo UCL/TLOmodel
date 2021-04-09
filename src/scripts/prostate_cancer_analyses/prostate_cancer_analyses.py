@@ -54,21 +54,21 @@ def run_sim(service_availability):
     sim = Simulation(start_date=start_date)
 
     # Register the appropriate modules
-    sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+    sim.register(  # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
                  prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)

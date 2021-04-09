@@ -56,18 +56,18 @@ sim = Simulation(start_date=start_date, seed=1, log_config=log_config)
 
 # Register the appropriate modules
 sim.register(
-    antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+    # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
     demography.Demography(resourcefilepath=resourcefilepath),
-    contraception.Contraception(resourcefilepath=resourcefilepath),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    # contraception.Contraception(resourcefilepath=resourcefilepath),
+    # enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    labour.Labour(resourcefilepath=resourcefilepath),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+    # labour.Labour(resourcefilepath=resourcefilepath),
+    # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+    # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+    # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
     #  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
     prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
 )
