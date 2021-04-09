@@ -292,8 +292,6 @@ class ProstateCancer(Module):
 #           add_or_remove='+',
 #           disease_module=self
 #       )
-
-
         # -------------------- pc_date_diagnosis -----------
 
         # for those with symptoms set to initially diagnosed
