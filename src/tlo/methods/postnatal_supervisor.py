@@ -504,6 +504,10 @@ class PostnatalSupervisor(Module):
                 sensitivity=params['sensitivity_eons_assessment']),
         )
 
+        if 'Hiv' not in self.sim.modules:
+            logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
+                                               'testing will not happen in postnatal care')
+
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
 
@@ -1188,17 +1192,14 @@ class PostnatalSupervisor(Module):
                     logger.debug(key='message', data='Neonate of a HIV +ve mother has been referred for '
                                                      'HIV testing during PNC at 6 weeks')
 
+                    individual_id = int(individual_id)
+
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         HSI_Hiv_TestAndRefer(person_id=individual_id, module=self.sim.modules['Hiv']),
                         topen=self.sim.date,
                         tclose=None,
                         priority=0)
-                else:
-                    logger.debug(key='message', data='Neonate of a HIV +ve mother has not been referred for '
-                                                     'HIV testing during PNC at 6 weeks')
-            else:
-                logger.debug(key='message',  data='HIV module is not registered in this simulation run and therefore '
-                                                  'HIV testing will not happen in postnatal care')
+
         hsi_event.target = mother_id
 
     def apply_risk_of_maternal_or_neonatal_death_postnatal(self, mother_or_child, individual_id):
@@ -1404,7 +1405,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             if not pd.isnull(mni[person]['hypertension_onset']):
                 store_dalys_in_mni(person, 'hypertension_resolution')
 
-        df.loc[week_8_postnatal_women_htn, 'pn_htn_disorders'] = 'none'
+        df.loc[week_8_postnatal_women, 'pn_htn_disorders'] = 'none'
 
         week_8_postnatal_women_anaemia = \
             df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8) & \
@@ -1427,8 +1428,6 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Schedule event that deletes the mni dictionary, we reset in greater than one months time to allow dalys to be
         # counted
 
-        # TODO: This could crash if women become pregnant again soon after the postnatal period. AT is there a cleaner
-        #  way to do this?
         for person in week_8_postnatal_women.loc[week_8_postnatal_women].index:
             mni[person]['delete_mni'] = True
 

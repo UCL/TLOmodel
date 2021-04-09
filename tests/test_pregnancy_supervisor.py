@@ -144,47 +144,13 @@ def test_run_core_modules_high_volumes_of_pregnancy():
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
     simulation"""
 
-    #sim = register_core_modules()
+    """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
+      simulation"""
 
-    from tlo import logging
-
-    log_config = {
-        "filename": "preg_sup_test",  # The name of the output file (a timestamp will be appended).
-        "directory": "C:/Users/sejjj49/PycharmProjects/TLOmodel/outputs",
-        "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
-            "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
-            "tlo.methods.labour": logging.DEBUG,
-            "tlo.methods.newborn_outcomes": logging.DEBUG,
-            "tlo.methods.antenatal_care": logging.DEBUG,
-            "tlo.methods.pregnancy_supervisor": logging.DEBUG,
-            "tlo.methods.postnatal_supervisor": logging.DEBUG,
-        }
-    }
-    sim = Simulation(start_date=start_date, seed=618, log_config=log_config)
-
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*']),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 malaria.Malaria(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath))
-
-
-    sim.make_initial_population(n=20000)
+    sim = register_core_modules()
+    sim.make_initial_population(n=1000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    sim.simulate(end_date=Date(2050, 1, 1))
+    sim.simulate(end_date=Date(2011, 1, 1))
 
 
 def test_store_dalys_in_mni_function_and_daly_calculations():

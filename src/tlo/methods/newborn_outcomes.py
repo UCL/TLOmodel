@@ -411,6 +411,10 @@ class NewbornOutcomes(Module):
                                                                       'low_birth_weight'],
             sensitivity=self.parameters['sensitivity_of_assessment_of_lbw_hp']))
 
+        if 'Hiv' not in self.sim.modules:
+            logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
+                                               'testing will not happen in newborn care')
+
     def eval(self, eq, person_id):
         """
         This function compares the result of a specific linear equation with a random draw providing
@@ -912,6 +916,7 @@ class NewbornOutcomes(Module):
         :param child_id: child_id
         """
         df = self.sim.population.props
+        child_id = int(child_id)
         # mother_id = df.at[child_id, 'mother_id']
 
         if 'Hiv' in self.sim.modules:
@@ -922,6 +927,7 @@ class NewbornOutcomes(Module):
                     tclose=None,
                     priority=0
                 )
+                logger.debug(key='message', data=f'Neonate {child_id} is receiving HIV screening after birth')
 
     def assessment_and_initiation_of_neonatal_resus(self, hsi_event, facility_type):
         """
