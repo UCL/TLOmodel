@@ -23,6 +23,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    simplified_births
 )
 from tlo.methods.healthsystem import HSI_Event
 
@@ -103,12 +104,13 @@ def test_run_with_healthsystem_no_disease_modules_defined():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -145,12 +147,13 @@ def test_run_no_interventions_allowed(tmpdir):
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -197,12 +200,13 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -238,7 +242,8 @@ def test_run_in_mode_0_no_capacity(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
@@ -248,11 +253,11 @@ def test_run_in_mode_0_no_capacity(tmpdir):
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath)
                  )
 
@@ -295,12 +300,13 @@ def test_run_in_mode_1_with_capacity(tmpdir):
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -342,12 +348,14 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
+                 )
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -390,12 +398,14 @@ def test_run_in_mode_2_with_capacity(tmpdir):
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
+                 )
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -438,12 +448,14 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
+                 )
 
     # Run the simulation, manually setting smaller values to decrease runtime (logfile size)
     sim.make_initial_population(n=100)
@@ -488,12 +500,14 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
+                 )
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -536,12 +550,14 @@ def test_run_in_with_hs_disabled(tmpdir):
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
+                 )
 
     # Run the simulation
     sim.make_initial_population(n=2000)
@@ -585,12 +601,14 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
+                 )
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
