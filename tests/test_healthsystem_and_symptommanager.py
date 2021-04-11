@@ -185,6 +185,9 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  )
 
+    # Set the availability of consumables to 50% for everything
+    sim.modules['HealthSystem'].prob_item_codes_available.loc[:, :] = 0.5
+
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)

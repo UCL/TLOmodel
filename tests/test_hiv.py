@@ -8,6 +8,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.lm import LinearModel
 from tlo.methods import (
+    antenatal_care,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
@@ -15,7 +16,10 @@ from tlo.methods import (
     healthsystem,
     hiv,
     hsi_generic_first_appts,
+    labour,
     newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
     simplified_births,
     symptommanager,
 )
@@ -41,22 +45,37 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def get_sim():
+def get_sim(use_simplified_birth=True):
     """get sim with the checks for configuration of properties running in the HIV module"""
     start_date = Date(2010, 1, 1)
     popsize = 1000
     sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
-                 )
+    if use_simplified_birth:
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
+                     )
+    else:
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                     antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                     labour.Labour(resourcefilepath=resourcefilepath),
+                     newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
+                     )
 
     # Edit the efficacy of PrEP to be perfect (for the purpose of these tests)
     sim.modules['Hiv'].parameters['proportion_reduction_in_risk_of_hiv_aq_if_on_prep'] = 1.0
@@ -502,11 +521,12 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
 
 def test_art_is_initiated_for_infants():
     """Check that infant infected at birth, and tested, diagnosed and start ART"""
-    # TODO: edited by JC, TH/TM to review - This test ensures that HIVTestAndRefer is scheduled for all newborns who
-    #  pass through the newborn HSI (i.e. their mother gave birth in a health facility). We therefore now assume that no
-    #  newborns born at home get HIV testing unless they interact with the health system at a different point
+    # This test ensures that HIVTestAndRefer is scheduled for all newborns who
+    # pass through the newborn HSI (i.e. their mother gave birth in a health facility). We therefore now assume that no
+    # newborns born at home get HIV testing unless they interact with the health system at a different point
 
-    sim = get_sim()
+    # Create simulation object that uses the Newborn module:
+    sim = get_sim(use_simplified_birth=False)
 
     # Simulate for 0 days so as to complete all the initialisation steps
     sim = start_sim_and_clear_event_queues(sim)
