@@ -102,7 +102,21 @@ def check_property_integrity(sim):
             ~(newborns['date_of_birth_nb'] > newborns['date_of_death'])
         ).all()
 
+    # Check that breastfeeding properties are correct
+    #  - those aged 6-23mo are either not breastfed or breastfed non-exclusively (limit is >0.6y here to allow for
+    #   interval between 6 months being reached and the occurrence of the poll event).
+    assert (df.loc[
+                df.is_alive &
+                (df.age_exact_years > 0.6) &
+                (df.age_exact_years < 2.0),
+                'nb_breastfeeding_status'].isin(['none', 'non_exclusive'])).all()
 
+    #  - those aged >=24mo are either not breastfed (limit is >2.1y here to allow for interval between 24 months being
+    #   reached and the occurrence of the poll event).
+    assert (df.loc[
+                df.is_alive &
+                (df.age_exact_years > 2.1),
+                'nb_breastfeeding_status'] == 'none').all()
 
 def test_pregnancy_and_birth_for_one_woman():
     """Test to check that properties and sequence of events work as expected, when considering a single woman."""
@@ -124,19 +138,18 @@ def test_pregnancy_and_birth_for_one_woman():
     # Set the probability of becoming pregnancy to 1
     sim = set_prob_of_pregnancy_to_one(sim)
 
-    # Run the Simplified Pregnancy Event on the selected population
-    pregnancy_event = simplified_births.PregnancyEvent(module=sim.modules['SimplifiedBirths'])
-    pregnancy_event.apply(sim.population.props)
+    # Run the 'set_new_pregnancies' function on the selected population
+    sb_event = simplified_births.SimplifiedBirthsPoll(module=sim.modules['SimplifiedBirths'])
+    sb_event.set_new_pregnancies()
 
     # Check that woman is now pregnant, has a date of pregnancy of today, and a delivery date in the future
     assert df.loc[0, 'is_pregnant']
     assert sim.date == df.loc[0, 'date_of_last_pregnancy']
     assert (sim.date + pd.DateOffset(months=9)) == df.loc[0, 'si_date_of_last_delivery']
 
-    # Update time to after the date of delivery and run the birth event
+    # Update time to after the date of delivery and run the 'do_deliveries' function
     sim.date = df.loc[0, 'si_date_of_last_delivery'] + pd.DateOffset(days=0)
-    birth_event = simplified_births.BirthsEvent(module=sim.modules['SimplifiedBirths'])
-    birth_event.apply(sim.population.props)
+    sb_event.do_deliveries()
 
     # Check that woman's properties are updated accordingly
     assert not df.loc[0, 'is_pregnant']
@@ -151,7 +164,7 @@ def test_pregnancy_and_birth_for_one_woman():
 
 
 def test_no_pregnancy_among_in_ineligible_populations():
-    """If no one in the population is pregnant, the PregnancyEvent should not result in any pregnancies:"""
+    """If no one in the population is pregnant, the SimplifiedBirthsPoll should not result in any pregnancies:"""
 
     # running pregnancy event with zero pregnancy probability
     sim = get_sim(popsize=400)
@@ -166,12 +179,12 @@ def test_no_pregnancy_among_in_ineligible_populations():
     df.loc[range(200, 300), ['age_years', 'age_range']] = (14, '10-14')
     df.loc[range(300, 400), ['age_years', 'age_range']] = (50, '50-54')
 
-    # make no one pregnant before the PregnancyEvent is run:
+    # make no one pregnant before the SimplifiedBirthsPoll is run:
     df.loc[:, 'is_pregnant'] = False
 
-    # Run the Simplified Pregnancy Event
-    pregnancy_event = simplified_births.PregnancyEvent(module=sim.modules['SimplifiedBirths'])
-    pregnancy_event.apply(df)
+    # Run the 'set_new_pregnancies' function
+    sb_event = simplified_births.SimplifiedBirthsPoll(module=sim.modules['SimplifiedBirths'])
+    sb_event.set_new_pregnancies()
 
     # Check that no one became pregnant
     assert not df.is_pregnant.any()
@@ -186,9 +199,9 @@ def test_no_births_if_no_one_is_pregnant():
     df.loc[:, 'is_alive'] = True
     df.loc[:, 'is_pregnant'] = False
 
-    # Run the birth event - and check that there are no births:
-    birth_event = simplified_births.BirthsEvent(module=sim.modules['SimplifiedBirths'])
-    birth_event.apply(df)
+    # Run the do_deliveries function - and check that there are no births:
+    sb_event = simplified_births.SimplifiedBirthsPoll(module=sim.modules['SimplifiedBirths'])
+    sb_event.do_deliveries()
 
     # get population dataframe
     df = sim.population.props
@@ -196,7 +209,7 @@ def test_no_births_if_no_one_is_pregnant():
 
 
 def test_standard_run_using_simplified_birth_module():
-    """Run the model using the PregnancyEvent and SimplifiedBirthEvent and check that properties are
+    """Run the model using the SimplifiedBirthsPoll and SimplifiedBirthEvent and check that properties are
     maintained correctly and that some number of births result."""
 
     # Get simulation object
@@ -220,11 +233,15 @@ def test_standard_run_using_simplified_birth_module():
 
     # check that there are births happening
     df = sim.population.props
-    newborns = df.loc[~pd.isnull(df.date_of_birth) & (df.mother_id >= 0)]
-    assert len(newborns) > 0
+    born_in_sim = df.loc[~pd.isnull(df.date_of_birth) & (df.mother_id >= 0)]
+    assert len(born_in_sim) > 0
 
-    # check that all newborns have their breastfeeding status set to exclusive
-    assert (df.loc[newborns.index, 'nb_breastfeeding_status'] == 'exclusive').all()
+    # check that all newborns have their breastfeeding status set to exclusive if aged under six months
+    assert (df.loc[
+                df.index.isin(born_in_sim.index) &
+                (df.age_exact_years < 0.5),
+                'nb_breastfeeding_status'] == 'exclusive'
+            ).all()
 
 
 def test_other_modules_running_with_simplified_births_module():

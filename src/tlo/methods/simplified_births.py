@@ -26,7 +26,8 @@ class SimplifiedBirths(Module):
         'months_between_pregnancy_and_delivery': Parameter(
             Types.INT, 'number of whole months that elapase betweeen pregnancy and delivery'),
         'prob_breastfeeding_type': Parameter(
-            Types.LIST, 'probabilities for breastfeeding status: none, non_exclusive, exclusive')
+            Types.LIST, 'probabilities that a woman is: 1) not breastfeeding (none); 2) non-exclusively breastfeeding '
+                        '(non_exclusive); 3)exclusively breastfeeding at birth (until 6 months) (exclusive)')
     }
 
     PROPERTIES = {
@@ -46,8 +47,18 @@ class SimplifiedBirths(Module):
 
         # (Property usually managed by Newborn_outcomes module)
         'nb_breastfeeding_status': Property(Types.CATEGORICAL,
-                                            'Breastfeeding status of a newborn',
+                                            'How this neonate is being breastfed currently',
                                             categories=['none', 'non_exclusive', 'exclusive']),
+        # (Internal property)
+        'si_breastfeeding_status_6mo_to_23mo': Property(Types.CATEGORICAL,
+                                                            'How this neonate is breastfeed during ages 6mo to 23 '
+                                                            'months',
+                                                            categories=['none', 'non_exclusive', 'exclusive']),
+
+        # (Property usually managed by Newborn_outcomes module)
+        'nb_early_init_breastfeeding': Property(Types.BOOL,
+                                                'whether this neonate initiated breastfeeding within 1 hour of birth'
+                                                'This is always FALSE in this module.')
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -63,9 +74,10 @@ class SimplifiedBirths(Module):
 
         self.parameters['months_between_pregnancy_and_delivery'] = 9
 
-        # Breastfeeding status for newborns; #todo - @mnjowe: say what is source of these parameters? and access them
-        #  ... from a resourcefile directly rather than hard-coding
-        self.parameters['prob_breastfeeding_type'] = [0.101, 0.289, 0.61]
+        # Breastfeeding status for newborns (importing from the Newborn resourcefile)
+        rf = pd.read_excel(self.resourcefilepath / 'ResourceFile_NewbornOutcomes.xlsx')
+        param_as_string = rf.loc[rf.parameter_name == 'prob_breastfeeding_type']['value'].iloc[0]
+        self.parameters['prob_breastfeeding_type'] = [float(y) for y in param_as_string.strip('][').split(',')]
 
 
     def initialise_population(self, population):
@@ -76,34 +88,61 @@ class SimplifiedBirths(Module):
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'si_date_of_last_delivery'] = pd.NaT
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'none'
+        df.loc[df.is_alive, 'si_breastfeeding_status_6mo_to_23mo'] = 'none'
+        df.loc[df.is_alive, 'nb_early_init_breastfeeding'] = False
+
 
     def initialise_simulation(self, sim):
-        """Schedule the PregnancyEvent and the SimplifiedBirthEvent to occur every month."""
-        sim.schedule_event(PregnancyEvent(self), sim.date)
-        sim.schedule_event(BirthsEvent(self), sim.date)
+        """Schedule the SimplifiedBirthsPoll and the SimplifiedBirthEvent to occur every month."""
+        sim.schedule_event(SimplifiedBirthsPoll(self), sim.date)
 
         # Check that the parameters loaded are ok
         assert 1.0 == sum(self.parameters['prob_breastfeeding_type'])
+
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual."""
         df = self.sim.population.props
         params = self.parameters
 
-        # Assign the date of last delivery to a newborn
-        df.at[child_id, 'is_pregnant'] = False
-        df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
-        df.at[child_id, 'si_date_of_last_delivery'] = pd.NaT
+        # Determine breastfeeding characteristics
+        initial_breastfeeding_status = 'none'
 
-        # Assign breastfeeding status to newborns
-        df.at[child_id, 'nb_breastfeeding_status'] = self.rng.choice(
+        # Assign breastfeeding status to newborns:
+
+        # 1) Newborn modules assigned initial status probablistically from ['prob_breastfeeding_type']
+        initial_breastfeeding_status = self.rng.choice(
             ('none', 'non_exclusive', 'exclusive'), p=params['prob_breastfeeding_type']
         )
 
+        # 2) Breastfeeding for those aged 6-23months: those who were initially breastfed at all, switch down to
+        #  either non_exclusive or none (equal probability of each)
+        if initial_breastfeeding_status == 'none':
+            breastfeeding_status_6mo_to_23mo = 'none'
+        else:
+            breastfeeding_status_6mo_to_23mo = self.rng.choice(
+                ('none', 'non_exclusive'), p=[0.5, 0.5]
+            )
 
-class PregnancyEvent(RegularEvent, PopulationScopeEventMixin):
-    """A event for making women pregnant. Rate of doing so is based on age-specific fertility rates under assumption
-    that every pregnancy results in a birth."""
+        # Assign properties for the newborns
+        df.at[child_id, [
+                            'is_pregnant',
+                            'date_of_last_pregnancy',
+                            'si_date_of_last_delivery',
+                            'nb_breastfeeding_status',
+                            'si_breastfeeding_status_6mo_to_23mo',
+                            'nb_early_init_breastfeeding']
+        ] = (
+            False,
+            pd.NaT,
+            pd.NaT,
+            initial_breastfeeding_status,
+            breastfeeding_status_6mo_to_23mo,
+            False
+        )
+
+
+class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         self.months_between_polls = 1
@@ -131,6 +170,19 @@ class PregnancyEvent(RegularEvent, PopulationScopeEventMixin):
         return asfr
 
     def apply(self, population):
+        # Set new pregnancies:
+        self.set_new_pregnancies()
+
+        # Do the delivery
+        self.do_deliveries()
+
+        # Update breastfeeding status at six months
+        self.update_breastfed_status()
+
+    def set_new_pregnancies(self):
+        """Making women pregnant. Rate of doing so is based on age-specific fertility rates under assumption that every
+        pregnancy results in a birth."""
+
         df = self.sim.population.props  # get the population dataframe
 
         # find probability of becoming pregnant (using asfr for the year, limiting to alive, non-pregnant females)
@@ -149,15 +201,10 @@ class PregnancyEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[pregnant_women_ids, 'si_date_of_last_delivery'] = \
             self.sim.date + pd.DateOffset(months=self.module.parameters['months_between_pregnancy_and_delivery'])
 
+    def do_deliveries(self):
+        """Checks to see if the date-of-delivery for pregnant women has been reached and implement births where
+        appropriate."""
 
-class BirthsEvent(RegularEvent, PopulationScopeEventMixin):
-    """This event checks to see if the date-of-delivery for pregnant women has been reached and implement births where
-    appropriate."""
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
-
-    def apply(self, population):
         df = self.sim.population.props  # get the population dataframe
 
         # find the women who are due to have delivered their babies before now
@@ -175,3 +222,19 @@ class BirthsEvent(RegularEvent, PopulationScopeEventMixin):
             # do the births:
             for mother_id in females_to_give_birth:
                 self.sim.do_birth(mother_id)
+
+    def update_breastfed_status(self):
+        """Update the bread_fed status of newborns, mirroing the functionality provided by the Newborn module"""
+        df = self.sim.population.props
+
+        # 1) Update for those aged 6-23 months (set probabilistically at on_birth)
+        aged_6mo_to_23mo = df.is_alive & \
+                              (df.age_exact_years >= 0.5) & \
+                              (df.age_exact_years < 2.0)
+
+        df.loc[aged_6mo_to_23mo,'nb_breastfeeding_status'] = \
+            df.loc[aged_6mo_to_23mo, 'si_breastfeeding_status_6mo_to_23mo']
+
+        # 2) Update for those aged 24+ months ('none' for all, per the Newborn module)
+        df.loc[df.is_alive & (df.age_exact_years >= 2.0), 'nb_breastfeeding_status'] = 'none'
+
