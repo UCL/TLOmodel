@@ -792,7 +792,7 @@ class Hiv(Module):
         # TODO: note for AT/TH - neonatal breastfeeding property replaced HIV temp property as discussed 19/02/21.
         #  We need to make sure newborn outcomes on_birth is always called before HIV so breastfeeding status is set
         #  prior to this function being called
-        if not child_infected and df.at[child_id, "nb_breastfeeding_status"] != 'none' and mother.hv_inf:
+        if (not child_infected) and (df.at[child_id, "nb_breastfeeding_status"] != 'none') and mother.hv_inf:
             self.mtct_during_breastfeeding(mother_id, child_id)
 
     def on_hsi_alert(self, person_id, treatment_id):

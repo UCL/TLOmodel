@@ -3,6 +3,7 @@ Plot to demonstrate calibration of simplified births module to the Census and WP
 """
 
 # %% Import Statements and initial declarations
+import datetime
 from pathlib import Path
 
 import numpy as np
@@ -18,9 +19,6 @@ resourcefilepath = Path("./resources")
 
 
 def run():
-    # Setting the seed for the Simulation instance.
-    seed = 1
-
     # configuring outputs
     log_config = {
         "filename": "simplified_births_calibrations",
@@ -29,10 +27,10 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2030, 1, 2)
-    pop_size = 20_000
+    end_date = Date(2029, 12, 31)
+    pop_size = 10_000
 
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    sim = Simulation(start_date=start_date, log_config=log_config)
 
     # Registering all required modules
     sim.register(
@@ -48,15 +46,15 @@ def run():
 def get_scaling_ratio(sim):
     cens_tot = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
     cens_yr = 2018
-
-    assert sim.date.year >= cens_yr, "Cannot scale if simulation does not include the census year"
+    cens_date = Date(cens_yr, 7, 1)  # notional date for census at midpoint of the census year.
+    assert sim.date >= cens_date, "Cannot scale if simulation does not include the census date"
 
     # Compute number of people alive in the year of census
     df = sim.population.props
     alive_in_cens_yr = \
         ~df.date_of_birth.isna() & \
-        (df.date_of_birth.dt.year >= cens_yr) & \
-        ~(df.date_of_death.dt.year < cens_yr)
+        (df.date_of_birth <= cens_date) & \
+        ~(df.date_of_death < cens_date)
     model_tot = alive_in_cens_yr.sum()
 
     # Calculate ratio for scaling
@@ -71,24 +69,22 @@ sim = run()
 # %% Make the plots
 
 # date-stamp to label outputs
-datestamp = "__2020_06_16"
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # destination for outputs
 outputpath = Path("./outputs")
 
 # Births over time (Model)
-# define the dataframe
-df = sim.population.props
 
 # select babies born during simulation
-number_of_ever_newborns = df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]
+df = sim.population.props
+newborns = df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]
 
 # getting total number of newborns per year in the model
-total_births_per_year = pd.DataFrame(data=number_of_ever_newborns['date_of_birth'].dt.year.value_counts())
-total_births_per_year.sort_index(inplace=True)
-total_births_per_year.rename(columns={'date_of_birth': 'total_births'}, inplace=True)
-births_model = total_births_per_year.reset_index()
-births_model.rename(columns={'index': 'year'}, inplace=True)
+births_model = pd.DataFrame(data=newborns['date_of_birth'].dt.year.value_counts())
+births_model.sort_index(inplace=True)
+births_model.reset_index(inplace=True)
+births_model.rename(columns={'index': 'year', 'date_of_birth': 'total_births'}, inplace=True)
 
 # rescale the number of births in the model (so that the model population sizes matches actual population size)
 births_model['total_births'] *= get_scaling_ratio(sim)
@@ -107,12 +103,13 @@ wpp.columns = 'WPP_' + wpp.columns
 
 # Births in 2018 Census
 cens = pd.read_csv(Path(resourcefilepath) / "ResourceFile_Births_2018Census.csv")
-cens_per_5y_per = cens['Count'].sum() * 5
+cens_per_5y = cens['Count'].sum() * 5
+
 # Merge in model results
 births = wpp.copy()
 births['Model'] = births_model
 births['Census'] = np.nan
-births.at[cens['Period'][0], 'Census'] = cens_per_5y_per
+births.at[cens['Period'][0], 'Census'] = cens_per_5y
 
 # Plot:
 cens_period = cens['Period'][0]
