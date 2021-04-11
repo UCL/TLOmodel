@@ -7,20 +7,14 @@ import pytest
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    antenatal_care,
-    contraception,
     demography,
     enhanced_lifestyle,
     epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
-    simplified_births
 )
 
 start_date = Date(2010, 1, 1)

@@ -7,19 +7,14 @@ from pandas import DateOffset
 from tlo import Date, Module, Simulation
 from tlo.methods import (
     Metadata,
-    antenatal_care,
     chronicsyndrome,
-    contraception,
     demography,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     mockitis,
-    newborn_outcomes,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
-    simplified_births
 )
 from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,

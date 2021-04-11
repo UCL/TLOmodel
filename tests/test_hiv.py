@@ -8,8 +8,6 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.lm import LinearModel
 from tlo.methods import (
-    antenatal_care,
-    contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
@@ -17,11 +15,9 @@ from tlo.methods import (
     healthsystem,
     hiv,
     hsi_generic_first_appts,
-    labour,
     newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    symptommanager, simplified_births,
+    simplified_births,
+    symptommanager,
 )
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 from tlo.methods.healthsystem import HealthSystemScheduler

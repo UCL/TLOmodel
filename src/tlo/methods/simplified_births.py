@@ -3,8 +3,9 @@
  postnatal supervisor, newborn outcomes) , allowing for faster runnning when these are not required. The main assumption
  is that every pregnancy results in a birth."""
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
@@ -51,9 +52,8 @@ class SimplifiedBirths(Module):
                                             categories=['none', 'non_exclusive', 'exclusive']),
         # (Internal property)
         'si_breastfeeding_status_6mo_to_23mo': Property(Types.CATEGORICAL,
-                                                            'How this neonate is breastfeed during ages 6mo to 23 '
-                                                            'months',
-                                                            categories=['none', 'non_exclusive', 'exclusive']),
+                                                        'How this neonate is breastfeed during ages 6mo to 23 months',
+                                                        categories=['none', 'non_exclusive', 'exclusive']),
 
         # (Property usually managed by Newborn_outcomes module)
         'nb_early_init_breastfeeding': Property(Types.BOOL,
@@ -79,7 +79,6 @@ class SimplifiedBirths(Module):
         param_as_string = rf.loc[rf.parameter_name == 'prob_breastfeeding_type']['value'].iloc[0]
         self.parameters['prob_breastfeeding_type'] = [float(y) for y in param_as_string.strip('][').split(',')]
 
-
     def initialise_population(self, population):
         """Set our property values for the initial population."""
         df = population.props
@@ -91,14 +90,12 @@ class SimplifiedBirths(Module):
         df.loc[df.is_alive, 'si_breastfeeding_status_6mo_to_23mo'] = 'none'
         df.loc[df.is_alive, 'nb_early_init_breastfeeding'] = False
 
-
     def initialise_simulation(self, sim):
         """Schedule the SimplifiedBirthsPoll and the SimplifiedBirthEvent to occur every month."""
         sim.schedule_event(SimplifiedBirthsPoll(self), sim.date)
 
         # Check that the parameters loaded are ok
         assert 1.0 == sum(self.parameters['prob_breastfeeding_type'])
-
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual."""
@@ -125,14 +122,12 @@ class SimplifiedBirths(Module):
             )
 
         # Assign properties for the newborns
-        df.at[child_id, [
-                            'is_pregnant',
-                            'date_of_last_pregnancy',
-                            'si_date_of_last_delivery',
-                            'nb_breastfeeding_status',
-                            'si_breastfeeding_status_6mo_to_23mo',
-                            'nb_early_init_breastfeeding']
-        ] = (
+        df.at[child_id, ['is_pregnant',
+                         'date_of_last_pregnancy',
+                         'si_date_of_last_delivery',
+                         'nb_breastfeeding_status',
+                         'si_breastfeeding_status_6mo_to_23mo',
+                         'nb_early_init_breastfeeding']] = (
             False,
             pd.NaT,
             pd.NaT,
@@ -228,13 +223,10 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
 
         # 1) Update for those aged 6-23 months (set probabilistically at on_birth)
-        aged_6mo_to_23mo = df.is_alive & \
-                              (df.age_exact_years >= 0.5) & \
-                              (df.age_exact_years < 2.0)
+        aged_6mo_to_23mo = df.is_alive & (df.age_exact_years >= 0.5) & (df.age_exact_years < 2.0)
 
-        df.loc[aged_6mo_to_23mo,'nb_breastfeeding_status'] = \
+        df.loc[aged_6mo_to_23mo, 'nb_breastfeeding_status'] = \
             df.loc[aged_6mo_to_23mo, 'si_breastfeeding_status_6mo_to_23mo']
 
         # 2) Update for those aged 24+ months ('none' for all, per the Newborn module)
         df.loc[df.is_alive & (df.age_exact_years >= 2.0), 'nb_breastfeeding_status'] = 'none'
-

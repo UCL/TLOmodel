@@ -6,8 +6,6 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
-    antenatal_care,
-    contraception,
     demography,
     diarrhoea,
     dx_algorithm_adult,
@@ -16,13 +14,9 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     malaria,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
-    simplified_births
 )
 from tlo.methods.healthsystem import HSI_Event
 
@@ -54,18 +48,14 @@ def test_sims(tmpdir):
     # Register the appropriate modules
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        # healthsystem.HealthSystem(
-        #     resourcefilepath=resourcefilepath,
-        #     service_availability=service_availability,
-        #     mode_appt_constraints=0,
-        #     ignore_cons_constraints=True,
-        #     ignore_priority=True,
-        #     capabilities_coefficient=1.0,
-        #     disable=True,  # disables the health system constraints so all HSI events run
-        # ),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
-            disable_and_reject_all=True
+            service_availability=service_availability,
+            mode_appt_constraints=0,
+            ignore_cons_constraints=True,
+            ignore_priority=True,
+            capabilities_coefficient=1.0,
+            disable=True,  # disables the health system constraints so all HSI events run
         ),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -185,18 +175,14 @@ def test_schedule_rdt_for_all(tmpdir):
     # Register the appropriate modules
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        # healthsystem.HealthSystem(
-        #     resourcefilepath=resourcefilepath,
-        #     service_availability=service_availability,
-        #     mode_appt_constraints=0,
-        #     ignore_cons_constraints=True,
-        #     ignore_priority=True,
-        #     capabilities_coefficient=1.0,
-        #     disable=True,  # disables the health system constraints so all HSI events run
-        # ),
         healthsystem.HealthSystem(
-                resourcefilepath=resourcefilepath,
-                disable_and_reject_all=True
+            resourcefilepath=resourcefilepath,
+            service_availability=service_availability,
+            mode_appt_constraints=0,
+            ignore_cons_constraints=True,
+            ignore_priority=True,
+            capabilities_coefficient=1.0,
+            disable=True,  # disables the health system constraints so all HSI events run
             ),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),

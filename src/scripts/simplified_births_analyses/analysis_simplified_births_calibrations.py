@@ -10,17 +10,12 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import (
-    make_calendar_period_lookup,
-    make_calendar_period_type,
-)
-from tlo.methods import (
-    demography,
-    simplified_births,
-)
+from tlo.analysis.utils import make_calendar_period_lookup, make_calendar_period_type
+from tlo.methods import demography, simplified_births
 
 # Path to the resource files
 resourcefilepath = Path("./resources")
+
 
 def run():
     # Setting the seed for the Simulation instance.
@@ -49,6 +44,7 @@ def run():
     sim.simulate(end_date=end_date)
     return sim
 
+
 def get_scaling_ratio(sim):
     cens_tot = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
     cens_yr = 2018
@@ -57,15 +53,17 @@ def get_scaling_ratio(sim):
 
     # Compute number of people alive in the year of census
     df = sim.population.props
-    alive_in_cens_yr = ~df.date_of_birth.isna() & \
-                       (df.date_of_birth.dt.year >= cens_yr) &\
-                       ~(df.date_of_death.dt.year < cens_yr)
+    alive_in_cens_yr = \
+        ~df.date_of_birth.isna() & \
+        (df.date_of_birth.dt.year >= cens_yr) & \
+        ~(df.date_of_death.dt.year < cens_yr)
     model_tot = alive_in_cens_yr.sum()
 
     # Calculate ratio for scaling
     ratio_data_to_model = cens_tot / model_tot
 
     return ratio_data_to_model
+
 
 # %% Run the Simulation
 sim = run()

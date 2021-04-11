@@ -7,19 +7,15 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.methods import (
     chronicsyndrome,
-    contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     mockitis,
-    newborn_outcomes,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
-    simplified_births
 )
 
 start_date = Date(2010, 1, 1)

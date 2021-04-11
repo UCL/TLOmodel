@@ -5,21 +5,15 @@ from pandas import DateOffset
 
 from tlo import Date, Simulation
 from tlo.methods import (
-    antenatal_care,
     chronicsyndrome,
-    contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     mockitis,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
-    simplified_births
 )
 from tlo.methods.symptommanager import (
     DuplicateSymptomWithNonIdenticalPropertiesError,

@@ -8,21 +8,16 @@ import pytest
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
-    antenatal_care,
     chronicsyndrome,
-    contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     mockitis,
-    newborn_outcomes,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
-    simplified_births
 )
 from tlo.methods.dxmanager import DxManager, DxTest
 from tlo.methods.healthsystem import HSI_Event

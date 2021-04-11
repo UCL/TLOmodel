@@ -1,28 +1,28 @@
 import os
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from pandas._libs.tslibs.offsets import DateOffset
-from tlo import Simulation, Date, logging
-from tlo.events import RegularEvent, PopulationScopeEventMixin
+
+from tlo import Date, Simulation, logging
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
-    demography,
-    simplified_births,
-    enhanced_lifestyle,
-    healthsystem,
-    symptommanager,
-    healthseekingbehaviour,
-    healthburden,
-    oesophagealcancer,
     bladder_cancer,
+    demography,
     diarrhoea,
+    enhanced_lifestyle,
     epilepsy,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
     hiv,
     malaria,
-    tb
+    oesophagealcancer,
+    simplified_births,
+    symptommanager,
+    tb,
 )
-
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -117,6 +117,7 @@ def check_property_integrity(sim):
                 df.is_alive &
                 (df.age_exact_years > 2.1),
                 'nb_breastfeeding_status'] == 'none').all()
+
 
 def test_pregnancy_and_birth_for_one_woman():
     """Test to check that properties and sequence of events work as expected, when considering a single woman."""

@@ -10,10 +10,7 @@ from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation
-from tlo.methods import (
-    demography,
-    simplified_births
-)
+from tlo.methods import demography, simplified_births
 
 # Where will outputs go - by default, wherever this script is run
 outputpath = Path("./outputs")  # folder for convenience of storing outputs

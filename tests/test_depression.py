@@ -8,20 +8,14 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
-    antenatal_care,
-    contraception,
     demography,
     depression,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
-    simplified_births
 )
 
 try:
