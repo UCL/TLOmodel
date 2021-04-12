@@ -41,7 +41,7 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 2
+yearsrun = 3
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
@@ -177,25 +177,27 @@ for i in range(0, nsim):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath),
-        contraception.Contraception(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        # contraception.Contraception(resourcefilepath=resourcefilepath),
+        # labour.Labour(resourcefilepath=resourcefilepath),
+        # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
     )
     # Get the log file
     logfile = sim.configure_logging(filename="LogFile")
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
     # alter the number of injuries given out
+    # Injury vibes number of GBD injury category distribution:
+    number_inj_data = [0.38, 0.25, 0.153, 0.094, 0.055, 0.031, 0.018, 0.019]
     sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
-        [1, 2, 3, 4, 5, 6, 7, 8], [1, 0.0, 0.0, 0.0, 0.00, 0.0, 0.0, 0.0]
+        [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
     ]
     sim.modules['RTI'].parameters['base_rate_injrti'] = \
-        sim.modules['RTI'].parameters['base_rate_injrti'] * 6.9
+        sim.modules['RTI'].parameters['base_rate_injrti'] * 5.6
     sim.modules['RTI'].parameters['imm_death_proportion_rti'] = \
-        sim.modules['RTI'].parameters['imm_death_proportion_rti'] * 0.1
+        sim.modules['RTI'].parameters['imm_death_proportion_rti'] * 0
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
@@ -207,7 +209,7 @@ for i in range(0, nsim):
     incidences_of_death_pre_hospital.append(
         log_df['tlo.methods.rti']['summary_1m']['incidence of prehospital death per 100,000'].tolist()
     )
-    incidences_of_injuries.append(log_df['tlo.methods.rti']['summary_1m']['injury incidence per 100,000'].tolist())
+    incidences_of_injuries.append(log_df['tlo.methods.rti']['Inj_category_incidence']['tot_inc_injuries'].tolist())
 
 print(f"Mean incidence of rti = {np.mean(incidences_of_rti)}")
 print(f"Mean incidence of rti death = {np.mean(incidences_of_death)}")
