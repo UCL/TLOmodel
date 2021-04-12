@@ -24,6 +24,7 @@ from tlo.methods.symptommanager import Symptom
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -62,16 +63,6 @@ class Wasting(Module):
         'prev_WHZ_distribution_age_48_59mo': Parameter(
             Types.LIST, 'distribution of WHZ among 4 year olds  in 2015'),
         # effect of risk factors on wasting prevalence
-        'or_wasting_male': Parameter(
-            Types.REAL, 'odds ratio of wasting if male gender'),
-        'or_wasting_no_recent_diarrhoea': Parameter(
-            Types.REAL, 'odds ratio of wasting if no recent diarrhoea in past 2 weeks, compared to recent episode'),
-        'or_wasting_single_birth': Parameter(
-            Types.REAL, 'odds ratio of wasting if single birth, ref group multiple birth (twins)'),
-        'or_wasting_mother_no_education': Parameter(
-            Types.REAL, 'odds ratio of wasting if mother has no formal education, ref group secondary education'),
-        'or_wasting_mother_primary_education': Parameter(
-            Types.REAL, 'odds ratio of wasting if mother has primary education, ref group secondary education'),
         'or_wasting_motherBMI_underweight': Parameter(
             Types.REAL, 'odds ratio of wasting if mother has low BMI, ref group high BMI (overweight)'),
         'or_wasting_motherBMI_normal': Parameter(
@@ -84,22 +75,32 @@ class Wasting(Module):
             Types.REAL, 'odds ratio of wasting if household wealth is middle Q3, ref group Q1'),
         'or_wasting_hhwealth_Q2': Parameter(
             Types.REAL, 'odds ratio of wasting if household wealth is richer Q2, ref group Q1'),
-        'base_inc_rate_wasting': Parameter(
-            Types.REAL, 'baseline incidence of wasting'),
-        'rr_wasting_preterm_and_AGA': Parameter(
+        'base_inc_rate_MAM_by_agegp': Parameter(
+            Types.LIST, 'List with baseline incidence of wasting by age group'),
+        'rr_MAM_preterm_and_AGA': Parameter(
             Types.REAL, 'relative risk of wasting if born preterm and adequate for gestational age'),
-        'rr_wasting_SGA_and_term': Parameter(
+        'rr_MAM_SGA_and_term': Parameter(
             Types.REAL, 'relative risk of wasting if born term and small for geatational age'),
-        'rr_wasting_SGA_and_preterm': Parameter(
+        'rr_MAM_SGA_and_preterm': Parameter(
             Types.REAL, 'relative risk of wasting if born preterm and small for gestational age'),
+        'min_days_duration_of_wasting': Parameter(
+            Types.REAL, 'minimum duration in days of wasting (MAM and SAM)'),
+        'average_duration_of_untreated_MAM': Parameter(
+            Types.REAL, 'average duration of untreated MAM'),
+        'prob_progress_to_SAM_without_tx': Parameter(
+            Types.REAL, 'probability of MAM progressing to SAM without treatment'),
+        'average_duration_of_untreated_SAM': Parameter(
+            Types.REAL, 'average duration of untreated SAM'),
 
     }
 
     PROPERTIES = {
         'un_WHZ_score': Property(Types.REAL, 'height-for-age z-score'),
+        'un_ever_wasted': Property(Types.BOOL, 'had wasting before WHZ <-2'),
         'un_WHZ_category': Property(Types.CATEGORICAL, 'height-for-age z-score group',
                                     categories=['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']),
-
+        'un_wasting_oedema': Property(Types.BOOL, 'oedema present in wasting'),
+        'un_wasting_MUAC_measure': Property(Types.REAL, 'MUAC measurement'),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -107,6 +108,10 @@ class Wasting(Module):
         self.resourcefilepath = resourcefilepath
 
         self.prevalence_equations_by_age = dict()
+        self.wasting_incidence_equation = dict()
+
+        # dict to hold the DALY weights
+        self.daly_wts = dict()
 
     def read_parameters(self, data_folder):
         """
@@ -120,12 +125,6 @@ class Wasting(Module):
         self.load_parameters_from_dataframe(dfd)
 
         p = self.parameters
-
-        # if 'HealthBurden' in self.sim.modules.keys():
-        #     #get the DALY weight - 860-862 are the sequale codes for epilepsy
-        # p['daly_wt_epilepsy_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=860)
-        # p['daly_wt_epilepsy_less_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=861)
-        # p['daly_wt_epilepsy_seizure_free'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=862)
 
     def initialise_population(self, population):
         """
@@ -147,6 +146,7 @@ class Wasting(Module):
             with adjusted intercept so odds in 0-year-olds matches the specified value in the model
             when averaged across the population
             """
+
             def get_odds_wasting(agegp):
                 """
                 This function will calculate the WHZ scores by categories and return the odds of wasting
@@ -163,7 +163,7 @@ class Wasting(Module):
                 probability_less_than_minus2sd = 1 - probability_over_or_equal_minus2sd
 
                 # convert probability to odds
-                base_odds_of_wasting = probability_less_than_minus2sd / (1-probability_less_than_minus2sd)
+                base_odds_of_wasting = probability_less_than_minus2sd / (1 - probability_less_than_minus2sd)
 
                 return base_odds_of_wasting
 
@@ -171,15 +171,12 @@ class Wasting(Module):
                 return LinearModel(
                     LinearModelType.LOGISTIC,
                     get_odds_wasting(agegp=agegp),  # base odds
-                    # Predictor('gi_last_diarrhoea_date_of_onset').when(range(self.sim.date - DateOffset(weeks=2)),
-                    #                                                   p['or_wasting_no_recent_diarrhoea']),
-                    Predictor('li_ed_lev').when(1, p['or_wasting_mother_no_education'])
-                        .when(2, p['or_wasting_mother_primary_education']),
+                    Predictor('li_bmi').when(1, p['or_wasting_motherBMI_underweight']),
                     Predictor('li_wealth').when(2, p['or_wasting_hhwealth_Q2'])
                         .when(3, p['or_wasting_hhwealth_Q3'])
                         .when(4, p['or_wasting_hhwealth_Q4'])
                         .when(5, p['or_wasting_hhwealth_Q5']),
-                        )
+                )
 
             unscaled_lm = make_linear_model_wasting(agegp)  # intercept=get_odds_wasting(agegp)
             target_mean = get_odds_wasting(agegp='12_23mo')
@@ -244,14 +241,278 @@ class Wasting(Module):
             for id in wasted[wasted].index:
                 probability_of_severe = get_prob_severe_in_overall_wasting(agegp)
                 wasted_category = self.rng.choice(['WHZ<-3', '-3<=WHZ<-2'],
-                                                   p=[probability_of_severe, 1 - probability_of_severe])
+                                                  p=[probability_of_severe, 1 - probability_of_severe])
                 df.at[id, 'un_WHZ_category'] = wasted_category
-            df.loc[wasted[wasted==False].index, 'un_WHZ_category'] = 'WHZ>=-2'
+            df.loc[wasted[wasted == False].index, 'un_WHZ_category'] = 'WHZ>=-2'
 
     def initialise_simulation(self, sim):
         """Prepares for simulation:
         * Schedules the main polling event
         * Schedules the main logging event
-        * Establishes the linear models and other data structures using the parameters that have been read-in
+        * Establishes the incidence linear models and other data structures using the parameters that have been read-in
         * Store the consumables that are required in each of the HSI
         """
+
+        event = WastingPollingEvent(self)
+        sim.schedule_event(event, sim.date + DateOffset(months=6))
+
+        # event = WastingLoggingEvent(self)
+        # sim.schedule_event(event, sim.date + DateOffset(months=0))
+
+        # Get DALY weights
+        get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
+        if 'HealthBurden' in self.sim.modules.keys():
+            # self.daly_wts['MAM_w/o_oedema'] = get_daly_weight(sequlae_code=460)  ## no value given
+            self.daly_wts['MAM_with_oedema'] = get_daly_weight(sequlae_code=461)
+            self.daly_wts['SAM_w/o_oedema'] = get_daly_weight(sequlae_code=462)
+            self.daly_wts['SAM_with_oedema'] = get_daly_weight(sequlae_code=463)
+
+        # --------------------------------------------------------------------------------------------
+        # Make a linear model equation that govern the probability that a person becomes wasted WHZ<-2
+        df = self.sim.population.props
+        p = self.parameters
+
+        def make_scaled_lm_wasting_incidence():
+            """
+            Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
+            1-year-olds and then creates a new linear model with adjusted intercept so incidents in 1-year-olds
+            matches the specified value in the model when averaged across the population
+            """
+            def make_lm_wasting_incidence(intercept=1.0):
+                return LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    intercept,
+                    Predictor('age_exact_years').when('.between(0,0.5)', p['base_inc_rate_MAM_by_agegp'][0])
+                        .when('.between(0.5,1)', p['base_inc_rate_MAM_by_agegp'][1])
+                        .when('.between(1,1)', p['base_inc_rate_MAM_by_agegp'][2])
+                        .when('.between(2,2)', p['base_inc_rate_MAM_by_agegp'][3])
+                        .when('.between(3,3)', p['base_inc_rate_MAM_by_agegp'][4])
+                        .when('.between(4,4)', p['base_inc_rate_MAM_by_agegp'][5]),
+                    Predictor('nb_size_for_gestational_age').when('small_for_gestational_age',
+                                                                  p['rr_MAM_SGA_and_term']),
+                    Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
+                                     '& (nb_late_preterm == False) & (nb_early_preterm == False)',
+                                     p['rr_MAM_SGA_and_term']),
+                    Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
+                                     '& (nb_late_preterm == True) | (nb_early_preterm == True)',
+                                     p['rr_MAM_SGA_and_preterm']),
+                    Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
+                                     '& (nb_late_preterm == True) | (nb_early_preterm == True)',
+                                     p['rr_MAM_preterm_and_AGA'])
+                )
+
+            unscaled_lm = make_lm_wasting_incidence()
+            target_mean = p[f'base_inc_rate_MAM_by_agegp'][2]
+            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1)]).mean()
+            scaled_intercept = 1.0 * (target_mean / actual_mean)
+            scaled_lm = make_lm_wasting_incidence(intercept=scaled_intercept)
+            return scaled_lm
+
+        self.wasting_incidence_equation = make_scaled_lm_wasting_incidence()
+
+    def on_birth(self, mother_id, child_id):
+        """Initialise properties for a newborn individual.
+        :param mother_id: the mother for this child
+        :param child_id: the new child
+        """
+
+        df = self.sim.population.props
+
+        df.at[child_id, 'un_WHZ_category'] = 'WHZ>=-2'
+
+    def on_hsi_alert(self, person_id, treatment_id):
+        """
+        This is called whenever there is an HSI event commissioned by one of the other disease modules.
+        """
+        logger.debug(key='message',
+                     data=f'This is Wasting, being alerted about a health system interaction for person'
+                          f'{person_id} and treatment {treatment_id}')
+
+    def report_daly_values(self):
+        """
+        This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+        experienced by persons in the previous month. Only rows for alive-persons must be returned.
+        The names of the series of columns is taken to be the label of the cause of this disability.
+        It will be recorded by the healthburden module as <ModuleName>_<Cause>.
+        """
+        df = self.sim.population.props
+
+        total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
+        total_daly_values.loc[df.is_alive & (df.un_WHZ_category == 'WHZ<-3') &
+                              (df.un_wasting_oedema == True)] = self.daly_wts['SAM_with_oedema']
+        total_daly_values.loc[df.is_alive & (df.un_WHZ_category == 'WHZ<-3') &
+                              (df.un_wasting_oedema == False)] = self.daly_wts['SAM_w/o_oedema']
+        total_daly_values.loc[df.is_alive & (df.un_WHZ_category == '-3<=WHZ<-2') &
+                              (df.un_wasting_oedema == True)] = self.daly_wts['MAM_with_oedema']
+        # total_daly_values.loc[df.is_alive & (df.un_WHZ_category == '-3<=WHZ<-2') &
+        #                       (df.un_wasting_oedema == False)] = self.daly_wts['MAM_w/o_oedema']
+
+        return total_daly_values
+
+
+class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    Regular event that updates all wasting properties for the population
+    """
+
+    def __init__(self, module):
+        """schedule to run every 6 months
+        :param module: the module that created this event
+        """
+        self.repeat_months = 6
+        super().__init__(module, frequency=DateOffset(months=self.repeat_months))
+        assert isinstance(module, Wasting)
+
+    def apply(self, population):
+        """Apply this event to the population.
+        :param population: the current population
+        """
+        df = population.props
+        m = self.module
+        rng = m.rng
+
+        days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'D')
+
+        # Determine who will be onset with wasting among those who are not currently wasted
+        incidence_of_wasting = self.module.wasting_incidence_equation.predict(
+            df.loc[df.is_alive & (df.age_exact_years < 5)])
+
+        wasted = rng.random_sample(len(incidence_of_wasting)) < incidence_of_wasting
+        for person_id in wasted[wasted].index:
+            # Allocate a date of onset for wasting episode
+            date_onset = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
+
+            # Create the event for the onset of wasting
+            self.sim.schedule_event(
+                event=WastingOnsetEvent(module=self.module, person_id=person_id),
+                date=date_onset
+            )
+
+
+class WastingOnsetEvent(Event, IndividualScopeEventMixin):
+    """
+    This Event is for the onset of wasting (MAM with WHZ <-2).
+     * Refreshes all the properties so that they pertain to this current episode of wasting
+     * Imposes the symptoms
+     * Schedules relevant natural history event {(ProgressionSAMEvent) and
+       (either WastingNaturalRecoveryEvent or WastingDeathEvent)}
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+        m = self.module
+        p = m.parameters
+        rng = m.rng
+
+        df.at[person_id, 'un_ever_wasted'] = True
+        df.at[person_id, 'un_currently_wasted'] = True
+        df.at[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'  # start as MAM
+
+        # Allocate the duration of the wasting episode
+        duration_in_days = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM']))
+
+        # Determine those that will progress to SAM
+
+        # after reaching the last day of the total duration of MAM, the child can progress to SAM,
+        # naturally recover or die (due to other causes). Here we just allocate them into recovery or SAM
+        outcome_from_MAM = rng.choice(['SAM', 'recovery'],
+                                      p=[p['prob_progress_to_SAM_without_tx'],
+                                         1 - p['prob_progress_to_SAM_without_tx']])
+        if outcome_from_MAM == 'SAM':
+            # schedule SAM onset
+            self.sim.schedule_event(
+                event=ProgressionSevereWastingEvent(module=self.module, person_id=person_id),
+                date=self.sim.date + DateOffset(duration_in_days)
+            )
+        else:
+            # schedule natural recovery
+            self.sim.schedule_event(
+                event=WastingNaturalRecoveryEvent(module=self.module, person_id=person_id),
+                date=self.sim.date + DateOffset(duration_in_days)
+            )
+
+
+class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
+    """
+    This Event is for the onset of wasting (SAM with WHZ <-3).
+     * Refreshes all the properties so that they pertain to this current episode of wasting
+     * Imposes the symptoms
+     * Schedules relevant natural history event {(either WastingNaturalRecoveryEvent or WastingDeathEvent)}
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+        m = self.module
+        p = m.parameters
+        rng = m.rng
+
+        df.at[person_id, 'un_WHZ_category'] = 'WHZ<-3'  # SAM
+
+        # determine the duration of SAM episode
+        duration_in_days = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_SAM']))
+
+        # Determine progression to death or natural recovery
+        outcome_from_SAM = rng.choice(['death', 'recovery'],
+                                      p=[p['prob_progress_to_SAM_without_tx'],
+                                         1 - p['prob_progress_to_SAM_without_tx']])
+        if outcome_from_SAM == 'death':
+            # schedule SAM onset
+            self.sim.schedule_event(
+                event=SevereWastingDeathEvent(module=self.module, person_id=person_id),
+                date=self.sim.date + DateOffset(duration_in_days)
+            )
+        else:
+            # schedule natural recovery
+            self.sim.schedule_event(
+                event=WastingNaturalRecoveryEvent(module=self.module, person_id=person_id),
+                date=self.sim.date + DateOffset(duration_in_days)
+            )
+
+
+class SevereWastingDeathEvent(Event, IndividualScopeEventMixin):
+    """
+    This event applies the death function
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+        m = self.module
+        p = m.parameters
+        rng = m.rng
+
+        # Implement the death:
+        self.sim.schedule_event(
+            demography.InstantaneousDeath(
+                self.module,
+                person_id,
+                cause='Wasting'
+            ),
+            self.sim.date)
+
+
+class WastingNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
+    """
+    This event sets the properties back to normal state
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+        m = self.module
+        p = m.parameters
+        rng = m.rng
+
+        df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
+
+# class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):

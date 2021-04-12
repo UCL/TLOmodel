@@ -172,6 +172,7 @@ class Stunting(Module):
                     get_odds_stunting(agegp=agegp),  # base odds
                     # Predictor('gi_last_diarrhoea_date_of_onset').when(range(self.sim.date - DateOffset(weeks=2)),
                     #                                                   p['or_stunting_no_recent_diarrhoea']),
+                    Predictor('sex').when('M', p['or_stunting_male']),
                     Predictor('li_ed_lev').when(1, p['or_stunting_mother_no_education'])
                         .when(2, p['or_stunting_mother_primary_education']),
                     Predictor('li_wealth').when(2, p['or_stunting_hhwealth_Q2'])
