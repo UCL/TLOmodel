@@ -7,7 +7,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     depression,
@@ -94,7 +94,7 @@ def register_core_modules():
                                            service_availability=['*']),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
@@ -116,7 +116,7 @@ def register_all_modules():
                                            service_availability=['*']),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
@@ -693,7 +693,7 @@ def test_check_first_anc_visit_scheduling():
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact in hsi_events
 
 
 def test_pregnancy_supervisor_anaemia():
@@ -842,7 +842,7 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage():
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
 
     # Now clear the event queue and reset haemorrhage variables
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -924,7 +924,7 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
 
     # Now clear the event queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -1102,7 +1102,7 @@ def test_pregnancy_supervisor_chorio_and_prom():
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
 
     # Now clear the event queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -1121,7 +1121,7 @@ def test_pregnancy_supervisor_chorio_and_prom():
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
 
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.event_queue.queue.clear()
@@ -1209,7 +1209,7 @@ def test_induction_of_labour_logic():
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour in hsi_events
 
     # Clear the event queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()

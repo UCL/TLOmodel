@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
     parse_log_file,
 )
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -73,7 +73,7 @@ def run():
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
         healthburden.HealthBurden(resourcefilepath=resources),
         contraception.Contraception(resourcefilepath=resources),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resources),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
         labour.Labour(resourcefilepath=resources),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),

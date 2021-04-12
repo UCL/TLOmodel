@@ -1490,7 +1490,7 @@ class PregnancySupervisor(Module):
         # If they do, we scheduled them to preset to a health facility immediately (this HSI schedules the correct
         # labour modules)
         for person in care_seekers.loc[care_seekers].index:
-            from tlo.methods.antenatal_care import (
+            from tlo.methods.care_of_women_during_pregnancy import (
                 HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour,
             )
 
@@ -1724,7 +1724,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
                 facility_level = int(self.module.rng.choice([1, 2], p=params['prob_anc_at_facility_level_1_2']))
 
-                from tlo.methods.antenatal_care import (
+                from tlo.methods.care_of_women_during_pregnancy import (
                     HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact,
                 )
 
@@ -1805,7 +1805,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             logger.debug(key='message', data=f'Mother {person} will seek care following acute pregnancy'
                                              f'complications')
 
-            from tlo.methods.antenatal_care import (
+            from tlo.methods.care_of_women_during_pregnancy import (
                 HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment,
             )
 

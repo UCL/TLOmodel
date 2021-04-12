@@ -7,7 +7,7 @@ import pytest
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -67,7 +67,7 @@ def test_no_health_system(tmpdir):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         contraception.Contraception(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
@@ -120,7 +120,7 @@ def test_epi_scheduling_hsi_events(tmpdir):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         contraception.Contraception(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),

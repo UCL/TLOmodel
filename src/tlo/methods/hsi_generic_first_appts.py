@@ -4,7 +4,7 @@ the health system following the onset of acute generic symptoms.
 """
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
-from tlo.methods.antenatal_care import (
+from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
 )

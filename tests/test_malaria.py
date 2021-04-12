@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     diarrhoea,
@@ -72,7 +72,7 @@ def test_sims(tmpdir):
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
     )
@@ -143,7 +143,7 @@ def test_remove_malaria_test(tmpdir):
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
     )
@@ -209,7 +209,7 @@ def test_schedule_rdt_for_all(tmpdir):
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
     )
@@ -262,7 +262,7 @@ def test_dx_algorithm_for_malaria_outcomes():
                      pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                      labour.Labour(resourcefilepath=resourcefilepath),
                      newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                     antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                      postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                      malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
                      )
@@ -393,7 +393,7 @@ def test_dx_algorithm_for_non_malaria_outcomes():
                      pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                      labour.Labour(resourcefilepath=resourcefilepath),
                      newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                     antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                      postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                      )
