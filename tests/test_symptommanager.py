@@ -99,12 +99,6 @@ def test_no_symptoms_if_no_diseases():
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -130,12 +124,6 @@ def test_adding_quering_and_removing_symptoms():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -192,12 +180,6 @@ def test_spurious_symptoms():
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -226,12 +208,6 @@ def test_baby_born_has_no_symptoms():
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -241,22 +217,7 @@ def test_baby_born_has_no_symptoms():
     # do a birth
     df = sim.population.props
 
-    # TODO: JC 09/03/2021- this is a quick fix so that the newborn outcomes on_birth function  runs. I imagine that
-    #  this test will use the simplified births module in the future? if so this mni logic can be removed
-
     mother_id = df.loc[df.sex == 'F'].index[0]
-
-    # Populate the mni dictionary with variables that are assessed in the on_birth function of the newborn outcomes
-    # module
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {
-        'twin_count': 0,
-        'single_twin_still_birth': False,
-        'labour_state': 'term_labour',
-        'stillbirth_in_labour': False,
-        'abx_for_prom_given': False,
-        'corticosteroids_given': False,
-        'delivery_setting': 'health_centre',
-        'clean_birth_practices': False}
 
     person_id = sim.do_birth(mother_id)
 
