@@ -376,7 +376,7 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     # make inital popuation
     sim.make_initial_population(n=popsize)
 
-    # force that all persons aged over 20 are in the prostate-confined stage to begin with:
+    # force that all persons aged over 35 are in the prostate-confined stage to begin with:
     has_lgd = sim.population.props.is_alive & (sim.population.props.age_years >= 35)
     sim.population.props.loc[has_lgd, "pc_status"] = 'prostate_confined'
 

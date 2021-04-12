@@ -59,7 +59,7 @@ sim.register(
     # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
     demography.Demography(resourcefilepath=resourcefilepath),
     # contraception.Contraception(resourcefilepath=resourcefilepath),
-    # enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
