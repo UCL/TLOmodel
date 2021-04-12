@@ -148,9 +148,9 @@ def test_run_core_modules_high_volumes_of_pregnancy():
       simulation"""
 
     sim = register_core_modules()
-    sim.make_initial_population(n=1000)
+    sim.make_initial_population(n=20000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=Date(2020, 1, 1))
 
 
 def test_store_dalys_in_mni_function_and_daly_calculations():
@@ -486,9 +486,7 @@ def test_abortion_complications():
 
     death_event.apply(mother_id)
 
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not sim.population.props.at[mother_id, 'is_alive']
     assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delete_mni'])
 
 
@@ -867,11 +865,9 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage():
     sim.date = sim.date + pd.DateOffset(weeks=5)
     pregnancy_sup.apply(sim.population)
 
-    # Check that a woman from the series has correctly had the instantaneous death event scheduled
+    # Check that a woman from the series has correctly died
     mother_id = pregnant_women.index[0]
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not sim.population.props.at[mother_id, 'is_alive']
     assert mother_id not in list(sim.modules['PregnancySupervisor'].mother_and_newborn_info)
 
     # todo check stillbirth
@@ -946,12 +942,11 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
     sim.date = sim.date + pd.DateOffset(weeks=4)
     pregnancy_sup.apply(sim.population)
 
-    # Check the death event is correctly scheduled
-    mother_id = pregnant_women.index[0]
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
-    assert mother_id not in list(sim.modules['PregnancySupervisor'].mother_and_newborn_info)
+    # Check the death has occurred
+    assert not (df.loc[pregnant_women.index, 'is_alive']).all().all()
+
+    # reset the is_alive property
+    df.loc[pregnant_women.index, 'is_alive'] = True
 
     # Clear the event queue again and reset the mni dictionary which had been deleted
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -1148,13 +1143,14 @@ def test_pregnancy_supervisor_chorio_and_prom():
 
     pregnancy_sup.apply(sim.population)
 
-    # Check that a woman from the series has correctly had the instantaneous death event scheduled
-    mother_id = pregnant_women.index[0]
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert sim.population.props.at[mother_id, 'ps_chorioamnionitis'] == 'clinical'
-    assert demography.InstantaneousDeath in events
-    assert mother_id not in list(sim.modules['PregnancySupervisor'].mother_and_newborn_info)
+    # Check women from the series has correctly died
+    assert (df.loc[pregnant_women.index, 'ps_chorioamnionitis'] == 'clinical').all().all()
+    assert not (df.loc[pregnant_women.index, 'is_alive']).all().all()
+    for person in pregnant_women.index:
+        assert person not in list(sim.modules['PregnancySupervisor'].mother_and_newborn_info)
+
+    # reset the is_alive property
+    df.loc[pregnant_women.index, 'is_alive'] = True
 
     # Clear the event queue and regenerate MNI (deleted in death)
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()

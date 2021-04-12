@@ -237,9 +237,7 @@ def test_twin_and_single_twin_still_birth_logic_for_twins():
     assert (mni[mother_id]['twin_count'] == 2)
 
     # And using that logging registered that one twin had died intrapartum and scheduled the death event accordingly
-    events = sim.find_events_for_person(person_id=child_id_two)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not sim.population.props.at[child_id_two, 'is_alive']
 
 
 def test_care_seeking_for_twins_delivered_at_home_who_develop_complications():

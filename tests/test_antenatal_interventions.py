@@ -973,9 +973,7 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care():
     death_event.apply(mother_id)
 
     # Check that the woman survived thanks to treatment
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath not in events
+    assert df.at[mother_id, 'is_alive']
 
     # Check that the mni will be deleted on the next daly poll and that treatment properties have been reset
     assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delete_mni'])
@@ -1073,9 +1071,7 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management():
     assert (df.at[mother_id, 'ps_ectopic_pregnancy'] == 'none')
 
     # Check that the woman survived thanks to treatment
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath not in events
+    assert df.at[mother_id, 'is_alive']
 
 # TODO: test treatment effects work as expected? (some of this is done in preg sup test)
 # todo: test when probabilities/consumables are blocked/reduced

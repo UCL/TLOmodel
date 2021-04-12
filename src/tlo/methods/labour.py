@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
-from tlo.methods import Metadata, demography, labour_lm
+from tlo.methods import Metadata, labour_lm
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -828,10 +828,8 @@ class Labour(Module):
                                                 'child': child_id})
 
         if mother.la_intrapartum_still_birth:
-            death = demography.InstantaneousDeath(self.sim.modules['Demography'],
-                                                  child_id,
-                                                  cause='intrapartum stillbirth')
-            self.sim.schedule_event(death, self.sim.date)
+            self.sim.modules['Demography'].do_death(individual_id=child_id, cause='intrapartum stillbirth',
+                                                    originating_module=self.sim.modules['Labour'])
 
         # We use this variable in the postnatal supervisor module to track postpartum women
         df.at[mother_id, 'la_is_postpartum'] = True
@@ -1316,8 +1314,8 @@ class Labour(Module):
 
         if mni[individual_id]['death_postpartum']:
             self.labour_tracker['maternal_death'] += 1
-            self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id, cause='maternal'),
-                                    self.sim.date)
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+                                                    originating_module=self.sim.modules['Labour'])
 
             logger.debug(key='message', data=f'Mother {individual_id} has died due to postpartum complications')
 
@@ -2687,8 +2685,8 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         # For a woman who die (due to the effect of one or more of the above complications) we schedule the death event
         if mni[individual_id]['death_in_labour']:
             self.module.labour_tracker['maternal_death'] += 1
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                  cause='maternal'), self.sim.date)
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+                                                    originating_module=self.sim.modules['Labour'])
 
             # Log the maternal death
             logger.info(key='message', data=f'This is LabourDeathEvent scheduling a death for person {individual_id} on'

@@ -229,12 +229,11 @@ class Demography(Module):
 
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
         if 'HealthBurden' in self.sim.modules.keys():
-            label = originating_module.name + '_' + cause           # creates a label for these YLL of the form:
-                                                                    # <ModuleName>_<CauseOfDeath>
+            label = originating_module.name + '_' + cause
+            # creates a label for these YLL of the form: <ModuleName>_<CauseOfDeath>
             self.sim.modules['HealthBurden'].report_live_years_lost(sex=person['sex'],
                                                                     date_of_birth=person['date_of_birth'],
                                                                     label=label)
-
 
     def calc_py_lived_in_last_year(self, delta=pd.DateOffset(years=1)):
         """

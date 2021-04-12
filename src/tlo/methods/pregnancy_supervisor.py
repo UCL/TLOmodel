@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, demography
+from tlo.methods import Metadata
 from tlo.methods.labour import LabourOnsetEvent
 from tlo.util import BitsetHandler
 
@@ -608,18 +608,19 @@ class PregnancySupervisor(Module):
         df = self.sim.population.props
         mni = self.mother_and_newborn_info
 
-        # We reset all womans gestational age when they deliver as they are no longer pregnant
-        df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
-        df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT
+        if df.at[mother_id, 'is_alive']:
+            # We reset all womans gestational age when they deliver as they are no longer pregnant
+            df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
+            df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT
 
-        # We currently assume that hyperglycemia due to gestational diabetes resolves following birth
-        if df.at[mother_id, 'ps_gest_diab'] != 'none':
-            df.at[mother_id, 'ps_gest_diab'] = 'none'
+            # We currently assume that hyperglycemia due to gestational diabetes resolves following birth
+            if df.at[mother_id, 'ps_gest_diab'] != 'none':
+                df.at[mother_id, 'ps_gest_diab'] = 'none'
 
-            # We store the date of resolution for women who were aware of their diabetes (as the DALY weight only
-            # occurs after diagnosis)
-            if not pd.isnull(mni[mother_id]['gest_diab_onset']):
-                self.store_dalys_in_mni(mother_id, 'gest_diab_resolution')
+                # We store the date of resolution for women who were aware of their diabetes (as the DALY weight only
+                # occurs after diagnosis)
+                if not pd.isnull(mni[mother_id]['gest_diab_onset']):
+                    self.store_dalys_in_mni(mother_id, 'gest_diab_resolution')
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug(key='message', data='This is PregnancySupervisor, being alerted about a health system interaction '
@@ -699,12 +700,6 @@ class PregnancySupervisor(Module):
 
                             monthly_daly[person] += daily_weight * days_with_comp
 
-                            print('daly_calc_id', person)
-                            print(monthly_daly[person])
-                            print('daly_calc_comp', complication)
-                            print('daly_calc_onset', mni[person][f'{complication}_onset'])
-                            print('daly_calc_resolution', mni[person][f'{complication}_resolution'])
-
                             assert monthly_daly[person] >= 0
                             mni[person][f'{complication}_resolution'] = pd.NaT
 
@@ -746,7 +741,13 @@ class PregnancySupervisor(Module):
                 if monthly_daly[person] > 1:
                     monthly_daly[person] = 1
 
-                if mni[person]['delete_mni']:
+                if mni[person]['delete_mni'] and (df.at[person, 'is_pregnant'] or
+                                                  (df.at[person, 'ps_ectopic_pregnancy'] != 'none')):
+                    mni[person]['delete_mni'] = False
+
+                elif mni[person]['delete_mni'] and not df.at[person, 'is_pregnant'] and (df.at[person,
+                                                                                               'ps_ectopic_pregnancy']
+                                                                                         == 'none'):
                     del mni[person]
 
         daly_series = pd.Series(data=0, index=df.index[df.is_alive])
@@ -1187,9 +1188,8 @@ class PregnancySupervisor(Module):
 
             # Those women who die have InstantaneousDeath scheduled
             for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
-                self.sim.schedule_event(demography.InstantaneousDeath(self, person,
-                                                                      cause='maternal'), self.sim.date)
-
+                self.sim.modules['Demography'].do_death(individual_id=person, cause='maternal',
+                                                        originating_module=self.sim.modules['PregnancySupervisor'])
                 del mni[person]
 
     def apply_risk_of_placental_abruption(self, gestation_of_interest):
@@ -1872,8 +1872,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                  data=f'mother {person} has died following a pregnancy emergency on '
                                       f'date {self.sim.date}')
 
-                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, person,
-                                                                          cause='maternal'), self.sim.date)
+                    self.sim.modules['Demography'].do_death(individual_id=person, cause='maternal',
+                                                            originating_module=self.sim.modules['PregnancySupervisor'])
+
                     self.module.pregnancy_disease_tracker['antenatal_death'] += 1
                     del mni[person]
 
@@ -1986,8 +1987,8 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
             logger.debug(key='message', data=f'person {individual_id} has died due to {self.cause} on date '
                                              f'{self.sim.date}')
 
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                  cause='maternal'), self.sim.date)
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+                                                    originating_module=self.sim.modules['PregnancySupervisor'])
 
             self.module.pregnancy_disease_tracker[f'{self.cause}_death'] += 1
             self.module.pregnancy_disease_tracker['antenatal_death'] += 1

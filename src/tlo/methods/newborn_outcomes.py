@@ -1110,10 +1110,8 @@ class NewbornOutcomes(Module):
             # If the mother has lost a baby who was part of a twin pair during labour, we schedule the death here (
             # to monitor stillbirths)
             if m['single_twin_still_birth']:
-                death = demography.InstantaneousDeath(self.sim.modules['Demography'],
-                                                      child_id,
-                                                      cause='intrapartum stillbirth')
-                self.sim.schedule_event(death, self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=child_id, cause='intrapartum stillbirth ',
+                                                        originating_module=self.sim.modules['NewbornOutcomes'])
                 return
 
         elif ~df.at[mother_id, 'ps_multiple_pregnancy']:

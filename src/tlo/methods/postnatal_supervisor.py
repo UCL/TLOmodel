@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
-from tlo.methods import Metadata, demography, postnatal_supervisor_lm
+from tlo.methods import Metadata, postnatal_supervisor_lm
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -936,7 +936,8 @@ class PostnatalSupervisor(Module):
 
             # Those women who die have InstantaneousDeath scheduled
             for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
-                self.sim.schedule_event(demography.InstantaneousDeath(self, person, cause='maternal'), self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=person, cause='maternal',
+                                                        originating_module=self.sim.modules['PostnatalSupervisor'])
                 del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]
 
         # ----------------------------------------- CARE SEEKING ------------------------------------------------------
@@ -1270,8 +1271,9 @@ class PostnatalSupervisor(Module):
                 logger.debug(key='message', data=f'mother {individual_id} has died due to complications of the '
                                                  f'postnatal period')
 
-                self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
-                                                                      cause='maternal'), self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+                                                        originating_module=self.sim.modules['PostnatalSupervisor'])
+
                 self.postnatal_tracker['postnatal_death'] += 1
                 del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[individual_id]
 
@@ -1294,8 +1296,8 @@ class PostnatalSupervisor(Module):
                     logger.debug(key='message', data=f'person {individual_id} has died due to late neonatal sepsis on '
                                                      f'date {self.sim.date}')
 
-                    self.sim.schedule_event(demography.InstantaneousDeath(
-                        self, individual_id, cause='neonatal'), self.sim.date)
+                    self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='neonatal',
+                                                            originating_module=self.sim.modules['PostnatalSupervisor'])
 
                     self.postnatal_tracker['neonatal_death'] += 1
                     self.postnatal_tracker['neonatal_sepsis_death'] += 1
