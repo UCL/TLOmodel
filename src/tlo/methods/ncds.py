@@ -16,6 +16,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods import demography as de
 from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.symptommanager import Symptom
 
 # from tlo.methods.healthsystem import HSI_Event
 
@@ -125,6 +126,17 @@ class Ncds(Module):
 
         self.condition_list = ['nc_' + cond for cond in list(self.extended_conditions)]
 
+        # Store the symptoms that this module will use:
+        self.symptoms = {
+            'diabetes_symptoms',
+            'chronic_lower_bp_symptoms',
+            'chronic_ischemic_hd_symptoms',
+            'vomiting' # for CKD
+        }
+
+        # dict to hold the probability of onset of different types of symptom given a condition
+        self.prob_symptoms = dict()
+
     def read_parameters(self, data_folder):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
 
@@ -191,12 +203,32 @@ class Ncds(Module):
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
 
+        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
+        generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
+        for symptom_name in self.symptoms:
+            if symptom_name not in generic_symptoms:
+                self.sim.modules['SymptomManager'].register_symptom(
+                    Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
+                )
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
 
         # retrieve age range categories from Demography module
         self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
+
+        # --------------------------------------------------------------------------------------------
+        # Make a dict containing the probability of symptoms onset given acquisition of each condition.
+        def make_symptom_probs(condition):
+            sy = self.parameters[f'{condition}_onset'].set_index('parameter_name').T.to_dict('records')[0]
+            return {
+                'diabetes_symptoms': sy['diabetes_symptoms'],
+                'chronic_lower_bp_symptoms': sy['chronic_lower_bp_symptoms'],
+                'chronic_ischemic_hd_symptoms': sy['chronic_ischemic_hd_symptoms'],
+                'vomiting': sy['vomiting'],
+            }
+        # --------------------------------------------------------------------------------------------
 
         df = population.props
         for condition in self.conditions:
@@ -227,6 +259,37 @@ class Ncds(Module):
                 else:
                     age_min = age_min + 5
                     age_max = age_max + 20
+
+            # get symptom probabilities
+            self.prob_symptoms[condition] = make_symptom_probs(condition)
+
+        # --------------------------------------------------------------------------------------------
+        # Do some quick checks
+        # Check that each condition has a risk of developing each symptom
+        assert set(self.conditions) == set(self.prob_symptoms.keys())
+
+        assert all(
+            [
+                set(self.symptoms) == set(self.prob_symptoms[condition].keys())
+                for condition in self.prob_symptoms.keys()
+            ]
+        )
+
+        # -------------------- SYMPTOMS ---------------------------------------------------------------
+        # ----- Impose the symptom on random sample of those with each condition to have:
+        for condition in self.conditions:
+            for symptom in self.prob_symptoms[condition].keys():
+                lm_init_symptoms = LinearModel.multiplicative(
+                    Predictor(f'nc_{condition}').when(False, 0.0)
+                    .when(True, self.prob_symptoms[condition].get(f'{symptom}'))
+                )
+                has_symptom_at_init = lm_init_symptoms.predict(df.loc[df.is_alive], self.rng)
+                self.sim.modules['SymptomManager'].change_symptom(
+                    person_id=has_symptom_at_init.index[has_symptom_at_init].tolist(),
+                    symptom_string=f'{symptom}',
+                    add_or_remove='+',
+                    disease_module=self
+                )
 
     def initialise_simulation(self, sim):
         """Schedule:
