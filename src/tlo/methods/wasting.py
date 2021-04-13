@@ -20,6 +20,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -47,6 +48,8 @@ class Wasting(Module):
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
     }
+
+    wasting_states = ['MAM', 'SAM']
 
     PARAMETERS = {
         # prevalence of wasting by age group
@@ -107,8 +110,31 @@ class Wasting(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+        # set the linear model equations for prevalence and incidence
         self.prevalence_equations_by_age = dict()
         self.wasting_incidence_equation = dict()
+
+        # dict to hold counters for the number of episodes by wasting-type and age-group
+        blank_counter = dict(zip(self.wasting_states, [list() for _ in self.wasting_states]))
+        self.wasting_incident_case_tracker_blank = {
+            '0y': copy.deepcopy(blank_counter),
+            '1y': copy.deepcopy(blank_counter),
+            '2y': copy.deepcopy(blank_counter),
+            '3y': copy.deepcopy(blank_counter),
+            '4y': copy.deepcopy(blank_counter),
+            '5+y': copy.deepcopy(blank_counter)
+        }
+        self.wasting_incident_case_tracker = copy.deepcopy(self.wasting_incident_case_tracker_blank)
+
+        zeros_counter = dict(zip(self.wasting_states, [0] * len(self.wasting_states)))
+        self.wasting_incident_case_tracker_zeros = {
+            '0y': copy.deepcopy(zeros_counter),
+            '1y': copy.deepcopy(zeros_counter),
+            '2y': copy.deepcopy(zeros_counter),
+            '3y': copy.deepcopy(zeros_counter),
+            '4y': copy.deepcopy(zeros_counter),
+            '5+y': copy.deepcopy(zeros_counter)
+        }
 
         # dict to hold the DALY weights
         self.daly_wts = dict()
@@ -252,12 +278,14 @@ class Wasting(Module):
         * Establishes the incidence linear models and other data structures using the parameters that have been read-in
         * Store the consumables that are required in each of the HSI
         """
+        df = self.sim.population.props
+        p = self.parameters
 
         event = WastingPollingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=6))
 
-        # event = WastingLoggingEvent(self)
-        # sim.schedule_event(event, sim.date + DateOffset(months=0))
+        event = WastingLoggingEvent(self)
+        sim.schedule_event(event, sim.date + DateOffset(months=12))
 
         # Get DALY weights
         get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
@@ -269,8 +297,6 @@ class Wasting(Module):
 
         # --------------------------------------------------------------------------------------------
         # Make a linear model equation that govern the probability that a person becomes wasted WHZ<-2
-        df = self.sim.population.props
-        p = self.parameters
 
         def make_scaled_lm_wasting_incidence():
             """
@@ -378,13 +404,14 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[df.is_alive & (df.age_exact_years < 5)])
 
         wasted = rng.random_sample(len(incidence_of_wasting)) < incidence_of_wasting
+
         for person_id in wasted[wasted].index:
             # Allocate a date of onset for wasting episode
             date_onset = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
 
             # Create the event for the onset of wasting
             self.sim.schedule_event(
-                event=WastingOnsetEvent(module=self.module, person_id=person_id),
+                event=WastingOnsetEvent(module=self.module, person_id=person_id, am_state='MAM'),
                 date=date_onset
             )
 
@@ -398,8 +425,11 @@ class WastingOnsetEvent(Event, IndividualScopeEventMixin):
        (either WastingNaturalRecoveryEvent or WastingDeathEvent)}
     """
 
-    def __init__(self, module, person_id):
+    AGE_GROUPS = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
+
+    def __init__(self, module, person_id, am_state):
         super().__init__(module, person_id=person_id)
+        self.wasting_state = am_state
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -424,7 +454,7 @@ class WastingOnsetEvent(Event, IndividualScopeEventMixin):
         if outcome_from_MAM == 'SAM':
             # schedule SAM onset
             self.sim.schedule_event(
-                event=ProgressionSevereWastingEvent(module=self.module, person_id=person_id),
+                event=ProgressionSevereWastingEvent(module=self.module, person_id=person_id, am_state='SAM'),
                 date=self.sim.date + DateOffset(duration_in_days)
             )
         else:
@@ -433,6 +463,12 @@ class WastingOnsetEvent(Event, IndividualScopeEventMixin):
                 event=WastingNaturalRecoveryEvent(module=self.module, person_id=person_id),
                 date=self.sim.date + DateOffset(duration_in_days)
             )
+
+        # -------------------------------------------------------------------------------------------
+        # Add this incident case to the tracker
+        age_group = WastingOnsetEvent.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
+        m.wasting_incident_case_tracker[age_group][self.wasting_state].append(self.sim.date)
+        print(self.module.wasting_incident_case_tracker)
 
 
 class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
@@ -443,8 +479,9 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
      * Schedules relevant natural history event {(either WastingNaturalRecoveryEvent or WastingDeathEvent)}
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, am_state):
         super().__init__(module, person_id=person_id)
+        self.wasting_state = am_state
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -515,4 +552,33 @@ class WastingNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
 
         df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
 
-# class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+
+class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+        This Event logs the number of incident cases that have occurred since the previous logging event.
+        Analysis scripts expect that the frequency of this logging event is once per year.
+        """
+
+    def __init__(self, module):
+        # This event to occur every year
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        self.date_last_run = self.sim.date
+
+    def apply(self, population):
+        # Convert the list of timestamps into a number of timestamps
+        # and check that all the dates have occurred since self.date_last_run
+        counts = copy.deepcopy(self.module.wasting_incident_case_tracker_zeros)
+
+        for age_grp in self.module.wasting_incident_case_tracker.keys():
+            for state in self.module.wasting_states:
+                list_of_times = self.module.wasting_incident_case_tracker[age_grp][state]
+                counts[age_grp][state] = len(list_of_times)
+                for t in list_of_times:
+                    assert self.date_last_run <= t <= self.sim.date
+
+        logger.info(key='wasting_incidence_count', data=counts)
+
+        # Reset the counters and the date_last_run
+        self.module.wasting_incident_case_tracker = copy.deepcopy(self.module.wasting_incident_case_tracker_blank)
+        self.date_last_run = self.sim.date
