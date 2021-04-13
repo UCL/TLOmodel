@@ -1820,7 +1820,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             art_cov = art / count if count > 0 else 0
             # proportion of subset on treatment that have good VL suppression
             art_vs = sum(subset & (df.hv_art == "on_VL_suppressed"))
-            art_cov_vs = art_vs / art_vs if art_vs > 0 else 0
+            art_cov_vs = art_vs / art if art > 0 else 0
             return proportion_diagnosed, art_cov, art_cov_vs
 
         alive_infected = df.is_alive & df.hv_inf
