@@ -5,8 +5,8 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
-    care_of_women_during_pregnancy,
     bladder_cancer,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,

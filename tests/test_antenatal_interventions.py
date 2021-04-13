@@ -615,7 +615,7 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     # And finally check she has been scheduled to return for follow up testing in 1 months time
     date_event = check_event_queue_for_event_and_return_scheduled_event_date(
         sim, queue_of_interest='hsi', individual_id=updated_mother_id,
-        event_of_interest=care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia)
+        event_of_interest=care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia)  # noqa: E501
 
     assert date_event == (sim.date + pd.DateOffset(days=28))
 
@@ -628,7 +628,7 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     df.at[mother_id, 'ac_date_next_contact'] = sim.date + pd.DateOffset(weeks=2)
 
     # Run the outpatient appointment
-    outpatient_check = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(
+    outpatient_check = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(  # noqa: E501
         module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     outpatient_check.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
@@ -649,7 +649,7 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     # Because she is due to have ANC in 2 weeks we check here that has been correctly identified and that she has not
     # been scheduled for outpatient care (as screening for anaemia will happen as part of routine treatment)
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
-    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia not in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia not in hsi_events  # noqa: E501
 
 
 def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpatient_care():
@@ -732,8 +732,7 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
 
     # Check bother the glycaemic control event and outpatient follow up events are scheduled
     assert pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent in events
-    assert \
-        care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes in hsi_events  # noqa: E501
 
     # Clear the event queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -752,7 +751,7 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
     assert (df.at[mother_id, 'ps_gest_diab'] == 'uncontrolled')
 
     # Define the outpatient HSI and run
-    outpatient_hsi = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(
+    outpatient_hsi = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(  # noqa: E501
         module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     outpatient_hsi.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
@@ -765,8 +764,7 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
 
     assert pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent in events
-    assert \
-        care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes in hsi_events  # noqa: E501
 
     # Set the probability that oral medication alone will control this womans diabetes to 0
     params['prob_glycaemic_control_orals'] = 0
@@ -782,8 +780,7 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
     events = find_and_return_events_list(sim, mother_id)
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
     assert pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent in events
-    assert \
-        care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes in hsi_events  # noqa: E501
 
 
 def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_during_antenatal_inpatient_care():

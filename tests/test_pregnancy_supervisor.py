@@ -148,9 +148,9 @@ def test_run_core_modules_high_volumes_of_pregnancy():
       simulation"""
 
     sim = register_core_modules()
-    sim.make_initial_population(n=20000)
+    sim.make_initial_population(n=1000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    sim.simulate(end_date=Date(2020, 1, 1))
+    sim.simulate(end_date=Date(2011, 1, 1))
 
 
 def test_store_dalys_in_mni_function_and_daly_calculations():
