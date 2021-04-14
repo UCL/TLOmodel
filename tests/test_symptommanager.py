@@ -6,15 +6,13 @@ from pandas import DateOffset
 from tlo import Date, Simulation
 from tlo.methods import (
     chronicsyndrome,
-    contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     mockitis,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 from tlo.methods.symptommanager import (
@@ -100,9 +98,7 @@ def test_no_symptoms_if_no_diseases():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath)
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -127,9 +123,7 @@ def test_adding_quering_and_removing_symptoms():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -185,9 +179,7 @@ def test_spurious_symptoms():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath)
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -215,9 +207,7 @@ def test_baby_born_has_no_symptoms():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath)
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -226,7 +216,9 @@ def test_baby_born_has_no_symptoms():
 
     # do a birth
     df = sim.population.props
+
     mother_id = df.loc[df.sex == 'F'].index[0]
+
     person_id = sim.do_birth(mother_id)
 
     # check that the new person does not have symptoms:
