@@ -68,8 +68,6 @@ class Wasting(Module):
         # effect of risk factors on wasting prevalence
         'or_wasting_motherBMI_underweight': Parameter(
             Types.REAL, 'odds ratio of wasting if mother has low BMI, ref group high BMI (overweight)'),
-        'or_wasting_motherBMI_normal': Parameter(
-            Types.REAL, 'odds ratio of wasting if mother has normal BMI, ref group high BMI (overweight)'),
         'or_wasting_hhwealth_Q5': Parameter(
             Types.REAL, 'odds ratio of wasting if household wealth is poorest Q5, ref group Q1'),
         'or_wasting_hhwealth_Q4': Parameter(
@@ -94,6 +92,14 @@ class Wasting(Module):
             Types.REAL, 'probability of MAM progressing to SAM without treatment'),
         'average_duration_of_untreated_SAM': Parameter(
             Types.REAL, 'average duration of untreated SAM'),
+        'recovery_rate_with_standard_RUTF': Parameter(
+            Types.REAL, 'probability of recovery from wasting following treatment with standard RUTF'),
+        'recovery_rate_with_soy_RUSF': Parameter(
+            Types.REAL, 'probability of recovery from wasting following treatment with soy RUSF'),
+        'recovery_rate_with_CSB++': Parameter(
+            Types.REAL, 'probability of recovery from wasting following treatment with CSB++'),
+        'recovery_rate_with_inpatient_care': Parameter(
+            Types.REAL, 'probability of recovery from wasting following treatment with inpatient care'),
 
     }
 
@@ -104,9 +110,12 @@ class Wasting(Module):
                                     categories=['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']),
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'clinical acute malnutrition state based on WHZ',
                                                    categories=['MAM', 'SAM']),
+        'un_wasting_death_date': Property(Types.DATE, 'death date from wasting'),
 
         'un_wasting_oedema': Property(Types.BOOL, 'oedema present in wasting'),
         'un_wasting_MUAC_measure': Property(Types.REAL, 'MUAC measurement'),
+        'un_AM_treatment_type': Property(Types.CATEGORICAL, 'treatment types for of acute malnutrition',
+                                         categories=['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -116,6 +125,22 @@ class Wasting(Module):
         # set the linear model equations for prevalence and incidence
         self.prevalence_equations_by_age = dict()
         self.wasting_incidence_equation = dict()
+
+        # dict to hold the probability of onset of different symptoms:
+        self.prob_symptoms = dict()
+
+        # Store the symptoms that this module will use:
+        self.symptoms = {
+            'palmar_pallor',
+            'oedema',
+            'lack_of_appetite',
+            'lethargic',
+            'dehydration'
+        }
+
+        # set the linear model for recovery
+        self.uncomplicated_acute_malnutrition_recovery_rate = dict()
+        self.acute_malnutrition_with_complications_recovery_rate = dict()
 
         # dict to hold counters for the number of episodes by wasting-type and age-group
         blank_counter = dict(zip(self.wasting_states, [list() for _ in self.wasting_states]))
@@ -149,11 +174,27 @@ class Wasting(Module):
         :return:
         """
         # Update parameters from the resource dataframe
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Undernutrition.xlsx',
-                            sheet_name='Parameter_values_AM')
-        self.load_parameters_from_dataframe(dfd)
-
+        # Read parameters from the resourcefile
+        self.load_parameters_from_dataframe(
+            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Undernutrition.xlsx',
+                          sheet_name='Parameter_values_AM'))
         p = self.parameters
+
+        # Check that every value has been read-in successfully
+        for param_name, param_type in self.PARAMETERS.items():
+            assert param_name in p, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+            assert param_name is not None, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+            assert isinstance(p[param_name],
+                              param_type.python_type), f'Parameter "{param_name}" is not read in correctly from the ' \
+                                                       f'resourcefile.'
+
+        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
+        generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
+        for symptom_name in self.symptoms:
+            if symptom_name not in generic_symptoms:
+                self.sim.modules['SymptomManager'].register_symptom(
+                    Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
+                )
 
     def initialise_population(self, population):
         """
@@ -302,7 +343,6 @@ class Wasting(Module):
 
         # --------------------------------------------------------------------------------------------
         # Make a linear model equation that govern the probability that a person becomes wasted WHZ<-2
-
         def make_scaled_lm_wasting_incidence():
             """
             Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
@@ -343,6 +383,39 @@ class Wasting(Module):
 
         self.wasting_incidence_equation = make_scaled_lm_wasting_incidence()
 
+        # --------------------------------------------------------------------------------------------
+        # Make a linear model equations that govern the probability of recovery following treatment
+        # lm with probability of recovery following treatment for uncomplicated cases
+        self.uncomplicated_acute_malnutrition_recovery_rate.update({
+            'MAM':
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('un_AM_treatment_type').when('soy_RUSF', p['recovery_rate_with_soy_RUSF'])
+                            .otherwise(0.0),
+                            Predictor('un_AM_treatment_type').when('CSB++', p['recovery_rate_with_CSB++'])
+                            .otherwise(0.0),
+                            ),
+            'SAM':
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('un_AM_treatment_type')
+                            .when('standard_RUTF', p['recovery_rate_with_standard_RUTF'])
+                            .otherwise(0.0),
+                            )
+        })
+
+        # lm with probability of recovery following treatment for complicated cases
+        self.acute_malnutrition_with_complications_recovery_rate.update({
+            'SAM':
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('un_AM_treatment_type').when('inpatient_care',
+                                                                    p['recovery_rate_with_inpatient_care'])
+                            .otherwise(0.0),
+
+                            ),
+        })
+
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
         :param mother_id: the mother for this child
@@ -382,6 +455,92 @@ class Wasting(Module):
 
         return total_daly_values
 
+    def wasting_clinical_symptoms(self, population, clinical_index):
+        """
+        assign clinical symptoms to new acute malnutrition cases
+
+        :param population:
+        :param clinical_index:
+        """
+        df = population
+        p = self.parameters
+        rng = self.rng
+        now = self.sim.date
+
+        # currently symptoms list is applied to all
+        for symptom in self.symptoms:
+            # this also schedules symptom resolution in 5 days
+            self.sim.modules["SymptomManager"].change_symptom(
+                person_id=list(clinical_index),
+                symptom_string=symptom,
+                add_or_remove="+",
+                disease_module=self,
+                duration_in_days=None,
+            )
+
+    # def severe_symptoms(self, population, severe_index, child=False):
+    #     """assign clinical symptoms to new severe malaria cases. Symptoms can only be resolved by treatment
+    #     handles both adult and child (using the child parameter) symptoms
+    #
+    #     :param population: the population dataframe
+    #     :param severe_index: the indices of new clinical cases
+    #     :param child: to apply severe symptoms to children (otherwise applied to adults)
+    #     """
+    #     df = population
+    #     p = self.parameters
+    #     rng = self.rng
+    #     now = self.sim.date
+    #
+    #     # currently symptoms list is applied to all
+    #     for symptom in self.symptoms:
+    #         # this also schedules symptom resolution in 5 days
+    #         self.sim.modules["SymptomManager"].change_symptom(
+    #             person_id=list(severe_index),
+    #             symptom_string=symptom,
+    #             add_or_remove="+",
+    #             disease_module=self,
+    #             duration_in_days=None,
+    #         )
+
+    def do_wasting_treatment(self, person_id, wasting_severity, treatment_id):
+        """Helper function that enacts the effects of a treatment to acute malnutrition.
+        * Log the treatment date
+        * Prevents this episode of wasting from causing a death
+        * Schedules the cure event, at which symptoms are alleviated.
+        """
+        df = self.sim.population.props
+        p = self.module.parameters
+        person = df.loc[person_id]
+        if not person.is_alive:
+            return
+
+        # Log that the treatment is provided:
+        df.at[person_id, 'un_wasting_tx_start_date'] = self.sim.date
+
+        # Determine the outcome of treatment
+        recovery_from_wasting = self.module.uncomplicated_acute_malnutrition_recovery_rate[wasting_severity].predict(
+            df.loc[person_id])
+        if recovery_from_wasting > self.rng.rand():
+            # If treatment is successful: cancel death and schedule cure event
+            self.cancel_death_date(person_id)
+            self.sim.schedule_event(WastingRecoveryEvent(self, person_id),
+                                    self.sim.date + DateOffset(
+                                        days=self.parameters['days_between_treatment_and_cure']
+                                    ))
+        # else:  # not improving seek care or death
+        #     self.do_when_not_improving(person_id)
+
+    def cancel_death_date(self, person_id):
+        """
+        Cancels a scheduled date of death due to wasting for a person. This is called prior to the scheduling the
+        CureEvent to prevent deaths happening in the time between a treatment being given and the cure event occurring.
+
+        :param person_id:
+        :return:
+        """
+        df = self.sim.population.props
+        df.at[person_id, 'un_wasting_death_date'] = pd.NaT
+
 
 class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -412,6 +571,9 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[df.is_alive & (df.age_exact_years < 5)])
         wasted = rng.random_sample(len(incidence_of_wasting)) < incidence_of_wasting
 
+        # update clinical symptoms for all new clinical infections
+        self.module.wasting_clinical_symptoms(df, wasted[wasted].index)
+
         # determine the time of onset and other disease characteristics for each individual
         for person_id in wasted[wasted].index:
             # Allocate a date of onset for wasting episode
@@ -431,7 +593,7 @@ class WastingOnsetEvent(Event, IndividualScopeEventMixin):
      * Refreshes all the properties so that they pertain to this current episode of wasting
      * Imposes the symptoms
      * Schedules relevant natural history event {(ProgressionSAMEvent) and
-       (either WastingNaturalRecoveryEvent or WastingDeathEvent)}
+       (either WastingRecoveryEvent or WastingDeathEvent)}
     """
 
     AGE_GROUPS = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
@@ -470,7 +632,7 @@ class WastingOnsetEvent(Event, IndividualScopeEventMixin):
         else:
             # schedule natural recovery
             self.sim.schedule_event(
-                event=WastingNaturalRecoveryEvent(module=self.module, person_id=person_id),
+                event=WastingRecoveryEvent(module=self.module, person_id=person_id),
                 date=self.sim.date + DateOffset(duration_in_days)
             )
 
@@ -485,7 +647,7 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
     This Event is for the onset of wasting (SAM with WHZ <-3).
      * Refreshes all the properties so that they pertain to this current episode of wasting
      * Imposes the symptoms
-     * Schedules relevant natural history event {(either WastingNaturalRecoveryEvent or WastingDeathEvent)}
+     * Schedules relevant natural history event {(either WastingRecoveryEvent or WastingDeathEvent)}
     """
 
     def __init__(self, module, person_id, am_state):
@@ -517,7 +679,7 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
         else:
             # schedule natural recovery
             self.sim.schedule_event(
-                event=WastingNaturalRecoveryEvent(module=self.module, person_id=person_id),
+                event=WastingRecoveryEvent(module=self.module, person_id=person_id),
                 date=self.sim.date + DateOffset(duration_in_days)
             )  # TODO: add improvement to MAM before full recovery
 
@@ -551,7 +713,7 @@ class SevereWastingDeathEvent(Event, IndividualScopeEventMixin):
             self.sim.date)
 
 
-class WastingNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
+class WastingRecoveryEvent(Event, IndividualScopeEventMixin):
     """
     This event sets the properties back to normal state
     """
@@ -565,7 +727,94 @@ class WastingNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         p = m.parameters
         rng = m.rng
 
+        if not df.at[person_id, 'is_alive']:
+            return
+
         df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
+        df.at[person_id, 'un_clinical_acute_malnutrition'] = None
+        df.at[person_id, 'un_wasting_death_date'] = pd.NaT
+        df.at[person_id, 'un_wasting_oedema'] = False
+
+        # this will clear all wasting symptoms
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=person_id, disease_module=self.module
+        )
+
+
+class HSI_uncomplicated_MAM_treatment(HSI_Event, IndividualScopeEventMixin):
+    """
+    this is the treatment for moderate acute malnutrition without complications
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Wasting)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'uncomplicated_MAM_treatment'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+
+        df = self.sim.population.props
+
+        # Stop the person from dying of acute malnutrition (if they were going to die)
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # Do here whatever happens to an individual during this health system interaction event
+        # ~~~~~~~~~~~~~~~~~~~~~~
+        # Make request for some consumables
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # whole package of interventions
+        pkg_code_mam = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Management of moderate acute malnutrition (children)',
+                            'Intervention_Pkg_Code'])[0]  # This package includes only CSB(or supercereal or CSB++)
+        # individual items
+        item_code1 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Corn Soya Blend (or Supercereal - CSB++)', 'Item_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_mam: 1}, 'Item_Code': {item_code1: 1}}
+
+        # check availability of consumables
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed)
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_mam]:
+            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
+            self.module.do_wasting_treatment(
+                person_id=person_id,
+                wasting_severity='MAM',
+                treatment_id='CSB++'
+            )
+        else:
+            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+
+        # --------------------------------------------------------------------------------------------------
+        # check to see if all consumables returned (for demonstration purposes):
+        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_mam]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code1])
+        # use helper function instead (for demonstration purposes)
+        all_available_using_helper_function = self.get_all_consumables(
+            item_codes=[item_code1],
+            pkg_codes=[pkg_code_mam]
+        )
+        # Demonstrate equivalence
+        assert all_available == all_available_using_helper_function
+        # Return the actual appt footprints
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug("HSI_Malaria_tx_compl_adult: did not run")
+        pass
 
 
 class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -583,17 +832,19 @@ class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # Convert the list of timestamps into a number of timestamps
         # and check that all the dates have occurred since self.date_last_run
-        counts = copy.deepcopy(self.module.wasting_incident_case_tracker_zeros)
+        counts_am = copy.deepcopy(self.module.wasting_incident_case_tracker_zeros)
 
         for age_grp in self.module.wasting_incident_case_tracker.keys():
             for state in self.module.wasting_states:
                 list_of_times = self.module.wasting_incident_case_tracker[age_grp][state]
-                counts[age_grp][state] = len(list_of_times)
+                counts_am[age_grp][state] = len(list_of_times)
                 for t in list_of_times:
                     assert self.date_last_run <= t <= self.sim.date
 
-        logger.info(key='wasting_incidence_count', data=counts)
+        logger.info(key='wasting_incidence_count', data=counts_am)
 
         # Reset the counters and the date_last_run
         self.module.wasting_incident_case_tracker = copy.deepcopy(self.module.wasting_incident_case_tracker_blank)
         self.date_last_run = self.sim.date
+
+
