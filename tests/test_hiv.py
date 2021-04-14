@@ -8,7 +8,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.lm import LinearModel
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
@@ -65,7 +65,7 @@ def get_sim(use_simplified_birth=True):
     else:
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                      pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                     antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                      labour.Labour(resourcefilepath=resourcefilepath),
                      newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                      postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),

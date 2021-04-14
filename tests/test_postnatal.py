@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     depression,
@@ -80,7 +80,7 @@ def register_core_modules(ignore_cons_constraints):
                                            ignore_cons_constraints=ignore_cons_constraints),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
@@ -268,13 +268,8 @@ def test_application_of_risk_of_death_postnatal_week_one_event():
 
     # Check that both mother and newborn have had risk of death immediately applied after failing to seek treatment,
     # and will now die
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
-
-    events = sim.find_events_for_person(person_id=child_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not sim.population.props.at[mother_id, 'is_alive']
+    assert not sim.population.props.at[child_id, 'is_alive']
 
 
 def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event():
@@ -346,9 +341,7 @@ def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event(
     post_natal_sup.apply(sim.population)
 
     # check women are scheduled for death not careseeking
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not sim.population.props.at[mother_id, 'is_alive']
 
 
 def test_application_of_risk_of_spph_postnatal_supervisor_event():
@@ -396,9 +389,7 @@ def test_application_of_risk_of_spph_postnatal_supervisor_event():
     post_natal_sup.apply(sim.population)
 
     # check women are scheduled for death not care seeking
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not sim.population.props.at[mother_id, 'is_alive']
 
 
 def test_application_of_risk_of_anaemia_postnatal_supervisor_event():
@@ -497,9 +488,7 @@ def test_application_of_risk_of_hypertensive_disorders_postnatal_supervisor_even
     post_natal_sup.apply(sim.population)
 
     # check this time that she will die as she didnt seek care
-    events = sim.find_events_for_person(person_id=mother_id_onset)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not df.at[mother_id_onset, 'is_alive']
 
 # todo: effect of orals on reduced risk of progression
 # todo: death from severe hypertension
@@ -547,9 +536,7 @@ def test_application_of_risk_of_late_onset_neonatal_sepsis():
 
     # run event again but check the child has died
     post_natal_sup.apply(sim.population)
-    events = sim.find_events_for_person(person_id=child_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not sim.population.props.at[child_id, 'is_alive']
 
 
 def test_postnatal_care():
@@ -569,7 +556,7 @@ def test_postnatal_care():
                  depression.Depression(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
