@@ -5,7 +5,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -116,7 +116,7 @@ def register_modules(ignore_cons_constraints):
                                            ignore_cons_constraints=ignore_cons_constraints),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
@@ -570,12 +570,11 @@ def test_logic_within_death_and_still_birth_events():
     death_event = labour.LabourDeathAndStillBirthEvent(individual_id=mother_id, module=sim.modules['Labour'])
     death_event.apply(mother_id)
 
-    # Check the event has correctly scheduled the instantaneous death event
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    # Check the mother has died
+    assert not df.at[mother_id, 'is_alive']
 
-    # clear the event queue
+    # clear the event queue and reset is_alive
+    df.at[mother_id, 'is_alive'] = True
     sim.event_queue.queue.clear()
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
 
@@ -597,9 +596,7 @@ def test_logic_within_death_and_still_birth_events():
     df.at[mother_id, 'ps_postpartum_haem'] = True
 
     sim.modules['Labour'].apply_risk_of_early_postpartum_death(mother_id)
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not df.at[mother_id, 'is_alive']
 
 
 def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_constraints_via_functions():
