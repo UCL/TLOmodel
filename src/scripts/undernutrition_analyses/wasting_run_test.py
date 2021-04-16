@@ -9,7 +9,8 @@ from tlo import logging
 
 from tlo import Date, Simulation
 from tlo.methods import contraception, demography, wasting, enhanced_lifestyle, labour, healthsystem, \
-    symptommanager, healthseekingbehaviour, pregnancy_supervisor, healthburden, dx_algorithm_child, newborn_outcomes
+    symptommanager, healthseekingbehaviour, pregnancy_supervisor, healthburden, dx_algorithm_child, newborn_outcomes, \
+    simplified_births, care_of_women_during_pregnancy, postnatal_supervisor
 
 # Path to the resource files used by the disease and intervention methods
 resourcefilepath = Path("./resources")
@@ -45,6 +46,9 @@ sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+# sim.register(simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath))
+sim.register(postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
+sim.register(care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
 sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
 sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))

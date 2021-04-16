@@ -76,6 +76,7 @@ class Wasting(Module):
             Types.REAL, 'odds ratio of wasting if household wealth is middle Q3, ref group Q1'),
         'or_wasting_hhwealth_Q2': Parameter(
             Types.REAL, 'odds ratio of wasting if household wealth is richer Q2, ref group Q1'),
+        # incidence parameters
         'base_inc_rate_MAM_by_agegp': Parameter(
             Types.LIST, 'List with baseline incidence of wasting by age group'),
         'rr_MAM_preterm_and_AGA': Parameter(
@@ -360,7 +361,8 @@ class Wasting(Module):
                         .when('.between(1,1)', p['base_inc_rate_MAM_by_agegp'][2])
                         .when('.between(2,2)', p['base_inc_rate_MAM_by_agegp'][3])
                         .when('.between(3,3)', p['base_inc_rate_MAM_by_agegp'][4])
-                        .when('.between(4,4)', p['base_inc_rate_MAM_by_agegp'][5]),
+                        .when('.between(4,4)', p['base_inc_rate_MAM_by_agegp'][5])
+                        .otherwise(0.0),
                     Predictor('nb_size_for_gestational_age').when('small_for_gestational_age',
                                                                   p['rr_MAM_SGA_and_term']),
                     Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
@@ -376,7 +378,8 @@ class Wasting(Module):
 
             unscaled_lm = make_lm_wasting_incidence()
             target_mean = p[f'base_inc_rate_MAM_by_agegp'][2]
-            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1)]).mean()
+            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1) &
+                                                     (df.un_WHZ_category == 'WHZ>=-2')]).mean()
             scaled_intercept = 1.0 * (target_mean / actual_mean)
             scaled_lm = make_lm_wasting_incidence(intercept=scaled_intercept)
             return scaled_lm
@@ -524,11 +527,7 @@ class Wasting(Module):
             # If treatment is successful: cancel death and schedule cure event
             self.cancel_death_date(person_id)
             self.sim.schedule_event(WastingRecoveryEvent(self, person_id),
-                                    self.sim.date + DateOffset(
-                                        days=self.parameters['days_between_treatment_and_cure']
-                                    ))
-        # else:  # not improving seek care or death
-        #     self.do_when_not_improving(person_id)
+                                    self.sim.date + DateOffset(days=30)) # 30 days from treatment to recovery
 
     def cancel_death_date(self, person_id):
         """
@@ -545,6 +544,7 @@ class Wasting(Module):
 class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that updates all wasting properties for the population
+    It determines who will be wasted and schedules individual incident cases to represent onset.
     """
 
     def __init__(self, module):
@@ -568,7 +568,7 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Determine who will be onset with wasting among those who are not currently wasted
         incidence_of_wasting = self.module.wasting_incidence_equation.predict(
-            df.loc[df.is_alive & (df.age_exact_years < 5)])
+            df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category == 'WHZ>=-2')])
         wasted = rng.random_sample(len(incidence_of_wasting)) < incidence_of_wasting
 
         # update clinical symptoms for all new clinical infections
