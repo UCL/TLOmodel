@@ -95,9 +95,31 @@ class Stunting(Module):
             Types.REAL, 'relative risk of stunting if born term and small for gestational age'),
         'rr_stunting_SGA_and_preterm': Parameter(
             Types.REAL, 'relative risk of stunting if born preterm and small for gestational age'),
+        'rr_stunting_untreated_HIV': Parameter(
+            Types.REAL, 'relative risk of stunting for untreated HIV+'),
+        'rr_stunting_wealth_level': Parameter(
+            Types.REAL, 'relative risk of stunting by increase in wealth level'),
+        'rr_stunting_no_exclusive_breastfeeding': Parameter(
+            Types.REAL, 'relative risk of stunting for not exclusively breastfed babies < 6 months'),
+        'rr_stunting_no_continued_breastfeeding': Parameter(
+            Types.REAL, 'relative risk of stunting for not continued breasfed infants 6-24 months'),
+        'rr_stunting_diarrhoeal_episode': Parameter(
+            Types.REAL, 'relative risk of stunting for recent diarrhoea episode'),
+
         # progression parameters
         'r_progression_severe_stunting_by_agegp': Parameter(
             Types.LIST, 'list with rates of progression to severe stunting by age group'),
+        'rr_progress_severe_stunting_preterm_and_AGA': Parameter(
+            Types.REAL, 'relative risk of severe stunting if born preterm and adequate for gestational age'),
+        'rr_progress_severe_stunting_SGA_and_term': Parameter(
+            Types.REAL, 'relative risk of severe stunting if born term and small for gestational age'),
+        'rr_progress_severe_stunting_SGA_and_preterm': Parameter(
+            Types.REAL, 'relative risk of severe stunting if born preterm and small for gestational age'),
+        'rr_progress_severe_stunting_untreated_HIV': Parameter(
+            Types.REAL, 'relative risk of severe stunting for untreated HIV+'),
+        'rr_progress_severe_stunting_previous_wasting': Parameter(
+            Types.REAL, 'relative risk of severe stunting if previously wasted'),
+
         'baseline_rate_of_HAZ_improvement_by_1sd': Parameter(
             Types.REAL, 'baseline rate or natural recovery rate for HAZ improvement by 1 standard deviation'),
         'rr_stunting_improvement_with_continued_breastfeeding': Parameter(
@@ -330,7 +352,7 @@ class Stunting(Module):
 
         # --------------------------------------------------------------------------------------------
         # # # # # # # # # # INCIDENCE # # # # # # # # # #
-        # Make a linear model equation that govern the probability that a person becomes wasted HAZ<-2
+        # Make a linear model equation that govern the probability that a person becomes stunted HAZ<-2
         def make_scaled_lm_stunting_incidence():
             """
             Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
@@ -356,11 +378,27 @@ class Stunting(Module):
                                      '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                      p['rr_stunting_SGA_and_term']),
                     Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
-                                     '& (nb_late_preterm == True) | (nb_early_preterm == True)',
+                                     '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
                                      p['rr_stunting_SGA_and_preterm']),
                     Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
-                                     '& (nb_late_preterm == True) | (nb_early_preterm == True)',
-                                     p['rr_stunting_preterm_and_AGA'])
+                                     '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
+                                     p['rr_stunting_preterm_and_AGA']),
+                    Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_stunting_untreated_HIV']),
+                    Predictor('li_wealth').apply(lambda x: (p['rr_stunting_wealth_level']*(x**2))),
+                    Predictor('nb_breastfeeding_status').when('non_exclusive | none',
+                                                              p['rr_stunting_no_exclusive_breastfeeding']),
+                    Predictor().when('((nb_breastfeeding_status == "non_exclusive") | '
+                                     '(nb_breastfeeding_status == "none")) & (age_exact_years < 0.5)',
+                                     p['rr_stunting_no_exclusive_breastfeeding']),
+                    Predictor().when('(nb_breastfeeding_status == "none") & (age_exact_years.between(0.5,2))',
+                                     p['rr_stunting_no_continued_breastfeeding']),
+                    Predictor('gi_last_diarrhoea_date_of_onset')
+                        .when(pd.date_range(start=(self.sim.date - DateOffset(months=3)), end=self.sim.date),
+                              p['rr_stunting_diarrhoeal_episode']),
+                    # Predictor().when('(gi_last_diarrhoea_date_of_onset > (sim.date - DateOffset(months=3))) &'
+                    #                  '(gi_last_diarrhoea_date_of_onset < (sim.date))',
+                    #                  p['rr_stunting_diarrhoeal_episode']),
+
                 )
 
             unscaled_lm = make_lm_stunting_incidence()
@@ -402,11 +440,12 @@ class Stunting(Module):
                                      '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                      p['rr_stunting_SGA_and_term']),
                     Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
-                                     '& (nb_late_preterm == True) | (nb_early_preterm == True)',
+                                     '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
                                      p['rr_stunting_SGA_and_preterm']),
                     Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
-                                     '& (nb_late_preterm == True) | (nb_early_preterm == True)',
-                                     p['rr_stunting_preterm_and_AGA'])
+                                     '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
+                                     p['rr_stunting_preterm_and_AGA']),
+                    # Predictor('un_ever_wasted').when(True, p['rr_progress_severe_stunting_previous_wasting']),
                 )
 
             unscaled_lm = make_lm_severe_stunting()
@@ -441,6 +480,13 @@ class Stunting(Module):
 
     def on_birth(self, mother_id, child_id):
         pass
+
+    def report_daly_values(self):
+        df = self.sim.population.props
+
+        total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
+
+        return total_daly_values
 
 
 class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -548,7 +594,6 @@ class StuntingRecoveryPollingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
 
-
 class StuntingOnsetEvent(Event, IndividualScopeEventMixin):
     """
     This Event is for the onset of stunting (stunting with HAZ <-2).
@@ -570,8 +615,8 @@ class StuntingOnsetEvent(Event, IndividualScopeEventMixin):
         p = m.parameters
         rng = m.rng
 
-        df.at[person_id, 'un_ever_wasted'] = True
-        df.at[person_id, 'un_currently_wasted'] = True
+        df.at[person_id, 'un_ever_stunted'] = True
+        df.at[person_id, 'un_currently_stunted'] = True
         df.at[person_id, 'un_HAZ_category'] = '-3<=HAZ<-2'  # start as moderate stunting
         df.at[person_id, 'un_clinical_acute_malnutrition'] = self.stunting_state
         df.at[person_id, 'un_last_stunting_date_of_onset'] = self.sim.date

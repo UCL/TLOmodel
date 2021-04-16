@@ -8,9 +8,9 @@ from pathlib import Path
 from tlo import logging
 
 from tlo import Date, Simulation
-from tlo.methods import contraception, demography, stunting, enhanced_lifestyle, labour, healthsystem, \
+from tlo.methods import contraception, demography, stunting, diarrhoea, enhanced_lifestyle, labour, healthsystem, \
     symptommanager, healthseekingbehaviour, pregnancy_supervisor, healthburden, dx_algorithm_child, newborn_outcomes, \
-    simplified_births, care_of_women_during_pregnancy, postnatal_supervisor
+    simplified_births, care_of_women_during_pregnancy, postnatal_supervisor, hiv, wasting
 
 # Path to the resource files used by the disease and intervention methods
 resourcefilepath = Path("./resources")
@@ -45,7 +45,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-# sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
 sim.register(care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
 sim.register(labour.Labour(resourcefilepath=resourcefilepath))
@@ -53,7 +53,10 @@ sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath)
 sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
+sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
 sim.register(stunting.Stunting(resourcefilepath=resourcefilepath))
+# sim.register(wasting.Wasting(resourcefilepath=resourcefilepath))
 
 sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 
@@ -61,10 +64,3 @@ sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepa
 sim.make_initial_population(n=pop_size)
 sim.simulate(end_date=end_date)
 
-# # parse the simulation logfile to get the output dataframes
-# output = parse_log_file(sim.log_filepath)
-# one_person = output['tlo.methods.ALRI']['person_one']
-#
-#
-# # save into an cvs file
-# one_person.to_csv(r'./outputs/one_person2.csv', index=False)
