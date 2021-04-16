@@ -131,7 +131,9 @@ class Ncds(Module):
             'diabetes_symptoms',
             'chronic_lower_bp_symptoms',
             'chronic_ischemic_hd_symptoms',
-            'vomiting'  # for CKD
+            'vomiting',  # for CKD
+            'stroke_symptoms',
+            'heart_attack_symptoms'
         }
 
         # dict to hold the probability of onset of different types of symptom given a condition
@@ -181,6 +183,13 @@ class Ncds(Module):
             params_prevalence['value'] = params_prevalence['value'].replace(np.nan, 0)
             self.parameters[f'{condition}_initial_prev'] = params_prevalence
 
+            # get parameters for symptoms by condition
+            params_symptoms = pd.read_excel(
+                Path(self.resourcefilepath) / "ncds" / "ResourceFile_NCDs_condition_symptoms.xlsx",
+                sheet_name=f"{condition}")
+            params_symptoms['value'] = params_symptoms['value'].replace(np.nan, 0)
+            self.parameters[f'{condition}_symptoms'] = params_symptoms
+
         for event in self.events:
             # get onset parameters
             params_onset = pd.read_excel(Path(self.resourcefilepath) / "ncds" / "ResourceFile_NCDs_events.xlsx",
@@ -195,6 +204,13 @@ class Ncds(Module):
             # replace NaNs with 1
             params_death['value'] = params_death['value'].replace(np.nan, 1)
             self.parameters[f'{event}_death'] = params_death
+
+            # get parameters for symptoms by event
+            params_symptoms = pd.read_excel(
+                Path(self.resourcefilepath) / "ncds" / "ResourceFile_NCDs_events_symptoms.xlsx",
+                sheet_name=f"{event}")
+            params_symptoms['value'] = params_symptoms['value'].replace(np.nan, 0)
+            self.parameters[f'{event}_symptoms'] = params_symptoms
 
         # Check that every value has been read-in successfully
         for param_name in self.PARAMETERS.items():
@@ -217,17 +233,6 @@ class Ncds(Module):
 
         # retrieve age range categories from Demography module
         self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
-
-        # --------------------------------------------------------------------------------------------
-        # Make a dict containing the probability of symptoms onset given acquisition of each condition.
-        def make_symptom_probs(condition):
-            sy = self.parameters[f'{condition}_onset'].set_index('parameter_name').T.to_dict('records')[0]
-            return {
-                'diabetes_symptoms': sy['diabetes_symptoms'],
-                'chronic_lower_bp_symptoms': sy['chronic_lower_bp_symptoms'],
-                'chronic_ischemic_hd_symptoms': sy['chronic_ischemic_hd_symptoms'],
-                'vomiting': sy['vomiting'],
-            }
 
         # --------------------------------------------------------------------------------------------
 
@@ -262,19 +267,19 @@ class Ncds(Module):
                     age_max = age_max + 20
 
             # get symptom probabilities
-            self.prob_symptoms[condition] = make_symptom_probs(condition)
+            if not self.parameters[f'{condition}_symptoms'].empty:
+                self.prob_symptoms[condition] = \
+                    self.parameters[f'{condition}_symptoms'].set_index('parameter_name').T.to_dict('records')[0]
+            else:
+                self.prob_symptoms[condition] = {}
 
-        # --------------------------------------------------------------------------------------------
-        # Do some quick checks
-        # Check that each condition has a risk of developing each symptom
-        assert set(self.conditions) == set(self.prob_symptoms.keys())
-
-        assert all(
-            [
-                set(self.symptoms) == set(self.prob_symptoms[condition].keys())
-                for condition in self.prob_symptoms.keys()
-            ]
-        )
+        for event in self.events:
+            # get symptom probabilities
+            if not self.parameters[f'{event}_symptoms'].empty:
+                self.prob_symptoms[event] = \
+                    self.parameters[f'{event}_symptoms'].set_index('parameter_name').T.to_dict('records')[0]
+            else:
+                self.prob_symptoms[event] = {}
 
         # -------------------- SYMPTOMS ---------------------------------------------------------------
         # ----- Impose the symptom on random sample of those with each condition to have:
@@ -344,9 +349,8 @@ class Ncds(Module):
                                                                   lm_type='onset')
             self.lms_event_death[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
                                                                   lm_type='death')
-            self.lms_event_symptoms[event] = self.build_linear_model_symptoms(event,
-                                                                            self.parameters['interval_between_polls'])
-
+            self.lms_event_symptoms[event] = self.build_linear_model_symptoms(event, self.parameters[
+                'interval_between_polls'])
 
     def build_linear_model(self, condition, interval_between_polls, lm_type):
         """
@@ -452,10 +456,9 @@ class Ncds(Module):
 
             lms_symptoms_dict[condition][f'{symptom}'] = LinearModel(LinearModelType.MULTIPLICATIVE,
                                                                      symptom_3mo, Predictor(f'nc_{condition}')
-                                                                     .when(True, symptom_3mo).otherwise(0.0))
+                                                                     .when(True, 1.0).otherwise(0.0))
 
         return lms_symptoms_dict[condition]
-
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
