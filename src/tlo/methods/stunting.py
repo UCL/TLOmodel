@@ -149,6 +149,9 @@ class Stunting(Module):
         self.prevalence_equations_by_age = dict()
         self.stunting_incidence_equation = dict()
 
+        # helper function for recent diarrhoeal episodes
+        self.diarrhoea_in_last_6months = None
+
         # set the linear model equation for progression to severe stunting state
         self.severe_stunting_progression_equation = dict()
 
@@ -328,6 +331,28 @@ class Stunting(Module):
                 df.at[id, 'un_HAZ_category'] = stunted_category
             df.loc[stunted[stunted==False].index, 'un_HAZ_category'] = 'HAZ>=-2'
 
+    def get_diarrhoea_counts_in_past_6months(self, today, index):
+        """
+        Function to make an external variable for diarrhoeal episodes in the last 6 months prior to date
+        :param today:
+        :param index:
+        :return:
+        """
+        df = self.sim.population.props
+        now = today
+        delta_dates = now - (now - DateOffset(months=3))
+        day = pd.Timestamp
+        list_dates = []
+
+        for i in range(delta_dates.days):
+            day = now - DateOffset(days=i)
+        for person in index:
+            if df.gi_last_diarrhoea_date_of_onset[person] == day:
+                list_dates.append(day)
+        diarrhoeal_count_last_6months = len(list_dates)
+
+        return diarrhoeal_count_last_6months
+
     def initialise_simulation(self, sim):
         """Prepares for simulation:
         * Schedules the main polling event
@@ -384,7 +409,7 @@ class Stunting(Module):
                                      '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
                                      p['rr_stunting_preterm_and_AGA']),
                     Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_stunting_untreated_HIV']),
-                    Predictor('li_wealth').apply(lambda x: (p['rr_stunting_wealth_level']*(x**2))),
+                    Predictor('li_wealth').apply(lambda x: 0 if x == 1 else (x - 1) ** (p['rr_stunting_wealth_level'])),
                     Predictor('nb_breastfeeding_status').when('non_exclusive | none',
                                                               p['rr_stunting_no_exclusive_breastfeeding']),
                     Predictor().when('((nb_breastfeeding_status == "non_exclusive") | '
@@ -392,19 +417,19 @@ class Stunting(Module):
                                      p['rr_stunting_no_exclusive_breastfeeding']),
                     Predictor().when('(nb_breastfeeding_status == "none") & (age_exact_years.between(0.5,2))',
                                      p['rr_stunting_no_continued_breastfeeding']),
-                    Predictor('gi_last_diarrhoea_date_of_onset')
-                        .when(pd.date_range(start=(self.sim.date - DateOffset(months=3)), end=self.sim.date),
-                              p['rr_stunting_diarrhoeal_episode']),
-                    # Predictor().when('(gi_last_diarrhoea_date_of_onset > (sim.date - DateOffset(months=3))) &'
-                    #                  '(gi_last_diarrhoea_date_of_onset < (sim.date))',
-                    #                  p['rr_stunting_diarrhoeal_episode']),
-
+                    Predictor('diarrhoea_in_last_6months', external=True)
+                        .when('>=2', p['rr_stunting_diarrhoeal_episode']).otherwise(0.0),
                 )
 
             unscaled_lm = make_lm_stunting_incidence()
             target_mean = p[f'base_inc_rate_stunting_by_agegp'][2]
-            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1) &
-                                                     (df.un_HAZ_category == 'HAZ>=-2')]).mean()
+            actual_mean = unscaled_lm.predict(
+                df.loc[df.is_alive & (df.age_years == 1) & (df.un_HAZ_category == 'HAZ>=-2')],
+                diarrhoea_in_last_6months=
+                self.get_diarrhoea_counts_in_past_6months(today=sim.date,
+                                                          index=df.loc[df.is_alive & (df.age_years == 1) &
+                                                                       (df.un_HAZ_category == 'HAZ>=-2')].index)).mean()
+
             scaled_intercept = 1.0 * (target_mean / actual_mean)
             scaled_lm = make_lm_stunting_incidence(intercept=scaled_intercept)
             return scaled_lm
@@ -438,14 +463,15 @@ class Stunting(Module):
                                                                   p['rr_stunting_SGA_and_term']),
                     Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                      '& (nb_late_preterm == False) & (nb_early_preterm == False)',
-                                     p['rr_stunting_SGA_and_term']),
+                                     p['rr_progress_severe_stunting_SGA_and_term']),
                     Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                      '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
-                                     p['rr_stunting_SGA_and_preterm']),
+                                     p['rr_progress_severe_stunting_SGA_and_preterm']),
                     Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
                                      '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
-                                     p['rr_stunting_preterm_and_AGA']),
+                                     p['rr_progress_severe_stunting_preterm_and_AGA']),
                     # Predictor('un_ever_wasted').when(True, p['rr_progress_severe_stunting_previous_wasting']),
+                    Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_stunting_untreated_HIV']),
                 )
 
             unscaled_lm = make_lm_severe_stunting()
@@ -508,7 +534,10 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Determine who will be onset with stunting among those who are not currently stunted
         incidence_of_stunting = self.module.stunting_incidence_equation.predict(
-            df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_HAZ_category == 'HAZ>=-2')])
+            df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_HAZ_category == 'HAZ>=-2')],
+            diarrhoea_in_last_6months=self.module.get_diarrhoea_counts_in_past_6months(
+                today=self.sim.date, index=df.loc[df.is_alive & (df.age_exact_years < 5) &
+                                                  (df.un_HAZ_category == 'HAZ>=-2')].index))
         stunted = rng.random_sample(len(incidence_of_stunting)) < incidence_of_stunting
 
         # determine the time of onset and other disease characteristics for each individual
