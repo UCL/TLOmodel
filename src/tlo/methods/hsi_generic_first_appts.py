@@ -95,6 +95,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         # --------------------------- measles diagnosis ---------------------------
 
         # measles diagnosis and treatment referral (independent of age)
+        # todo if other modules can cause rash, add further conditionals
         if "rash" in symptoms:
             logger.debug(key="measles",
                          data=f"Start treatment for measles for person {person_id}")
