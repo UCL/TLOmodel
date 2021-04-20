@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     dx_algorithm_adult,
@@ -156,7 +156,7 @@ for scenario_reduction in scenarios.values():
             newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-            antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         )
         # name the logfile
         logfile = sim.configure_logging(filename="LogFile")

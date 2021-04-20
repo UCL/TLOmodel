@@ -7,8 +7,6 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
-    antenatal_care,
-    contraception,
     demography,
     depression,
     dx_algorithm_adult,
@@ -19,11 +17,8 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
     rti,
+    simplified_births,
     symptommanager,
 )
 
@@ -52,7 +47,8 @@ def create_basic_rti_sim(population_size):
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
@@ -127,15 +123,10 @@ def test_with_more_modules():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
                  rti.RTI(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
                  epi.Epi(resourcefilepath=resourcefilepath),
                  epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
@@ -167,6 +158,7 @@ def test_run_health_system_high_squeeze():
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=2),
                  rti.RTI(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
@@ -195,6 +187,7 @@ def test_run_health_system_events_wont_run():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
                  rti.RTI(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
@@ -255,6 +248,7 @@ def test_no_capabilities():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=0.0),
                  rti.RTI(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
@@ -285,6 +279,7 @@ def test_health_system_disabled():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  rti.RTI(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)

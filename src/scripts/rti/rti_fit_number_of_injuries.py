@@ -5,7 +5,7 @@ import numpy as np
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     dx_algorithm_adult,
@@ -177,12 +177,12 @@ for i in range(0, nsim):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath),
-        # contraception.Contraception(resourcefilepath=resourcefilepath),
-        # labour.Labour(resourcefilepath=resourcefilepath),
-        # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-        # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
     )
     # Get the log file
     logfile = sim.configure_logging(filename="LogFile")
@@ -195,7 +195,7 @@ for i in range(0, nsim):
         [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
     ]
     sim.modules['RTI'].parameters['base_rate_injrti'] = \
-        sim.modules['RTI'].parameters['base_rate_injrti'] * 5.6
+        sim.modules['RTI'].parameters['base_rate_injrti'] * 2.8
     sim.modules['RTI'].parameters['imm_death_proportion_rti'] = \
         sim.modules['RTI'].parameters['imm_death_proportion_rti'] * 0
     # Run the simulation
