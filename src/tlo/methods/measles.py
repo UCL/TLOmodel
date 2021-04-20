@@ -312,6 +312,9 @@ class MeaslesSymptomResolveEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
+        """ this event is called by MeaslesOnsetEvent and HSI_Measles_Treatment
+        """
+
         df = self.sim.population.props  # shortcut to the dataframe
 
         logger.debug(key="MeaslesSymptomResolve Event",
