@@ -22,7 +22,7 @@ logger.setLevel(logging.INFO)
 
 
 class Malaria(Module):
-    def __init__(self, name=None, resourcefilepath=None, testing=0, itn=0):
+    def __init__(self, name=None, resourcefilepath=None):
         """Create instance of Malaria module
 
         :param name: Name of this module (optional, defaults to name of class)
@@ -32,19 +32,6 @@ class Malaria(Module):
         """
         super().__init__(name)
         self.resourcefilepath = Path(resourcefilepath)
-
-        # calibrate value to match treatment coverage
-        if testing is None:
-            self.testing = 0.5  # default value
-        else:
-            self.testing = testing
-
-        self.itn = itn  # projected ITN values from 2020
-        # check itn projected values are <=0.7 and rounded to 1dp for matching to incidence tables
-        self.itn = round(self.itn, 1)
-        assert (self.itn <= 0.7)
-
-        logger.info(key='message', data=f'Malaria infection event running with projected ITN {self.itn}')
 
         # cleaned coverage values for IRS and ITN (populated in `read_parameters`)
         self.itn_irs = None
@@ -127,6 +114,12 @@ class Malaria(Module):
         "irs_rates_lower": Parameter(
             Types.REAL, "indoor residual spraying low coverage"
         ),
+        "testing_adj": Parameter(
+            Types.REAL, "adjusted testing rates to match rdt/tx levels"
+        ),
+        "itn": Parameter(
+            Types.REAL, "projected future itn coverage"
+        ),
     }
 
     PROPERTIES = {
@@ -180,7 +173,9 @@ class Malaria(Module):
         p["clin_inc"] = pd.read_csv(self.resourcefilepath / "ResourceFile_malaria_ClinInc_expanded.csv")
         p["sev_inc"] = pd.read_csv(self.resourcefilepath / "ResourceFile_malaria_SevInc_expanded.csv")
 
-        p["testing_adj"] = self.testing
+        # check itn projected values are <=0.7 and rounded to 1dp for matching to incidence tables
+        p["itn"] = round(p["itn"], 1)
+        assert (p["itn"] <= 0.7)
 
         # ===============================================================================
         # single dataframe for itn and irs district/year data; set index for fast lookup
@@ -1234,11 +1229,12 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
                               (df.ma_date_tx < (self.sim.date - DateOffset(days=7)))]
 
         # clear symptoms
-        all_cured = clinical_inf + severe_inf
+        all_cured = (clinical_inf + severe_inf) if len(severe_inf) else clinical_inf
 
-        self.sim.modules["SymptomManager"].clear_symptoms(
-            person_id=list(all_cured), disease_module=self.module
-        )
+        for idx in all_cured:
+            self.sim.modules["SymptomManager"].clear_symptoms(
+                person_id=idx, disease_module=self.module
+            )
 
         # change properties
         df.loc[all_cured, "ma_tx"] = False
