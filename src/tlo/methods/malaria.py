@@ -325,18 +325,18 @@ class Malaria(Module):
         alive_now_infected_pregnant = alive_infected_clinical & (df.ma_date_infected == now) & df.is_pregnant
         df.loc[alive_now_infected_pregnant, "ma_clinical_preg_counter"] += 1
 
-        # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
-        # schedule self-cure if no treatment, no self-cure from severe malaria
-
-        # asymptomatic (can't reuse now_infected, because some asym might have become clinical)
-        asym = df.is_alive & (df.ma_inf_type == "asym") & (df.ma_date_infected == now)
-
-        for person in df.index[asym]:
-            random_date = rng.randint(low=0, high=p["dur_asym"])
-            random_days = pd.to_timedelta(random_date, unit="d")
-
-            cure = MalariaParasiteClearanceEvent(self, person)
-            self.sim.schedule_event(cure, (self.sim.date + random_days))
+        # # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
+        # # schedule self-cure if no treatment, no self-cure from severe malaria
+        #
+        # # asymptomatic (can't reuse now_infected, because some asym might have become clinical)
+        # asym = df.is_alive & (df.ma_inf_type == "asym") & (df.ma_date_infected == now)
+        #
+        # for person in df.index[asym]:
+        #     random_date = rng.randint(low=0, high=p["dur_asym"])
+        #     random_days = pd.to_timedelta(random_date, unit="d")
+        #
+        #     cure = MalariaParasiteClearanceEvent(self, person)
+        #     self.sim.schedule_event(cure, (self.sim.date + random_days))
 
         # ----------------------------------- CLINICAL MALARIA SYMPTOMS -----------------------------------
         # clinical - can't use now_clinical, because some clinical may have become severe
@@ -345,20 +345,20 @@ class Malaria(Module):
         # update clinical symptoms for all new clinical infections
         self.clinical_symptoms(df, clin)
 
-        for person in clin:
-            # clinical symptoms resolve after 5 days
-            # parasitaemia clears after much longer
-
-            date_para = rng.randint(low=0, high=p["dur_clin_para"])
-            date_para_days = pd.to_timedelta(date_para, unit="d")
-            # print('date_para_days', date_para_days)
-
-            cure = MalariaParasiteClearanceEvent(self, person)
-            self.sim.schedule_event(cure, (self.sim.date + date_para_days))
-
-            # symptoms are resolved using the symptom manager but have to change ma_inf_type == "clinical" to "none"
-            change_clinical_status = MalariaCureEvent(self, person)
-            self.sim.schedule_event(change_clinical_status, (self.sim.date + DateOffset(days=5)))
+        # for person in clin:
+        #     # clinical symptoms resolve after 5 days
+        #     # parasitaemia clears after much longer
+        #
+        #     date_para = rng.randint(low=0, high=p["dur_clin_para"])
+        #     date_para_days = pd.to_timedelta(date_para, unit="d")
+        #     # print('date_para_days', date_para_days)
+        #
+        #     cure = MalariaParasiteClearanceEvent(self, person)
+        #     self.sim.schedule_event(cure, (self.sim.date + date_para_days))
+        #
+        #     # symptoms are resolved using the symptom manager but have to change ma_inf_type == "clinical" to "none"
+        #     change_clinical_status = MalariaCureEvent(self, person)
+        #     self.sim.schedule_event(change_clinical_status, (self.sim.date + DateOffset(days=5)))
 
         # ----------------------------------- SEVERE MALARIA SYMPTOMS -----------------------------------
 
@@ -398,14 +398,16 @@ class Malaria(Module):
         sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
         sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
-        sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
+        sim.schedule_event(MalariaCureEvent(self), sim.date + DateOffset(days=5))
+        sim.schedule_event(MalariaParasiteClearanceEvent(self), sim.date + DateOffset(days=30.5))
 
         sim.schedule_event(MalariaResetCounterEvent(self), sim.date + DateOffset(days=365))  # 01 jan each year
 
         # add an event to log to screen - 31st Dec each year
         sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=364))
         sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=364))
-        sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(days=30.5))
 
         # ----------------------------------- DIAGNOSTIC TESTS -----------------------------------
         # Create the diagnostic test representing the use of RDT for malaria diagnosis
@@ -875,11 +877,6 @@ class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEve
                     df.at[person_id, "ma_date_tx"] = self.sim.date
                     df.at[person_id, "ma_tx_counter"] += 1
 
-                    self.sim.schedule_event(
-                        MalariaCureEvent(self.module, person_id),
-                        self.sim.date + DateOffset(weeks=1),
-                    )
-
     def did_not_run(self):
         logger.debug(key='message',
                      data='HSI_Malaria_tx_0_5: did not run')
@@ -946,11 +943,6 @@ class HSI_Malaria_non_complicated_treatment_age5_15(HSI_Event, IndividualScopeEv
                     df.at[person_id, "ma_date_tx"] = self.sim.date
                     df.at[person_id, "ma_tx_counter"] += 1
 
-                    self.sim.schedule_event(
-                        MalariaCureEvent(self.module, person_id),
-                        self.sim.date + DateOffset(weeks=1),
-                    )
-
     def did_not_run(self):
         logger.debug(key='message',
                      data='HSI_Malaria_tx_5_15: did not run')
@@ -1015,11 +1007,6 @@ class HSI_Malaria_non_complicated_treatment_adult(HSI_Event, IndividualScopeEven
                     df.at[person_id, "ma_tx"] = True
                     df.at[person_id, "ma_date_tx"] = self.sim.date
                     df.at[person_id, "ma_tx_counter"] += 1
-
-                    self.sim.schedule_event(
-                        MalariaCureEvent(self.module, person_id),
-                        self.sim.date + DateOffset(weeks=1),
-                    )
 
     def did_not_run(self):
         logger.debug(key='message',
@@ -1087,11 +1074,6 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
                     df.at[person_id, "ma_date_tx"] = self.sim.date
                     df.at[person_id, "ma_tx_counter"] += 1
 
-                    self.sim.schedule_event(
-                        MalariaCureEvent(self.module, person_id),
-                        self.sim.date + DateOffset(weeks=1),
-                    )
-
     def did_not_run(self):
         logger.debug(key='message',
                      data='HSI_Malaria_tx_compl_child: did not run')
@@ -1157,11 +1139,6 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
                     df.at[person_id, "ma_tx"] = True
                     df.at[person_id, "ma_date_tx"] = self.sim.date
                     df.at[person_id, "ma_tx_counter"] += 1
-
-                    self.sim.schedule_event(
-                        MalariaCureEvent(self.module, person_id),
-                        self.sim.date + DateOffset(weeks=1),
-                    )
 
     def did_not_run(self):
         logger.debug("HSI_Malaria_tx_compl_adult: did not run")
@@ -1237,52 +1214,54 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------
 # Recovery Events
 # ---------------------------------------------------------------------------------
-class MalariaCureEvent(Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
+class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(days=5))
 
-    def apply(self, person_id):
-
-        logger.debug(key='message',
-                     data=f'MalariaCureEvent: Stopping malaria treatment and curing {person_id}')
+    def apply(self, population):
+        logger.debug(key='message', data='MalariaCureEvent: symptom resolution for malaria cases')
 
         df = self.sim.population.props
 
-        # exit if person has died already
-        if not df.at[person_id, "is_alive"]:
-            return
+        # select people with clinical malaria and symptoms for at least 5 days
+        # or severe cases on treatment for at least 7 days
+        clinical_inf = df.index[df.is_alive &
+                                (df.ma_inf_type == "clinical") &
+                                (df.ma_date_symptoms < (self.sim.date - DateOffset(days=5)))]
 
-        # stop treatment
-        # check that a fever is present and was caused by malaria before resolving it
-        if ("fever" in self.sim.modules["SymptomManager"].has_what(person_id)) & (
-            "Malaria"
-            in self.sim.modules["SymptomManager"].causes_of(person_id, "fever")
-        ):
-            # this will clear all malaria symptoms
-            self.sim.modules["SymptomManager"].clear_symptoms(
-                person_id=person_id, disease_module=self.module
-            )
+        severe_inf = df.index[df.is_alive &
+                              (df.ma_inf_type == "severe") &
+                              (df.ma_date_tx < (self.sim.date - DateOffset(days=7)))]
 
-        # change treatment and infection status
-        df.at[person_id, "ma_tx"] = False
+        # clear symptoms
+        all_cured = clinical_inf + severe_inf
 
-        df.at[person_id, "ma_is_infected"] = False
-        df.at[person_id, "ma_inf_type"] = "none"
-        df.at[person_id, "ma_date_symptoms"] = pd.NaT
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=list(all_cured), disease_module=self.module
+        )
+
+        # change properties
+        df.loc[all_cured, "ma_tx"] = False
+        df.loc[all_cured, "ma_inf_type"] = "asym"
+        df.loc[all_cured, "ma_date_symptoms"] = pd.NaT
 
 
-class MalariaParasiteClearanceEvent(Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
+class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(days=30.5))
 
-    def apply(self, person_id):
-        # logger.debug("This is MalariaParasiteClearanceEvent for person %d", person_id)
+    def apply(self, population):
+        logger.debug(key='message', data='MalariaParasiteClearanceEvent: parasite clearance for malaria cases')
 
         df = self.sim.population.props
+        p = self.module.parameters
 
-        if df.at[person_id, "is_alive"]:
-            df.at[person_id, "ma_is_infected"] = False
-            df.at[person_id, "ma_inf_type"] = "none"
+        # select people infected at least 100 days ago
+        asym_inf = df.index[df.is_alive &
+                                (df.ma_date_infected < (self.sim.date - DateOffset(days=p["dur_asym"])))]
+
+        df.loc[asym_inf, "ma_inf_type"] = "none"
+        df.loc[asym_inf, "ma_is_infected"] = False
 
 
 # ---------------------------------------------------------------------------------
