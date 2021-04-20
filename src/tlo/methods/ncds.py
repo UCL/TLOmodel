@@ -227,6 +227,21 @@ class Ncds(Module):
                     Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
                 )
 
+        # Register symptoms from events and make them emergencies
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(
+                name='ever_stroke_damage',
+                emergency_in_adults=True
+            ),
+        )
+
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(
+                name='ever_heart_attack_damage',
+                emergency_in_adults=True
+            ),
+        )
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
@@ -622,16 +637,14 @@ class NcdEvent(Event, IndividualScopeEventMixin):
         self.module.eventsTracker[f'{self.event}_events'] += 1
         self.sim.population.props.at[person_id, f'nc_{self.event}'] = True
 
-        # TODO: @britta add functionality to add symptoms
-
         # Add the outward symptom to the SymptomManager. This will result in emergency care being sought for any
         # event that takes place
-        #self.sim.modules['SymptomManager'].change_symptom(
-            #person_id=person_id,
-            #disease_module=self.module,
-            #add_or_remove='+',
-            #symptom_string=f'{self.event}_damage'
-         #)
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id,
+            disease_module=self.module,
+            add_or_remove='+',
+            symptom_string=f'{self.event}_damage'
+         )
 
 
 # ---------------------------------------------------------------------------------------------------------
