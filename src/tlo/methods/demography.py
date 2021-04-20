@@ -71,8 +71,7 @@ class Demography(Module):
         'age_days': Property(Types.INT, 'The age of the individual in whole days'),
         'region_of_residence': Property(Types.STRING, 'The region in which the person in resident'),
         'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
-        'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident'),
-        'ethnicity': Property(Types.CATEGORICAL, 'Ethnicity of this individual', categories=['None']),
+        'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident')
     }
 
     def read_parameters(self, data_folder):
@@ -140,7 +139,6 @@ class Demography(Module):
         df['region_of_residence'] = demog_char_to_assign['Region']
         df['district_of_residence'] = demog_char_to_assign['District']
         df['district_num_of_residence'] = demog_char_to_assign['District_Num']
-        df.loc[df.is_alive, 'ethnicity'] = 'None'
 
         # Check for no bad values being assigned to persons in the dataframe:
         assert (not pd.isnull(df['region_of_residence']).any())
@@ -191,8 +189,7 @@ class Demography(Module):
             'age_years': 0,
             'age_range': self.AGE_RANGE_LOOKUP[0],
             'region_of_residence': df.at[mother_id, 'region_of_residence'],
-            'district_of_residence': df.at[mother_id, 'district_of_residence'],
-            'ethnicity': 'None'
+            'district_of_residence': df.at[mother_id, 'district_of_residence']
         }
 
         df.loc[child_id, child.keys()] = child.values()
