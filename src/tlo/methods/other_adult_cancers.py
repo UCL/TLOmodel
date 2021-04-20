@@ -866,8 +866,10 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'n_diagnosed': n_diagnosed
         })
 
-        logger.info('%s|summary_stats|%s', self.sim.date, out)
-
+        # logger.info('%s|summary_stats|%s', self.sim.date, out)
+        logger.info(key='summary_stats',
+                    data=out,
+                    description='The summary information for the other adult cancer modules')
 #       logger.info('%s|person_one|%s',
 #                        self.sim.date,
 #                       df.loc[3].to_dict())
