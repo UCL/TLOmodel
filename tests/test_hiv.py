@@ -8,7 +8,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.lm import LinearModel
 from tlo.methods import (
-    contraception,
+    care_of_women_during_pregnancy,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
@@ -17,7 +17,10 @@ from tlo.methods import (
     hiv,
     hsi_generic_first_appts,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
@@ -42,24 +45,37 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def get_sim():
+def get_sim(use_simplified_birth=True):
     """get sim with the checks for configuration of properties running in the HIV module"""
     start_date = Date(2010, 1, 1)
     popsize = 1000
     sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
-                 )
+    if use_simplified_birth:
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
+                     )
+    else:
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                     labour.Labour(resourcefilepath=resourcefilepath),
+                     newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
+                     )
 
     # Edit the efficacy of PrEP to be perfect (for the purpose of these tests)
     sim.modules['Hiv'].parameters['proportion_reduction_in_risk_of_hiv_aq_if_on_prep'] = 1.0
@@ -447,7 +463,7 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
@@ -457,8 +473,6 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
                                                                # force symptoms to lead to health care seeking:
                                                                force_any_symptom_to_lead_to_healthcareseeking=True),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )
@@ -507,8 +521,12 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
 
 def test_art_is_initiated_for_infants():
     """Check that infant infected at birth, and tested, diagnosed and start ART"""
+    # This test ensures that HIVTestAndRefer is scheduled for all newborns who
+    # pass through the newborn HSI (i.e. their mother gave birth in a health facility). We therefore now assume that no
+    # newborns born at home get HIV testing unless they interact with the health system at a different point
 
-    sim = get_sim()
+    # Create simulation object that uses the Newborn module:
+    sim = get_sim(use_simplified_birth=False)
 
     # Simulate for 0 days so as to complete all the initialisation steps
     sim = start_sim_and_clear_event_queues(sim)
@@ -526,7 +544,14 @@ def test_art_is_initiated_for_infants():
     df.at[mother_id, 'hv_date_inf'] = sim.date
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
 
-    child_id = sim.population.do_birth()
+    # Populate the minimum set of keys within the mni dict so the on_birth function will run
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {
+        'twin_count': 0,  'single_twin_still_birth': False, 'labour_state': 'term_labour',
+        'stillbirth_in_labour': False, 'abx_for_prom_given': False,  'corticosteroids_given': False,
+        'delivery_setting': 'health_centre', 'clean_birth_practices': False}
+
+    # Do birth
+    child_id = sim.do_birth(mother_id)
     sim.modules['Demography'].on_birth(mother_id, child_id)
     sim.modules['Hiv'].on_birth(mother_id, child_id)
 
@@ -534,12 +559,25 @@ def test_art_is_initiated_for_infants():
     assert sim.population.props.at[child_id, "hv_inf"]
     assert not sim.population.props.at[child_id, "hv_diagnosed"]
 
-    # Check that the child has a TestAndRefer event schedule
+    # Populate the minimum set of keys within the nci dictionary so the newborn HSI will run
+    sim.modules['NewbornOutcomes'].newborn_care_info[child_id] = {
+        'ga_at_birth': df.at[mother_id, 'ps_gestational_age_in_weeks'], 'vit_k': False, 'tetra_eye_d': False,
+        'proph_abx': False, 'abx_for_prom_given': False, 'corticosteroids_given': False,
+        'delivery_setting': 'health_centre', 'clean_birth_practices': False, 'sought_care_for_complication': False,
+        'cause_of_death_after_birth': []}
+
+    # Define the newborn HSI and run the event
+    newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
+        module=sim.modules['NewbornOutcomes'], person_id=child_id, facility_level_of_this_hsi=2)
+
+    newborn_care.apply(person_id=child_id, squeeze_factor=0.0)
+
+    # Check that the child has a TestAndRefer event scheduled via the newborn HSI
     date_event, event = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(child_id) if
         isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)
     ][0]
-    assert date_event == sim.date + pd.DateOffset(months=1)
+    assert date_event == sim.date
 
     # Run the TestAndRefer event for the child
     rtn = event.apply(person_id=child_id, squeeze_factor=0.0)
@@ -868,15 +906,13 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )
@@ -967,15 +1003,13 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )

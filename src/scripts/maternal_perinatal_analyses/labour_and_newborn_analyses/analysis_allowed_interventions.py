@@ -4,24 +4,41 @@ from pathlib import Path
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
+    healthburden,
     healthseekingbehaviour,
     healthsystem,
     labour,
     newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
 
+seed = 567
+
+log_config = {
+    "filename": "postnatal_analysis",   # The name of the output file (a timestamp will be appended).
+    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
+        "tlo.methods.labour": logging.DEBUG,
+        "tlo.methods.newborn_outcomes": logging.DEBUG,
+        "tlo.methods.antenatal_care": logging.DEBUG,
+        "tlo.methods.pregnancy_supervisor": logging.DEBUG,
+        "tlo.methods.postnatal_supervisor": logging.DEBUG,
+    }
+}
+
 resourcefilepath = Path("./resources")
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # Scenarios Definitions:
 # *1: All interventions called within the Labour HSI are able to run
@@ -62,21 +79,24 @@ popsize = 10000
 
 for label, allowed_interventions in scenarios.items():
     # add file handler for the purpose of logging
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-    sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-    sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*']),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
     logfile = sim.configure_logging(filename="LogFile")
-    sim.seed_rngs(0)
+
     sim.make_initial_population(n=popsize)
 
     params = sim.modules['Labour'].parameters
@@ -88,8 +108,8 @@ for label, allowed_interventions in scenarios.items():
     output_files[label] = logfile
 
 
-def get_incidence_rate_and_death_numbers_from_logfile(logfile):
-    output = parse_log_file(logfile)
+def get_incidence_rate_and_death_numbers_from_logfile(log_df):
+    output = parse_log_file(log_df)
 
     # Calculate the "incidence rate" from the output counts of incidence
     maternal_counts = output['tlo.methods.labour']['summary_stats_incidence']

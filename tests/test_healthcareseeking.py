@@ -8,14 +8,12 @@ from tlo import Date, Module, Simulation
 from tlo.methods import (
     Metadata,
     chronicsyndrome,
-    contraception,
     demography,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     mockitis,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 from tlo.methods.hsi_generic_first_appts import (
@@ -247,9 +245,12 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules()
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation for one day
@@ -275,9 +276,12 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
                  )
 
     # Run the simulation for one day
@@ -309,9 +313,12 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
