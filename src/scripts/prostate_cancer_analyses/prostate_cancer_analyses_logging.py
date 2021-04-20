@@ -3,8 +3,8 @@ from pathlib import Path
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import (  # bladder_cancer,
-    antenatal_care,
+from tlo.methods import (bladder_cancer,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -56,19 +56,19 @@ sim = Simulation(start_date=start_date, seed=1, log_config=log_config)
 
 # Register the appropriate modules
 sim.register(
-    # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
     demography.Demography(resourcefilepath=resourcefilepath),
-    # contraception.Contraception(resourcefilepath=resourcefilepath),
+    contraception.Contraception(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    # labour.Labour(resourcefilepath=resourcefilepath),
-    # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-    # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-    # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-    #  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+    labour.Labour(resourcefilepath=resourcefilepath),
+    newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+    bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
     prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
 )
 

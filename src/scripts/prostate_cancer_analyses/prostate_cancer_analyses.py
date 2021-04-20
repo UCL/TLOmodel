@@ -18,7 +18,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -54,21 +54,21 @@ def run_sim(service_availability):
     sim = Simulation(start_date=start_date)
 
     # Register the appropriate modules
-    sim.register(  # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+    sim.register(care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  demography.Demography(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
                  prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
