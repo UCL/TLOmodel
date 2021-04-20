@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     dx_algorithm_adult,
@@ -72,7 +72,7 @@ sim.register(
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     labour.Labour(resourcefilepath=resourcefilepath),
     newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-    antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
     malaria.Malaria(
         resourcefilepath=resourcefilepath,
