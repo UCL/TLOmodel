@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
-from tlo.methods import Metadata, demography, postnatal_supervisor_lm
+from tlo.methods import Metadata, postnatal_supervisor_lm
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -504,6 +504,10 @@ class PostnatalSupervisor(Module):
                 sensitivity=params['sensitivity_eons_assessment']),
         )
 
+        if 'Hiv' not in self.sim.modules:
+            logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
+                                               'testing will not happen in postnatal care')
+
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
 
@@ -531,6 +535,7 @@ class PostnatalSupervisor(Module):
     def further_on_birth_postnatal_supervisor(self, mother_id, child_id):
         df = self.sim.population.props
         params = self.parameters
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
         # We store the ID number of the child this woman has most recently delivered as a property of the woman. This is
@@ -588,7 +593,8 @@ class PostnatalSupervisor(Module):
                     df.at[mother_id, 'pn_htn_disorders'] = df.at[mother_id, 'ps_htn_disorders']
 
                 else:
-                    store_dalys_in_mni(mother_id, 'hypertension_resolution')
+                    if not pd.isnull(mni[mother_id]['hypertension_onset']):
+                        store_dalys_in_mni(mother_id, 'hypertension_resolution')
                     df.at[mother_id, 'pn_htn_disorders'] = 'resolved'
 
             # Currently we assume women who received antihypertensive in the antenatal period will continue to use them
@@ -930,7 +936,8 @@ class PostnatalSupervisor(Module):
 
             # Those women who die have InstantaneousDeath scheduled
             for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
-                self.sim.schedule_event(demography.InstantaneousDeath(self, person, cause='maternal'), self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=person, cause='maternal',
+                                                        originating_module=self.sim.modules['PostnatalSupervisor'])
                 del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]
 
         # ----------------------------------------- CARE SEEKING ------------------------------------------------------
@@ -1090,7 +1097,7 @@ class PostnatalSupervisor(Module):
                                                                                            'pn_gest_htn_on_treatment']:
                     hypertension_diagnosed = True
 
-                if ~df.at[individual_id, 'pn_gest_htn_on_treatment']:
+                if not df.at[individual_id, 'pn_gest_htn_on_treatment']:
                     self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'hypertension_onset')
 
         if hypertension_diagnosed or proteinuria_diagnosed:
@@ -1186,17 +1193,14 @@ class PostnatalSupervisor(Module):
                     logger.debug(key='message', data='Neonate of a HIV +ve mother has been referred for '
                                                      'HIV testing during PNC at 6 weeks')
 
+                    individual_id = int(individual_id)
+
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         HSI_Hiv_TestAndRefer(person_id=individual_id, module=self.sim.modules['Hiv']),
                         topen=self.sim.date,
                         tclose=None,
                         priority=0)
-                else:
-                    logger.debug(key='message', data='Neonate of a HIV +ve mother has not been referred for '
-                                                     'HIV testing during PNC at 6 weeks')
-            else:
-                logger.debug(key='message',  data='HIV module is not registered in this simulation run and therefore '
-                                                  'HIV testing will not happen in postnatal care')
+
         hsi_event.target = mother_id
 
     def apply_risk_of_maternal_or_neonatal_death_postnatal(self, mother_or_child, individual_id):
@@ -1267,8 +1271,9 @@ class PostnatalSupervisor(Module):
                 logger.debug(key='message', data=f'mother {individual_id} has died due to complications of the '
                                                  f'postnatal period')
 
-                self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
-                                                                      cause='maternal'), self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+                                                        originating_module=self.sim.modules['PostnatalSupervisor'])
+
                 self.postnatal_tracker['postnatal_death'] += 1
                 del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[individual_id]
 
@@ -1291,8 +1296,8 @@ class PostnatalSupervisor(Module):
                     logger.debug(key='message', data=f'person {individual_id} has died due to late neonatal sepsis on '
                                                      f'date {self.sim.date}')
 
-                    self.sim.schedule_event(demography.InstantaneousDeath(
-                        self, individual_id, cause='neonatal'), self.sim.date)
+                    self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='neonatal',
+                                                            originating_module=self.sim.modules['PostnatalSupervisor'])
 
                     self.postnatal_tracker['neonatal_death'] += 1
                     self.postnatal_tracker['neonatal_sepsis_death'] += 1
@@ -1402,7 +1407,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             if not pd.isnull(mni[person]['hypertension_onset']):
                 store_dalys_in_mni(person, 'hypertension_resolution')
 
-        df.loc[week_8_postnatal_women_htn, 'pn_htn_disorders'] = 'none'
+        df.loc[week_8_postnatal_women, 'pn_htn_disorders'] = 'none'
 
         week_8_postnatal_women_anaemia = \
             df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8) & \
@@ -1425,8 +1430,6 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Schedule event that deletes the mni dictionary, we reset in greater than one months time to allow dalys to be
         # counted
 
-        # TODO: This could crash if women become pregnant again soon after the postnatal period. AT is there a cleaner
-        #  way to do this?
         for person in week_8_postnatal_women.loc[week_8_postnatal_women].index:
             mni[person]['delete_mni'] = True
 

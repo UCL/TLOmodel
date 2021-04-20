@@ -2681,7 +2681,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
                 # This property stores what type of delivery this woman is being admitted for
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
-                logger.debug(key='msg', data=f'{person_id} will be admitted for induction due to spe/ec')
+                logger.debug(key='msg', data=f'{person_id} will be admitted for induction due to '
+                                             f'{mother.ps_htn_disorders}')
 
                 # Women are started on oral antihypertensives also
                 if ~mother.ac_gest_htn_on_treatment:

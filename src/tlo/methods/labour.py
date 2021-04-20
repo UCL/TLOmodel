@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
-from tlo.methods import Metadata, demography, labour_lm
+from tlo.methods import Metadata, labour_lm
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -828,10 +828,8 @@ class Labour(Module):
                                                 'child': child_id})
 
         if mother.la_intrapartum_still_birth:
-            death = demography.InstantaneousDeath(self.sim.modules['Demography'],
-                                                  child_id,
-                                                  cause='intrapartum stillbirth')
-            self.sim.schedule_event(death, self.sim.date)
+            self.sim.modules['Demography'].do_death(individual_id=child_id, cause='intrapartum stillbirth',
+                                                    originating_module=self.sim.modules['Labour'])
 
         # We use this variable in the postnatal supervisor module to track postpartum women
         df.at[mother_id, 'la_is_postpartum'] = True
@@ -1206,21 +1204,23 @@ class Labour(Module):
                 risk_prog_gh_sgh = params['prob_progression_gest_htn']
             if risk_prog_gh_sgh > self.rng.random_sample():
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_gest_htn'
-                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_gest_htn{property_prefix}')
+                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_gest_htn_{property_prefix}')
 
         # Or from severe gestational hypertension to severe pre-eclampsia...
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'severe_gest_htn':
             if params['prob_progression_severe_gest_htn'] > self.rng.random_sample():
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_pre_eclamp'
                 self.labour_tracker['severe_pre_eclampsia'] += 1
-                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_pre_eclamp{property_prefix}')
+                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_pre_eclamp_'
+                                             f'{property_prefix}')
 
         # Or from mild pre-eclampsia to severe pre-eclampsia...
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'mild_pre_eclamp':
             if params['prob_progression_mild_pre_eclamp'] > self.rng.random_sample():
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_pre_eclamp'
                 self.labour_tracker['severe_pre_eclampsia'] += 1
-                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_pre_eclamp{property_prefix}')
+                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_pre_eclamp_'
+                                             f'{property_prefix}')
 
     def set_maternal_death_status_intrapartum(self, individual_id, cause):
         """
@@ -1283,7 +1283,7 @@ class Labour(Module):
 
         else:
             if cause == 'eclampsia':
-                df.at[individual_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
+                df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
 
     def apply_risk_of_early_postpartum_death(self, individual_id):
         """
@@ -1314,8 +1314,8 @@ class Labour(Module):
 
         if mni[individual_id]['death_postpartum']:
             self.labour_tracker['maternal_death'] += 1
-            self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id, cause='maternal'),
-                                    self.sim.date)
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+                                                    originating_module=self.sim.modules['Labour'])
 
             logger.debug(key='message', data=f'Mother {individual_id} has died due to postpartum complications')
 
@@ -2100,10 +2100,10 @@ class Labour(Module):
         :param hsi_event: HSI event in which the function has been called:
         """
         df = self.sim.population.props
-        person_id = hsi_event.target
+        person_id = int(hsi_event.target)
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        if 'hiv' in self.sim.modules.keys():
+        if 'Hiv' in self.sim.modules.keys():
             if ~df.at[person_id, 'hv_diagnosed']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
@@ -2685,8 +2685,8 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         # For a woman who die (due to the effect of one or more of the above complications) we schedule the death event
         if mni[individual_id]['death_in_labour']:
             self.module.labour_tracker['maternal_death'] += 1
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                  cause='maternal'), self.sim.date)
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+                                                    originating_module=self.sim.modules['Labour'])
 
             # Log the maternal death
             logger.info(key='message', data=f'This is LabourDeathEvent scheduling a death for person {individual_id} on'

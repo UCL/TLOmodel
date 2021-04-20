@@ -792,7 +792,7 @@ class Hiv(Module):
         # TODO: note for AT/TH - neonatal breastfeeding property replaced HIV temp property as discussed 19/02/21.
         #  We need to make sure newborn outcomes on_birth is always called before HIV so breastfeeding status is set
         #  prior to this function being called
-        if not child_infected and df.at[child_id, "nb_breastfeeding_status"] != 'none' and mother.hv_inf:
+        if (not child_infected) and (df.at[child_id, "nb_breastfeeding_status"] != 'none') and mother.hv_inf:
             self.mtct_during_breastfeeding(mother_id, child_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -1810,30 +1810,22 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         current_testing_rate = self.module.per_capita_testing_rate()
 
         # ------------------------------------ TREATMENT ------------------------------------
-        plhiv_adult = len(df.loc[df.is_alive & df.hv_inf & (df.age_years >= 15)])
-        plhiv_children = len(df.loc[df.is_alive & df.hv_inf & (df.age_years < 15)])
+        def treatment_counts(subset):
+            # total number of subset (subset is a true/false series)
+            count = sum(subset)
+            # proportion of subset living with HIV that are diagnosed:
+            proportion_diagnosed = sum(subset & df.hv_diagnosed) / count if count > 0 else 0
+            # proportions of subset living with HIV on treatment:
+            art = sum(subset & (df.hv_art != "not"))
+            art_cov = art / count if count > 0 else 0
+            # proportion of subset on treatment that have good VL suppression
+            art_vs = sum(subset & (df.hv_art == "on_VL_suppressed"))
+            art_cov_vs = art_vs / art if art > 0 else 0
+            return proportion_diagnosed, art_cov, art_cov_vs
 
-        # proportion of adults (15+) living with HIV that are diagnosed:
-        dx_adult = len(df.loc[df.is_alive & df.hv_inf & df.hv_diagnosed & (df.age_years >= 15)]) / plhiv_adult
-
-        # proportion of children (15+) living with HIV that are diagnosed:
-        dx_children = len(df.loc[df.is_alive & df.hv_inf & df.hv_diagnosed & (df.age_years >= 15)]) / plhiv_children
-
-        # proportions of adults (15+) living with HIV on treatment:
-        art_adult = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art != "not") & (df.age_years >= 15)])
-        art_cov_adult = art_adult / plhiv_adult if plhiv_adult > 0 else 0
-
-        # proportion of adults (15+) on treatment that have good VL suppression
-        art_adult_vs = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art == "on_VL_suppressed") & (df.age_years >= 15)])
-        art_cov_vs_adult = art_adult_vs / art_adult if art_adult > 0 else 0
-
-        # proportions of children (0-14) living with HIV on treatment:
-        art_children = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art != "not") & (df.age_years < 15)])
-        art_cov_children = art_children / plhiv_children if plhiv_adult > 0 else 0
-
-        # proportion of children (0-14) living with HIV on treatment and with VL suppression
-        art_children_vs = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art == "on_VL_suppressed") & (df.age_years < 15)])
-        art_cov_vs_children = art_children_vs / art_children if art_children > 0 else 0
+        alive_infected = df.is_alive & df.hv_inf
+        dx_adult, art_cov_adult, art_cov_vs_adult = treatment_counts(alive_infected & (df.age_years >= 15))
+        dx_children, art_cov_children, art_cov_vs_children = treatment_counts(alive_infected & (df.age_years < 15))
 
         # ------------------------------------ BEHAVIOUR CHANGE ------------------------------------
 
