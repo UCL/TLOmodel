@@ -191,17 +191,18 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 # ----------------------------------- ADULT -----------------------------------
 
                 # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:
-                if 'dysphagia' in symptoms:
-                    hsi_event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
-                        module=self.sim.modules['OesophagealCancer'],
-                        person_id=person_id,
-                    )
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event,
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
+                if 'OesophagealCancer' in self.sim.modules:
+                    if 'dysphagia' in symptoms:
+                        hsi_event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
+                            module=self.sim.modules['OesophagealCancer'],
+                            person_id=person_id,
+                        )
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            hsi_event,
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None
+                        )
 
                 if 'BladderCancer' in self.sim.modules:
                     # If the symptoms include blood_urine, then begin investigation for Bladder Cancer:
@@ -216,22 +217,21 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                             topen=self.sim.date,
                             tclose=None
                         )
-
-                # If the symptoms include pelvic_pain, then begin investigation for Bladder Cancer:
-                if 'pelvic_pain' in symptoms:
-                    hsi_event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
-                        module=self.sim.modules['BladderCancer'],
-                        person_id=person_id,
-                    )
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event,
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
+                    # If the symptoms include pelvic_pain, then begin investigation for Bladder Cancer:
+                    if 'pelvic_pain' in symptoms:
+                        hsi_event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
+                            module=self.sim.modules['BladderCancer'],
+                            person_id=person_id,
+                        )
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            hsi_event,
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None
+                        )
 
             if 'ProstateCancer' in self.sim.modules:
-                # If the symptoms include urinary, then begin investigation for Bladder Cancer:
+                # If the symptoms include urinary, then begin investigation for prostate cancer:
                 if 'urinary' in symptoms:
                     hsi_event = HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
                         module=self.sim.modules['ProstateCancer'],
@@ -243,24 +243,11 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         topen=self.sim.date,
                         tclose=None
                     )
-
                 # If the symptoms include pelvic_pain, then begin investigation for Prostate Cancer
                 # (as well as bladder cancer):
-                if 'pelvic_pain' in symptoms:
-                    hsi_event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
-                        module=self.sim.modules['ProstateCancer'],
-                        person_id=person_id,
-                    )
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event,
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
-                    # If the symptoms include pelvic_pain, then begin investigation for Bladder Cancer:
                     if 'pelvic_pain' in symptoms:
-                        hsi_event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
-                            module=self.sim.modules['BladderCancer'],
+                        hsi_event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
+                            module=self.sim.modules['ProstateCancer'],
                             person_id=person_id,
                         )
                         self.sim.modules['HealthSystem'].schedule_hsi_event(
