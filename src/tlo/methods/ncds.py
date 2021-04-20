@@ -126,14 +126,12 @@ class Ncds(Module):
 
         self.condition_list = ['nc_' + cond for cond in list(self.extended_conditions)]
 
-        # Store the symptoms that this module will use:
+        # Store the symptoms that this module will use (for conditions only):
         self.symptoms = {
             'diabetes_symptoms',
             'chronic_lower_bp_symptoms',
             'chronic_ischemic_hd_symptoms',
-            'vomiting',  # for CKD
-            'stroke_symptoms',
-            'heart_attack_symptoms'
+            'vomiting'  # for CKD
         }
 
         # dict to hold the probability of onset of different types of symptom given a condition
@@ -146,8 +144,10 @@ class Ncds(Module):
         ResourceFile_NCDs_condition_removal.xlsx  = parameters for removal of conditions
         ResourceFile_NCDs_condition_death.xlsx  = parameters for death rate from conditions
         ResourceFile_NCDs_condition_prevalence.xlsx  = initial and target prevalence for conditions
+        ResourceFile_NCDs_condition_symptoms.xlsx  = symptoms for conditions
         ResourceFile_NCDs_events.xlsx  = parameters for occurrence of events
         ResourceFile_NCDs_events_death.xlsx  = parameters for death rate from events
+        ResourceFile_NCDs_events_symptoms.xlsx  = symptoms for events
 
         """
 
@@ -461,7 +461,8 @@ class Ncds(Module):
         return lms_symptoms_dict[condition]
 
     def on_birth(self, mother_id, child_id):
-        """Initialise our properties for a newborn individual.
+        """Initialise our properties for a newborn individual. Assume that all children have no conditions when they
+        are born.
 
         :param mother_id: the mother for this child
         :param child_id: the new child
@@ -607,7 +608,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class NcdEvent(Event, IndividualScopeEventMixin):
     """
-    This is an NCD event. It has been scheduled to occur by the Ncds_MainPollingEvent.
+    This is an NCD event. It has been scheduled to occur by the Ncds_MainPollingEvent. It
     """
 
     def __init__(self, module, person_id, event):
@@ -623,13 +624,14 @@ class NcdEvent(Event, IndividualScopeEventMixin):
 
         # TODO: @britta add functionality to add symptoms
 
-        # Add the outward symptom to the SymptomManager. This will result in emergency care being sought
-        # self.sim.modules['SymptomManager'].change_symptom(
-        #    person_id=person_id,
-        #    disease_module=self.module,
-        #    add_or_remove='+',
-        #    symptom_string='Damage_From_Stroke'
-        # )
+        # Add the outward symptom to the SymptomManager. This will result in emergency care being sought for any
+        # event that takes place
+        #self.sim.modules['SymptomManager'].change_symptom(
+            #person_id=person_id,
+            #disease_module=self.module,
+            #add_or_remove='+',
+            #symptom_string=f'{self.event}_damage'
+         #)
 
 
 # ---------------------------------------------------------------------------------------------------------
