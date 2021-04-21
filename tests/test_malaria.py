@@ -38,10 +38,8 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-# @pytest.fixture(scope='module')
-def test_sims(tmpdir):
+def register_sim():
     service_availability = list(["*"])
-    malaria_testing = 0.35  # adjust this to match rdt/tx levels
 
     sim = Simulation(start_date=start_date, seed=0)
 
@@ -64,18 +62,23 @@ def test_sims(tmpdir):
         dx_algorithm_adult.DxAlgorithmAdult(),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
+        malaria.Malaria(resourcefilepath=resourcefilepath)
     )
+    return sim
+
+# @pytest.fixture(scope='module')
+def test_sims(tmpdir):
+
+    sim = register_sim()
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
+    check_dtypes(sim)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # IRS rates should be 0 or 0.8
     assert (sim.modules['Malaria'].itn_irs.irs_rate.isin([0, 0.8])).all()
-
-    # assert (sim.modules['Malaria'].irs_curr.irs_rates == 0) | (sim.modules['Malaria'].irs_curr == 0.8)
 
     # check malaria deaths only being scheduled due to severe malaria (not clinical or asym)
     df = sim.population.props
@@ -112,26 +115,8 @@ def test_sims(tmpdir):
 # remove scheduled rdt testing and disable health system, should be no rdts and no treatment
 # increase cfr for severe cases (all severe cases will die)
 def test_remove_malaria_test(tmpdir):
-    malaria_testing = 0
 
-    sim = Simulation(start_date=start_date, seed=0)
-
-    # Register the appropriate modules
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            disable_and_reject_all=True
-        ),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        dx_algorithm_child.DxAlgorithmChild(),
-        dx_algorithm_adult.DxAlgorithmAdult(),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
-    )
+    sim = register_sim()
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -167,32 +152,9 @@ def test_remove_malaria_test(tmpdir):
 
 # test everyone regularly and check no treatment without positive rdt
 def test_schedule_rdt_for_all(tmpdir):
+    # todo redo this changing testing parameter in sim.modules
     malaria_testing = 1
-    service_availability = list(["*"])
-
-    sim = Simulation(start_date=start_date, seed=0)
-
-    # Register the appropriate modules
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            service_availability=service_availability,
-            mode_appt_constraints=0,
-            ignore_cons_constraints=True,
-            ignore_priority=True,
-            capabilities_coefficient=1.0,
-            disable=True,  # disables the health system constraints so all HSI events run
-            ),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        dx_algorithm_child.DxAlgorithmChild(),
-        dx_algorithm_adult.DxAlgorithmAdult(),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
-    )
+    sim = register_sim()
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -214,8 +176,6 @@ def test_dx_algorithm_for_malaria_outcomes():
         popsize = 200  # smallest population size that works
 
         sim = Simulation(start_date=start_date, seed=0)
-
-        malaria_testing = 0.35  # adjust this to match rdt/tx levels
 
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -239,7 +199,7 @@ def test_dx_algorithm_for_malaria_outcomes():
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      dx_algorithm_adult.DxAlgorithmAdult(),
-                     malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
+                     malaria.Malaria(resourcefilepath=resourcefilepath)
                      )
 
         sim.make_initial_population(n=popsize)
@@ -339,9 +299,6 @@ def test_dx_algorithm_for_non_malaria_outcomes():
         popsize = 200  # smallest population size that works
 
         sim = Simulation(start_date=start_date, seed=0)
-
-        # adjust this to match rdt/tx levels
-        # malaria_testing = 0.35
 
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
