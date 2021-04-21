@@ -125,6 +125,15 @@ class Stunting(Module):
         'rr_stunting_improvement_with_continued_breastfeeding': Parameter(
             Types.REAL, 'relative rate of improvement in stunting HAZ with continued breastfeeding'),
 
+        # intervention parameters
+        'un_effectiveness_complementary_feeding_promo_education_only_in_stunting_reduction': Parameter(
+            Types.REAL, 'effectiveness of complementary feeding promotion (education only) in reducing stunting'),
+        'un_effectiveness_complementary_feeding_promo_with_food_supplementation_in_stunting_reduction': Parameter(
+            Types.REAL,
+            'effectiveness of complementary feeding promotion with food supplementation in reducing stunting'),
+        'un_effectiveness_zinc_supplementation_in_stunting_reduction': Parameter(
+            Types.REAL, 'effectiveness of zinc supplementation in reducing stunting'),
+
     }
 
     PROPERTIES = {
@@ -137,7 +146,8 @@ class Stunting(Module):
                      categories=['moderate_stunting', 'severe_stunting']),
         'un_last_stunting_date_of_onset': Property(Types.DATE, 'date of onset of lastest stunting episode'),
         'un_CM_treatment_type': Property(Types.CATEGORICAL, 'treatment types for of chronic malnutrition',
-                                         categories=['continued breastfeeding']),
+                                         categories=['continued_breastfeeding', 'education_on_complementary_feeding',
+                                                     'complementary_feeding_with_food_supplementation']),
 
     }
 
@@ -148,9 +158,6 @@ class Stunting(Module):
         # set the linear model equations for prevalence and incidence
         self.prevalence_equations_by_age = dict()
         self.stunting_incidence_equation = dict()
-
-        # helper function for recent diarrhoeal episodes
-        self.diarrhoea_in_last_6months = None
 
         # set the linear model equation for progression to severe stunting state
         self.severe_stunting_progression_equation = dict()
@@ -487,22 +494,19 @@ class Stunting(Module):
         # --------------------------------------------------------------------------------------------
         # # # # # # # # # # RECOVERY # # # # # # # # # #
         # Make a linear model equation that govern the probability that a person improves in stunting state
-        self.stunting_improvement_rate.update({
-            'moderate_stunting':
-                LinearModel(LinearModelType.MULTIPLICATIVE,
-                            p['baseline_rate_of_HAZ_improvement_by_1sd'],
-                            Predictor('un_CM_treatment_type')
-                            .when('continued_breastfeeding', p['rr_stunting_improvement_with_continued_breastfeeding'])
-                            .otherwise(0.0)
-                            ),
-            'severe_stunting':
-                LinearModel(LinearModelType.MULTIPLICATIVE,
-                            p['baseline_rate_of_HAZ_improvement_by_1sd'],
-                            Predictor('un_CM_treatment_type')
-                            .when('continued_breastfeeding', p['rr_stunting_improvement_with_continued_breastfeeding'])
-                            .otherwise(0.0)
-                            )
-        })
+        self.stunting_improvement_rate = \
+            LinearModel(LinearModelType.MULTIPLICATIVE,
+                        p['baseline_rate_of_HAZ_improvement_by_1sd'],
+                        Predictor('un_CM_treatment_type')
+                        .when('continued_breastfeeding', p['rr_stunting_improvement_with_continued_breastfeeding'])
+                        .when('complementary_feeding_with_food_supplementation',
+                              p['un_effectiveness_complementary_feeding_promo_'
+                                'with_food_supplementation_in_stunting_reduction'])
+                        .when('education_on_complementary_feeding',
+                              p['un_effectiveness_complementary_feeding_promo_'
+                                'education_only_in_stunting_reduction'])
+                        .otherwise(0.0),
+                        )
 
     def on_birth(self, mother_id, child_id):
         pass
