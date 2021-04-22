@@ -1,0 +1,46 @@
+{
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_test_scenario.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 1603685629,
+      "parameters": {
+        "Lifestyle": {
+          "init_p_urban": 0.11,
+          "init_p_high_sugar": 0.52
+        },
+        "RTI": {
+          "base_rate_injrti": 0.01
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 371232386,
+      "parameters": {
+        "Lifestyle": {
+          "init_p_urban": 0.13,
+          "init_p_high_sugar": 0.52
+        },
+        "RTI": {
+          "base_rate_injrti": 0.02
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 960362435,
+      "parameters": {
+        "Lifestyle": {
+          "init_p_urban": 0.1,
+          "init_p_high_sugar": 0.52
+        },
+        "RTI": {
+          "base_rate_injrti": 0.03
+        }
+      }
+    }
+  ]
+}

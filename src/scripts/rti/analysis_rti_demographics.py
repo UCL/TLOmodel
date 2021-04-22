@@ -8,8 +8,6 @@ from matplotlib import pyplot as plt
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    care_of_women_during_pregnancy,
-    contraception,
     demography,
     dx_algorithm_adult,
     dx_algorithm_child,
@@ -17,12 +15,9 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
     rti,
-    symptommanager,
+    simplified_births,
+    symptommanager
 )
 
 # =============================== Analysis description ========================================================
@@ -44,11 +39,11 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 10
+yearsrun = 1
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 50000
+pop_size = 5000
 nsim = 2
 # Create a variable whether to save figures or not (used in debugging)
 save_figures = True
@@ -180,13 +175,8 @@ for i in range(0, nsim):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         rti.RTI(resourcefilepath=resourcefilepath),
-        contraception.Contraception(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-    )
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
+        )
     # Get the log file
     logfile = sim.configure_logging(filename="LogFile")
     # create and run the simulation
@@ -197,7 +187,7 @@ for i in range(0, nsim):
         [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
     ]
     sim.modules['RTI'].parameters['base_rate_injrti'] = \
-        sim.modules['RTI'].parameters['base_rate_injrti'] * 2.8
+        sim.modules['RTI'].parameters['base_rate_injrti'] * 6.08
     sim.modules['RTI'].parameters['imm_death_proportion_rti'] = \
         sim.modules['RTI'].parameters['imm_death_proportion_rti'] * 0
     # Run the simulation
@@ -1655,13 +1645,12 @@ else:
     plt.clf()
 
 # Plot mean incidence of RTIs, mean number of rti deaths and the predicted incidence of RTI death
-gbd_data = [954.24, 12.13, 0]
+gbd_data = [954.24, 12.13, 954.24]
 n = np.arange(len(gbd_data))
-model_data = [mean_inc_total, np.mean(average_deaths), np.mean(average_incidence)]
+model_data = [np.mean(average_incidence), np.mean(average_deaths), mean_inc_total]
 plt.bar(n, gbd_data, width=0.4, color='lightsalmon', label='GBD estimates')
 plt.bar(n+ 0.4, model_data, width=0.4, color='lightsteelblue', label='Model estimates')
-plt.xticks(n + 0.2, ['Incidence of injuries', 'Incidence of death',
-                                            'Incidence of people with RTIs'])
+plt.xticks(n + 0.2, ['Incidence of people with RTIs', 'Incidence of death','Incidence of injuries'])
 for i in range(len(gbd_data)):
     plt.annotate(str(np.round(gbd_data[i], 2)), xy=(n[i], gbd_data[i]), ha='center', va='bottom')
 for i in range(len(model_data)):
@@ -1675,8 +1664,8 @@ else:
     plt.clf()
 # =============== Plot percentage of injury by type in model compared to the GBD estimates =======================
 # Store model injuries by type in a list
-model_injury_types = [mean_inc_amp, mean_inc_burns, mean_inc_fractures, mean_inc_tbi,
-                      mean_inc_minor, mean_inc_other, mean_inc_sci]
+model_injury_types = [mean_inc_amp, mean_inc_burns, mean_inc_fractures, mean_inc_tbi, mean_inc_minor, mean_inc_other,
+                      mean_inc_sci]
 # Calculate percentage of injuries by type
 model_injury_type_percentages = np.divide(model_injury_types, sum(model_injury_types))
 # Convert to percentage
@@ -2040,354 +2029,3 @@ if save_figures is True:
     plt.clf()
 else:
     plt.clf()
-# ======================================= Create outputs for GBD DATA ===============================================
-# The following code is commented out as it relates to GBD data and not the simulation data, so It doesn't need to be
-# in master but I am keeping it here currently in case I want to use it later on, the same can be said for the resource
-# files used: ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv, ResourceFile_RTI_GBD_gender_data.csv,
-# ResourceFile_RTI_GBD_age_data.csv, ResourceFile_RTI_GBD_age_gender_data.csv and
-# ResourceFile_RTI_Vehicle_Ownersip_Death_Data.csv
-
-# data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
-# gbd_death_data = data.loc[data['measure'] == 'Deaths']
-# gbd_in_rti_data = data.loc[data['measure'] == 'Incidence']
-# gbd_death_data = gbd_death_data.sort_values(by='year')
-# gbd_in_rti_data = gbd_in_rti_data.sort_values(by='year')
-# gbd_death_number = gbd_death_data.loc[gbd_death_data['metric'] == 'Number']
-# gbd_rti_number = gbd_in_rti_data.loc[gbd_in_rti_data['metric'] == 'Number']
-# plt.subplot(2, 1, 1)
-# plt.plot(gbd_rti_number['year'], gbd_rti_number['val'], 'lightsteelblue', label='Number of RTIs')
-# plt.fill_between(gbd_rti_number['year'], gbd_rti_number['upper'], gbd_rti_number['lower'], color='lightsteelblue',
-#                  alpha=0.5, label='95% C.I.')
-# plt.legend()
-# plt.xlabel('Years')
-# plt.ylabel('Number')
-# plt.title('Number of RTIs in Malawi, GBD estimates')
-# plt.subplot(2, 1, 2)
-# plt.plot(gbd_death_number['year'], gbd_death_number['val'], 'lightsalmon', label='Deaths')
-#
-# plt.fill_between(gbd_death_number['year'], gbd_death_number['upper'], gbd_death_number['lower'], color='lightsalmon',
-#                  alpha=0.5, label='95% C.I.')
-# plt.legend()
-# plt.xlabel('Years')
-# plt.ylabel('Number')
-# plt.title('Number of RTI deaths in Malawi, GBD estimates')
-# left  = 0.125  # the left side of the subplots of the figure
-# right = 0.9    # the right side of the subplots of the figure
-# bottom = 0.1   # the bottom of the subplots of the figure
-# top = 0.9      # the top of the subplots of the figure
-# wspace = 0.2   # the amount of width reserved for blank space between subplots
-# hspace = 0.45   # the amount of height reserved for white space between subplots
-# plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=0.2, hspace=hspace)
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/GBD_RTI_number_of_rtis_and_deaths.png", bbox_inches='tight')
-# plt.clf()
-# per_injury_fatal_ratio = np.divide(gbd_death_number['val'].tolist(), gbd_rti_number['val'].tolist())
-# plt.plot(gbd_death_number['year'], per_injury_fatal_ratio, 'lightsteelblue')
-# plt.xlabel('Year')
-# plt.ylabel('Percent')
-# plt.title('Number of deaths per-injury in Malawi, GBD estimates')
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/GBD_percent_fatal_injuries.png", bbox_inches='tight')
-# plt.clf()
-# gbd_gender_data = pd.read_csv('resources/ResourceFile_RTI_GBD_gender_data.csv')
-# global_males = gbd_gender_data.loc[(gbd_gender_data['location'] == 'Global') & (gbd_gender_data['sex'] == 'Male')]
-# global_males_in_rti = global_males['val'].sum()
-# global_females = gbd_gender_data.loc[(gbd_gender_data['location'] == 'Global') & (gbd_gender_data['sex'] == 'Female')]
-# global_females_in_rti = global_females['val'].sum()
-# global_gender_percentages = [global_males_in_rti / (global_females_in_rti + global_males_in_rti),
-#                              global_females_in_rti / (global_females_in_rti + global_males_in_rti)]
-# gbd_age_data = pd.read_csv('resources/ResourceFile_RTI_GBD_age_data.csv')
-# age_1_to_4 = gbd_age_data.loc[gbd_age_data['age'] == '1 to 4']
-# age_5_to_9 = gbd_age_data.loc[gbd_age_data['age'] == '5 to 9']
-# age_10_to_14 = gbd_age_data.loc[gbd_age_data['age'] == '10 to 14']
-# age_15_to_19 = gbd_age_data.loc[gbd_age_data['age'] == '15 to 19']
-# age_20_to_24 = gbd_age_data.loc[gbd_age_data['age'] == '20 to 24']
-# age_25_to_29 = gbd_age_data.loc[gbd_age_data['age'] == '25 to 29']
-# age_30_to_34 = gbd_age_data.loc[gbd_age_data['age'] == '30 to 34']
-# age_35_to_39 = gbd_age_data.loc[gbd_age_data['age'] == '35 to 39']
-# age_40_to_44 = gbd_age_data.loc[gbd_age_data['age'] == '40 to 44']
-# age_45_to_49 = gbd_age_data.loc[gbd_age_data['age'] == '45 to 49']
-# age_50_to_54 = gbd_age_data.loc[gbd_age_data['age'] == '50 to 54']
-# age_55_to_59 = gbd_age_data.loc[gbd_age_data['age'] == '55 to 59']
-# age_60_to_64 = gbd_age_data.loc[gbd_age_data['age'] == '60 to 64']
-# age_65_to_69 = gbd_age_data.loc[gbd_age_data['age'] == '65 to 69']
-# age_70_to_74 = gbd_age_data.loc[gbd_age_data['age'] == '70 to 74']
-# age_75_to_79 = gbd_age_data.loc[gbd_age_data['age'] == '75 to 79']
-# age_80_to_84 = gbd_age_data.loc[gbd_age_data['age'] == '80 to 84']
-# age_85_to_89 = gbd_age_data.loc[gbd_age_data['age'] == '85 to 89']
-# global_total = age_1_to_4.loc[age_1_to_4['location'] == 'Global']['val'].sum() + \
-#                age_5_to_9.loc[age_5_to_9['location'] == 'Global']['val'].sum() + \
-#                age_10_to_14.loc[age_10_to_14['location'] == 'Global']['val'].sum() + \
-#                age_15_to_19.loc[age_15_to_19['location'] == 'Global']['val'].sum() + \
-#                age_20_to_24.loc[age_20_to_24['location'] == 'Global']['val'].sum() + \
-#                age_25_to_29.loc[age_25_to_29['location'] == 'Global']['val'].sum() + \
-#                age_30_to_34.loc[age_30_to_34['location'] == 'Global']['val'].sum() + \
-#                age_35_to_39.loc[age_35_to_39['location'] == 'Global']['val'].sum() + \
-#                age_40_to_44.loc[age_40_to_44['location'] == 'Global']['val'].sum() + \
-#                age_45_to_49.loc[age_45_to_49['location'] == 'Global']['val'].sum() + \
-#                age_50_to_54.loc[age_50_to_54['location'] == 'Global']['val'].sum() + \
-#                age_55_to_59.loc[age_55_to_59['location'] == 'Global']['val'].sum() + \
-#                age_60_to_64.loc[age_60_to_64['location'] == 'Global']['val'].sum() + \
-#                age_65_to_69.loc[age_65_to_69['location'] == 'Global']['val'].sum() + \
-#                age_70_to_74.loc[age_70_to_74['location'] == 'Global']['val'].sum() + \
-#                age_75_to_79.loc[age_75_to_79['location'] == 'Global']['val'].sum() + \
-#                age_80_to_84.loc[age_80_to_84['location'] == 'Global']['val'].sum() + \
-#                age_85_to_89.loc[age_85_to_89['location'] == 'Global']['val'].sum()
-# global_age_range = [age_1_to_4.loc[age_1_to_4['location'] == 'Global']['val'].sum(),
-#                age_5_to_9.loc[age_5_to_9['location'] == 'Global']['val'].sum(),
-#                age_10_to_14.loc[age_10_to_14['location'] == 'Global']['val'].sum(),
-#                age_15_to_19.loc[age_15_to_19['location'] == 'Global']['val'].sum(),
-#                age_20_to_24.loc[age_20_to_24['location'] == 'Global']['val'].sum(),
-#                age_25_to_29.loc[age_25_to_29['location'] == 'Global']['val'].sum(),
-#                age_30_to_34.loc[age_30_to_34['location'] == 'Global']['val'].sum(),
-#                age_35_to_39.loc[age_35_to_39['location'] == 'Global']['val'].sum(),
-#                age_40_to_44.loc[age_40_to_44['location'] == 'Global']['val'].sum(),
-#                age_45_to_49.loc[age_45_to_49['location'] == 'Global']['val'].sum(),
-#                age_50_to_54.loc[age_50_to_54['location'] == 'Global']['val'].sum(),
-#                age_55_to_59.loc[age_55_to_59['location'] == 'Global']['val'].sum(),
-#                age_60_to_64.loc[age_60_to_64['location'] == 'Global']['val'].sum(),
-#                age_65_to_69.loc[age_65_to_69['location'] == 'Global']['val'].sum(),
-#                age_70_to_74.loc[age_70_to_74['location'] == 'Global']['val'].sum(),
-#                age_75_to_79.loc[age_75_to_79['location'] == 'Global']['val'].sum(),
-#                age_80_to_84.loc[age_80_to_84['location'] == 'Global']['val'].sum(),
-#                age_85_to_89.loc[age_85_to_89['location'] == 'Global']['val'].sum()
-#                     ]
-# global_age_distribution = np.divide(global_age_range, global_total)
-# malawi_males = gbd_gender_data.loc[(gbd_gender_data['location'] == 'Malawi') & (gbd_gender_data['sex'] == 'Male')]
-# malawi_males_in_rti = malawi_males['val'].sum()
-# malawi_females = gbd_gender_data.loc[(gbd_gender_data['location'] == 'Malawi') & (gbd_gender_data['sex'] == 'Female')]
-# malawi_females_in_rti = malawi_females['val'].sum()
-# malawi_gender_percentages = [malawi_males_in_rti / (malawi_females_in_rti + malawi_males_in_rti),
-#                              malawi_females_in_rti / (malawi_females_in_rti + malawi_males_in_rti)]
-# malawi_total = age_1_to_4.loc[age_1_to_4['location'] == 'Malawi']['val'].sum() + \
-#                age_5_to_9.loc[age_5_to_9['location'] == 'Malawi']['val'].sum() + \
-#                age_10_to_14.loc[age_10_to_14['location'] == 'Malawi']['val'].sum() + \
-#                age_15_to_19.loc[age_15_to_19['location'] == 'Malawi']['val'].sum() + \
-#                age_20_to_24.loc[age_20_to_24['location'] == 'Malawi']['val'].sum() + \
-#                age_25_to_29.loc[age_25_to_29['location'] == 'Malawi']['val'].sum() + \
-#                age_30_to_34.loc[age_30_to_34['location'] == 'Malawi']['val'].sum() + \
-#                age_35_to_39.loc[age_35_to_39['location'] == 'Malawi']['val'].sum() + \
-#                age_40_to_44.loc[age_40_to_44['location'] == 'Malawi']['val'].sum() + \
-#                age_45_to_49.loc[age_45_to_49['location'] == 'Malawi']['val'].sum() + \
-#                age_50_to_54.loc[age_50_to_54['location'] == 'Malawi']['val'].sum() + \
-#                age_55_to_59.loc[age_55_to_59['location'] == 'Malawi']['val'].sum() + \
-#                age_60_to_64.loc[age_60_to_64['location'] == 'Malawi']['val'].sum() + \
-#                age_65_to_69.loc[age_65_to_69['location'] == 'Malawi']['val'].sum() + \
-#                age_70_to_74.loc[age_70_to_74['location'] == 'Malawi']['val'].sum() + \
-#                age_75_to_79.loc[age_75_to_79['location'] == 'Malawi']['val'].sum() + \
-#                age_80_to_84.loc[age_80_to_84['location'] == 'Malawi']['val'].sum() + \
-#                age_85_to_89.loc[age_85_to_89['location'] == 'Malawi']['val'].sum()
-# malawi_age_range = [age_1_to_4.loc[age_1_to_4['location'] == 'Malawi']['val'].sum(),
-#                age_5_to_9.loc[age_5_to_9['location'] == 'Malawi']['val'].sum(),
-#                age_10_to_14.loc[age_10_to_14['location'] == 'Malawi']['val'].sum(),
-#                age_15_to_19.loc[age_15_to_19['location'] == 'Malawi']['val'].sum(),
-#                age_20_to_24.loc[age_20_to_24['location'] == 'Malawi']['val'].sum(),
-#                age_25_to_29.loc[age_25_to_29['location'] == 'Malawi']['val'].sum(),
-#                age_30_to_34.loc[age_30_to_34['location'] == 'Malawi']['val'].sum(),
-#                age_35_to_39.loc[age_35_to_39['location'] == 'Malawi']['val'].sum(),
-#                age_40_to_44.loc[age_40_to_44['location'] == 'Malawi']['val'].sum(),
-#                age_45_to_49.loc[age_45_to_49['location'] == 'Malawi']['val'].sum(),
-#                age_50_to_54.loc[age_50_to_54['location'] == 'Malawi']['val'].sum(),
-#                age_55_to_59.loc[age_55_to_59['location'] == 'Malawi']['val'].sum(),
-#                age_60_to_64.loc[age_60_to_64['location'] == 'Malawi']['val'].sum(),
-#                age_65_to_69.loc[age_65_to_69['location'] == 'Malawi']['val'].sum(),
-#                age_70_to_74.loc[age_70_to_74['location'] == 'Malawi']['val'].sum(),
-#                age_75_to_79.loc[age_75_to_79['location'] == 'Malawi']['val'].sum(),
-#                age_80_to_84.loc[age_80_to_84['location'] == 'Malawi']['val'].sum(),
-#                age_85_to_89.loc[age_85_to_89['location'] == 'Malawi']['val'].sum()
-#                     ]
-# malawi_age_distribution = np.divide(malawi_age_range, malawi_total)
-#
-# age_labels = ['1-4', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59',
-#               '60-64', '65-69', '70-74', '75-79', '80-84', '85-89']
-# plt.subplots(figsize=(18, 10))
-#
-# plt.subplot(2, 2, 1)
-# colours = ['lightsteelblue', 'lightsalmon']
-# plt.pie(global_gender_percentages, labels=['Males', 'Females'], autopct='%1.1f%%', startangle=90, colors=colours)
-# plt.title('GBD global gender distribution'
-#           '\n'
-#           ' of RTI incidence, all years')
-# plt.subplot(2, 2, 2)
-# plt.bar(np.arange(len(global_age_distribution)), global_age_distribution, color='lightsteelblue')
-# plt.xticks(np.arange(len(global_age_distribution)), age_labels, rotation=90)
-# plt.ylabel('Percent')
-# plt.title('GBD global age distribution '
-#           '\n'
-#           'of RTI incidence, all years')
-# plt.subplot(2, 2, 3)
-# plt.pie(malawi_gender_percentages, labels=['Males', 'Females'], autopct='%1.1f%%', startangle=90, colors=colours)
-# plt.title('GBD Malawi gender distribution '
-#           '\n'
-#           'of RTI incidence, all years')
-# plt.subplot(2, 2, 4)
-# plt.bar(np.arange(len(malawi_age_distribution)), malawi_age_distribution, color='lightsteelblue')
-# plt.xticks(np.arange(len(malawi_age_distribution)), age_labels, rotation=90)
-# plt.ylabel('Percent')
-# plt.title('GBD Malawi age distribution '
-#           '\n'
-#           'of RTI incidence, all years')
-# plt.tight_layout()
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/GBD_RTI_demography.png")
-# plt.clf()
-#
-# gbd_gender_data = pd.read_csv('resources/ResourceFile_RTI_GBD_age_gender_data.csv')
-# number_of_injuries = gbd_gender_data.loc[gbd_gender_data['metric'] == 'Number']
-# number_males_injured = number_of_injuries.loc[number_of_injuries['sex'] == 'Male']
-# number_females_injured = number_of_injuries.loc[number_of_injuries['sex'] == 'Female']
-# rate_of_injuries = gbd_gender_data.loc[gbd_gender_data['metric'] == 'Rate']
-# rate_males_injured = rate_of_injuries.loc[rate_of_injuries['sex'] == 'Male']
-# rate_females_injured = rate_of_injuries.loc[rate_of_injuries['sex'] == 'Female']
-# female_df = number_females_injured.groupby(['age']).sum()
-# female_df['rank'] = [1, 3, 4, 5, 6, 7, 8, 9, 10, 2, 11, 12, 13, 14, 15, 16, 17, 18, 19]
-# female_df = female_df.sort_values(by=['rank'])
-# ages = female_df.index.tolist()
-# ages.reverse()
-# female_number = female_df['val'].tolist()
-# female_number.reverse()
-# male_df = number_males_injured.groupby(['age']).sum()
-# male_df['rank'] = [1, 3, 4, 5, 6, 7, 8, 9, 10, 2, 11, 12, 13, 14, 15, 16, 17, 18, 19]
-# male_df = male_df.sort_values(by=['rank'])
-# male_number = male_df['val'].tolist()
-# male_number.reverse()
-# plt.close()
-# plt.clf()
-# plt.plot(number_males_injured.groupby(['year']).sum().index, number_males_injured.groupby(['year']).sum()['val'],
-#          label='Males', color='lightsteelblue')
-# plt.plot(number_females_injured.groupby(['year']).sum().index, number_females_injured.groupby(['year']).sum()['val'],
-#          label='Females', color='lightsalmon')
-# plt.plot(number_males_injured.groupby(['year']).sum().index,
-#          number_males_injured.groupby(['year']).sum()['val'] + number_females_injured.groupby(['year']).sum()['val'],
-#          label='Total', color='black')
-# plt.xlabel('Year')
-# plt.ylabel('Number of road traffic injuries')
-# plt.title('Number of road traffic injuries in Malawi per year, GBD data')
-# plt.legend(loc='center right')
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Malawi_Number_of_injuries.png")
-# plt.clf()
-# plt.barh(ages, male_number, alpha=0.5, label='Males', color='lightsteelblue')
-# plt.barh(ages, np.multiply(female_number, -1), alpha=0.5, label='Females', color='lightsalmon')
-# locs, labels = plt.xticks()
-# plt.xticks(locs, np.sqrt(locs**2), fontsize=8)
-# plt.title('Sum total of number of road traffic injuries in Malawi'
-#           '\n'
-#           'by age and sex over all years, GBD data')
-# plt.xlabel('Number')
-# plt.yticks(fontsize=7)
-# plt.legend()
-# plt.tight_layout()
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Malawi_Injury_Demographics.png")
-# plt.clf()
-# plt.barh(ages, np.divide(male_number, sum(male_number)), alpha=0.5, label='Males', color='lightsteelblue')
-# plt.barh(ages, np.multiply(np.divide(female_number, sum(female_number)), -1), alpha=0.5,
-#          label='Females', color='lightsalmon')
-# locs, labels = plt.xticks()
-# plt.xticks(locs, np.sqrt(locs**2), fontsize=8)
-# plt.title('Distribution of number of road traffic injuries in Malawi'
-#           '\n'
-#           'by age and sex over all years, GBD data')
-# plt.xlabel('Number')
-# plt.yticks(fontsize=7)
-# plt.legend()
-# plt.tight_layout()
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Malawi_Injury_Demographics_percentage.png")
-# plt.clf()
-#
-# gbd_cat_2017 = [24026.90542, 1082.276734, 7941.462531, 7578.726195, 7578.726195, 1825.22282, 106.8162861, 1004.93119,
-#                 559.5158363, 10931.61332, 1712.892472]
-# gbd_cat_2017_labels = ['Fracture', 'Dislocation', 'TBI', 'Soft Tissue Inj.', 'Int. Organ Inj.',
-#                        'Int. Bleeding', 'SCI', 'Amputation', 'Eye injury', 'Laceration', 'Burn']
-# plt.bar(np.arange(len(gbd_cat_2017)), np.divide(gbd_cat_2017, sum(gbd_cat_2017)))
-# plt.xticks(np.arange(len(gbd_cat_2017)), gbd_cat_2017_labels, rotation=90)
-# plt.title('GBD Injury categories Malawi 2017')
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/GBD_injury_category_distribution.png", bbox_inches='tight')
-# plt.clf()
-
-# # Plot data on vehicle ownership vs death incidence in Africa
-# df = pd.read_csv('resources/ResourceFile_RTI_Vehicle_Ownersip_Death_Data.csv', skipinitialspace=True)
-# # Preprocessing
-# df = df.dropna()
-# df['n_vehicles'] = pd.to_numeric(df['n_vehicles'])
-# df['adjusted_n_deaths'] = pd.to_numeric(df['adjusted_n_deaths'])
-#
-# def group_by_gdp(row):
-#     if row['gdp_usd_per_capita'] < 1005:
-#         val = 'Low income'
-#     elif row['gdp_usd_per_capita'] < 3955:
-#         val = 'Lower middle income'
-#     elif row['gdp_usd_per_capita'] < 12235:
-#         val = 'Upper middle income'
-#     else:
-#         val = 'High income'
-#     return val
-#
-#
-# df['income_index'] = df.apply(group_by_gdp, axis=1)
-# # drop outliers
-# df = df.drop(df.n_vehicles.nlargest(3).index)
-# low_income_slope, low_income_intercept, r_value, low_income_p_value, std_err = \
-#     stats.linregress(df.loc[df['income_index'] == 'Low income', 'n_vehicles'],
-#                      df.loc[df['income_index'] == 'Low income', 'mortality_rate_2016'])
-# low_middle_income_slope, low_middle_income_intercept, r_value, low_middle_income_p_value, std_err = \
-#     stats.linregress(df.loc[df['income_index'] == 'Lower middle income', 'n_vehicles'],
-#                      df.loc[df['income_index'] == 'Lower middle income', 'mortality_rate_2016'])
-# upper_middle_income_slope, upper_middle_income_intercept, r_value, upper_middle_income_p_value, std_err = \
-#     stats.linregress(df.loc[df['income_index'] == 'Upper middle income', 'n_vehicles'],
-#                      df.loc[df['income_index'] == 'Upper middle income', 'mortality_rate_2016'])
-# high_income_slope, high_income_intercept, r_value, high_income_p_value, std_err = \
-#     stats.linregress(df.loc[df['income_index'] == 'High income', 'n_vehicles'],
-#                      df.loc[df['income_index'] == 'High income', 'mortality_rate_2016'])
-# groups = df.groupby('income_index')
-# for name, group in groups:
-#     plt.plot(group.n_vehicles, group.mortality_rate_2016, marker='o', linestyle='', markersize=12, label=name)
-# plt.xlabel('Number of vehicles')
-# plt.ylabel('Mortality rate per 100,000 people per year')
-# plt.legend()
-# plt.title('The number of vehicles vs the mortality rate due to RTI per 100,000, grouped by GDP')
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/N_vehicles_vs_incidence_scatter.png", bbox_inches='tight')
-# plt.clf()
-# plt.subplot(2, 2, 1)
-# plt.scatter(df.loc[df['income_index'] == 'Low income', 'n_vehicles'],
-#             df.loc[df['income_index'] == 'Low income', 'mortality_rate_2016'], c='blue')
-# plt.plot(df.loc[df['income_index'] == 'Low income', 'n_vehicles'],
-#          low_income_intercept + low_income_slope * df.loc[df['income_index'] == 'Low income', 'n_vehicles'],
-#          color='blue')
-# plt.xlabel('Number of vehicles')
-# plt.ylabel('Deaths per 100,000'
-#            '\n'
-#            ' population in 2016')
-# plt.title(f"Low income, p = {np.round(low_income_p_value, 2)}")
-# plt.subplot(2, 2, 2)
-# plt.scatter(df.loc[df['income_index'] == 'Lower middle income', 'n_vehicles'],
-#             df.loc[df['income_index'] == 'Lower middle income', 'mortality_rate_2016'], c='red')
-# plt.plot(df.loc[df['income_index'] == 'Lower middle income', 'n_vehicles'],
-#          low_middle_income_intercept +
-#          low_middle_income_slope * df.loc[df['income_index'] == 'Lower middle income', 'n_vehicles'], color='red')
-# plt.xlabel('Number of vehicles')
-# plt.ylabel('Deaths per 100,000'
-#            '\n'
-#            ' population in 2016')
-# plt.title(f"Lower middle income, p = {np.round(low_middle_income_p_value, 2)}")
-# plt.subplot(2, 2, 3)
-# plt.scatter(df.loc[df['income_index'] == 'Upper middle income', 'n_vehicles'],
-#             df.loc[df['income_index'] == 'Upper middle income', 'mortality_rate_2016'], c='green')
-# plt.plot(df.loc[df['income_index'] == 'Upper middle income', 'n_vehicles'],
-#          upper_middle_income_intercept +
-#          upper_middle_income_slope * df.loc[df['income_index'] == 'Upper middle income', 'n_vehicles'], color='green')
-# plt.xlabel('Number of vehicles')
-# plt.ylabel('Deaths per 100,000'
-#            '\n'
-#            ' population in 2016')
-# plt.title(f"Upper middle income, p = {np.round(upper_middle_income_p_value, 2)}")
-# plt.subplot(2, 2, 4)
-# plt.scatter(df.loc[df['income_index'] == 'High income', 'n_vehicles'],
-#             df.loc[df['income_index'] == 'High income', 'mortality_rate_2016'], c='yellow')
-# plt.plot(df.loc[df['income_index'] == 'High income', 'n_vehicles'],
-#          high_income_intercept + high_income_slope * df.loc[df['income_index'] == 'High income', 'n_vehicles'],
-#          color='yellow')
-# plt.title(f"High income, p = {np.round(high_income_p_value, 2)}")
-# plt.xlabel('Number of vehicles')
-# plt.ylabel('Deaths per 100,000'
-#            '\n'
-#            ' population in 2016')
-# plt.tight_layout()
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Insignificant_relationship_between_n_vehicles_deaths.png")
-# plt.clf()
