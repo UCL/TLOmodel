@@ -202,6 +202,39 @@ class Demography(Module):
                   'mother_age': df.at[mother_id, 'age_years']}
         )
 
+    def do_death(self, individual_id, cause, originating_module):
+        """Register and log the death of an individual from a specific cause"""
+
+        df = self.sim.population.props
+        person = df.loc[individual_id]
+
+        if not person['is_alive']:
+            return
+
+        # Register the death:
+        df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = (False, self.sim.date, cause)
+
+        # Log the death:
+        logger.info(
+            key='death',
+            data={'age': person['age_years'],
+                  'sex': person['sex'],
+                  'cause': cause,
+                  'person_id': individual_id
+                  })
+
+        # Release any beds-days that would be used by this person:
+        if 'HealthSystem' in self.sim.modules:
+            self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
+
+        # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
+        if 'HealthBurden' in self.sim.modules.keys():
+            label = originating_module.name + '_' + cause
+            # creates a label for these YLL of the form: <ModuleName>_<CauseOfDeath>
+            self.sim.modules['HealthBurden'].report_live_years_lost(sex=person['sex'],
+                                                                    date_of_birth=person['date_of_birth'],
+                                                                    label=label)
+
     def calc_py_lived_in_last_year(self, delta=pd.DateOffset(years=1)):
         """
         This is a helper method to compute the person-years that were lived in the previous year by age.
@@ -338,7 +371,8 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
 class InstantaneousDeath(Event, IndividualScopeEventMixin):
     """
-    Performs the Death operation on an individual and logs it.
+    Call the do_death function to cause the person to die.
+    The 'module' passed to this event is the disease module that is causing the death.
     """
 
     def __init__(self, module, individual_id, cause):
@@ -346,42 +380,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
         self.cause = cause
 
     def apply(self, individual_id):
-        df = self.sim.population.props
-
-        logger.debug(key='death_occurring', data=f"@@@@ A Death is now occurring, to person {individual_id}")
-
-        if df.at[individual_id, 'is_alive']:
-            # here comes the death.......
-            df.at[individual_id, 'is_alive'] = False
-            df.at[individual_id, 'date_of_death'] = self.sim.date
-            df.at[individual_id, 'cause_of_death'] = self.cause
-
-            # release any beds-days that would be used by this person:
-            if 'HealthSystem' in self.sim.modules:
-                self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
-
-        logger.debug(key='official_death',
-                     data=(f"*******************************************The person {individual_id} "
-                           f"is now officially dead and has died of {self.cause}"))
-
-        # Log the death
-        logger.info(
-            key='death',
-            data={'age': df.at[individual_id, 'age_years'],
-                  'sex': df.at[individual_id, 'sex'],
-                  'cause': self.cause,
-                  'person_id': individual_id
-                  })
-
-        # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
-        if 'HealthBurden' in self.sim.modules.keys():
-            date_of_birth = df.at[individual_id, 'date_of_birth']
-            sex = df.at[individual_id, 'sex']
-            label = self.module.name + '_' + self.cause  # creates a label for these YLL of
-            # <ModuleName>_<CauseOfDeath>
-            self.sim.modules['HealthBurden'].report_live_years_lost(sex=sex,
-                                                                    date_of_birth=date_of_birth,
-                                                                    label=label)
+        self.sim.modules['Demography'].do_death(individual_id, cause=self.cause, originating_module=self.module)
 
 
 class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):

@@ -7,7 +7,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     depression,
@@ -94,7 +94,7 @@ def register_core_modules():
                                            service_availability=['*']),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
@@ -116,7 +116,7 @@ def register_all_modules():
                                            service_availability=['*']),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
@@ -143,6 +143,9 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
 def test_run_core_modules_high_volumes_of_pregnancy():
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
     simulation"""
+
+    """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
+      simulation"""
 
     sim = register_core_modules()
     sim.make_initial_population(n=1000)
@@ -483,9 +486,7 @@ def test_abortion_complications():
 
     death_event.apply(mother_id)
 
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not sim.population.props.at[mother_id, 'is_alive']
     assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delete_mni'])
 
 
@@ -692,7 +693,7 @@ def test_check_first_anc_visit_scheduling():
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact in hsi_events
 
 
 def test_pregnancy_supervisor_anaemia():
@@ -841,7 +842,7 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage():
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
 
     # Now clear the event queue and reset haemorrhage variables
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -864,11 +865,9 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage():
     sim.date = sim.date + pd.DateOffset(weeks=5)
     pregnancy_sup.apply(sim.population)
 
-    # Check that a woman from the series has correctly had the instantaneous death event scheduled
+    # Check that a woman from the series has correctly died
     mother_id = pregnant_women.index[0]
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not sim.population.props.at[mother_id, 'is_alive']
     assert mother_id not in list(sim.modules['PregnancySupervisor'].mother_and_newborn_info)
 
     # todo check stillbirth
@@ -925,7 +924,7 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
 
     # Now clear the event queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -943,12 +942,11 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
     sim.date = sim.date + pd.DateOffset(weeks=4)
     pregnancy_sup.apply(sim.population)
 
-    # Check the death event is correctly scheduled
-    mother_id = pregnant_women.index[0]
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
-    assert mother_id not in list(sim.modules['PregnancySupervisor'].mother_and_newborn_info)
+    # Check the death has occurred
+    assert not (df.loc[pregnant_women.index, 'is_alive']).all().all()
+
+    # reset the is_alive property
+    df.loc[pregnant_women.index, 'is_alive'] = True
 
     # Clear the event queue again and reset the mni dictionary which had been deleted
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -1104,7 +1102,7 @@ def test_pregnancy_supervisor_chorio_and_prom():
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
 
     # Now clear the event queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -1123,7 +1121,7 @@ def test_pregnancy_supervisor_chorio_and_prom():
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
 
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.event_queue.queue.clear()
@@ -1145,13 +1143,14 @@ def test_pregnancy_supervisor_chorio_and_prom():
 
     pregnancy_sup.apply(sim.population)
 
-    # Check that a woman from the series has correctly had the instantaneous death event scheduled
-    mother_id = pregnant_women.index[0]
-    events = sim.find_events_for_person(person_id=mother_id)
-    events = [e.__class__ for d, e in events]
-    assert sim.population.props.at[mother_id, 'ps_chorioamnionitis'] == 'clinical'
-    assert demography.InstantaneousDeath in events
-    assert mother_id not in list(sim.modules['PregnancySupervisor'].mother_and_newborn_info)
+    # Check women from the series has correctly died
+    assert (df.loc[pregnant_women.index, 'ps_chorioamnionitis'] == 'clinical').all().all()
+    assert not (df.loc[pregnant_women.index, 'is_alive']).all().all()
+    for person in pregnant_women.index:
+        assert person not in list(sim.modules['PregnancySupervisor'].mother_and_newborn_info)
+
+    # reset the is_alive property
+    df.loc[pregnant_women.index, 'is_alive'] = True
 
     # Clear the event queue and regenerate MNI (deleted in death)
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -1210,7 +1209,7 @@ def test_induction_of_labour_logic():
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert antenatal_care.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour in hsi_events
 
     # Clear the event queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
