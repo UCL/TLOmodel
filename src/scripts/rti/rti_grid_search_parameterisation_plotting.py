@@ -38,16 +38,10 @@ sim_run_time_years = int(sim_run_time.days / 365)
 pop_size = log['tlo.methods.demography']['population']['total'].iloc[0]
 
 # 2) Extract a series for all runs:
-people_in_rti_incidence = extract_results(results_folder,
-                                          module="tlo.methods.rti",
-                                          key="summary_1m",  # <-- the key used for the logging entry
-                                          column="incidence of rti per 100,000",  # <-- the column in the dataframe
-                                          index="date")  # <-- optional index
-deaths_from_rti_incidence = extract_results(results_folder,
-                                          module="tlo.methods.rti",
-                                          key="summary_1m",  # <-- the key used for the logging entry
-                                          column="incidence of rti death per 100,000",  # <-- the column in the dataframe
-                                          index="date")
+people_in_rti_incidence = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
+                                          column="incidence of rti per 100,000", index="date")
+deaths_from_rti_incidence = extract_results(results_folder, module="tlo.methods.rti", key="summary_1m",
+                                            column="incidence of rti death per 100,000", index="date")
 # 3) Get summary of the results for that log-element (only mean and the value at then of the simulation)
 incidence_results = summarize(people_in_rti_incidence, only_mean=True).mean(axis=0)
 incidence_results.name = 'z'

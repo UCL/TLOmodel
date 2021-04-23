@@ -27,7 +27,6 @@ class TestScenario(BaseScenario):
         self.number_of_draws = self.number_of_samples_in_parameter_range ** 2
         self.runs_per_draw = 3
 
-
     def log_configuration(self):
         return {
             'filename': 'rti_grid_search_parameterisation',
@@ -72,8 +71,6 @@ class TestScenario(BaseScenario):
 
             },
             }
-
-
 
 
 if __name__ == '__main__':
