@@ -14,8 +14,8 @@ resourcefilepath = 'resources'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 100
-days_sim = 100
+popsize = 1000
+days_sim = 1000
 default_facility_id = 0
 cap_bedtype1 = popsize
 
@@ -39,8 +39,7 @@ def impose_bd_footprint(person_id, dur_bed):
     """impose a footprint for a person for a particular duration starting on a particular date"""
     bd.impose_beddays_footprint(person_id=person_id, footprint={'bedtype1': dur_bed})
 
-# Create a 100 day simulation of 100 people
-
+# Create the simulation
 end_date = start_date + pd.DateOffset(days=days_sim)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
