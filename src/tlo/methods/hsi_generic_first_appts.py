@@ -28,6 +28,7 @@ from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Fo
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 # ---------------------------------------------------------------------------------------------------------
 #
 #    ** NON-EMERGENCY APPOINTMENTS **
@@ -63,7 +64,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         if is_child:
             the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
         else:
-            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # Adult out-patient appointment
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel1'
@@ -258,9 +259,20 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         treatment_hsi, priority=1, topen=self.sim.date, tclose=None
                     )
 
+            # ---- ROUTINE ASSESSEMENT FOR NCDs ----
+            if 'Ncds' in self.sim.modules:
+                ncds = self.sim.modules['Ncds']
+                if (squeeze_factor == 0.0) and (self.module.rng.rand() <
+                                                ncds.parameters['pr_assessed_for_diabetes_in_generic_appt_level1']):
+                    ncds.do_when_suspected_diabetes(person_id=person_id, hsi_event=self)
+                if (squeeze_factor == 0.0) and (self.module.rng.rand() <
+                                                ncds.parameters['pr_assessed_for_hypertension_in_generic_appt_level1']):
+                    ncds.do_when_suspected_hypertension(person_id=person_id, hsi_event=self)
+
     def did_not_run(self):
         logger.debug(key='message',
                      data='HSI_GenericFirstApptAtFacilityLevel1: did not run')
+
 
 # ---------------------------------------------------------------------------------------------------------
 #    HSI_GenericFirstApptAtFacilityLevel0
@@ -298,6 +310,7 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         logger.debug(key='message',
                      data='HSI_GenericFirstApptAtFacilityLevel0: did not run')
 
+
 # ---------------------------------------------------------------------------------------------------------
 #
 #    ** EMERGENCY APPOINTMENTS **
@@ -333,7 +346,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         if is_child:
             the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
         else:
-            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # Adult out-patient appointment
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
@@ -358,15 +371,15 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             # -----  COMPLICATION DURING BIRTH  -----
             if person_id in labour_list:
                 if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                        & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
+                    & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
                     event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
                     health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
-            # -----  COMPLICATION AFTER BIRTH  -----
+                # -----  COMPLICATION AFTER BIRTH  -----
                 if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                        & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
+                    & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
                     event = HSI_Labour_ReceivesCareForPostpartumPeriod(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
@@ -429,7 +442,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                         topen=self.sim.date,
                     )
         # else:
-            # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
+        # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:
