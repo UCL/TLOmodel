@@ -446,13 +446,18 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
         df = population.props
         people_to_resolve = list(df.index[df.is_alive & (df.index.isin(self.person_id))])
 
-        # strip out those who do not have this symptom being caused by this disease_module
-        for person_id in people_to_resolve:
-            if self.symptom_string not in self.module.has_what(person_id, disease_module=self.disease_module):
-                people_to_resolve.remove(person_id)
+        # find the person_id's for those have this symptom (and this symptom caused by a disease_module if specified)
+        bsh = self.module.bsh[self.symptom_string]
+        have_symptom_from_disease = bsh.has_any(df.index.isin(self.person_id) & df.is_alive, self.disease_module.name)
+        people_index = have_symptom_from_disease.index[have_symptom_from_disease]
+
+        # # strip out those who do not have this symptom being caused by this disease_module
+        # for person_id in people_to_resolve:
+        #     if self.symptom_string not in self.module.has_what(person_id, disease_module=self.disease_module):
+        #         people_to_resolve.remove(person_id)
 
         # run the chg_symptom function
-        if people_to_resolve:
+        if len(people_index) > 0:
             self.module.change_symptom(person_id=people_to_resolve,
                                        symptom_string=self.symptom_string,
                                        add_or_remove='-',
