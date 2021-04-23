@@ -111,11 +111,12 @@ class Wasting(Module):
                                     categories=['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']),
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'clinical acute malnutrition state based on WHZ',
                                                    categories=['MAM', 'SAM']),
+        'un_last_wasting_date_of_onset': Property(Types.DATE, 'date of onset of lastest wasting episode'),
         'un_wasting_death_date': Property(Types.DATE, 'death date from wasting'),
 
         'un_wasting_oedema': Property(Types.BOOL, 'oedema present in wasting'),
         'un_wasting_MUAC_measure': Property(Types.REAL, 'MUAC measurement'),
-        'un_AM_treatment_type': Property(Types.CATEGORICAL, 'treatment types for of acute malnutrition',
+        'un_AM_treatment_type': Property(Types.CATEGORICAL, 'treatment types for acute malnutrition',
                                          categories=['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']),
     }
 
@@ -481,30 +482,6 @@ class Wasting(Module):
                 duration_in_days=None,
             )
 
-    # def severe_symptoms(self, population, severe_index, child=False):
-    #     """assign clinical symptoms to new severe malaria cases. Symptoms can only be resolved by treatment
-    #     handles both adult and child (using the child parameter) symptoms
-    #
-    #     :param population: the population dataframe
-    #     :param severe_index: the indices of new clinical cases
-    #     :param child: to apply severe symptoms to children (otherwise applied to adults)
-    #     """
-    #     df = population
-    #     p = self.parameters
-    #     rng = self.rng
-    #     now = self.sim.date
-    #
-    #     # currently symptoms list is applied to all
-    #     for symptom in self.symptoms:
-    #         # this also schedules symptom resolution in 5 days
-    #         self.sim.modules["SymptomManager"].change_symptom(
-    #             person_id=list(severe_index),
-    #             symptom_string=symptom,
-    #             add_or_remove="+",
-    #             disease_module=self,
-    #             duration_in_days=None,
-    #         )
-
     def do_wasting_treatment(self, person_id, wasting_severity, treatment_id):
         """Helper function that enacts the effects of a treatment to acute malnutrition.
         * Log the treatment date
@@ -609,7 +586,7 @@ class WastingOnsetEvent(Event, IndividualScopeEventMixin):
         rng = m.rng
 
         df.at[person_id, 'un_ever_wasted'] = True
-        df.at[person_id, 'un_currently_wasted'] = True
+        df.at[person_id, 'un_last_wasting_date_of_onset'] = self.sim.date
         df.at[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'  # start as MAM
         df.at[person_id, 'un_clinical_acute_malnutrition'] = self.wasting_state
 
@@ -813,7 +790,7 @@ class HSI_uncomplicated_MAM_treatment(HSI_Event, IndividualScopeEventMixin):
         return actual_appt_footprint
 
     def did_not_run(self):
-        logger.debug("HSI_Malaria_tx_compl_adult: did not run")
+        logger.debug("HSI_uncomplicated_MAM_treatment: did not run")
         pass
 
 

@@ -139,7 +139,6 @@ class Stunting(Module):
     PROPERTIES = {
         'un_HAZ_score': Property(Types.REAL, 'height-for-age z-score'),
         'un_ever_stunted': Property(Types.BOOL, 'had stunting before (HAZ <-2)'),
-        'un_currently_stunted': Property(Types.BOOL, 'currently stunted (HAZ <-2)'),
         'un_HAZ_category': Property(Types.CATEGORICAL, 'height-for-age z-score group',
                                     categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
         'un_clinical_chronic_malnutrition':
@@ -655,7 +654,6 @@ class StuntingOnsetEvent(Event, IndividualScopeEventMixin):
         m = self.module
 
         df.at[person_id, 'un_ever_stunted'] = True
-        df.at[person_id, 'un_currently_stunted'] = True
         df.at[person_id, 'un_HAZ_category'] = '-3<=HAZ<-2'  # start as moderate stunting
         df.at[person_id, 'un_clinical_acute_malnutrition'] = self.stunting_state
         df.at[person_id, 'un_last_stunting_date_of_onset'] = self.sim.date
