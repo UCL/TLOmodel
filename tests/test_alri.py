@@ -8,18 +8,13 @@ from pathlib import Path
 from tlo import Date, Simulation
 from tlo.methods import (
     alri,
-    antenatal_care,
-    contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 
@@ -50,18 +45,13 @@ def test_basic_run():
 
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
         dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-        contraception.Contraception(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         alri.Alri(resourcefilepath=resourcefilepath)
     )
 
