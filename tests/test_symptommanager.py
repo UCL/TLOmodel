@@ -175,11 +175,10 @@ def test_spurious_symptoms():
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable_and_reject_all=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  )
 
     # Run the simulation
@@ -196,6 +195,10 @@ def test_spurious_symptoms():
             has_any_generic_symptom = has_any_generic_symptom + has_this_symptom
 
     assert len(has_any_generic_symptom) > 0
+
+    # todo - check that the symptoms are being resolved...
+
+
 
 
 def test_baby_born_has_no_symptoms():

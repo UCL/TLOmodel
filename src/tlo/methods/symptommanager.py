@@ -132,12 +132,11 @@ class SymptomManager(Module):
     # Declare Metadata
     METADATA = {}
 
-    PROPERTIES = dict()  # updated as pre-initialise population once symptoms have been registered.
+    PROPERTIES = dict()  # updated at ```pre-initialise population``` once symptoms have been registered.
 
     PARAMETERS = {
-        'generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms'),
-        'generic_symptoms_spurious_occurrence': Parameter(Types.DATA_FRAME, 'probability and duration of spurious '
-                                                                            'occureneces of generic symptoms')
+        'generic_symptoms_spurious_occurrence': Parameter(
+            Types.DATA_FRAME, 'probability and duration of spurious occureneces of generic symptoms')
     }
 
     def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=False):
@@ -159,39 +158,8 @@ class SymptomManager(Module):
 
     def read_parameters(self, data_folder):
         """Read in the generic symptoms and register them"""
-
-        # Define the Generic Symptoms
-        generic_symptoms = pd.read_csv(Path(self.resourcefilepath) /
-                                       'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
-
-        # ensure types are correct:
-        generic_symptoms['duration_in_days_of_spurious_occurrence_in_children'] = \
-            generic_symptoms['duration_in_days_of_spurious_occurrence_in_children'].astype(int)
-        generic_symptoms['duration_in_days_of_spurious_occurrence_in_adults'] = \
-            generic_symptoms['duration_in_days_of_spurious_occurrence_in_adults'].astype(int)
-
-        generic_symptoms.set_index('generic_symptom_name', drop=True, inplace=True)
-        self.parameters['generic_symptoms'] = list(generic_symptoms.index)
         self.parameters['generic_symptoms_spurious_occurrence'] = \
-            generic_symptoms[['prob_spurious_occurrence_in_children_per_month',
-                              'prob_spurious_occurrence_in_adults_per_month',
-                              'duration_in_days_of_spurious_occurrence_in_children',
-                              'duration_in_days_of_spurious_occurrence_in_adults'
-                              ]]
-
-        # Register the Generic Symptoms
-        for generic_symptom_name in generic_symptoms.index:
-            self.register_symptom(
-                Symptom(
-                    name=generic_symptom_name,
-                    odds_ratio_health_seeking_in_adults=generic_symptoms.at[
-                        generic_symptom_name, 'odds_ratio_for_health_seeking_in_adults'],
-                    odds_ratio_health_seeking_in_children=generic_symptoms.at[
-                        generic_symptom_name, 'odds_ratio_for_health_seeking_in_children'],
-                    emergency_in_adults=False,
-                    emergency_in_children=False
-                )
-            )
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
 
     def register_symptom(self, *symptoms_to_register: Symptom):
         """
@@ -210,8 +178,48 @@ class SymptomManager(Module):
             elif symptom not in self.all_registered_symptoms:
                 raise DuplicateSymptomWithNonIdenticalPropertiesError
 
+    def proces_and_register_generic_symptoms_params(self):
+        """Process the file that has been read into the parameters for genric symptoms and their occurences"""
+
+        generic_symptoms = self.parameters['generic_symptoms_spurious_occurrence']
+
+        # ensure types are correct:
+        generic_symptoms['duration_in_days_of_spurious_occurrence_in_children'] = \
+            generic_symptoms['duration_in_days_of_spurious_occurrence_in_children'].astype(int)
+        generic_symptoms['duration_in_days_of_spurious_occurrence_in_adults'] = \
+            generic_symptoms['duration_in_days_of_spurious_occurrence_in_adults'].astype(int)
+        generic_symptoms.set_index('generic_symptom_name', drop=True, inplace=True)
+
+        # Store list of generic symptoms
+        self.generic_symptoms = list(generic_symptoms.index)
+
+        # todo - Store table of generic symptoms and their occurences somewhere other than 'self.parameters'
+        self.parameters['generic_symptoms_spurious_occurrence'] = \
+            generic_symptoms[['prob_spurious_occurrence_in_children_per_month',
+                              'prob_spurious_occurrence_in_adults_per_month',
+                              'duration_in_days_of_spurious_occurrence_in_children',
+                              'duration_in_days_of_spurious_occurrence_in_adults'
+                              ]]
+
+        # Register the Generic Symptoms
+        for generic_symptom_name in self.generic_symptoms:
+            self.register_symptom(
+                Symptom(
+                    name=generic_symptom_name,
+                    odds_ratio_health_seeking_in_adults=generic_symptoms.at[
+                        generic_symptom_name, 'odds_ratio_for_health_seeking_in_adults'],
+                    odds_ratio_health_seeking_in_children=generic_symptoms.at[
+                        generic_symptom_name, 'odds_ratio_for_health_seeking_in_children'],
+                    emergency_in_adults=False,
+                    emergency_in_children=False
+                )
+            )
+
     def pre_initialise_population(self):
         """Define the properties for each symptom"""
+
+        self.process_and_register_generic_symptoms()
+
         SymptomManager.PROPERTIES = dict()
         for symptom_name in sorted(self.symptom_names):
             symptom_column_name = self.get_column_name_for_symptom(symptom_name)
@@ -251,7 +259,7 @@ class SymptomManager(Module):
             # Resolve event (and retain pointer to the event)
             self.spurious_symptom_resolve_event = SymptomManager_SpuriousSymptomResolve(
                 module=self,
-                generic_symptoms=list(self.parameters['generic_symptoms_spurious_occurrence'].index)
+                generic_symptoms=self.generic_symptoms
             )
             sim.schedule_event(
                 self.spurious_symptom_resolve_event,
@@ -519,6 +527,7 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
     def apply(self, population):
         """Determine who will be onset which which symptoms today"""
         # todo - convert rates to be those for a day:
+        # todo - processing the file at the __init__ of the event
 
         params = self.module.parameters['generic_symptoms_spurious_occurrence']
 
