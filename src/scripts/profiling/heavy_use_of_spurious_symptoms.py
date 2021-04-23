@@ -35,10 +35,9 @@ sim = Simulation(start_date=start_date)
 
 # Register the core modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       disable=True),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                       disable_and_reject_all=True),
              simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
              )
 
