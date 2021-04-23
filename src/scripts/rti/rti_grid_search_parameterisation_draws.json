@@ -1,7 +1,7 @@
 {
   "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_grid_search_parameterisation.py",
   "scenario_seed": 12,
-  "runs_per_draw": 5,
+  "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
@@ -62,7 +62,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0093960384,
+          "base_rate_injrti": 0.0045960384,
           "imm_death_proportion_rti": 0.0
         }
       }
@@ -94,14 +94,1038 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0033960384,
-          "imm_death_proportion_rti": 0.1
+          "base_rate_injrti": 0.0057960384,
+          "imm_death_proportion_rti": 0.0
         }
       }
     },
     {
       "draw_number": 3,
       "draw_seed": 1603685629,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0069960384,
+          "imm_death_proportion_rti": 0.0
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 1130929393,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.008196038400000001,
+          "imm_death_proportion_rti": 0.0
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "draw_seed": 371232386,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0093960384,
+          "imm_death_proportion_rti": 0.0
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "draw_seed": 144909571,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0033960384,
+          "imm_death_proportion_rti": 0.02
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "draw_seed": 960362435,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0045960384,
+          "imm_death_proportion_rti": 0.02
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 62598988,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0057960384,
+          "imm_death_proportion_rti": 0.02
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 1505292720,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0069960384,
+          "imm_death_proportion_rti": 0.02
+        }
+      }
+    },
+    {
+      "draw_number": 10,
+      "draw_seed": 1798504726,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.008196038400000001,
+          "imm_death_proportion_rti": 0.02
+        }
+      }
+    },
+    {
+      "draw_number": 11,
+      "draw_seed": 145874993,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0093960384,
+          "imm_death_proportion_rti": 0.02
+        }
+      }
+    },
+    {
+      "draw_number": 12,
+      "draw_seed": 1721057204,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0033960384,
+          "imm_death_proportion_rti": 0.04
+        }
+      }
+    },
+    {
+      "draw_number": 13,
+      "draw_seed": 1268891525,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0045960384,
+          "imm_death_proportion_rti": 0.04
+        }
+      }
+    },
+    {
+      "draw_number": 14,
+      "draw_seed": 143543949,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0057960384,
+          "imm_death_proportion_rti": 0.04
+        }
+      }
+    },
+    {
+      "draw_number": 15,
+      "draw_seed": 354439641,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0069960384,
+          "imm_death_proportion_rti": 0.04
+        }
+      }
+    },
+    {
+      "draw_number": 16,
+      "draw_seed": 1962582434,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.008196038400000001,
+          "imm_death_proportion_rti": 0.04
+        }
+      }
+    },
+    {
+      "draw_number": 17,
+      "draw_seed": 970465739,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0093960384,
+          "imm_death_proportion_rti": 0.04
+        }
+      }
+    },
+    {
+      "draw_number": 18,
+      "draw_seed": 589309558,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0033960384,
+          "imm_death_proportion_rti": 0.06
+        }
+      }
+    },
+    {
+      "draw_number": 19,
+      "draw_seed": 1601311818,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0045960384,
+          "imm_death_proportion_rti": 0.06
+        }
+      }
+    },
+    {
+      "draw_number": 20,
+      "draw_seed": 1219033472,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0057960384,
+          "imm_death_proportion_rti": 0.06
+        }
+      }
+    },
+    {
+      "draw_number": 21,
+      "draw_seed": 755903861,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0069960384,
+          "imm_death_proportion_rti": 0.06
+        }
+      }
+    },
+    {
+      "draw_number": 22,
+      "draw_seed": 455623784,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.008196038400000001,
+          "imm_death_proportion_rti": 0.06
+        }
+      }
+    },
+    {
+      "draw_number": 23,
+      "draw_seed": 2077248716,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0093960384,
+          "imm_death_proportion_rti": 0.06
+        }
+      }
+    },
+    {
+      "draw_number": 24,
+      "draw_seed": 1907932429,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0033960384,
+          "imm_death_proportion_rti": 0.08
+        }
+      }
+    },
+    {
+      "draw_number": 25,
+      "draw_seed": 2068156498,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0045960384,
+          "imm_death_proportion_rti": 0.08
+        }
+      }
+    },
+    {
+      "draw_number": 26,
+      "draw_seed": 1514987609,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0057960384,
+          "imm_death_proportion_rti": 0.08
+        }
+      }
+    },
+    {
+      "draw_number": 27,
+      "draw_seed": 1771840803,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0069960384,
+          "imm_death_proportion_rti": 0.08
+        }
+      }
+    },
+    {
+      "draw_number": 28,
+      "draw_seed": 9703358,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.008196038400000001,
+          "imm_death_proportion_rti": 0.08
+        }
+      }
+    },
+    {
+      "draw_number": 29,
+      "draw_seed": 815512676,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0093960384,
+          "imm_death_proportion_rti": 0.08
+        }
+      }
+    },
+    {
+      "draw_number": 30,
+      "draw_seed": 91165091,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0033960384,
+          "imm_death_proportion_rti": 0.1
+        }
+      }
+    },
+    {
+      "draw_number": 31,
+      "draw_seed": 635542945,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0045960384,
+          "imm_death_proportion_rti": 0.1
+        }
+      }
+    },
+    {
+      "draw_number": 32,
+      "draw_seed": 223499934,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0057960384,
+          "imm_death_proportion_rti": 0.1
+        }
+      }
+    },
+    {
+      "draw_number": 33,
+      "draw_seed": 1749199991,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.0069960384,
+          "imm_death_proportion_rti": 0.1
+        }
+      }
+    },
+    {
+      "draw_number": 34,
+      "draw_seed": 2084680127,
+      "parameters": {
+        "RTI": {
+          "number_of_injured_body_regions_distribution": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "base_rate_injrti": 0.008196038400000001,
+          "imm_death_proportion_rti": 0.1
+        }
+      }
+    },
+    {
+      "draw_number": 35,
+      "draw_seed": 791670112,
       "parameters": {
         "RTI": {
           "number_of_injured_body_regions_distribution": [
