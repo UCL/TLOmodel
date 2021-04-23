@@ -1,3 +1,5 @@
+import numpy as np
+
 from tlo import Date, logging
 from tlo.methods import (
     demography,
@@ -19,14 +21,16 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2012, 1, 1)
-        self.pop_size = 10000
-        self.number_of_draws = 2
-        self.runs_per_draw = 5
+        self.end_date = Date(2020, 1, 1)
+        self.pop_size = 1000000
+        self.number_of_samples_in_parameter_range = 6
+        self.number_of_draws = self.number_of_samples_in_parameter_range ** 2
+        self.runs_per_draw = 3
+
 
     def log_configuration(self):
         return {
-            'filename': 'rti_single_vs_mutliple_injury',
+            'filename': 'rti_grid_search_parameterisation',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.INFO,
@@ -49,20 +53,28 @@ class TestScenario(BaseScenario):
 
 # Here I want to run the model with two sets of parameters multiple times. Once where only singular injuries
 # are given out and once where we allow multiple injuries
+
     def draw_parameters(self, draw_number, rng):
-        if draw_number < self.number_of_draws / 2:
-            return {
-                'RTI': {
-                    'number_of_injured_body_regions_distribution': [[1, 2, 3, 4, 5, 6, 7, 8], [1, 0, 0, 0, 0, 0, 0, 0]]
-                },
+        base_rate_max = 0.0063960384 + 0.003
+        base_rate_min = 0.0063960384 - 0.003
+        imm_death_prop_min = 0
+        imm_death_prop_max = 0.1
+        grid = self.make_grid(
+            {'base_rate_injrti': np.linspace(base_rate_min, base_rate_max, self.number_of_samples_in_parameter_range),
+             'imm_death_proportion_rti': np.linspace(imm_death_prop_min, imm_death_prop_max,
+                                                     self.number_of_samples_in_parameter_range)}
+        )
+        return {
+            'RTI': {
+                'number_of_injured_body_regions_distribution': [[1, 2, 3, 4, 5, 6, 7, 8], [1, 0, 0, 0, 0, 0, 0, 0]],
+                'base_rate_injrti': grid['base_rate_injrti'][draw_number],
+                'imm_death_proportion_rti': grid['imm_death_proportion_rti'][draw_number]
+
+            },
             }
-        else:
-            return {
-                'RTI': {
-                    'number_of_injured_body_regions_distribution':
-                        [[1, 2, 3, 4, 5, 6, 7, 8], [0.38, 0.25, 0.153, 0.094, 0.055, 0.031, 0.018, 0.019]]
-                },
-            }
+
+
+
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run

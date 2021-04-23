@@ -194,10 +194,6 @@ for i in range(0, nsim):
     sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
         [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
     ]
-    sim.modules['RTI'].parameters['base_rate_injrti'] = \
-        sim.modules['RTI'].parameters['base_rate_injrti'] * 2.8
-    sim.modules['RTI'].parameters['imm_death_proportion_rti'] = \
-        sim.modules['RTI'].parameters['imm_death_proportion_rti'] * 0
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation

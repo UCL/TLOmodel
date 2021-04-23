@@ -186,8 +186,6 @@ for i in range(0, nsim):
     sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
         [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
     ]
-    sim.modules['RTI'].parameters['base_rate_injrti'] = \
-        sim.modules['RTI'].parameters['base_rate_injrti'] * 6.08
     sim.modules['RTI'].parameters['imm_death_proportion_rti'] = \
         sim.modules['RTI'].parameters['imm_death_proportion_rti'] * 0
     # Run the simulation
@@ -1649,8 +1647,8 @@ gbd_data = [954.24, 12.13, 954.24]
 n = np.arange(len(gbd_data))
 model_data = [np.mean(average_incidence), np.mean(average_deaths), mean_inc_total]
 plt.bar(n, gbd_data, width=0.4, color='lightsalmon', label='GBD estimates')
-plt.bar(n+ 0.4, model_data, width=0.4, color='lightsteelblue', label='Model estimates')
-plt.xticks(n + 0.2, ['Incidence of people with RTIs', 'Incidence of death','Incidence of injuries'])
+plt.bar(n + 0.4, model_data, width=0.4, color='lightsteelblue', label='Model estimates')
+plt.xticks(n + 0.2, ['Incidence of people with RTIs', 'Incidence of death', 'Incidence of injuries'])
 for i in range(len(gbd_data)):
     plt.annotate(str(np.round(gbd_data[i], 2)), xy=(n[i], gbd_data[i]), ha='center', va='bottom')
 for i in range(len(model_data)):
