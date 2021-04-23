@@ -9,7 +9,6 @@ import numpy as np
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
-    get_grid,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
@@ -53,8 +52,9 @@ for death_type in yll_names:
         YLL = extract_results(results_folder, module="tlo.methods.healthburden", key="dalys", column=death_type,
                               index="date")
         dalys = dalys + YLL
-    except:
-        KeyError
+    except KeyError:
+        print(f"No YLL from {death_type}")
+
 
 # 3) Get summary of the results for that log-element (only mean and the value at then of the simulation)
 mean_incidence_single = np.mean(summarize(people_in_rti_incidence, only_mean=True)[0])
@@ -71,7 +71,7 @@ multiple_injury_data = [mean_incidence_multiple, mean_incidence_of_death_multipl
 n = np.arange(len(single_injury_data))
 # 4) plot a bar chart showing the base rate of injury vs the incidence of injury:
 plt.bar(n, single_injury_data, width=0.4, color='lightsteelblue', label='Single')
-plt.bar(n+ 0.4, multiple_injury_data, width=0.4, color='lightsalmon',
+plt.bar(n + 0.4, multiple_injury_data, width=0.4, color='lightsalmon',
         label='Multiple')
 
 xlabels = ['Incidence of people \n with RTIs', 'Incidence of RTI death', 'Incidence of RTIs']
