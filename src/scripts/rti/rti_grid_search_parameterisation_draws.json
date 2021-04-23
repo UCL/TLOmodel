@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_grid_search_parameterisation.py",
+  "scenario_script_path": "src/scripts/rti/rti_grid_search_parameterisation.py",
   "scenario_seed": 12,
   "runs_per_draw": 3,
   "draws": [

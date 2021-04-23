@@ -1,0 +1,52 @@
+{
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/dev/th_testing/single_sweep/mockitis_single_sweep.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 5,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 662124363,
+      "parameters": {
+        "Mockitis": {
+          "p_infection": 0.0
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1916507803,
+      "parameters": {
+        "Mockitis": {
+          "p_infection": 0.025
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1031005574,
+      "parameters": {
+        "Mockitis": {
+          "p_infection": 0.05
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1603685629,
+      "parameters": {
+        "Mockitis": {
+          "p_infection": 0.07500000000000001
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 1130929393,
+      "parameters": {
+        "Mockitis": {
+          "p_infection": 0.1
+        }
+      }
+    }
+  ]
+}
