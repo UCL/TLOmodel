@@ -16,7 +16,7 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-outputspath = Path('./outputs')
+outputspath = Path('./outputs/rmjlra2@ucl.ac.uk')
 
 # %% Analyse results of runs when doing a sweep of a single parameter:
 

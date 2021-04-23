@@ -1,0 +1,14 @@
+{
+  "scenario_script_path": "src/scripts/rti/rti_find_minimum_viable_population_size.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 662124363,
+      "parameters": {}
+    }
+  ],
+  "commit": "d05600e60d9145b370b35f03baded15e6072d33c",
+  "github": "https://github.com/UCL/TLOmodel/blob/d05600e60d9145b370b35f03baded15e6072d33c/src/scripts/rti/rti_find_minimum_viable_population_size.py"
+}
