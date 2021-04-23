@@ -1155,5 +1155,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "aea002ef986fa225e1532ee6c7deff4836ca6844",
+  "github": "https://github.com/UCL/TLOmodel/blob/aea002ef986fa225e1532ee6c7deff4836ca6844/src/scripts/rti/rti_grid_search_parameterisation.py"
 }
