@@ -4,12 +4,11 @@ This is the Bed days modules.
 It maintains a current record of the availability and usage of beds in the healthcare system.
 
 """
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import Metadata
-from tlo.methods.healthsystem import HSI_Event
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -34,7 +33,7 @@ class BedDays(Module):
         'bd_is_inpatient': Property(
             Types.BOOL, 'Whether or not the person is currently an in-patient at any medical facility'
         ),
-    } # <-- more properties defined later
+    }  # <-- more properties defined later
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -59,7 +58,8 @@ class BedDays(Module):
             BedDays.PROPERTIES[f"bd_next_first_day_in_bed_{bed_type}"] = Property(
                 Types.DATE, f"Date when person will next enter bed_type {bed_type}. (pd.NaT) is nothing scheduled")
             BedDays.PROPERTIES[f"bd_next_last_day_in_bed_{bed_type}"] = Property(
-                Types.DATE, f"Date of the last day in the next stay in bed_type {bed_type}. (pd.NaT) is nothing scheduled")
+                Types.DATE,
+                f"Date of the last day in the next stay in bed_type {bed_type}. (pd.NaT) is nothing scheduled")
 
         # Create store columns names
         self.list_of_cols_with_internal_dates = dict()
@@ -89,7 +89,7 @@ class BedDays(Module):
         self.log_bed_tracker()
 
     def on_birth(self, mother_id, child_id):
-        df = population.props
+        df = self.sim.population.props
         df.at[child_id, 'bd_is_inpatient'] = False
         df.loc[child_id, self.list_of_cols_with_internal_dates['all']] = pd.NaT
 
@@ -109,8 +109,8 @@ class BedDays(Module):
         self.bed_tracker = dict()
         for bed_type in self.bed_types:
             df = pd.DataFrame(
-                index=date_range,          # <- Days in the simulation
-                columns=capacity.index,    # <- Facility_ID
+                index=date_range,  # <- Days in the simulation
+                columns=capacity.index,  # <- Facility_ID
                 data=1
             )
             df = df.mul(capacity[bed_type], axis=1)
@@ -297,27 +297,4 @@ class RefreshInPatientStatus(RegularEvent, PopulationScopeEventMixin):
         # if any "date of last day in bed" in not null and in the future, then the person is an in-patient:
         df.loc[df.is_alive, "bd_is_inpatient"] = \
             ((~df.loc[df.is_alive, exit_cols].isnull()) & ~(
-                    df.loc[df.is_alive, exit_cols] < self.sim.date)).any(axis=1)
-
-
-
-
-
-# def __init__(self, capacity: pd.DataFrame, date_range: pd.DatetimeIndex):
-#
-#     # Check the capacity dataframe is as expected and save
-#     assert capacity.index.name == 'Facility_ID'
-#     assert 0 < len(capacity.columns) and 0 < len(capacity)
-#     assert (capacity.dtypes == int).all()
-#     self.capacity = capacity
-#
-#     # Store bed-types (equal to the columns in the capacity dataframe)
-#     self.bed_types = list(self.capacity.columns)
-#
-#     # Store the date_range
-#     assert 0 < len(date_range)
-#     assert isinstance(date_range.freq, pd._libs.tslibs.offsets.Day)
-#     self.date_range = date_range
-#
-#     # Initiaise the tracker
-#     self.initialise_tracker()
+                df.loc[df.is_alive, exit_cols] < self.sim.date)).any(axis=1)

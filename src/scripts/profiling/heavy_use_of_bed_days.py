@@ -1,14 +1,9 @@
 """This script heavily use the BedDays module and is used to improve performance of the BedDays module"""
 
-import os
-from pathlib import Path
 import pandas as pd
 
-from tlo.events import IndividualScopeEventMixin, RegularEvent, PopulationScopeEventMixin
-from tlo.methods import bed_days, demography, Metadata, healthsystem
-from tlo.methods.bed_days import BedDays
-from tlo import Date, Module, Simulation, logging
-from tlo.methods.healthsystem import HSI_Event
+from tlo import Date, Simulation
+from tlo.methods import bed_days, demography
 
 resourcefilepath = 'resources'
 
@@ -35,9 +30,11 @@ sim.modules['BedDays'].parameters['BedCapacity'] = pd.DataFrame(
     }
 )
 
+
 def impose_bd_footprint(person_id, dur_bed):
     """impose a footprint for a person for a particular duration starting on a particular date"""
     bd.impose_beddays_footprint(person_id=person_id, footprint={'bedtype1': dur_bed})
+
 
 # Create the simulation
 end_date = start_date + pd.DateOffset(days=days_sim)

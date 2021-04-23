@@ -122,7 +122,6 @@ class HealthSystem(Module):
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
         self.dx_manager = DxManager(self)
 
-
     def read_parameters(self, data_folder):
 
         self.parameters['Officer_Types_Table'] = pd.read_csv(
@@ -210,7 +209,6 @@ class HealthSystem(Module):
         # Note that this characteritic is inherited from mother to child.
         df.loc[df.is_alive, 'hs_dist_to_facility'] = self.rng.uniform(0.01, 5.00, df.is_alive.sum())
 
-
     def initialise_simulation(self, sim):
 
         # Capture list of disease modules:
@@ -246,7 +244,6 @@ class HealthSystem(Module):
             self.beddays = self.sim.modules['BedDays']
         else:
             self.beddays = None
-
 
     def set_service_availability(self):
         """Set service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
@@ -910,7 +907,6 @@ class HealthSystem(Module):
             "Item_Code": items,
             "Intervention_Package_Code": pkgs
         }
-
 
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
