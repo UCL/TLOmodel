@@ -62,6 +62,10 @@ class Ncds(Module):
         f"{p}_removal": Parameter(Types.DICT, f"all the parameters that specify the linear models for removal of {p}")
         for p in conditions
     }
+    hsi_conditions_param_dicts = {
+        f"{p}_hsi": Parameter(Types.DICT, f"all the parameters that specify diagnostic tests and treatments for {p}")
+        for p in conditions
+    }
     onset_events_param_dicts = {
         f"{p}_onset": Parameter(Types.DICT, f"all the parameters that specify the linear models for onset of {p}")
         for p in events
@@ -74,6 +78,10 @@ class Ncds(Module):
         f"{p}_death": Parameter(Types.DICT, f"all the parameters that specify the linear models for death from {p}")
         for p in events
     }
+    hsi_events_param_dicts = {
+        f"{p}_hsi": Parameter(Types.DICT, f"all the parameters that specify diagnostic tests and treatments for {p}")
+        for p in events
+    }
     initial_prev_param_dicts = {
         f"{p}_initial_prev": Parameter(Types.DICT, 'initial prevalence of condition') for p in conditions
     }
@@ -81,10 +89,9 @@ class Ncds(Module):
         'interval_between_polls': Parameter(Types.INT, 'months between the main polling event')
     }
 
-    PARAMETERS = {**onset_conditions_param_dicts, **removal_conditions_param_dicts, **onset_events_param_dicts,
-                  **death_conditions_param_dicts, **death_events_param_dicts, **initial_prev_param_dicts,
-                  **other_params_dict
-                  }
+    PARAMETERS = {**onset_conditions_param_dicts, **removal_conditions_param_dicts, **hsi_conditions_param_dicts,
+                  **onset_events_param_dicts, **death_conditions_param_dicts, **death_events_param_dicts,
+                  **hsi_events_param_dicts, **initial_prev_param_dicts, **other_params_dict}
 
     # convert conditions and events to dicts and merge together into PROPERTIES
     condition_list = {
@@ -144,9 +151,11 @@ class Ncds(Module):
         ResourceFile_NCDs_condition_death.xlsx  = parameters for death rate from conditions
         ResourceFile_NCDs_condition_prevalence.xlsx  = initial and target prevalence for conditions
         ResourceFile_NCDs_condition_symptoms.xlsx  = symptoms for conditions
+        ResourceFile_NCDs_condition_hsi.xlsx  = HSI paramseters for conditions
         ResourceFile_NCDs_events.xlsx  = parameters for occurrence of events
         ResourceFile_NCDs_events_death.xlsx  = parameters for death rate from events
         ResourceFile_NCDs_events_symptoms.xlsx  = symptoms for events
+        ResourceFile_NCDs_events_hsi.xlsx  = HSI parameters for events
 
         """
 
@@ -188,6 +197,13 @@ class Ncds(Module):
                 sheet_name=f"{condition}")
             params_symptoms['value'] = params_symptoms['value'].replace(np.nan, 0)
             self.parameters[f'{condition}_symptoms'] = params_symptoms
+
+            # get parameters for HSIs by condition
+            params_hsi = pd.read_excel(
+                Path(self.resourcefilepath) / "ncds" / "ResourceFile_NCDs_condition_hsi.xlsx",
+                sheet_name=f"{condition}")
+            params_hsi['value'] = params_hsi['value'].replace(np.nan, 0)
+            self.parameters[f'{condition}_hsi'] = params_hsi
 
         for event in self.events:
             # get onset parameters
