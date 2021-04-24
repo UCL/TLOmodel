@@ -544,6 +544,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
