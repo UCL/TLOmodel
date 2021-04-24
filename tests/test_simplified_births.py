@@ -217,7 +217,7 @@ def test_standard_run_using_simplified_birth_module():
     # Get simulation object
     sim = get_sim(popsize=10_000)
 
-    # Force all new borns to be given a breastfeeding status of 'exclusive'
+    # Force all newborns to be given a breastfeeding status of 'exclusive'
     sim.modules['SimplifiedBirths'].parameters['prob_breastfeeding_type'] = [0, 0, 1]
 
     # Cause the 'check on configuration' of properties to run daily during the simulation.
