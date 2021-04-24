@@ -7,6 +7,7 @@ It maintains a current record of the availability and usage of beds in the healt
 from pathlib import Path
 
 import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
