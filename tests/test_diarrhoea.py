@@ -10,6 +10,7 @@ import pytest
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
+    bed_days,
     demography,
     diarrhoea,
     dx_algorithm_child,
@@ -140,6 +141,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -167,17 +169,12 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
@@ -237,17 +234,12 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
@@ -319,12 +311,12 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                      simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                     # contraception.Contraception(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
                          disable=True
                      ),
+                     bed_days.BedDays(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
                                                    spurious_symptoms=spurious_symptoms),
                      healthseekingbehaviour.HealthSeekingBehaviour(
@@ -333,11 +325,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                          # every symptom leads to healthcare seeking
                      ),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                     # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                     # labour.Labour(resourcefilepath=resourcefilepath),
-                     # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                     # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                      )
@@ -444,12 +431,12 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                      simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                     # contraception.Contraception(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
                          disable=False
                      ),
+                     bed_days.BedDays(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(
                          resourcefilepath=resourcefilepath,
@@ -457,11 +444,6 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
                          # every symptom leads to health-care seeking
                      ),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                     # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                     # labour.Labour(resourcefilepath=resourcefilepath),
-                     # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                     # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                      )
@@ -701,23 +683,18 @@ def test_run_each_of_the_HSI():
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False
                  ),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
                      resourcefilepath=resourcefilepath,
                      force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
                  ),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )

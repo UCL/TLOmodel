@@ -150,7 +150,7 @@ class BedDays(Module):
         """This is called to reflect that a new occupany of bed-days should be recorded:
         * Cause to be reflected in the bed_tracker that an hsi_event is being run that will cause bed to be
          occupied.
-        * Update the property ```hs_is_inpatient``` to show that this person is now an in-patient
+        * Update the property ```bd_is_inpatient``` to show that this person is now an in-patient
 
          NB. If multiple bed types are required, then it is assumed that these run in the sequence given in
          ```bed_types```.

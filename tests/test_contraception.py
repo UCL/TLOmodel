@@ -6,6 +6,7 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    bed_days,
     care_of_women_during_pregnancy,
     contraception,
     demography,
@@ -37,6 +38,7 @@ def simulation():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),

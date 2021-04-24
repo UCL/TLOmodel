@@ -8,6 +8,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.lm import LinearModel
 from tlo.methods import (
+    bed_days,
     care_of_women_during_pregnancy,
     demography,
     dx_algorithm_child,
@@ -57,6 +58,7 @@ def get_sim(use_simplified_birth=True):
                      simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     bed_days.BedDays(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
@@ -71,6 +73,7 @@ def get_sim(use_simplified_birth=True):
                      postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     bed_days.BedDays(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),

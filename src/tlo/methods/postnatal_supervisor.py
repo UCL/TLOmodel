@@ -677,7 +677,7 @@ class PostnatalSupervisor(Module):
             onset_condition = apply_linear_model(
                 params['pn_linear_equations'][f'{eq}'],
                 df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
-                       ~df['hs_is_inpatient']])
+                       ~df['bd_is_inpatient']])
             return onset_condition
 
         # -------------------------------------- INFECTIONS ---------------------------------------------------------
@@ -806,7 +806,7 @@ class PostnatalSupervisor(Module):
 
         women_with_htn = df.loc[
             df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
-            ~df['hs_is_inpatient'] &
+            ~df['bd_is_inpatient'] &
             (df['pn_htn_disorders'].str.contains('gest_htn|severe_gest_htn|mild_pre_eclamp|severe_pre_eclamp|'
                                                  'eclampsia'))]
 
@@ -875,7 +875,7 @@ class PostnatalSupervisor(Module):
             (df.pn_postnatal_period_in_weeks == week) & \
             (df['pn_htn_disorders'].str.contains('gest_htn|severe_gest_htn|mild_pre_eclamp|severe_pre_eclamp|'
                                                  'eclampsia')) & \
-            ~df.pn_gest_htn_on_treatment & ~df.hs_is_inpatient
+            ~df.pn_gest_htn_on_treatment & ~df.bd_is_inpatient
 
         women_with_htn_on_anti_htns = \
             df.is_alive & \
@@ -883,7 +883,7 @@ class PostnatalSupervisor(Module):
             (df.pn_postnatal_period_in_weeks == week) & \
             (df['pn_htn_disorders'].str.contains('gest_htn|severe_gest_htn|mild_pre_eclamp|severe_pre_eclamp|'
                                                  'eclampsia')) & \
-            df.pn_gest_htn_on_treatment & ~df.hs_is_inpatient
+            df.pn_gest_htn_on_treatment & ~df.bd_is_inpatient
 
         risk_progression_mild_to_severe_htn = 0.1
 
@@ -946,7 +946,7 @@ class PostnatalSupervisor(Module):
         care_seeking = apply_linear_model(
             params['pn_linear_equations']['care_seeking_postnatal_complication_mother'],
             df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
-                   df['pn_emergency_event_mother'] & ~df['hs_is_inpatient']])
+                   df['pn_emergency_event_mother'] & ~df['bd_is_inpatient']])
 
         # Reset this property to stop repeat care seeking
         df.loc[care_seeking.index, 'pn_emergency_event_mother'] = False
@@ -1004,7 +1004,7 @@ class PostnatalSupervisor(Module):
         onset_sepsis = apply_linear_model(
             params['pn_linear_equations']['late_onset_neonatal_sepsis'],
             df.loc[df['is_alive'] & (df['age_days'] > upper_and_lower_day_limits[0]) &
-                   (df['age_days'] < upper_and_lower_day_limits[1]) & ~df['hs_is_inpatient']])
+                   (df['age_days'] < upper_and_lower_day_limits[1]) & ~df['bd_is_inpatient']])
 
         df.loc[onset_sepsis.loc[onset_sepsis].index, 'pn_sepsis_late_neonatal'] = True
         self.postnatal_tracker['late_neonatal_sepsis'] += 1

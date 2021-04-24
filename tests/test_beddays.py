@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+
 from tlo import Date, Module, Simulation
 # 1) Core functionality of the BedDays module
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent

@@ -6,6 +6,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
+    bed_days,
     demography,
     diarrhoea,
     dx_algorithm_adult,
@@ -57,6 +58,7 @@ def test_sims(tmpdir):
             capabilities_coefficient=1.0,
             disable=True,  # disables the health system constraints so all HSI events run
         ),
+        bed_days.BedDays(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -123,6 +125,7 @@ def test_remove_malaria_test(tmpdir):
             resourcefilepath=resourcefilepath,
             disable_and_reject_all=True
         ),
+        bed_days.BedDays(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         dx_algorithm_child.DxAlgorithmChild(),
@@ -184,6 +187,7 @@ def test_schedule_rdt_for_all(tmpdir):
             capabilities_coefficient=1.0,
             disable=True,  # disables the health system constraints so all HSI events run
             ),
+        bed_days.BedDays(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         dx_algorithm_child.DxAlgorithmChild(),
@@ -230,6 +234,7 @@ def test_dx_algorithm_for_malaria_outcomes():
                          capabilities_coefficient=1.0,
                          disable=True,  # disables the health system constraints so all HSI events run
                      ),
+                     bed_days.BedDays(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(
                          resourcefilepath=resourcefilepath,
@@ -356,6 +361,7 @@ def test_dx_algorithm_for_non_malaria_outcomes():
                          capabilities_coefficient=1.0,
                          disable=True,  # disables the health system constraints so all HSI events run
                      ),
+                     bed_days.BedDays(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(
                          resourcefilepath=resourcefilepath,

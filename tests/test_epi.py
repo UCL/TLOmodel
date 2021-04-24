@@ -7,6 +7,7 @@ import pytest
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    bed_days,
     demography,
     enhanced_lifestyle,
     epi,
@@ -57,6 +58,7 @@ def test_no_health_system(tmpdir):
             ignore_priority=True,
             capabilities_coefficient=0.0  # no officer time
         ),
+        bed_days.BedDays(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -105,16 +107,11 @@ def test_epi_scheduling_hsi_events(tmpdir):
             mode_appt_constraints=0,  # no constraints
             disable=False
         ),
+        bed_days.BedDays(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        # contraception.Contraception(resourcefilepath=resourcefilepath),
-        # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        # labour.Labour(resourcefilepath=resourcefilepath),
-        # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         epi.Epi(resourcefilepath=resourcefilepath),
     )

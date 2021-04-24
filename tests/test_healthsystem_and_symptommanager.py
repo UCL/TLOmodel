@@ -6,9 +6,10 @@ import pytest
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
     Metadata,
+    bed_days,
     chronicsyndrome,
     demography,
     dx_algorithm_child,
@@ -95,6 +96,7 @@ def test_run_with_healthsystem_no_disease_modules_defined():
                                            service_availability=['*'],
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
@@ -130,6 +132,7 @@ def test_run_no_interventions_allowed(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
@@ -177,6 +180,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=0),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
@@ -226,6 +230,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=0),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
@@ -268,6 +273,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=1),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
@@ -310,6 +316,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=1),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
@@ -354,6 +361,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
@@ -398,6 +406,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=2),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
@@ -444,6 +453,7 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=0,
                                            ignore_cons_constraints=True),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
@@ -488,6 +498,7 @@ def test_run_in_with_hs_disabled(tmpdir):
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2,
                                            disable=True),
+                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
@@ -769,5 +780,3 @@ def test_speeding_up_request_consumables():
     print(f"Elapsed time for 1000 X get_consumables_as_individual_items: {end - start}")
     # with looping through dict: elapsed time = 2.2378311157226562
     # with pandas manipulations: 16.766106843948364
-
-
