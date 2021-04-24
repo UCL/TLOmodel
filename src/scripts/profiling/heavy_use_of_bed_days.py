@@ -32,7 +32,7 @@ sim.modules['BedDays'].parameters['BedCapacity'] = pd.DataFrame(
 
 
 def impose_bd_footprint(person_id, dur_bed):
-    """impose a footprint for a person for a particular duration starting on a particular date"""
+    """impose a footprint for a person for a particular duration"""
     bd.impose_beddays_footprint(person_id=person_id, footprint={'bedtype1': dur_bed})
 
 
