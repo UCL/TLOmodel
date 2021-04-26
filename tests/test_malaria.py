@@ -116,14 +116,40 @@ def test_sims(tmpdir):
 # increase cfr for severe cases (all severe cases will die)
 def test_remove_malaria_test(tmpdir):
 
-    sim = register_sim()
+    service_availability = list([" "])  # no treatments available
 
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the appropriate modules
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=service_availability,
+            mode_appt_constraints=0,
+            ignore_cons_constraints=True,
+            ignore_priority=True,
+            capabilities_coefficient=0,
+            disable=False,  # disables the health system constraints so all HSI events run
+        ),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        dx_algorithm_child.DxAlgorithmChild(),
+        dx_algorithm_adult.DxAlgorithmAdult(),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        malaria.Malaria(resourcefilepath=resourcefilepath)
+    )
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     df = sim.population.props
+
+    # set testing adjustment to 0
+    sim.modules['Malaria'].parameters['testing_adj'] = 0
 
     # increase death rate due to severe malaria
     sim.modules['Malaria'].parameters['cfr'] = 1.0
@@ -152,12 +178,11 @@ def test_remove_malaria_test(tmpdir):
 
 # test everyone regularly and check no treatment without positive rdt
 def test_schedule_rdt_for_all(tmpdir):
-    # todo redo this changing testing parameter in sim.modules
-    malaria_testing = 1
     sim = register_sim()
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
+    sim.modules['Malaria'].parameters['testing_adj'] = 10
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
@@ -175,32 +200,7 @@ def test_dx_algorithm_for_malaria_outcomes():
     def make_blank_simulation():
         popsize = 200  # smallest population size that works
 
-        sim = Simulation(start_date=start_date, seed=0)
-
-        # Register the appropriate modules
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(
-                         resourcefilepath=resourcefilepath,
-                         service_availability=["*"],
-                         mode_appt_constraints=0,
-                         ignore_cons_constraints=True,
-                         ignore_priority=True,
-                         capabilities_coefficient=1.0,
-                         disable=True,  # disables the health system constraints so all HSI events run
-                     ),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                     healthseekingbehaviour.HealthSeekingBehaviour(
-                         resourcefilepath=resourcefilepath,
-                         force_any_symptom_to_lead_to_healthcareseeking=True
-                         # every symptom leads to health-care seeking
-                     ),
-                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                     dx_algorithm_adult.DxAlgorithmAdult(),
-                     malaria.Malaria(resourcefilepath=resourcefilepath)
-                     )
+        sim = register_sim()
 
         sim.make_initial_population(n=popsize)
         sim.simulate(end_date=start_date)
