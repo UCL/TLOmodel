@@ -7523,28 +7523,52 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             percentage_admitted_to_ICU_or_HDU = len(df.loc[df.rt_med_int & df.rt_in_icu_or_hdu]) / n_sought_care
         else:
             percentage_admitted_to_ICU_or_HDU = 'none_injured'
-
+        if (n_alive - n_in_RTI) > 0:
+            inc_rti = (n_in_RTI / ((n_alive - n_in_RTI) * (1 / 12))) * 100000
+        else:
+            inc_rti = 0
+        if (children_alive - children_in_RTI) > 0:
+            inc_rti_in_children = (children_in_RTI / ((children_alive - children_in_RTI) * (1 / 12))) * 100000
+        else:
+            inc_rti_in_children = 0
+        if (n_alive - len(diedfromrtiidx)) > 0:
+            inc_rti_death = (len(diedfromrtiidx) / ((n_alive - len(diedfromrtiidx)) * (1 / 12))) * 100000
+        else:
+            inc_rti_death = 0
+        if (n_alive - len(df.loc[df.rt_post_med_death])) > 0:
+            inc_post_med_death = (len(df.loc[df.rt_post_med_death]) / ((n_alive - len(df.loc[df.rt_post_med_death])) *
+                                                                       (1 / 12))) * 100000
+        else:
+            inc_post_med_death = 0
+        if (n_alive - len(df.loc[df.rt_imm_death])) > 0:
+            inc_imm_death = (len(df.loc[df.rt_imm_death]) / ((n_alive - len(df.loc[df.rt_imm_death])) * (1 / 12))) * \
+                            100000
+        else:
+            inc_imm_death = 0
+        if (n_alive - len(df.loc[df.rt_no_med_death])) > 0:
+            inc_death_no_med = (len(df.loc[df.rt_no_med_death]) / ((n_alive - len(df.loc[df.rt_no_med_death])) *
+                                                                (1 / 12))) * 100000
+        else:
+            inc_death_no_med = 0
+        if (n_alive - len(df.loc[df.rt_unavailable_med_death])) > 0:
+            inc_death_unavailable_med = (len(df.loc[df.rt_unavailable_med_death]) /
+                                         ((n_alive - len(df.loc[df.rt_unavailable_med_death])) * (1 / 12))) * 100000
+        else:
+            inc_death_unavailable_med = 0
+        if self.fracdenominator > 0:
+            frac_incidence = (self.totfracnumber / self.fracdenominator) * 100000
+        else:
+            frac_incidence = 0
         dict_to_output = {
             'number involved in a rti': n_in_RTI,
-            'incidence of rti per 100,000': (n_in_RTI / ((n_alive - n_in_RTI) * (1 / 12))) * 100000,
-            'incidence of rti per 100,000 in children': (children_in_RTI /
-                                                         ((children_alive - children_in_RTI) * (1 / 12))) * 100000,
-            'incidence of rti death per 100,000': (len(diedfromrtiidx) /
-                                                   ((n_alive - len(diedfromrtiidx)) * (1 / 12))) * 100000,
-            'incidence of death post med per 100,000': (len(df.loc[df.rt_post_med_death]) /
-                                                        ((n_alive -
-                                                          len(df.loc[df.rt_post_med_death])) * (1 / 12))) * 100000,
-            'incidence of prehospital death per 100,000': (len(df.loc[df.rt_imm_death]) /
-                                                           ((n_alive -
-                                                             len(df.loc[df.rt_imm_death])) * (1 / 12))) * 100000,
-            'incidence of death without med per 100,000': (len(df.loc[df.rt_no_med_death]) /
-                                                           ((n_alive -
-                                                             len(df.loc[df.rt_no_med_death])) * (1 / 12))) * 100000,
-            'incidence of death due to unavailable med per 100,000': (len(df.loc[df.rt_unavailable_med_death]) /
-                                                                      ((n_alive -
-                                                                        len(df.loc[df.rt_unavailable_med_death])) * (
-                                                                           1 / 12))) * 100000,
-            'incidence of fractures per 100,000': (self.totfracnumber / self.fracdenominator) * 100000,
+            'incidence of rti per 100,000': inc_rti,
+            'incidence of rti per 100,000 in children': inc_rti_in_children,
+            'incidence of rti death per 100,000': inc_rti_death,
+            'incidence of death post med per 100,000': inc_post_med_death,
+            'incidence of prehospital death per 100,000': inc_imm_death,
+            'incidence of death without med per 100,000': inc_death_no_med,
+            'incidence of death due to unavailable med per 100,000': inc_death_unavailable_med,
+            'incidence of fractures per 100,000': frac_incidence,
             'injury incidence per 100,000': incidence_of_injuries,
             'number alive': n_alive,
             'number immediate deaths': n_immediate_death,
