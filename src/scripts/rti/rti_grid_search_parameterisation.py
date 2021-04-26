@@ -21,7 +21,7 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2020, 1, 1)
+        self.end_date = Date(2030, 1, 1)
         self.pop_size = 500000
         self.number_of_samples_in_parameter_range = 7
         self.number_of_draws = self.number_of_samples_in_parameter_range ** 2
