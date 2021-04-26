@@ -5,7 +5,8 @@ The results of the bachrun were put into the 'outputs' results_folder
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-
+import numpy as np
+import pandas as pd
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
@@ -50,12 +51,19 @@ death_incidence.name = 'z'
 
 # 4) Create a heatmap for incidence of RTI:
 filtered_params = params.loc[params['module_param'] != 'RTI:number_of_injured_body_regions_distribution']
-grid = get_grid(filtered_params, incidence_results)
+inc_grid = get_grid(filtered_params, incidence_results)
+# get values in the range of the GBD estimates, first filter out values below lower boundary
+inc_grid['z'][inc_grid['z'] < 809.234] = 0
+# filter out results above upper boundary
+inc_grid['z'][inc_grid['z'] > 1130.626] = 0
+
+
 fig, ax = plt.subplots()
 c = ax.pcolormesh(
-    grid['RTI:base_rate_injrti'],
-    grid['RTI:imm_death_proportion_rti'],
-    grid['z'],
+    inc_grid['RTI:base_rate_injrti'],
+    inc_grid['RTI:imm_death_proportion_rti'],
+    inc_grid['z'],
+    cmap='Greys',
     shading='nearest'
 )
 plt.xlabel('RTI:base_rate_injrti')
@@ -67,12 +75,17 @@ plt.savefig(
     "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Scenarios/incidence_and_death_calibration/Incidence",
     bbox_inches='tight')
 
-grid = get_grid(filtered_params, death_incidence)
+death_inc_grid = get_grid(filtered_params, death_incidence)
+# get values in the range of the GBD estimates, first filter out values below lower boundary
+death_inc_grid['z'][death_inc_grid['z'] < 9.606] = 0
+# filter out results above upper boundary
+death_inc_grid['z'][death_inc_grid['z'] > 15.13] = 0
 fig, ax = plt.subplots()
 c = ax.pcolormesh(
-    grid['RTI:base_rate_injrti'],
-    grid['RTI:imm_death_proportion_rti'],
-    grid['z'],
+    death_inc_grid['RTI:base_rate_injrti'],
+    death_inc_grid['RTI:imm_death_proportion_rti'],
+    death_inc_grid['z'],
+    cmap='Greys',
     shading='nearest'
 )
 plt.title(f"RTI death incidence produced by the model when using single injuries only \n"

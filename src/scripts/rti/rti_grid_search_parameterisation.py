@@ -6,8 +6,8 @@ from tlo.methods import (
     dx_algorithm_adult,
     dx_algorithm_child,
     enhanced_lifestyle,
-    healthseekingbehaviour,
     healthburden,
+    healthseekingbehaviour,
     healthsystem,
     rti,
     simplified_births,
@@ -22,8 +22,8 @@ class TestScenario(BaseScenario):
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
-        self.pop_size = 20000
-        self.number_of_samples_in_parameter_range = 6
+        self.pop_size = 500000
+        self.number_of_samples_in_parameter_range = 7
         self.number_of_draws = self.number_of_samples_in_parameter_range ** 2
         self.runs_per_draw = 3
 
