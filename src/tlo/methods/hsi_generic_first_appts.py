@@ -263,10 +263,13 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             if 'Ncds' in self.sim.modules:
                 ncds = self.sim.modules['Ncds']
                 if (squeeze_factor == 0.0) and (self.module.rng.rand() <
-                                                ncds.parameters['pr_assessed_for_diabetes_in_generic_appt_level1']):
+                                                ncds.parameters['diabetes_hsi'].set_index('parameter_name').T.to_dict(
+                                                    'records')[0].get('pr_assessed_in_generic_appt_level1')):
                     ncds.do_when_suspected_diabetes(person_id=person_id, hsi_event=self)
                 if (squeeze_factor == 0.0) and (self.module.rng.rand() <
-                                                ncds.parameters['pr_assessed_for_hypertension_in_generic_appt_level1']):
+                                                ncds.parameters['hypertension_hsi'].set_index(
+                                                    'parameter_name').T.to_dict('records')[0].get(
+                                                    'pr_assessed_in_generic_appt_level1')):
                     ncds.do_when_suspected_hypertension(person_id=person_id, hsi_event=self)
 
     def did_not_run(self):
