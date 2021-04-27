@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -55,7 +55,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=['*']),
              newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-             antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
