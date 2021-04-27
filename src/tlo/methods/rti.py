@@ -1547,9 +1547,6 @@ class RTI(Module):
         The final event is one which checks if this person has not sought sought care or been given care, if they
         haven't then it asks whether they should die away from their injuries
         """
-        # Begin logging the RTI events
-        event = RTI_Logging_Event(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=0))
         # Begin modelling road traffic injuries
         event = RTIPollingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
@@ -1558,6 +1555,9 @@ class RTI(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         # Begin checking whether those with untreated injuries die
         event = RTI_Check_Death_No_Med(self)
+        sim.schedule_event(event, sim.date + DateOffset(months=0))
+        # Begin logging the RTI events
+        event = RTI_Logging_Event(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
 
     def rti_do_when_diagnosed(self, person_id):
@@ -7546,8 +7546,8 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         else:
             inc_imm_death = 0
         if (n_alive - len(df.loc[df.rt_no_med_death])) > 0:
-            inc_death_no_med = (len(df.loc[df.rt_no_med_death]) / ((n_alive - len(df.loc[df.rt_no_med_death])) *
-                                                                (1 / 12))) * 100000
+            inc_death_no_med = (len(df.loc[df.rt_no_med_death]) /
+                                ((n_alive - len(df.loc[df.rt_no_med_death])) * (1 / 12))) * 100000
         else:
             inc_death_no_med = 0
         if (n_alive - len(df.loc[df.rt_unavailable_med_death])) > 0:

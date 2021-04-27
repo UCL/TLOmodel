@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
@@ -38,7 +37,7 @@ resourcefilepath = Path('./resources')
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 50000
+pop_size = 10000
 nsim = 2
 # Set service availability
 service_availability = ["*"]
@@ -80,7 +79,7 @@ for i in range(0, nsim):
         # get the incidence of road traffic injury's in the sim
         rti_summary = log_df['tlo.methods.rti']['summary_1m']
         rti_inc = rti_summary['incidence of rti per 100,000'].tolist()
-        list_inc_rti.append(rti_inc_death)
+        list_inc_rti.append(rti_inc)
         # get the incidence of road traffic injury death in the sim
         rti_inc_death = rti_summary['incidence of rti death per 100,000'].tolist()
         list_inc_deaths.append(rti_inc_death)
@@ -93,6 +92,7 @@ plt.bar(np.arange(len(prehosital_percentage)), list_rti_inc_death_average, width
         label='Incidence\n of\nRTI death')
 plt.bar(np.arange(len(prehosital_percentage)) + 0.4, list_rti_inc_average, width=0.4, color='lightsalmon',
         label='Incidence\n of\nRTI')
+xtick_labels = [str(percentage) for percentage in prehosital_percentage]
 plt.xticks(np.arange(len(prehosital_percentage)) + 0.2, xtick_labels)
 plt.legend()
 plt.title(f"The effect of reducing pre-hospital mortality on the incidence of RTI"
