@@ -153,9 +153,9 @@ class Ncds(Module):
         p = self.parameters
 
         for condition in self.conditions:
-            p[f'{condition}_onset'] = replace_nan(cond_onset[condition], 1)
-            p[f'{condition}_removal'] = replace_nan(cond_removal[condition], 1)
-            p[f'{condition}_death'] = replace_nan(cond_death[condition], 1)
+            p[f'{condition}_onset'] = replace_nan(cond_onset[condition], 1).set_index('parameter_name')['value']
+            p[f'{condition}_removal'] = replace_nan(cond_removal[condition], 1).set_index('parameter_name')['value']
+            p[f'{condition}_death'] = replace_nan(cond_death[condition], 1).set_index('parameter_name')['value']
             p[f'{condition}_initial_prev'] = replace_nan(cond_prevalence[condition], 0).set_index('parameter_name')['value']
 
         for event in self.events:
@@ -216,21 +216,20 @@ class Ncds(Module):
 
         # dict to hold counters for the number of episodes by condition-type and age-group
         self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_index, columns=self.conditions)
-        self.df_incidence_tracker = copy.deepcopy(self.df_incidence_tracker_zeros)
+        self.df_incidence_tracker = self.df_incidence_tracker_zeros.copy()
 
         # copy NCD conditions from other modules into nc_ condition
         df = self.sim.population.props
         df['nc_depression'] = df['de_depr']
 
         # Create Tracker for the number of different types of events
-        self.eventsTracker = dict()
+        self.events_tracker = dict()
         for event in self.events:
-            self.eventsTracker.update({f'{event}_events': 0})
+            self.events_tracker[f'{event}_events'] = 0
 
         # Build the LinearModel for onset/removal/deaths for each condition
         # Baseline probability of condition onset, removal, and death are annual; in LinearModel, rates are adjusted to
         # be consistent with the polling interval
-
         self.lms_onset = dict()
         self.lms_removal = dict()
         self.lms_death = dict()
@@ -269,14 +268,14 @@ class Ncds(Module):
         lms_dict = dict()
 
         # load parameters for correct condition/event
-        p = self.parameters[f'{condition}_{lm_type}'].set_index('parameter_name').T.to_dict('records')[0]
+        p = self.parameters[f'{condition}_{lm_type}']
 
         p['baseline_annual_probability'] = 1 - math.exp(-interval_between_polls / 12 * p['baseline_annual_probability'])
 
         lms_dict[condition] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['baseline_annual_probability'],
-            Predictor().when('(sex=="M")', p['rr_male']),
+            Predictor('sex').when('M', p['rr_male']),
             Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
             .when('.between(5, 9)', p['rr_5_9'])
             .when('.between(10, 14)', p['rr_10_14'])
@@ -299,12 +298,12 @@ class Ncds(Module):
             .when('.between(95, 99)', p['rr_95_99'])
             .otherwise(p['rr_100']),
             Predictor('li_urban').when(True, p['rr_urban']),
-            Predictor('li_wealth').when('==1', p['rr_wealth_1'])
+            Predictor('li_wealth').when('1', p['rr_wealth_1'])
             .when('2', p['rr_wealth_2'])
             .when('3', p['rr_wealth_3'])
             .when('4', p['rr_wealth_4'])
             .when('5', p['rr_wealth_5']),
-            Predictor('li_bmi').when('==1', p['rr_bmi_1'])
+            Predictor('li_bmi').when('1', p['rr_bmi_1'])
             .when('2', p['rr_bmi_2'])
             .when('3', p['rr_bmi_3'])
             .when('4', p['rr_bmi_4'])
@@ -318,7 +317,7 @@ class Ncds(Module):
             .when('2', p['rr_marital_status_2'])
             .when('3', p['rr_marital_status_3']),
             Predictor('li_in_ed').when(True, p['rr_in_education']),
-            Predictor('li_ed_lev').when('==1', p['rr_current_education_level_1'])
+            Predictor('li_ed_lev').when('1', p['rr_current_education_level_1'])
             .when('2', p['rr_current_education_level_2'])
             .when('3', p['rr_current_education_level_3']),
             Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
@@ -494,7 +493,7 @@ class NcdEvent(Event, IndividualScopeEventMixin):
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
-        self.module.eventsTracker[f'{self.event}_events'] += 1
+        self.module.events_tracker[f'{self.event}_events'] += 1
         self.sim.population.props.at[person_id, f'nc_{self.event}'] = True
 
         # TODO: @britta add functionality to add symptoms
