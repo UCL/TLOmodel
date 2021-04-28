@@ -28,8 +28,8 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     oesophagealcancer,
-    pregnancy_supervisor,
     postnatal_supervisor,
+    pregnancy_supervisor,
     prostate_cancer,
     symptommanager,
 )
