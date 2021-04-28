@@ -19,7 +19,7 @@ from tlo.methods import (
     symptommanager,
 )
 
-seed = 567
+seed = 1896
 
 # The resource files
 try:
