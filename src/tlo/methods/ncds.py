@@ -121,8 +121,10 @@ class Ncds(Module):
 
         # create list that includes conditions modelled by other modules
         self.extended_conditions = Ncds.conditions + ["depression"]
-
         self.condition_list = ['nc_' + cond for cond in self.extended_conditions]
+
+        # retrieve age range categories from Demography module
+        self.age_index = None
 
     def read_parameters(self, data_folder):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
@@ -148,18 +150,20 @@ class Ncds(Module):
             params['value'] = params['value'].replace(np.nan, value)
             return params
 
+        p = self.parameters
+
         for condition in self.conditions:
-            self.parameters[f'{condition}_onset'] = replace_nan(cond_onset[condition], 1)
-            self.parameters[f'{condition}_removal'] = replace_nan(cond_removal[condition], 1)
-            self.parameters[f'{condition}_death'] = replace_nan(cond_death[condition], 1)
-            self.parameters[f'{condition}_initial_prev'] = replace_nan(cond_prevalence[condition], 0)
+            p[f'{condition}_onset'] = replace_nan(cond_onset[condition], 1)
+            p[f'{condition}_removal'] = replace_nan(cond_removal[condition], 1)
+            p[f'{condition}_death'] = replace_nan(cond_death[condition], 1)
+            p[f'{condition}_initial_prev'] = replace_nan(cond_prevalence[condition], 0).set_index('parameter_name')['value']
 
         for event in self.events:
-            self.parameters[f'{event}_onset'] = replace_nan(events_onset[event], 1)
-            self.parameters[f'{event}_death'] = replace_nan(events_death[event], 1)
+            p[f'{event}_onset'] = replace_nan(events_onset[event], 1)
+            p[f'{event}_death'] = replace_nan(events_death[event], 1)
 
         # Set the interval (in months) between the polls
-        self.parameters['interval_between_polls'] = 3
+        p['interval_between_polls'] = 3
 
         # Check that every value has been read-in successfully
         for param_name in self.PARAMETERS:
@@ -168,33 +172,32 @@ class Ncds(Module):
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
-
-        # retrieve age range categories from Demography module
         self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
-
         df = population.props
+
+        men = df.is_alive & (df.sex == 'M')
+        women = df.is_alive & (df.sex == 'F')
+
+        def sample_eligible(_filter, _p, _condition):
+            """uses filter to get eligible population and samples individuals for condition using p"""
+            eligible = df.index[_filter]
+            init_prev = self.rng.choice([True, False], size=len(eligible), p=[_p, 1 - _p])
+            if sum(init_prev):
+                df.loc[eligible[init_prev], f'nc_{_condition}'] = True
+
         for condition in self.conditions:
-            p = self.parameters[f'{condition}_initial_prev'].set_index('parameter_name').T.to_dict('records')[0]
+            p = self.parameters[f'{condition}_initial_prev']
             # Set age min and max to get correct age group later
             age_min = 0
             age_max = 4
+            # men & women without condition
+            men_wo_cond = men & ~df[f'nc_{condition}']
+            women_wo_cond = women & ~df[f'nc_{condition}']
             for age_grp in self.age_index:
-                # Select all eligible individuals
-                eligible_pop_m = df.index[
-                    df.is_alive & (df.age_years.between(age_min, age_max)) & (df.sex == 'M') & ~df[f'nc_{condition}']]
-                init_prev_m = self.rng.choice([True, False], size=len(eligible_pop_m),
-                                              p=[p[f'm_{age_grp}'], 1 - p[f'm_{age_grp}']])
-                eligible_pop_f = df.index[
-                    df.is_alive & (df.age_years.between(age_min, age_max)) & (df.sex == 'F') & ~df[f'nc_{condition}']]
-                init_prev_f = self.rng.choice([True, False], size=len(eligible_pop_f),
-                                              p=[p[f'f_{age_grp}'], 1 - p[f'f_{age_grp}']])
-                # if any have condition
-                if init_prev_m.sum():
-                    condition_idx_m = eligible_pop_m[init_prev_m]
-                    df.loc[condition_idx_m, f'nc_{condition}'] = True
-                if init_prev_f.sum():
-                    condition_idx_f = eligible_pop_f[init_prev_f]
-                    df.loc[condition_idx_f, f'nc_{condition}'] = True
+                # Select all eligible individuals (men & women w/o condition and in age range)
+                sample_eligible(men_wo_cond & df.age_years.between(age_min, age_max), p[f'm_{age_grp}'], condition)
+                sample_eligible(women_wo_cond & df.age_years.between(age_min, age_max), p[f'f_{age_grp}'], condition)
+
                 if age_grp != '100+':
                     age_min = age_min + 5
                     age_max = age_max + 5
