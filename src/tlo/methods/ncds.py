@@ -135,60 +135,35 @@ class Ncds(Module):
         ResourceFile_NCDs_events_death.xlsx  = parameters for death rate from events
 
         """
+        ncds_path = Path(self.resourcefilepath) / "ncds"
+        cond_onset = pd.read_excel(ncds_path / "ResourceFile_NCDs_condition_onset.xlsx", sheet_name=None)
+        cond_removal = pd.read_excel(ncds_path / "ResourceFile_NCDs_condition_removal.xlsx", sheet_name=None)
+        cond_death = pd.read_excel(ncds_path / "ResourceFile_NCDs_condition_death.xlsx", sheet_name=None)
+        cond_prevalence = pd.read_excel(ncds_path / "ResourceFile_NCDs_condition_prevalence.xlsx", sheet_name=None)
+        events_onset = pd.read_excel(ncds_path / "ResourceFile_NCDs_events.xlsx", sheet_name=None)
+        events_death = pd.read_excel(ncds_path / "ResourceFile_NCDs_events_death.xlsx", sheet_name=None)
+
+        def replace_nan(params, value):
+            """replaces nans in the 'value' key with specified value"""
+            params['value'] = params['value'].replace(np.nan, value)
+            return params
 
         for condition in self.conditions:
-            # get onset parameters
-            params_onset = pd.read_excel(Path(self.resourcefilepath) / "ncds" /
-                                         "ResourceFile_NCDs_condition_onset.xlsx",
-                                         sheet_name=f"{condition}")
-            # replace NaNs with 1
-            params_onset['value'] = params_onset['value'].replace(np.nan, 1)
-            self.parameters[f'{condition}_onset'] = params_onset
-
-            # get removal parameters
-            params_removal = pd.read_excel(Path(self.resourcefilepath) / "ncds" /
-                                           "ResourceFile_NCDs_condition_removal.xlsx",
-                                           sheet_name=f"{condition}")
-            # replace NaNs with 1
-            params_removal['value'] = params_removal['value'].replace(np.nan, 1)
-            self.parameters[f'{condition}_removal'] = params_removal
-
-            # get death parameters
-            params_death = pd.read_excel(Path(self.resourcefilepath) / "ncds" /
-                                         "ResourceFile_NCDs_condition_death.xlsx",
-                                         sheet_name=f"{condition}")
-            # replace NaNs with 1
-            params_death['value'] = params_death['value'].replace(np.nan, 1)
-            self.parameters[f'{condition}_death'] = params_death
-
-            # get parameters for initial prevalence by age/sex
-            params_prevalence = pd.read_excel(
-                Path(self.resourcefilepath) / "ncds" / "ResourceFile_NCDs_condition_prevalence.xlsx",
-                sheet_name=f"{condition}")
-            params_prevalence['value'] = params_prevalence['value'].replace(np.nan, 0)
-            self.parameters[f'{condition}_initial_prev'] = params_prevalence
+            self.parameters[f'{condition}_onset'] = replace_nan(cond_onset[condition], 1)
+            self.parameters[f'{condition}_removal'] = replace_nan(cond_removal[condition], 1)
+            self.parameters[f'{condition}_death'] = replace_nan(cond_death[condition], 1)
+            self.parameters[f'{condition}_initial_prev'] = replace_nan(cond_prevalence[condition], 0)
 
         for event in self.events:
-            # get onset parameters
-            params_onset = pd.read_excel(Path(self.resourcefilepath) / "ncds" / "ResourceFile_NCDs_events.xlsx",
-                                         sheet_name=f"{event}")
-            # replace NaNs with 1
-            params_onset['value'] = params_onset['value'].replace(np.nan, 1)
-            self.parameters[f'{event}_onset'] = params_onset
-
-            # get death parameters
-            params_death = pd.read_excel(Path(self.resourcefilepath) / "ncds" / "ResourceFile_NCDs_events_death.xlsx",
-                                         sheet_name=f"{event}")
-            # replace NaNs with 1
-            params_death['value'] = params_death['value'].replace(np.nan, 1)
-            self.parameters[f'{event}_death'] = params_death
-
-        # Check that every value has been read-in successfully
-        for param_name in self.PARAMETERS.items():
-            assert param_name is not None, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+            self.parameters[f'{event}_onset'] = replace_nan(events_onset[event], 1)
+            self.parameters[f'{event}_death'] = replace_nan(events_death[event], 1)
 
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
+
+        # Check that every value has been read-in successfully
+        for param_name in self.PARAMETERS:
+            assert self.parameters[param_name] is not None, f'Parameter "{param_name}" has not been set.'
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
