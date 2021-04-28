@@ -2,7 +2,6 @@
 The joint NCDs model by Tim Hallett and Britta Jewell, October 2020
 
 """
-import copy
 import math
 from itertools import combinations
 from pathlib import Path
