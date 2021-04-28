@@ -85,26 +85,16 @@ def test_basic_run():
 
     p = sim.modules['Ncds'].parameters
 
-    p['diabetes_onset'].loc[
-        p['diabetes_onset'].parameter_name == "baseline_annual_probability", "value"] = 0.75
-    p['hypertension_onset'].loc[
-        p['hypertension_onset'].parameter_name == "baseline_annual_probability", "value"] = 0.75
-    p['chronic_lower_back_pain_onset'].loc[
-        p['chronic_lower_back_pain_onset'].parameter_name == "baseline_annual_probability", "value"] = 0.75
-    p['chronic_kidney_disease_onset'].loc[
-        p['chronic_kidney_disease_onset'].parameter_name == "baseline_annual_probability", "value"] = 0.75
-    p['ever_stroke_onset'].loc[
-        p['ever_stroke_onset'].parameter_name == "baseline_annual_probability", "value"] = 0.75
-    p['ever_heart_attack_onset'].loc[
-        p['ever_heart_attack_onset'].parameter_name == "baseline_annual_probability", "value"] = 0.75
-    p['diabetes_death'].loc[
-        p['diabetes_death'].parameter_name == "baseline_annual_probability", "value"] = 0.75
-    p['chronic_kidney_disease_death'].loc[
-        p['chronic_kidney_disease_death'].parameter_name == "baseline_annual_probability", "value"] = 0.75
-    p['ever_stroke_death'].loc[
-        p['ever_stroke_death'].parameter_name == "baseline_annual_probability", "value"] = 0.75
-    p['ever_heart_attack_death'].loc[
-        p['ever_heart_attack_death'].parameter_name == "baseline_annual_probability", "value"] = 0.75
+    p['diabetes_onset']["baseline_annual_probability"] = 0.75
+    p['hypertension_onset']["baseline_annual_probability"] = 0.75
+    p['chronic_lower_back_pain_onset']["baseline_annual_probability"] = 0.75
+    p['chronic_kidney_disease_onset']["baseline_annual_probability"] = 0.75
+    p['ever_stroke_onset']["baseline_annual_probability"] = 0.75
+    p['ever_heart_attack_onset']["baseline_annual_probability"] = 0.75
+    p['diabetes_death']["baseline_annual_probability"] = 0.75
+    p['chronic_kidney_disease_death']["baseline_annual_probability"] = 0.75
+    p['ever_stroke_death']["baseline_annual_probability"] = 0.75
+    p['ever_heart_attack_death']["baseline_annual_probability"] = 0.75
 
     sim.make_initial_population(n=5000)
     sim.simulate(end_date=Date(year=2011, month=1, day=1))
@@ -136,23 +126,17 @@ def test_basic_run_with_high_incidence_hypertension():
 
     p = sim.modules['Ncds'].parameters
 
-    p['hypertension_onset'].loc[
-        p['hypertension_onset'].parameter_name == "baseline_annual_probability", "value"] = 10000
-    p['chronic_ischemic_hd_onset'].loc[
-        p['chronic_ischemic_hd_onset'].parameter_name == "baseline_annual_probability", "value"] = 10
-    p['diabetes_onset'].loc[
-        p['diabetes_onset'].parameter_name == "baseline_annual_probability", "value"] = 0
-    p['chronic_lower_back_pain_onset'].loc[
-        p['chronic_lower_back_pain_onset'].parameter_name == "baseline_annual_probability", "value"] = 0
-    p['chronic_kidney_disease_onset'].loc[
-        p['chronic_kidney_disease_onset'].parameter_name == "baseline_annual_probability", "value"] = 0
+    p['hypertension_onset']["baseline_annual_probability"] = 10000
+    p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = 10
+    p['diabetes_onset']["baseline_annual_probability"] = 0
+    p['chronic_lower_back_pain_onset']["baseline_annual_probability"] = 0
+    p['chronic_kidney_disease_onset']["baseline_annual_probability"] = 0
     p['diabetes_initial_prev']['value'] = 0
     p['chronic_lower_back_pain_initial_prev']['value'] = 0
     p['chronic_kidney_disease_initial_prev']['value'] = 0
 
     # Increase RR of heart disease very high if individual has hypertension
-    p['chronic_ischemic_hd_onset'].loc[
-        p['chronic_ischemic_hd_onset'].parameter_name == "rr_hypertension", "value"] = 1000
+    p['chronic_ischemic_hd_onset']["rr_hypertension"] = 1000
 
     sim.make_initial_population(n=2000)
     sim.simulate(end_date=Date(year=2013, month=1, day=1))

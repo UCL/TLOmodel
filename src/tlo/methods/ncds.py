@@ -145,22 +145,23 @@ class Ncds(Module):
         events_onset = pd.read_excel(ncds_path / "ResourceFile_NCDs_events.xlsx", sheet_name=None)
         events_death = pd.read_excel(ncds_path / "ResourceFile_NCDs_events_death.xlsx", sheet_name=None)
 
-        def replace_nan(params, value):
+        def get_values(params, value):
             """replaces nans in the 'value' key with specified value"""
             params['value'] = params['value'].replace(np.nan, value)
-            return params
+            params['value'] = params['value'].astype(float)
+            return params.set_index('parameter_name')['value']
 
         p = self.parameters
 
         for condition in self.conditions:
-            p[f'{condition}_onset'] = replace_nan(cond_onset[condition], 1).set_index('parameter_name')['value']
-            p[f'{condition}_removal'] = replace_nan(cond_removal[condition], 1).set_index('parameter_name')['value']
-            p[f'{condition}_death'] = replace_nan(cond_death[condition], 1).set_index('parameter_name')['value']
-            p[f'{condition}_initial_prev'] = replace_nan(cond_prevalence[condition], 0).set_index('parameter_name')['value']
+            p[f'{condition}_onset'] = get_values(cond_onset[condition], 1)
+            p[f'{condition}_removal'] = get_values(cond_removal[condition], 1)
+            p[f'{condition}_death'] = get_values(cond_death[condition], 1)
+            p[f'{condition}_initial_prev'] = get_values(cond_prevalence[condition], 0)
 
         for event in self.events:
-            p[f'{event}_onset'] = replace_nan(events_onset[event], 1)
-            p[f'{event}_death'] = replace_nan(events_death[event], 1)
+            p[f'{event}_onset'] = get_values(events_onset[event], 1)
+            p[f'{event}_death'] = get_values(events_death[event], 1)
 
         # Set the interval (in months) between the polls
         p['interval_between_polls'] = 3
@@ -270,11 +271,13 @@ class Ncds(Module):
         # load parameters for correct condition/event
         p = self.parameters[f'{condition}_{lm_type}']
 
-        p['baseline_annual_probability'] = 1 - math.exp(-interval_between_polls / 12 * p['baseline_annual_probability'])
+        baseline_annual_probability = 1 - math.exp(-interval_between_polls / 12 * p['baseline_annual_probability'])
+        # LinearModel expects native python types - if it's numpy type, convert it
+        baseline_annual_probability = float(baseline_annual_probability)
 
         lms_dict[condition] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['baseline_annual_probability'],
+            baseline_annual_probability,
             Predictor('sex').when('M', p['rr_male']),
             Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
             .when('.between(5, 9)', p['rr_5_9'])
@@ -370,8 +373,6 @@ class Ncds(Module):
 
         return any_condition * 0.0
 
-        pass
-
     def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
@@ -413,10 +414,11 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Function to schedule deaths on random day throughout polling period
         def schedule_death_to_occur_before_next_poll(p_id, cond, interval_between_polls):
+            ndays = (self.sim.date + DateOffset(months=interval_between_polls, days=-1) - self.sim.date).days
             self.sim.schedule_event(
-                InstantaneousDeath(self.module, p_id, cond), self.sim.date + DateOffset(
-                    days=self.module.rng.randint((self.sim.date + DateOffset(
-                        months=interval_between_polls, days=-1) - self.sim.date).days)))
+                InstantaneousDeath(self.module, p_id, cond),
+                self.sim.date + DateOffset(days=self.module.rng.randint(ndays))
+            )
 
         current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
 
@@ -467,11 +469,11 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 idx_has_event = has_event[has_event].index
 
                 for person_id in idx_has_event:
+                    start = self.sim.date
+                    end = self.sim.date + DateOffset(months=m.parameters['interval_between_polls'], days=-1)
+                    ndays = (end - start).days
                     self.sim.schedule_event(NcdEvent(self.module, person_id, event),
-                                            self.sim.date + DateOffset(days=self.module.rng.randint(
-                                                (self.sim.date + DateOffset(
-                                                    months=m.parameters['interval_between_polls'], days=-1) -
-                                                 self.sim.date).days)))
+                                            self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
 
             # -------------------- DEATH FROM NCD EVENT ---------------------------------------
             # There is a risk of death for those who have had an NCD event. Death is assumed to happen instantly.
@@ -541,7 +543,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     description=f"count of events occurring between each successive poll of logging event every "
                                 f"{self.repeat} months")
         # Reset the counter
-        self.module.df_incidence_tracker = copy.deepcopy(self.module.df_incidence_tracker_zeros)
+        self.module.df_incidence_tracker = self.module.df_incidence_tracker_zeros.copy()
 
         def age_cats(ages_in_years):
             AGE_RANGE_CATEGORIES = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
