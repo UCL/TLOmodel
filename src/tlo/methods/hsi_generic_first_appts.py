@@ -234,23 +234,10 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                             tclose=None
                         )
 
-            if 'ProstateCancer' in self.sim.modules:
-                # If the symptoms include urinary, then begin investigation for prostate cancer:
-                if 'urinary' in symptoms:
-                    hsi_event = HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
-                        module=self.sim.modules['ProstateCancer'],
-                        person_id=person_id,
-                    )
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event,
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
-                # If the symptoms include pelvic_pain, then begin investigation for Prostate Cancer
-                # (as well as bladder cancer):
-                    if 'pelvic_pain' in symptoms:
-                        hsi_event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
+                if 'ProstateCancer' in self.sim.modules:
+                    # If the symptoms include urinary, then begin investigation for prostate cancer:
+                    if 'urinary' in symptoms:
+                        hsi_event = HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
                             module=self.sim.modules['ProstateCancer'],
                             person_id=person_id,
                         )
@@ -260,20 +247,34 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                             topen=self.sim.date,
                             tclose=None
                         )
+                    # If the symptoms include pelvic_pain, then begin investigation for Prostate Cancer
+                    # (as well as bladder cancer):
+                        if 'pelvic_pain' in symptoms:
+                            hsi_event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
+                                module=self.sim.modules['ProstateCancer'],
+                                person_id=person_id,
+                            )
+                            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                hsi_event,
+                                priority=0,
+                                topen=self.sim.date,
+                                tclose=None
+                            )
 
-            # ----- OAC
-            # If the symptoms include OtherAdultCancer_Investigation_Following_other_adult_ca_symptom,
-            # then begin investigation for other adult cancer:
-            if 'early_other_adult_ca_symptom' in symptoms:
-                hsi_event = HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
-                    module=self.sim.modules['OtherAdultCancer'],
-                    person_id=person_id,
-                )
-                self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event,
-                                                                    priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=None
-                                                                    )
+                # ----- OAC
+                # If the symptoms include OtherAdultCancer_Investigation_Following_other_adult_ca_symptom,
+                # then begin investigation for other adult cancer:
+                if 'OtherAdultCancer' in self.sim.modules:
+                    if 'early_other_adult_ca_symptom' in symptoms:
+                        hsi_event = HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
+                            module=self.sim.modules['OtherAdultCancer'],
+                            person_id=person_id,
+                        )
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event,
+                                                                            priority=0,
+                                                                            topen=self.sim.date,
+                                                                            tclose=None
+                                                                            )
                 # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
                 if 'Depression' in self.sim.modules:
                     depr = self.sim.modules['Depression']
