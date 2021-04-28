@@ -471,6 +471,7 @@ class BreastCancer(Module):
         df.at[child_id, "brc_date_palliative_care"] = pd.NaT
         df.at[child_id, "brc_new_stage_this_month"] = False
         df.at[child_id, "brc_breast_lump_discernible_investigated"] = False
+        df.at[child_id, "brc_date_death"] = pd.NaT
 
     def on_hsi_alert(self, person_id, treatment_id):
         pass
