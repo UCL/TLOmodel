@@ -654,6 +654,5 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     )
 
         # output entire dataframe for logistic regression
-
-        df = population.props
-        df.to_csv('df_for_regression.csv')
+        # df = population.props
+        # df.to_csv('df_for_regression.csv')
