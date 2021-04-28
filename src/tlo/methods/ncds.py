@@ -116,8 +116,8 @@ class Ncds(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        self.conditions = [c.split('_', 1)[1] for c in list(Ncds.condition_list)]
-        self.events = [c.split('_', 1)[1] for c in list(Ncds.event_list)]
+        self.conditions = Ncds.conditions
+        self.events = Ncds.events
 
         # create list that includes conditions modelled by other modules
         self.extended_conditions = [c.split('_', 1)[1] for c in list(Ncds.condition_list)]
