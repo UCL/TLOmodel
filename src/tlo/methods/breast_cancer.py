@@ -249,14 +249,16 @@ class BreastCancer(Module):
         )
 
         # -------------------- brc_date_diagnosis -----------
-        # Create shorthand variable for the initial proportion of the population with a discernible breast lump
-        bc_initial_prop_discernible_lump = p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage']
+        # Create shorthand variable for the initial proportion of the population with a discernible breast lump that has
+        # been diagnosed
+        bc_initial_prop_diagnosed_discernible_lump = \
+            p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage']
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor('brc_status') .when("none", 0.0)
-                                    .when("stage1", bc_initial_prop_discernible_lump[0])
-                                    .when("stage2", bc_initial_prop_discernible_lump[1])
-                                    .when("stage3", bc_initial_prop_discernible_lump[2])
-                                    .when("stage4", bc_initial_prop_discernible_lump[3])
+                                    .when("stage1", bc_initial_prop_diagnosed_discernible_lump[0])
+                                    .when("stage2", bc_initial_prop_diagnosed_discernible_lump[1])
+                                    .when("stage3", bc_initial_prop_diagnosed_discernible_lump[2])
+                                    .when("stage4", bc_initial_prop_diagnosed_discernible_lump[3])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -812,7 +814,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
-# todo: request consumables needed for this
+        # todo: request consumables needed for this
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -924,7 +926,9 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'n_diagnosed': n_diagnosed
         })
 
-        logger.info('%s|summary_stats|%s', self.sim.date, out)
+        logger.info(key='summary_stats',
+                    description='summary statistics for breast cancer',
+                    data=out)
 
 #       logger.info('%s|person_one|%s',
 #                    self.sim.date,

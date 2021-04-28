@@ -42,8 +42,8 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 1000
+end_date = Date(2013, 1, 1)
+popsize = 10000
 
 
 def run_sim(service_availability):
@@ -52,15 +52,15 @@ def run_sim(service_availability):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
                  breast_cancer.BreastCancer(resourcefilepath=resourcefilepath)
                  )
@@ -103,7 +103,7 @@ def get_summary_stats(logfile):
     counts_by_cascade = pd.DataFrame(summary)
 
     # 3) DALYS wrt age (total over whole simulation)
-    dalys = output['tlo.methods.healthburden']['DALYS']
+    dalys = output['tlo.methods.healthburden']['dalys']
     dalys = dalys.groupby(by=['age_range']).sum()
     dalys.index = dalys.index.astype(make_age_grp_types())
     dalys = dalys.sort_index()

@@ -5,6 +5,7 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     breast_cancer,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -12,6 +13,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -27,7 +30,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2020,  1, 1)
-popsize = 1450000
+popsize = 145000
 # 1450000
 
 # Establish the simulation object
@@ -52,6 +55,7 @@ sim = Simulation(start_date=start_date, seed=1, log_config=log_config)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
              contraception.Contraception(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
@@ -59,6 +63,8 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
+             newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
              breast_cancer.BreastCancer(resourcefilepath=resourcefilepath)
              )
