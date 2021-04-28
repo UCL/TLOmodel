@@ -345,6 +345,12 @@ class Ncds(Module):
         df = self.sim.population.props
         for condition in self.conditions:
             df.at[child_id, f'nc_{condition}'] = False
+        for event in self.events:
+            df.at[child_id, f'nc_{event}'] = False
+        df.at[child_id, 'nc_depression'] = False
+        df.at[child_id, 'nc_cancers'] = False
+        df.at[child_id, 'nc_n_conditions'] = 0
+        df.at[child_id, 'nc_condition_combos'] = False
 
     def report_daly_values(self):
         """Report DALY values to the HealthBurden module"""
