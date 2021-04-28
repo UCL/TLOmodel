@@ -186,6 +186,7 @@ class OtherAdultCancer(Module):
         df.loc[df.is_alive, "oac_date_treatment"] = pd.NaT
         df.loc[df.is_alive, "oac_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "oac_date_palliative_care"] = pd.NaT
+        df.loc[df.is_alive, "oac_date_death"] = pd.NaT
 
         # -------------------- oac_status -----------
         # Determine who has cancer at ANY cancer stage:
@@ -201,18 +202,17 @@ class OtherAdultCancer(Module):
                                   .when('.between(0,14)', 0.0)
         )
 
-        oac_status_ = \
-            lm_init_oac_status_any_stage.predict(df.loc[df.is_alive], self.rng)
+        oac_status_ = lm_init_oac_status_any_stage.predict(df.loc[df.is_alive], self.rng)
 
         # Determine the stage of the cancer for those who do have a cancer:
-        if oac_status_.sum():
+        if sum(oac_status_):
             sum_probs = sum(p['in_prop_other_adult_cancer_stage'])
             if sum_probs > 0:
                 prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['in_prop_other_adult_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
                 df.loc[oac_status_, "oac_status"] = self.rng.choice(
                     [val for val in df.oac_status.cat.categories if val != 'none'],
-                    size=oac_status_.sum(),
+                    size=sum(oac_status_),
                     p=prob_by_stage_of_cancer_if_cancer
                 )
 
@@ -424,6 +424,7 @@ class OtherAdultCancer(Module):
         df.at[child_id, "oac_date_treatment"] = pd.NaT
         df.at[child_id, "oac_stage_at_which_treatment_given"] = "none"
         df.at[child_id, "oac_date_palliative_care"] = pd.NaT
+        df.at[child_id, "oac_date_death"] = pd.NaT
 
     def on_hsi_alert(self, person_id, treatment_id):
         pass
