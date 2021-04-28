@@ -1294,7 +1294,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if sum(women_1549) > 0:
             logger.info(
                 key='proportion_1549_women_sexworker',
-                data=[sum(women_1549 & df.li_is_sexworker) / women_1549]
+                data=[sum(women_1549 & df.li_is_sexworker) / sum(women_1549)]
             )
         else:
             logger.info(
