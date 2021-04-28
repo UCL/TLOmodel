@@ -120,10 +120,9 @@ class Ncds(Module):
         self.events = Ncds.events
 
         # create list that includes conditions modelled by other modules
-        self.extended_conditions = [c.split('_', 1)[1] for c in list(Ncds.condition_list)]
-        self.extended_conditions.append("depression")
+        self.extended_conditions = Ncds.conditions + ["depression"]
 
-        self.condition_list = ['nc_' + cond for cond in list(self.extended_conditions)]
+        self.condition_list = ['nc_' + cond for cond in self.extended_conditions]
 
     def read_parameters(self, data_folder):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
