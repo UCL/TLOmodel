@@ -19,7 +19,7 @@ from tlo.methods import (
     symptommanager,
 )
 
-seed = 567
+seed = 823
 
 
 # The resource files
@@ -455,6 +455,7 @@ def test_function_which_applies_risk_of_death_following_birth():
     params['cfr_severe_enceph'] = 1
     params['cfr_congenital_anomaly'] = 1
     params['cfr_rds_preterm'] = 1
+    params['cfr_neonatal_sepsis'] = 1
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
