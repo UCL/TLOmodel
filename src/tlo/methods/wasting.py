@@ -101,6 +101,24 @@ class Wasting(Module):
             Types.REAL, 'probability of recovery from wasting following treatment with CSB++'),
         'recovery_rate_with_inpatient_care': Parameter(
             Types.REAL, 'probability of recovery from wasting following treatment with inpatient care'),
+        'MUAC_distribution_WHZ<-3': Parameter(
+            Types.LIST, 'mean and standard deviation of a normal distribution of MUAC measurements for WHZ<-3'),
+        'MUAC_distribution_-3<=WHZ<-2': Parameter(
+            Types.LIST, 'mean and standard deviation of a normal distribution of MUAC measurements for -3<=WHZ<-2'),
+        'MUAC_distribution_WHZ>=-2': Parameter(
+            Types.LIST, 'mean and standard deviation of a normal distribution of MUAC measurements for WHZ>=-2'),
+        'proportion_WHZ<-3_with_MUAC<115mm_age_6_17mo': Parameter(
+            Types.REAL, 'proportion of severe wasting by WHZ with MUAC<115mm, for age group 6 to <18 months'),
+        'proportion_-3<=WHZ<-2_with_MUAC<115mm_age_6_17mo': Parameter(
+            Types.REAL, 'proportion of moderate wasting by WHZ with MUAC<115mm, for age group 6 to <18 months'),
+        'proportion_WHZ<-3_with_MUAC<115mm_age_18_35mo': Parameter(
+            Types.REAL, 'proportion of severe wasting by WHZ with MUAC<115mm, for age group 18 to <36 months'),
+        'proportion_-3<=WHZ<-2_with_MUAC<115mm_age_18_35mo': Parameter(
+            Types.REAL, 'proportion of moderate wasting by WHZ with MUAC<115mm, for age group 18 to <36 months'),
+        'proportion_WHZ<-3_with_MUAC<115mm_age_36_59mo': Parameter(
+            Types.REAL, 'proportion of severe wasting by WHZ with MUAC<115mm, for age group 18 to <36 months'),
+        'proportion_-3<=WHZ<-2_with_MUAC<115mm_age_36_59mo': Parameter(
+            Types.REAL, 'proportion of moderate wasting by WHZ with MUAC<115mm, for age group 36 to <60 months'),
 
     }
 
@@ -115,7 +133,10 @@ class Wasting(Module):
         'un_wasting_death_date': Property(Types.DATE, 'death date from wasting'),
 
         'un_wasting_oedema': Property(Types.BOOL, 'oedema present in wasting'),
-        'un_wasting_MUAC_measure': Property(Types.REAL, 'MUAC measurement'),
+        'un_wasting_MUAC_measure': Property(Types.REAL, 'MUAC measurement in cm'),
+        'un_wasting_MUAC_category': Property(Types.CATEGORICAL, 'MUAC measurement categories',
+                                             categories=['<115mm', '115<=MUAC<125mm', '>=125mm']),
+        'un_wasting_MUAC_<115mm': Property(Types.BOOL, 'MUAC measurement less than 115 mm'),
         'un_AM_treatment_type': Property(Types.CATEGORICAL, 'treatment types for acute malnutrition',
                                          categories=['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']),
     }
@@ -197,6 +218,45 @@ class Wasting(Module):
                 self.sim.modules['SymptomManager'].register_symptom(
                     Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
                 )
+
+    # determine the MUAC measurement
+    def muac_distribution(self, WHZ):
+        """
+        apply MUAC measurements to the population
+        :param WHZ: WHZ category
+        :return:
+        """
+        df = self.sim.population.props
+        p = self.parameters
+
+        # under 5 index
+        index_children_under5 = df.index[df.is_alive & df.age_exact_years < 5]
+
+        # # # Random draw of MUAC measurements from a normal distribution # # #
+        MUAC_mean_sd_by_Zscore = f'MUAC_distribution_{WHZ}'
+        df.loc[index_children_under5, 'un_wasting_MUAC_measure'] = \
+            np.random.normal(loc=p[MUAC_mean_sd_by_Zscore][0],
+                             scale=p[MUAC_mean_sd_by_Zscore][1])
+
+    def low_muac_distribution_by_WHZ(self, idx, whz, agegp):
+        """
+        proportion of MUAC<115mm in WHZ<-3 and -3<=WHZ<-2
+        :param index:
+        :param whz:
+        :param agegp:
+        :return:
+        """
+        df = self.sim.population.props
+        p = self.parameters
+
+        # parameters used
+        prob_low_MUAC = f'proportion_{whz}_with_MUAC<115mm_age_{agegp}'
+
+        # apply probability of MUAC<115mm
+        low_muac = self.rng.random_sample(size=len(idx)) < p[prob_low_MUAC]
+
+        df.loc[idx[low_muac], 'un_wasting_MUAC_category'] = '<115mm'
+        df.loc[idx[low_muac == False], 'un_wasting_MUAC_category'] = '115<=MUAC<125mm'
 
     def initialise_population(self, population):
         """
@@ -318,6 +378,32 @@ class Wasting(Module):
                                                   p=[probability_of_severe, 1 - probability_of_severe])
                 df.at[id, 'un_WHZ_category'] = wasted_category
             df.loc[wasted[wasted == False].index, 'un_WHZ_category'] = 'WHZ>=-2'
+
+        # for whz in ['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']:
+        #     self.muac_distribution(WHZ=whz)
+
+        # Give MUAC measurements categories based on WHZ and age group
+        for whz in ['WHZ<-3', '-3<=WHZ<-2']:
+            index_6_17mo_with_wasting = df.index[df.is_alive & ((df.age_exact_years >= 0.5) & (
+                df.age_exact_years < 1.5)) & (df.un_WHZ_category == whz)]
+            self.low_muac_distribution_by_WHZ(idx=index_6_17mo_with_wasting, whz=whz, agegp='6_17mo')
+            index_18_35mo_with_wasting = df.index[df.is_alive & ((df.age_exact_years >= 1.5) & (df.age_exact_years < 3))
+                                                  & (df.un_WHZ_category == whz)]
+            self.low_muac_distribution_by_WHZ(idx=index_18_35mo_with_wasting, whz=whz, agegp='18_35mo')
+            index_36_59mo_with_wasting = df.index[df.is_alive & ((df.age_exact_years >= 3) & (df.age_exact_years < 5))
+                                                  & (df.un_WHZ_category == whz)]
+            self.low_muac_distribution_by_WHZ(idx=index_36_59mo_with_wasting, whz=whz, agegp='36_59mo')
+
+        # parameters used
+        # # prob_low_MUAC = f'proportion_-3<=WHZ<-2_with_MUAC<115mm_age_6_17mo'
+        # index_6_17mo_with_wasting = df.index[df.is_alive & (df.un_WHZ_category == '-3<=WHZ<-2')]
+        # # apply probability of MUAC<115mm
+        # low_muac = self.rng.random_sample(size=len(index_6_17mo_with_wasting)) < p['proportion_-3<=WHZ<-2_with_MUAC<115mm_age_6_17mo']
+        #
+        # df.loc[index_6_17mo_with_wasting[low_muac], 'un_wasting_MUAC_category'] = '<115mm'
+        # df.loc[index_6_17mo_with_wasting[low_muac == False], 'un_wasting_MUAC_category'] = '115<=MUAC<125mm'
+
+        check = df.index[df.is_alive & (df.age_exact_years >= 0.5)]
 
     def initialise_simulation(self, sim):
         """Prepares for simulation:
@@ -588,6 +674,18 @@ class WastingOnsetEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_ever_wasted'] = True
         df.at[person_id, 'un_last_wasting_date_of_onset'] = self.sim.date
         df.at[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'  # start as MAM
+
+        # Give MUAC measurement category for -3<=WHZ<-2
+        age_at_onset = df.at[person_id, 'age_exact_years']
+        if 0.5 <= age_at_onset < 1.5:
+            agegp = '6_17mo'
+        if 1.5 <= age_at_onset < 3:
+            agegp = '18_35mo'
+        if 3 <= age_at_onset < 5:
+            agegp = '36_59mo'
+
+        self.module.low_muac_distribution_by_WHZ(index=df.at[person_id], whz='-3<=WHZ<-2', agegp=agegp)
+
         df.at[person_id, 'un_clinical_acute_malnutrition'] = self.wasting_state
 
         # Allocate the duration of the wasting episode (as MAM)
@@ -791,6 +889,80 @@ class HSI_uncomplicated_MAM_treatment(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         logger.debug("HSI_uncomplicated_MAM_treatment: did not run")
+        pass
+
+
+class HSI_complicated_SAM_treatment(HSI_Event, IndividualScopeEventMixin):
+    """
+    this is the inpatient care for complicated severe acute malnutrition
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Wasting)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint['InpatientDays'] = 1
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'complicated_SAM_treatment'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 2
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+
+        df = self.sim.population.props
+
+        # Stop the person from dying of acute malnutrition (if they were going to die)
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # Do here whatever happens to an individual during this health system interaction event
+        # ~~~~~~~~~~~~~~~~~~~~~~
+        # Make request for some consumables
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # whole package of interventions
+        pkg_code_sam = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Management of severe malnutrition (children)',
+                            'Intervention_Pkg_Code'])[0]
+        # individual items
+        item_code1 = pd.unique(
+            consumables.loc[consumables['Items'] == 'SAM theraputic foods', 'Item_Code'])[0]
+        item_code2 = pd.unique(
+            consumables.loc[consumables['Items'] == 'SAM medicines', 'Item_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_sam: 1}, 'Item_Code': {item_code1: 1,
+                                                                                            item_code2: 1}}
+
+        # check availability of consumables
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed)
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sam]:
+            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
+            self.module.do_wasting_treatment(
+                person_id=person_id,
+                wasting_severity='SAM',
+                treatment_id='inpatient_care'
+            )
+        else:
+            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+        # --------------------------------------------------------------------------------------------------
+        # check to see if all consumables returned (for demonstration purposes):
+        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sam]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code1][item_code2])
+        # use helper function instead (for demonstration purposes)
+        all_available_using_helper_function = self.get_all_consumables(
+            item_codes=[item_code1, item_code2],
+            pkg_codes=[pkg_code_sam]
+        )
+        # Demonstrate equivalence
+        assert all_available == all_available_using_helper_function
+
+    def did_not_run(self):
+        logger.debug("HSI_complicated_SAM_treatment: did not run")
         pass
 
 

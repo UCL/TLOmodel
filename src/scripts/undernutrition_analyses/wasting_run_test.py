@@ -22,8 +22,8 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-pop_size = 100
+end_date = Date(2012, 1, 1)
+pop_size = 1000
 seed = 146
 
 log_config = {
