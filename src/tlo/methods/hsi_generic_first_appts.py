@@ -28,6 +28,9 @@ from tlo.methods.malaria import (
 )
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
+from tlo.methods.other_adult_cancers import (
+    HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom,
+)
 from tlo.methods.prostate_cancer import (
     HSI_ProstateCancer_Investigation_Following_Pelvic_Pain,
     HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms,
@@ -217,6 +220,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                             topen=self.sim.date,
                             tclose=None
                         )
+
                     # If the symptoms include pelvic_pain, then begin investigation for Bladder Cancer:
                     if 'pelvic_pain' in symptoms:
                         hsi_event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
@@ -257,6 +261,20 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                             tclose=None
                         )
 
+                # ----- OAC
+                # If the symptoms include OtherAdultCancer_Investigation_Following_other_adult_ca_symptom,
+                # then begin investigation for other adult cancer:
+                if 'early_other_adult_ca_symptom' in symptoms:
+                    hsi_event = HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
+                        module=self.sim.modules['OtherAdultCancer'],
+                        person_id=person_id,
+                    )
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event,
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                        )
                 # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
                 if 'Depression' in self.sim.modules:
                     depr = self.sim.modules['Depression']
