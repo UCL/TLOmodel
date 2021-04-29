@@ -5443,6 +5443,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         # determine if this is a child
         if df.loc[person_id, 'age_years'] < 15:
             self.is_child = True
+        the_appt_footprint['InpatientDays'] = 5  # placeholder
         the_accepted_facility_level = 1
         self.TREATMENT_ID = 'RTI_Shock_Treatment'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -5458,18 +5459,34 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries = self.sim.modules['RTI']
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         consumables_shock = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
-
+        # TODO: find a more complete list of required consumables for adults
         if self.is_child:
             item_code_fluid_replacement = pd.unique(
                 consumables.loc[consumables['Items'] ==
                                 "ringer's lactate (Hartmann's solution), 500 ml_20_IDA", 'Item_Code'])[0]
             item_code_dextrose = pd.unique(consumables.loc[consumables['Items'] ==
                                                            "Dextrose (glucose) 5%, 1000ml_each_CMST", 'Item_Code'])[0]
+            item_code_cannula = pd.unique(consumables.loc[consumables['Items'] ==
+                                                          'Cannula iv  (winged with injection pot) 20_each_CMST',
+                                                          'Item_Code'])[0]
             item_code_blood = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-            consumables_shock['Item_Code'].update({item_code_fluid_replacement: 1, item_code_dextrose: 1,
-                                                   item_code_blood: 1})
+            item_code_oxygen = pd.unique(consumables.loc[consumables['Items'] ==
+                                                         "Oxygen, 1000 liters, primarily with oxygen cylinders",
+                                                         'Item_Code'])[0]
+            consumables_shock['Item_Code'].update({item_code_cannula: 1, item_code_fluid_replacement: 1,
+                                                   item_code_dextrose: 1, item_code_blood: 1, item_code_oxygen: 1})
         else:
-            pass
+            item_code_fluid_replacement = pd.unique(
+                consumables.loc[consumables['Items'] ==
+                                "ringer's lactate (Hartmann's solution), 500 ml_20_IDA", 'Item_Code'])[0]
+            item_code_oxygen = pd.unique(consumables.loc[consumables['Items'] ==
+                                                         "Oxygen, 1000 liters, primarily with oxygen cylinders",
+                                                         'Item_Code'])[0]
+            item_code_cannula = pd.unique(consumables.loc[consumables['Items'] ==
+                                                          'Cannula iv  (winged with injection pot) 20_each_CMST',
+                                                          'Item_Code'])[0]
+            consumables_shock['Item_Code'].update({item_code_fluid_replacement: 1, item_code_cannula: 1,
+                                                   item_code_oxygen: 1})
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=consumables_shock,
@@ -5478,6 +5495,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             logger.debug(f"Hypovolemic shock treatment available for person %d",
                          person_id)
             df.at[person_id, 'rt_med_int'] = True
+            
     def did_not_run(self, person_id):
         # Assume that untreated shock leads to death for now
         # Schedule the death
