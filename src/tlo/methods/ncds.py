@@ -101,6 +101,10 @@ class Ncds(Module):
         f"nc_{p}_ever_diagnosed": Property(Types.BOOL, f"Whether or not someone has ever been diagnosed with {p}") for p
         in conditions
     }
+    condition_date_of_diagnosis_list = {
+        f"nc_{p}_date_of_diagnosis": Property(Types.BOOL, f"When someone has  been diagnosed with {p}") for p
+        in conditions
+    }
     condition_medication_list = {
         f"nc_{p}_on_medication": Property(Types.BOOL, f"Whether or not someone is on medication for {p}") for p
         in conditions
@@ -111,12 +115,18 @@ class Ncds(Module):
         f"nc_{p}_ever_diagnosed": Property(Types.BOOL, f"Whether or not someone has ever been diagnosed with {p}") for p
         in events
     }
+    event_date_of_diagnosis_list = {
+        f"nc_{p}_date_of_diagnosis": Property(Types.BOOL, f"When someone has  been diagnosed with {p}") for p
+        in events
+    }
 
-    PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **event_diagnosis_list,
-                  **condition_medication_list,
+    PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **condition_date_of_diagnosis_list,
+                  **event_diagnosis_list, **condition_medication_list, **event_date_of_diagnosis_list,
                   'nc_ever_weight_loss_treatment': Property(Types.BOOL,
                                                             'whether or not the person has ever had weight loss '
                                                             'treatment'),
+                  'nc_weight_loss_worked': Property(Types.BOOL,
+                                                    'whether or not weight loss treatment worked'),
                   'nc_depression': Property(Types.BOOL,
                                             'shadow property for whether or not the person currently has depression'
                                             ),
@@ -398,25 +408,68 @@ class Ncds(Module):
             self.lms_event_symptoms[event] = self.build_linear_model_symptoms(event, self.parameters[
                 'interval_between_polls'])
 
-        # Create the diagnostic representing the assessment for whether a person is diagnosed with condition
+        # ------- DEFINE THE CONSUMABLES USED IN TESETS -------
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        blood_glucose_test = \
+            pd.unique(consumables.loc[consumables["Items"] == "Blood glucose level test", "Item_Code"])[0]
+        blood_tube = pd.unique(consumables.loc[consumables["Items"] == "Blood collecting tube, 5 ml", "Item_Code"])[0]
+        urine_analysis = pd.unique(consumables.loc[consumables["Items"] == "Urine analysis", "Item_Code"])[0]
+        ecg_electrodes = \
+            pd.unique(consumables.loc[consumables["Items"] == "Electrodes, electrocardiographic", "Item_Code"])[0]
+        ecg_paper = pd.unique(consumables.loc[consumables["Items"] == "Paper, Recording ECG", "Item_Code"])[0]
+        ecg_paper_roll = \
+            pd.unique(consumables.loc[consumables["Items"] == "ECG paper for printing_Roll_CMST", "Item_Code"])[0]
+
+        # ------- DEFINE THE TESTS -------
+        # Create the diagnostic representing the assessment for whether a person is diagnosed with diabetes
         # NB. Specificity is assumed to be 100%
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_diabetes=DxTest(
                 property='nc_diabetes',
-                sensitivity=float(
-                    self.parameters['diabetes_hsi'].set_index('parameter_name').T.to_dict('records')[0].get(
-                        'sensitivity_of_assessment')),
+                sensitivity=1.0,
+                specificity=1.0,
+                cons_req_as_footprint={'Intervention_Package_Code': {},
+                                       'Item_Code': {blood_glucose_test: 1, blood_tube: 1}}
             )
         )
 
-        # Create the diagnostic representing the assessment for whether a person is diagnosed with condition
-        # NB. Specificity is assumed to be 100%
+        # Create the diagnostic representing the assessment for whether a person is diagnosed with hypertension:
+        # blood pressure measurement
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_hypertension=DxTest(
                 property='nc_hypertension',
-                sensitivity=float(
-                    self.parameters['hypertension_hsi'].set_index('parameter_name').T.to_dict('records')[0].get(
-                        'sensitivity_of_assessment')),
+                sensitivity=1.0,
+                specificity=1.0,
+            )
+        )
+
+        # Create the diagnostic representing the assessment for whether a person is diagnosed with
+        # chronic lower back pain
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_chronic_lower_back_pain=DxTest(
+                property='nc_chronic_lower_back_pain',
+                sensitivity=1.0,
+                specificity=1.0,
+            )
+        )
+
+        # Create the diagnostic representing the assessment for whether a person is diagnosed with CKD
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_chronic_kidney_disease=DxTest(
+                property='nc_chronic_kidney_disease',
+                sensitivity=1.0,
+                specificity=1.0,
+                cons_req_as_footprint={'Intervention_Package_Code': {}, 'Item_Code': {urine_analysis: 1}}
+            )
+        )
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_chronic_ischemic_heart_disease=DxTest(
+                property='nc_chronic_ischemic_heart_disease',
+                sensitivity=1.0,
+                specificity=1.0,
+                cons_req_as_footprint={'Intervention_Package_Code': {},
+                                       'Item_Code': {ecg_electrodes: 1, ecg_paper: 1, ecg_paper_roll: 1}}
             )
         )
 
@@ -565,76 +618,6 @@ class Ncds(Module):
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
         pass
-
-    def do_when_suspected_diabetes(self, person_id, hsi_event):
-        """
-        This is called by a generic HSI event when diabetes is suspected or otherwise investigated.
-        :param person_id:
-        :param hsi_event: The HSI event that has called this event
-        :return:
-        """
-
-        # Assess for diabetes and initiate treatments for depression if positive diagnosis
-        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='assess_diabetes',
-                                                                   hsi_event=hsi_event
-                                                                   ):
-            # If has diabetes: diagnose the person with diabetes
-            self.sim.population.props.at[person_id, 'nc_diabetes_ever_diagnosed'] = True
-
-            # Provide weight loss recommendation (at the same facility level as the HSI event that is calling)
-            # (This can occur even if the person has already had a weight loss recommendation before)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_NCDs_Weight_Loss(module=self,
-                                               person_id=person_id,
-                                               facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
-                priority=0,
-                topen=self.sim.date
-            )
-
-            # Initiate person on medication (at the same facility level as the HSI event that is calling)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_NCDs_Start_Medication(module=self,
-                                                    person_id=person_id,
-                                                    facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL,
-                                                    condition='diabetes'),
-                priority=0,
-                topen=self.sim.date
-            )
-
-    def do_when_suspected_hypertension(self, person_id, hsi_event):
-        """
-        This is called by the a generic HSI event when hypertension is suspected or otherwise investigated.
-        :param person_id:
-        :param hsi_event: The HSI event that has called this event
-        :return:
-        """
-
-        # Assess for diabetes and initiate treatments for depression if positive diagnosis
-        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='assess_hypertension',
-                                                                   hsi_event=hsi_event
-                                                                   ):
-            # If has diabetes: diagnose the person with diabetes
-            self.sim.population.props.at[person_id, 'nc_hypertension_ever_diagnosed'] = True
-
-            # Provide weight loss recommendation (at the same facility level as the HSI event that is calling)
-            # (This can occur even if the person has already had talking therapy before)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_NCDs_Weight_Loss(module=self,
-                                               person_id=person_id,
-                                               facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
-                priority=0,
-                topen=self.sim.date
-            )
-
-            # Initiate person on medication (at the same facility level as the HSI event that is calling)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_NCDs_Start_Medication(module=self,
-                                                    person_id=person_id,
-                                                    facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL,
-                                                    condition='hypertension'),
-                priority=0,
-                topen=self.sim.date
-            )
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -919,28 +902,132 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_NCDs_Weight_Loss(HSI_Event, IndividualScopeEventMixin):
+class HSI_NCDs_InvestigationFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a Health System Interaction Event in which a person receives a short period of talking therapy.
-    This only happens if the squeeze-factor is sufficiently low.
-    The facility_level is modified as a input parameter.
+    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
+    for each condition.
+    This event begins the investigation that may result in diagnosis and the scheduling of treatment.
+    It is for people with the condition-relevant symptom (e.g. diabetes_symptoms).
     """
 
-    def __init__(self, module, person_id, facility_level):
+    def __init__(self, module, person_id, condition):
+        super().__init__(module, person_id=person_id)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "NCDs_Investigation_Following_Symptoms"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+        self.condition = condition
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
+        # Ignore this event if the person is no longer alive:
+        if not df.at[person_id, 'is_alive']:
+            return hs.get_blank_appt_footprint()
+
+        # Check that this event has been called for someone with the symptom for the condition
+        assert f'{self.condition}_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
+
+        # If the person is already diagnosed, then take no action:
+        if df.at[person_id, f'nc_{self.condition}_ever_diagnosed']:
+            return hs.get_blank_appt_footprint()
+
+        # Run a test to diagnose whether the person has condition:
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run=f'assess_{self.condition}',
+            hsi_event=self
+        )
+
+        if dx_result:
+            # record date of diagnosis:
+            df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
+            df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
+
+            # start weight loss recommendation:
+            hs.schedule_hsi_event(
+                hsi_event=HSI_NCDs_StartWeightLoss(
+                    module=self.module,
+                    person_id=person_id,
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
+
+    def did_not_run(self):
+        pass
+
+
+class HSI_NCDs_StartWeightLoss(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event in which a person receives a recommendation of weight loss.
+    This results in an individual having a probability of reducing their BMI by one category by the 6-month check.
+    """
+
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'NCDs_WeightLoss'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        if squeeze_factor == 0.0:
-            self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
-        else:
-            # If squeeze_factor non-zero then do nothing and do not take up any time.
+        self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
+
+        # Schedule a post-treatment check for 12 months:
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi_event=HSI_NCDs_PostWeightLossCheck(
+                module=self.module,
+                person_id=person_id,
+            ),
+            topen=self.sim.date + DateOffset(months=6),
+            tclose=self.sim.date + DateOffset(months=9),
+            priority=0
+        )
+
+        p_bmi_reduction = 0.5
+        if 'li_bmi' != 1:
+            if self.module.rng.rand() < p_bmi_reduction:
+                self.sim.population.props.at[person_id, 'li_bmi'] = self.sim.population.props.at[
+                                                                        person_id, 'li_bmi'] - 1
+                self.sim.population.props.at[person_id, 'nc_weight_loss_worked'] = True
+
+
+class HSI_NCDs_PostWeightLossCheck(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event in which a person receives a check-up following a recommendation of weight
+    loss.
+    This results in an individual having a probability of reducing their BMI by one category by the 6-month check.
+    """
+
+    def __init__(self, module, person_id, condition):
+        super().__init__(module, person_id=person_id)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'NCDs_WeightLoss'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+        self.condition = condition
+
+    def apply(self, person_id, squeeze_factor):
+        if self.sim.population.props.at[person_id, 'nc_weight_loss_worked']:
+            # weight loss worked so don't put the individual on medication and don't use up resources
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        else:
+            # Schedule their next HSI to start medication
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_NCDs_Start_Medication(person_id=person_id, module=self.module, condition=self.condition),
+                priority=1,
+                facility_level=0,
+                topen=self.sim.date,
+                tclose=None
+            )
 
 
 class HSI_NCDs_Start_Medication(HSI_Event, IndividualScopeEventMixin):
@@ -949,13 +1036,13 @@ class HSI_NCDs_Start_Medication(HSI_Event, IndividualScopeEventMixin):
     The facility_level is modified as a input parameter.
     """
 
-    def __init__(self, module, person_id, facility_level, condition):
+    def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'NCDs_Medication_Start'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
 
@@ -1019,7 +1106,7 @@ class HSI_NCDs_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
 
         # Check that the person is on medication
         if not df.at[person_id, f'nc_{self.condition}']:
-            # This person is not on anti-depressants so will not have this HSI
+            # This person is not on medication so will not have this HSI
             # Return the blank_appt_footprint() so that this HSI does not occupy any time resources
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
@@ -1048,132 +1135,3 @@ class HSI_NCDs_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
         # If this HSI event did not run, then the persons ceases to be taking medication
         person_id = self.target
         self.sim.population.props.at[person_id, f'nc_{self.condition}_on_medication'] = False
-
-class HSI_NCDs_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event.
-    It is the event when a person with the severe symptoms of chronic syndrome presents for emergency care
-    and is immediately provided with treatment.
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, ChronicSyndrome)
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug(
-            key='debug',
-            data=('This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: '
-                  f'We are now ready to treat this person {person_id}.'),
-
-        )
-        logger.debug(
-            key='debug',
-            data=('This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: '
-                  f'The squeeze-factor is {squeeze_factor}.'),
-        )
-
-        if squeeze_factor < 0.5:
-            # If squeeze factor is not too large:
-            logger.debug(key='debug', data='Treatment will be provided.')
-            df = self.sim.population.props
-            treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
-
-            if treatmentworks:
-                df.at[person_id, 'cs_has_cs'] = False
-                df.at[person_id, 'cs_status'] = 'P'
-
-                # (in this we nullify the death event that has been scheduled.)
-                df.at[person_id, 'cs_scheduled_date_death'] = pd.NaT
-                df.at[person_id, 'cs_date_cure'] = self.sim.date
-
-                # remove all symptoms instantly
-                self.sim.modules['SymptomManager'].clear_symptoms(
-                    person_id=person_id,
-                    disease_module=self.module)
-        else:
-            # Squeeze factor is too large
-            logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
-
-    def did_not_run(self):
-        logger.debug(key='debug', data='HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: did not run')
-        pass
-
-class HSI_NCDs_Investigation_Following_Diabetes_Symptoms(HSI_Event, IndividualScopeEventMixin):
-    """
-    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
-    diabetes_symptoms.
-    This event begins the investigation that may result in diagnosis of Diabetes and the scheduling of
-    treatment.
-    It is for people with the symptom diabetes_symptoms.
-    """
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "NCDs_Investigation_Following_diabetes_symptoms"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
-
-        # Ignore this event if the person is no longer alive:
-        if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
-
-        # Check that this event has been called for someone with the symptom diabetes_symptoms
-        assert 'diabetes_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
-
-        # If the person is already diagnosed, then take no action:
-        if df.at[person_id, 'nc_diabetes_ever_diagnosed']:
-            return hs.get_blank_appt_footprint()
-
-        # Run a blood glucose test to diagnose whether the person has diabetes:
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='assess_diabetes',
-            hsi_event=self
-        )
-
-        if dx_result:
-            # record date of diagnosis:
-            df.at[person_id, 'bc_date_diagnosis'] = self.sim.date
-
-            # Check if is in metastatic:
-            in_metastatic = df.at[person_id, 'bc_status'] == 'metastatic'
-
-            # If diagnosis detects cancer, we assume classification as metastatic is accurate
-            if not in_metastatic:
-                # start treatment:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_BladderCancer_StartTreatment(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
-
-            else:
-                # start palliative care:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_BladderCancer_PalliativeCare(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
-
-    def did_not_run(self):
-        pass
