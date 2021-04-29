@@ -1078,6 +1078,7 @@ class RTI(Module):
                                             'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
                                             'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b',
                                             'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']),
+        'rt_in_shock': Property(Types.BOOL, 'A property determining if this person is in shock'),
         'rt_injuries_to_cast': Property(Types.LIST, 'A list of injuries that are to be treated with casts'),
         'rt_injuries_for_minor_surgery': Property(Types.LIST, 'A list of injuries that are to be treated with a minor'
                                                               'surgery'),
@@ -1509,6 +1510,7 @@ class RTI(Module):
         df.loc[df.is_alive, 'rt_injury_6'] = "none"
         df.loc[df.is_alive, 'rt_injury_7'] = "none"
         df.loc[df.is_alive, 'rt_injury_8'] = "none"
+        df.loc[df.is_alive, 'rt_in_shock'] = False
         df.loc[df.is_alive, 'rt_polytrauma'] = False
         df.loc[df.is_alive, 'rt_ISS_score'] = 0
         df.loc[df.is_alive, 'rt_perm_disability'] = False
@@ -1754,6 +1756,27 @@ class RTI(Module):
                 topen=self.sim.date,
                 tclose=self.sim.date + DateOffset(days=15)
             )
+
+    def rti_ask_for_shock_treatment(self, person_id):
+        """
+        A function called by the generic emergency appointment to treat the onset of hypovolemic shock
+        :param person_id:
+        :return:
+        """
+        df = self.sim.population.props
+        if ~df.loc[person_id, 'is_alive']:
+            return
+        assert df.loc[person_id, 'rt_diagnosed'], 'person sent here has not been through A and E'
+        assert df.loc[person_id, 'rt_in_shock'], 'person requesting shock treatment is not in shocl'
+        if person.is_alive:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_RTI_Shock_Treatment(module=self,
+                                                  person_id=person_id),
+                priority=0,
+                topen=self.sim.date,
+                tclose=self.sim.date + DateOffset(days=15)
+            )
+
 
     def rti_ask_for_burn_treatment(self, person_id):
         """
@@ -2713,6 +2736,7 @@ class RTI(Module):
         df.at[child_id, 'rt_injury_6'] = "none"
         df.at[child_id, 'rt_injury_7'] = "none"
         df.at[child_id, 'rt_injury_8'] = "none"
+        df.at[child_id, 'rt_in_shock'] = False
         df.at[child_id, 'rt_injuries_to_cast'] = []
         df.at[child_id, 'rt_injuries_for_minor_surgery'] = []
         df.at[child_id, 'rt_injuries_for_major_surgery'] = []
@@ -5485,8 +5509,9 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             item_code_cannula = pd.unique(consumables.loc[consumables['Items'] ==
                                                           'Cannula iv  (winged with injection pot) 20_each_CMST',
                                                           'Item_Code'])[0]
+            item_code_blood = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
             consumables_shock['Item_Code'].update({item_code_fluid_replacement: 1, item_code_cannula: 1,
-                                                   item_code_oxygen: 1})
+                                                   item_code_oxygen: 1, item_code_blood: 1})
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=consumables_shock,
@@ -5495,7 +5520,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             logger.debug(f"Hypovolemic shock treatment available for person %d",
                          person_id)
             df.at[person_id, 'rt_med_int'] = True
-            
+
     def did_not_run(self, person_id):
         # Assume that untreated shock leads to death for now
         # Schedule the death
