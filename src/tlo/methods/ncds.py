@@ -465,7 +465,7 @@ class Ncds(Module):
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_chronic_ischemic_heart_disease=DxTest(
-                property='nc_chronic_ischemic_heart_disease',
+                property='nc_chronic_ischemic_hd',
                 sensitivity=1.0,
                 specificity=1.0,
                 cons_req_as_footprint={'Intervention_Package_Code': {},

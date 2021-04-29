@@ -23,8 +23,7 @@ from tlo.methods.malaria import (
     HSI_Malaria_non_complicated_treatment_age5_15,
 )
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
-from tlo.methods.ncds import HSI_NCDs_SeeksEmergencyCareAndGetsTreatment
-from tlo.methods.ncds import HSI_NCDs_InvestigationFollowingSymptoms
+#from tlo.methods.ncds import HSI_NCDs_InvestigationFollowingSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
 
 logger = logging.getLogger(__name__)
@@ -262,33 +261,33 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     )
 
             # ---- ASSESSEMENT FOR NCDs ----
-            if 'Ncds' in self.sim.modules:
+            #if 'Ncds' in self.sim.modules:
                 # take a blood pressure measurement for everyone
-                hsi_event = HSI_NCDs_InvestigationFollowingSymptoms(
-                    module=self.sim.modules['Ncds'],
-                    person_id=person_id,
-                    condition='hypertension'
-                )
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event,
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                #hsi_event = HSI_NCDs_InvestigationFollowingSymptoms(
+                    #module=self.sim.modules['Ncds'],
+                    #person_id=person_id,
+                    #condition='hypertension'
+                #)
+                #self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    #hsi_event,
+                    #priority=0,
+                    #topen=self.sim.date,
+                    #tclose=None
+                #)
                 # If the symptoms include those for an NCD condition, then begin investigation for other conditions:
-                for condition in self.sim.modules['Ncds'].conditions:
-                    if f'{condition}_symptoms' in symptoms:
-                        hsi_event = HSI_NCDs_InvestigationFollowingSymptoms(
-                            module=self.sim.modules['Ncds'],
-                            person_id=person_id,
-                            condition=f'{condition}'
-                        )
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            hsi_event,
-                            priority=0,
-                            topen=self.sim.date,
-                            tclose=None
-                        )
+                #for condition in self.sim.modules['Ncds'].conditions:
+                    #if f'{condition}_symptoms' in symptoms:
+                        #hsi_event = HSI_NCDs_InvestigationFollowingSymptoms(
+                            #module=self.sim.modules['Ncds'],
+                            #person_id=person_id,
+                            #condition=f'{condition}'
+                        #)
+                        #self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            #hsi_event,
+                            #priority=0,
+                            #topen=self.sim.date,
+                            #tclose=None
+                        #)
 
     def did_not_run(self):
         logger.debug(key='message',
@@ -466,16 +465,16 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
 
         # ------ NCDs ------
-        if 'Ncds' in self.sim.modules:
-            ncds = self.sim.modules['Ncds']
-            if 'stroke_symptoms' in symptoms:
-                ncds.do_when_suspected_diabetes(person_id=person_id, hsi_event=self)
-            if 'heart_attack_symptoms' in symptoms:
-                event = HSI_NCDs_SeeksEmergencyCareAndGetsTreatment(
-                    module=ncds,
-                    person_id=person_id
-                )
-                health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+        #if 'Ncds' in self.sim.modules:
+            #ncds = self.sim.modules['Ncds']
+            #if 'stroke_symptoms' in symptoms:
+                #ncds.do_when_suspected_diabetes(person_id=person_id, hsi_event=self)
+            #if 'heart_attack_symptoms' in symptoms:
+                #event = HSI_NCDs_SeeksEmergencyCareAndGetsTreatment(
+                    #module=ncds,
+                    #person_id=person_id
+                #)
+                #health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:
