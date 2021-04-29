@@ -5423,6 +5423,72 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         logger.debug(f'Injury profile of person %d, {injurycodes}', person_id)
 
 
+class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
+    """
+    This HSI event handles the process of treating hypovolemic shock, as recommended by the pediatric
+    handbook for Malawi and (TODO: FIND ADULT REFERENCE)
+    Currently this HSI_Event is described only and not used, as I still need to work out how to model the occurrence
+    of shock
+    """
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, RTI)
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        self.is_child = False
+        # create placeholder footprint requirements
+        if df.loc[person_id, 'age_years'] < 5:
+            the_appt_footprint['Under5OPD'] = 1 # Placeholder requirement
+        else:
+            the_appt_footprint['Over5OPD'] = 1  # Placeholder requirement
+        # determine if this is a child
+        if df.loc[person_id, 'age_years'] < 15:
+            self.is_child = True
+        the_accepted_facility_level = 1
+        self.TREATMENT_ID = 'RTI_Shock_Treatment'  # This must begin with the module name
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, 'is_alive']:
+            return hs.get_blank_appt_footprint()
+        road_traffic_injuries = self.sim.modules['RTI']
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        consumables_shock = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
+
+        if self.is_child:
+            item_code_fluid_replacement = pd.unique(
+                consumables.loc[consumables['Items'] ==
+                                "ringer's lactate (Hartmann's solution), 500 ml_20_IDA", 'Item_Code'])[0]
+            item_code_dextrose = pd.unique(consumables.loc[consumables['Items'] ==
+                                                           "Dextrose (glucose) 5%, 1000ml_each_CMST", 'Item_Code'])[0]
+            item_code_blood = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
+            consumables_shock['Item_Code'].update({item_code_fluid_replacement: 1, item_code_dextrose: 1,
+                                                   item_code_blood: 1})
+        else:
+            pass
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_shock,
+            to_log=True)
+        if is_cons_available:
+            logger.debug(f"Hypovolemic shock treatment available for person %d",
+                         person_id)
+            df.at[person_id, 'rt_med_int'] = True
+    def did_not_run(self, person_id):
+        # Assume that untreated shock leads to death for now
+        # Schedule the death
+        self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
+                                                              cause='RTI_death_with_med'), self.sim.date)
+        # Log the death
+        logger.debug('This is RTI_Shock_Treatment scheduling a death for person %d who did not recieve treatment'
+                     'for shock',
+                     person_id, self.sim.date)
+
+
 class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
     """
     This HSI event handles fracture casts/giving slings for those who need it. The HSI event tests whether the injured
@@ -6766,7 +6832,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         treated_code = rng.choice(relevant_codes)
 
         injury_columns = non_empty_injuries.columns
-
+        external_fixation = False
         # elsewhere
         if treated_code == '322' or treated_code == '323':
             columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
@@ -6810,6 +6876,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
             columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
                                                                                           [treated_code])[0])
             # using estimated 9 weeks for external fixation
+            external_fixation = True
             df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
         if treated_code == '812':
             columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
@@ -6820,17 +6887,34 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
             columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
                                                                                           [treated_code])[0])
             # using estimated 9 weeks for external fixation
+            external_fixation = True
             df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
         if treated_code == '813b':
             columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
                                                                                           [treated_code])[0])
             # using estimated 9 weeks for external fixation
+            external_fixation = True
             df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
         if treated_code == '813c':
             columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
                                                                                           [treated_code])[0])
             # using estimated 9 weeks for external fixation
+            external_fixation = True
             df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
+        # If surgery requires external fixation, request the materials as part of the appointment footprint
+        if external_fixation:
+            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+            item_code_external_fixator = pd.unique(
+                consumables.loc[consumables['Items'] == 'External fixator', 'Item_Code'])[0]
+            consumables_external_fixation = {
+                'Intervention_Package_Code': dict(),
+                'Item_Code': {item_code_external_fixator: 1}
+            }
+            is_external_fixator_available = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint=consumables_external_fixation,
+                to_log=True)
+
         swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a',
                           'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884',
                           '813bo', '813co', '813do', '813eo']
