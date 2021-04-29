@@ -1288,20 +1288,13 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             key='prop_adult_men_circumcised',
             data=[df.loc[df.is_alive & (df.sex == 'M') & (df.age_years >= 15)].li_is_circ.mean()]
         )
-        if len(df.loc[df.is_alive & (df.sex == "F") & df.age_years.between(15, 49)]) > 0:
+
+        women_1549 = df.is_alive & (df.sex == "F") & df.age_years.between(15, 49)
+
+        if sum(women_1549) > 0:
             logger.info(
                 key='proportion_1549_women_sexworker',
-                data=[(
-                         len(df.loc[df.is_alive &
-                                    df.li_is_sexworker &
-                                    (df.sex == "F") &
-                                    df.age_years.between(15, 49)]
-                             ) /
-                         len(df.loc[df.is_alive &
-                                    (df.sex == "F") &
-                                    df.age_years.between(15, 49)]
-                             )
-                )]
+                data=[sum(women_1549 & df.li_is_sexworker) / sum(women_1549)]
             )
         else:
             logger.info(

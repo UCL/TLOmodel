@@ -269,71 +269,6 @@ class NewbornOutcomes(Module):
                 'severe_motor_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(435),
                 'mild_motor_cognitive_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(441)}
 
-        # ======================================= LINEAR MODEL EQUATIONS ===========================
-        # All linear equations used in this module are stored within the nb_newborn_equations
-        # parameter below
-
-        # TODO: process of 'selection' of important predictors in linear equations is ongoing, a linear model that
-        #  is empty of predictors at the end of this process will be converted to a set probability
-
-        params = self.parameters
-        params['nb_newborn_equations'] = {
-
-            # This equation is used to determine a newborns risk of early onset neonatal sepsis. Risk of early onset
-            # sepsis is mitigated by a number of interventions
-            'early_onset_neonatal_sepsis': LinearModel.custom(newborn_outcomes_lm.predict_early_onset_neonatal_sepsis,
-                                                              parameters=params),
-
-            # This equation is used to determine a newborns risk of encephalopathy
-            'encephalopathy': LinearModel.custom(newborn_outcomes_lm.predict_encephalopathy, parameters=params),
-
-            # This equation is used to determine a preterm newborns risk of respiratory distress syndrome
-            # (secondary to incomplete lung development)
-            'rds_preterm': LinearModel.custom(newborn_outcomes_lm.predict_rds_preterm, parameters=params),
-
-            # This equation is used to determine a newborns risk of not breathing after delivery,
-            # triggering resuscitation
-            'not_breathing_at_birth': LinearModel.custom(newborn_outcomes_lm.predict_not_breathing_at_birth,
-                                                         parameters=params),
-
-            # This equation is used to determine a premature newborns risk of retinopathy
-            'retinopathy': LinearModel.custom(newborn_outcomes_lm.predict_retinopathy, parameters=params),
-
-            # This equation is used to determine the probability that a the mother of a newborn, who has been delivered
-            # at home, will seek care in the event that a newborn experiences complications after birth
-            'care_seeking_for_complication': LinearModel.custom(
-                newborn_outcomes_lm.predict_care_seeking_for_complication, parameters=params),
-
-            # This equation is used to determine a preterm newborns risk of death due to 'complications of prematurity'
-            #  not explicitly modelled here (therefore excluding sepsis, encephalopathy and RDS)
-            'preterm_birth_other_death': LinearModel.custom(
-                newborn_outcomes_lm.predict_preterm_birth_other_death, parameters=params),
-
-            # This equation is used to determine a the risk of death for a newborn who doesnt breathe at birth.
-            'not_breathing_at_birth_death': LinearModel.custom(
-                newborn_outcomes_lm.predict_not_breathing_at_birth_death, parameters=params),
-
-            # Theses equations are used to determine the risk of death for encephalopathic newborns.
-            'mild_enceph_death': LinearModel.custom(
-                newborn_outcomes_lm.predict_mild_enceph_death, parameters=params),
-            'moderate_enceph_death': LinearModel.custom(
-                newborn_outcomes_lm.predict_moderate_enceph_death, parameters=params),
-            'severe_enceph_death': LinearModel.custom(
-                newborn_outcomes_lm.predict_severe_enceph_death, parameters=params),
-
-            # This equation is used to determine a newborns risk of death from sepsis
-            'neonatal_sepsis_death': LinearModel.custom(
-                newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
-
-            # This equation is used to determine a newborns risk of death due to congenital anomaly. It will need to be
-            # amended to ensure only potentially fatal anomalies lead to death
-            'congenital_anomaly_death': LinearModel.custom(
-                newborn_outcomes_lm.predict_congenital_anomaly_death, parameters=params),
-
-            # This equation is used to determine a preterm newborns risk of death due to respiratory distress syndrome
-            'respiratory_distress_death': LinearModel.custom(
-                newborn_outcomes_lm.predict_respiratory_distress_death, parameters=params)}
-
     def initialise_population(self, population):
         df = population.props
 
@@ -411,6 +346,73 @@ class NewbornOutcomes(Module):
                                                                       'low_birth_weight'],
             sensitivity=self.parameters['sensitivity_of_assessment_of_lbw_hp']))
 
+        # ======================================= LINEAR MODEL EQUATIONS ==============================================
+        # All linear equations used in this module are stored within the nb_newborn_equations
+        # parameter below
+
+        # TODO: process of 'selection' of important predictors in linear equations is ongoing, a linear model that
+        #  is empty of predictors at the end of this process will be converted to a set probability
+
+        params = self.parameters
+        params['nb_newborn_equations'] = {
+
+            # This equation is used to determine a newborns risk of early onset neonatal sepsis. Risk of early onset
+            # sepsis is mitigated by a number of interventions
+            'early_onset_neonatal_sepsis': LinearModel.custom(newborn_outcomes_lm.predict_early_onset_neonatal_sepsis,
+                                                              parameters=params),
+
+            # This equation is used to determine a newborns risk of encephalopathy
+            'encephalopathy': LinearModel.custom(newborn_outcomes_lm.predict_encephalopathy, parameters=params),
+
+            # This equation is used to determine a preterm newborns risk of respiratory distress syndrome
+            # (secondary to incomplete lung development)
+            'rds_preterm': LinearModel.custom(newborn_outcomes_lm.predict_rds_preterm, parameters=params),
+
+            # This equation is used to determine a newborns risk of not breathing after delivery,
+            # triggering resuscitation
+            'not_breathing_at_birth': LinearModel.custom(newborn_outcomes_lm.predict_not_breathing_at_birth,
+                                                         parameters=params),
+
+            # This equation is used to determine a premature newborns risk of retinopathy
+            'retinopathy': LinearModel.custom(newborn_outcomes_lm.predict_retinopathy, parameters=params),
+
+            # This equation is used to determine the probability that a the mother of a newborn, who has been delivered
+            # at home, will seek care in the event that a newborn experiences complications after birth
+            'care_seeking_for_complication': LinearModel.custom(
+                newborn_outcomes_lm.predict_care_seeking_for_complication, parameters=params),
+
+            # This equation is used to determine a preterm newborns risk of death due to 'complications of prematurity'
+            #  not explicitly modelled here (therefore excluding sepsis, encephalopathy and RDS)
+            'preterm_birth_other_death': LinearModel.custom(
+                newborn_outcomes_lm.predict_preterm_birth_other_death, parameters=params),
+
+            # This equation is used to determine a the risk of death for a newborn who doesnt breathe at birth.
+            'not_breathing_at_birth_death': LinearModel.custom(
+                newborn_outcomes_lm.predict_not_breathing_at_birth_death, parameters=params),
+
+            # Theses equations are used to determine the risk of death for encephalopathic newborns.
+            'mild_enceph_death': LinearModel.custom(
+                newborn_outcomes_lm.predict_mild_enceph_death, parameters=params),
+            'moderate_enceph_death': LinearModel.custom(
+                newborn_outcomes_lm.predict_moderate_enceph_death, parameters=params),
+            'severe_enceph_death': LinearModel.custom(
+                newborn_outcomes_lm.predict_severe_enceph_death, parameters=params),
+
+            # This equation is used to determine a newborns risk of death from sepsis
+            'neonatal_sepsis_death': LinearModel.custom(
+                newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
+
+            # This equation is used to determine a newborns risk of death due to congenital anomaly. It will need to be
+            # amended to ensure only potentially fatal anomalies lead to death
+            'congenital_anomaly_death': LinearModel.custom(
+                newborn_outcomes_lm.predict_congenital_anomaly_death, parameters=params),
+
+            # This equation is used to determine a preterm newborns risk of death due to respiratory distress syndrome
+            'respiratory_distress_death': LinearModel.custom(
+                newborn_outcomes_lm.predict_respiratory_distress_death, parameters=params)}
+
+        # Finally we add this warning note to document that HIV testing will not occur if the correct module isnt
+        # registered
         if 'Hiv' not in self.sim.modules:
             logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
                                                'testing will not happen in newborn care')
