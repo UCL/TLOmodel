@@ -101,8 +101,8 @@ class Ncds(Module):
         f"nc_{p}_ever_diagnosed": Property(Types.BOOL, f"Whether or not someone has ever been diagnosed with {p}") for p
         in conditions
     }
-    condition_date_of_diagnosis_list = {
-        f"nc_{p}_date_of_diagnosis": Property(Types.BOOL, f"When someone has  been diagnosed with {p}") for p
+    condition_date_diagnosis_list = {
+        f"nc_{p}_date_diagnosis": Property(Types.BOOL, f"When someone has  been diagnosed with {p}") for p
         in conditions
     }
     condition_medication_list = {
@@ -115,13 +115,13 @@ class Ncds(Module):
         f"nc_{p}_ever_diagnosed": Property(Types.BOOL, f"Whether or not someone has ever been diagnosed with {p}") for p
         in events
     }
-    event_date_of_diagnosis_list = {
-        f"nc_{p}_date_of_diagnosis": Property(Types.BOOL, f"When someone has  been diagnosed with {p}") for p
+    event_date_diagnosis_list = {
+        f"nc_{p}_date_diagnosis": Property(Types.BOOL, f"When someone has  been diagnosed with {p}") for p
         in events
     }
 
-    PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **condition_date_of_diagnosis_list,
-                  **event_diagnosis_list, **condition_medication_list, **event_date_of_diagnosis_list,
+    PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **condition_date_diagnosis_list,
+                  **event_diagnosis_list, **condition_medication_list, **event_date_diagnosis_list,
                   'nc_ever_weight_loss_treatment': Property(Types.BOOL,
                                                             'whether or not the person has ever had weight loss '
                                                             'treatment'),
@@ -163,7 +163,7 @@ class Ncds(Module):
             'diabetes_symptoms',
             'chronic_lower_bp_symptoms',
             'chronic_ischemic_hd_symptoms',
-            'vomiting'  # for CKD
+            'chronic_kidney_disease_symptoms'  # was vomiting for CKD
         }
 
         # dict to hold the probability of onset of different types of symptom given a condition
@@ -464,7 +464,7 @@ class Ncds(Module):
         )
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            assess_chronic_ischemic_heart_disease=DxTest(
+            assess_chronic_ischemic_hd=DxTest(
                 property='nc_chronic_ischemic_hd',
                 sensitivity=1.0,
                 specificity=1.0,
@@ -929,7 +929,8 @@ class HSI_NCDs_InvestigationFollowingSymptoms(HSI_Event, IndividualScopeEventMix
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the symptom for the condition
-        assert f'{self.condition}_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
+        if self.condition != "hypertension":
+            assert f'{self.condition}_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
         if df.at[person_id, f'nc_{self.condition}_ever_diagnosed']:
@@ -951,6 +952,7 @@ class HSI_NCDs_InvestigationFollowingSymptoms(HSI_Event, IndividualScopeEventMix
                 hsi_event=HSI_NCDs_StartWeightLoss(
                     module=self.module,
                     person_id=person_id,
+                    condition=self.condition
                 ),
                 priority=0,
                 topen=self.sim.date,
@@ -967,7 +969,7 @@ class HSI_NCDs_StartWeightLoss(HSI_Event, IndividualScopeEventMixin):
     This results in an individual having a probability of reducing their BMI by one category by the 6-month check.
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
 
         # Define the necessary information for an HSI
@@ -975,6 +977,7 @@ class HSI_NCDs_StartWeightLoss(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
+        self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
         self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
@@ -984,17 +987,18 @@ class HSI_NCDs_StartWeightLoss(HSI_Event, IndividualScopeEventMixin):
             hsi_event=HSI_NCDs_PostWeightLossCheck(
                 module=self.module,
                 person_id=person_id,
+                condition=self.condition
             ),
             topen=self.sim.date + DateOffset(months=6),
             tclose=self.sim.date + DateOffset(months=9),
             priority=0
         )
 
+        df = self.sim.population.props
         p_bmi_reduction = 0.5
-        if 'li_bmi' != 1:
+        if df.at[person_id, 'li_bmi'] != 1:
             if self.module.rng.rand() < p_bmi_reduction:
-                self.sim.population.props.at[person_id, 'li_bmi'] = self.sim.population.props.at[
-                                                                        person_id, 'li_bmi'] - 1
+                df.at[person_id, 'li_bmi'] = df.at[person_id, 'li_bmi'] - 1
                 self.sim.population.props.at[person_id, 'nc_weight_loss_worked'] = True
 
 
@@ -1024,7 +1028,6 @@ class HSI_NCDs_PostWeightLossCheck(HSI_Event, IndividualScopeEventMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_NCDs_Start_Medication(person_id=person_id, module=self.module, condition=self.condition),
                 priority=1,
-                facility_level=0,
                 topen=self.sim.date,
                 tclose=None
             )
