@@ -729,7 +729,8 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class NcdEvent(Event, IndividualScopeEventMixin):
     """
-    This is an NCD event. It has been scheduled to occur by the Ncds_MainPollingEvent. It
+    This is an NCD event. It has been scheduled to occur by the Ncds_MainPollingEvent. It produces a stroke or heart
+    attack event, which triggers emergency care seeking.
     """
 
     def __init__(self, module, person_id, event):
@@ -1138,3 +1139,56 @@ class HSI_NCDs_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
         # If this HSI event did not run, then the persons ceases to be taking medication
         person_id = self.target
         self.sim.population.props.at[person_id, f'nc_{self.condition}_on_medication'] = False
+
+class HSI_NCDs_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event.
+    It is the event when a person with the severe symptoms of chronic syndrome presents for emergency care
+    and is immediately provided with treatment.
+    """
+
+    def __init__(self, module, person_id, ev):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Ncds)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'NCDs_SeeksEmergencyCareAndGetsTreatment'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
+        self.ALERT_OTHER_DISEASES = []
+        self.event = ev
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(
+            key='debug',
+            data=('This is HSI_NCDs_SeeksEmergencyCareAndGetsTreatment: '
+                  f'We are now ready to treat this person {person_id}.'),
+
+        )
+        logger.debug(
+            key='debug',
+            data=('This is HSI_NCDs_SeeksEmergencyCareAndGetsTreatment: '
+                  f'The squeeze-factor is {squeeze_factor}.'),
+        )
+
+        if squeeze_factor < 0.5:
+            # If squeeze factor is not too large:
+            logger.debug(key='debug', data='Treatment will be provided.')
+            df = self.sim.population.props
+            treatmentworks = self.module.rng.rand() < 0.2 # made up number for now
+
+            if treatmentworks:
+                # (in this we nullify the death event that has been scheduled.)
+                # df.at[person_id, 'nc_scheduled_date_death'] = pd.NaT
+
+                # remove all symptoms instantly
+                self.sim.modules['SymptomManager'].clear_symptoms(
+                    person_id=person_id,
+                    disease_module=self.module)
+        else:
+            # Squeeze factor is too large
+            logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
+
+    def did_not_run(self):
+        logger.debug(key='debug', data='HSI_NCDs_SeeksEmergencyCareAndGetsTreatment: did not run')
+        pass

@@ -23,7 +23,10 @@ from tlo.methods.malaria import (
     HSI_Malaria_non_complicated_treatment_age5_15,
 )
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
-from tlo.methods.ncds import HSI_NCDs_InvestigationFollowingSymptoms
+from tlo.methods.ncds import (
+    HSI_NCDs_InvestigationFollowingSymptoms,
+    HSI_NCDs_SeeksEmergencyCareAndGetsTreatment
+)
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
 
 logger = logging.getLogger(__name__)
@@ -465,16 +468,16 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
 
         # ------ NCDs ------
-        #if 'Ncds' in self.sim.modules:
-            #ncds = self.sim.modules['Ncds']
-            #if 'stroke_symptoms' in symptoms:
-                #ncds.do_when_suspected_diabetes(person_id=person_id, hsi_event=self)
-            #if 'heart_attack_symptoms' in symptoms:
-                #event = HSI_NCDs_SeeksEmergencyCareAndGetsTreatment(
-                    #module=ncds,
-                    #person_id=person_id
-                #)
-                #health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+        if 'Ncds' in self.sim.modules:
+            ncds = self.sim.modules['Ncds']
+            for ev in self.sim.modules['Ncds'].events:
+                if f'{ev}_damage' in symptoms:
+                    event = HSI_NCDs_SeeksEmergencyCareAndGetsTreatment(
+                        module=ncds,
+                        person_id=person_id,
+                        ev=ev,
+                    )
+                    health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:
