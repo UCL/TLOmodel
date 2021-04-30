@@ -140,9 +140,6 @@ class Ncds(Module):
                                                   )
                   }
 
-    # TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank
-    SYMPTOMS = {}
-
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
@@ -260,28 +257,6 @@ class Ncds(Module):
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
 
-        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
-        generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
-        for symptom_name in self.symptoms:
-            if symptom_name not in generic_symptoms:
-                self.sim.modules['SymptomManager'].register_symptom(
-                    Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
-                )
-
-        # Register symptoms from events and make them emergencies
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='ever_stroke_damage',
-                emergency_in_adults=True
-            ),
-        )
-
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='ever_heart_attack_damage',
-                emergency_in_adults=True
-            ),
-        )
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -338,6 +313,28 @@ class Ncds(Module):
                 self.prob_symptoms[event] = {}
 
         # -------------------- SYMPTOMS ---------------------------------------------------------------
+        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
+        generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
+        for symptom_name in self.symptoms:
+            if symptom_name not in generic_symptoms:
+                self.sim.modules['SymptomManager'].register_symptom(
+                    Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
+                )
+
+        # Register symptoms from events and make them emergencies
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(
+                name='ever_stroke_damage',
+                emergency_in_adults=True
+            ),
+        )
+
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(
+                name='ever_heart_attack_damage',
+                emergency_in_adults=True
+            ),
+        )
         # ----- Impose the symptom on random sample of those with each condition to have:
         for condition in self.conditions:
             for symptom in self.prob_symptoms[condition].keys():
