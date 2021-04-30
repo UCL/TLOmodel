@@ -322,19 +322,14 @@ class Ncds(Module):
                 )
 
         # Register symptoms from events and make them emergencies
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='ever_stroke_damage',
-                emergency_in_adults=True
-            ),
-        )
+        for event in self.events:
+            self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(
+                    name=f'{event}_damage',
+                    emergency_in_adults=True
+                ),
+            )
 
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='ever_heart_attack_damage',
-                emergency_in_adults=True
-            ),
-        )
         # ----- Impose the symptom on random sample of those with each condition to have:
         for condition in self.conditions:
             for symptom in self.prob_symptoms[condition].keys():
