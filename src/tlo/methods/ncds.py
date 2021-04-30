@@ -93,12 +93,9 @@ class Ncds(Module):
         f"nc_{p}": Property(Types.BOOL, f"Whether or not someone has had a {p}") for p in events}
 
     PROPERTIES = {**condition_list, **event_list,
-                  'nc_depression': Property(Types.BOOL,
-                                            'whether or not the person currently has depression'
-                                            ),
-                  'nc_cancers': Property(Types.BOOL,
-                                         'whether or not the person currently has any form of cancer'
-                                         ),
+                  #'nc_cancers': Property(Types.BOOL,
+                                         #'whether or not the person currently has any form of cancer'
+                                         #),
                   'nc_n_conditions': Property(Types.INT,
                                               'how many NCD conditions the person currently has'),
                   'nc_condition_combos': Property(Types.BOOL,
@@ -119,8 +116,8 @@ class Ncds(Module):
         self.events = Ncds.events
 
         # create list that includes conditions modelled by other modules
-        self.extended_conditions = Ncds.conditions + ["depression"]
-        self.condition_list = ['nc_' + cond for cond in self.extended_conditions]
+        self.condition_list = ['nc_' + cond for cond in Ncds.conditions] + ['de_depr']
+
 
         # retrieve age range categories from Demography module
         self.age_index = None
@@ -217,10 +214,6 @@ class Ncds(Module):
         # dict to hold counters for the number of episodes by condition-type and age-group
         self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_index, columns=self.conditions)
         self.df_incidence_tracker = self.df_incidence_tracker_zeros.copy()
-
-        # copy NCD conditions from other modules into nc_ condition
-        df = self.sim.population.props
-        df['nc_depression'] = df['de_depr']
 
         # Create Tracker for the number of different types of events
         self.events_tracker = dict()
@@ -349,8 +342,7 @@ class Ncds(Module):
             df.at[child_id, f'nc_{condition}'] = False
         for event in self.events:
             df.at[child_id, f'nc_{event}'] = False
-        df.at[child_id, 'nc_depression'] = False
-        df.at[child_id, 'nc_cancers'] = False
+        #df.at[child_id, 'nc_cancers'] = False
         df.at[child_id, 'nc_n_conditions'] = 0
         df.at[child_id, 'nc_condition_combos'] = False
 
@@ -420,9 +412,6 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
         current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
-
-        # Update depression status
-        df['nc_depression'] = df['de_depr']
 
         # Determine onset/removal of conditions
         for condition in self.module.conditions:
@@ -534,9 +523,6 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # update depression status
-        self.sim.population.props['nc_depression'] = self.sim.population.props['de_depr']
-
         # Convert incidence tracker to dict to pass through logger
         logger.info(key='incidence_count_by_condition', data=self.module.df_incidence_tracker.to_dict(),
                     description=f"count of events occurring between each successive poll of logging event every "
@@ -612,10 +598,10 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         mask = df.is_alive
         df.loc[mask, 'nc_n_conditions'] = df.loc[mask, self.module.condition_list].sum(axis=1)
         n_comorbidities_all = pd.DataFrame(index=self.module.age_index,
-                                           columns=list(range(0, len(self.module.extended_conditions) + 1)))
+                                           columns=list(range(0, len(self.module.condition_list) + 1)))
         df = df[['age_range', 'nc_n_conditions']]
 
-        for num in range(0, len(self.module.extended_conditions) + 1):
+        for num in range(0, len(self.module.condition_list) + 1):
             col = df.loc[df['nc_n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
                 {'count': x['nc_n_conditions'].count()}))
             n_comorbidities_all.loc[:, num] = col['count']
@@ -631,14 +617,14 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         df = df[df.is_alive]
 
-        combos = combinations(self.module.extended_conditions, 2)
+        combos = combinations(self.module.condition_list, 2)
         condition_combos = list(combos)
 
         n_combos = pd.DataFrame(index=df['age_range'].value_counts().sort_index().index)
 
         for i in range(0, len(condition_combos)):
             df['nc_condition_combos'] = np.where(
-                df.loc[:, f'nc_{condition_combos[i][0]}'] & df.loc[:, f'nc_{condition_combos[i][1]}'], True, False)
+                df.loc[:, f'{condition_combos[i][0]}'] & df.loc[:, f'{condition_combos[i][1]}'], True, False)
             col = df.loc[df['nc_condition_combos']].groupby(['age_range'])['nc_condition_combos'].count()
             n_combos.reset_index()
             n_combos.loc[:, (f'{condition_combos[i][0]}' + '_' + f'{condition_combos[i][1]}')] = col.values

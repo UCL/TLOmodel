@@ -41,7 +41,6 @@ def routine_checks(sim):
     df = sim.population.props
     assert df.nc_diabetes.any()
     assert df.nc_hypertension.any()
-    assert df.nc_depression.any()
     assert df.nc_chronic_lower_back_pain.any()
     assert df.nc_chronic_kidney_disease.any()
     assert df.nc_chronic_ischemic_hd.any()
