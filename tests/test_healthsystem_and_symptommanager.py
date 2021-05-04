@@ -932,89 +932,6 @@ def check_bed_days_basics(hs_disable):
     )
 
 
-def check_bed_days_released_on_death(hs_disable):
-    """Check that bed-days scheduled to be occupied are released upon the death of the person"""
-
-    class DummyModule(Module):
-        METADATA = {Metadata.USES_HEALTHSYSTEM}
-
-        def read_parameters(self, data_folder):
-            pass
-
-        def initialise_population(self, population):
-            pass
-
-        def initialise_simulation(self, sim):
-            # Schedule event that will query the status of the property 'is_inpatient' each day
-            self.sim.schedule_event(
-                QueryInPatientStatus(self),
-                self.sim.date
-            )
-            self.in_patient_status = pd.DataFrame(
-                index=pd.date_range(self.sim.start_date, self.sim.end_date),
-                columns=[0, 1],
-                data=False
-            )
-
-            # Schedule person_id=0 and person_id=1 to attend care on day 2 for 10 days
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Dummy(self, person_id=0),
-                topen=self.sim.date + pd.DateOffset(days=2),
-                tclose=None,
-                priority=0)
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Dummy(self, person_id=1),
-                topen=self.sim.date + pd.DateOffset(days=2),
-                tclose=None,
-                priority=0)
-
-            # Schedule person_id=0 to die on day 5
-            self.sim.schedule_event(
-                demography.InstantaneousDeath(self.sim.modules['Demography'], 0, ''),
-                self.sim.date + pd.DateOffset(days=5)
-            )
-
-    class QueryInPatientStatus(RegularEvent, PopulationScopeEventMixin):
-        def __init__(self, module):
-            super().__init__(module, frequency=pd.DateOffset(days=1))
-
-        def apply(self, population):
-            self.module.in_patient_status.loc[self.sim.date.normalize()] = \
-                population.props.loc[[0, 1], 'hs_is_inpatient'].values
-
-    # Create a dummy HSI with both-types of Bed Day specified
-    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
-        def __init__(self, module, person_id):
-            super().__init__(module, person_id=person_id)
-            self.TREATMENT_ID = 'Dummy'
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
-            self.ALERT_OTHER_DISEASES = []
-            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 10})
-
-        def apply(self, person_id, squeeze_factor):
-            pass
-
-    # Create simulation with the health system and DummyModule
-    sim = Simulation(start_date=start_date, seed=0)
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=hs_disable),
-        DummyModule()
-    )
-    sim.make_initial_population(n=100)
-    sim.simulate(end_date=start_date + pd.DateOffset(days=20))
-
-    # Test that all bed-days released when person dies
-    assert not sim.population.props.at[0, 'is_alive']   # person 0 has died
-    assert sim.population.props.at[1, 'is_alive']   # person 1 is alive
-
-    tracker = sim.modules['HealthSystem'].bed_tracker['general_bed']
-    bed_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
-    assert all([0] * 2 + [2] * 3 + [1] * 7 + [0] * 9 == bed_occupied.values)
-
-
 def check_bed_days_property_is_inpatient(hs_disable):
     """Check that the is_inpatient property is controlled correctly and kept in sync with the bed-tracker"""
 
@@ -1113,6 +1030,89 @@ def check_bed_days_property_is_inpatient(hs_disable):
     assert (beds_occupied == tot_time_as_in_patient).all()
 
     check_dtypes(sim)
+
+
+def check_bed_days_released_on_death(hs_disable):
+    """Check that bed-days scheduled to be occupied are released upon the death of the person"""
+
+    class DummyModule(Module):
+        METADATA = {Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # Schedule event that will query the status of the property 'is_inpatient' each day
+            self.sim.schedule_event(
+                QueryInPatientStatus(self),
+                self.sim.date
+            )
+            self.in_patient_status = pd.DataFrame(
+                index=pd.date_range(self.sim.start_date, self.sim.end_date),
+                columns=[0, 1],
+                data=False
+            )
+
+            # Schedule person_id=0 and person_id=1 to attend care on day 2 for 10 days
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy(self, person_id=0),
+                topen=self.sim.date + pd.DateOffset(days=2),
+                tclose=None,
+                priority=0)
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy(self, person_id=1),
+                topen=self.sim.date + pd.DateOffset(days=2),
+                tclose=None,
+                priority=0)
+
+            # Schedule person_id=0 to die on day 5
+            self.sim.schedule_event(
+                demography.InstantaneousDeath(self.sim.modules['Demography'], 0, ''),
+                self.sim.date + pd.DateOffset(days=5)
+            )
+
+    class QueryInPatientStatus(RegularEvent, PopulationScopeEventMixin):
+        def __init__(self, module):
+            super().__init__(module, frequency=pd.DateOffset(days=1))
+
+        def apply(self, population):
+            self.module.in_patient_status.loc[self.sim.date.normalize()] = \
+                population.props.loc[[0, 1], 'hs_is_inpatient'].values
+
+    # Create a dummy HSI with both-types of Bed Day specified
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ALERT_OTHER_DISEASES = []
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 10})
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    # Create simulation with the health system and DummyModule
+    sim = Simulation(start_date=start_date, seed=0)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=hs_disable),
+        DummyModule()
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=20))
+
+    # Test that all bed-days released when person dies
+    assert not sim.population.props.at[0, 'is_alive']   # person 0 has died
+    assert sim.population.props.at[1, 'is_alive']   # person 1 is alive
+
+    tracker = sim.modules['HealthSystem'].bed_tracker['general_bed']
+    bed_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
+    assert all([0] * 2 + [2] * 3 + [1] * 7 + [0] * 9 == bed_occupied.values)
 
 
 def test_bed_days_if_healthsystem_not_disabled():
