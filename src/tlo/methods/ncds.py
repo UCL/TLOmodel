@@ -92,16 +92,13 @@ class Ncds(Module):
     event_list = {
         f"nc_{p}": Property(Types.BOOL, f"Whether or not someone has had a {p}") for p in events}
 
-    PROPERTIES = {**condition_list, **event_list,
-                  #'nc_cancers': Property(Types.BOOL,
-                                         #'whether or not the person currently has any form of cancer'
-                                         #),
-                  'nc_n_conditions': Property(Types.INT,
-                                              'how many NCD conditions the person currently has'),
-                  'nc_condition_combos': Property(Types.BOOL,
-                                                  'whether or not the person currently has a combination of conds'
-                                                  )
-                  }
+    PROPERTIES = {
+        **condition_list,
+        **event_list,
+        # 'nc_cancers': Property(Types.BOOL, 'whether or not the person currently has any form of cancer'),
+        'nc_n_conditions': Property(Types.INT, 'how many NCD conditions the person currently has'),
+        'nc_condition_combos': Property(Types.BOOL, 'whether or not the person currently has a combination of conds')
+    }
 
     # TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank
     SYMPTOMS = {}
@@ -117,7 +114,6 @@ class Ncds(Module):
 
         # create list that includes conditions modelled by other modules
         self.condition_list = ['nc_' + cond for cond in Ncds.conditions] + ['de_depr']
-
 
         # retrieve age range categories from Demography module
         self.age_index = None
@@ -342,7 +338,7 @@ class Ncds(Module):
             df.at[child_id, f'nc_{condition}'] = False
         for event in self.events:
             df.at[child_id, f'nc_{event}'] = False
-        #df.at[child_id, 'nc_cancers'] = False
+        # df.at[child_id, 'nc_cancers'] = False
         df.at[child_id, 'nc_n_conditions'] = 0
         df.at[child_id, 'nc_condition_combos'] = False
 
