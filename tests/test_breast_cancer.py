@@ -76,12 +76,6 @@ def zero_out_init_prev(sim):
     return sim
 
 
-def seed_init_prev_in_first_stage_only(sim):
-    # Set initial prevalence to zero:
-    sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'] = [0.0, 0.0, 0.0, 0.0]
-    return sim
-
-
 def make_high_init_prev(sim):
     # Set initial prevalence to a high value:
     sim.modules['BreastCancer'].parameters['init_prop_breast_cancer_stage'] = [0.6, 0.1, 0.1, 0.1]
