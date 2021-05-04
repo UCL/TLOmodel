@@ -39,7 +39,7 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 pop_size = 50000
-nsim = 2
+nsim = 3
 # Set service availability
 service_availability = ["*"]
 # create lists to store deaths and dalys for each level of reduction in prehospital mortality
@@ -124,4 +124,4 @@ plt.legend()
 plt.title(f"The effect of reducing pre-hospital mortality on average Deaths/DALYS"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/PrehospitalMortality/PrehospitalMortality_vs_deaths_DALYS.png', bbox_inches='tight')
+plt.savefig('C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PrehospitalMortality/PrehospitalMortality_vs_deaths_DALYS.png', bbox_inches='tight')

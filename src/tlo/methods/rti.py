@@ -1764,9 +1764,9 @@ class RTI(Module):
         :return:
         """
         df = self.sim.population.props
+        person = df.loc[person_id]
         if ~df.loc[person_id, 'is_alive']:
             return
-        assert df.loc[person_id, 'rt_diagnosed'], 'person sent here has not been through A and E'
         assert df.loc[person_id, 'rt_in_shock'], 'person requesting shock treatment is not in shocl'
         if person.is_alive:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -3965,6 +3965,17 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # All those who are injures and do not die immediately have an ISS score > 0
         assert len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_ISS_score'] > 0) == \
                len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death])
+        # ========================== Determine who will experience shock from blood loss ==============================
+        # todo: improve this section, currently using a blanket assumption that those with internal bleeding or open
+        # fractures will have shock, this is a temporary fix.
+        internal_bleeding_codes = ['361', '363', '461', '463', '813bo', '813co', '813do', '813eo']
+        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6', 'rt_injury_7',
+                'rt_injury_8']
+        df = self.sim.population.props
+        persons_injuries = df.loc[[person_id], cols]
+
+        shock_index, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [internal_bleeding_codes])
+        df.loc[shock_index, 'rt_in_shock'] = True
         # ========================== Decide survival time without medical intervention ================================
         # todo: find better time for survival data without med int for ISS scores
         df.loc[selected_for_rti_inj.index, 'rt_date_death_no_med'] = now + DateOffset(days=7)
@@ -4497,6 +4508,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                            sought medical care
     rt_med_int - the bool property that shows whether a person has sought medical care or not
     """
+    # TODO: include treatment or at least transfer between facilities, e.g. at KCH "Most patients transferred from
+    #  either a health center, 2463 (47.2%), or district hospital, 1996 (38.3%)"
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -5460,6 +5473,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         self.is_child = False
         # create placeholder footprint requirements
+        df = self.sim.population.props
         if df.loc[person_id, 'age_years'] < 5:
             the_appt_footprint['Under5OPD'] = 1 # Placeholder requirement
         else:
@@ -5467,7 +5481,6 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         # determine if this is a child
         if df.loc[person_id, 'age_years'] < 15:
             self.is_child = True
-        the_appt_footprint['InpatientDays'] = 5  # placeholder
         the_accepted_facility_level = 1
         self.TREATMENT_ID = 'RTI_Shock_Treatment'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -5519,7 +5532,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         if is_cons_available:
             logger.debug(f"Hypovolemic shock treatment available for person %d",
                          person_id)
-            df.at[person_id, 'rt_med_int'] = True
+            df.at[person_id, 'rt_in_shock'] = False
 
     def did_not_run(self, person_id):
         # Assume that untreated shock leads to death for now

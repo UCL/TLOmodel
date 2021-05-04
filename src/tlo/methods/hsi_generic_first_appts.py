@@ -79,6 +79,9 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             if 'RTI' in self.sim.modules:
                 # change the appointment footprint for general injuries if diagnostic equipment is needed
                 self.sim.modules['RTI'].rti_injury_diagnosis(person_id, the_appt_footprint)
+                df = self.sim.population.props
+                if df.loc[person_id, 'rt_in_shock']:
+                    self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel1'
@@ -299,6 +302,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     else:
                         df.loc[person_id, 'rt_diagnosed'] = True
                         road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
+                    if df.loc[person_id, 'rt_in_shock']:
+                        self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
 
     def did_not_run(self):
         logger.debug(key='message',
@@ -386,9 +391,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                  'rt_injury_7', 'rt_injury_8']
             df = self.sim.population.props
-            if columns[0] in df.columns:  # Simple check to see if RTI module is registered
-                # Determine what this person needs from the first emergency appointment
-                road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
+            road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
+
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -515,7 +519,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         if 'RTI' in self.sim.modules:
             if 'severe_trauma' in symptoms:
-
+                if df.loc[person_id, 'rt_in_shock']:
+                    self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
                 df = self.sim.population.props
                 # Check they haven't died from another source
                 if df.loc[person_id, 'cause_of_death'] != '':
