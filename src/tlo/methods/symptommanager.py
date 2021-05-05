@@ -126,7 +126,9 @@ class DuplicateSymptomWithNonIdenticalPropertiesError(Exception):
 
 class SymptomManager(Module):
     """
-    This module is used to track the symptoms of persons. The addition and removal of symptoms is handled here.
+    This module is used to track the symptoms of persons. The addition and removal of symptoms by disease modules is
+     handled here. This module can also causes symptoms that are not related to any disease module (representing those
+     caused by conditions not represented explicitly in the model).
     """
 
     # Declare Metadata
@@ -144,12 +146,9 @@ class SymptomManager(Module):
         self.resourcefilepath = resourcefilepath
         self.spurious_symptoms = spurious_symptoms
         self.persons_with_newly_onset_symptoms = set()
-
         self.all_registered_symptoms = set()
         self.symptom_names = set()
-
         self.recognised_module_names = None
-
         self.spurious_symptom_resolve_event = None
 
     def get_column_name_for_symptom(self, symptom_name):
@@ -178,10 +177,10 @@ class SymptomManager(Module):
             elif symptom not in self.all_registered_symptoms:
                 raise DuplicateSymptomWithNonIdenticalPropertiesError
 
-    def proces_and_register_generic_symptoms_params(self):
+    def process_and_register_generic_symptoms_params(self):
         """Process the file that has been read into the parameters for genric symptoms and their occurences"""
 
-        generic_symptoms = self.parameters['generic_symptoms_spurious_occurrence']
+        generic_symptoms = self.parameters['generic_symptoms_spurious_occurrence'].copy()
 
         # ensure types are correct:
         generic_symptoms['duration_in_days_of_spurious_occurrence_in_children'] = \
@@ -190,19 +189,11 @@ class SymptomManager(Module):
             generic_symptoms['duration_in_days_of_spurious_occurrence_in_adults'].astype(int)
         generic_symptoms.set_index('generic_symptom_name', drop=True, inplace=True)
 
-        # Store list of generic symptoms
-        self.generic_symptoms = list(generic_symptoms.index)
-
-        # todo - Store table of generic symptoms and their occurences somewhere other than 'self.parameters'
-        self.parameters['generic_symptoms_spurious_occurrence'] = \
-            generic_symptoms[['prob_spurious_occurrence_in_children_per_month',
-                              'prob_spurious_occurrence_in_adults_per_month',
-                              'duration_in_days_of_spurious_occurrence_in_children',
-                              'duration_in_days_of_spurious_occurrence_in_adults'
-                              ]]
+        # Store the data on generic symptoms
+        self.generic_symptoms = generic_symptoms
 
         # Register the Generic Symptoms
-        for generic_symptom_name in self.generic_symptoms:
+        for generic_symptom_name in self.generic_symptoms.index:
             self.register_symptom(
                 Symptom(
                     name=generic_symptom_name,
@@ -218,7 +209,7 @@ class SymptomManager(Module):
     def pre_initialise_population(self):
         """Define the properties for each symptom"""
 
-        self.process_and_register_generic_symptoms()
+        self.process_and_register_generic_symptoms_params()
 
         SymptomManager.PROPERTIES = dict()
         for symptom_name in sorted(self.symptom_names):
@@ -227,7 +218,7 @@ class SymptomManager(Module):
 
     def initialise_population(self, population):
         """
-        Establish the BitSetHandler for each of the symptoms:
+        Establish the Properties and the BitSetHandler for each of the symptoms:
         """
         self.recognised_module_names = [
             m.name for m in self.sim.modules.values() if Metadata.USES_SYMPTOMMANAGER in m.METADATA
@@ -250,22 +241,18 @@ class SymptomManager(Module):
     def initialise_simulation(self, sim):
         """Schedule SpuriousSymptomsOnset/Resolve if the parameter 'spurious_symptoms' is True"""
         if self.spurious_symptoms:
-            # Onset Event
+            # Create and schedule the Onset Event
             sim.schedule_event(
-                SymptomManager_SpuriousSymptomOnset(self),
+                SymptomManager_SpuriousSymptomOnset(module=self),
                 self.sim.date
             )
 
-            # Resolve event (and retain pointer to the event)
-            self.spurious_symptom_resolve_event = SymptomManager_SpuriousSymptomResolve(
-                module=self,
-                generic_symptoms=self.generic_symptoms
-            )
+            # Create and schedule the Resolve event (and retain pointer to the event)
+            self.spurious_symptom_resolve_event = SymptomManager_SpuriousSymptomResolve(module=self)
             sim.schedule_event(
                 self.spurious_symptom_resolve_event,
                 self.sim.date
             )
-
 
     def on_birth(self, mother_id, child_id):
         """Give a value of 0 for each symptom.
@@ -451,6 +438,36 @@ class SymptomManager(Module):
 #   EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
+class SymptomManager_AutoOnsetEvent(Event, PopulationScopeEventMixin):
+    """
+    This utility function will add symptoms. It is scheduled by the SymptomManager to let symptoms 'auto-onset' on a
+    particular date.
+    """
+
+    def __init__(self, module, person_id, symptom_string, disease_module, duration_in_days):
+        super().__init__(module)
+        assert isinstance(module, SymptomManager)
+
+        if not isinstance(person_id, list):
+            person_id = list(person_id)
+
+        self.person_id = person_id
+        self.symptom_string = symptom_string
+        self.disease_module = disease_module
+        self.duration_in_days = duration_in_days
+
+    def apply(self, population):
+        # strip out those who are not alive
+        df = population.props
+        people_to_get_symptom = list(df.index[df.is_alive & (df.index.isin(self.person_id))])
+
+        self.module.change_symptom(person_id=people_to_get_symptom,
+                                   symptom_string=self.symptom_string,
+                                   add_or_remove='+',
+                                   disease_module=self.disease_module,
+                                   duration_in_days=self.duration_in_days)
+
+
 class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
     """
     This utility function will remove symptoms. It is scheduled by the SymptomManager to let symptoms 'auto-resolve'
@@ -485,34 +502,7 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
                                        disease_module=self.disease_module)
 
 
-class SymptomManager_AutoOnsetEvent(Event, PopulationScopeEventMixin):
-    """
-    This utility function will add symptoms. It is scheduled by the SymptomManager to let symptoms 'auto-onset' on a
-    particular date.
-    """
 
-    def __init__(self, module, person_id, symptom_string, disease_module, duration_in_days):
-        super().__init__(module)
-        assert isinstance(module, SymptomManager)
-
-        if not isinstance(person_id, list):
-            person_id = list(person_id)
-
-        self.person_id = person_id
-        self.symptom_string = symptom_string
-        self.disease_module = disease_module
-        self.duration_in_days = duration_in_days
-
-    def apply(self, population):
-        # strip out those who are not alive
-        df = population.props
-        people_to_get_symptom = list(df.index[df.is_alive & (df.index.isin(self.person_id))])
-
-        self.module.change_symptom(person_id=people_to_get_symptom,
-                                   symptom_string=self.symptom_string,
-                                   add_or_remove='+',
-                                   disease_module=self.disease_module,
-                                   duration_in_days=self.duration_in_days)
 
 
 class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixin):
@@ -523,13 +513,10 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
         """This event occurs every day"""
         super().__init__(module, frequency=DateOffset(day=1))
         assert isinstance(module, SymptomManager)
+        self.generic_symptoms = self.module.generic_symptoms
 
     def apply(self, population):
         """Determine who will be onset which which symptoms today"""
-        # todo - convert rates to be those for a day:
-        # todo - processing the file at the __init__ of the event
-
-        params = self.module.parameters['generic_symptoms_spurious_occurrence']
 
         # get indices of adults and children
         df = population.props
@@ -537,10 +524,10 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
         adults_idx = df.loc[df.is_alive & (df.age_years >= 15)].index
 
         # for each generic symptom, impose it on a random sample of persons
-        for symp in params.index:
+        for symp in self.generic_symptoms.index:
             # children:
-            p_symp_children = params.at[symp, 'prob_spurious_occurrence_in_children_per_month']
-            dur_symp_children = params.at[symp, 'duration_in_days_of_spurious_occurrence_in_children']
+            p_symp_children = self.generic_symptoms.at[symp, 'prob_spurious_occurrence_in_children_per_day']
+            dur_symp_children = self.generic_symptoms.at[symp, 'duration_in_days_of_spurious_occurrence_in_children']
             children_to_onset_with_this_symptom = \
                 list(children_idx[self.module.rng.rand(len(children_idx)) < p_symp_children])
 
@@ -556,12 +543,12 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
             self.module.spurious_symptom_resolve_event.schedule_symptom_resolve(
                 person_id=children_to_onset_with_this_symptom,
                 symptom_string=symp,
-                date_of_resolution=self.sim.date + pd.DateOffset(days=int(dur_symp_children))
+                date_of_resolution=(self.sim.date + pd.DateOffset(days=int(dur_symp_children))).date()
             )
 
             # adults:
-            p_symp_adults = params.at[symp, 'prob_spurious_occurrence_in_adults_per_month']
-            dur_symp_adults = params.at[symp, 'duration_in_days_of_spurious_occurrence_in_adults']
+            p_symp_adults = self.generic_symptoms.at[symp, 'prob_spurious_occurrence_in_adults_per_day']
+            dur_symp_adults = self.generic_symptoms.at[symp, 'duration_in_days_of_spurious_occurrence_in_adults']
             adults_to_onset_with_this_symptom = list(adults_idx[self.module.rng.rand(len(adults_idx)) < p_symp_adults])
 
             self.sim.modules['SymptomManager'].change_symptom(
@@ -576,7 +563,7 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
             self.module.spurious_symptom_resolve_event.schedule_symptom_resolve(
                 person_id=adults_to_onset_with_this_symptom,
                 symptom_string=symp,
-                date_of_resolution=self.sim.date + pd.DateOffset(days=int(dur_symp_adults))
+                date_of_resolution=(self.sim.date + pd.DateOffset(days=int(dur_symp_adults))).date()
             )
 
 
@@ -584,29 +571,30 @@ class SymptomManager_SpuriousSymptomResolve(RegularEvent, PopulationScopeEventMi
     """ This event resolves the generic symptoms that have been onset by this module.
     """
 
-    def __init__(self, module, generic_symptoms):
+    def __init__(self, module):
         """This event occurs every day"""
         super().__init__(module, frequency=DateOffset(days=1))
         assert isinstance(module, SymptomManager)
 
-        self.generic_symptoms = generic_symptoms
+        self.generic_symptoms = self.module.generic_symptoms
 
+        # Create the dict structures to store information about for whom and when each symptoms must be resolved
         self.to_resolve = dict()
-        for symp in generic_symptoms:
+        for symp in self.generic_symptoms.index:
             self.to_resolve[symp] = defaultdict(set)
 
     def schedule_symptom_resolve(self, person_id, date_of_resolution, symptom_string):
         """Store information to allow symptoms to be resolved for groups of persons each day"""
-        self.to_resolve[symptom_string][date_of_resolution.date()].update(person_id)
+        self.to_resolve[symptom_string][date_of_resolution].update(person_id)
 
     def apply(self, population):
         """Resolve the symptoms when due; a whole group of persons with the same symptoms at once"""
         df = population.props
-        today = self.sim.date.date()
+        date_today = self.sim.date.date()
 
-        for symp in self.generic_symptoms:
-            if today in self.to_resolve[symp]:
-                person_ids = self.to_resolve[symp].pop(today)
+        for symp in self.to_resolve.keys():
+            if date_today in self.to_resolve[symp]:
+                person_ids = self.to_resolve[symp].pop(date_today)
                 if len(person_ids) > 0:
                     person_ids_alive = list(df.index[df.is_alive & (df.index.isin(person_ids))])
                     self.module.change_symptom(
