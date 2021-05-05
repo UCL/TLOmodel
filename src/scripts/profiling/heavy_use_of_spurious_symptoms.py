@@ -29,7 +29,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = start_date + DateOffset(months=1)
-popsize = 1000
+popsize = 50000
 
 sim = Simulation(start_date=start_date, seed=0)
 
