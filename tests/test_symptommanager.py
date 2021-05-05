@@ -105,9 +105,7 @@ def test_no_symptoms_if_no_diseases():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    generic_symptoms = list(sim.modules['SymptomManager'].generic_symptoms.index)
-
-    for symp in generic_symptoms:
+    for symp in sim.modules['SymptomManager'].generic_symptoms:
         # No one should have any symptom currently (as no disease modules registered)
         assert list() == sim.modules['SymptomManager'].who_has(symp)
 

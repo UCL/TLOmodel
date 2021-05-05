@@ -28,21 +28,21 @@ from tlo.methods.symptommanager import (
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = start_date + DateOffset(years=1)
+end_date = start_date + DateOffset(months=1)
 popsize = 1000
 
-sim = Simulation(start_date=start_date)
+sim = Simulation(start_date=start_date, seed=0)
 
 # Register the core modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       disable_and_reject_all=True),
-             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                                       disable_and_reject_all=True)
              )
 
 # Run the simulation
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-
+# Time with updated implementation (n=1000, dur=1 year):
