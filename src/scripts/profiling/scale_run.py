@@ -10,6 +10,7 @@ import shared
 
 from tlo import Date, Simulation, logging
 from tlo.methods import (
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     depression,
@@ -24,7 +25,9 @@ from tlo.methods import (
     healthsystem,
     labour,
     malaria,
+    newborn_outcomes,
     oesophagealcancer,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -56,7 +59,10 @@ sim.register(
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=rfp),
     healthburden.HealthBurden(resourcefilepath=rfp),
     contraception.Contraception(resourcefilepath=rfp),
+    newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
+    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
     labour.Labour(resourcefilepath=rfp),
+    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=rfp),
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=rfp),
     dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=rfp),
