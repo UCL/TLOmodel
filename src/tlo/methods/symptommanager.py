@@ -304,7 +304,7 @@ class SymptomManager(Module):
         assert (date_of_onset is None) or (isinstance(date_of_onset, pd.Timestamp) and date_of_onset >= self.sim.date)
 
         # If the date of onset if not equal to today's date, then schedule the auto_onset event
-        if date_of_onset is not None:
+        if (date_of_onset is not None) and (date_of_onset > self.sim.date):
             auto_onset_event = SymptomManager_AutoOnsetEvent(self,
                                                              person_id=person_id,
                                                              symptom_string=symptom_string,
@@ -535,7 +535,6 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
                 symptom_string=symp,
                 add_or_remove='+',
                 person_id=children_to_onset_with_this_symptom,
-                date_of_onset=self.sim.date,
                 duration_in_days=None,   # <- resolution for these is handled by the SpuriousSymptomsResolve Event
                 disease_module=self.module,
             )
@@ -555,7 +554,6 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
                 symptom_string=symp,
                 add_or_remove='+',
                 person_id=adults_to_onset_with_this_symptom,
-                date_of_onset=self.sim.date,
                 duration_in_days=None,   # <- resolution for these is handled by the SpuriousSymptomsResolve Event
                 disease_module=self.module
             )
