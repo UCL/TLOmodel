@@ -277,14 +277,14 @@ def test_spurious_symptoms_during_simulation():
     the_generic_symptom = generic_symptoms.iloc[0].generic_symptom_name
     generic_symptoms.loc[
         (the_generic_symptom == generic_symptoms['generic_symptom_name']),
-            ['prob_spurious_occurrence_in_children_per_day',
-             'prob_spurious_occurrence_in_adults_per_day']
+        ['prob_spurious_occurrence_in_children_per_day',
+         'prob_spurious_occurrence_in_adults_per_day']
     ] = (1.0, 1.0)
 
     generic_symptoms.loc[
         (the_generic_symptom == generic_symptoms['generic_symptom_name']),
-            ['duration_in_days_of_spurious_occurrence_in_children',
-             'duration_in_days_of_spurious_occurrence_in_adults']
+        ['duration_in_days_of_spurious_occurrence_in_children',
+         'duration_in_days_of_spurious_occurrence_in_adults']
     ] = (1, 1)
 
     # Run the simulation

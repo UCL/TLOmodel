@@ -28,7 +28,6 @@ from tlo.util import BitsetHandler
 # ---------------------------------------------------------------------------------------------------------
 
 
-
 class Symptom:
     """Data structure to hold the information about a symptom.
     Adult is peron aged 15+
@@ -183,7 +182,8 @@ class SymptomManager(Module):
     def register_generic_symptoms(self):
         """Process the file that has been read into the parameters for genric symptoms and their occurences"""
 
-        self.generic_symptoms = set(self.parameters['generic_symptoms_spurious_occurrence']['generic_symptom_name'].to_list())
+        self.generic_symptoms = set(
+            self.parameters['generic_symptoms_spurious_occurrence']['generic_symptom_name'].to_list())
 
         odds_ratio_health_seeking_in_children = self.parameters['generic_symptoms_spurious_occurrence'].set_index(
             'generic_symptom_name')['odds_ratio_for_health_seeking_in_children'].to_dict()
@@ -386,7 +386,6 @@ class SymptomManager(Module):
 
         return no_symptom[no_symptom].index.tolist()
 
-
     def has_what(self, person_id, disease_module=None):
         """
         This is a helper function that will give a list of strings for the symptoms that a person
@@ -480,9 +479,6 @@ class SymptomManager_AutoOnsetEvent(Event, PopulationScopeEventMixin):
         self.duration_in_days = duration_in_days
 
     def apply(self, population):
-        # strip out those who are not alive
-        df = population.props
-
         self.module.change_symptom(person_id=self.person_id,
                                    symptom_string=self.symptom_string,
                                    add_or_remove='+',
@@ -507,11 +503,11 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
         self.disease_module = disease_module
 
     def apply(self, population):
-        # strip out those who are not alive
-        df = population.props
-        people_to_resolve = list(df.index[df.is_alive & (df.index.isin(self.person_id))])
-
         # todo-checking this works: removing checks from these utility function as they all happen inside change_symptom
+        # strip out those who are not alive
+        # df = population.props
+        # people_to_resolve = list(df.index[df.is_alive & (df.index.isin(self.person_id))])
+        #
         # # find the person_id's for those have this symptom (and this symptom caused by a disease_module if specified)
         # bsh = self.module.bsh[self.symptom_string]
         # have_symptom_from_disease = bsh.has_any(df.index.isin(self.person_id) & df.is_alive, self.disease_module.name)
@@ -576,7 +572,8 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
 
                 idx_grp = idx[group]
                 eligible_to_get_symptom = idx_grp[idx_grp.isin(does_not_have_symptom)]
-                persons_to_onset_with_this_symptom = list(eligible_to_get_symptom[self.rand(len(eligible_to_get_symptom)) < p])
+                persons_to_onset_with_this_symptom = list(
+                    eligible_to_get_symptom[self.rand(len(eligible_to_get_symptom)) < p])
 
                 # Do onset
                 self.sim.modules['SymptomManager'].change_symptom(
@@ -623,7 +620,7 @@ class SymptomManager_SpuriousSymptomResolve(RegularEvent, PopulationScopeEventMi
                 person_ids = self.to_resolve[symp].pop(date_today)
                 person_ids_alive = list(df.index[df.is_alive & (df.index.isin(person_ids))])
                 self.module.change_symptom(
-                    person_id= person_ids_alive,
+                    person_id=person_ids_alive,
                     add_or_remove='-',
                     symptom_string=symp,
                     disease_module=self.module
