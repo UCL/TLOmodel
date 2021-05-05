@@ -552,7 +552,6 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
 
     def apply(self, population):
         """Determine who will be onset which which symptoms today"""
-        print(f'SpuriousSympomOnset on {self.sim.date}')
 
         df = self.sim.population.props
         idx = {
