@@ -16,10 +16,8 @@ from tlo.methods import (
     symptommanager,
 )
 
-# In this file I run the model with a large population twice with the same seed, storing the model run as it's
-# log file and then see if the two logfiles are the same for all the logs which RTI will produce/interact with.
-# Obviously all the logfiles should be the same if the seed is the same, but I don't know how best to check every
-# bit of logging.
+# In this file I run the model with a large population size for a short period of time and dump the population dataframe
+# to try and find the minimum viable population
 # ============================================== Model run ============================================================
 log_config = {
     "filename": "rti_health_system_comparison",  # The name of the output file (a timestamp will be appended).
@@ -68,10 +66,4 @@ logfile = sim.configure_logging(filename="LogFile")
 sim.make_initial_population(n=pop_size)
 # run the simulation
 sim.simulate(end_date=end_date)
-# parse the logfile
-log_df = parse_log_file(logfile)
-# store the logfile
-logfiles_storage = log_df
-df = sim.population.props
-df.to_csv('Documents/big_df.csv')
-print(df.head())
+

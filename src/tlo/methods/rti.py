@@ -3972,9 +3972,9 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6', 'rt_injury_7',
                 'rt_injury_8']
         df = self.sim.population.props
-        persons_injuries = df.loc[[person_id], cols]
 
-        shock_index, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [internal_bleeding_codes])
+        shock_index, counts = road_traffic_injuries.rti_find_and_count_injuries(df.loc[df.rt_road_traffic_inc, cols],
+                                                                                internal_bleeding_codes)
         df.loc[shock_index, 'rt_in_shock'] = True
         # ========================== Decide survival time without medical intervention ================================
         # todo: find better time for survival data without med int for ISS scores
@@ -7297,6 +7297,10 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         # Make some summary statistics
         # Get the dataframe and isolate the important information
         df = population.props
+        # dump dataframe each month if population size is large
+        time_stamped_file_name = "df_at_" + str(self.sim.date.month) + "_" + str(self.sim.date.year)
+        if len(df.loc[df.is_alive]) > 750000:
+            df.to_csv(f"C:/Users/Robbie Manning Smith/Documents/Dataframe_dump/{time_stamped_file_name}.csv")
         road_traffic_injuries = self.sim.modules['RTI']
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                    'rt_injury_7', 'rt_injury_8']
