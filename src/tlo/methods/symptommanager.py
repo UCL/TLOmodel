@@ -280,7 +280,7 @@ class SymptomManager(Module):
         if type(person_id) != list:
             person_id = [person_id]
 
-        # Strip out the person_ids for anyone who is not alive.
+        # Strip out the person_ids for anyone who is not alive:
         person_id = list(df.index[df.is_alive & (df.index.isin(person_id))])
 
         do_checks = False
@@ -503,19 +503,6 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
         self.disease_module = disease_module
 
     def apply(self, population):
-        # todo-checking this works: removing checks from these utility function as they all happen inside change_symptom
-        # strip out those who are not alive
-        # df = population.props
-        # people_to_resolve = list(df.index[df.is_alive & (df.index.isin(self.person_id))])
-        #
-        # # find the person_id's for those have this symptom (and this symptom caused by a disease_module if specified)
-        # bsh = self.module.bsh[self.symptom_string]
-        # have_symptom_from_disease = bsh.has_any(df.index.isin(self.person_id) & df.is_alive, self.disease_module.name)
-        # people_index = have_symptom_from_disease.index[have_symptom_from_disease]
-        #
-        # # run the chg_symptom function
-        # if len(people_index) > 0:
-
         self.module.change_symptom(person_id=self.person_id,
                                    symptom_string=self.symptom_string,
                                    add_or_remove='-',
