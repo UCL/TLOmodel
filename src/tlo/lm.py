@@ -1,7 +1,7 @@
 import numbers
 from enum import Enum, auto
 from math import prod
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -161,7 +161,19 @@ class LinearModel(object):
         return custom_model
 
     def model_string_and_callback_predictors(self):
-        null_op_value = 0 if self.lm_type == LinearModelType.ADDITIVE else 1
+        """Construct model expression string and list of callback predictors.
+
+        Constructs an expression string (to be evaluated by ``pandas.DataFrame.eval``)
+        corresponding to the evaluation of the model output for the subset of the
+        predictors which do not define a custom callback function and the model intercept,
+        or an empty string if no non-callback predictors are present.
+        
+        Additionally returns a list of the omitted predictors with custom callback 
+        functions.
+        """
+        # For additive models a zero coefficient corresponds to no effect while for
+        # multiplicative and logistic models the relevant value is one
+        null_coeff_value = 0 if self.lm_type == LinearModelType.ADDITIVE else 1
         predictor_strings = []
         callback_predictors = []
         for predictor in self.predictors:
@@ -183,8 +195,10 @@ class LinearModel(object):
                         else:
                             predictor_str += f" + (~({any_prev_conds}) & {condition}) * {value}"
                             any_prev_conds += f" | {condition}"
+                # If no 'otherwise' catch-all condition then add term corresponding to
+                # no effect when no previous conditions matched
                 if not has_catch_all_condition:
-                    predictor_str += f" + ~({any_prev_conds}) * {null_op_value}" 
+                    predictor_str += f" + ~({any_prev_conds}) * {null_coeff_value}" 
                 predictor_strings.append(f"({predictor_str})")
             else:
                 callback_predictors.append(predictor)
@@ -202,7 +216,15 @@ class LinearModel(object):
         return model_string, callback_predictors
 
 
-    def predict(self, df: pd.DataFrame, rng: np.random.RandomState = None, **kwargs) -> pd.Series:
+    def predict(self, df: pd.DataFrame, rng: Optional[np.random.RandomState] = None, **kwargs) -> pd.Series:
+        """Evaluate linear model output for a given set of input data.
+
+        :param df: The input ``DataFrame`` containing the input data to evaluate the model with.
+        :param rng: If set to a NumPy ``RandomState`` instance, returned output will be boolean
+          ``Series`` corresponding to Bernoulli random variables sampled according to
+          probabilities specified by model output.
+        :param \**kwargs: Values for any external variables included in model predictors.
+        """
 
         if kwargs:
             new_columns = {}
@@ -212,18 +234,27 @@ class LinearModel(object):
         
         converted_columns = {}
         for column_name, dtype in zip(df.columns, df.dtypes):
+            # `pandas.DataFrame.eval` raises an error when using boolean operations on
+            # columns with a categorical dtype with integer categories therefore if any
+            # such columns are present we create a new DataFrame with any such columns
+            # converted to integer dtype
             if isinstance(dtype, pd.CategoricalDtype) and dtype.categories.dtype == "int":
                 converted_columns[column_name] = df[column_name].astype("int")
         if len(converted_columns) > 0:
             df = df.assign(**converted_columns)
 
+        # TODO: This could be cached so that it only requires evaluation on the initial
+        # `model.predict` call. To be robust to changes to the predictors it may make 
+        # sense to, for example, wrap `predictors` as a property and clear the cache on 
+        # any changes.
         model_string, callback_predictors = self.model_string_and_callback_predictors()
 
         if model_string != "":
-
             try:
-                result = df.eval(model_string)
-            except (TypeError, ValueError):
+                result = df.eval(model_string, engine="numexpr")
+            except (ImportError, TypeError, ValueError):
+                # Fallback to `python` engine to evaluate expression if numexpr not available
+                # or expression cannot be evaluated with numexpr engine
                 result = df.eval(model_string, engine="python")
 
         else:

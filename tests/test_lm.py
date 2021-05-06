@@ -33,7 +33,10 @@ Northern,False,F,91,True,1
 Northern,True,M,29,False,3
 """
 
-EXAMPLE_DF = pd.read_csv(io.StringIO(EXAMPLE_POP), dtype={'li_wealth': pd.CategoricalDtype([1, 2, 3, 4, 5])})
+# Make `li_wealth` column integer categorical to test for failures due to brittle behaviour
+# of Pandas `eval` with columns of this datatype
+EXAMPLE_DF = pd.read_csv(
+    io.StringIO(EXAMPLE_POP), dtype={'li_wealth': pd.CategoricalDtype([1, 2, 3, 4, 5])})
 
 
 def test_of_example_usage():
