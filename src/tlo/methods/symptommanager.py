@@ -16,12 +16,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 
 from collections import defaultdict
 from tlo.util import BitsetHandler
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -146,7 +149,21 @@ class SymptomManager(Module):
         self.spurious_symptoms = spurious_symptoms
         self.persons_with_newly_onset_symptoms = set()
 
-        self.generic_symptoms = set()
+        self.generic_symptoms = {
+            'fever',
+            'vomiting',
+            'stomachache',
+            'sore_throat',
+            'respiratory_symptoms',
+            'headache',
+            'skin_complaint',
+            'dental_complaint',
+            'backache',
+            'injury',
+            'eye_complaint',
+            'diarrhoea'
+        }
+
         self.all_registered_symptoms = set()
         self.symptom_names = set()
 
@@ -180,9 +197,10 @@ class SymptomManager(Module):
                 raise DuplicateSymptomWithNonIdenticalPropertiesError
 
     def register_generic_symptoms(self):
-        """Process the file that has been read into the parameters for genric symptoms and their occurences"""
+        """Register the genric symptoms, using information read in from the ResourceFile."""
 
-        self.generic_symptoms = set(
+        # Check that information is contained in the ResourceFile for every generic symptom that must be defined
+        assert self.generic_symptoms == set(
             self.parameters['generic_symptoms_spurious_occurrence']['generic_symptom_name'].to_list())
 
         odds_ratio_health_seeking_in_children = self.parameters['generic_symptoms_spurious_occurrence'].set_index(
@@ -283,27 +301,25 @@ class SymptomManager(Module):
         # Strip out the person_ids for anyone who is not alive:
         person_id = list(df.index[df.is_alive & (df.index.isin(person_id))])
 
-        do_checks = True
-        if do_checks:
-            # Check that the symptom_string is legitimate
-            assert symptom_string in self.symptom_names, f'Symptom {symptom_string} is not recognised'
-            assert ('sy_' + symptom_string) in df.columns, 'Symptom has not been declared'
+        # Check that the symptom_string is legitimate
+        assert symptom_string in self.symptom_names, f'Symptom {symptom_string} is not recognised'
+        assert ('sy_' + symptom_string) in df.columns, 'Symptom has not been declared'
 
-            # Check that the add/remove signal is legitimate
-            assert add_or_remove in ['+', '-']
+        # Check that the add/remove signal is legitimate
+        assert add_or_remove in ['+', '-']
 
-            # Check that the duration in days makes sense
-            if duration_in_days is not None:
-                assert int(duration_in_days) > 0
+        # Check that the duration in days makes sense
+        if duration_in_days is not None:
+            assert int(duration_in_days) > 0
 
-            # Check that the provided disease_module is a disease_module or is the SymptomManager itself
-            assert disease_module.name in ([self.name] + self.recognised_module_names)
+        # Check that the provided disease_module is a disease_module or is the SymptomManager itself
+        assert disease_module.name in ([self.name] + self.recognised_module_names)
 
-            # Check that a sensible or no date_of_onset is provided
-            assert (date_of_onset is None) or (
-                (type(date_of_onset) == pd.Timestamp)
-                and (date_of_onset >= self.sim.date)
-            )
+        # Check that a sensible or no date_of_onset is provided
+        assert (date_of_onset is None) or (
+            (type(date_of_onset) == pd.Timestamp)
+            and (date_of_onset >= self.sim.date)
+        )
 
         # If the date of onset if not equal to today's date, then schedule the auto_onset event
         if (date_of_onset is not None) and (date_of_onset > self.sim.date):
@@ -333,9 +349,13 @@ class SymptomManager(Module):
 
         else:
             # Remove this disease module as a cause of this symptom
-            # Check that this symptom is being caused by this diease module.
-            assert self.bsh[symptom_string].uncompress(person_id)[disease_module.name].all(), \
-                'Error - request from disease module to remove a symptom that it has not caused.'
+            # But, first, check that this symptom is being caused by this diease module.
+            the_disease_module_is_causing_the_symptom = \
+                self.bsh[symptom_string].uncompress(person_id)[disease_module.name].all()
+            if not the_disease_module_is_causing_the_symptom:
+                logger.debug(f"Request from disease module '{disease_module.name}' to remove the symptom "
+                             f"'{symptom_string}', which it is not currently causing.")
+
             # Do the remove:
             self.bsh[symptom_string].unset(person_id, disease_module.name)
 
@@ -413,7 +433,6 @@ class SymptomManager(Module):
 
         return [s for s in self.symptom_names if person[f'sy_{s}'] > 0]
 
-
     def have_what(self, person_ids):
         """Find the set of symptoms for a list of person_ids.
         NB. This is a fast implementation without the same amount checking as 'has_what'"""
@@ -473,6 +492,7 @@ class SymptomManager(Module):
 # ---------------------------------------------------------------------------------------------------------
 #   EVENTS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class SymptomManager_AutoOnsetEvent(Event, PopulationScopeEventMixin):
     """

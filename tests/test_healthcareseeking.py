@@ -284,7 +284,6 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only():
         'odds_ratio_for_health_seeking_in_adults'
     ]] = 10.0
 
-
     # Run the simulation for one day
     end_date = start_date + DateOffset(days=1)
     popsize = 200
