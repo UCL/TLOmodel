@@ -283,7 +283,7 @@ class SymptomManager(Module):
         # Strip out the person_ids for anyone who is not alive:
         person_id = list(df.index[df.is_alive & (df.index.isin(person_id))])
 
-        do_checks = False
+        do_checks = True
         if do_checks:
             # Check that the symptom_string is legitimate
             assert symptom_string in self.symptom_names, f'Symptom {symptom_string} is not recognised'
@@ -388,7 +388,7 @@ class SymptomManager(Module):
 
     def has_what(self, person_id, disease_module=None):
         """
-        This is a helper function that will give a list of strings for the symptoms that a person
+        This is a helper function that will give a list of strings for the symptoms that a _single_ person
         is currently experiencing.
         Optionally can specify disease_module_name to limit to the symptoms caused by that disease module
 
@@ -412,6 +412,15 @@ class SymptomManager(Module):
             return [s for s in self.symptom_names if disease_module.name in self.bsh[s].to_strings(person[f'sy_{s}'])]
 
         return [s for s in self.symptom_names if person[f'sy_{s}'] > 0]
+
+
+    def have_what(self, person_ids):
+        """Find the set of symptoms for a list of person_ids.
+        NB. This is a fast implementation without the same amount checking as 'has_what'"""
+        df = self.sim.population.props
+        return df.loc[person_ids].apply(
+            lambda p: [s for s in self.symptom_names if p[f'sy_{s}'] > 0], axis=1, result_type='reduce'
+        ).rename('symptoms')
 
     def causes_of(self, person_id, symptom_string):
         """
@@ -455,6 +464,11 @@ class SymptomManager(Module):
                 disease_module=disease_module
             )
 
+    def get_persons_with_newly_onset_symptoms(self):
+        return self.persons_with_newly_onset_symptoms
+
+    def reset_persons_with_newly_onset_symptoms(self):
+        self.persons_with_newly_onset_symptoms.clear()
 
 # ---------------------------------------------------------------------------------------------------------
 #   EVENTS

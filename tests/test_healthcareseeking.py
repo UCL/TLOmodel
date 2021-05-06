@@ -246,11 +246,6 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules()
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation for one day
@@ -272,17 +267,23 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only():
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
                  )
+
+    # Make spurious symptoms certain to occur and cause non-emergency care-seeking:
+    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'][[
+        'prob_spurious_occurrence_in_children_per_day',
+        'prob_spurious_occurrence_in_adults_per_day'
+    ]] = 1.0
+    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'][[
+        'odds_ratio_for_health_seeking_in_children',
+        'odds_ratio_for_health_seeking_in_adults'
+    ]] = 10.0
+
 
     # Run the simulation for one day
     end_date = start_date + DateOffset(days=1)
@@ -290,16 +291,15 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # check that some have symptoms onset recently
-    assert 0 < len(sim.modules['SymptomManager'].persons_with_newly_onset_symptoms)
-
-    # run health-care seeking event:
-    sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.apply(sim.population)
-
     # Check that Generic Non-Emergency HSI events are scheduled but not Emergency HSI
     q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
     assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
     assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
+
+    # And that the persons who have those HSI do have symptoms currently:
+    person_ids = [i[4].target for i in q]
+    for person in person_ids:
+        assert 0 < len(sim.modules['SymptomManager'].has_what(person))
 
 
 def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules():
@@ -314,11 +314,6 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
