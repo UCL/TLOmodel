@@ -26,6 +26,19 @@ from tlo.analysis.utils import (
     get_scenario_outputs,
     load_pickled_dataframes,
     summarize,
+from tlo.methods import (
+    care_of_women_during_pregnancy,
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    labour,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
+    symptommanager,
 )
 
 
@@ -46,6 +59,23 @@ params = extract_params(results_folder)
 
 # TODO -- When the long-runs work, finish off converting this script to use the results from the batchrun system
 
+    # We register all modules in a single call to the register method, calling once with multiple
+    # objects. This is preferred to registering each module in multiple calls because we will be
+    # able to handle dependencies if modules are registered together
+    sim.register(
+        demography.Demography(resourcefilepath=resources),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+        healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
+        symptommanager.SymptomManager(resourcefilepath=resources),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+        healthburden.HealthBurden(resourcefilepath=resources),
+        contraception.Contraception(resourcefilepath=resources),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+        labour.Labour(resourcefilepath=resources),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+    )
 # 2) Extract a specific log series for all runs:
 extracted = extract_results(results_folder,
                             module="tlo.methods.mockitis",

@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
-from tlo.methods import Metadata, demography, postnatal_supervisor_lm
+from tlo.methods import Metadata, postnatal_supervisor_lm
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -284,126 +284,9 @@ class PostnatalSupervisor(Module):
     }
 
     def read_parameters(self, data_folder):
-
-        params = self.parameters
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PostnatalSupervisor.xlsx',
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
-
-        # ======================================= LINEAR MODEL EQUATIONS =============================================
-        # All linear equations used in this module are stored within the pn_linear_equations
-        # parameter below
-
-        # TODO: process of 'selection' of important predictors in linear equations is ongoing, a linear model that
-        #  is empty of predictors at the end of this process will be converted to a set probability
-
-        params['pn_linear_equations'] = {
-
-            # This equation is used to determine a mothers risk of developing obstetric fistula after birth
-            'obstetric_fistula': LinearModel.custom(postnatal_supervisor_lm.predict_obstetric_fistula,
-                                                    parameters=params),
-
-            # This equation is used to determine a mothers risk of secondary postpartum haemorrhage
-            'secondary_postpartum_haem': LinearModel.custom(postnatal_supervisor_lm.predict_secondary_postpartum_haem,
-                                                            parameters=params),
-
-            # This equation is used to determine a mothers risk of dying following a secondary postpartum haemorrhage.
-            # Risk of death is modified by the effect of treatment, if delivered
-            'secondary_postpartum_haem_death': LinearModel.custom(
-                postnatal_supervisor_lm.predict_secondary_postpartum_haem_death, parameters=params),
-
-
-            # This equation is used to determine a mothers risk of developing endometritis infection
-            'endometritis': LinearModel.custom(postnatal_supervisor_lm.predict_endometritis, parameters=params),
-
-            # This equation is used to determine a mothers risk of developing a urinary tract infection
-            'urinary_tract_inf': LinearModel.custom(postnatal_supervisor_lm.predict_urinary_tract_inf,
-                                                    parameters=params),
-
-
-            # This equation is used to determine a mothers risk of developing a skin or soft tissue infection
-            'skin_soft_tissue_inf': LinearModel.custom(postnatal_supervisor_lm.predict_skin_soft_tissue_inf,
-                                                       parameters=params),
-
-            # This equation is used to determine a mothers risk of developing another infection, not defined above
-            'other_maternal_infection': LinearModel.custom(postnatal_supervisor_lm.predict_other_maternal_infection,
-                                                           parameters=params),
-
-            # This equation is used to determine a mothers risk of developing sepsis following one of more of the above
-            # infections
-
-            'sepsis_late_postpartum': LinearModel.custom(postnatal_supervisor_lm.predict_sepsis_late_postpartum,
-                                                         module=self),
-
-            # This equation is used to determine a mothers risk of dying due to sepsis in the postnatal period. Risk of
-            # death is modified by the effect of treatment, if delivered
-            'postnatal_sepsis_death': LinearModel.custom(postnatal_supervisor_lm.predict_postnatal_sepsis_death,
-                                                         parameters=params),
-
-            # This equation is used to determine a mothers risk of developing gestational hypertension in the postnatal
-            # period
-            'gest_htn_pn': LinearModel.custom(postnatal_supervisor_lm.predict_gest_htn_pn, parameters=params),
-
-
-            # This equation is used to determine a mothers risk of developing pre-eclampsia in in the postnatal
-            # period
-            'pre_eclampsia_pn': LinearModel.custom(postnatal_supervisor_lm.predict_pre_eclampsia_pn, parameters=params),
-
-            # This equation is used to determine a mothers risk of dying from eclampsia that has developed in the
-            # postnatal period. Risk of death is mitigated by treatment effects, if treatment is delivered
-            'eclampsia_death_pn': LinearModel.custom(postnatal_supervisor_lm.predict_eclampsia_death_pn,
-                                                     parameters=params),
-
-
-            # This equation is used to determine a mothers risk of dying due to severe hypertension
-            'death_from_hypertensive_disorder_pn': LinearModel.custom(
-                postnatal_supervisor_lm.predict_death_from_hypertensive_disorder_pn, parameters=params),
-
-            # This equation is used to determine a mothers risk of developing anaemia postnatal
-            'anaemia_after_pregnancy': LinearModel.custom(postnatal_supervisor_lm.predict_anaemia_after_pregnancy,
-                                                          module=self),
-
-            # This equation is used to determine a neonates risk of developing early onset neonatal sepsis
-            # (sepsis onsetting prior to day 7) in the first week of life
-            'early_onset_neonatal_sepsis_week_1': LinearModel.custom(
-                postnatal_supervisor_lm.predict_early_onset_neonatal_sepsis_week_1, parameters=params),
-
-            # This equation is used to determine a neonates risk of dying following early onset sepsis in week one.
-            # Risk of death is mitigated by treatment effects, if delivered
-            'early_onset_neonatal_sepsis_week_1_death': LinearModel.custom(
-                postnatal_supervisor_lm.predict_early_onset_neonatal_sepsis_week_1_death, parameters=params),
-
-            # This equation is used to determine a neonates risk of developing late onset neonatal sepsis
-            # (sepsis onsetting between 7 and day 28) after  the first week of life
-            'late_onset_neonatal_sepsis': LinearModel.custom(
-                postnatal_supervisor_lm.predict_late_onset_neonatal_sepsis, parameters=params),
-
-            # This equation is used to determine a neonates risk of dying following late onset neonatal sepsis
-            # (sepsis onsetting between 7 and day 28) after the first week of life
-            'late_neonatal_sepsis_death': LinearModel.custom(
-                postnatal_supervisor_lm.predict_late_neonatal_sepsis_death, parameters=params),
-
-            # This equation is used to determine the probability that a woman will seek care for PNC after delivery
-            'care_seeking_for_first_pnc_visit': LinearModel.custom(
-                postnatal_supervisor_lm.predict_care_seeking_for_first_pnc_visit, parameters=params),
-
-
-            # This equation is used to determine if a mother will seek care for treatment in the instance of an
-            # emergency complication postnatally (sepsis or haemorrhage)
-            'care_seeking_postnatal_complication_mother': LinearModel.custom(
-                postnatal_supervisor_lm.predict_care_seeking_postnatal_complication_mother, parameters=params),
-
-
-            # This equation is used to determine if a mother will seek care for treatment for her newborn in the
-            # instance of them developing an emergency complication postnatally (sepsis)
-            'care_seeking_postnatal_complication_neonate': LinearModel.custom(
-                postnatal_supervisor_lm.predict_care_seeking_postnatal_complication_neonate, parameters=params),
-
-            # This equation is used to determine if a mother will seek care for treatment for her obstetric fistula
-            'care_seeking_for_fistula_repair': LinearModel.custom(
-                postnatal_supervisor_lm.predict_care_seeking_for_fistula_repair, parameters=params),
-
-        }
 
     def initialise_population(self, population):
 
@@ -504,6 +387,119 @@ class PostnatalSupervisor(Module):
                 sensitivity=params['sensitivity_eons_assessment']),
         )
 
+        # ======================================= LINEAR MODEL EQUATIONS =============================================
+        # All linear equations used in this module are stored within the pn_linear_equations
+        # parameter below
+
+        # TODO: process of 'selection' of important predictors in linear equations is ongoing, a linear model that
+        #  is empty of predictors at the end of this process will be converted to a set probability
+
+        params['pn_linear_equations'] = {
+
+            # This equation is used to determine a mothers risk of developing obstetric fistula after birth
+            'obstetric_fistula': LinearModel.custom(postnatal_supervisor_lm.predict_obstetric_fistula,
+                                                    parameters=params),
+
+            # This equation is used to determine a mothers risk of secondary postpartum haemorrhage
+            'secondary_postpartum_haem': LinearModel.custom(postnatal_supervisor_lm.predict_secondary_postpartum_haem,
+                                                            parameters=params),
+
+            # This equation is used to determine a mothers risk of dying following a secondary postpartum haemorrhage.
+            # Risk of death is modified by the effect of treatment, if delivered
+            'secondary_postpartum_haem_death': LinearModel.custom(
+                postnatal_supervisor_lm.predict_secondary_postpartum_haem_death, parameters=params),
+
+            # This equation is used to determine a mothers risk of developing endometritis infection
+            'endometritis': LinearModel.custom(postnatal_supervisor_lm.predict_endometritis, parameters=params),
+
+            # This equation is used to determine a mothers risk of developing a urinary tract infection
+            'urinary_tract_inf': LinearModel.custom(postnatal_supervisor_lm.predict_urinary_tract_inf,
+                                                    parameters=params),
+
+            # This equation is used to determine a mothers risk of developing a skin or soft tissue infection
+            'skin_soft_tissue_inf': LinearModel.custom(postnatal_supervisor_lm.predict_skin_soft_tissue_inf,
+                                                       parameters=params),
+
+            # This equation is used to determine a mothers risk of developing another infection, not defined above
+            'other_maternal_infection': LinearModel.custom(postnatal_supervisor_lm.predict_other_maternal_infection,
+                                                           parameters=params),
+
+            # This equation is used to determine a mothers risk of developing sepsis following one of more of the above
+            # infections
+
+            'sepsis_late_postpartum': LinearModel.custom(postnatal_supervisor_lm.predict_sepsis_late_postpartum,
+                                                         module=self),
+
+            # This equation is used to determine a mothers risk of dying due to sepsis in the postnatal period. Risk of
+            # death is modified by the effect of treatment, if delivered
+            'postnatal_sepsis_death': LinearModel.custom(postnatal_supervisor_lm.predict_postnatal_sepsis_death,
+                                                         parameters=params),
+
+            # This equation is used to determine a mothers risk of developing gestational hypertension in the postnatal
+            # period
+            'gest_htn_pn': LinearModel.custom(postnatal_supervisor_lm.predict_gest_htn_pn, parameters=params),
+
+            # This equation is used to determine a mothers risk of developing pre-eclampsia in in the postnatal
+            # period
+            'pre_eclampsia_pn': LinearModel.custom(postnatal_supervisor_lm.predict_pre_eclampsia_pn, parameters=params),
+
+            # This equation is used to determine a mothers risk of dying from eclampsia that has developed in the
+            # postnatal period. Risk of death is mitigated by treatment effects, if treatment is delivered
+            'eclampsia_death_pn': LinearModel.custom(postnatal_supervisor_lm.predict_eclampsia_death_pn,
+                                                     parameters=params),
+
+            # This equation is used to determine a mothers risk of dying due to severe hypertension
+            'death_from_hypertensive_disorder_pn': LinearModel.custom(
+                postnatal_supervisor_lm.predict_death_from_hypertensive_disorder_pn, parameters=params),
+
+            # This equation is used to determine a mothers risk of developing anaemia postnatal
+            'anaemia_after_pregnancy': LinearModel.custom(postnatal_supervisor_lm.predict_anaemia_after_pregnancy,
+                                                          module=self),
+
+            # This equation is used to determine a neonates risk of developing early onset neonatal sepsis
+            # (sepsis onsetting prior to day 7) in the first week of life
+            'early_onset_neonatal_sepsis_week_1': LinearModel.custom(
+                postnatal_supervisor_lm.predict_early_onset_neonatal_sepsis_week_1, parameters=params),
+
+            # This equation is used to determine a neonates risk of dying following early onset sepsis in week one.
+            # Risk of death is mitigated by treatment effects, if delivered
+            'early_onset_neonatal_sepsis_week_1_death': LinearModel.custom(
+                postnatal_supervisor_lm.predict_early_onset_neonatal_sepsis_week_1_death, parameters=params),
+
+            # This equation is used to determine a neonates risk of developing late onset neonatal sepsis
+            # (sepsis onsetting between 7 and day 28) after  the first week of life
+            'late_onset_neonatal_sepsis': LinearModel.custom(
+                postnatal_supervisor_lm.predict_late_onset_neonatal_sepsis, parameters=params),
+
+            # This equation is used to determine a neonates risk of dying following late onset neonatal sepsis
+            # (sepsis onsetting between 7 and day 28) after the first week of life
+            'late_neonatal_sepsis_death': LinearModel.custom(
+                postnatal_supervisor_lm.predict_late_neonatal_sepsis_death, parameters=params),
+
+            # This equation is used to determine the probability that a woman will seek care for PNC after delivery
+            'care_seeking_for_first_pnc_visit': LinearModel.custom(
+                postnatal_supervisor_lm.predict_care_seeking_for_first_pnc_visit, parameters=params),
+
+            # This equation is used to determine if a mother will seek care for treatment in the instance of an
+            # emergency complication postnatally (sepsis or haemorrhage)
+            'care_seeking_postnatal_complication_mother': LinearModel.custom(
+                postnatal_supervisor_lm.predict_care_seeking_postnatal_complication_mother, parameters=params),
+
+            # This equation is used to determine if a mother will seek care for treatment for her newborn in the
+            # instance of them developing an emergency complication postnatally (sepsis)
+            'care_seeking_postnatal_complication_neonate': LinearModel.custom(
+                postnatal_supervisor_lm.predict_care_seeking_postnatal_complication_neonate, parameters=params),
+
+            # This equation is used to determine if a mother will seek care for treatment for her obstetric fistula
+            'care_seeking_for_fistula_repair': LinearModel.custom(
+                postnatal_supervisor_lm.predict_care_seeking_for_fistula_repair, parameters=params),
+
+        }
+
+        if 'Hiv' not in self.sim.modules:
+            logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
+                                               'testing will not happen in postnatal care')
+
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
 
@@ -531,6 +527,7 @@ class PostnatalSupervisor(Module):
     def further_on_birth_postnatal_supervisor(self, mother_id, child_id):
         df = self.sim.population.props
         params = self.parameters
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
         # We store the ID number of the child this woman has most recently delivered as a property of the woman. This is
@@ -588,7 +585,8 @@ class PostnatalSupervisor(Module):
                     df.at[mother_id, 'pn_htn_disorders'] = df.at[mother_id, 'ps_htn_disorders']
 
                 else:
-                    store_dalys_in_mni(mother_id, 'hypertension_resolution')
+                    if not pd.isnull(mni[mother_id]['hypertension_onset']):
+                        store_dalys_in_mni(mother_id, 'hypertension_resolution')
                     df.at[mother_id, 'pn_htn_disorders'] = 'resolved'
 
             # Currently we assume women who received antihypertensive in the antenatal period will continue to use them
@@ -930,7 +928,8 @@ class PostnatalSupervisor(Module):
 
             # Those women who die have InstantaneousDeath scheduled
             for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
-                self.sim.schedule_event(demography.InstantaneousDeath(self, person, cause='maternal'), self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=person, cause='maternal',
+                                                        originating_module=self.sim.modules['PostnatalSupervisor'])
                 del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]
 
         # ----------------------------------------- CARE SEEKING ------------------------------------------------------
@@ -1090,7 +1089,7 @@ class PostnatalSupervisor(Module):
                                                                                            'pn_gest_htn_on_treatment']:
                     hypertension_diagnosed = True
 
-                if ~df.at[individual_id, 'pn_gest_htn_on_treatment']:
+                if not df.at[individual_id, 'pn_gest_htn_on_treatment']:
                     self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'hypertension_onset')
 
         if hypertension_diagnosed or proteinuria_diagnosed:
@@ -1186,17 +1185,14 @@ class PostnatalSupervisor(Module):
                     logger.debug(key='message', data='Neonate of a HIV +ve mother has been referred for '
                                                      'HIV testing during PNC at 6 weeks')
 
+                    individual_id = int(individual_id)
+
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         HSI_Hiv_TestAndRefer(person_id=individual_id, module=self.sim.modules['Hiv']),
                         topen=self.sim.date,
                         tclose=None,
                         priority=0)
-                else:
-                    logger.debug(key='message', data='Neonate of a HIV +ve mother has not been referred for '
-                                                     'HIV testing during PNC at 6 weeks')
-            else:
-                logger.debug(key='message',  data='HIV module is not registered in this simulation run and therefore '
-                                                  'HIV testing will not happen in postnatal care')
+
         hsi_event.target = mother_id
 
     def apply_risk_of_maternal_or_neonatal_death_postnatal(self, mother_or_child, individual_id):
@@ -1267,8 +1263,9 @@ class PostnatalSupervisor(Module):
                 logger.debug(key='message', data=f'mother {individual_id} has died due to complications of the '
                                                  f'postnatal period')
 
-                self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
-                                                                      cause='maternal'), self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+                                                        originating_module=self.sim.modules['PostnatalSupervisor'])
+
                 self.postnatal_tracker['postnatal_death'] += 1
                 del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[individual_id]
 
@@ -1291,8 +1288,8 @@ class PostnatalSupervisor(Module):
                     logger.debug(key='message', data=f'person {individual_id} has died due to late neonatal sepsis on '
                                                      f'date {self.sim.date}')
 
-                    self.sim.schedule_event(demography.InstantaneousDeath(
-                        self, individual_id, cause='neonatal'), self.sim.date)
+                    self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='neonatal',
+                                                            originating_module=self.sim.modules['PostnatalSupervisor'])
 
                     self.postnatal_tracker['neonatal_death'] += 1
                     self.postnatal_tracker['neonatal_sepsis_death'] += 1
@@ -1402,7 +1399,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             if not pd.isnull(mni[person]['hypertension_onset']):
                 store_dalys_in_mni(person, 'hypertension_resolution')
 
-        df.loc[week_8_postnatal_women_htn, 'pn_htn_disorders'] = 'none'
+        df.loc[week_8_postnatal_women, 'pn_htn_disorders'] = 'none'
 
         week_8_postnatal_women_anaemia = \
             df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8) & \
@@ -1425,8 +1422,6 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Schedule event that deletes the mni dictionary, we reset in greater than one months time to allow dalys to be
         # counted
 
-        # TODO: This could crash if women become pregnant again soon after the postnatal period. AT is there a cleaner
-        #  way to do this?
         for person in week_8_postnatal_women.loc[week_8_postnatal_women].index:
             mni[person]['delete_mni'] = True
 

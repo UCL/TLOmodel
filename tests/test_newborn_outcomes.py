@@ -5,7 +5,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -19,7 +19,7 @@ from tlo.methods import (
     symptommanager,
 )
 
-seed = 567
+seed = 823
 
 
 # The resource files
@@ -82,7 +82,7 @@ def register_modules(ignore_cons_constraints):
                                            ignore_cons_constraints=ignore_cons_constraints),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
@@ -237,9 +237,7 @@ def test_twin_and_single_twin_still_birth_logic_for_twins():
     assert (mni[mother_id]['twin_count'] == 2)
 
     # And using that logging registered that one twin had died intrapartum and scheduled the death event accordingly
-    events = sim.find_events_for_person(person_id=child_id_two)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not sim.population.props.at[child_id_two, 'is_alive']
 
 
 def test_care_seeking_for_twins_delivered_at_home_who_develop_complications():
@@ -457,6 +455,7 @@ def test_function_which_applies_risk_of_death_following_birth():
     params['cfr_severe_enceph'] = 1
     params['cfr_congenital_anomaly'] = 1
     params['cfr_rds_preterm'] = 1
+    params['cfr_neonatal_sepsis'] = 1
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
