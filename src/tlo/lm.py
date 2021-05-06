@@ -1,5 +1,6 @@
 import numbers
 from enum import Enum, auto
+from math import prod
 from typing import Any, Callable, Union
 
 import numpy as np
@@ -12,6 +13,7 @@ logger.setLevel(logging.INFO)
 
 
 class Predictor(object):
+
     def __init__(self, property_name: str = None, external: bool = False):
         """A Predictor variable for the regression model. The property_name is a property of the
          population dataframe e.g. age, sex, etc."""
@@ -20,7 +22,6 @@ class Predictor(object):
         # If this is a property that is not part of the population dataframe
         if external:
             assert property_name is not None, "Can't have an unnamed external predictor"
-            # It will be an private column appended to the dataframe
             self.property_name = f'__{self.property_name}__'
 
         self.conditions = list()
@@ -83,52 +84,6 @@ class Predictor(object):
         self.conditions.append((parsed_condition, coefficient))
         return self
 
-    def predict(self, df: pd.DataFrame) -> pd.Series:
-        """Will add the value(s) of this predictor to the output series, checking values in the supplied
-        dataframe"""
-
-        # We want to "short-circuit" values i.e. if an individual in a population matches a certain
-        # condition, we don't want that individual to be matched in any subsequent conditions
-
-        # result of assigning coefficients on this predictor
-        output = pd.Series(data=np.nan, index=df.index)
-
-        # if this predictor's coefficient is calculated by callback, run it and return
-        if self.callback:
-            # note that callback only works on single column
-            output = df[self.property_name].apply(self.callback)
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(key='debug', data=f'predictor: {self.property_name}; function: {self.callback}; '
-                                               f'matched: {len(df)}')
-            return output
-
-        # keep a record of all rows matched by this predictor's conditions
-        matched = pd.Series(False, index=df.index)
-
-        for condition, value in self.conditions:
-            # don't include rows that were matched by a previous condition
-            if condition:
-                unmatched_condition = f'{condition} & (~@matched)'
-            else:
-                unmatched_condition = '~@matched'
-
-            # rows matching the current conditional
-            mask = df.eval(unmatched_condition)
-
-            # test if mask includes rows that were already matched by a previous condition
-            assert not (matched & mask).any(), f'condition "{unmatched_condition}" matches rows already matched'
-
-            # update elements in the output series with the corresponding value for the condition
-            output[mask] = value
-
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(key='debug', data=f'predictor: {self.property_name}; condition: {condition}; '
-                                               f'value: {value}; matched rows: {mask.sum()}/{len(mask)}')
-
-            # add this condition's matching rows to the list of matched rows
-            matched = (matched | mask)
-        return output
-
     def __str__(self):
         if self.property_name and self.property_name.startswith('__'):
             name = f'{self.property_name.strip("__")} (external)'
@@ -164,6 +119,7 @@ class LinearModelType(Enum):
 
 
 class LinearModel(object):
+
     def __init__(self, lm_type: LinearModelType, intercept: float, *args: Predictor):
         """
         A linear model has an intercept and zero or more Predictor variables.
@@ -204,63 +160,94 @@ class LinearModel(object):
             setattr(custom_model, k, v)
         return custom_model
 
-    def predict(self, df: pd.DataFrame, rng: np.random.RandomState = None, **kwargs) -> pd.Series:
-        """Will call each Predictor's `predict` methods passing the supplied dataframe"""
+    def model_string_and_callback_predictors(self):
+        null_op_value = 0 if self.lm_type == LinearModelType.ADDITIVE else 1
+        predictor_strings = []
+        callback_predictors = []
+        for predictor in self.predictors:
+            if predictor.callback is None:
+                has_catch_all_condition = False
+                for i, (condition, value) in enumerate(predictor.conditions):
+                    if i == 0:
+                        if condition is None:
+                            predictor_str = f"{value}"
+                            any_prev_conds = f"True"
+                            has_catch_all_condition = True
+                        else:
+                            predictor_str = f"({condition}) * {value}"
+                            any_prev_conds = f"{condition}"
+                    else:
+                        if condition is None:
+                            predictor_str += f" + (~({any_prev_conds})) * {value}"
+                            has_catch_all_condition = True
+                        else:
+                            predictor_str += f" + (~({any_prev_conds}) & {condition}) * {value}"
+                            any_prev_conds += f" | {condition}"
+                if not has_catch_all_condition:
+                    predictor_str += f" + ~({any_prev_conds}) * {null_op_value}" 
+                predictor_strings.append(f"({predictor_str})")
+            else:
+                callback_predictors.append(predictor)
 
-        # addition external variables used in the model but not part of the population dataframe
+        if len(predictor_strings) > 0:
+    
+            if (self.lm_type == LinearModelType.ADDITIVE and self.intercept != 0) or self.intercept != 1:
+                predictor_strings.append(f"{self.intercept}")
+
+        if self.lm_type == LinearModelType.ADDITIVE:
+            model_string = " + ".join(predictor_strings)
+        else:
+            model_string = " * ".join(predictor_strings)
+
+        return model_string, callback_predictors
+
+
+    def predict(self, df: pd.DataFrame, rng: np.random.RandomState = None, **kwargs) -> pd.Series:
+
         if kwargs:
             new_columns = {}
             for column_name, value in kwargs.items():
                 new_columns[f'__{column_name}__'] = kwargs[column_name]
             df = df.assign(**new_columns)
+        
+        converted_columns = {}
+        for column_name, dtype in zip(df.columns, df.dtypes):
+            if isinstance(dtype, pd.CategoricalDtype) and dtype.categories.dtype == "int":
+                converted_columns[column_name] = df[column_name].astype("int")
+        if len(converted_columns) > 0:
+            df = df.assign(**converted_columns)
 
-        indicator_property_names_not_in_df = [p.property_name for p in self.predictors
-                                              if (p.property_name is not None)
-                                              and (p.property_name not in df.columns)]
+        model_string, callback_predictors = self.model_string_and_callback_predictors()
 
-        assert not indicator_property_names_not_in_df,\
-            f"Predictor variables not in df: {indicator_property_names_not_in_df}"
+        if model_string != "":
 
-        assert all([p.property_name in df.columns
-                    for p in self.predictors
-                    if p.property_name is not None]), "Predictor variables not in dataframe"
-
-        # Store the result of the calculated values of Predictors
-        res_by_predictor = pd.DataFrame(index=df.index)
-        res_by_predictor[f'__intercept{id(self)}__'] = self.intercept
-
-        for predictor in self.predictors:
-            res_by_predictor[predictor] = predictor.predict(df)
-
-        # Do appropriate transformation on output
-        if self.lm_type is LinearModelType.ADDITIVE:
-            # print("Linear Model: Prediction will be sum of each effect size.")
-            res_by_predictor = res_by_predictor.sum(axis=1, skipna=True)
-
-        elif self.lm_type is LinearModelType.LOGISTIC:
-            # print("Logistic Regression Model: Prediction will be transform to probabilities. " \
-            #       "Intercept assumed to be Odds and effect sizes assumed to be Odds Ratios.")
-            odds = res_by_predictor.prod(axis=1, skipna=True)
-            res_by_predictor = odds / (1 + odds)
-
-        elif self.lm_type is LinearModelType.MULTIPLICATIVE:
-            # print("Multiplicative Model: Prediction will be multiplication of each effect size.")
-            res_by_predictor = res_by_predictor.prod(axis=1, skipna=True)
+            try:
+                result = df.eval(model_string)
+            except (TypeError, ValueError):
+                result = df.eval(model_string, engine="python")
 
         else:
-            raise ValueError(f'Unhandled linear model type: {self.lm_type}')
+            result = pd.Series(data=self.intercept, index=df.index)
 
-        # if the user supplied a random number generator then they want outcomes, not probabilities
+        if len(callback_predictors) > 0:
+            callback_results = [df[p.property_name].apply(p.callback) for p in callback_predictors]
+            if self.lm_type == LinearModelType.ADDITIVE:
+                result += sum(callback_results)
+            else:
+                result *= prod(callback_results)
+
+        if self.lm_type == LinearModelType.LOGISTIC:
+            result = result / (1 + result)
+
         if rng:
-            outcome = rng.random_sample(len(res_by_predictor)) < res_by_predictor
+            outcome = rng.random_sample(len(result)) < result
             # pop the boolean out of the series if we have a single row, otherwise return the series
             if len(outcome) == 1:
                 return outcome.iloc[0]
             else:
                 return outcome
-
-        # return the raw result from the model
-        return res_by_predictor
+        else:
+            return result
 
     @staticmethod
     def multiplicative(*predictors: Predictor):

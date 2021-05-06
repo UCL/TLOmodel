@@ -1,36 +1,39 @@
+# TODO: Additional edge cases to test: model with no predictors, model with nan intercept (?)
+
 import io
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from tlo.lm import LinearModel, LinearModelType, Predictor
 
-EXAMPLE_POP = """region_of_residence,li_urban,sex,age_years,sy_vomiting
-Northern,True,M,12,False
-Central,True,M,6,True
-Northern,True,M,24,False
-Southern,True,M,46,True
-Central,True,M,91,True
-Central,False,M,16,False
-Southern,False,F,80,True
-Northern,True,F,99,False
-Western,True,F,63,False
-Central,True,F,51,True
-Central,True,M,57,False
-Central,False,F,2,False
-Central,True,F,93,False
-Western,False,M,15,True
-Western,False,M,5,False
-Northern,True,M,29,True
-Western,True,M,63,False
-Southern,True,F,54,False
-Western,False,M,94,False
-Northern,False,F,91,True
-Northern,True,M,29,False
+EXAMPLE_POP = """region_of_residence,li_urban,sex,age_years,sy_vomiting,li_wealth
+Northern,True,M,12,False,3
+Central,True,M,6,True,2
+Northern,True,M,24,False,5
+Southern,True,M,46,True,1
+Central,True,M,91,True,1
+Central,False,M,16,False,4
+Southern,False,F,80,True,2
+Northern,True,F,99,False,3
+Western,True,F,63,False,5
+Central,True,F,51,True,2
+Central,True,M,57,False,3
+Central,False,F,2,False,1
+Central,True,F,93,False,4
+Western,False,M,15,True,2
+Western,False,M,5,False,3
+Northern,True,M,29,True,4
+Western,True,M,63,False,1
+Southern,True,F,54,False,5
+Western,False,M,94,False,2
+Northern,False,F,91,True,1
+Northern,True,M,29,False,3
 """
 
-EXAMPLE_DF = pd.read_csv(io.StringIO(EXAMPLE_POP))
+EXAMPLE_DF = pd.read_csv(io.StringIO(EXAMPLE_POP), dtype={'li_wealth': pd.CategoricalDtype([1, 2, 3, 4, 5])})
 
 
 def test_of_example_usage():
@@ -48,7 +51,8 @@ def test_of_example_usage():
                               .when('< 35', 0.0003)
                               .when('< 60', 0.0004)
                               .otherwise(0.0005),
-        Predictor('sy_vomiting').when(True, 0.00001).otherwise(0.00002)
+        Predictor('sy_vomiting').when(True, 0.00001).otherwise(0.00002),
+        Predictor('li_wealth').when(1, 0.001).when(2, 0.002).otherwise(0.003)
     )
 
     eq.predict(EXAMPLE_DF)
@@ -142,7 +146,7 @@ def test_external_variable():
         LinearModelType.ADDITIVE,
         0.0,
         Predictor('region_of_residence').when('Northern', 0.1).otherwise(0.3),
-        Predictor('year', external=True).when('.between(0,2019)', 1).when(2020, 2).otherwise(3)
+        Predictor('year', external=True).when('<= 2019', 1).when(2020, 2).otherwise(3)
     )
 
     output = eq.predict(EXAMPLE_DF, year=2010)
@@ -290,7 +294,7 @@ def test_logistic_application_tob():
 
     lm_tob_probs = eq_tob.predict(df.loc[df.is_alive & (df.age_years >= 15)])
 
-    assert tob_probs.equals(lm_tob_probs)
+    assert np.allclose(tob_probs, lm_tob_probs)
 
 
 def test_logisitc_HSB_example():
@@ -407,7 +411,7 @@ def test_logisitc_HSB_example():
 
     prob_seeking_care_lm = lm.predict(df, year=2015)
 
-    assert prob_seeking_care_lm.equals(prob_seeking_care)
+    assert np.allclose(prob_seeking_care_lm, prob_seeking_care)
 
 
 def test_using_int_as_intercept():
