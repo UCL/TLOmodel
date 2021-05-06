@@ -19,7 +19,8 @@ from tlo.methods.symptommanager import (
     DuplicateSymptomWithNonIdenticalPropertiesError,
     Symptom,
     SymptomManager_AutoOnsetEvent,
-    SymptomManager_AutoResolveEvent, SymptomManager_SpuriousSymptomOnset,
+    SymptomManager_AutoResolveEvent,
+    SymptomManager_SpuriousSymptomOnset,
 )
 
 try:

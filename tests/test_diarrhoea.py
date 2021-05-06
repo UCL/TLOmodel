@@ -410,7 +410,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     # run without spurious symptoms
     run(spurious_symptoms=False)
 
-    # run with spurious symptoms
+    # # run with spurious symptoms
     run(spurious_symptoms=True)
 
 
