@@ -28,8 +28,10 @@ from tlo.methods import (
     labour,
     malaria,
     mockitis,
+    ncds,
     newborn_outcomes,
     oesophagealcancer,
+    other_adult_cancers,
     postnatal_supervisor,
     postnatal_supervisor_lm,
     pregnancy_supervisor,
@@ -84,7 +86,9 @@ class LongRun(BaseScenario):
             epi.Epi(resourcefilepath=self.resources),
             depression.Depression(resourcefilepath=self.resources),
             oesophagealcancer.OesophagealCancer(resourcefilepath=self.resources),
-            epilepsy.Epilepsy(resourcefilepath=self.resources)
+            epilepsy.Epilepsy(resourcefilepath=self.resources),
+            other_adult_cancers.OtherAdultCancer(resourcefilepath=self.resources),
+            ncds.Ncds(resourcefilpeath=self.resources)
         ]
 
     def draw_parameters(self, draw_number, rng):
