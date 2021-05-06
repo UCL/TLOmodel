@@ -23,7 +23,7 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-pop_size = 100
+pop_size = 1000
 seed = 146
 
 log_config = {
@@ -43,7 +43,7 @@ sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))  # service_availability=service_availability
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 # sim.register(simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath))

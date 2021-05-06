@@ -76,6 +76,12 @@ class Wasting(Module):
             Types.REAL, 'odds ratio of wasting if household wealth is middle Q3, ref group Q1'),
         'or_wasting_hhwealth_Q2': Parameter(
             Types.REAL, 'odds ratio of wasting if household wealth is richer Q2, ref group Q1'),
+        'or_wasting_preterm_and_AGA': Parameter(
+            Types.REAL, 'odds ratio of wasting if born preterm and adequate for gestational age'),
+        'or_wasting_SGA_and_term': Parameter(
+            Types.REAL, 'relative risk of wasting if born term and small for geatational age'),
+        'or_wasting_SGA_and_preterm': Parameter(
+            Types.REAL, 'odds ratio of wasting if born preterm and small for gestational age'),
         # incidence parameters
         'base_inc_rate_wasting_by_agegp': Parameter(
             Types.LIST, 'List with baseline incidence of wasting by age group'),
@@ -144,6 +150,8 @@ class Wasting(Module):
         'proportion_-3<=WHZ<-2_with_kwashiorkor_age_36_59mo': Parameter(
             Types.REAL, 'proportion of moderate wasting by WHZ with bilateral oedema, for age group 36 to <60 months'),
         # death CFR, risk factors
+        'base_death_rate_untreated_SAM': Parameter(
+            Types.REAL, 'baseline death rate of untreated SAM'),
         'cfr_SAM_inpatient_care': Parameter(
             Types.REAL, 'case-fatality-rate of complicated SAM in inpatient care'),
         'cfr_SAM_outpatient_care': Parameter(
@@ -204,7 +212,7 @@ class Wasting(Module):
         self.symptoms = {
             'palmar_pallor',
             'oedema',
-            'lack_of_appetite',
+            'poor_appetite',
             'lethargic',
             'dehydration'
         }
@@ -356,6 +364,23 @@ class Wasting(Module):
         else:
             df.at[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
 
+    def complications_in_sam(self, person_id):
+        """
+        Function to determine whether the individual will have medical complications, applicable to SAM cases only,
+        requiring inpatient care.
+        :param person_id:
+        :return:
+        """
+        df = self.sim.population.props
+        p = self.parameters
+
+        if df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM':
+            return
+
+        # Determine those SAM with complications that need inpatient treatment
+        if self.rng.rand() < p['prob_complications_in_SAM']:
+            df.at[person_id, 'un_SAM_with_complications'] = True
+
     def initialise_population(self, population):
         """
         Set our property values for the initial population.
@@ -412,17 +437,28 @@ class Wasting(Module):
                 return LinearModel(
                     LinearModelType.LOGISTIC,
                     intercept,  # baseline odds: get_odds_wasting(agegp=agegp)
-                    Predictor('li_bmi').when(1, p['or_wasting_motherBMI_underweight']),
+                    # Predictor('li_bmi').when(1, p['or_wasting_motherBMI_underweight']), todo: mother_id given in initation?
                     Predictor('li_wealth').when(2, p['or_wasting_hhwealth_Q2'])
                         .when(3, p['or_wasting_hhwealth_Q3'])
                         .when(4, p['or_wasting_hhwealth_Q4'])
-                        .when(5, p['or_wasting_hhwealth_Q5']),
+                        .when(5, p['or_wasting_hhwealth_Q5'])
+                        .otherwise(0.0),
+                    Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
+                                     '& (nb_late_preterm == False) & (nb_early_preterm == False)',
+                                     p['or_wasting_SGA_and_term']),
+                    Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
+                                     '& (nb_late_preterm == True) | (nb_early_preterm == True)',
+                                     p['or_wasting_SGA_and_preterm']),
+                    Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
+                                     '& (nb_late_preterm == True) | (nb_early_preterm == True)',
+                                     p['or_wasting_preterm_and_AGA'])
                 )
 
             unscaled_lm = make_linear_model_wasting(agegp, intercept=get_odds_wasting(agegp=agegp))
             target_mean = get_odds_wasting(agegp='12_23mo')
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1)]).mean()
-            scaled_intercept = get_odds_wasting(agegp) * (target_mean / actual_mean)
+            scaled_intercept = get_odds_wasting(agegp) * (target_mean / actual_mean) if \
+                (target_mean != 0 and actual_mean != 0) else 1.0
             scaled_lm = make_linear_model_wasting(agegp, intercept=scaled_intercept)
             return scaled_lm
 
@@ -502,6 +538,22 @@ class Wasting(Module):
                                                   & (df.un_WHZ_category == whz)]
             self.low_muac_distribution_by_WHZ(idx=index_36_59mo_with_wasting, whz=whz, agegp='36_59mo')
 
+        # Give MUAC distribution for WHZ>=-2 ('well' group) ---------
+        muac_distribution_in_well_group = norm(loc=p['MUAC_distribution_WHZ>=-2'][0],
+                                               scale=p['MUAC_distribution_WHZ>=-2'][1])
+        # get probability of MUAC <115mm
+        probability_over_or_equal_115 = muac_distribution_in_well_group.sf(115)
+        probability_over_or_equal_125 = muac_distribution_in_well_group.sf(125)
+
+        prob_less_than_115 = 1 - probability_over_or_equal_115
+        pro_between_115_125 = probability_over_or_equal_115 - probability_over_or_equal_125
+
+        for id in df.index[df.is_alive & ((df.age_exact_years >= 0.5) & (
+            df.age_exact_years < 1.5)) & (df.un_WHZ_category == 'WHZ>=-2')]:
+            muac_cat = self.rng.choice(['<115mm', '115-<125mm', '>=125mm'],
+                                       p=[prob_less_than_115, pro_between_115_125, probability_over_or_equal_125])
+            df.at[id, 'un_wasting_MUAC_category'] = muac_cat
+
     def initialise_simulation(self, sim):
         """Prepares for simulation:
         * Schedules the main polling event
@@ -514,7 +566,7 @@ class Wasting(Module):
 
         # event = WastingPollingEvent(self)
         # sim.schedule_event(event, sim.date + DateOffset(months=6))
-        sim.schedule_event(WastingPollingEvent2(self), sim.date + DateOffset(months=6))
+        sim.schedule_event(WastingIncidencePollingEvent(self), sim.date + DateOffset(months=6))
 
         event = WastingLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=12))
@@ -548,8 +600,6 @@ class Wasting(Module):
                         .when('.between(3,3)', p['base_inc_rate_wasting_by_agegp'][4])
                         .when('.between(4,4)', p['base_inc_rate_wasting_by_agegp'][5])
                         .otherwise(0.0),
-                    Predictor('nb_size_for_gestational_age').when('small_for_gestational_age',
-                                                                  p['rr_wasting_SGA_and_term']),
                     Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                      '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                      p['rr_wasting_SGA_and_term']),
@@ -565,7 +615,8 @@ class Wasting(Module):
             target_mean = p[f'base_inc_rate_wasting_by_agegp'][2]
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1) &
                                                      (df.un_WHZ_category == 'WHZ>=-2')]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean)
+            scaled_intercept = 1.0 * (target_mean / actual_mean) if \
+                (target_mean != 0 and actual_mean != 0) else 1.0
             scaled_lm = make_lm_wasting_incidence(intercept=scaled_intercept)
             return scaled_lm
 
@@ -618,17 +669,15 @@ class Wasting(Module):
                         .when('.between(3,3)', p['progression_severe_wasting_by_agegp'][4])
                         .when('.between(4,4)', p['progression_severe_wasting_by_agegp'][5])
                         .otherwise(0.0),
-                        Predictor('nb_size_for_gestational_age').when('small_for_gestational_age',
-                                                                      p['rr_progress_severe_wasting_SGA_and_term']),
-                        Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
-                                         '& (nb_late_preterm == False) & (nb_early_preterm == False)',
-                                         p['rr_progress_severe_wasting_SGA_and_term']),
-                        Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
-                                         '& (nb_late_preterm == True) | (nb_early_preterm == True)',
-                                         p['rr_progress_severe_wasting_SGA_and_preterm']),
-                        Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
-                                         '& (nb_late_preterm == True) | (nb_early_preterm == True)',
-                                         p['rr_progress_severe_wasting_preterm_and_AGA'])
+                        # Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
+                        #                  '& (nb_late_preterm == False) & (nb_early_preterm == False)',
+                        #                  p['rr_progress_severe_wasting_SGA_and_term']),
+                        # Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
+                        #                  '& (nb_late_preterm == True) | (nb_early_preterm == True)',
+                        #                  p['rr_progress_severe_wasting_SGA_and_preterm']),
+                        # Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
+                        #                  '& (nb_late_preterm == True) | (nb_early_preterm == True)',
+                        #                  p['rr_progress_severe_wasting_preterm_and_AGA'])
                         )
 
         # --------------------------------------------------------------------------------------------
@@ -645,7 +694,8 @@ class Wasting(Module):
                     intercept,
                     Predictor('un_SAM_management_facility_type')
                         .when('inpatient', p['cfr_SAM_inpatient_care'])  # proxy for complicated SAM
-                        .when('outpatient', p['cfr_SAM_outpatient_care']),  # proxy for uncomplicated SAM
+                        .when('outpatient', p['cfr_SAM_outpatient_care'])  # proxy for uncomplicated SAM
+                        .otherwise(p['base_death_rate_untreated_SAM']),
                     Predictor().when('(un_wasting_bilateral_oedema == False) & '
                                      '(un_WHZ_category == "WHZ<-3") & (un_wasting_MUAC_category == "115-<125mm")',
                                      p['rr_SAM_death_WHZ<-3_only']),
@@ -670,8 +720,9 @@ class Wasting(Module):
             target_mean = p[f'cfr_SAM_inpatient_care']
             actual_mean = unscaled_lm.predict(
                 df.loc[df.is_alive & ((df.age_exact_years > 0.5) & (df.age_exact_years < 5)) &
-                       (df.un_WHZ_category != 'WHZ>=-2')]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean)
+                       (df.un_WHZ_category != 'WHZ>=-2') & df.un_SAM_with_complications]).mean()
+            scaled_intercept = 1.0 * (target_mean / actual_mean) if \
+                (target_mean != 0 and actual_mean != 0) else 1.0
             scaled_lm = make_lm_wasting_death(intercept=scaled_intercept)
             return scaled_lm
 
@@ -739,53 +790,54 @@ class Wasting(Module):
                 duration_in_days=None,
             )
 
-    def do_wasting_treatment(self, person_id, wasting_severity, treatment_id):
-        """Helper function that enacts the effects of a treatment to acute malnutrition.
-        * Log the treatment date
-        * Prevents this episode of wasting from causing a death
-        * Schedules the cure event, at which symptoms are alleviated.
-        """
-        df = self.sim.population.props
-        p = self.module.parameters
-        person = df.loc[person_id]
-        if not person.is_alive:
-            return
+    # def do_wasting_treatment(self, person_id, wasting_severity, treatment_id):
+    #     """Helper function that enacts the effects of a treatment to acute malnutrition.
+    #     * Log the treatment date
+    #     * Prevents this episode of wasting from causing a death
+    #     * Schedules the cure event, at which symptoms are alleviated.
+    #     """
+    #     df = self.sim.population.props
+    #     p = self.module.parameters
+    #     person = df.loc[person_id]
+    #     if not person.is_alive:
+    #         return
+    #
+    #     # Log that the treatment is provided:
+    #     df.at[person_id, 'un_wasting_tx_start_date'] = self.sim.date
+    #     df.at[person_id, 'un_SAM_management_facility_type'] = treatment_id
+    #
+    #     # Determine the outcome of treatment
+    #     recovery_from_wasting = self.module.uncomplicated_acute_malnutrition_recovery_rate[wasting_severity].predict(
+    #         df.loc[person_id])
+    #     if recovery_from_wasting > self.rng.rand():
+    #         # If treatment is successful: cancel death and schedule cure event
+    #         self.cancel_death_date(person_id)
+    #         self.sim.schedule_event(WastingRecoveryEvent(self, person_id),
+    #                                 self.sim.date + DateOffset(days=30)) # 30 days from treatment to recovery
+    #
+    # def cancel_death_date(self, person_id):
+    #     """
+    #     Cancels a scheduled date of death due to wasting for a person. This is called prior to the scheduling the
+    #     CureEvent to prevent deaths happening in the time between a treatment being given and the cure event occurring.
+    #
+    #     :param person_id:
+    #     :return:
+    #     """
+    #     df = self.sim.population.props
+    #     df.at[person_id, 'un_wasting_death_date'] = pd.NaT
 
-        # Log that the treatment is provided:
-        df.at[person_id, 'un_wasting_tx_start_date'] = self.sim.date
 
-        # # Determine the outcome of treatment
-        # recovery_from_wasting = self.module.uncomplicated_acute_malnutrition_recovery_rate[wasting_severity].predict(
-        #     df.loc[person_id])
-        # if recovery_from_wasting > self.rng.rand():
-        #     # If treatment is successful: cancel death and schedule cure event
-        #     self.cancel_death_date(person_id)
-        #     self.sim.schedule_event(WastingRecoveryEvent(self, person_id),
-        #                             self.sim.date + DateOffset(days=30)) # 30 days from treatment to recovery
-
-    def cancel_death_date(self, person_id):
-        """
-        Cancels a scheduled date of death due to wasting for a person. This is called prior to the scheduling the
-        CureEvent to prevent deaths happening in the time between a treatment being given and the cure event occurring.
-
-        :param person_id:
-        :return:
-        """
-        df = self.sim.population.props
-        df.at[person_id, 'un_wasting_death_date'] = pd.NaT
-
-
-class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
+class WastingIncidencePollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    Regular event that updates all wasting properties for the population
-    It determines who will be wasted and schedules individual incident cases to represent onset.
+    Regular event that determines new cases of wasting (WHZ<-2) to the under-5 population.
+    This is a monthly incidence event and it schedules individual incident cases to represent onset.
     """
 
     def __init__(self, module):
-        """schedule to run every 6 months
+        """schedule to run every month
         :param module: the module that created this event
         """
-        self.repeat_months = 6
+        self.repeat_months = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat_months))
         assert isinstance(module, Wasting)
 
@@ -806,7 +858,7 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         wasted = rng.random_sample(len(incidence_of_wasting)) < incidence_of_wasting
 
         # update clinical symptoms for all new clinical infections
-        self.module.wasting_clinical_symptoms(df, wasted[wasted].index)
+        self.module.wasting_clinical_symptoms(df, wasted[wasted].index)  # asymptomatic moderate wasting
 
         # determine the time of onset and other disease characteristics for each individual
         for person_id in wasted[wasted].index:
@@ -820,110 +872,214 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
 
-class WastingPollingEvent2(RegularEvent, PopulationScopeEventMixin):
-    """
-    Regular event that updates all wasting properties for the population
-    It determines who will be wasted and schedules individual incident cases to represent onset.
-    """
+# class SevereWastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
+#     """
+#     Regular event that determines the progression to severe wasting (WHZ<-3)
+#     and schedules individual progression event
+#     """
+#
+#     def __init__(self, module):
+#         """schedule to run every month
+#         :param module: the module that created this event
+#         """
+#         self.repeat_months = 1
+#         super().__init__(module, frequency=DateOffset(months=self.repeat_months))
+#         assert isinstance(module, Wasting)
+#
+#     def apply(self, population):
+#         """Apply this event to the population.
+#         :param population: the current population
+#         """
+#         df = population.props
+#         m = self.module
+#         rng = m.rng
+#         p = m.parameters
+#
+#         days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'D')
+#
+#         # Determine those that will progress to severe wasting -----------------------------------------------
+#         progression_severe_wasting = m.severe_wasting_progression_equation.predict(
+#             df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category == '-3<=WHZ<-2')])
+#         severely_wasted = rng.random_sample(len(progression_severe_wasting)) < progression_severe_wasting
+#
+#         # determine the time of onset and other disease characteristics for each individual
+#         for person_id in severely_wasted[severely_wasted].index:
+#             # Allocate a date of progression to severe
+#             # if self.sim.date < df.at[person_id, 'un_last_wasting_date_of_onset'] < days_until_next_polling_event:
+#             date_onset_severe = df.at[person_id, 'un_last_wasting_date_of_onset'] + \
+#                                 DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
+#                                                             p['average_duration_of_untreated_MAM']))
+#             # schedule severe wasting WHZ<-3 onset
+#             self.sim.schedule_event(
+#                 event=ProgressionSevereWastingEvent(module=self.module, person_id=person_id),
+#                 date=date_onset_severe
+#             )
+#
+#         # Determine those SAM with complications that need inpatient treatment
+#         clinically_severe_am = df.loc[df.is_alive & (df.age_exact_years < 5) &
+#                                       (df.un_clinical_acute_malnutrition == 'SAM')]
+#         complicated_SAM = rng.random_sample(len(clinically_severe_am)) < p['prob_complications_in_SAM']
+#         df.loc[clinically_severe_am[complicated_SAM].index, 'un_SAM_with_complications'] = True
+#
+#
+# class WastingDeathPollingEvent(RegularEvent, PopulationScopeEventMixin):
+#     """
+#     Regular event that updates all wasting properties for the population
+#     It determines who will be wasted and schedules individual incident cases to represent onset.
+#     """
+#
+#     def __init__(self, module):
+#         """schedule to run every 6 months
+#         :param module: the module that created this event
+#         """
+#         self.repeat_months = 1
+#         super().__init__(module, frequency=DateOffset(months=self.repeat_months))
+#         assert isinstance(module, Wasting)
+#
+#     def apply(self, population):
+#         """Apply this event to the population.
+#         :param population: the current population
+#         """
+#         df = population.props
+#         m = self.module
+#         rng = m.rng
+#         p = m.parameters
+#
+#         days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'D')
+#
+#         # Determine those that will die -----------------------------------------------
+#         prob_death = m.wasting_death_equation.predict(df.loc[df.is_alive & (df.age_exact_years < 5) &
+#                                                              (df.un_WHZ_category != 'WHZ>=-2')])
+#         will_die = rng.rand() < prob_death
+#
+#         # schedule death date
+#         for person in will_die[will_die].index:
+#             if self.sim.date < df.at[person, 'un_last_wasting_date_of_onset'] < days_until_next_polling_event:
+#                 date_of_death = df.at[person, 'un_last_wasting_date_of_onset'] + \
+#                                 DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
+#                                                             p['average_duration_of_untreated_MAM'] +
+#                                                             p['average_duration_of_untreated_SAM']))
+#                 self.sim.schedule_event(
+#                     event=SevereWastingDeathEvent(module=self.module, person_id=person),
+#                     date=date_of_death)
+#
+#         # schedule recovery for those not scheduled to die
+#         for person in will_die[will_die==False].index:
+#             if self.sim.date < df.at[person, 'un_last_wasting_date_of_onset'] < days_until_next_polling_event:
+#                 date_of_recovery = df.at[person, 'un_last_wasting_date_of_onset'] + \
+#                                    DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
+#                                                                p['average_duration_of_untreated_MAM'] +
+#                                                                p['average_duration_of_untreated_SAM']))
+#                 self.sim.schedule_event(
+#                     event=WastingRecoveryEvent(module=self.module, person_id=person),
+#                     date=date_of_recovery)
 
-    def __init__(self, module):
-        """schedule to run every 6 months
-        :param module: the module that created this event
-        """
-        self.repeat_months = 6
-        super().__init__(module, frequency=DateOffset(months=self.repeat_months))
-        assert isinstance(module, Wasting)
 
-    def apply(self, population):
-        """Apply this event to the population.
-        :param population: the current population
-        """
-        df = population.props
-        m = self.module
-        rng = m.rng
-        p = m.parameters
-
-        days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'D')
-
-        # Determine who will be onset with wasting among those who are not currently wasted
-        incidence_of_wasting = self.module.wasting_incidence_equation.predict(
-            df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category == 'WHZ>=-2')])
-        wasted = rng.random_sample(len(incidence_of_wasting)) < incidence_of_wasting
-
-        # update clinical symptoms
-        self.module.wasting_clinical_symptoms(df, wasted[wasted].index)
-
-        # determine the time of onset and other disease characteristics for each individual
-        for person_id in wasted[wasted].index:
-            # Allocate a date of onset for wasting episode
-            date_onset = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
-
-            # Create the event for the onset of wasting
-            self.sim.schedule_event(
-                event=WastingOnsetEvent(module=self.module,
-                                        person_id=person_id), date=date_onset
-            )
-
-        # Determine those that will progress to SAM -----------------------------------------------
-        progression_severe_wasting = m.severe_wasting_progression_equation.predict(
-            df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category == '-3<=WHZ<-2')])
-        severely_wasted = rng.random_sample(len(progression_severe_wasting)) < progression_severe_wasting
-
-        # determine the time of onset and other disease characteristics for each individual
-        for person_id in severely_wasted[severely_wasted].index:
-            # Allocate a date of onset for wasting episode
-            if self.sim.date < df.at[person_id, 'un_last_wasting_date_of_onset'] < days_until_next_polling_event:
-                date_onset_severe = df.at[person_id, 'un_last_wasting_date_of_onset'] + \
-                             DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
-                                                         p['average_duration_of_untreated_MAM']))
-                # schedule severe wasting WHZ<-3 onset
-                self.sim.schedule_event(
-                    event=ProgressionSevereWastingEvent(module=self.module, person_id=person_id),
-                    date=date_onset_severe
-                )
-
-        # Determine those SAM with complications that need inpatient treatment
-        clinically_severe_am = df.loc[df.is_alive & (df.age_exact_years < 5) &
-                                      (df.un_clinical_acute_malnutrition == 'SAM')]
-        complicated_SAM = rng.random_sample(len(clinically_severe_am)) < p['prob_complications_in_SAM']
-        df.loc[clinically_severe_am[complicated_SAM].index, 'un_SAM_with_complications'] = True
-
-        # Determine those that will die -----------------------------------------------
-        prob_death = m.wasting_death_equation.predict(df.loc[df.is_alive & (df.age_exact_years < 5) &
-                                                                       (df.un_WHZ_category != 'WHZ>=-2')])
-        will_die = rng.rand() < prob_death
-
-        # schedule death date
-        for person in will_die[will_die].index:
-            if self.sim.date < df.at[person, 'un_last_wasting_date_of_onset'] < days_until_next_polling_event:
-                date_of_death = df.at[person, 'un_last_wasting_date_of_onset'] + \
-                                DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
-                                                            p['average_duration_of_untreated_MAM'] +
-                                                            p['average_duration_of_untreated_SAM']))
-                self.sim.schedule_event(
-                    event=SevereWastingDeathEvent(module=self.module, person_id=person_id),
-                    date=date_of_death)
-
-        # schedule recovery for those not scheduled to die
-        for person in will_die[will_die==False].index:
-            if self.sim.date < df.at[person, 'un_last_wasting_date_of_onset'] < days_until_next_polling_event:
-                date_of_recovery = df.at[person, 'un_last_wasting_date_of_onset'] + \
-                                  DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
-                                                              p['average_duration_of_untreated_MAM'] +
-                                                              p['average_duration_of_untreated_SAM']))
-                self.sim.schedule_event(
-                    event=WastingRecoveryEvent(module=self.module, person_id=person_id),
-                    date=date_of_recovery)
+# class WastingPollingEvent2(RegularEvent, PopulationScopeEventMixin):
+#     """
+#     Regular event that updates all wasting properties for the population
+#     It determines who will be wasted and schedules individual incident cases to represent onset.
+#     """
+#
+#     def __init__(self, module):
+#         """schedule to run every 6 months
+#         :param module: the module that created this event
+#         """
+#         self.repeat_months = 6
+#         super().__init__(module, frequency=DateOffset(months=self.repeat_months))
+#         assert isinstance(module, Wasting)
+#
+#     def apply(self, population):
+#         """Apply this event to the population.
+#         :param population: the current population
+#         """
+#         df = population.props
+#         m = self.module
+#         rng = m.rng
+#         p = m.parameters
+#
+#         days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'D')
+#
+#         # Determine who will be onset with wasting among those who are not currently wasted
+#         incidence_of_wasting = self.module.wasting_incidence_equation.predict(
+#             df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category == 'WHZ>=-2')])
+#         wasted = rng.random_sample(len(incidence_of_wasting)) < incidence_of_wasting
+#
+#         # update clinical symptoms
+#         self.module.wasting_clinical_symptoms(df, wasted[wasted].index)
+#
+#         # determine the time of onset and other disease characteristics for each individual
+#         for person_id in wasted[wasted].index:
+#             # Allocate a date of onset for wasting episode
+#             date_onset = self.sim.date + DateOffset(days=rng.randint(0, 30))  # new cases all occur in the same month
+#
+#             # Create the event for the onset of wasting
+#             self.sim.schedule_event(
+#                 event=WastingOnsetEvent(module=self.module,
+#                                         person_id=person_id), date=date_onset
+#             )
+#
+#         # Determine those that will progress to SAM -----------------------------------------------
+#         progression_severe_wasting = m.severe_wasting_progression_equation.predict(
+#             df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category == '-3<=WHZ<-2')])
+#         severely_wasted = rng.random_sample(len(progression_severe_wasting)) < progression_severe_wasting
+#
+#         # determine the time of onset and other disease characteristics for each individual
+#         for person_id in severely_wasted[severely_wasted].index:
+#             # Allocate a date of onset for wasting episode
+#             if self.sim.date < df.at[person_id, 'un_last_wasting_date_of_onset'] < days_until_next_polling_event:
+#                 date_onset_severe = df.at[person_id, 'un_last_wasting_date_of_onset'] + \
+#                              DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
+#                                                          p['average_duration_of_untreated_MAM']))
+#                 # schedule severe wasting WHZ<-3 onset
+#                 self.sim.schedule_event(
+#                     event=ProgressionSevereWastingEvent(module=self.module, person_id=person_id),
+#                     date=date_onset_severe
+#                 )
+#
+#         # Determine those SAM with complications that need inpatient treatment
+#         clinically_severe_am = df.loc[df.is_alive & (df.age_exact_years < 5) &
+#                                       (df.un_clinical_acute_malnutrition == 'SAM')]
+#         complicated_SAM = rng.random_sample(len(clinically_severe_am)) < p['prob_complications_in_SAM']
+#         df.loc[clinically_severe_am[complicated_SAM].index, 'un_SAM_with_complications'] = True
+#
+#         # Determine those that will die -----------------------------------------------
+#         prob_death = m.wasting_death_equation.predict(df.loc[df.is_alive & (df.age_exact_years < 5) &
+#                                                                        (df.un_WHZ_category != 'WHZ>=-2')])
+#         will_die = rng.rand() < prob_death
+#
+#         # schedule death date
+#         for person in will_die[will_die].index:
+#             if self.sim.date < df.at[person, 'un_last_wasting_date_of_onset'] < days_until_next_polling_event:
+#                 date_of_death = df.at[person, 'un_last_wasting_date_of_onset'] + \
+#                                 DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
+#                                                             p['average_duration_of_untreated_MAM'] +
+#                                                             p['average_duration_of_untreated_SAM']))
+#                 self.sim.schedule_event(
+#                     event=SevereWastingDeathEvent(module=self.module, person_id=person_id),
+#                     date=date_of_death)
+#
+#         # schedule recovery for those not scheduled to die
+#         for person in will_die[will_die==False].index:
+#             if self.sim.date < df.at[person, 'un_last_wasting_date_of_onset'] < days_until_next_polling_event:
+#                 date_of_recovery = df.at[person, 'un_last_wasting_date_of_onset'] + \
+#                                   DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
+#                                                               p['average_duration_of_untreated_MAM'] +
+#                                                               p['average_duration_of_untreated_SAM']))
+#                 self.sim.schedule_event(
+#                     event=WastingRecoveryEvent(module=self.module, person_id=person_id),
+#                     date=date_of_recovery)
 
 
 class WastingOnsetEvent(Event, IndividualScopeEventMixin):
     """
-    This Event is for the onset of wasting (MAM with WHZ <-2).
-     * Refreshes all the properties so that they pertain to this current episode of wasting
+    This Event is for the onset of wasting (WHZ <-2).
+     * Updates all properties so that they pertain to this current episode of wasting
      * Imposes the symptoms
      * Schedules relevant natural history event {(ProgressionSAMEvent) and
        (either WastingRecoveryEvent or WastingDeathEvent)}
     """
+    # TODO: UPDATE ABOVE DESCRIPTION
 
     AGE_GROUPS = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
 
@@ -965,6 +1121,46 @@ class WastingOnsetEvent(Event, IndividualScopeEventMixin):
         clinical_am_state = df.at[person_id, 'un_clinical_acute_malnutrition']
         age_group = WastingOnsetEvent.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
         m.wasting_incident_case_tracker[age_group][clinical_am_state].append(self.sim.date)
+
+        # --------------------------------------------------------------------------------------------
+        # Determine those that will progress to severe wasting -----------------------------------------------
+        progression_severe_wasting = m.severe_wasting_progression_equation.predict(df.loc[[person_id]]).values[0]
+        if rng.rand() < progression_severe_wasting:
+            # Allocate a date of progression to severe
+            date_onset_severe = df.at[person_id, 'un_last_wasting_date_of_onset'] + \
+                                DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
+                                                            p['average_duration_of_untreated_MAM']))
+            # schedule severe wasting WHZ<-3 onset
+            self.sim.schedule_event(
+                event=ProgressionSevereWastingEvent(module=self.module, person_id=person_id),
+                date=date_onset_severe
+            )
+
+        # if SAM, check complicated or uncomplicated case
+        self.module.complications_in_sam(person_id=person_id)
+
+        # --------------------------------------------------------------------------------------------
+        # Determine the outcome of moderate wasting (-3<=WHZ<-2) -----------------------------------------------
+        # TODO: linear model of recovery / death / progression
+
+        # # check death by MUAC <115mm or oedema within -3<=WHZ<-2
+        # prob_death = m.wasting_death_equation.predict(df.loc[[person_id]]).values[0]
+        # if rng.rand() < prob_death:
+        #     date_of_death = df.at[person_id, 'un_last_wasting_date_of_onset'] + \
+        #                     DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
+        #                                                 p['average_duration_of_untreated_MAM'] +
+        #                                                 p['average_duration_of_untreated_SAM']))
+        #     self.sim.schedule_event(
+        #         event=SevereWastingDeathEvent(module=self.module, person_id=person_id),
+        #         date=date_of_death)
+        # else:
+        #     date_of_recovery = df.at[person_id, 'un_last_wasting_date_of_onset'] + \
+        #                        DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
+        #                                                    p['average_duration_of_untreated_MAM'] +
+        #                                                    p['average_duration_of_untreated_SAM']))
+        #     self.sim.schedule_event(
+        #         event=WastingRecoveryEvent(module=self.module, person_id=person_id),
+        #         date=date_of_recovery)
 
 
 class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
@@ -1012,6 +1208,29 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
         clinical_am_state = df.at[person_id, 'un_clinical_acute_malnutrition']
         age_group = WastingOnsetEvent.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
         m.wasting_incident_case_tracker[age_group][clinical_am_state].append(self.sim.date)
+
+        # -------------------------------------------------------------------------------------------
+        # if SAM, check complicated or uncomplicated case
+        self.module.complications_in_sam(person_id=person_id)
+
+        # # check death by MUAC <115mm or oedema within -3<=WHZ<-2
+        # prob_death = m.wasting_death_equation.predict(df.loc[[person_id]]).values[0]
+        # if rng.rand() < prob_death:
+        #     date_of_death = df.at[person_id, 'un_last_wasting_date_of_onset'] + \
+        #                     DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
+        #                                                 p['average_duration_of_untreated_MAM'] +
+        #                                                 p['average_duration_of_untreated_SAM']))
+        #     self.sim.schedule_event(
+        #         event=SevereWastingDeathEvent(module=self.module, person_id=person_id),
+        #         date=date_of_death)
+        # else:
+        #     date_of_recovery = df.at[person_id, 'un_last_wasting_date_of_onset'] + \
+        #                        DateOffset(days=rng.randint(p['min_days_duration_of_wasting'],
+        #                                                    p['average_duration_of_untreated_MAM'] +
+        #                                                    p['average_duration_of_untreated_SAM']))
+        #     self.sim.schedule_event(
+        #         event=WastingRecoveryEvent(module=self.module, person_id=person_id),
+        #         date=date_of_recovery)
 
 
 class SevereWastingDeathEvent(Event, IndividualScopeEventMixin):
@@ -1108,11 +1327,11 @@ class HSI_uncomplicated_MAM_treatment(HSI_Event, IndividualScopeEventMixin):
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_mam]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.module.do_wasting_treatment(
-                person_id=person_id,
-                wasting_severity='MAM',
-                treatment_id='CSB++'
-            )
+            # self.module.do_wasting_treatment(
+            #     person_id=person_id,
+            #     wasting_severity='MAM',
+            #     treatment_id='CSB++'
+            # )
         else:
             logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
 
@@ -1137,7 +1356,7 @@ class HSI_uncomplicated_MAM_treatment(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_complicated_SAM_treatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_complicated_SAM_inpatient_treatment(HSI_Event, IndividualScopeEventMixin):
     """
     this is the inpatient care for complicated severe acute malnutrition
     """
@@ -1151,7 +1370,7 @@ class HSI_complicated_SAM_treatment(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint['InpatientDays'] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'complicated_SAM_treatment'
+        self.TREATMENT_ID = 'complicated_SAM_inpatient_treatment'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 2
         self.ALERT_OTHER_DISEASES = []
@@ -1187,11 +1406,10 @@ class HSI_complicated_SAM_treatment(HSI_Event, IndividualScopeEventMixin):
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sam]:
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-            self.module.do_wasting_treatment(
-                person_id=person_id,
-                wasting_severity='SAM',
-                treatment_id='inpatient_care'
-            )
+            # Log that the treatment is provided:
+            df.at[person_id, 'un_wasting_tx_start_date'] = self.sim.date
+            df.at[person_id, 'un_SAM_management_facility_type'] = 'inpatient'
+            assert df.at[person_id, 'un_wasting_tx_start_date'] < df.at[person_id, 'un_wasting_death_date']
         else:
             logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
         # --------------------------------------------------------------------------------------------------
