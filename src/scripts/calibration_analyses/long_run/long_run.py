@@ -11,7 +11,7 @@ import numpy as np
 
 from tlo import Date, logging
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     depression,
@@ -46,9 +46,9 @@ class LongRun(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 12, 31)
-        self.pop_size = 1_000
-        self.number_of_draws = 1    # <- one scenario
-        self.runs_per_draw = 10     # <- repeated ten times
+        self.pop_size = 50_000
+        self.number_of_draws = 1        # <- one scenario
+        self.runs_per_draw = 2          # <- repeated this many times
 
     def log_configuration(self):
         return {
@@ -74,7 +74,7 @@ class LongRun(BaseScenario):
             # Pregnancy and Birth
             contraception.Contraception(resourcefilepath=self.resources),
             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
-            antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
             labour.Labour(resourcefilepath=self.resources),
             newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
@@ -88,7 +88,7 @@ class LongRun(BaseScenario):
             oesophagealcancer.OesophagealCancer(resourcefilepath=self.resources),
             epilepsy.Epilepsy(resourcefilepath=self.resources),
             other_adult_cancers.OtherAdultCancer(resourcefilepath=self.resources),
-            ncds.Ncds(resourcefilpeath=self.resources)
+            ncds.Ncds(resourcefilepath=self.resources)
         ]
 
     def draw_parameters(self, draw_number, rng):
