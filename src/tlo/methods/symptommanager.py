@@ -11,6 +11,7 @@ Outstanding issues
 * The probability of spurious symptoms is not informed by data.
 
 """
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -19,8 +20,6 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
-
-from collections import defaultdict
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)

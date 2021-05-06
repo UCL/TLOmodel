@@ -6,13 +6,7 @@ from pathlib import Path
 from pandas import DateOffset
 
 from tlo import Date, Simulation, logging
-from tlo.methods import (
-    demography,
-    healthsystem,
-    simplified_births,
-    symptommanager,
-)
-
+from tlo.methods import demography, healthsystem, simplified_births, symptommanager
 
 resourcefilepath = Path("./resources")
 
@@ -40,4 +34,4 @@ sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
 # Time with updated implementation (n=10k, dur=1 year): 55.73144602775574 s
-# Time with old implementation (n=10k, dur=1 year):
+# Time with old implementation (n=10k, dur=1 year): too_long_to_wait!
