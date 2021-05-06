@@ -1,10 +1,13 @@
 import numbers
+import re
 from enum import Enum, auto
 from math import prod
 from typing import Any, Callable, Union, Optional
 
 import numpy as np
 import pandas as pd
+from pandas.core.computation.parsing import clean_column_name
+from pandas.core.dtypes.generic import ABCSeries
 
 from tlo import logging
 
@@ -135,6 +138,8 @@ class LinearModel(object):
             assert isinstance(predictor, Predictor)
             self.predictors.append(predictor)
 
+        self._cleaned_column_names_cache = {}
+
     @staticmethod
     def custom(predict_function, **kwargs):
         """Define a linear model using the supplied function
@@ -176,8 +181,18 @@ class LinearModel(object):
         null_coeff_value = 0 if self.lm_type == LinearModelType.ADDITIVE else 1
         predictor_strings = []
         callback_predictors = []
+        predictor_columns = set()
         for predictor in self.predictors:
             if predictor.callback is None:
+                if predictor.property_name is not None:
+                    predictor_columns.add(predictor.property_name)
+                else:
+                    for condition, _ in predictor.conditions:
+                        predictor_columns.update(re.findall('[A-z_]\w*', condition))
+                        #predictor_columns.update(
+                        #    node.id for node in ast.walk(ast.parse(condition))
+                        #    if isinstance(node, ast.Name)
+                        #)
                 has_catch_all_condition = False
                 for i, (condition, value) in enumerate(predictor.conditions):
                     if i == 0:
@@ -213,7 +228,7 @@ class LinearModel(object):
         else:
             model_string = " * ".join(predictor_strings)
 
-        return model_string, callback_predictors
+        return model_string, callback_predictors, predictor_columns
 
 
     def predict(self, df: pd.DataFrame, rng: Optional[np.random.RandomState] = None, **kwargs) -> pd.Series:
@@ -247,15 +262,28 @@ class LinearModel(object):
         # `model.predict` call. To be robust to changes to the predictors it may make 
         # sense to, for example, wrap `predictors` as a property and clear the cache on 
         # any changes.
-        model_string, callback_predictors = self.model_string_and_callback_predictors()
+        model_string, callback_predictors, predictor_columns = self.model_string_and_callback_predictors()
 
         if model_string != "":
+            
+            if isinstance(df, ABCSeries):
+                column_resolvers = {clean_column_name(df.name): df}
+            else:
+                column_resolvers = {}
+                for col_name in predictor_columns:
+                    if col_name in df:
+                        cleaned_col_name = self._cleaned_column_names_cache.get(col_name, None)
+                        if cleaned_col_name is None:
+                            cleaned_col_name = clean_column_name(col_name)
+                            self._cleaned_column_names_cache[col_name] = cleaned_col_name
+                        column_resolvers[cleaned_col_name] = df[col_name]
+                
             try:
-                result = df.eval(model_string, engine="numexpr")
+                result = df.eval(model_string, resolvers=(column_resolvers.copy(),), engine="numexpr")
             except (ImportError, TypeError, ValueError):
                 # Fallback to `python` engine to evaluate expression if numexpr not available
                 # or expression cannot be evaluated with numexpr engine
-                result = df.eval(model_string, engine="python")
+                result = df.eval(model_string, resolvers=(column_resolvers.copy(),),  engine="python")
 
         else:
             result = pd.Series(data=self.intercept, index=df.index)
