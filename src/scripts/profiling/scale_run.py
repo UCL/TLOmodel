@@ -36,7 +36,7 @@ from tlo.methods import (
 start_date = Date(2010, 1, 1)
 end_date = start_date + pd.DateOffset(years=2)
 
-pop_size = 100  # 500_000
+pop_size = 10_000
 
 # The resource files
 rfp = Path("./resources")
