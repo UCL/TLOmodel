@@ -201,10 +201,6 @@ class Wasting(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # set the linear model equations for prevalence and incidence
-        self.prevalence_equations_by_age = dict()
-        self.wasting_incidence_equation = dict()
-
         # dict to hold the probability of onset of different symptoms:
         self.prob_symptoms = dict()
 
@@ -216,16 +212,6 @@ class Wasting(Module):
             'lethargic',
             'dehydration'
         }
-
-        # linear model for progression to severe wasting
-        self.severe_wasting_progression_equation = dict()
-
-        # linear model for death from severe acute malnutrition
-        self.wasting_death_equation = dict()
-
-        # set the linear model for recovery
-        self.uncomplicated_acute_malnutrition_recovery_rate = dict()
-        self.acute_malnutrition_with_complications_recovery_rate = dict()
 
         # dict to hold counters for the number of episodes by wasting-type and age-group
         blank_counter = dict(zip(self.wasting_states, [list() for _ in self.wasting_states]))
@@ -251,6 +237,24 @@ class Wasting(Module):
 
         # dict to hold the DALY weights
         self.daly_wts = dict()
+
+        # --------------------- linear models of the natural history --------------------- #
+
+        # set the linear model equations for prevalence and incidence
+        self.prevalence_equations_by_age = dict()
+        self.wasting_incidence_equation = dict()
+
+        # set the linear model for progression to severe wasting
+        self.severe_wasting_progression_equation = dict()
+
+        # set the linear model for death from severe acute malnutrition
+        self.wasting_death_equation = dict()
+
+        # --------------------- linear models following HSI interventions --------------------- #
+
+        # set the linear models for MAM and SAM recovery by intervention
+        self.acute_malnutrition_recovery_based_on_interventions = dict()
+
 
     def read_parameters(self, data_folder):
         """
@@ -380,6 +384,33 @@ class Wasting(Module):
         # Determine those SAM with complications that need inpatient treatment
         if self.rng.rand() < p['prob_complications_in_SAM']:
             df.at[person_id, 'un_SAM_with_complications'] = True
+
+    def date_of_outcome_for_untreated_am(self, person_id, am_severity):
+        """
+        helper funtion to get the duration and the wasting episode and date of outcome (recovery, progression, or death)
+        :param person_id:
+        :param am_severity:
+        :return:
+        """
+        df = self.sim.population.props
+        p = self.parameters
+
+        # moderate wasting (for progression to severe, or recovery from MAM) -----
+        if am_severity == 'MAM':
+            # Allocate the duration of the moderate wasting episode
+            duration_mam = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM']))
+            # Allocate a date of outcome (progression, recovery or death)
+            date_of_outcome = df.at[person_id, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_mam)
+            return date_of_outcome
+
+        # severe wasting (for death, or recovery to moderate wasting) -----
+        if am_severity == 'SAM':
+            # determine the duration of SAM episode
+            duration_sam = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM'] +
+                                   p['average_duration_of_untreated_SAM']))
+            # Allocate a date of outcome (progression, recovery or death)
+            date_of_outcome = df.at[person_id, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_sam)
+            return date_of_outcome
 
     def initialise_population(self, population):
         """
@@ -622,28 +653,8 @@ class Wasting(Module):
         self.wasting_incidence_equation = make_scaled_lm_wasting_incidence()
 
         # --------------------------------------------------------------------------------------------
-        # Make a linear model equations that govern the probability of recovery following treatment for MAM
-        # outcomes: recovery, remained MAM, or progressed to SAM
-        # self.mam_recovery_rate.update({
-        #     'MAM':
-        #         LinearModel(LinearModelType.MULTIPLICATIVE,
-        #                     1.0,
-        #                     Predictor('un_AM_treatment_type').when('soy_RUSF', p['recovery_rate_with_soy_RUSF'])
-        #                     .otherwise(0.0),
-        #                     Predictor('un_AM_treatment_type').when('CSB++', p['recovery_rate_with_CSB++'])
-        #                     .otherwise(0.0),
-        #                     ),
-        #     'SAM':
-        #         LinearModel(LinearModelType.MULTIPLICATIVE,
-        #                     1.0,
-        #                     Predictor('un_AM_treatment_type')
-        #                     .when('standard_RUTF', p['recovery_rate_with_standard_RUTF'])
-        #                     .otherwise(0.0),
-        #                     )
-        # })
-
-        # --------------------------------------------------------------------------------------------
-        # Make a linear model equations that govern the probability of progression to severe wasting
+        # Linear model for the probability of progression to severe wasting
+        # (natural history only, no interventions)
         self.severe_wasting_progression_equation = \
             LinearModel(LinearModelType.MULTIPLICATIVE,
                         1.0,
@@ -669,6 +680,24 @@ class Wasting(Module):
                         #                  p['rr_progress_severe_wasting_preterm_and_AGA'])
                         )
 
+        # --------------------------------------------------------------------------------------------
+        # Linear model for the probability of recovery based on interventions
+        self.acute_malnutrition_recovery_based_on_interventions.update({
+            'MAM':
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('un_AM_treatment_type').when('soy_RUSF', p['recovery_rate_with_soy_RUSF'])
+                            .when('CSB++', p['recovery_rate_with_CSB++'])
+                            .otherwise(0.0),
+                            ),
+            'SAM':
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('un_AM_treatment_type')
+                            .when('standard_RUTF', p['recovery_rate_with_standard_RUTF'])
+                            .otherwise(0.0),
+                            )
+        })
         # --------------------------------------------------------------------------------------------
         # Make a linear model equation of death from severe acute malnutrition
         def make_scaled_lm_wasting_death():
@@ -716,6 +745,10 @@ class Wasting(Module):
             return scaled_lm
 
         self.wasting_death_equation = make_scaled_lm_wasting_death()
+
+        # --------------------------------------------------------------------------------------------
+        # Make a linear model equations that govern the probability of progression to severe wasting
+        # TODO: LINEAR MODEL OF RECOVERY BASED ON TREATMENT
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -867,19 +900,20 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category == '-3<=WHZ<-2')])
         severely_wasted = rng.random_sample(len(progression_severe_wasting)) < progression_severe_wasting
 
+        # Before progression to severe wasting, check recovery of those who had supplementary feeding programme
+        mam_recovery = self.module.acute_malnutrition_recovery_based_on_interventions['MAM'].predict(
+            df.loc[severely_wasted[severely_wasted].index])
+        not_recovered_mam = severely_wasted[severely_wasted].index.intersection(mam_recovery[mam_recovery==False].index)
+
         # determine those individuals who will progress to severe wasting and time of progression
-        for person in severely_wasted[severely_wasted].index:
+        for person in not_recovered_mam:
             # for wasting cases in current polling event
             if self.sim.date < df.at[person, 'un_last_wasting_date_of_onset'] < \
                 DateOffset(days=days_until_next_polling_event):
-                # Allocate the duration of the moderate wasting episode
-                duration_in_days = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM']))
-                # Allocate a date of onset for severe wasting episode
-                date_onset_severe = df.at[person, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_in_days)
                 # schedule severe wasting WHZ<-3 onset
                 self.sim.schedule_event(
                     event=ProgressionSevereWastingEvent(module=self.module, person_id=person),
-                    date=date_onset_severe)
+                    date=self.module.date_of_outcome_for_untreated_am(person_id=person, am_severity='MAM'))
             # for wasting cases from previous polling events
             if df.at[person, 'un_last_wasting_date_of_onset'] < self.sim.date:
                 # schedule severe wasting WHZ<-3 onset to be today
@@ -899,15 +933,12 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # for wasting cases in current polling event
             if self.sim.date < df.at[person, 'un_last_wasting_date_of_onset'] < \
                 DateOffset(days=days_until_next_polling_event):
-                # determine the duration of MAM episode
-                duration_in_days = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM']))
-                date_of_recovery = df.at[person, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_in_days)
                 self.sim.schedule_event(
                     event=WastingRecoveryEvent(module=self.module, person_id=person),
-                    date=date_of_recovery)
+                    date=self.module.date_of_outcome_for_untreated_am(person_id=person, am_severity='MAM'))
             # for wasting cases from previous polling events
             if df.at[person, 'un_last_wasting_date_of_onset'] < self.sim.date:
-                # schedule severe wasting WHZ<-3 onset to be today
+                # schedule recovery to be today
                 self.sim.schedule_event(
                     event=WastingRecoveryEvent(module=self.module, person_id=person), date=self.sim.date)
 
@@ -916,21 +947,22 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Determine those that will die -----------------------------------------------
         prob_death = m.wasting_death_equation.predict(df.loc[df.is_alive & (df.age_exact_years < 5) &
                                                              (df.un_WHZ_category != 'WHZ>=-2')])
-        will_die = rng.rand() < prob_death
+        will_die = rng.random_sample(len(prob_death)) < prob_death
+
+        # Before scheduling death, check recovery of those who had outpatient/inpatient care
+        sam_recovery = self.module.acute_malnutrition_recovery_based_on_interventions['SAM'].predict(
+            df.loc[will_die[will_die].index])
+        not_recovered_sam = will_die[will_die].index.intersection(sam_recovery[sam_recovery==False].index)
 
         # schedule death date
-        for person in will_die[will_die].index:
+        for person in not_recovered_sam:
             # for wasting cases in current polling event
             if self.sim.date < df.at[person, 'un_last_wasting_date_of_onset'] < \
                 DateOffset(days=days_until_next_polling_event):
-                # determine the duration of MAM + SAM episode
-                duration_in_days = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM'] +
-                                           p['average_duration_of_untreated_SAM']))
-                # Allocate a date of death
-                date_of_death = df.at[person, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_in_days)
                 # schedule death
                 self.sim.schedule_event(
-                    event=SevereWastingDeathEvent(module=self.module, person_id=person), date=date_of_death)
+                    event=SevereWastingDeathEvent(module=self.module, person_id=person),
+                    date=self.module.date_of_outcome_for_untreated_am(person_id=person, am_severity='SAM'))
             # for wasting cases from previous polling events
             if df.at[person, 'un_last_wasting_date_of_onset'] < self.sim.date:
                 # schedule death for today
@@ -950,13 +982,10 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # for wasting cases in current polling event
             if self.sim.date < df.at[person, 'un_last_wasting_date_of_onset'] < \
                 DateOffset(days=days_until_next_polling_event):
-                # determine the duration of MAM + SAM episode
-                duration_in_days = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM'] +
-                                           p['average_duration_of_untreated_SAM']))
-                date_of_recovery = df.at[person, 'un_last_wasting_date_of_onset'] + DateOffset(days=duration_in_days)
+                # schedule recovery date
                 self.sim.schedule_event(
                     event=WastingRecoveryEvent(module=self.module, person_id=person),
-                    date=date_of_recovery)
+                    date=self.module.date_of_outcome_for_untreated_am(person_id=person, am_severity='SAM'))
             # for wasting cases from previous polling events
             if df.at[person, 'un_last_wasting_date_of_onset'] < self.sim.date:
                 # schedule recovery for today
@@ -1118,9 +1147,9 @@ class WastingRecoveryEvent(Event, IndividualScopeEventMixin):
         )
 
 
-class HSI_uncomplicated_MAM_treatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_supplementary_feeding_programme_for_MAM(HSI_Event, IndividualScopeEventMixin):
     """
-    this is the treatment for moderate acute malnutrition without complications
+    This is the supplementary feeding programme for MAM without complications
     """
 
     def __init__(self, module, person_id):
@@ -1132,7 +1161,7 @@ class HSI_uncomplicated_MAM_treatment(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'uncomplicated_MAM_treatment'
+        self.TREATMENT_ID = 'supplementary_feeding_programme_for_MAM'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1184,19 +1213,15 @@ class HSI_uncomplicated_MAM_treatment(HSI_Event, IndividualScopeEventMixin):
         )
         # Demonstrate equivalence
         assert all_available == all_available_using_helper_function
-        # Return the actual appt footprints
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
-        actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
-        return actual_appt_footprint
 
     def did_not_run(self):
-        logger.debug("HSI_uncomplicated_MAM_treatment: did not run")
+        logger.debug("supplementary_feeding_programme_for_MAM: did not run")
         pass
 
 
-class HSI_complicated_SAM_inpatient_treatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_outpatient_therapeutic_programme_for_SAM(HSI_Event, IndividualScopeEventMixin):
     """
-    this is the inpatient care for complicated severe acute malnutrition
+    This is the outpatient management of SAM without any medical complications
     """
 
     def __init__(self, module, person_id):
@@ -1205,13 +1230,87 @@ class HSI_complicated_SAM_inpatient_treatment(HSI_Event, IndividualScopeEventMix
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint['InpatientDays'] = 1
+        the_appt_footprint['U5Malnutr'] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'complicated_SAM_inpatient_treatment'
+        self.TREATMENT_ID = 'outpatient_therapeutic_programme_for_SAM'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+
+        df = self.sim.population.props
+
+        # Stop the person from dying of acute malnutrition (if they were going to die)
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # Do here whatever happens to an individual during this health system interaction event
+        # ~~~~~~~~~~~~~~~~~~~~~~
+        # Make request for some consumables
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # whole package of interventions
+        pkg_code_sam = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Management of severe malnutrition (children)',
+                            'Intervention_Pkg_Code'])[0]
+        # individual items
+        item_code1 = pd.unique(
+            consumables.loc[consumables['Items'] == 'SAM theraputic foods', 'Item_Code'])[0]
+        item_code2 = pd.unique(
+            consumables.loc[consumables['Items'] == 'SAM medicines', 'Item_Code'])[0]
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_sam: 1}, 'Item_Code': {item_code1: 1,
+                                                                                            item_code2: 1}}
+
+        # check availability of consumables
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed)
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sam]:
+            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
+            # Log that the treatment is provided:
+            df.at[person_id, 'un_wasting_tx_start_date'] = self.sim.date
+            df.at[person_id, 'un_SAM_management_facility_type'] = 'outpatient'
+            assert df.at[person_id, 'un_wasting_tx_start_date'] < df.at[person_id, 'un_wasting_death_date']
+        else:
+            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+        # --------------------------------------------------------------------------------------------------
+        # check to see if all consumables returned (for demonstration purposes):
+        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sam]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code1][item_code2])
+        # use helper function instead (for demonstration purposes)
+        all_available_using_helper_function = self.get_all_consumables(
+            item_codes=[item_code1, item_code2],
+            pkg_codes=[pkg_code_sam]
+        )
+        # Demonstrate equivalence
+        assert all_available == all_available_using_helper_function
+
+    def did_not_run(self):
+        logger.debug("HSI_outpatient_therapeutic_programme_for_SAM: did not run")
+        pass
+
+
+class HSI_inpatient_therapeutic_care_for_complicated_SAM(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is the inpatient management of SAM with medical complications
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Wasting)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint['U5Malnutr'] = 1
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'inpatient_therapeutic_care_for_complicated_SAM'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 2
         self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1263,7 +1362,7 @@ class HSI_complicated_SAM_inpatient_treatment(HSI_Event, IndividualScopeEventMix
         assert all_available == all_available_using_helper_function
 
     def did_not_run(self):
-        logger.debug("HSI_complicated_SAM_treatment: did not run")
+        logger.debug("HSI_inpatient_therapeutic_care_for_complicated_SAM: did not run")
         pass
 
 
