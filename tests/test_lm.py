@@ -147,7 +147,7 @@ def test_external_variable():
         LinearModelType.ADDITIVE,
         0.0,
         Predictor('region_of_residence').when('Northern', 0.1).otherwise(0.3),
-        Predictor('year', external=True).when('<= 2019', 1).when(2020, 2).otherwise(3)
+        Predictor('year', external=True).when('.between(0,2019)', 1).when(2020, 2).otherwise(3)
     )
 
     output = eq.predict(EXAMPLE_DF, year=2010)

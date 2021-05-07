@@ -396,6 +396,14 @@ class LinearModel(object):
             else:
                 result *= prod(callback_results)
 
+        # Ensure result of floating point type even if all predictor coefficients 
+        # are integer but intercept is floating point
+        if isinstance(self.intercept, float) and result.dtype == int:
+            result = result.astype(float)
+        # Result series sometimes picks up name from one of predictors - set to
+        # None so comparisons with unnamed series in tests pass
+        result.name = None
+
         if self.lm_type == LinearModelType.LOGISTIC:
             result = result / (1 + result)
 
