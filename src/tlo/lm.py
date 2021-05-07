@@ -1,5 +1,6 @@
+import ast
+import builtins
 import numbers
-import re
 from enum import Enum, auto
 from math import prod
 from typing import Any, Callable, Dict, Optional, Tuple, Union 
@@ -153,6 +154,7 @@ class LinearModel(object):
             f"One or more predictors are of invalid type: {non_predictors}"
         )
 
+        self._parse_predictors()
 
     @property
     def lm_type(self) -> LinearModelType:
@@ -209,50 +211,68 @@ class LinearModel(object):
             setattr(custom_model, k, v)
         return custom_model
 
-    def model_string_and_callback_predictors(self):
-        """Construct model expression string and list of callback predictors.
+    def _parse_predictors(self):
+        """Set model string, callback predictors and predictor names from predictors.
 
-        Constructs an expression string (to be evaluated by ``pandas.DataFrame.eval``)
-        corresponding to the evaluation of the model output for the subset of the
-        predictors which do not define a custom callback function and the model intercept,
-        or an empty string if no non-callback predictors are present.
+        Sets `self._model_string` to an expression string (to be evaluated by 
+        ``pandas.DataFrame.eval``) corresponding to the evaluation of the model output 
+        for the subset of the predictors which do not define a custom callback function
+        and the model intercept, or an empty string if no non-callback predictors are 
+        present.
         
-        Additionally returns a list of the omitted predictors with custom callback 
-        functions.
+        Additionally sets `self._callback_predictors` to a tuple of the omitted 
+        predictors with custom callback functions and `self._predictor_names` to a set 
+        of strings corresponding to names specified in the predictors.
         """
         # For additive models a zero coefficient corresponds to no effect while for
         # multiplicative and logistic models the relevant value is one
         null_coeff_value = 0 if self.lm_type == LinearModelType.ADDITIVE else 1
         predictor_strings = []
         callback_predictors = []
-        predictor_columns = set()
+        self._predictor_names = set()
         for predictor in self.predictors:
             if predictor.callback is None:
                 if predictor.property_name is not None:
-                    predictor_columns.add(predictor.property_name)
+                    self._predictor_names.add(predictor.property_name)
                 else:
+                    # If no property_name specified, predictor conditions will
+                    # contain one or more column names therefore parse condition
+                    # strings and filter for all name nodes. This will also
+                    # add non-column names such as builtin functions so need to
+                    # check if names are actually columns before using
                     for condition, _ in predictor.conditions:
-                        predictor_columns.update(re.findall('[A-z_]\w*', condition))
-                        #predictor_columns.update(
-                        #    node.id for node in ast.walk(ast.parse(condition))
-                        #    if isinstance(node, ast.Name)
-                        #)
+                        self._predictor_names.update(
+                            node.id for node in ast.walk(ast.parse(condition))
+                            if isinstance(node, ast.Name)
+                        )
                 has_catch_all_condition = False
                 for i, (condition, value) in enumerate(predictor.conditions):
                     if i == 0:
                         if condition is None:
+                            # 'otherwise' fallback condition - always True. If used as 
+                            # first condition any other conditions will be ignored as 
+                            # this condition matches all
                             predictor_str = f"{value}"
                             any_prev_conds = f"True"
                             has_catch_all_condition = True
+                            break
                         else:
                             predictor_str = f"({condition}) * {value}"
                             any_prev_conds = f"{condition}"
                     else:
+                        # conditions are potentially non-mutually exclusive and
+                        # are applied sequentially in order specified on subset
+                        # not matching any previous conditions
                         if condition is None:
+                            # 'otherwise' fallback condition - matches all not
+                            # so far matched therefore can ignore any remaining
+                            # conditions
                             predictor_str += f" + (~({any_prev_conds})) * {value}"
                             has_catch_all_condition = True
+                            break
                         else:
-                            predictor_str += f" + (~({any_prev_conds}) & {condition}) * {value}"
+                            predictor_str += (
+                                f" + (~({any_prev_conds}) & {condition}) * {value}")
                             any_prev_conds += f" | {condition}"
                 # If no 'otherwise' catch-all condition then add term corresponding to
                 # no effect when no previous conditions matched
@@ -260,80 +280,117 @@ class LinearModel(object):
                     predictor_str += f" + ~({any_prev_conds}) * {null_coeff_value}" 
                 predictor_strings.append(f"({predictor_str})")
             else:
+                self._predictor_names.add(predictor.property_name)
                 callback_predictors.append(predictor)
+
+        self._callback_predictors = tuple(callback_predictors)
 
         if len(predictor_strings) > 0:
     
-            if (self.lm_type == LinearModelType.ADDITIVE and self.intercept != 0) or self.intercept != 1:
+            if self.intercept != null_coeff_value:
+                # Only need to include intercept if its non-zero in additive models
+                # or non-unity in multiplicative/logistic models
                 predictor_strings.append(f"{self.intercept}")
 
         if self.lm_type == LinearModelType.ADDITIVE:
-            model_string = " + ".join(predictor_strings)
+            self._model_string = " + ".join(predictor_strings)
         else:
-            model_string = " * ".join(predictor_strings)
-
-        return model_string, callback_predictors, predictor_columns
+            self._model_string = " * ".join(predictor_strings)
 
 
-    def predict(self, df: pd.DataFrame, rng: Optional[np.random.RandomState] = None, **kwargs) -> pd.Series:
+    def _get_column_resolvers(
+        self, 
+        df: pd.DataFrame, 
+        **external_variables
+    ) -> Dict[str, pd.Series]:
+        """Construct mapping from predictor column names to column values.
+
+        For use in ``resolvers`` argument to ``pandas.eval`` call.
+
+        Compared to ``pandas.DataFrame._get_cleaned_column_resolvers()`` here only the
+        column names present in the model predictors are included when constructing the
+        returned dictionary. For dataframes with a large number of columns this is more
+        performant than iterating over all columns, of which typically only a small 
+        subset are used in each linear model. Any external variables specified in 
+        predictors are also included with dunder-wrapped keys (e.g '__ext_var__').
+        """
+        column_resolvers = {}
+        for name in self._predictor_names:
+            # predictor_names may contain built-in names that are not columns
+            # therefore we need to check if name is column in dataframe
+            col = df.get(name)
+            if col is not None:
+                cleaned_name = clean_column_name(name)
+                if (
+                    isinstance(col.dtype, pd.CategoricalDtype) 
+                    and col.dtype.categories.dtype == "int"
+                ):
+                    # `pandas.eval` raises an error when using boolean 
+                    # operations on series with a categorical dtype with integer 
+                    # categories therefore if any such columns are present we 
+                    # convert to integer type
+                    column_resolvers[cleaned_name] = col.astype("int")
+                else: 
+                    column_resolvers[cleaned_name] = col
+        for name, value in external_variables.items():
+            column_resolvers[f"__{name}__"] = pd.Series(value, index=df.index)
+        return column_resolvers
+
+    def predict(
+        self, 
+        df: pd.DataFrame, 
+        rng: Optional[np.random.RandomState] = None, 
+        **kwargs
+    ) -> pd.Series:
         """Evaluate linear model output for a given set of input data.
 
-        :param df: The input ``DataFrame`` containing the input data to evaluate the model with.
-        :param rng: If set to a NumPy ``RandomState`` instance, returned output will be boolean
-          ``Series`` corresponding to Bernoulli random variables sampled according to
-          probabilities specified by model output.
-        :param \**kwargs: Values for any external variables included in model predictors.
+        :param df: The input ``DataFrame`` containing the input data to evaluate the 
+          model with.
+        :param rng: If set to a NumPy ``RandomState`` instance, returned output will 
+          be boolean ``Series`` corresponding to Bernoulli random variables sampled 
+          according to probabilities specified by model output. Otherwise model
+          output directly returned.
+        :param **kwargs: Values for any external variables included in model 
+          predictors.
         """
+        # Check that all names specified in predictors are either a column name, an 
+        # external variable in kwargs (with __ prefix/suffix removed) or a built-in
+        for name in self._predictor_names:
+            assert (
+                name in df 
+                or name.strip("__") in kwargs 
+                or name in builtins.__dict__
+            ), (
+                f"Predictors include unknown name {name}"
+            )
 
-        if kwargs:
-            new_columns = {}
-            for column_name, value in kwargs.items():
-                new_columns[f'__{column_name}__'] = kwargs[column_name]
-            df = df.assign(**new_columns)
-        
-        converted_columns = {}
-        for column_name, dtype in zip(df.columns, df.dtypes):
-            # `pandas.DataFrame.eval` raises an error when using boolean operations on
-            # columns with a categorical dtype with integer categories therefore if any
-            # such columns are present we create a new DataFrame with any such columns
-            # converted to integer dtype
-            if isinstance(dtype, pd.CategoricalDtype) and dtype.categories.dtype == "int":
-                converted_columns[column_name] = df[column_name].astype("int")
-        if len(converted_columns) > 0:
-            df = df.assign(**converted_columns)
+        column_resolvers = self._get_column_resolvers(df, **kwargs)
 
-        # TODO: This could be cached so that it only requires evaluation on the initial
-        # `model.predict` call. To be robust to changes to the predictors it may make 
-        # sense to, for example, wrap `predictors` as a property and clear the cache on 
-        # any changes.
-        model_string, callback_predictors, predictor_columns = self.model_string_and_callback_predictors()
-
-        if model_string != "":
-            
-            if isinstance(df, ABCSeries):
-                column_resolvers = {clean_column_name(df.name): df}
-            else:
-                column_resolvers = {}
-                for col_name in predictor_columns:
-                    if col_name in df:
-                        cleaned_col_name = self._cleaned_column_names_cache.get(col_name, None)
-                        if cleaned_col_name is None:
-                            cleaned_col_name = clean_column_name(col_name)
-                            self._cleaned_column_names_cache[col_name] = cleaned_col_name
-                        column_resolvers[cleaned_col_name] = df[col_name]
-                
+        if self._model_string != "":
+  
             try:
-                result = df.eval(model_string, resolvers=(column_resolvers.copy(),), engine="numexpr")
+                result = pd.eval(
+                    self._model_string, 
+                    resolvers=(column_resolvers.copy(),), 
+                    engine="numexpr"
+                )
             except (ImportError, TypeError, ValueError):
-                # Fallback to `python` engine to evaluate expression if numexpr not available
-                # or expression cannot be evaluated with numexpr engine
-                result = df.eval(model_string, resolvers=(column_resolvers.copy(),),  engine="python")
+                # Fallback to `python` engine to evaluate expression if numexpr not 
+                # available or expression cannot be evaluated with numexpr engine
+                result = pd.eval(
+                    self._model_string, 
+                    resolvers=(column_resolvers.copy(),), 
+                    engine="python"
+                )
 
         else:
             result = pd.Series(data=self.intercept, index=df.index)
 
-        if len(callback_predictors) > 0:
-            callback_results = [df[p.property_name].apply(p.callback) for p in callback_predictors]
+        if len(self._callback_predictors) > 0:
+            callback_results = [
+                column_resolvers[p.property_name].apply(p.callback) 
+                for p in self._callback_predictors
+            ]
             if self.lm_type == LinearModelType.ADDITIVE:
                 result += sum(callback_results)
             else:
@@ -342,9 +399,12 @@ class LinearModel(object):
         if self.lm_type == LinearModelType.LOGISTIC:
             result = result / (1 + result)
 
+        # If the user supplied a random number generator then they want outcomes, 
+        # not probabilities
         if rng:
             outcome = rng.random_sample(len(result)) < result
-            # pop the boolean out of the series if we have a single row, otherwise return the series
+            # pop the boolean out of the series if we have a single row, 
+            # otherwise return the series
             if len(outcome) == 1:
                 return outcome.iloc[0]
             else:
