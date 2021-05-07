@@ -2,7 +2,7 @@ import numbers
 import re
 from enum import Enum, auto
 from math import prod
-from typing import Any, Callable, Union, Optional
+from typing import Any, Callable, Dict, Optional, Tuple, Union 
 
 import numpy as np
 import pandas as pd
@@ -123,45 +123,89 @@ class LinearModelType(Enum):
 
 class LinearModel(object):
 
-    def __init__(self, lm_type: LinearModelType, intercept: float, *args: Predictor):
+    def __init__(
+            self, 
+            lm_type: LinearModelType, 
+            intercept: Union[float, int], 
+            *predictors: Predictor
+        ):
+        """A linear model has an intercept and zero or more ``Predictor`` variables.
+        
+        :param lm_type: Model type to use.
+        :param intercept: Intercept term for the model.
+        :param *predictors: Any ``Predictor`` instances to use in computing output.
         """
-        A linear model has an intercept and zero or more Predictor variables.
+        assert lm_type in LinearModelType, (
+            "Model should be one of the prescribed LinearModelTypes"
+        )
+        self._lm_type = lm_type
+
+        assert isinstance(intercept, (float, int)), (
+            "Intercept is not specified or wrong type."
+        )
+        self._intercept = intercept
+
+        # Store predictors as tuple and expose via read-only property to prevent
+        # updates after model initialisation
+        self._predictors = tuple(predictors)
+        non_predictors = [p for p in self._predictors if not isinstance(p, Predictor)]
+        assert len(non_predictors) == 0, (
+            f"One or more predictors are of invalid type: {non_predictors}"
+        )
+
+
+    @property
+    def lm_type(self) -> LinearModelType:
+        """The model type."""
+        return self._lm_type
+
+    @property
+    def intercept(self) -> Union[float, int]:
+        """The intercept value for the model."""
+        return self._intercept
+
+    @property
+    def predictors(self) -> Tuple[Predictor]:
+        """The predictors used in calculating the model output."""
+        return self._predictors
+
+    @staticmethod
+    def multiplicative(*predictors: Predictor):
+        """Returns a multplicative LinearModel with intercept=1.0
+
+        :param predictors: One or more Predictor objects defining the model
         """
-        assert lm_type in LinearModelType, 'Model should be one of the prescribed LinearModelTypes'
-        self.lm_type = lm_type
-
-        assert isinstance(intercept, (float, int)), "Intercept is not specified or wrong type."
-        self.intercept = intercept
-
-        self.predictors = list()
-        for predictor in args:
-            assert isinstance(predictor, Predictor)
-            self.predictors.append(predictor)
-
-        self._cleaned_column_names_cache = {}
+        return LinearModel(LinearModelType.MULTIPLICATIVE, 1.0, *predictors)
 
     @staticmethod
     def custom(predict_function, **kwargs):
         """Define a linear model using the supplied function
 
-        The function acts as a drop-in replacement to the predict function and must implement the interface:
+        The function acts as a drop-in replacement to the predict function and must 
+        implement the interface:
 
-            (df: Union[pd.DataFrame, pd.Series], rng: np.random.RandomState = None, **kwargs)
+            (
+                self: LinearModel,
+                df: Union[pd.DataFrame, pd.Series],
+                rng: Optional[np.random.RandomState] = None, 
+                **kwargs
+            ) -> pd.Series
 
-        It is the responsibility of the caller of predict to ensure they pass either a dataframe or an
-        individual record as expected by the custom function.
+        It is the responsibility of the caller of predict to ensure they pass either
+        a dataframe or an individual record as expected by the custom function.
 
         See test_custom() in test_lm.py for a couple of examples.
         """
         # create an instance of a custom linear model
         custom_model = LinearModel(LinearModelType.CUSTOM, 0)
         # replace this instance's predict method
-        # see https://stackoverflow.com/questions/28127874/monkey-patching-python-an-instance-method
+        # see https://stackoverflow.com/a/28127947
         custom_model.predict = predict_function.__get__(custom_model, LinearModel)
         # save value to any keyword arguments inside of this linear model
         for k, v in kwargs.items():
             # check the name doesn't already exist
-            assert not hasattr(custom_model, k), f"Cannot store argument '{k}' as name already exists; change name."
+            assert not hasattr(custom_model, k), (
+                f"Cannot store argument '{k}' as name already exists; change name.")
             setattr(custom_model, k, v)
         return custom_model
 
@@ -307,14 +351,6 @@ class LinearModel(object):
                 return outcome
         else:
             return result
-
-    @staticmethod
-    def multiplicative(*predictors: Predictor):
-        """Returns a multplicative LinearModel with intercept=1.0
-
-        :param predictors: One or more Predictor objects defining the model
-        """
-        return LinearModel(LinearModelType.MULTIPLICATIVE, 1.0, *predictors)
 
     def __str__(self):
         out = "LinearModel(\n"\
