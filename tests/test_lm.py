@@ -1,5 +1,3 @@
-# TODO: Additional edge cases to test: model with no predictors, model with nan intercept (?)
-
 import io
 import os
 from pathlib import Path
@@ -423,6 +421,11 @@ def test_using_int_as_intercept():
         0
     )
     assert isinstance(eq, LinearModel)
+    pred = eq.predict(EXAMPLE_DF)
+    assert isinstance(pred, pd.Series)
+    assert pred.dtype == int
+    assert (pred.index == EXAMPLE_DF.index).all()
+    assert (pred == 0).all()
 
 
 def test_multiplicative_helper():
