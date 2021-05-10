@@ -1463,8 +1463,8 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             dx_tests_to_run='hiv_rapid_test',
             hsi_event=self
         )
-        person['hv_number_tests'] += 1
-        person['hv_last_test_date'] = self.sim.date
+        df.at[person_id, 'hv_number_tests'] += 1
+        df.at[person_id, 'hv_last_test_date'] = self.sim.date
 
         # If test is positive, flag as diagnosed and refer to ART
         if test_result is True:
