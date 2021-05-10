@@ -27,8 +27,6 @@ class Malaria(Module):
 
         :param name: Name of this module (optional, defaults to name of class)
         :param resourcefilepath: Path to the TLOmodel `resources` directory
-        :param testing: coverage of malaria testing, calibrated to match rdt/tx coverage levels
-        :param itn: projected future coverage of insecticide-treated bednets
         """
         super().__init__(name)
         self.resourcefilepath = Path(resourcefilepath)
@@ -89,9 +87,6 @@ class Malaria(Module):
         "p_sev_anaemia_preg": Parameter(
             Types.REAL,
             "probability of severe anaemia in pregnant women with clinical malaria",
-        ),
-        "testing_adj": Parameter(
-            Types.REAL, "additional malaria rdt to match reported coverage levels"
         ),
         "itn_proj": Parameter(
             Types.REAL, "coverage of ITN for projections 2020 onwards"
@@ -1226,7 +1221,7 @@ class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
 
         # select people infected at least 100 days ago
         asym_inf = df.index[df.is_alive &
-                                (df.ma_date_infected < (self.sim.date - DateOffset(days=p["dur_asym"])))]
+                            (df.ma_date_infected < (self.sim.date - DateOffset(days=p["dur_asym"])))]
 
         df.loc[asym_inf, "ma_inf_type"] = "none"
         df.loc[asym_inf, "ma_is_infected"] = False
