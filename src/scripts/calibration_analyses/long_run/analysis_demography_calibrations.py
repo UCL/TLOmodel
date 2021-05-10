@@ -5,6 +5,8 @@ This uses Scenario file: src/scripts/long_run/long_run.py
 
 """
 
+# TODO -- When the long-runs work, finish off converting this script to use the results from the batchrun system
+
 import pickle
 from datetime import datetime
 from pathlib import Path
@@ -31,8 +33,17 @@ from tlo.analysis.utils import (
 from tlo.methods import demography
 from tlo.util import create_age_range_lookup
 
+# Declare usual paths:
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
+rfp = Path('./resources')
+
+# ** Declare the results folder ***
 results_folder = get_scenario_outputs('long_run.py', outputspath)[-1]
+
+# Declare path for output graphs from this script
+make_graph_file_name = lambda stub: outputspath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
+
+# %% Examine the results folder:
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder, draw=0, run=0)
@@ -41,59 +52,24 @@ log = load_pickled_dataframes(results_folder, draw=0, run=0)
 info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
-params = extract_params(results_folder)
-
-# TODO -- When the long-runs work, finish off converting this script to use the results from the batchrun system
-
-#     # We register all modules in a single call to the register method, calling once with multiple
-#     # objects. This is preferred to registering each module in multiple calls because we will be
-#     # able to handle dependencies if modules are registered together
-#     sim.register(
-#         demography.Demography(resourcefilepath=resources),
-#         enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-#         healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
-#         symptommanager.SymptomManager(resourcefilepath=resources),
-#         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-#         healthburden.HealthBurden(resourcefilepath=resources),
-#         contraception.Contraception(resourcefilepath=resources),
-#         care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
-#         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
-#         labour.Labour(resourcefilepath=resources),
-#         newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
-#         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
-#     )
-# # 2) Extract a specific log series for all runs:
-# extracted = extract_results(results_folder,
-#                             module="tlo.methods.mockitis",
-#                             key="summary",
-#                             column="PropInf",
-#                             index="date")
+# params = extract_params(results_folder)
 
 
-# %% Filename etc
-
-# Resource file path
-rfp = Path("./resources")
-
-# Where will outputs be found
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
-results_filename = outputpath / '2020_11_25_long_run.pickle'
-
-with open(results_filename, 'rb') as f:
-    output = pickle.load(f)['output']
-
-make_file_name = lambda stub: outputpath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
-
-# %% read the results and do the scaling:
-scaled_output = demography.scale_to_population(output, rfp)
 
 # %% Population Size
 # Trend in Number Over Time
 
-# Population Growth Over Time:
-# Load and format model results
-model_df = scaled_output["tlo.methods.demography"]["population"]
-model_df['year'] = pd.to_datetime(model_df.date).dt.year
+# 1) Population Growth Over Time:
+
+# Load and format model results (with year as integer:
+pop_model = summarize(extract_results(results_folder,
+                            module="tlo.methods.demography",
+                            key="population",
+                            column="total",
+                            index="date"),
+                      collapse_columns=True
+                      )
+pop_model.index = pop_model.index.year
 
 # Load Data: WPP_Annual
 wpp_ann = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
@@ -101,18 +77,31 @@ wpp_ann_total = wpp_ann.groupby(['Year']).sum().sum(axis=1)
 
 # Load Data: Census
 cens = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
-cens_2018 = cens.groupby('Sex')['Count'].sum()
+cens_2018 = cens.groupby('Sex')['Count'].sum().sum()
+
+# Work out the scaling-factor (using mean in case sampling is ever greater than once per year):
+mean_pop_2018 = pop_model.loc[pop_model.index == 2018, 'mean'].mean()
+sf = cens_2018 / mean_pop_2018
+
+# Update the model results to incorporate the scaling factor
+pop_model *= sf
 
 # Plot population size over time
-plt.plot(model_df['year'], model_df['total'])
+plt.plot(pop_model.index, pop_model['mean'])
+plt.fill_between(pop_model.index,
+                 pop_model['lower'],
+                 pop_model['upper'],
+                 color='blue',
+                 alpha=0.5
+                 )
 plt.plot(wpp_ann_total.index, wpp_ann_total)
-plt.plot(2018, cens_2018.sum(), '*')
+plt.plot(2018, cens_2018, '*')
 plt.title("Population Size")
 plt.xlabel("Year")
 plt.ylabel("Population Size")
 plt.gca().set_xlim(2010, 2050)
 plt.legend(["Model", "WPP", "Census 2018"])
-plt.savefig(make_file_name("Pop_Over_Time"))
+plt.savefig(make_graph_file_name("Pop_Over_Time"))
 plt.show()
 
 # Population Size in 2018
