@@ -10,13 +10,18 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
+    care_of_women_during_pregnancy,
+    contraception,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     hiv,
-    simplified_births,
+    labour,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
     symptommanager,
 )
 
@@ -48,15 +53,22 @@ log_config = {
 # Register the appropriate modules
 sim = Simulation(start_date=start_date, seed=100, log_config=log_config)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+             contraception.Contraception(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                       service_availability=['*']),
+             labour.Labour(resourcefilepath=resourcefilepath),
+             newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
              hiv.Hiv(resourcefilepath=resourcefilepath)
              )
+
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
