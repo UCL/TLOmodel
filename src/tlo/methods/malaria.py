@@ -320,40 +320,12 @@ class Malaria(Module):
         alive_now_infected_pregnant = alive_infected_clinical & (df.ma_date_infected == now) & df.is_pregnant
         df.loc[alive_now_infected_pregnant, "ma_clinical_preg_counter"] += 1
 
-        # # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
-        # # schedule self-cure if no treatment, no self-cure from severe malaria
-        #
-        # # asymptomatic (can't reuse now_infected, because some asym might have become clinical)
-        # asym = df.is_alive & (df.ma_inf_type == "asym") & (df.ma_date_infected == now)
-        #
-        # for person in df.index[asym]:
-        #     random_date = rng.randint(low=0, high=p["dur_asym"])
-        #     random_days = pd.to_timedelta(random_date, unit="d")
-        #
-        #     cure = MalariaParasiteClearanceEvent(self, person)
-        #     self.sim.schedule_event(cure, (self.sim.date + random_days))
-
         # ----------------------------------- CLINICAL MALARIA SYMPTOMS -----------------------------------
         # clinical - can't use now_clinical, because some clinical may have become severe
         clin = df.index[df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_symptoms == now)]
 
         # update clinical symptoms for all new clinical infections
         self.clinical_symptoms(df, clin)
-
-        # for person in clin:
-        #     # clinical symptoms resolve after 5 days
-        #     # parasitaemia clears after much longer
-        #
-        #     date_para = rng.randint(low=0, high=p["dur_clin_para"])
-        #     date_para_days = pd.to_timedelta(date_para, unit="d")
-        #     # print('date_para_days', date_para_days)
-        #
-        #     cure = MalariaParasiteClearanceEvent(self, person)
-        #     self.sim.schedule_event(cure, (self.sim.date + date_para_days))
-        #
-        #     # symptoms are resolved using the symptom manager but have to change ma_inf_type == "clinical" to "none"
-        #     change_clinical_status = MalariaCureEvent(self, person)
-        #     self.sim.schedule_event(change_clinical_status, (self.sim.date + DateOffset(days=5)))
 
         # ----------------------------------- SEVERE MALARIA SYMPTOMS -----------------------------------
 
