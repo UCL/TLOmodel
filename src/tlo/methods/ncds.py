@@ -611,7 +611,6 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # output combinations of different conditions
         df = population.props
-        df = df[df.is_alive]
 
         combos = combinations(self.module.condition_list, 2)
         condition_combos = list(combos)
@@ -619,9 +618,9 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_combos = pd.DataFrame(index=df['age_range'].value_counts().sort_index().index)
 
         for i in range(0, len(condition_combos)):
-            df['nc_condition_combos'] = np.where(
+            df.loc[df.is_alive, 'nc_condition_combos'] = np.where(
                 df.loc[:, f'{condition_combos[i][0]}'] & df.loc[:, f'{condition_combos[i][1]}'], True, False)
-            col = df.loc[df['nc_condition_combos']].groupby(['age_range'])['nc_condition_combos'].count()
+            col = df.loc[df.is_alive].groupby(['age_range'])['nc_condition_combos'].count()
             n_combos.reset_index()
             n_combos.loc[:, (f'{condition_combos[i][0]}' + '_' + f'{condition_combos[i][1]}')] = col.values
 
