@@ -569,7 +569,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Prevalence of conditions broken down by sex and age
 
         for condition in self.module.conditions:
-            prev_age_sex = proportion_of_something_in_a_groupby_ready_for_logging(df, f'nc_{condition}',
+            prev_age_sex = proportion_of_something_in_a_groupby_ready_for_logging(df.loc[df.is_alive], f'nc_{condition}',
                                                                                   ['sex', 'age_range'])
 
             # Prevalence of conditions broken down by sex and age
@@ -619,7 +619,10 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for i in range(0, len(condition_combos)):
             df.loc[df.is_alive, 'nc_condition_combos'] = np.where(
-                df.loc[:, f'{condition_combos[i][0]}'] & df.loc[:, f'{condition_combos[i][1]}'], True, False)
+                df.loc[df.is_alive, f'{condition_combos[i][0]}'] &
+                df.loc[df.is_alive, f'{condition_combos[i][1]}'],
+                True, False
+            )
             col = df.loc[df.is_alive].groupby(['age_range'])['nc_condition_combos'].count()
             n_combos.reset_index()
             n_combos.loc[:, (f'{condition_combos[i][0]}' + '_' + f'{condition_combos[i][1]}')] = col.values
