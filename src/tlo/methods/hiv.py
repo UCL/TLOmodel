@@ -903,6 +903,34 @@ class Hiv(Module):
         draw_number_of_months = int(np.round(self.rng.exponential(mean)))
         return pd.DateOffset(months=draw_number_of_months)
 
+    def do_when_hiv_diagnosed(self, person_id):
+        """Things to do when a person has been tested and found (newly) be be HIV-positive:.
+        * Consier if ART should be initiated, and schedule HSI if so.
+        The person should not yet be on ART.
+
+        """
+        df = self.sim.population.props
+
+        if not (df.loc[person_id, 'hv_art'] == 'not'):
+            logger.warning("This event should not be running. do_when_diagnosed is for persons being newly dianogsed.")
+
+        # Consider if the person will be referred to start ART
+        has_aids_symptoms = 'aids_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
+
+        starts_art = self.lm['lm_art'].predict(
+            df=df.loc[[person_id]],
+            rng=self.rng,
+            has_aids_symptoms=has_aids_symptoms
+        )
+
+        if starts_art:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
+
     def stops_treatment(self, person_id):
         """Helper function that is called when someone stops being on ART.
         Sets the flag for ART status. If the person was already on ART, it schedules a new AIDSEvent"""
@@ -1193,11 +1221,8 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
         m = self.module
 
-        if not person["is_alive"]:
-            return
-
-        # If the person is no longer a sex worker they will not continue on PrEP
-        if not person["li_is_sexworker"]:
+        # If the person is no longer alive, and sex worker and not diagnosed, they will not continue on PrEP
+        if (not person["is_alive"]) or (not person["li_is_sexworker"]) or (person["hv_diagnosed"]):
             return
 
         # Check that there are on PrEP currently:
@@ -1331,21 +1356,10 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                 # The test_result is HIV positive
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'VCTPositive': 1})
 
-                # Update diagnosis if the person is indeed HIV positive
+                # Update diagnosis if the person is indeed HIV positive;
                 if person['hv_inf']:
                     df.at[person_id, 'hv_diagnosed'] = True
-
-                    # Consider if the person will be referred to start ART
-                    has_aids_symptoms = 'aids_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
-                    if self.module.lm['lm_art'].predict(df=df.loc[[person_id]],
-                                                        rng=self.module.rng,
-                                                        has_aids_symptoms=has_aids_symptoms):
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self.module),
-                            topen=self.sim.date,
-                            tclose=None,
-                            priority=0
-                        )
+                    self.module.do_when_hiv_diagnosed(person_id=person_id)
 
             else:
                 # The test_result is HIV negative
@@ -1440,8 +1454,8 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        # Do not run if the person is not alive or is not currently a sex worker
-        if not person["is_alive"]:
+        # Do not run if the person is not alive, or is not currently a sex worker, or is diagnosed
+        if (not person["is_alive"]) or (not person["li_is_sexworker"]) or (person["hv_diagnosed"]):
             return
 
         # Run an HIV test
@@ -1456,14 +1470,10 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         if test_result is True:
             # label as diagnosed
             df.at[person_id, 'hv_diagnosed'] = True
-            # Consider if the person will be referred to start ART
-            if self.module.lm['lm_art'].predict(df.loc[[person_id]], self.module.rng):
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self.module),
-                    topen=self.sim.date,
-                    tclose=None,
-                    priority=0
-                )
+
+            # Do actions for when a person has been diagnosed with HIV
+            self.module.do_when_hiv_diagnosed(person_id=person_id)
+
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
         # Check that PrEP is available and if it is, initiate or continue  PrEP:
