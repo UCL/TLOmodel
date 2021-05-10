@@ -9,7 +9,6 @@ import pandas as pd
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
@@ -17,8 +16,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     hiv,
-    labour,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 
@@ -33,7 +31,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2012, 1, 1)
 popsize = 1000
 
 # Establish the simulation object
@@ -50,15 +48,13 @@ log_config = {
 # Register the appropriate modules
 sim = Simulation(start_date=start_date, seed=100, log_config=log_config)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             contraception.Contraception(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-             labour.Labour(resourcefilepath=resourcefilepath),
-             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
              hiv.Hiv(resourcefilepath=resourcefilepath)
              )
 
