@@ -21,8 +21,8 @@ from tlo.methods import (
 from tlo.methods.healthsystem import HSI_Event
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 1000
+end_date = Date(2012, 1, 1)
+popsize = 500
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
@@ -118,6 +118,7 @@ def test_remove_malaria_test(tmpdir):
 
     service_availability = list([" "])  # no treatments available
 
+    end_date = Date(2011, 1, 1)
     sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
@@ -129,7 +130,7 @@ def test_remove_malaria_test(tmpdir):
             mode_appt_constraints=0,
             ignore_cons_constraints=True,
             ignore_priority=True,
-            capabilities_coefficient=0,
+            capabilities_coefficient=0.0,
             disable=False,  # disables the health system constraints so all HSI events run
         ),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -142,17 +143,18 @@ def test_remove_malaria_test(tmpdir):
         malaria.Malaria(resourcefilepath=resourcefilepath)
     )
     # Run the simulation and flush the logger
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-    check_dtypes(sim)
-
-    df = sim.population.props
+    sim.make_initial_population(n=2000)
 
     # set testing adjustment to 0
     sim.modules['Malaria'].parameters['testing_adj'] = 0
 
     # increase death rate due to severe malaria
     sim.modules['Malaria'].parameters['cfr'] = 1.0
+
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    df = sim.population.props
 
     # check no-one on malaria treatment
     assert not (df.ma_date_tx == pd.NaT).all()
@@ -188,10 +190,12 @@ def test_schedule_rdt_for_all(tmpdir):
 
     df = sim.population.props
 
-    # check no treatment unless positive rdt (ma_is_infected == True)
+    # check no treatment unless infected
     for person in df.index[df.ma_tx]:
         assert not pd.isnull(df.at[person, "ma_date_infected"])
-        assert not df.at[person, "ma_inf_type"] == "none"
+
+    # check clinical counter is working
+    assert sum(df["ma_clinical_counter"]) > 0
 
 
 def test_dx_algorithm_for_malaria_outcomes():

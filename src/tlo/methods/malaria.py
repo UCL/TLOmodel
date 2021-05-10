@@ -68,9 +68,9 @@ class Malaria(Module):
         "sev_symp_prob": Parameter(
             Types.REAL, "probabilities of each symptom for severe malaria cases"
         ),
-        "p_infection": Parameter(
-            Types.REAL, "Probability that an uninfected individual becomes infected"
-        ),
+        # "p_infection": Parameter(
+        #     Types.REAL, "Probability that an uninfected individual becomes infected"
+        # ),
         "sensitivity_rdt": Parameter(Types.REAL, "Sensitivity of rdt"),
         "cfr": Parameter(Types.REAL, "case-fatality rate for severe malaria"),
         "dur_asym": Parameter(Types.REAL, "duration (days) of asymptomatic malaria"),
@@ -102,9 +102,9 @@ class Malaria(Module):
         "data_end": Parameter(
             Types.REAL, "final year of ICL malaria model outputs, after 2018 = projections"
         ),
-        "prob_sev": Parameter(
-            Types.REAL, "probability of infected case becoming severe"
-        ),
+        # "prob_sev": Parameter(
+        #     Types.REAL, "probability of infected case becoming severe"
+        # ),
         "irs_rates_boundary": Parameter(
             Types.REAL, "threshold for indoor residual spraying coverage"
         ),
@@ -382,7 +382,7 @@ class Malaria(Module):
             random_days = pd.to_timedelta(random_date, unit="d")
 
             death_event = MalariaDeathEvent(
-                self, individual_id=person, cause="malaria"
+                self, individual_id=person, cause="severe_malaria"
             )  # make that death event
             self.sim.schedule_event(
                 death_event, self.sim.date + random_days
@@ -659,7 +659,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
             if prob < self.module.parameters["treatment_adjustment"]:
                 self.sim.schedule_event(
                     demography.InstantaneousDeath(
-                        self.module, individual_id, cause="severe_malaria"
+                        self.module, individual_id, cause=self.cause
                     ),
                     self.sim.date,
                 )
@@ -669,7 +669,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
         else:
             self.sim.schedule_event(
                 demography.InstantaneousDeath(
-                    self.module, individual_id, cause="severe_malaria"
+                    self.module, individual_id, cause=self.cause
                 ),
                 self.sim.date,
             )
