@@ -1489,6 +1489,8 @@ class Labour(Module):
                     all_available = hsi_event.get_all_consumables(
                         pkg_codes=[pkg_code_pprom])
 
+                    # TODO: review antibiotics in this package, add equipment to deliver IV
+
                     # And provide if available. Antibiotics for from reduce risk of newborn sepsis within the first
                     # week of life
                     if all_available:
@@ -1507,6 +1509,8 @@ class Labour(Module):
                     consumables.loc[consumables['Items'] == 'Dexamethasone 5mg/ml, 5ml_each_CMST', 'Item_Code'])[0]
                 item_code_steroids_prem_betamethasone = pd.unique(
                     consumables.loc[consumables['Items'] == 'Betamethasone, 12 mg injection', 'Item_Code'])[0]
+
+                # todo: add consumables for delivering IV drugs (there is a consumables pkg we could ammend)
 
                 consumables_steriod_preterm = {
                     'Intervention_Package_Code': {},
@@ -1562,6 +1566,8 @@ class Labour(Module):
                                 'Intervention_Pkg_Code'])[0]
             all_available = hsi_event.get_all_consumables(
                 pkg_codes=[pkg_code_severe_pre_eclampsia])
+
+            # todo: check consumables match with those used in other modules
 
             # Here we run a dx_test function to determine if the birth attendant will correctly identify this womans
             # severe pre-eclampsia, and therefore administer treatment
@@ -1714,6 +1720,8 @@ class Labour(Module):
             consumables_obstructed_labour = {'Intervention_Package_Code': {pkg_code_obstructed_labour: 1},
                                              'Item_Code': {item_code_forceps: 1, item_code_vacuum: 1}}
 
+            # todo: review the contents of this consumables pkg
+
             outcome_of_request_for_consumables_ol = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=hsi_event,
                 cons_req_as_footprint=consumables_obstructed_labour)
@@ -1780,6 +1788,8 @@ class Labour(Module):
             pkg_code_sepsis = pd.unique(
                 consumables.loc[consumables['Intervention_Pkg'] == 'Maternal sepsis case management',
                                 'Intervention_Pkg_Code'])[0]
+
+            # todo: review consumables pkg, 5+ abx for a single case
 
             all_available = hsi_event.get_all_consumables(
                 pkg_codes=[pkg_code_sepsis])
@@ -3110,6 +3120,9 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # ================================ SURGICAL MANAGEMENT OF RUPTURED UTERUS =====================================
         # Women referred after the labour HSI following correct identification of ruptured uterus will also need to
         # undergo surgical repair of this complication
+        # TODO: women who have a caesarean due to UTERINE rupture will be treated, i dont know if this should be
+        #  seperated (i.e. no woman would have a CS and not have her uterus repaired/removed)
+
         if mni[person_id]['referred_for_surgery'] and self.timing == 'intrapartum' and df.at[person_id,
                                                                                              'la_uterine_rupture']:
 

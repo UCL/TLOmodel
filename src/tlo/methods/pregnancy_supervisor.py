@@ -38,7 +38,7 @@ class PregnancySupervisor(Module):
         self.deficiencies_in_pregnancy = None
 
         # This variable will store a Bitset handler for the property ps_abortion_complications
-        self.abortion_complication = None
+        self.abortion_complications = None
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHBURDEN}
@@ -204,12 +204,13 @@ class PregnancySupervisor(Module):
             Types.REAL, 'case fatality rate for chorioamnionitis'),
         'prob_still_birth_chorioamnionitis': Parameter(
             Types.REAL, 'probability of still birth for chorioamnionitis'),
-        'prob_first_anc_visit_gestational_age': Parameter(
-            Types.LIST, 'probability of initiation of ANC by month'),
         'prob_four_or_more_anc_visits': Parameter(
             Types.REAL, 'probability of a woman undergoing 4 or more basic ANC visits'),
-        'prob_eight_or_more_anc_visits': Parameter(
-            Types.REAL, 'probability of a woman undergoing 8 or more basic ANC visits'),
+        'prob_anc1_months_1_to_4': Parameter(
+            Types.LIST, 'list of probabilities that a woman will attend her first ANC visit at either month 1, 2, 3 or'
+                        ' 4 of pregnancy'),
+        'prob_anc1_months_5_to_9': Parameter(
+            Types.LIST, 'list of probabilities that a woman will attend her first ANC visit on months 5-10'),
         'prob_anc_at_facility_level_1_2': Parameter(
             Types.LIST, 'probabilities a woman will attend ANC 1 at facility levels 1 or 2'),
         'probability_htn_persists': Parameter(
@@ -237,7 +238,7 @@ class PregnancySupervisor(Module):
         'ps_anaemia_in_pregnancy': Property(Types.CATEGORICAL, 'Whether a woman has anaemia in pregnancy and its '
                                                                'severity',
                                             categories=['none', 'mild', 'moderate', 'severe']),
-        'ps_will_attend_four_or_more_anc': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more '
+        'ps_will_initiate_anc4_early': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more '
                                                                 'antenatal care visits during her pregnancy'),
         'ps_abortion_complications': Property(Types.INT, 'Bitset column holding types of abortion complication'),
         'ps_prev_spont_abortion': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
@@ -318,7 +319,7 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
         df.loc[df.is_alive, 'ps_deficiencies_in_pregnancy'] = 0
         df.loc[df.is_alive, 'ps_anaemia_in_pregnancy'] = 'none'
-        df.loc[df.is_alive, 'ps_will_attend_four_or_more_anc'] = False
+        df.loc[df.is_alive, 'ps_will_initiate_anc4_early'] = False
         df.loc[df.is_alive, 'ps_abortion_complications'] = 0
         df.loc[df.is_alive, 'ps_prev_spont_abortion'] = False
         df.loc[df.is_alive, 'ps_prev_stillbirth'] = False
@@ -364,8 +365,6 @@ class PregnancySupervisor(Module):
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # All linear equations used in this module are stored within the ps_linear_equations parameter below
 
-        # TODO: process of 'selection' of important predictors in linear equations is ongoing, a linear model that
-        #  is empty of predictors at the end of this process will be converted to a set probability
         params = self.parameters
 
         params['ps_linear_equations'] = {
@@ -564,15 +563,9 @@ class PregnancySupervisor(Module):
 
             # This equation calculates a the probability a woman will attend at least 4 ANC contacts during her
             # pregnancy - derived from Wingstons analysis of DHS data
-            'four_or_more_anc_visits': LinearModel(
+            'early_initiation_anc4': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_four_or_more_anc_visits']),
-
-            # This equation calculates a the probability a woman will attend at least 8 ANC contacts during her
-            # pregnancy - derived from Wingstons analysis of DHS data
-            'eight_or_more_anc_visits': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_eight_or_more_anc_visits']),
         }
 
     def on_birth(self, mother_id, child_id):
@@ -585,7 +578,7 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_multiple_pregnancy'] = False
         df.at[child_id, 'ps_deficiencies_in_pregnancy'] = 0
         df.at[child_id, 'ps_anaemia_in_pregnancy'] = 'none'
-        df.at[child_id, 'ps_will_attend_four_or_more_anc'] = False
+        df.at[child_id, 'ps_will_initiate_anc4_early'] = False
         df.at[child_id, 'ps_abortion_complications'] = 0
         df.at[child_id, 'ps_prev_spont_abortion'] = False
         df.at[child_id, 'ps_prev_stillbirth'] = False
@@ -792,7 +785,7 @@ class PregnancySupervisor(Module):
         set[id_or_index, 'ps_date_of_anc1'] = pd.NaT
         set[id_or_index, 'ps_placenta_praevia'] = False
         set[id_or_index, 'ps_anaemia_in_pregnancy'] = 'none'
-        set[id_or_index, 'ps_will_attend_four_or_more_anc'] = False
+        set[id_or_index, 'ps_will_initiate_anc4_early'] = False
         set[id_or_index, 'ps_htn_disorders'] = 'none'
         set[id_or_index, 'ps_gest_diab'] = 'none'
         set[id_or_index, 'ps_placental_abruption'] = False
@@ -815,6 +808,45 @@ class PregnancySupervisor(Module):
         """
 
         return self.rng.random_sample(len(df)) < lm.predict(df)
+
+    def schedule_anc_one(self, individual_id, anc_month):
+        """
+        This functions schedules the first ANC visit for newly pregnant women depending on their predicted month of
+        attendance
+        :param anc_month: month of pregnancy that woman will attend ANC 1
+        :param individual_id: individual_id
+        :return:
+        """
+        df = self.sim.population.props
+        params = self.parameters
+
+        days_until_anc_month_start = anc_month * 30  # we approximate 30 days in a month
+        days_until_anc_month_end = days_until_anc_month_start + 29
+        days_until_anc = self.module.rng.randint(days_until_anc_month_start, days_until_anc_month_end)
+        first_anc_date = self.sim.date + DateOffset(days=days_until_anc)
+
+        # We store that date as a property which is used by the HSI to ensure the event only runs when it
+        # should
+        df.at[individual_id, 'ps_date_of_anc1'] = first_anc_date
+        logger.debug(key='msg', data=f'{individual_id} will attend ANC 1 in {anc_month} months on '
+                                     f'{first_anc_date}')
+
+        # We used a weighted draw to decide what facility level this woman will seek care at, as ANC is offered
+        # at multiple levels
+
+        facility_level = int(self.module.rng.choice([1, 2], p=params['prob_anc_at_facility_level_1_2']))
+
+        from tlo.methods.care_of_women_during_pregnancy import (
+            HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact,
+        )
+
+        first_anc_appt = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
+            self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id,
+            facility_level_of_this_hsi=facility_level)
+
+        self.sim.modules['HealthSystem'].schedule_hsi_event(first_anc_appt, priority=0,
+                                                            topen=first_anc_date,
+                                                            tclose=first_anc_date + DateOffset(days=3))
 
     def apply_risk_of_spontaneous_abortion(self, gestation_of_interest):
         """
@@ -1691,52 +1723,32 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ----------------------------------- SCHEDULING FIRST ANC VISIT -----------------------------------------
         # Finally for these women we determine care seeking for the first antenatal care contact of their
-        # pregnancy. We use a linear model to determine if women will attend four or more visits
+        # pregnancy. We use a linear model to predict if these women will attend early ANC and at least 4 visits
         anc_attendance = self.module.apply_linear_model(
-            params['ps_linear_equations']['four_or_more_anc_visits'],
+            params['ps_linear_equations']['early_initiation_anc4'],
             df.loc[new_pregnancy & (df['ps_ectopic_pregnancy'] == 'none')])
 
         # This property is used  during antenatal care to ensure the right % of women attend four or more visits
-        df.loc[anc_attendance.loc[anc_attendance].index, 'ps_will_attend_four_or_more_anc'] = True
+        df.loc[anc_attendance.loc[anc_attendance].index, 'ps_will_initiate_anc4_early'] = True
+
+        for person in anc_attendance.loc[anc_attendance].index:
+            random_draw_gest_at_anc = self.module.rng.choice([1, 2, 3, 4],  # todo: and 4?
+                                                             p=params['prob_anc1_months_1_to_4'])
+
+            self.module.schedule_anc_one(self, individual_id=person, anc_month=random_draw_gest_at_anc)
 
         # Gestation of first ANC visit (month) is selected via a random weighted draw to represent the distribution
         # of first ANC attendance by gestational age
-        for person in anc_attendance.index:
-            random_draw_gest_at_anc = self.module.rng.choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                                                             p=params['prob_first_anc_visit_gestational_age'])
+        for person in anc_attendance.loc[~anc_attendance].index:
+            random_draw_gest_at_anc = self.module.rng.choice([5, 6, 7, 8, 9, 10],
+                                                             p=params['prob_anc1_months_5_to_9'])
 
             # We use month ten to capture women who will never attend ANC during their pregnancy
             if random_draw_gest_at_anc == 10:
                 pass
             else:
                 # Otherwise we use the result of the random draw to schedule the first ANC visit
-                days_until_anc_month_start = random_draw_gest_at_anc * 30  # we approximate 30 days in a month
-                days_until_anc_month_end = days_until_anc_month_start + 29
-                days_until_anc = self.module.rng.randint(days_until_anc_month_start, days_until_anc_month_end)
-                first_anc_date = self.sim.date + DateOffset(days=days_until_anc)
-
-                # We store that date as a property which is used by the HSI to ensure the event only runs when it
-                # should
-                df.at[person, 'ps_date_of_anc1'] = first_anc_date
-                logger.debug(key='msg', data=f'{person} will attend ANC 1 in {random_draw_gest_at_anc} months on '
-                                             f'{first_anc_date}')
-
-                # We used a weighted draw to decide what facility level this woman will seek care at, as ANC is offered
-                # at multiple levels
-
-                facility_level = int(self.module.rng.choice([1, 2], p=params['prob_anc_at_facility_level_1_2']))
-
-                from tlo.methods.care_of_women_during_pregnancy import (
-                    HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact,
-                )
-
-                first_anc_appt = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
-                    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person,
-                    facility_level_of_this_hsi=facility_level)
-
-                self.sim.modules['HealthSystem'].schedule_hsi_event(first_anc_appt, priority=0,
-                                                                    topen=first_anc_date,
-                                                                    tclose=first_anc_date + DateOffset(days=3))
+                self.module.schedule_anc_one(self, individual_id=person, anc_month=random_draw_gest_at_anc)
 
         # ------------------------ APPLY RISK OF ADDITIONAL PREGNANCY COMPLICATIONS -----------------------------------
         # The following functions apply risk of key complications/outcomes of pregnancy as specific time points of a

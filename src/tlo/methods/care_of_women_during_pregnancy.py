@@ -510,7 +510,7 @@ class CareOfWomenDuringPregnancy(Module):
             # PregnancySupervisor module when ANC1 is scheduled) her subsequent ANC appointment is automatically
             # scheduled
             if visit_to_be_scheduled <= 4:
-                if df.at[individual_id, 'ps_will_attend_four_or_more_anc']:
+                if df.at[individual_id, 'ps_will_initiate_anc4_early']:
 
                     # We subtract this womans current gestational age from the recommended gestational age for the next
                     # contact
@@ -928,8 +928,6 @@ class CareOfWomenDuringPregnancy(Module):
         # Define the consumables
         item_code_hep_test = pd.unique(
             consumables.loc[consumables['Items'] == 'Hepatitis B test kit-Dertemine_100 tests_CMST', 'Item_Code'])[0]
-        item_code_blood_tube = pd.unique(
-            consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
         item_code_needle = pd.unique(
             consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
         item_code_gloves = pd.unique(
@@ -937,7 +935,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         consumables_hep_b_test = {
             'Intervention_Package_Code': {},
-            'Item_Code': {item_code_hep_test: 1, item_code_blood_tube: 1, item_code_needle: 1, item_code_gloves: 1}}
+            'Item_Code': {item_code_hep_test: 1, item_code_needle: 1, item_code_gloves: 1}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=hsi_event,
@@ -945,7 +943,6 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If the consumables are available and the HCW will provide the test, the test is delivered
         if (outcome_of_request_for_consumables['Item_Code'][item_code_hep_test]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_blood_tube]) and \
             (outcome_of_request_for_consumables['Item_Code'][item_code_needle]) and \
             (outcome_of_request_for_consumables['Item_Code'][item_code_gloves]) and (self.rng.random_sample() <
                                                                                      params['prob_intervention_'
@@ -1256,7 +1253,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Define the required consumables
         item_code_hb_test = pd.unique(
-            consumables.loc[consumables['Items'] == 'Haemoglobin test (HB)', 'Item_Code'])[0]
+            consumables.loc[consumables['Items'] == 'Complete blood count', 'Item_Code'])[0]
         item_code_blood_tube = pd.unique(
             consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
         item_code_needle = pd.unique(
@@ -1334,6 +1331,8 @@ class CareOfWomenDuringPregnancy(Module):
             consumables.loc[
                 consumables['Items'] ==
                 'vitamin B12 (cyanocobalamine) 1 mg/ml, 1 ml, inj._100_IDA', 'Item_Code'])[0]
+
+        # TODO: add consumables (needle, syringe, gloves)
 
         # If iron or folate deficient, a woman will need to take additional daily supplements. If B12 deficient this
         # should occur monthly
@@ -1455,23 +1454,18 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Check for consumables
         item_code_blood = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-        item_code_needle = pd.unique(consumables.loc[consumables['Items'] == 'Lancet, blood, disposable',
-                                                     'Item_Code'])[0]
-        item_code_test = pd.unique(consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
+
         item_code_giving_set = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
                                                          'Item_Code'])[0]
 
         consumables_needed_bt = {'Intervention_Package_Code': {},
-                                 'Item_Code': {item_code_blood: 2, item_code_needle: 1, item_code_test: 1,
-                                               item_code_giving_set: 2}}
+                                 'Item_Code': {item_code_blood: 2, item_code_giving_set: 2}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=hsi_event, cons_req_as_footprint=consumables_needed_bt)
 
         # If the consumables are available the intervention is delivered
         if (outcome_of_request_for_consumables['Item_Code'][item_code_blood]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_test]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_needle]) and \
            (outcome_of_request_for_consumables['Item_Code'][item_code_giving_set]):
 
             logger.debug(key='msg', data=f'Mother {individual_id} is receiving an antenatal blood transfusion due '

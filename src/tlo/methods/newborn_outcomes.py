@@ -783,13 +783,13 @@ class NewbornOutcomes(Module):
         # ---------------------------------- VITAMIN D AND EYE CARE -----------------------------------------------
         # We define the consumables
         item_code_tetracycline = pd.unique(
-            consumables.loc[consumables['Items'] == 'Tetracycline eye ointment 1%_3.5_CMST', 'Item_Code'])[0]
+            consumables.loc[consumables['Items'] == 'Tetracycline eye ointment, 1 %, tube 5 mg', 'Item_Code'])[0]
         item_code_vit_k = pd.unique(
             consumables.loc[consumables['Items'] == 'vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA',
                                                     'Item_Code'])[0]
         item_code_vit_k_syringe = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe,  disposable 2ml,  hypoluer with 23g needle_each_'
-                                                    'CMST', 'Item_Code'])[0]
+            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+
         consumables_vit_k_and_eye_care = {
             'Intervention_Package_Code': {},
             'Item_Code': {item_code_tetracycline: 1, item_code_vit_k: 1, item_code_vit_k_syringe: 1}}
@@ -1009,7 +1009,7 @@ class NewbornOutcomes(Module):
             item_code_giving_set = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with '
                                                                                      'needle',
                                                                                      'Item_Code'])[0]
-
+            # todo: add other required consumables
             consumables_inj_abx_sepsis = {
                 'Intervention_Package_Code': {},
                 'Item_Code': {item_code_iv_penicillin: 1, item_code_iv_gentamicin: 1,
