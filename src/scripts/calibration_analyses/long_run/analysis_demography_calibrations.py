@@ -73,15 +73,19 @@ pop_model.index = pop_model.index.year
 
 # Load Data: WPP_Annual
 wpp_ann = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
+wpp_ann['Age_Grp'] = wpp_ann['Age_Grp'].astype(make_age_grp_types())
+
 wpp_ann_total = wpp_ann.groupby(['Year']).sum().sum(axis=1)
 
 # Load Data: Census
 cens = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
-cens_2018 = cens.groupby('Sex')['Count'].sum().sum()
+cens['Age_Grp'] = cens['Age_Grp'].astype(make_age_grp_types())
+
+cens_2018 = cens.groupby('Sex')['Count'].sum()
 
 # Work out the scaling-factor (using mean in case sampling is ever greater than once per year):
 mean_pop_2018 = pop_model.loc[pop_model.index == 2018, 'mean'].mean()
-sf = cens_2018 / mean_pop_2018
+sf = cens_2018.sum() / mean_pop_2018
 
 # Update the model results to incorporate the scaling factor
 pop_model *= sf
@@ -95,7 +99,7 @@ plt.fill_between(pop_model.index,
                  alpha=0.5
                  )
 plt.plot(wpp_ann_total.index, wpp_ann_total)
-plt.plot(2018, cens_2018, '*')
+plt.plot(2018, cens_2018.sum(), '*')
 plt.title("Population Size")
 plt.xlabel("Year")
 plt.ylabel("Population Size")
@@ -104,84 +108,110 @@ plt.legend(["Model", "WPP", "Census 2018"])
 plt.savefig(make_graph_file_name("Pop_Over_Time"))
 plt.show()
 
-# Population Size in 2018
+
+# 2) Population Size in 2018 (broken down by Male and Female)
 
 # Census vs WPP vs Model
 wpp_2018 = wpp_ann.groupby(['Year', 'Sex'])['Count'].sum()[2018]
 
-# Get Model totals for males and females in 2018
-model_2018 = model_df.loc[model_df['year'] == 2018, ['male', 'female']].reset_index(drop=True).transpose().rename(
-    index={'male': 'M', 'female': 'F'})
+# Get Model totals for males and females in 2018 (with scaling factor)
+pop_model_male = summarize(extract_results(results_folder,
+                            module="tlo.methods.demography",
+                            key="population",
+                            column="male",
+                            index="date"),
+                      collapse_columns=True
+                      ).mul(sf)
+pop_model_male.index = pop_model_male.index.year
 
-popsize = pd.concat([cens_2018, wpp_2018, model_2018], keys=['Census_2018', 'WPP', 'Model']).unstack()
-popsize.columns = ['Females', 'Males']
+pop_model_female = summarize(extract_results(results_folder,
+                            module="tlo.methods.demography",
+                            key="population",
+                            column="female",
+                            index="date"),
+                      collapse_columns=True
+                      ).mul(sf)
+pop_model_female.index = pop_model_female.index.year
+
+pop_2018 = {
+    'Census': cens_2018,
+    'WPP': wpp_2018,
+    'Model': {
+        'F': pop_model_female.loc[2018, 'mean'],
+        'M': pop_model_male.loc[2018, 'mean']
+    }
+}
+
+pop_2018 = pd.DataFrame(pop_2018)
 
 # Plot:
-popsize.transpose().plot(kind='bar')
+pop_2018.plot(kind='bar')
 plt.title('Population Size (2018)')
 plt.xticks(rotation=0)
-plt.savefig(make_file_name("Pop_Size_2018"))
+plt.savefig(make_graph_file_name("Pop_Size_2018"))
 plt.show()
 
 # %% Population Pyramid
 # Population Pyramid at two time points
 
+# Get Age/Sex Breakdown of population (with scaling)
+
+calperiods, calperiodlookup = make_calendar_period_lookup()
+
+def get_mean_pop_by_age_for_sex_and_year(sex, year):
+    if sex == 'F':
+        key = "age_range_f"
+    else:
+        key = "age_range_f"
+
+    agegroups = list(make_age_grp_types().categories)
+    output = dict()
+    for agegroup in agegroups:
+        num = summarize(extract_results(results_folder,
+                                module="tlo.methods.demography",
+                                key=key,
+                                column=agegroup,
+                                index="date"),
+                  collapse_columns=True,
+                  only_mean=True
+                  )
+        output[agegroup] = num.loc[num.index.year == year].values.mean()
+    return pd.Series(output)
+
+
+
 for year in [2018, 2030]:
 
-    # Import and model:
-    model_m = scaled_output["tlo.methods.demography"]["age_range_m"]
-    model_m = model_m.loc[pd.to_datetime(model_m['date']).dt.year == year].drop(columns=['date']).melt(
-        value_name='Model', var_name='Age_Grp')
-    model_m.index = model_m['Age_Grp'].astype(make_age_grp_types())
-    model_m = model_m.loc[model_m.index.dropna(), 'Model']
+    # Get WPP data:
+    wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
 
-    model_f = scaled_output["tlo.methods.demography"]["age_range_f"]
-    model_f = model_f.loc[pd.to_datetime(model_f['date']).dt.year == year].drop(columns=['date']).melt(
-        value_name='Model', var_name='Age_Grp')
-    model_f.index = model_f['Age_Grp'].astype(make_age_grp_types())
-    model_f = model_f.loc[model_f.index.dropna(), 'Model']
+    pops = dict()
+    for sex in ['M', 'F']:
+        # Import model results and scale:
+        model = get_mean_pop_by_age_for_sex_and_year(sex, year).mul(sf)
 
-    # Import and format WPP data:
-    wpp_ann = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
-    wpp_ann = wpp_ann.loc[wpp_ann['Year'] == year]
-    wpp_m = wpp_ann.loc[wpp_ann['Sex'] == 'M', ['Count', 'Age_Grp']].groupby('Age_Grp')['Count'].sum()
-    wpp_m.index = wpp_m.index.astype(make_age_grp_types())
-    wpp_m = wpp_m.loc[wpp_m.index.dropna()]
+        # Make into dataframes for plotting:
+        pops[sex] = {
+            'Model': model,
+            'WPP':  wpp_thisyr.loc[sex]
+        }
 
-    wpp_f = wpp_ann.loc[wpp_ann['Sex'] == 'F', ['Count', 'Age_Grp']].groupby('Age_Grp')['Count'].sum()
-    wpp_f.index = wpp_f.index.astype(make_age_grp_types())
-    wpp_f = wpp_f.loc[wpp_f.index.dropna()]
+        if year == 2018:
+            # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
+            pops[sex]['2018 Census'] = cens.loc[cens['Sex'] == sex].groupby(by='Age_Grp')['Count'].sum()
 
-    # Make into dataframes for plotting:
-    pop_m = pd.DataFrame(model_m)
-    pop_m['WPP'] = wpp_m
-
-    pop_f = pd.DataFrame(model_f)
-    pop_f['WPP'] = wpp_m
-
-    if year == 2018:
-        # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
-        cens = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
-        cens_m = cens.loc[cens['Sex'] == 'M'].groupby(by='Age_Grp')['Count'].sum()
-        cens_m.index = cens_m.index.astype(make_age_grp_types())
-        cens_m = cens_m.loc[cens_m.index.dropna()]
-
-        pop_m['Census'] = cens_m
-        cens_f = cens.loc[cens['Sex'] == 'F'].groupby(by='Age_Grp')['Count'].sum()
-        cens_f.index = cens_f.index.astype(make_age_grp_types())
-        cens_f = cens_f.loc[cens_f.index.dropna()]
-        pop_f['Census'] = cens_f
 
     # Simple plot of population pyramid
     fig, axes = plt.subplots(ncols=1, nrows=2, sharey=True)
-    pop_m.plot.bar(ax=axes[0], align="center")
+    pd.DataFrame(pops['M']).plot.bar(ax=axes[0], align="center")
     axes[0].set_xlabel('Age Group')
     axes[0].set_title('Males: ' + str(year))
-    pop_f.plot.bar(ax=axes[1], align="center")
+    pd.DataFrame(pops['F']).plot.bar(ax=axes[1], align="center")
     axes[1].set_xlabel('Age Group')
     axes[1].set_title('Females: ' + str(year))
-    plt.savefig(make_file_name(f"Pop_Size_{year}"))
+    plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
     plt.show()
+
 
 # %% Births: Number over time
 
