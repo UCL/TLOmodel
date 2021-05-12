@@ -1,6 +1,5 @@
 """
 The HIV Module
-
 Overview:
 HIV infection ---> AIDS onset Event (defined by the presence of AIDS symptoms) --> AIDS Death Event
 Testing is spontaneously taken-up and can lead to accessing intervention services (ART, VMMC, PrEP).
@@ -10,23 +9,19 @@ Persons can be on ART -
     - with viral suppression: when the person with not develop AIDS, or if they have already, it is relieved and they
         will not die of AIDS; and the person is not infectious
     - without viral suppression: when there is no benefit in avoiding AIDS and infectiousness is unchanged.
-
 Maintenance on ART and PrEP is re-assessed at periodic 'Decision Events', at which is it is determined if the person
   will attend the "next" HSI for continuation of the service; and if not, they are removed from that service and "stop
   treatment". If a stock-out or non-availability of health system resources prevent treatment continuation, the person
   "stops treatment". Stopping treatment leads to a new AIDS Event being scheduled. Persons can restart treatment. If a
   person has developed AIDS, starts treatment and then defaults from treatment, their 'original' AIDS Death Event will
   still occur.
-
 If PrEP is not available due to limitations in the HealthSystem, the person defaults to not being on PrEP.
-
 # Things to note:
     * Need to incorporate testing for HIV at first ANC appointment (as it does in generic HSI)
     * Need to incorporate testing for infants born to HIV-positive mothers (currently done in on_birth here).
     * Need to incorporate cotrim for infants born to HIV-positive mothers (not done here)
     * Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).
     * Calibration has not been done: most things look OK - except HIV-AIDS deaths
-
 """
 
 import os
@@ -816,7 +811,6 @@ class Hiv(Module):
     def mtct_during_breastfeeding(self, mother_id, child_id):
         """
         Compute risk of mother-to-child transmission and schedule HivInfectionDuringBreastFeedingEvent.
-
         If the child is breastfeeding currently, consider the time-until-infection assuming a constantly monthly risk of
          transmission. If the breastfeeding has ceased by the time of the scheduled infection, then it will not run.
         (This means that this event can be run at birth or at the time of the mother's infection without the need for
@@ -860,7 +854,6 @@ class Hiv(Module):
         For those infected prior to, or at, birth: (this is a draw from an exponential distribution)
         For those infected after birth but before reaching age 5.0 (this is drawn from a weibull distribution)
         For adults: (this is a drawn from a weibull distribution (with scale depending on age);
-
         * NB. It is further assumed that the time from aids to death is 18 months.
         """
 
@@ -907,7 +900,6 @@ class Hiv(Module):
         """Things to do when a person has been tested and found (newly) be be HIV-positive:.
         * Consier if ART should be initiated, and schedule HSI if so.
         The person should not yet be on ART.
-
         """
         df = self.sim.population.props
 
@@ -1287,20 +1279,16 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
     The is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to
     other services.
-
     This event is scheduled by:
         * the main event poll,
         * when someone presents for any care through a Generic HSI.
         * when an infant is born to an HIV-positive mother
-
     Following the test, they may or may not go on to present for uptake an HIV service: ART (if HIV-positive), VMMC (if
     HIV-negative and male) or PrEP (if HIV-negative and a female sex worker).
-
     If this event is called within another HSI, it may be desirable to limit the functionality of the HSI: do this
     using the arguments:
         * do_not_refer_if_neg=False : if the person is HIV-neg they will not be referred to VMMC or PrEP
         * suppress_footprint=True : the HSI will not have any footprint
-
     """
 
     def __init__(self, module, person_id, do_not_refer_if_neg=False, suppress_footprint=False):
@@ -1647,18 +1635,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         pass
         """
         Consider whether IPT is needed at this time. This is run only when treatment is initiated.
-
         # if 'Tb' in self.sim.modules:
             district = df.at[person_id, "district_of_residence"]
             eligible = df.at[person_id, "tb_inf"].startswith("active")
-
             if (
                 (district in params["tb_high_risk_distr"].values)
                 & (self.sim.date.year > 2012)
                 & eligible
                 & (self.module.rng.rand() < params["???"])
             ):
-
                 # Schedule the TB treatment event:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     tb.HSI_Tb_IptHiv(self.module['Tb'], person_id=person_id),
