@@ -35,6 +35,7 @@ from tlo.methods import (
     postnatal_supervisor,
     postnatal_supervisor_lm,
     pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 from tlo.scenario import BaseScenario
@@ -80,7 +81,7 @@ class LongRun(BaseScenario):
             # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
 
             # Using Simplified Births for speed currently
-            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
 
             # Disease modules considered complete:
             diarrhoea.Diarrhoea(resourcefilepath=self.resources),
