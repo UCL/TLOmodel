@@ -216,7 +216,28 @@ for year in [2018, 2030]:
 # %% Births: Number over time
 
 # Births over time (Model)
-births_model = scaled_output['tlo.methods.demography']['birth_groupby_scaled'].reset_index()
+
+pop_model_female = summarize(extract_results(results_folder,
+                                             module="tlo.methods.demography",
+                                             key="on_birth",
+                                             custom_generate_series="groupby(['date'])['date'].count()"
+                                             ),
+                             collapse_columns=True
+                             ).mul(sf)
+
+
+# births_model = scaled_output['tlo.methods.demography']['birth_groupby_scaled'].reset_index()
+
+# # 2) Counts of numbers of births by year/age-of-mother
+# births = o['tlo.methods.demography']['on_birth']
+# births.index = pd.to_datetime(births['date'])
+# births['year'] = births.index.year
+# births_groupby_scaled = \
+#     births[['year', 'mother_age', 'mother']].groupby(by=['year', 'mother_age']).count() \
+#     * ratio_data_to_model
+# births_groupby_scaled.rename(columns={'mother': 'count'}, inplace=True)
+# o['tlo.methods.demography'].update({'birth_groupby_scaled': births_groupby_scaled})
+
 # Aggregate the model outputs into five year periods:
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
 births_model["Period"] = births_model["year"].map(calendar_period_lookup)

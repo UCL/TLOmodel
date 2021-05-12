@@ -309,13 +309,24 @@ def extract_params(results_folder: Path) -> pd.DataFrame:
     return params
 
 
-def extract_results(results_folder: Path, module: str, key: str, column: str, index: str = None) -> pd.DataFrame:
+def extract_results(results_folder: Path,
+                    module: str,
+                    key: str,
+                    column: str,
+                    index: str = None,
+                    custom_generate_series: str = None
+                    ) -> pd.DataFrame:
     """Utility function to unpack results
 
     Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an 'index'
     component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
     index is the same in each run).
     """
+
+    if custom_generate_series is not None:
+        # if a custom command to generate a series is provided, no other arguements should be provided
+        assert index is None, "Cannot specify an index if using custom_generate_series"
+        assert column is None, "Cannot specify a column if using custom_generate_series"
 
     results_index = None
     if index is not None:
