@@ -46,9 +46,9 @@ class LongRun(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 12, 31)
-        self.pop_size = 1_000
+        self.pop_size = 50_000
         self.number_of_draws = 1        # <- one scenario
-        self.runs_per_draw = 2          # <- repeated this many times
+        self.runs_per_draw = 10          # <- repeated this many times
 
     def log_configuration(self):
         return {
@@ -71,13 +71,16 @@ class LongRun(BaseScenario):
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
 
-            # Pregnancy and Birth
-            contraception.Contraception(resourcefilepath=self.resources),
-            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
-            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
-            labour.Labour(resourcefilepath=self.resources),
-            newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
-            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
+            # # Pregnancy and Birth
+            # contraception.Contraception(resourcefilepath=self.resources),
+            # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
+            # care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
+            # labour.Labour(resourcefilepath=self.resources),
+            # newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
+            # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
+
+            # Using Simplified Births for speed currently
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
 
             # Disease modules considered complete:
             diarrhoea.Diarrhoea(resourcefilepath=self.resources),
