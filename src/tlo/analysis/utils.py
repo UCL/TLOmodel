@@ -321,6 +321,8 @@ def extract_results(results_folder: Path,
     Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an 'index'
     component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
     index is the same in each run).
+    Optionally, instead of a series that exists in the dataframe already, a command can be provided that, when applied
+    to the dataframe indicated, yields a new pd.Series.
     """
 
     # get number of draws and numbers of runs
@@ -374,8 +376,9 @@ def extract_results(results_folder: Path,
         for draw in range(info['number_of_draws']):
             for run in range(info['runs_per_draw']):
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                res[f"{draw}_{run}"] = eval(f"df.{custom_generate_series}")
-
+                output_from_eval = eval(f"df.{custom_generate_series}")
+                assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
+                res[f"{draw}_{run}"] = output_from_eval
         results = pd.concat(res.values(), axis=1).fillna(0)
         results.columns = cols
 
