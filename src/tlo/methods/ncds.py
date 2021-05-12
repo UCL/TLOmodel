@@ -423,7 +423,6 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # onset:
             eligible_population = df.is_alive & ~df[f'nc_{condition}']
-            # acquires_condition = self.module.lms_onset[condition].predict(df.loc[eligible_population], rng)
             acquires_condition = lmpredict_rtn_a_series(self.module.lms_onset[condition], df.loc[eligible_population])
             idx_acquires_condition = acquires_condition[acquires_condition].index
             df.loc[idx_acquires_condition, f'nc_{condition}'] = True
@@ -435,9 +434,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # removal:
             eligible_population = df.is_alive & df[f'nc_{condition}']
-            # loses_condition = self.module.lms_removal[condition].predict(df.loc[eligible_population], rng)
             loses_condition = lmpredict_rtn_a_series(self.module.lms_removal[condition], df.loc[eligible_population])
-
             idx_loses_condition = loses_condition[loses_condition].index
             df.loc[idx_loses_condition, f'nc_{condition}'] = False
 
