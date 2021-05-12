@@ -66,6 +66,7 @@ def register_sim():
     )
     return sim
 
+
 # @pytest.fixture(scope='module')
 def test_sims(tmpdir):
 
