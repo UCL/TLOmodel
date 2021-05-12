@@ -151,73 +151,73 @@ plt.xticks(rotation=0)
 plt.savefig(make_graph_file_name("Pop_Size_2018"))
 plt.show()
 
-# %% Population Pyramid
-# Population Pyramid at two time points
-
-# Get Age/Sex Breakdown of population (with scaling)
-
-calperiods, calperiodlookup = make_calendar_period_lookup()
-
-def get_mean_pop_by_age_for_sex_and_year(sex, year):
-    if sex == 'F':
-        key = "age_range_f"
-    else:
-        key = "age_range_f"
-
-    agegroups = list(make_age_grp_types().categories)
-    output = dict()
-    for agegroup in agegroups:
-        num = summarize(extract_results(results_folder,
-                                module="tlo.methods.demography",
-                                key=key,
-                                column=agegroup,
-                                index="date"),
-                  collapse_columns=True,
-                  only_mean=True
-                  )
-        output[agegroup] = num.loc[num.index.year == year].values.mean()
-    return pd.Series(output)
-
-
-
-for year in [2018, 2030]:
-
-    # Get WPP data:
-    wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
-
-    pops = dict()
-    for sex in ['M', 'F']:
-        # Import model results and scale:
-        model = get_mean_pop_by_age_for_sex_and_year(sex, year).mul(sf)
-
-        # Make into dataframes for plotting:
-        pops[sex] = {
-            'Model': model,
-            'WPP':  wpp_thisyr.loc[sex]
-        }
-
-        if year == 2018:
-            # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
-            pops[sex]['2018 Census'] = cens.loc[cens['Sex'] == sex].groupby(by='Age_Grp')['Count'].sum()
-
-
-    # Simple plot of population pyramid
-    fig, axes = plt.subplots(ncols=1, nrows=2, sharey=True)
-    pd.DataFrame(pops['M']).plot.bar(ax=axes[0], align="center")
-    axes[0].set_xlabel('Age Group')
-    axes[0].set_title('Males: ' + str(year))
-    pd.DataFrame(pops['F']).plot.bar(ax=axes[1], align="center")
-    axes[1].set_xlabel('Age Group')
-    axes[1].set_title('Females: ' + str(year))
-    plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
-    plt.show()
+# # %% Population Pyramid
+# # Population Pyramid at two time points
+#
+# # Get Age/Sex Breakdown of population (with scaling)
+#
+# calperiods, calperiodlookup = make_calendar_period_lookup()
+#
+# def get_mean_pop_by_age_for_sex_and_year(sex, year):
+#     if sex == 'F':
+#         key = "age_range_f"
+#     else:
+#         key = "age_range_f"
+#
+#     agegroups = list(make_age_grp_types().categories)
+#     output = dict()
+#     for agegroup in agegroups:
+#         num = summarize(extract_results(results_folder,
+#                                 module="tlo.methods.demography",
+#                                 key=key,
+#                                 column=agegroup,
+#                                 index="date"),
+#                   collapse_columns=True,
+#                   only_mean=True
+#                   )
+#         output[agegroup] = num.loc[num.index.year == year].values.mean()
+#     return pd.Series(output)
+#
+#
+#
+# for year in [2018, 2030]:
+#
+#     # Get WPP data:
+#     wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
+#
+#     pops = dict()
+#     for sex in ['M', 'F']:
+#         # Import model results and scale:
+#         model = get_mean_pop_by_age_for_sex_and_year(sex, year).mul(sf)
+#
+#         # Make into dataframes for plotting:
+#         pops[sex] = {
+#             'Model': model,
+#             'WPP':  wpp_thisyr.loc[sex]
+#         }
+#
+#         if year == 2018:
+#             # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
+#             pops[sex]['2018 Census'] = cens.loc[cens['Sex'] == sex].groupby(by='Age_Grp')['Count'].sum()
+#
+#
+#     # Simple plot of population pyramid
+#     fig, axes = plt.subplots(ncols=1, nrows=2, sharey=True)
+#     pd.DataFrame(pops['M']).plot.bar(ax=axes[0], align="center")
+#     axes[0].set_xlabel('Age Group')
+#     axes[0].set_title('Males: ' + str(year))
+#     pd.DataFrame(pops['F']).plot.bar(ax=axes[1], align="center")
+#     axes[1].set_xlabel('Age Group')
+#     axes[1].set_title('Females: ' + str(year))
+#     plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
+#     plt.show()
 
 
 # %% Births: Number over time
 
 # Births over time (Model)
 
-pop_model_female = summarize(extract_results(results_folder,
+births_by_date = summarize(extract_results(results_folder,
                                              module="tlo.methods.demography",
                                              key="on_birth",
                                              custom_generate_series="groupby(['date'])['date'].count()"
@@ -225,44 +225,31 @@ pop_model_female = summarize(extract_results(results_folder,
                              collapse_columns=True
                              ).mul(sf)
 
-
-# births_model = scaled_output['tlo.methods.demography']['birth_groupby_scaled'].reset_index()
-
-# # 2) Counts of numbers of births by year/age-of-mother
-# births = o['tlo.methods.demography']['on_birth']
-# births.index = pd.to_datetime(births['date'])
-# births['year'] = births.index.year
-# births_groupby_scaled = \
-#     births[['year', 'mother_age', 'mother']].groupby(by=['year', 'mother_age']).count() \
-#     * ratio_data_to_model
-# births_groupby_scaled.rename(columns={'mother': 'count'}, inplace=True)
-# o['tlo.methods.demography'].update({'birth_groupby_scaled': births_groupby_scaled})
-
 # Aggregate the model outputs into five year periods:
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
-births_model["Period"] = births_model["year"].map(calendar_period_lookup)
-births_model = births_model.loc[births_model.year < 2030].groupby(by='Period')['count'].sum()
+births_by_date['period'] = births_by_date.index.year.map(calendar_period_lookup)
+births_model = births_by_date.loc[births_by_date.index.year < 2030].groupby(by='period').sum()
 births_model.index = births_model.index.astype(make_calendar_period_type())
+births_model.columns = ['Model_' + col for col in births_model.columns]
 
 # Births over time (WPP)
-wpp = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_TotalBirths_WPP.csv")
-wpp = wpp.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
-wpp.index = wpp.index.astype(make_calendar_period_type())
-wpp.columns = 'WPP_' + wpp.columns
+wpp_births = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_TotalBirths_WPP.csv")
+wpp_births = wpp_births.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
+wpp_births.index = wpp_births.index.astype(make_calendar_period_type())
+wpp_births.columns = 'WPP_' + wpp_births.columns
 
 # Births in 2018 Census
-cens = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_Births_2018Census.csv")
-cens_per_5y_per = cens['Count'].sum() * 5
+cens_births = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_Births_2018Census.csv")
+cens_births_per_5y_per = cens_births['Count'].sum() * 5
 
 # Merge in model results
-births = wpp.copy()
-births['Model'] = births_model
+births = wpp_births.merge(births_model, right_index=True, left_index=True, how='left')
 births['Census'] = np.nan
-births.at[cens['Period'][0], 'Census'] = cens_per_5y_per
+births.at[cens['Period'][0], 'Census'] = cens_births_per_5y_per
 
 # Plot:
 cens_period = cens['Period'][0]
-ax = births.plot.line(y=['Model',  'WPP_Estimates', 'WPP_Medium variant'])
+ax = births.plot.line(y=['Model_mean',  'WPP_Estimates', 'WPP_Medium variant'])
 births.plot.line(
     y=['Census'],
     marker='^',
@@ -270,13 +257,14 @@ births.plot.line(
     ax=ax
 )
 plt.xticks(np.arange(len(births.index)), births.index)
+ax.fill_between(births.index, births['Model_lower'], births['Model_upper'], facecolor='blue', alpha=0.2)
 ax.fill_between(births.index, births['WPP_Low variant'], births['WPP_High variant'], facecolor='green', alpha=0.2)
 plt.xticks(rotation=90)
 ax.set_title('Number of Births Per Calendar Period')
 ax.legend(loc='upper left')
 ax.set_xlabel('Calendar Period')
 ax.set_ylabel('Number per period')
-plt.savefig(make_file_name("Births_Over_Time"))
+plt.savefig(make_graph_file_name("Births_Over_Time"))
 plt.tight_layout()
 plt.show()
 

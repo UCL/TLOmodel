@@ -312,7 +312,7 @@ def extract_params(results_folder: Path) -> pd.DataFrame:
 def extract_results(results_folder: Path,
                     module: str,
                     key: str,
-                    column: str,
+                    column: str = None,
                     index: str = None,
                     custom_generate_series: str = None
                     ) -> pd.DataFrame:
@@ -323,44 +323,63 @@ def extract_results(results_folder: Path,
     index is the same in each run).
     """
 
-    if custom_generate_series is not None:
-        # if a custom command to generate a series is provided, no other arguements should be provided
-        assert index is None, "Cannot specify an index if using custom_generate_series"
-        assert column is None, "Cannot specify a column if using custom_generate_series"
-
-    results_index = None
-    if index is not None:
-        # extract the index from the first log, and use this ensure that all other are exactly the same.
-        filename = f"{module}.pickle"
-        df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
-        results_index = df[index]
-
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
 
-    results = pd.DataFrame(columns=pd.MultiIndex.from_product(
+    cols = pd.MultiIndex.from_product(
         [range(info['number_of_draws']), range(info['runs_per_draw'])],
         names=["draw", "run"]
-    ))
+    )
 
-    for draw in range(info['number_of_draws']):
-        for run in range(info['runs_per_draw']):
-            try:
+    if custom_generate_series is None:
+
+        assert column is not None, "Must specify which column to extract"
+
+        results_index = None
+        if index is not None:
+            # extract the index from the first log, and use this ensure that all other are exactly the same.
+            filename = f"{module}.pickle"
+            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
+            results_index = df[index]
+
+        results = pd.DataFrame(columns=cols)
+
+        for draw in range(info['number_of_draws']):
+            for run in range(info['runs_per_draw']):
+                try:
+                    df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                    results[draw, run] = df[column]
+
+                    if index is not None:
+                        idx = df[index]
+                        assert idx.equals(results_index), "Indexes are not the same between runs"
+
+                except ValueError:
+                    results[draw, run] = np.nan
+
+        # if 'index' is provided, set this to be the index of the results
+        if index is not None:
+            results.index = results_index
+
+        return results
+
+    else:
+        # A custom commaand to generate a series has been provided.
+        # No other arguements should be provided.
+        assert index is None, "Cannot specify an index if using custom_generate_series"
+        assert column is None, "Cannot specify a column if using custom_generate_series"
+
+        # Collect results and then use pd.concat as indicies may be different betweeen runs
+        res = dict()
+        for draw in range(info['number_of_draws']):
+            for run in range(info['runs_per_draw']):
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                results[draw, run] = df[column]
+                res[f"{draw}_{run}"] = eval(f"df.{custom_generate_series}")
 
-                if index is not None:
-                    idx = df[index]
-                    assert idx.equals(results_index), "Indexes are not the same between runs"
+        results = pd.concat(res.values(), axis=1).fillna(0)
+        results.columns = cols
 
-            except ValueError:
-                results[draw, run] = np.nan
-
-    # if 'index' is provided, set this to be the index of the results
-    if index is not None:
-        results.index = results_index
-
-    return results
+        return results
 
 
 def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
