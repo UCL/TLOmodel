@@ -9,9 +9,9 @@ import pandas as pd
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    demography,
     care_of_women_during_pregnancy,
     contraception,
+    demography,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,

@@ -879,11 +879,11 @@ class Hiv(Module):
                 max(0.0, np.round(months_to_death - self.parameters['mean_months_between_aids_and_death_infant'])))
         elif age < 5.0:
             # The person is infected after birth but before age 5.0:
-            months_to_death = int(max(0.0,
-                                     self.rng.weibull(
-                                         p["infection_to_death_infant_infection_after_birth_weibull_shape"])
-                                     * p["infection_to_death_infant_infection_after_birth_weibull_scale"] * 12
-                                     ))
+            months_to_death = int(
+                max(0.0, self.rng.weibull(
+                    p["infection_to_death_infant_infection_after_birth_weibull_shape"]) *
+                    p["infection_to_death_infant_infection_after_birth_weibull_scale"] * 12)
+            )
             months_to_aids = int(
                 max(0.0, np.round(months_to_death - self.parameters['mean_months_between_aids_and_death_infant'])))
         else:
