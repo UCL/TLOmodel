@@ -407,8 +407,6 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.date + DateOffset(days=self.module.rng.randint(ndays))
             )
 
-        current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
-
         def lmpredict_rtn_a_series(lm, df):
             """wrapper to call predict on a linear model, guranteeing that a pd.Series is returned even if the length
             of the df is 1."""
@@ -417,6 +415,8 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 return res
             else:
                 return pd.Series(index=df.index, data=[res])
+
+        current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
 
         # Determine onset/removal of conditions
         for condition in self.module.conditions:
