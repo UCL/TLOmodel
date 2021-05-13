@@ -116,6 +116,10 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 if 'diarrhoea' in symptoms:
                     self.sim.modules['DxAlgorithmChild'].do_when_diarrhoea(person_id=person_id, hsi_event=self)
 
+                # routine assessment for acute malnutrition -----
+                if 'Wasting' in self.sim.modules:
+                    self.sim.modules['Wasting'].do_when_acute_malnutrition(person_id=person_id, hsi_event=self)
+
                 # Run DxAlgorithmChild to get additional diagnoses:
                 diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(
                     person_id=person_id, hsi_event=self

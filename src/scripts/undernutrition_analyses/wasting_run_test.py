@@ -23,7 +23,7 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-pop_size = 1000
+pop_size = 3000
 seed = 146
 
 log_config = {
@@ -31,6 +31,7 @@ log_config = {
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.CRITICAL,  # Asterisk matches all loggers - we set the default level to WARNING
+        'tlo.methods.wasting': logging.INFO
     }
 }
 
@@ -44,14 +45,14 @@ sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))  # service_availability=service_availability
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-# sim.register(simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath))
-sim.register(postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
-sim.register(care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
-sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
+sim.register(simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath))
+# sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+# sim.register(postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
+# sim.register(care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
+# sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+# sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
+# sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(wasting.Wasting(resourcefilepath=resourcefilepath))
@@ -61,11 +62,3 @@ sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepa
 # create and run the simulation
 sim.make_initial_population(n=pop_size)
 sim.simulate(end_date=end_date)
-
-# # parse the simulation logfile to get the output dataframes
-# output = parse_log_file(sim.log_filepath)
-# one_person = output['tlo.methods.ALRI']['person_one']
-#
-#
-# # save into an cvs file
-# one_person.to_csv(r'./outputs/one_person2.csv', index=False)
