@@ -964,12 +964,12 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # determine the time of onset and other disease characteristics for each individual
         for person_id in wasted[wasted].index:
             # Allocate a date of onset for wasting episode
-            # date_onset = self.sim.date + DateOffset(days=rng.randint(0, 30))  # new cases all occur in the same month
-            # # Create the event for the onset of wasting
-            # self.sim.schedule_event(
-            #     event=WastingOnsetEvent(module=self.module,
-            #                             person_id=person_id), date=date_onset)
-            self.module.do_wasting_onset_poll(person_id)
+            date_onset = self.sim.date # + DateOffset(days=rng.randint(0, 30))  # new cases all occur in the same month
+            # Create the event for the onset of wasting
+            self.sim.schedule_event(
+                event=WastingOnsetEvent(module=self.module,
+                                        person_id=person_id), date=date_onset)
+            # self.module.do_wasting_onset_poll(person_id)
 
         # # # # # # # # # # # # # # # # # # # # # PROGRESS TO SEVERE # # # # # # # # # # # # # # # # # # # # #
 
