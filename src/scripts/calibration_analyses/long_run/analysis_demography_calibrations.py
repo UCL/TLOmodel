@@ -7,7 +7,7 @@ This uses Scenario file: src/scripts/long_run/long_run.py
 
 # TODO -- Coding -- ordering of each element;
 
-# Observations -- very large variation in deaths: some runs seeming have almost no deaths
+# TODO -- Observations -- very large variation in deaths: some runs seeming have almost no deaths
 
 import pickle
 from datetime import datetime
@@ -374,9 +374,15 @@ deaths_model['Variant'] = 'Model_' + deaths_model['Variant']
 
 # Load WPP data
 wpp_deaths = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")
+# wpp_deaths.loc[
+#     (wpp_deaths.Period == '2020-2024') &
+#     (wpp_deaths.Age_Grp == '15-19') &
+#     (wpp_deaths.Sex == 'F')
+# ].groupby('Variant')['Count'].sum()/1e3
 
-# Load GBD
+# Load GBD (and collapse the ages for <5 together)
 gbd = pd.read_csv(rfp / "demography" / "ResourceFile_TotalDeaths_GBD.csv")
+gbd.loc[(gbd.Age_Grp == '<1year') | (gbd.Age_Grp == '1-4'), 'Age_Grp'] = '0-4'
 gbd = pd.DataFrame(gbd.drop(columns=['Year']).groupby(by=['Period', 'Sex', 'Age_Grp', 'Variant']).sum()).reset_index()
 
 # Combine into one large dataframe
@@ -391,7 +397,6 @@ tot_deaths = tot_deaths.replace(0, np.nan)
 
 # Make the WPP line connect to the 'medium variant' to make the lines look like they join up
 tot_deaths['WPP_continuous'] = tot_deaths['WPP_Estimates'].combine_first(tot_deaths['WPP_Medium variant'])
-
 
 # Plot:
 fig, ax = plt.subplots()
@@ -439,7 +444,6 @@ plt.show()
 
 
 # Deaths by age, during in selection periods
-
 calperiods_selected = list()
 for cal in calperiods:
     if cal != '2100+':
@@ -503,7 +507,7 @@ for period in calperiods_selected:
         ax[i].legend(loc='upper left')
         ax[i].set_xlabel('Age Group')
         ax[i].set_ylabel('Deaths per period (thousands)')
-        ax[i].set_ylim(0, 200)
+        ax[i].set_ylim(0, 80)
 
     fig.tight_layout()
     plt.savefig(make_graph_file_name(f"Deaths_By_Age_{period}"))
