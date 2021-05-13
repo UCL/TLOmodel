@@ -1,6 +1,9 @@
 """Produce comparisons between model and GBD of deaths by cause in a particular year."""
 
+# todo - get these plots working when the output comes from the batch system
+# todo - investigate causes of _extreme_ variation in deaths
 # todo - unify the labelling of causes in the HealthBurden module to simplify processing
+
 
 import pickle
 from datetime import datetime
