@@ -20,8 +20,6 @@ from scripts.utils.helper_funcs_for_processing_data_files import (
 from tlo.methods.demography import get_scaling_factor
 
 # %% Set file paths etc
-
-
 year = 2010
 
 # Resource file path
