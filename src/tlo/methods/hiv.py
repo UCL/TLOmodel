@@ -141,6 +141,8 @@ class Hiv(Module):
         # Natural history - survival (adults)
         "mean_months_between_aids_and_death": Parameter(
             Types.REAL, "Mean number of months (distributed exponentially) for the time between AIDS and AIDS Death"),
+        "mean_months_between_aids_and_death_infant": Parameter(
+            Types.REAL, "Mean number of months for the time between AIDS and AIDS Death for infants"),
         "infection_to_death_weibull_shape_1519": Parameter(
             Types.REAL,
             "Shape parameter for Weibull describing time between infection and death for 15-19 yo (units: years)"),
@@ -509,6 +511,14 @@ class Hiv(Module):
         df.loc[art_idx, "hv_last_test_date"] = self.sim.date
         df.loc[art_idx, "hv_diagnosed"] = True
 
+        # all those on ART need to have event scheduled for continuation/cessation of treatment
+        for person in art_idx:
+            days = self.rng.randint(low=100, high=200, size=1, dtype=np.int64)[0]
+            self.sim.schedule_event(
+                Hiv_DecisionToContinueTreatment(person_id=person, module=self),
+                self.sim.date + pd.to_timedelta(days)
+            )
+
     def initialise_baseline_tested(self, population):
         """ assign initial hiv testing levels, only for adults
         all who have been allocated ART will already have property hv_number_tests=1
@@ -863,15 +873,19 @@ class Hiv(Module):
 
         if age == 0.0:
             # The person is infected prior to, or at, birth:
-            months_to_aids = int(
+            months_to_death = int(
                 max(0.0, self.rng.exponential(scale=p["mean_survival_for_infants_infected_prior_to_birth"]) * 12))
+            months_to_aids = int(
+                max(0.0, np.round(months_to_death - self.parameters['mean_months_between_aids_and_death_infant'])))
         elif age < 5.0:
             # The person is infected after birth but before age 5.0:
-            months_to_aids = int(max(0.0,
-                                     self.rng.weibull(
-                                         p["infection_to_death_infant_infection_after_birth_weibull_shape"])
-                                     * p["infection_to_death_infant_infection_after_birth_weibull_scale"] * 12
-                                     ))
+            months_to_death = int(
+                max(0.0, self.rng.weibull(
+                    p["infection_to_death_infant_infection_after_birth_weibull_shape"]) *
+                    p["infection_to_death_infant_infection_after_birth_weibull_scale"] * 12)
+            )
+            months_to_aids = int(
+                max(0.0, np.round(months_to_death - self.parameters['mean_months_between_aids_and_death_infant'])))
         else:
             # The person is infected after age 5.0
             # - get the shape parameters (unit: years)
