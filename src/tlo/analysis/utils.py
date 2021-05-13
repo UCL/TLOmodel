@@ -207,18 +207,26 @@ def write_log_to_excel(filename, log_dataframes):
 
 def make_calendar_period_lookup():
     """Returns a dictionary mapping calendar year (in years) to five year period
-    i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
+    i.e. { 1950: '1950-1954', 1951: '1950-1954, ...}
     """
 
     # Recycles the code used to make age-range lookups:
     ranges, lookup = util.create_age_range_lookup(1950, 2100, 5)
 
-    # Removes the '1950-' category
+    # Removes the '0-1950' category
     ranges.remove('0-1950')
+
     for year in range(1950):
         lookup.pop(year)
 
     return ranges, lookup
+
+def make_age_grp_lookup():
+    """Returns a dictionary mapping age (in years) to five year period
+    i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
+    """
+    # todo - remove usage
+    return create_age_range_lookup(min_age=0, max_age=100, range_size=5)
 
 
 def make_age_grp_types():
@@ -437,3 +445,192 @@ def get_grid(params: pd.DataFrame, res: pd.Series):
     grid[res.columns[2]] = piv.values
 
     return grid
+
+
+def get_scaling_factor(results_folder, resourcefilepath):
+    """Compute the ratio of 'Actual Population Size' : 'Model Population Size'
+    """
+    pop_model = summarize(extract_results(results_folder,
+                                          module="tlo.methods.demography",
+                                          key="population",
+                                          column="total",
+                                          index="date"),
+                          only_mean=True
+                          )
+
+    # Get Mean for 2018, acrosss all runs and draws:
+    mean_pop_2018 = pop_model.loc[pop_model.index.year == 2018].mean().mean()
+
+    # Load Data: Census
+    cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
+    cens_2018 = cens.groupby('Sex')['Count'].sum()
+
+    return cens_2018.sum() / mean_pop_2018
+
+
+def format_gbd(gbd_df: pd.DataFrame):
+    """Format GBD data to give standarize categories for sex, age_group and period"""
+
+    # sort out labelling of sex:
+    gbd_df['sex'] = gbd_df['sex_name'].map({'Male': 'M', 'Female': 'F'})
+
+    # sort out age-groups:
+    gbd_df['age_grp'] = gbd_df['age_name'].\
+        str.replace('to', '-')\
+        .str.replace('95 plus', '95+')\
+        .str.replace(' ', '')\
+        .str.replace('1-4', '0-4')\
+        .str.replace('<1year', '0-4')\
+        .astype(make_age_grp_types())
+
+    # label periods:
+    calperiods, calperiodlookup = make_calendar_period_lookup()
+    gbd_df['period']  = gbd_df['year'].map(calperiodlookup).astype(make_calendar_period_type())
+
+    return gbd_df
+
+
+def get_causes_mappers(gbd_causes, tlo_causes):
+    """
+    Make data structures that define the mapping between "GBD strings" and "TLO strings" for causes of death and
+    disability. Mappings of each are made to a common "unified cause".
+
+    TODO - This must be kept up-to-date as new types of causes are added to the model
+
+    TODO - Should this be handled when modules register themselves with demography?
+
+    NB. The "TLO strings" may be those used as cause of death or as a label for DALYS:
+
+    :return: mapper_from_tlo_strings{tlo_string: unified_cause}, mapper_from_gbd_strings{gbd_strings: unified_cause}
+    """
+
+    causes = dict()
+    causes['AIDS'] = {
+        'gbd_strings': ['HIV/AIDS'],
+        'tlo_strings': ['AIDS', 'Hiv']
+    }
+    causes['Malaria'] = {
+        'gbd_strings': ['Malaria'],
+        'tlo_strings': ['severe_malaria',
+                        'Malaria']
+    }
+    causes['Childhood Diarrhoea'] = {
+        'gbd_strings': ['Diarrheal diseases'],
+        'tlo_strings': ['Diarrhoea_rotavirus',
+                        'Diarrhoea_shigella',
+                        'Diarrhoea_astrovirus',
+                        'Diarrhoea_campylobacter',
+                        'Diarrhoea_cryptosporidium',
+                        'Diarrhoea_sapovirus',
+                        'Diarrhoea_tEPEC',
+                        'Diarrhoea_adenovirus',
+                        'Diarrhoea_norovirus',
+                        'Diarrhoea_ST-ETEC',
+                        'Diarrhoea']
+    }
+    causes['Oesophageal Cancer'] = {
+        'gbd_strings': ['Esophageal cancer'],
+        'tlo_strings': ['OesophagealCancer']
+    }
+    causes['Epilepsy'] = {
+        'gbd_strings': ['Other neurological disorders'],
+        'tlo_strings': ['Epilepsy']
+    }
+    causes['Depression / Self-harm'] = {
+        'gbd_strings': ['Self-harm'],
+        'tlo_strings': ['Suicide',
+                        'Depression']
+    }
+    causes['Complications in Labour'] = {
+        'gbd_strings': ['Maternal disorders',
+                        'Neonatal disorders',
+                        'Congenital birth defects'],
+        'tlo_strings': ['postpartum labour',
+                        'labour',
+                        'Labour']
+    }
+    causes['Other Cancers'] = {
+        'gbd_strings': ['Other malignant neoplasms',
+                        'Nasopharynx cancer',
+                        'Other pharynx cancer',
+                        'Gallbladder and biliary tract cancer',
+                        'Pancreatic cancer',
+                        'Malignant skin melanoma',
+                        'Non-melanoma skin cancer',
+                        'Ovarian cancer',
+                        'Testicular cancer',
+                        'Kidney cancer',
+                        'Bladder cancer',
+                        'Brain and central nervous system cancer',
+                        'Thyroid cancer',
+                        'Mesothelioma',
+                        'Hodgkin lymphoma',
+                        'Non-Hodgkin lymphoma',
+                        'Multiple myeloma',
+                        'Leukemia',
+                        'Other neoplasms',
+                        'Breast cancer',
+                        'Cervical cancer',
+                        'Uterine cancer',
+                        'Prostate cancer',  #<-- will go into its own cause shortly
+                        'Colon and rectum cancer',
+                        'Lip and oral cavity cancer',
+                        'Stomach cancer',
+                        'Liver cancer'
+                        ],
+        'tlo_strings': ['OtherAdultCancer']
+    }
+    causes['Diabetes'] = {
+        'gbd_strings': ['Diabetes mellitus'],
+        'tlo_strings': ['diabetes']
+    }
+    causes['Heart Disease'] = {
+        'gbd_strings': ['Ischemic heart disease'],
+        'tlo_strings': ['chronic_ischemic_hd',
+                        'heart_attack']
+    }
+    causes['Stroke'] = {
+        'gbd_strings' : ['Stroke',
+                         'Hypertensive heart disease'],
+        'tlo_strings' : ['stroke']
+    }
+    causes['Kidney Disease'] = {
+        'gbd_strings' : ['Chronic kidney disease'],
+        'tlo_strings' : ['chronic_kidney_disease']
+    }
+
+    # # Check that every gbd-string identified above is included in the list of gbd_strings provided
+    for v in causes.values():
+        for g in v['gbd_strings']:
+            assert g in gbd_causes, f"{g} is not recognised in as a GBD cause of death"
+
+
+    # Catch-all groups for Others:
+    #  - map all the un-assigned gbd strings to Other
+    all_gbd_strings_mapped = []
+    for v in causes.values():
+        all_gbd_strings_mapped.extend(v['gbd_strings'])
+    gbd_strings_not_assigned = set(gbd_causes) - set(all_gbd_strings_mapped)
+    causes['Other'] = {
+        'gbd_strings': list(gbd_strings_not_assigned),
+        'tlo_strings': ['Other']
+    }
+
+    # make the mappers:
+    causes_df = pd.DataFrame.from_dict(causes, orient='index')
+
+    #  - from tlo_strings (key=tlo_string, value=unified_name)
+    mapper_from_tlo_strings = dict((v, k) for k, v in (
+        causes_df.tlo_strings.apply(pd.Series).stack().reset_index(level=1, drop=True)
+    ).iteritems())
+
+    #  - from gbd_strings (key=gbd_string, value=unified_name)
+    mapper_from_gbd_strings = dict((v, k) for k, v in (
+        causes_df.gbd_strings.apply(pd.Series).stack().reset_index(level=1, drop=True)
+    ).iteritems())
+
+    # check that the mappers are exhaustive for all causes in both gbd and tlo
+    assert all([c in mapper_from_gbd_strings for c in gbd_causes]), 'Caused in the gbd_causes have not been mapped.'
+    assert all([c in mapper_from_tlo_strings for c in tlo_causes]), 'Causes in the tlo_causes have not been mapped.'
+
+    return mapper_from_tlo_strings, mapper_from_gbd_strings

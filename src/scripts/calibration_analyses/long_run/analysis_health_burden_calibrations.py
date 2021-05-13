@@ -1,125 +1,145 @@
-"""Produce comparisons between model and GBD of deaths by cause in a particular year."""
+"""Produce comparisons between model and GBD of deaths by cause in a particular period."""
 
 # todo - get these plots working when the output comes from the batch system
 # todo - investigate causes of _extreme_ variation in deaths
 # todo - unify the labelling of causes in the HealthBurden module to simplify processing
+# todo - same for DALYS
 
-
-import pickle
 from datetime import datetime
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from scripts.utils.helper_funcs_for_processing_data_files import (
-    age_cats,
-    get_age_range_categories,
-    get_causes_mappers,
-    load_gbd_deaths_and_dalys_data,
+from matplotlib import pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
+
+from tlo.analysis.utils import (
+    make_age_grp_types,
+    make_age_grp_lookup,
+    make_calendar_period_lookup,
+    make_calendar_period_type,
+    extract_params,
+    extract_results,
+    get_scaling_factor,
+    get_scenario_info,
+    get_scenario_outputs,
+    load_pickled_dataframes,
+    summarize,
+    format_gbd,
+    get_causes_mappers
 )
-# Define the particular year for the focus of this analysis
-from tlo.methods.demography import get_scaling_factor
 
-# %% Set file paths etc
-year = 2010
 
-# Resource file path
-rfp = Path("./resources")
+# %% Declare usual paths:
+outputspath = Path('./outputs/tbh03@ic.ac.uk')
+rfp = Path('./resources')
 
-# Where will outputs be found
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
-results_filename = outputpath / '2020_11_25_long_run.pickle'
+# ** Declare the results folder ***
+results_folder = get_scenario_outputs('long_run.py', outputspath)[-1]
 
-with open(results_filename, 'rb') as f:
-    output = pickle.load(f)['output']
+# Declare path for output graphs from this script
+make_graph_file_name = lambda stub: outputspath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
 
-make_file_name = lambda stub: outputpath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
+# Define colo(u)rs to use:
+colors = {
+    'Model': 'royalblue',
+    'Census': 'darkred',
+    'WPP': 'forestgreen',
+    'GBD': 'plum'
+}
+
+
+# %% Set the period for the analysis (comparison is made of the average annual number of deaths in this period)
+period = '2010-2014'
 
 # %% Load and process the GBD data
+gbd = format_gbd(pd.read_csv(rfp / 'demography' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'))
 
-gbd = load_gbd_deaths_and_dalys_data(output)
+# rename the uncertainity range to align with the model
+gbd = gbd.rename(columns={'val': 'mean'})
 
-# Make pivot-tables of the form (index=sex/age, columns=unified_cause) (in a particular year)
-#  - Limit to relevant year and make the pivot table for deaths
-gbd_deaths_pt = gbd.loc[(gbd.year == year) & (gbd.measure_name == 'Deaths')]\
-    .groupby(['sex', 'age_range', 'unified_cause'])['val'].sum().unstack()
 
-#  - Limit to relevant year and make the pivot table for deaths
-gbd_dalys_pt = gbd.loc[(gbd.year == year) & (gbd.measure_name == 'DALYs (Disability-Adjusted Life Years)')]\
-    .groupby(['sex', 'age_range', 'unified_cause'])['val'].sum().unstack()
+# %% Load modelling results:
 
-# %% Get the scaling so that the population size matches that of the real population of Malawi
+# get the scaling_factor for the population run: todo - put this in the 'tlo.population' log
+sf = get_scaling_factor(results_folder=results_folder, resourcefilepath=rfp)
 
-scaling_factor = get_scaling_factor(output, rfp)
+deaths = summarize(extract_results(results_folder,
+                                         module="tlo.methods.demography",
+                                         key="death",
+                                         custom_generate_series="groupby(['sex', 'date', 'age', 'cause'])['person_id'].count()"
+                                         ),
+                         collapse_columns=True
+                         ).mul(sf).reset_index()
 
-# %% Get deaths from Model into a pivot-table (index=sex/age, columns=unified_cause) (in the particular year)
+# Sum by year/sex/age-group
+agegrps, agegrplookup = make_age_grp_lookup()
+deaths['year'] = deaths['date'].dt.year
+deaths['age_grp'] = deaths['age'].map(agegrplookup)
+deaths['age_grp'] = deaths['age_grp'].astype(make_age_grp_types())
+deaths_model = deaths.drop(columns=['age']).groupby(by=['sex', 'age_grp', 'cause', 'year']).sum().reset_index()
 
-deaths_df = output["tlo.methods.demography"]["death"]
-deaths_df["date"] = pd.to_datetime(deaths_df["date"])
-deaths_df["year"] = deaths_df["date"].dt.year
-deaths_df['age_range'] = age_cats(deaths_df.age)
+# Define period:
+calperiods, calperiodlookup = make_calendar_period_lookup()
+deaths_model['period'] = deaths_model['year'].map(calperiodlookup).astype(make_calendar_period_type())
 
-mapper_from_tlo_strings, _ = get_causes_mappers(output)
-deaths_df["unified_cause"] = deaths_df["cause"].map(mapper_from_tlo_strings)
-assert not pd.isnull(deaths_df["cause"]).any()
+# %% Load the cause-mappers (checking that it's up-to-date) and use it to define 'unified_cause' for model and gbd
+#  outputs
+mapper_from_tlo_strings, mapper_from_gbd_strings = get_causes_mappers(
+    gbd_causes=pd.unique(gbd['cause_name']),
+    tlo_causes=pd.unique(deaths_model['cause'])
+)
 
-df = deaths_df.loc[(deaths_df.year == year)].groupby(
-    ['sex', 'age_range', 'unified_cause']).size().reset_index()
-df = df.rename(columns={0: 'count'})
-df['count'] *= scaling_factor
+deaths_model['unified_cause'] = deaths_model['cause'].map(mapper_from_tlo_strings)
+assert not deaths_model['unified_cause'].isna().any()
 
-deaths_pt = df.groupby(by=['sex', 'age_range', 'unified_cause'])['count'].sum().unstack(fill_value=0.0)
+gbd['unified_cause'] = gbd['cause_name'].map(mapper_from_gbd_strings)
+assert not gbd['unified_cause'].isna().any()
 
-# %% Get DALYS from Model into a pivot-table (index=sex/age, columns=unified_cause) (in the particular year)
 
-dalys = output['tlo.methods.healthburden']['dalys'].copy()
+# %% Make comparable pivot-tables of the GBD and Model Outputs:
+# Find the average deaths (per unified cause) per year within the five-year period of interest
+# (index=sex/age, columns=unified_cause) (for particular period specified)
 
-# drop date because this is just the date of logging and not the date to which the results pertain.
-dalys = dalys.drop(columns=['date'])
+deaths_pt = dict()
 
-# re-classify the causes of DALYS
-dalys_melt = dalys.melt(id_vars=['sex', 'age_range', 'year'], var_name='cause', value_name='value')
-dalys_melt['cause'] = dalys_melt.cause\
-    .replace({'YLL_Demography_Other': '_Other'})\
-    .replace({'YLL_Demography_intrapartum stillbirth': 'YLL_Labour'})\
-    .str.split('_').apply(lambda x: x[1]).map(mapper_from_tlo_strings)
-assert not dalys_melt['cause'].isna().any()
+# - GBD:
+deaths_pt['GBD'] = gbd.loc[(gbd.period == period) & (gbd.measure_name == 'Deaths')]\
+    .groupby(['sex', 'age_grp', 'unified_cause'])[['mean', 'lower', 'upper']].sum().unstack().div(5.0)
 
-# limit to the year (so the output wil be new year's day of the next year)
-dalys_melt = dalys_melt.loc[dalys_melt.year == (year + 1)]
-dalys_melt = dalys_melt.drop(columns=['year'])
-
-# format age-groups and set index to be sex/age_range:
-age_range_categories, _ = get_age_range_categories()
-dalys_melt['age_range'] = pd.Categorical(dalys_melt['age_range'].replace({
-    '95-99': '95+',
-    '100+': '95+'}
-), categories=age_range_categories, ordered=True)
-
-# scale the total dalys
-dalys_melt['value'] *= scaling_factor
-
-# Make pivot-table
-dalys_pt = dalys_melt.groupby(by=['sex', 'age_range', 'cause'])['value'].sum().unstack(fill_value=0.0)
+# - TLO Model:
+deaths_pt['Model'] = deaths_model.loc[(deaths_model.period == period)].groupby(
+    by=['sex', 'age_grp', 'unified_cause']
+)[['mean', 'lower', 'upper']].sum().unstack(fill_value=0.0).div(5.0)
 
 
 # %% Make figures of overall summaries of deaths by cause
+# todo - improve formatting!!! ---- this should be a stacked bar chart (like the below)
 
-deaths_pt.sum().plot.bar()
-plt.xlabel('Cause')
-plt.ylabel(f"Total deaths in {year}")
-plt.savefig(make_file_name("Deaths by cause"))
+dats = ['GBD', 'Model']
+sex = ['F', 'M']
+sexname = lambda x: 'Females' if x=='F' else 'Males'
+
+fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True, sharex=True)
+
+for col, sex in enumerate(sex):
+    for row, dat in enumerate(dats):
+
+        ax = axes[row][col]
+        df = deaths_pt[dat].loc[sex].loc[:, pd.IndexSlice['mean']] / 1e3
+
+        xs = np.arange(len(df.index))
+        df.plot.bar(ax=ax)
+        ax.set_xlabel('Age Group')
+        ax.set_ylabel(f"Deaths per year (thousands)")
+        ax.set_title(f"{sexname(sex)}: {dat}")
+
 plt.show()
 
-dalys_pt.sum().plot.bar()
-plt.xlabel('Cause')
-plt.ylabel(f"Total DALYS in {year}")
-plt.savefig(make_file_name("DALY by cause"))
-plt.show()
 
 
+# todo - got to here!
 # %% Plots comparing between model and actual across all ages and sex:
 
 def make_scatter_graph(gbd_totals, model_totals, title, show_labels=None):
@@ -207,6 +227,8 @@ make_stacked_bar_comparison(
     model_pt=dalys_pt,
     gbd_pt=gbd_dalys_pt,
     ylabel='DALYS')
+
+
 
 # # %% make figure for Malaria:
 # plt.bar(

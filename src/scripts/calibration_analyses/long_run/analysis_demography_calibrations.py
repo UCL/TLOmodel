@@ -6,7 +6,7 @@ This uses Scenario file: src/scripts/long_run/long_run.py
 """
 
 # TODO -- Coding -- ordering of each element;
-
+# TODO -- CODING -- use the helper_funcs (e.g. GBD age-group categories) i.e. format_gbd
 # TODO -- Observations -- very large variation in deaths: some runs seeming have almost no deaths
 
 import pickle
@@ -73,7 +73,7 @@ except KeyError:
 
 # 1) Population Growth Over Time:
 
-# Load and format model results (with year as integer:
+# Load and format model results (with year as integer):
 pop_model = summarize(extract_results(results_folder,
                             module="tlo.methods.demography",
                             key="population",
@@ -253,8 +253,8 @@ for year in [2018, 2030]:
 
     axes[1].set_xlabel('Age Group')
     plt.xticks(x, list(make_age_grp_types().categories), rotation=90)
-    fig.tight_layout()
     axes[1].legend()
+    fig.tight_layout()
     plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
     plt.show()
 
@@ -275,7 +275,7 @@ births_by_date = summarize(extract_results(results_folder,
 
 # Aggregate the model outputs into five year periods:
 calperiods, calperiodlookup = make_calendar_period_lookup()
-births_by_date['Period'] = births_by_date.index.year.map(calendarperiodlookup)
+births_by_date['Period'] = births_by_date.index.year.map(calperiodlookup)
 births_model = births_by_date.loc[births_by_date.index.year < 2030].groupby(by='Period').sum()
 births_model.index = births_model.index.astype(make_calendar_period_type())
 births_model.columns = ['Model_' + col for col in births_model.columns]
@@ -360,7 +360,7 @@ deaths_by_age_and_date = summarize(extract_results(results_folder,
 
 # Aggregate the model outputs into five year periods for age and time:
 calperiods, calperiodlookup = make_calendar_period_lookup()
-deaths_by_age_and_date["Period"] = deaths_by_age_and_date["date"].dt.year.map(calendarperiodlookup)
+deaths_by_age_and_date["Period"] = deaths_by_age_and_date["date"].dt.year.map(calperiodlookup)
 
 (__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
 deaths_by_age_and_date["Age_Grp"] = deaths_by_age_and_date["age"].map(age_grp_lookup)
@@ -374,11 +374,7 @@ deaths_model['Variant'] = 'Model_' + deaths_model['Variant']
 
 # Load WPP data
 wpp_deaths = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")
-# wpp_deaths.loc[
-#     (wpp_deaths.Period == '2020-2024') &
-#     (wpp_deaths.Age_Grp == '15-19') &
-#     (wpp_deaths.Sex == 'F')
-# ].groupby('Variant')['Count'].sum()/1e3
+
 
 # Load GBD (and collapse the ages for <5 together)
 gbd = pd.read_csv(rfp / "demography" / "ResourceFile_TotalDeaths_GBD.csv")
