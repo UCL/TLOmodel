@@ -8,12 +8,12 @@ from tlo.methods.bladder_cancer import (
     HSI_BladderCancer_Investigation_Following_Blood_Urine,
     HSI_BladderCancer_Investigation_Following_pelvic_pain,
 )
+from tlo.methods.breast_cancer import (
+    HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
+)
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
-)
-from tlo.methods.breast_cancer import (
-    HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
