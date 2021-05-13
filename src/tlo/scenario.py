@@ -318,7 +318,7 @@ class SampleRunner:
         if sample["parameters"] is not None:
             self.override_parameters(sim, sample["parameters"])
 
-        sim.make_initial_population(n=self.scenario.pop_size)
+        sim.make_initial_population(n=self.scenario.smaller_pop_size)
         sim.simulate(end_date=self.scenario.end_date)
         outputs = parse_log_file(sim.log_filepath)
         for key, output in outputs.items():

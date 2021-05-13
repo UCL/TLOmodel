@@ -123,7 +123,7 @@ for i in range(0, nsim):
         # group the dalys by year
         dalys_df = dalys_df.groupby('year').sum()
         # get the YLL caused by RTI
-        dalys_df_RTI_YLL = dalys_df.filter(like='YLL_RTI').columns
+        cdalys_df_RTI_YLL = dalys_df.filter(like='YLL_RTI').columns
         # calculate dalys caused by rti
         dalys_df['dalys'] = dalys_df[dalys_df_RTI_YLL].sum(axis=1) + dalys_df['YLD_RTI_rt_disability']
         # get the dalys occurring in each full year of the simulation

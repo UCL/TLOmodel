@@ -1079,6 +1079,7 @@ class RTI(Module):
                                             'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b',
                                             'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']),
         'rt_in_shock': Property(Types.BOOL, 'A property determining if this person is in shock'),
+        'rt_death_from_shock': Property(Types.BOOL, 'whether this person died from shock'),
         'rt_injuries_to_cast': Property(Types.LIST, 'A list of injuries that are to be treated with casts'),
         'rt_injuries_for_minor_surgery': Property(Types.LIST, 'A list of injuries that are to be treated with a minor'
                                                               'surgery'),
@@ -1511,6 +1512,7 @@ class RTI(Module):
         df.loc[df.is_alive, 'rt_injury_7'] = "none"
         df.loc[df.is_alive, 'rt_injury_8'] = "none"
         df.loc[df.is_alive, 'rt_in_shock'] = False
+        df.loc[df.is_alive, 'rt_death_from_shock'] = False
         df.loc[df.is_alive, 'rt_polytrauma'] = False
         df.loc[df.is_alive, 'rt_ISS_score'] = 0
         df.loc[df.is_alive, 'rt_perm_disability'] = False
@@ -1560,7 +1562,7 @@ class RTI(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         # Begin logging the RTI events
         event = RTI_Logging_Event(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=0))
+        sim.schedule_event(event, sim.date + DateOffset(days=30))
 
     def rti_do_when_diagnosed(self, person_id):
         """
@@ -2737,6 +2739,7 @@ class RTI(Module):
         df.at[child_id, 'rt_injury_7'] = "none"
         df.at[child_id, 'rt_injury_8'] = "none"
         df.at[child_id, 'rt_in_shock'] = False
+        df.at[child_id, 'rt_death_from_shock'] = False
         df.at[child_id, 'rt_injuries_to_cast'] = []
         df.at[child_id, 'rt_injuries_for_minor_surgery'] = []
         df.at[child_id, 'rt_injuries_for_major_surgery'] = []
@@ -5537,8 +5540,9 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
     def did_not_run(self, person_id):
         # Assume that untreated shock leads to death for now
         # Schedule the death
+        df.at[person_id, 'rt_death_from_shock'] = True
         self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
-                                                              cause='RTI_death_with_med'), self.sim.date)
+                                                              cause='RTI_death_shock'), self.sim.date)
         # Log the death
         logger.debug('This is RTI_Shock_Treatment scheduling a death for person %d who did not recieve treatment'
                      'for shock',
