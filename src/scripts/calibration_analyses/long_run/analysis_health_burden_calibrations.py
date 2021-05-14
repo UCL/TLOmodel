@@ -115,124 +115,125 @@ deaths_pt['Model'] = deaths_model.loc[(deaths_model.period == period)].groupby(
 
 
 # %% Make figures of overall summaries of deaths by cause
-# todo - improve formatting!!! ---- this should be a stacked bar chart (like the below)
+# todo - improve formatting
 
 dats = ['GBD', 'Model']
-sex = ['F', 'M']
+sexes = ['F', 'M']
 sexname = lambda x: 'Females' if x=='F' else 'Males'
 
-fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True, sharex=True)
+fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True, sharex=True, figsize=(40, 40))
 
-for col, sex in enumerate(sex):
+for col, sex in enumerate(sexes):
     for row, dat in enumerate(dats):
 
         ax = axes[row][col]
         df = deaths_pt[dat].loc[sex].loc[:, pd.IndexSlice['mean']] / 1e3
 
         xs = np.arange(len(df.index))
-        df.plot.bar(ax=ax)
-        ax.set_xlabel('Age Group')
-        ax.set_ylabel(f"Deaths per year (thousands)")
-        ax.set_title(f"{sexname(sex)}: {dat}")
+        df.plot.bar(stacked=True, ax=ax, fontsize=30)
+        ax.set_xlabel('Age Group', fontsize=40)
+        ax.set_title(f"{sexname(sex)}: {dat}", fontsize=60)
+        ax.get_legend().remove()
 
+# add a big axis, hide frame
+bigax = fig.add_subplot(111, frameon=False)
+# hide tick and tick label of the big axis
+bigax.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+bigax.set_ylabel("Deaths per year (thousands)", fontsize=40)
+fig.legend(loc="center right", fontsize=15)
+fig.tight_layout()
+plt.savefig(make_graph_file_name(f"Deaths_StackedBars_ModelvsGBD_{period}"))
 plt.show()
 
 
-
-# todo - got to here!
 # %% Plots comparing between model and actual across all ages and sex:
 
-def make_scatter_graph(gbd_totals, model_totals, title, show_labels=None):
-    scatter = pd.concat({
-        'GBD': gbd_totals,
-        'Model': model_totals}, axis=1, sort=True
-        )
+causes = list(deaths_pt['Model'].loc[:, pd.IndexSlice['mean']].columns)
 
-    xylim = np.round(scatter.max().max(), -5)
+# Get total number of deaths (all ages) from each source
+tot_deaths_by_cause = pd.concat({dat: deaths_pt[dat].sum() for dat in deaths_pt.keys()}, axis=1).fillna(0.0)
 
-    # plot points:
-    fig, ax = plt.subplots()
-    ax.plot(scatter['GBD'], scatter['Model'], 'bo')
+fig, ax = plt.subplots()
+xylim = 250
+all_causes = tot_deaths_by_cause.index.levels[1]
+select_labels = ['AIDS', 'Childhood Diarrhoea', 'Other']
 
-    # label selected points:
-    if show_labels:
-        for label in show_labels:
-            row = scatter.loc[label]
-            ax.annotate(label,
-                        (row['GBD'], row['Model']),
-                        textcoords="offset points",
-                        xytext=(0, 10),
-                        ha='center',
-                        )
+for cause in all_causes:
 
-    # X=Y line
-    line_x = np.linspace(0, xylim)
-    ax.plot(line_x, line_x, 'r')
+    vals = tot_deaths_by_cause.loc[(slice(None), cause),] / 1e3
 
-    ax.set(xlim=(0, xylim), ylim=(0, xylim))
-    ax.set_xlabel('GBD')
-    ax.set_ylabel('Model')
-    ax.set_title(f'{title} in {year}')
-    plt.savefig(make_file_name("Deaths_Scatter_Plot"))
-    plt.show()
+    x = vals.at[('mean', cause), 'GBD']
+    xerr = np.array([
+               x - vals.at[('lower', cause), 'GBD'],
+               vals.at[('upper', cause), 'GBD'] - x
+    ]).reshape(2, 1)
+    y = vals.at[('mean', cause), 'Model']
+    yerr = np.array([
+        y - vals.at[('lower', cause), 'Model'],
+        vals.at[('upper', cause), 'Model'] - y
+    ]).reshape(2,1)
 
-# - Make scatter graph for deaths
-make_scatter_graph(gbd_totals=gbd_deaths_pt.sum(),
-                   model_totals=deaths_pt.sum(),
-                   title="Total Deaths",
-                   show_labels=['AIDS', 'Childhood Diarrhoea', 'Malaria', 'Other'])
+    ax.errorbar(x=x, y=y, xerr=xerr, yerr=yerr, label=cause)
 
-# - Make scatter graph for DALYS
-make_scatter_graph(gbd_totals=gbd_dalys_pt.sum(),
-                   model_totals=dalys_pt.sum(),
-                   title="Total DALYS",
-                   show_labels=['AIDS', 'Childhood Diarrhoea', 'Malaria', 'Other'])
-
-# %% Make stacked bar charts breaking-out causes by age/sex
-
-def make_stacked_bar_comparison(gbd_pt, model_pt, ylabel):
-
-    def plot_stacked_bar_chart_of_deaths_by_cause(ax, pt, title, ylabel):
-        pt.plot.bar(stacked=True, ax=ax)
-        ax.set_title(title)
-        ax.set_ylabel(f"{ylabel}")
-        ax.set_label('Age Group')
-        ax.get_legend().remove()
-
-    sex_as_string = lambda x: 'Females' if x == 'F' else 'Males'
-
-    fig, axs = plt.subplots(2, 2, sharex=True, sharey=True)
-    for i, sex in enumerate(['F', 'M']):
-         plot_stacked_bar_chart_of_deaths_by_cause(
-             ax=axs[i, 0],
-             pt=model_pt.loc[(sex,), ],
-             ylabel=ylabel,
-             title=f"Model: {sex_as_string(sex)}")
-         plot_stacked_bar_chart_of_deaths_by_cause(
-             ax=axs[i, 1],
-             pt=gbd_pt.loc[(sex,), ],
-             ylabel=ylabel,
-             title=f"GBD: {sex_as_string(sex)}")
-    plt.show()
-    plt.savefig(outputpath / f"StackedBars_{ylabel}.png")
-
-# Make stacked bar comparison plot of deaths
-make_stacked_bar_comparison(
-    model_pt=deaths_pt,
-    gbd_pt=gbd_deaths_pt,
-    ylabel='Deaths')
-
-# Make stacked bar comparison plot of DALYS
-make_stacked_bar_comparison(
-    model_pt=dalys_pt,
-    gbd_pt=gbd_dalys_pt,
-    ylabel='DALYS')
+    if cause in select_labels:
+        ax.annotate(cause,
+                (x,y),
+                textcoords="offset points",
+                xytext=(0, 10),
+                ha='center'
+                )
 
 
+line_x = np.linspace(0, xylim)
+ax.plot(line_x, line_x, 'r')
+ax.set(xlim=(0, xylim), ylim=(0, xylim))
+ax.set_xlabel('GBD')
+ax.set_ylabel('Model')
+ax.set_title(f'Deaths by Cause {period}')
+plt.savefig(make_graph_file_name(f"Deaths_Scatter_Plot_{period}"))
+plt.show()
 
-# # %% make figure for Malaria:
-# plt.bar(
-#     ['GBD', 'TLO'],
-#     [gbd_deaths_pt['Malaria'].sum(), deaths_pt['Malaria'].sum()]
-# )
-# plt.show()
+
+# %% Plots of deaths patten for each cause:
+
+sexes = ['F', 'M']
+dats = ['GBD', 'Model']
+
+x = list(deaths_this_cause.index.levels[1])
+xs = np.arange(len(x))
+
+for cause in all_causes:
+    try:
+        deaths_this_cause = pd.concat(
+            {dat: deaths_pt[dat].loc[:,(slice(None), cause)] for dat in deaths_pt.keys()}, axis=1
+        ).fillna(0.0) / 1e3
+
+        fig, ax = plt.subplots(ncols=1, nrows=2, sharey=True, sharex=True)
+        for row, sex in enumerate(sexes):
+            for dat in dats:
+                ax[row].plot(
+                    xs,
+                    deaths_this_cause.loc[(sex,),(dat, 'mean', cause)].values,
+                    label=dat,
+                    color=colors[dat]
+                )
+                ax[row].fill_between(
+                    xs,
+                    deaths_this_cause.loc[(sex,),(dat, 'upper', cause)].values,
+                    deaths_this_cause.loc[(sex,),(dat, 'lower', cause)].values,
+                    facecolor=colors[dat], alpha=0.2
+                )
+            ax[row].legend()
+            ax[row].set_xticks(xs)
+            ax[row].set_xticklabels(x, rotation=90)
+            ax[row].set_xlabel('Age Group')
+            ax[row].set_xlabel('Deaths (thousands)')
+            ax[row].set_title(f"{cause}: {sexname(sex)}, {period}")
+            ax[row].legend()
+
+        fig.tight_layout()
+        plt.savefig(make_graph_file_name(f"Deaths_Scatter_Plot_{period}"))
+        plt.show()
+
+    except KeyError:
+        print(f"Could not produce plot for {cause}")
