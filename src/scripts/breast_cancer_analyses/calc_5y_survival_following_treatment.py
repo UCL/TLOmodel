@@ -38,7 +38,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2080, 1, 1)
+end_date = Date(2025, 1, 1)
 popsize = 10000
 
 # Establish the simulation object and set the seed
@@ -108,11 +108,13 @@ cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_tre
 # calc % of those that were alive 5 years after starting treatment (not died of any cause):
 # Store condition in variable
 condition = cohort_treated['days_treatment_to_death'] < (5*365.25)
-1 - (len(cohort_treated.loc[condition]) / len(cohort_treated))
+print('% alive after five years = ')
+print(1 - (len(cohort_treated.loc[condition]) / len(cohort_treated)))
 
 # calc % of those that had not died of breast cancer 5 years after starting treatment (could have died of another
 # cause):
 
 # Store condition in variable
 condition = (cohort_treated['cause'] == 'BreastCancer') & (cohort_treated['days_treatment_to_death'] < (5*365.25))
-1 - (len(cohort_treated.loc[condition]) / len(cohort_treated))
+print('% of those that have not died of bc after 5 years post treatment')
+print(1 - (len(cohort_treated.loc[condition]) / len(cohort_treated)))
