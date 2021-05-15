@@ -118,7 +118,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
                 # routine assessment for acute malnutrition -----
                 if 'Wasting' in self.sim.modules:
-                    self.sim.modules['Wasting'].do_when_acute_malnutrition(person_id=person_id, hsi_event=self)
+                    self.sim.modules['Wasting'].do_when_acute_malnutrition(person_id=person_id)
 
                 # Run DxAlgorithmChild to get additional diagnoses:
                 diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(

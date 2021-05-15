@@ -22,8 +22,8 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-pop_size = 100
+end_date = Date(2012, 1, 1)
+pop_size = 1000
 seed = 146
 
 log_config = {
@@ -56,7 +56,7 @@ sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=reso
 sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
 sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
 sim.register(stunting.Stunting(resourcefilepath=resourcefilepath))
-# sim.register(wasting.Wasting(resourcefilepath=resourcefilepath))
+sim.register(wasting.Wasting(resourcefilepath=resourcefilepath))
 
 sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 

@@ -275,7 +275,8 @@ class Stunting(Module):
             unscaled_lm = make_linear_model_stunting(agegp)  # intercept=get_odds_stunting(agegp)
             target_mean = get_odds_stunting(agegp='12_23mo')
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1)]).mean()
-            scaled_intercept = get_odds_stunting(agegp) * (target_mean / actual_mean)
+            scaled_intercept = get_odds_stunting(agegp) * (target_mean / actual_mean) if \
+                (target_mean != 0 and actual_mean != 0) else get_odds_stunting(agegp)
             scaled_lm = make_linear_model_stunting(agegp, intercept=scaled_intercept)
             return scaled_lm
 
@@ -436,8 +437,7 @@ class Stunting(Module):
                 self.count_all_previous_diarrhoea_episodes(
                     today=sim.date, index=df.loc[df.is_alive & (df.age_years == 1) &
                                                  (df.un_HAZ_category == 'HAZ>=-2')].index)).mean()
-
-            scaled_intercept = 1.0 * (target_mean / actual_mean)
+            scaled_intercept = 1.0 * (target_mean / actual_mean) if (target_mean != 0 and actual_mean != 0) else 1.0
             scaled_lm = make_lm_stunting_incidence(intercept=scaled_intercept)
             return scaled_lm
 
