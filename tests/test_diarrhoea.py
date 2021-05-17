@@ -292,6 +292,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
 
 
 @pytest.mark.group2
+
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_with_perfect_treatment():
     """Run with high incidence and perfect treatment, with and without spurious symptoms of diarrhoea being generated"""
 
