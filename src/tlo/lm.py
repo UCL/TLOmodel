@@ -367,22 +367,11 @@ class LinearModel(object):
         column_resolvers = self._get_column_resolvers(df, **kwargs)
 
         if self._model_string != "":
-  
-            try:
-                result = pd.eval(
-                    self._model_string, 
-                    resolvers=(column_resolvers.copy(),), 
-                    engine="numexpr"
-                )
-            except (ImportError, TypeError, ValueError):
-                # Fallback to `python` engine to evaluate expression if numexpr not 
-                # available or expression cannot be evaluated with numexpr engine
-                result = pd.eval(
-                    self._model_string, 
-                    resolvers=(column_resolvers.copy(),), 
-                    engine="python"
-                )
-
+            result = pd.eval(
+                self._model_string, 
+                resolvers=(column_resolvers,), 
+                engine="python"
+            )
         else:
             result = pd.Series(data=self.intercept, index=df.index)
 
