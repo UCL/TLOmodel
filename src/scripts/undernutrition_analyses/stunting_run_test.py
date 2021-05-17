@@ -43,7 +43,7 @@ sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))

@@ -835,14 +835,16 @@ class Wasting(Module):
         df = self.sim.population.props
 
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
-        total_daly_values.loc[df.is_alive & (df.un_WHZ_category == 'WHZ<-3') &
+        total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'SAM') &
                               (df.un_am_bilateral_oedema == True)] = self.daly_wts['SAM_with_oedema']
-        total_daly_values.loc[df.is_alive & (df.un_WHZ_category == 'WHZ<-3') &
+        total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'SAM') &
                               (df.un_am_bilateral_oedema == False)] = self.daly_wts['SAM_w/o_oedema']
-        total_daly_values.loc[df.is_alive & (df.un_WHZ_category == '-3<=WHZ<-2') &
-                              (df.un_am_bilateral_oedema == True)] = self.daly_wts['MAM_with_oedema']
-        # total_daly_values.loc[df.is_alive & (df.un_WHZ_category == '-3<=WHZ<-2') &
-        #                       (df.un_am_bilateral_oedema == False)] = self.daly_wts['MAM_w/o_oedema']
+        total_daly_values.loc[df.is_alive & (
+            ((df.un_WHZ_category == '-3<=WHZ<-2') & (df.un_am_MUAC_category != "<115mm")) |
+            ((df.un_WHZ_category != 'WHZ<-3') & (df.un_am_MUAC_category != "115-<125mm"))
+        ) & (df.un_am_bilateral_oedema == True)] = self.daly_wts['MAM_with_oedema']
+        # total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'MAM')] = \
+        #     self.daly_wts['MAM_w/o_oedema']
 
         return total_daly_values
 
@@ -870,7 +872,7 @@ class Wasting(Module):
                 duration_in_days=None,
             )
 
-    def do_when_acute_malnutrition(self, person_id):
+    def do_when_acute_malnutrition_assessment(self, person_id):
         """
         This is called by the a generic HSI event when acute malnutrition is checked.
         :param person_id:
