@@ -358,7 +358,11 @@ class LinearModel(object):
         for name in self._predictor_names:
             assert (
                 name in df 
-                or name.strip("__") in kwargs 
+                or (
+                    name.startswith("__") 
+                    and name.endswith("__") 
+                    and name.strip("__") in kwargs
+                )
                 or name in builtins.__dict__
             ), (
                 f"Predictors include unknown name {name}"
