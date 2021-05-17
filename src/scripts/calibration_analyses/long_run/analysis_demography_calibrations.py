@@ -26,6 +26,7 @@ from tlo.analysis.utils import (
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
+    format_gbd,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
@@ -101,7 +102,6 @@ sf = cens_2018.sum() / mean_pop_2018
 
 # Update the model results to incorporate the scaling factor
 pop_model *= sf
-
 
 # Plot population size over time
 fig, ax = plt.subplots()
@@ -216,7 +216,6 @@ def get_mean_pop_by_age_for_sex_and_year(sex, year):
                   )
         output[agegroup] = num.loc[num.index.year == year].values.mean()
     return pd.Series(output)
-
 
 
 for year in [2018, 2030]:
@@ -375,8 +374,7 @@ deaths_model['Variant'] = 'Model_' + deaths_model['Variant']
 # Load WPP data
 wpp_deaths = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")
 
-
-# Load GBD (and collapse the ages for <5 together)
+# Load GBD (and collapse the ages for <5 together) #todo - instead, can this make use of format_gbd()
 gbd = pd.read_csv(rfp / "demography" / "ResourceFile_TotalDeaths_GBD.csv")
 gbd.loc[(gbd.Age_Grp == '<1year') | (gbd.Age_Grp == '1-4'), 'Age_Grp'] = '0-4'
 gbd = pd.DataFrame(gbd.drop(columns=['Year']).groupby(by=['Period', 'Sex', 'Age_Grp', 'Variant']).sum()).reset_index()
