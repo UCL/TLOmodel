@@ -617,42 +617,6 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 date=date_onset)
 
 
-# class SevereStuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
-#     """
-#     Regular event that determines those that will progress to severe stunting
-#      and schedules individual incident cases to represent onset od severe stunting.
-#      First run to occur 3 months after the first StuntingPollingEvent
-#     """
-#
-#     def __init__(self, module):
-#         super().__init__(module, frequency=DateOffset(months=6))
-#         assert isinstance(module, Stunting)
-#
-#     def apply(self, population):
-#         df = population.props
-#         rng = self.module.rng
-#         p = self.module.parameters
-#
-#         days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'D')
-#
-#         # determine those individuals that will progress to severe stunting
-#         progression_to_severe_stunting = self.module.severe_stunting_progression_equation.predict(
-#             df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_HAZ_category == '-3<=HAZ<-2')])
-#         severely_stunted = rng.random_sample(len(progression_to_severe_stunting)) < progression_to_severe_stunting
-#
-#         # determine the onset date of severe stunting and schedule event
-#         for person_id in severely_stunted[severely_stunted].index:
-#             # Allocate a date of onset for stunting episode
-#             date_onset_severe_stunting = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
-#
-#             # Create the event for the onset of severe stunting
-#             self.sim.schedule_event(
-#                 event=ProgressionSevereStuntingEvent(module=self.module,
-#                                                      person_id=person_id,
-#                                                      cm_state='severe_stunting'), date=date_onset_severe_stunting
-#             )
-
-
 class StuntingRecoveryPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that determines those that will improve their stunting state
@@ -736,7 +700,7 @@ class StuntingOnsetEvent(Event, IndividualScopeEventMixin):
                                                      person_id=person_id), date=date_onset_severe_stunting
             )
 
-        # determine if this person will improve stunting state # # # # # # # # # # #
+        # determine if this person will improve stunting state without interventions # # # # # # # # # # #
         improved_stunting_state = 1 - p['prob_remained_stunted_in_the_next_3months']
         if rng.rand() < improved_stunting_state:
             # Allocate a date of onset for improvement of stunting episode
@@ -801,9 +765,8 @@ class StuntingRecoveryEvent(Event, IndividualScopeEventMixin):
     This event sets the properties back to normal state
     """
 
-    def __init__(self, module, person_id, stunting_state):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        self.improved_state = stunting_state
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -857,10 +820,7 @@ class HSI_complementary_feeding_education_only(HSI_Event, IndividualScopeEventMi
         consumables_needed = {'Item_Code': {item_code_complementary_feeding_education: 1}}
 
         # check availability of consumables
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed)
-        # answer comes back in the same format, but with quantities replaced with bools indicating availability
-        if outcome_of_request_for_consumables['Items'][item_code_complementary_feeding_education]:
+        if self.get_all_consumables(item_codes=item_code_complementary_feeding_education):
             logger.debug(key='debug', data='item_code_complementary_feeding_education is available, so use it.')
             # Update properties
             df.at[person_id, 'un_chronic_malnutrition_tx_start_date'] = self.sim.date
@@ -921,10 +881,7 @@ class HSI_complementary_feeding_with_supplementary_foods(HSI_Event, IndividualSc
         consumables_needed = {'Item_Code': {item_code_complementary_feeding_with_supplements: 1}}
 
         # check availability of consumables
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed)
-        # answer comes back in the same format, but with quantities replaced with bools indicating availability
-        if outcome_of_request_for_consumables['Items'][item_code_complementary_feeding_with_supplements]:
+        if self.get_all_consumables(item_codes=item_code_complementary_feeding_with_supplements):
             logger.debug(key='debug', data='item_code_complementary_feeding_with_supplements is available, so use it.')
             # Update properties
             df.at[person_id, 'un_chronic_malnutrition_tx_start_date'] = self.sim.date
