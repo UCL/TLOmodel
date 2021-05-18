@@ -29,6 +29,13 @@ def predict_early_onset_neonatal_sepsis(self, df, rng=None, **externals):
     params = self.parameters
     result = params['prob_early_onset_neonatal_sepsis_day_0']
 
+    if externals['maternal_chorioamnionitis']:
+        result *= params['rr_eons_maternal_chorio']
+    if externals['maternal_prom']:
+        result *= params['rr_eons_maternal_prom']
+    if person['nb_early_preterm'] or person['nb_late_preterm']:
+        result *= params['rr_eons_preterm_neonate']
+
     if person['nb_clean_birth']:
         result *= params['treatment_effect_clean_birth']
     if person['nb_received_cord_care']:
@@ -43,19 +50,29 @@ def predict_early_onset_neonatal_sepsis(self, df, rng=None, **externals):
 
 def predict_encephalopathy(self, df, rng=None, **externals):
     """individual level"""
-    # person = df.iloc[0]
+    person = df.iloc[0]
     params = self.parameters
     result = params['prob_encephalopathy']
+
+    if person['nb_early_onset_neonatal_sepsis']:
+        result *= params['rr_enceph_neonatal_sepsis']
+    if externals['obstructed_labour']:
+        result *= params['rr_enceph_obstructed_labour']
+    if externals['hypoxic_event']:
+        result *= params['rr_enceph_acute_hypoxic_event']
 
     return pd.Series(data=[result], index=df.index)
 
 
 def predict_rds_preterm(self, df, rng=None, **externals):
     """individual level"""
-    # person = df.iloc[0]
     params = self.parameters
     result = params['prob_respiratory_distress_preterm']
 
+    # if externals['diabetes_mellitus']:
+    #    result *= params['rr_rds_maternal_diabetes_mellitus']
+    if externals['gestational_diabetes']:
+        result *= params['rr_rds_maternal_gestational_diab']
     if externals['received_corticosteroids']:
         result *= params['treatment_effect_steroid_preterm']
 
@@ -97,10 +114,8 @@ def predict_preterm_birth_other_death(self, df, rng=None, **externals):
 
     if person['nb_early_preterm']:
         result *= params['rr_preterm_death_early_preterm']
-    if person['nb_kangaroo_mother_care']:
+    if person['nb_kangaroo_mother_care']:  # TODO: and low birth weight?
         result *= params['treatment_effect_kmc']
-    if externals['received_corticosteroids']:
-        result *= params['treatment_effect_steroid_preterm']
 
     return pd.Series(data=[result], index=df.index)
 

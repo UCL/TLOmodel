@@ -50,7 +50,8 @@ class Labour(Module):
     }
 
     PARAMETERS = {
-        #  ===================================  NATURAL HISTORY PARAMETERS =============================================
+
+        #  PARITY AT BASELINE...
         'intercept_parity_lr2010': Parameter(
             Types.REAL, 'intercept value for linear regression equation predicating womens parity at 2010 baseline'),
         'effect_age_parity_lr2010': Parameter(
@@ -77,137 +78,82 @@ class Labour(Module):
         'effect_wealth_lev_1_parity_lr2010': Parameter(
             Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
                         'parity at 2010 base line'),
-        'lower_limit_term_days': Parameter(
-            Types.REAL, 'minimum number of days gestation at which a woman can go into labour and be categorised as '
-                        'term'),
-        'upper_limit_term_days': Parameter(
-            Types.REAL, 'maximum number of days gestation at which a woman can go into labour and be categorised as '
-                        'term'),
-        'lower_limit_early_preterm_days': Parameter(
-            Types.REAL, 'minimum number of days gestation at which a woman can go into labour and be categorised as '
-                        'early preterm'),
-        'upper_limit_early_preterm_days': Parameter(
-            Types.REAL, 'maximum number of days gestation at which a woman can go into labour and be categorised as '
-                        'early preterm'),
-        'lower_limit_late_preterm_days': Parameter(
-            Types.REAL, 'minimum number of days gestation at which a woman can go into labour and be categorised as '
-                        'early preterm'),
-        'upper_limit_late_preterm_days': Parameter(
-            Types.REAL, 'maximum number of days gestation at which a woman can go into labour and be categorised as '
-                        'late preterm'),
-        'lower_limit_postterm_days': Parameter(
-            Types.REAL, 'minimum number of days gestation at which a woman can go into labour and be categorised as '
-                        'post term '),
-        'prob_pl_ol': Parameter(
-            Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
-                        'parity at 2010 base line'),
-        'prob_cephalopelvic_dis': Parameter(
-            Types.REAL, 'an individuals probability of experiencing CPD'),
-        'prob_malpresentation': Parameter(
-            Types.REAL, 'an individuals probability of experiencing malpresentation'),
-        'prob_malposition': Parameter(
-            Types.REAL, 'an individuals probability of experiencing malposition'),
+
+        # MISC...
+        'list_limits_for_defining_term_status': Parameter(
+            Types.LIST, 'List of number of days of gestation used to define term, early preterm, late preterm and '
+                        'post term delivery'),
+        'allowed_interventions': Parameter(
+            Types.LIST, 'list of interventions allowed to run, used in analysis'),
+
+        # OBSTRUCTED LABOUR....
         'prob_obstruction_cpd': Parameter(
-            Types.REAL, 'risk of obstruction in a woman with CPD'),
-        'prob_obstruction_malpos': Parameter(
-            Types.REAL, 'risk of obstruction in a woman with malposition'),
-        'prob_obstruction_malpres': Parameter(
-            Types.REAL, 'risk of obstruction in a woman with malpresentation'),
+            Types.REAL, 'risk of a woman developing obstructed labour secondary to cephalopelvic disproportion'),
+        'rr_obstruction_cpd_stunted_mother': Parameter(
+            Types.REAL, 'relative risk of obstruction secondary to CPD in mothers who are stunted'),
+        'rr_obstruction_foetal_macrosomia': Parameter(
+            Types.REAL, 'relative risk of obstruction secondary to CPD in mothers who are carrying a macrosomic '
+                        'foetus'),
+        'prob_obstruction_malpos_malpres': Parameter(
+            Types.REAL, 'risk of a woman developing obstructed labour secondary to malposition or malpresentation'),
+        'prob_obstruction_other': Parameter(
+            Types.REAL, 'risk of a woman developing obstructed labour secondary to other causes'),
+
+        # ANTEPARTUM HAEMORRHAGE...
         'prob_placental_abruption_during_labour': Parameter(
             Types.REAL, 'probability of a woman developing placental abruption during labour'),
         'prob_aph_placenta_praevia_labour': Parameter(
             Types.REAL, 'probability of a woman with placenta praevia experiencing an APH during labour'),
         'prob_aph_placental_abruption_labour': Parameter(
             Types.REAL, 'probability of a woman with placental abruption experiencing an APH during labour'),
-        'prob_chorioamnionitis_ip': Parameter(
-            Types.REAL, 'probability of chorioamnionitis infection during labour'),
-        'prob_other_maternal_infection_ip': Parameter(
-            Types.REAL, 'probability of other obstetric infection in labour'),
-        'prob_endometritis_pp': Parameter(
-            Types.REAL, 'probability of endometritis infection following labour'),
-        'prob_skin_soft_tissue_inf_pp': Parameter(
-            Types.REAL, 'probability of a skin or soft tissue infection following labour'),
-        'prob_urinary_tract_inf_pp': Parameter(
-            Types.REAL, 'probability of a urinary tract infection following labour'),
-        'prob_other_maternal_infection_pp': Parameter(
-            Types.REAL, 'probability of other obstetric infections following labour'),
-        'prob_sepsis_chorioamnionitis': Parameter(
-            Types.REAL, 'risk of sepsis following chorioamnionitis infection'),
-        'prob_sepsis_other_maternal_infection_ip': Parameter(
-            Types.REAL, 'risk of sepsis following other intrapartum infection'),
-        'odds_uterine_rupture': Parameter(
-            Types.REAL, 'probability of a uterine rupture during labour'),
-        'or_ur_grand_multip': Parameter(
-            Types.REAL, 'relative risk of uterine rupture in women who have delivered >4 times previously'),
-        'or_ur_prev_cs': Parameter(
-            Types.REAL, 'relative risk of uterine rupture in women who have previously delivered via caesarean '
-                        'section'),
-        'or_ur_ref_ol': Parameter(
-            Types.REAL,
-            'relative risk of uterine rupture in women who have been referred in obstructed labour'),
+        'rr_placental_abruption_hypertension': Parameter(
+            Types.REAL, 'Relative risk of placental abruption in women with hypertension'),
+        'rr_placental_abruption_previous_cs': Parameter(
+            Types.REAL, 'Relative risk of placental abruption in women who delivered previously via caesarean section'),
         'severity_maternal_haemorrhage': Parameter(
             Types.LIST, 'probability a maternal hemorrhage is non-severe (<1000mls) or severe (>1000mls)'),
         'cfr_aph': Parameter(
             Types.REAL, 'case fatality rate for antepartum haemorrhage during labour'),
-        'cfr_eclampsia': Parameter(
-            Types.REAL, 'case fatality rate for eclampsia during labours'),
-        'cfr_severe_pre_eclamp': Parameter(
-            Types.REAL, 'case fatality rate for severe pre eclampsia during labour'),
-        'cfr_sepsis': Parameter(
-            Types.REAL, 'case fatality rate for sepsis during labour'),
-        'cfr_uterine_rupture': Parameter(
-            Types.REAL, 'case fatality rate for uterine rupture in labour'),
-        'prob_ip_still_birth_unk_cause': Parameter(
-            Types.REAL, 'baseline probability of intrapartum still birth secondary to unknown cause'),
-        'rr_still_birth_maternal_death': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers who have died during labour'),
-        'rr_still_birth_aph': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers experiencing antepartum haemorrhage'),
-        'rr_still_birth_ol': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers experiencing obstructed labour'),
-        'rr_still_birth_ur': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers experiencing uterine rupture'),
-        'rr_still_birth_sepsis': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers experiencing intrapartum sepsis'),
-        'rr_still_birth_spe': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers experiencing severe pre-eclampsia'),
-        'rr_still_birth_ec': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers experiencing eclampsia'),
-        'prob_both_twins_ip_still_birth': Parameter(
-            Types.REAL, 'probability that if this mother will experience still birth, and she is pregnant with twins, '
-                        'that neither baby will survive'),
-        'prob_uterine_atony': Parameter(
-            Types.REAL, 'probability of uterine atony following delivery'),
-        'prob_lacerations': Parameter(
-            Types.REAL, 'probability of genital tract lacerations following delivery'),
-        'prob_retained_placenta': Parameter(
-            Types.REAL, 'probability of placental retention following delievery'),
-        'prob_other_pph_cause': Parameter(
-            Types.REAL, 'probability of other pph causing factors'),
-        'prob_pph_uterine_atony': Parameter(
-            Types.REAL, 'risk of pph after experiencing uterine atony'),
-        'prob_pph_lacerations': Parameter(
-            Types.REAL, 'risk of pph after experiencing genital tract lacerations'),
-        'prob_pph_retained_placenta': Parameter(
-            Types.REAL, 'risk of pph after experiencing retained placenta'),
-        'prob_pph_other_causes': Parameter(
-            Types.REAL, 'risk of pph after experiencing otehr pph causes'),
+
+        # MATERNAL INFECTION...
+        'prob_sepsis_chorioamnionitis': Parameter(
+            Types.REAL, 'risk of sepsis following chorioamnionitis infection'),
+        'rr_sepsis_chorio_prom': Parameter(
+            Types.REAL, 'relative risk of chorioamnionitis following PROM'),
         'prob_sepsis_endometritis': Parameter(
             Types.REAL, 'risk of sepsis following endometritis'),
-        'prob_sepsis_urinary_tract_inf': Parameter(
+        'rr_sepsis_endometritis_post_cs': Parameter(
+            Types.REAL, 'relative risk of endometritis following caesarean delivery'),
+        'prob_sepsis_urinary_tract': Parameter(
             Types.REAL, 'risk of sepsis following urinary tract infection'),
-        'prob_sepsis_skin_soft_tissue_inf': Parameter(
+        'prob_sepsis_skin_soft_tissue': Parameter(
             Types.REAL, 'risk of sepsis following skin or soft tissue infection'),
-        'prob_sepsis_other_maternal_infection_pp': Parameter(
-            Types.REAL, 'risk of sepsis following other maternal postpartum infection'),
-        'cfr_pp_pph': Parameter(
-            Types.REAL, 'case fatality rate for postpartum haemorrhage'),
-        'rr_pph_death_anaemia': Parameter(
-            Types.REAL, 'relative risk increase of death in women who are anaemic at time of PPH'),
-        'cfr_pp_eclampsia': Parameter(
-            Types.REAL, 'case fatality rate for eclampsia following delivery'),
+        'rr_sepsis_sst_post_cs': Parameter(
+            Types.REAL, 'relative risk of skin/soft tissue sepsis following caesarean delivery'),
+        'cfr_sepsis': Parameter(
+            Types.REAL, 'case fatality rate for sepsis during labour'),
         'cfr_pp_sepsis': Parameter(
             Types.REAL, 'case fatality rate for sepsis following delivery'),
+
+        # UTERINE RUPTURE...
+        'prob_uterine_rupture': Parameter(
+            Types.REAL, 'probability of a uterine rupture during labour'),
+        'rr_ur_parity_2': Parameter(
+            Types.REAL, 'relative risk of uterine rupture in women who have delivered 2 times previously'),
+        'rr_ur_parity_3_or_4': Parameter(
+            Types.REAL, 'relative risk of uterine rupture in women who have delivered 3-4 times previously'),
+        'rr_ur_parity_5+': Parameter(
+            Types.REAL, 'relative risk of uterine rupture in women who have delivered > 5 times previously'),
+        'rr_ur_prev_cs': Parameter(
+            Types.REAL, 'relative risk of uterine rupture in women who have previously delivered via caesarean '
+                        'section'),
+        'rr_ur_obstructed_labour': Parameter(
+            Types.REAL,
+            'relative risk of uterine rupture in women who have been in obstructed labour'),
+        'cfr_uterine_rupture': Parameter(
+            Types.REAL, 'case fatality rate for uterine rupture in labour'),
+
+        # HYPERTENSIVE DISORDERS...
         'prob_progression_gest_htn': Parameter(
             Types.REAL, 'probability of gestational hypertension progressing to severe gestational hypertension'
                         'during/after labour'),
@@ -218,78 +164,212 @@ class Labour(Module):
             Types.REAL, 'probability of mild pre-eclampsia progressing to severe pre-eclampsia during/after labour'),
         'prob_progression_severe_pre_eclamp': Parameter(
             Types.REAL, 'probability of severe pre-eclampsia progressing to eclampsia during/after labour'),
+        'cfr_eclampsia': Parameter(
+            Types.REAL, 'case fatality rate for eclampsia during labours'),
+        'cfr_severe_pre_eclamp': Parameter(
+            Types.REAL, 'case fatality rate for severe pre eclampsia during labour'),
+        'cfr_pp_eclampsia': Parameter(
+            Types.REAL, 'case fatality rate for eclampsia following delivery'),
 
-        # ================================= HEALTH CARE SEEKING PARAMETERS ===========================================
+        # INTRAPARTUM STILLBIRTH...
+        'prob_ip_still_birth': Parameter(
+            Types.REAL, 'baseline probability of intrapartum still birth'),
+        'rr_still_birth_maternal_death': Parameter(
+            Types.REAL, 'relative risk of still birth in mothers who have died during labour'),
+        'rr_still_birth_ur': Parameter(
+            Types.REAL, 'relative risk of still birth in mothers experiencing uterine rupture'),
+        'rr_still_birth_ol': Parameter(
+            Types.REAL, 'relative risk of still birth in mothers experiencing obstructed labour'),
+        'rr_still_birth_aph': Parameter(
+            Types.REAL, 'relative risk of still birth in mothers experiencing antepartum haemorrhage'),
+        'rr_still_birth_hypertension': Parameter(
+            Types.REAL, 'relative risk of still birth in mothers experiencing hypertension'),
+        'rr_still_birth_sepsis': Parameter(
+            Types.REAL, 'relative risk of still birth in mothers experiencing intrapartum sepsis'),
+        'rr_still_birth_multiple_pregnancy': Parameter(
+            Types.REAL, 'relative risk of still birth in mothers pregnant with twins'),
+        'rr_still_birth_preterm_labour': Parameter(
+            Types.REAL, 'relative risk of still birth in mothers in preterm labour'),
+        'prob_both_twins_ip_still_birth': Parameter(
+            Types.REAL, 'probability that if this mother will experience still birth, and she is pregnant with twins, '
+                        'that neither baby will survive'),
+
+        # todo: shouldnt other RFs from antenatal SB also have effect here
+
+        # POSTPARTUM HAEMORRHAGE...
+        'prob_pph_uterine_atony': Parameter(
+            Types.REAL, 'risk of pph after experiencing uterine atony'),
+        'rr_pph_ua_hypertension': Parameter(
+            Types.REAL, 'relative risk risk of pph after secondary to uterine atony in hypertensive women'),
+        'rr_pph_ua_multiple_pregnancy': Parameter(
+            Types.REAL, 'relative risk risk of pph after secondary to uterine atony in women pregnant with twins'),
+        'rr_pph_ua_placental_abruption': Parameter(
+            Types.REAL, 'relative risk risk of pph after secondary to uterine atony in women with placental abruption'),
+        'rr_pph_ua_macrosomia': Parameter(
+            Types.REAL, 'relative risk risk of pph after secondary to uterine atony in women with macrosomic foetus'),
+        'rr_pph_ua_diabetes': Parameter(
+             Types.REAL, 'risk of pph after experiencing uterine atony'), # TODO: double counting with macrosomia?
+        'prob_pph_retained_placenta': Parameter(
+            Types.REAL, 'risk of pph after experiencing retained placenta'),
+        'prob_pph_other_causes': Parameter(
+            Types.REAL, 'risk of pph after experiencing other pph causes'),
+        'cfr_pp_pph': Parameter(
+            Types.REAL, 'case fatality rate for postpartum haemorrhage'),
+        'rr_pph_death_anaemia': Parameter(
+            Types.REAL, 'relative risk increase of death in women who are anaemic at time of PPH'),
+
+
+        # CARE SEEKING FOR HEALTH CENTRE DELIVERY...
         'odds_deliver_in_health_centre': Parameter(
             Types.REAL, 'odds of a woman delivering in a health centre compared to a hospital'),
-        'rrr_hc_delivery_age_25_29': Parameter(
+        'rrr_hc_delivery_age_20_24_2010': Parameter(
+            Types.REAL, 'relative risk ratio for a woman aged 20-24 delivering in a health centre compared to a '
+                        'hospital'),
+        'rrr_hc_delivery_age_25_29_2010': Parameter(
             Types.REAL, 'relative risk ratio for a woman aged 25-29 delivering in a health centre compared to a '
                         'hospital'),
-        'rrr_hc_delivery_age_30_34': Parameter(
+        'rrr_hc_delivery_age_30_34_2010': Parameter(
             Types.REAL, 'relative risk ratio for a woman aged 30-34 delivering in a health centre compared to a '
                         'hospital'),
-        'rrr_hc_delivery_age_35_39': Parameter(
+        'rrr_hc_delivery_age_35_39_2010': Parameter(
             Types.REAL, 'relative risk ratio for a woman aged 35-39 delivering in a health centre compared to a '
                         'hospital'),
-        'rrr_hc_delivery_age_40_44': Parameter(
+        'rrr_hc_delivery_age_40_44_2010': Parameter(
             Types.REAL, 'relative risk ratio for a woman aged 40-44 delivering in a health centre compared to a '
                         'hospital'),
-        'rrr_hc_delivery_age_45_49': Parameter(
+        'rrr_hc_delivery_age_45_49_2010': Parameter(
             Types.REAL, 'relative risk ratio for a woman aged 45-49 delivering in a health centre compared to a '
                         'hospital'),
-        'rrr_hc_delivery_rural': Parameter(
-            Types.REAL, 'relative risk ratio for a woman living in a rural setting delivery in a health centre compared'
-                        'to a hospital'),
-        'rrr_hc_delivery_parity_3_to_4': Parameter(
+        'rrr_hc_delivery_tertiary_education_2010': Parameter(
+            Types.REAL, ''),
+        'rrr_hc_delivery_wealth_4_2010': Parameter(
+            Types.REAL, ''),
+        'rrr_hc_delivery_wealth_3_2010': Parameter(
+            Types.REAL, ''),
+        'rrr_hc_delivery_wealth_2_2010': Parameter(
+            Types.REAL, ''),
+        'rrr_hc_delivery_wealth_1_2010': Parameter(
+            Types.REAL, ''),
+        'rrr_hc_delivery_parity_3_to_4_2010': Parameter(
             Types.REAL, 'relative risk ratio for a woman with a parity of 3-4 delivering in a health centre compared to'
                         'a hospital'),
-        'rrr_hc_delivery_parity_>4': Parameter(
+        'rrr_hc_delivery_parity_>4_2010': Parameter(
             Types.REAL, 'relative risk ratio of a woman with a parity >4 delivering in health centre compared to a '
                         'hospital'),
-        'rrr_hc_delivery_married': Parameter(
+        'rrr_hc_delivery_rural_2010': Parameter(
             Types.REAL, 'relative risk ratio of a married woman delivering in a health centre compared to a hospital'),
+        'rrr_hc_delivery_married_2010': Parameter(
+            Types.REAL, 'relative risk ratio of a married woman delivering in a health centre compared to a hospital'),
+
+        # CARE SEEKING FOR HOME BIRTH...
         'odds_deliver_at_home': Parameter(
             Types.REAL, 'odds of a woman delivering at home compared to a hospital'),
-        'rrr_hb_delivery_age_35_39': Parameter(
+        'rrr_hb_delivery_age_20_24_2010': Parameter(
+            Types.REAL, 'relative risk ratio for a woman aged 20-24 delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_age_30_34_2010': Parameter(
+            Types.REAL, 'relative risk ratio for a woman aged 30-34 delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_age_35_39_2010': Parameter(
             Types.REAL, 'relative risk ratio for a woman aged 35-39 delivering at home compared to a '
                         'hospital'),
-        'rrr_hb_delivery_age_40_44': Parameter(
+        'rrr_hb_delivery_age_40_44_2010': Parameter(
             Types.REAL, 'relative risk ratio for a woman aged 40-44 delivering at home compared to a hospital'),
-        'rrr_hb_delivery_age_45_49': Parameter(
+        'rrr_hb_delivery_age_45_49_2010': Parameter(
             Types.REAL, 'relative risk ratio for a woman aged 45-49 delivering at home compared to a hospital'),
-
-        'rrr_hb_delivery_parity_3_to_4': Parameter(
+        'rrr_hb_delivery_rural_2010': Parameter(
+            Types.REAL, 'relative risk ratio of a rural delivering at home compared to a hospital'),
+        'rrr_hb_delivery_primary_education_2010': Parameter(
+            Types.REAL, 'relative risk ratio of a woman with a primary education delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_secondary_education_2010': Parameter(
+            Types.REAL, 'relative risk ratio of a woman with a secondary education delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_tertiary_education_2010': Parameter(
+            Types.REAL, 'relative risk ratio of a woman with tertiary delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_wealth_4_2010': Parameter(
+            Types.REAL, 'relative risk ratio of a woman at wealth level 4 delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_wealth_3_2010': Parameter(
+            Types.REAL, 'relative risk ratio of a woman at wealth level 3 delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_wealth_2_2010': Parameter(
+            Types.REAL, 'relative risk ratio of a woman at wealth level 2 delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_wealth_1_2010': Parameter(
+            Types.REAL, 'relative risk ratio of a woman at wealth level 1 delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_parity_3_to_4_2010': Parameter(
             Types.REAL, 'relative risk ratio for a woman with a parity of 3-4 delivering at home compared to'
                         'a hospital'),
-        'rrr_hb_delivery_parity_>4': Parameter(
+        'rrr_hb_delivery_parity_>4_2010': Parameter(
             Types.REAL, 'relative risk ratio of a woman with a parity >4 delivering at home compared to a '
                         'hospital'),
+        'rrr_hb_delivery_married_2010': Parameter(
+            Types.REAL, 'relative risk ratio of a married woman delivering in a home compared to a hospital'),
+
+        # EMERGENCY CARE SEEKING...
         'prob_careseeking_for_complication': Parameter(
             Types.REAL, 'odds of a woman seeking skilled assistance after developing a complication at a home birth'),
-        'or_comp_careseeking_wealth_2': Parameter(
-            Types.REAL, 'odds ratio of a woman of wealth level 2 seeking assistance after developing a complication at '
-                        'a home birth '),
         'test_care_seeking_probs': Parameter(
             Types.LIST, 'dummy probabilities of delivery care seeking used in testing'),
 
-        # ================================= TREATMENT PARAMETERS =====================================================
+        # TREATMENT PARAMETERS...
         'treatment_effect_maternal_infection_clean_delivery': Parameter(
             Types.REAL, 'Effect of clean delivery practices on risk of maternal infection'),
-        'rr_pph_amtsl': Parameter(
+        'treatment_effect_amtsl': Parameter(
             Types.REAL, 'relative risk of severe postpartum haemorrhage following active management of the third '
                         'stage of labour'),
         'prob_haemostatis_uterotonics': Parameter(
             Types.REAL, 'probability of uterotonics stopping a postpartum haemorrhage due to uterine atony '),
+        'pph_treatment_effect_uterotonics_md': Parameter(
+            Types.REAL, 'effect of uterotonics on maternal death due to postpartum haemorrhage'),
         'prob_successful_manual_removal_placenta': Parameter(
             Types.REAL, 'probability of manual removal of retained products arresting a post partum haemorrhage'),
+        'pph_treatment_effect_mrp_md': Parameter(
+            Types.REAL, 'effect of uterotonics on maternal death due to postpartum haemorrhage'),
         'success_rate_pph_surgery': Parameter(
             Types.REAL, 'probability of surgery for postpartum haemorrhage being successful'),
-        'success_rate_surgical_removal_placenta': Parameter(
-            Types.REAL, 'probability of surgery for retained placenta being successful'),
+        'pph_treatment_effect_surg_md': Parameter(
+            Types.REAL, 'effect of surgery on maternal death due to postpartum haemorrhage'),
+        'pph_treatment_effect_hyst_md': Parameter(
+            Types.REAL, 'effect of hysterectomy on maternal death due to postpartum haemorrhage'),
+        'pph_bt_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of blood transfusion treatment for postpartum haemorrhage on risk of maternal death'),
+        'sepsis_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of treatment for sepsis on risk of maternal death'),
         'success_rate_uterine_repair': Parameter(
             Types.REAL, 'probability repairing a ruptured uterus surgically'),
         'prob_successful_assisted_vaginal_delivery': Parameter(
             Types.REAL, 'probability of successful assisted vaginal delivery'),
+        'ur_repair_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of surgical uterine repair treatment for uterine rupture on risk of maternal death'),
+        'ur_treatment_effect_bt_md': Parameter(
+            Types.REAL, 'effect of blood transfusion treatment for uterine rupture on risk of maternal death'),
+        'ur_hysterectomy_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of blood hysterectomy for uterine rupture on risk of maternal death'),
+        'eclampsia_treatment_effect_severe_pe': Parameter(
+            Types.REAL, 'effect of treatment for severe pre eclampsia on risk of eclampsia'),
+        'eclampsia_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of treatment for eclampsia on risk of maternal death'),
+        'anti_htns_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of IV anti hypertensive treatment on risk of death secondary to severe pre-eclampsia/'
+                        'eclampsia stillbirth'),
+        'anti_htns_treatment_effect_progression': Parameter(
+            Types.REAL,
+            'effect of IV anti hypertensive treatment on risk of progression from mild to severe gestational'
+            ' hypertension'),
+        'aph_bt_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of blood transfusion treatment for antepartum haemorrhage on risk of maternal death'),
+        'aph_cs_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of caesarean section for antepartum haemorrhage on risk of maternal death'),
+        'treatment_effect_avd_still_birth': Parameter(
+            Types.REAL, 'effect of assisted vaginal delivery on risk of intrapartum still birth'),
+        'treatment_effect_cs_still_birth': Parameter(
+            Types.REAL, 'effect of caesarean section delivery on risk of intrapartum still birth'),
+
+        # ASSESSMENT SENSITIVITIES...
         'sensitivity_of_assessment_of_obstructed_labour_hc': Parameter(
             Types.REAL, 'sensitivity of dx_test assessment by birth attendant for obstructed labour in a health '
                         'centre'),
@@ -334,45 +414,8 @@ class Labour(Module):
         'sensitivity_of_assessment_of_pph_hp': Parameter(
             Types.REAL, 'sensitivity of dx_test assessment by birth attendant for postpartum haemorrhage in a level 1 '
                         'hospital'),
-        'sepsis_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of treatment for sepsis on risk of maternal death'),
-        'eclampsia_treatment_effect_severe_pe': Parameter(
-            Types.REAL, 'effect of treatment for severe pre eclampsia on risk of eclampsia'),
-        'eclampsia_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of treatment for eclampsia on risk of maternal death'),
-        'anti_htns_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of IV anti hypertensive treatment on risk of death secondary to severe pre-eclampsia/'
-                        'eclampsia stillbirth'),
-        'anti_htns_treatment_effect_progression': Parameter(
-            Types.REAL,
-            'effect of IV anti hypertensive treatment on risk of progression from mild to severe gestational'
-            ' hypertension'),
-        'aph_bt_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of blood transfusion treatment for antepartum haemorrhage on risk of maternal death'),
-        'pph_treatment_effect_uterotonics_md': Parameter(
-            Types.REAL, 'effect of uterotonics on maternal death due to postpartum haemorrhage'),
-        'pph_treatment_effect_mrp_md': Parameter(
-            Types.REAL, 'effect of uterotonics on maternal death due to postpartum haemorrhage'),
-        'pph_treatment_effect_surg_md': Parameter(
-            Types.REAL, 'effect of surgery on maternal death due to postpartum haemorrhage'),
-        'pph_treatment_effect_hyst_md': Parameter(
-            Types.REAL, 'effect of hysterectomy on maternal death due to postpartum haemorrhage'),
-        'pph_bt_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of blood transfusion treatment for postpartum haemorrhage on risk of maternal death'),
-        'aph_cs_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of caesarean section for antepartum haemorrhage on risk of maternal death'),
-        'ur_repair_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of surgical uterine repair treatment for uterine rupture on risk of maternal death'),
-        'ur_treatment_effect_bt_md': Parameter(
-            Types.REAL, 'effect of blood transfusion treatment for uterine rupture on risk of maternal death'),
-        'ur_hysterectomy_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of blood hysterectomy for uterine rupture on risk of maternal death'),
-        'treatment_effect_avd_still_birth': Parameter(
-            Types.REAL, 'effect of assisted vaginal delivery on risk of intrapartum still birth'),
-        'treatment_effect_cs_still_birth': Parameter(
-            Types.REAL, 'effect of caesarean section delivery on risk of intrapartum still birth'),
-        'allowed_interventions': Parameter(
-            Types.LIST, 'list of interventions allowed to run, used in analysis'),
+
+        # SQUEEZE FACTOR THRESHOLDS...
         'squeeze_threshold_proph_ints': Parameter(
             Types.REAL, 'squeeze factor threshold below which prophylactic interventions for birth cant be given'),
         'squeeze_threshold_treatment_spe': Parameter(
@@ -393,18 +436,6 @@ class Labour(Module):
             Types.REAL, 'squeeze factor threshold below which treatment for antepartum haemorrhage cant be given'),
         'squeeze_threshold_amtsl': Parameter(
             Types.REAL, 'squeeze factor threshold below which treatment for amtsl cant be given'),
-
-        # ================================= DALY WEIGHT PARAMETERS =====================================================
-        'daly_wt_haemorrhage_moderate': Parameter(
-            Types.REAL, 'DALY weight for a moderate maternal haemorrhage (<1 litre)'),
-        'daly_wt_haemorrhage_severe': Parameter(
-            Types.REAL, 'DALY weight for a severe maternal haemorrhage (>1 litre)'),
-        'daly_wt_maternal_sepsis': Parameter(
-            Types.REAL, 'DALY weight for maternal sepsis'),
-        'daly_wt_eclampsia': Parameter(
-            Types.REAL, 'DALY weight for eclampsia'),
-        'daly_wt_obstructed_labour': Parameter(
-            Types.REAL, 'DALY weight for obstructed labour')
     }
 
     PROPERTIES = {
@@ -418,8 +449,6 @@ class Labour(Module):
         'la_has_previously_delivered_preterm': Property(Types.BOOL, 'whether the woman has had a previous preterm '
                                                                     'delivery for any of her previous deliveries'),
         'la_obstructed_labour': Property(Types.BOOL, 'Whether this woman is experiencing obstructed labour'),
-        'la_obstructed_labour_causes': Property(Types.INT, 'bitset column holding list of possible causes of obstructed'
-                                                           ' labour'),
         'la_placental_abruption': Property(Types.BOOL, 'whether the woman has experienced placental abruption'),
         'la_antepartum_haem': Property(Types.CATEGORICAL, 'whether the woman has experienced an antepartum haemorrhage'
                                                           ' in this delivery and it severity',
@@ -431,8 +460,6 @@ class Labour(Module):
         'la_uterine_rupture_treatment': Property(Types.BOOL, 'whether this womans uterine rupture has been treated'),
         'la_sepsis': Property(Types.BOOL, 'whether this woman has developed sepsis due to an intrapartum infection'),
         'la_sepsis_pp': Property(Types.BOOL, 'whether this woman has developed sepsis due to a postpartum infection'),
-        'la_maternal_ip_infection': Property(Types.INT, 'bitset column holding list of infections'),
-        'la_maternal_pp_infection': Property(Types.INT, 'bitset column holding list of postpartum infections'),
         'la_sepsis_treatment': Property(Types.BOOL, 'If this woman has received treatment for maternal sepsis'),
         'la_eclampsia_treatment': Property(Types.BOOL, 'whether this womans eclampsia has been treated'),
         'la_severe_pre_eclampsia_treatment': Property(Types.BOOL, 'whether this woman has been treated for severe '
@@ -473,7 +500,6 @@ class Labour(Module):
         df.loc[df.is_alive, 'la_has_previously_delivered_preterm'] = False
         df.loc[df.is_alive, 'la_due_date_current_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'la_obstructed_labour'] = False
-        df.loc[df.is_alive, 'la_obstructed_labour_causes'] = 0
         df.loc[df.is_alive, 'la_placental_abruption'] = False
         df.loc[df.is_alive, 'la_antepartum_haem'] = 'none'
         df.loc[df.is_alive, 'la_antepartum_haem_treatment'] = False
@@ -481,8 +507,6 @@ class Labour(Module):
         df.loc[df.is_alive, 'la_uterine_rupture_treatment'] = False
         df.loc[df.is_alive, 'la_sepsis'] = False
         df.loc[df.is_alive, 'la_sepsis_pp'] = False
-        df.loc[df.is_alive, 'la_maternal_ip_infection'] = 0
-        df.loc[df.is_alive, 'la_maternal_pp_infection'] = 0
         df.loc[df.is_alive, 'la_sepsis_treatment'] = False
         df.loc[df.is_alive, 'la_eclampsia_treatment'] = False
         df.loc[df.is_alive, 'la_severe_pre_eclampsia_treatment'] = False
@@ -496,24 +520,7 @@ class Labour(Module):
         df.loc[df.is_alive, 'la_date_most_recent_delivery'] = pd.NaT
         df.loc[df.is_alive, 'la_is_postpartum'] = False
 
-        # Maternal sepsis and haemorrhage are outcomes of preceding clinical events. We use a bitset handler to manage
-        # a property of the women that captures if she has experienced one or more of the necessary pre-ceding clinical
-        # events that could trigger sepsis of haemorrhage
-        self.intrapartum_infections = BitsetHandler(self.sim.population, 'la_maternal_ip_infection',
-                                                    ['chorioamnionitis', 'other_maternal_infection'])
-
-        self.postpartum_infections = BitsetHandler(self.sim.population, 'la_maternal_pp_infection',
-                                                   ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                                                    'other_maternal_infection'])
-
-        self.cause_of_primary_pph = BitsetHandler(self.sim.population, 'la_postpartum_haem_cause',
-                                                  ['uterine_atony', 'lacerations', 'retained_placenta',
-                                                   'other_pph_cause'])
-
-        self.cause_of_obstructed_labour = BitsetHandler(self.sim.population, 'la_obstructed_labour_causes',
-                                                        ['cephalopelvic_dis', 'malposition', 'malpresentation'])
-
-        # Additionally we store different potential treatments for postpartum haemorrhage in this way
+        #  we store different potential treatments for postpartum haemorrhage via bistet
         self.pph_treatment = BitsetHandler(self.sim.population, 'la_postpartum_haem_treatment',
                                            ['uterotonics', 'manual_removal_placenta', 'surgery', 'hysterectomy'])
 
@@ -548,16 +555,13 @@ class Labour(Module):
 
         # This list contains all possible complications/outcomes of the intrapartum and postpartum phase- its used in
         # assert functions as a test
-        self.possible_intrapartum_complications = ['cephalopelvic_dis', 'malposition', 'malpresentation',
-                                                   'obstructed_labour', 'placental_abruption',
-                                                   'antepartum_haem', 'chorioamnionitis',
-                                                   'other_maternal_infection', 'uterine_rupture', 'sepsis',
-                                                   'severe_pre_eclamp', 'eclampsia']
+        self.possible_intrapartum_complications = ['obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other',
+                                                   'placental_abruption', 'antepartum_haem', 'sepsis_chorioamnionitis',
+                                                   'uterine_rupture',  'severe_pre_eclamp', 'eclampsia']
 
-        self.possible_postpartum_complications = ['sepsis', 'endometritis', 'skin_soft_tissue_inf', 'urinary_tract_inf',
-                                                  'other_maternal_infection', 'sepsis_pp', 'uterine_atony',
-                                                  'lacerations', 'retained_placenta', 'other_pph_cause',
-                                                  'postpartum_haem', 'severe_pre_eclamp', 'eclampsia']
+        self.possible_postpartum_complications = ['sepsis_endometritis', 'sepsis_skin_soft_tissue',
+                                                  'sepsis_urinary_tract', 'pph_uterine_atony', 'pph_retained_placenta',
+                                                  'pph_other', 'severe_pre_eclamp', 'eclampsia']
 
         # =======================Register dx_tests for complications during labour/postpartum=======================
         # We register all the dx_tests needed within the labour HSI events. For simplicity we use the dx_test here to
@@ -659,8 +663,6 @@ class Labour(Module):
         # Here we define the equations that will be used throughout this module using the linear
         # model and stored them as a parameter
 
-        # TODO: process of 'selection' of important predictors in linear equations is ongoing, a linear model that
-        #  is empty of predictors at the end of this process will be converted to a set probability
         params = self.parameters
         params['la_labour_equations'] = {
 
@@ -669,47 +671,31 @@ class Labour(Module):
 
             # This equation is used to calculate a womans risk of obstructed labour. As we assume obstructed labour can
             # only occur following on of three preceding causes, this model is additive
-            'obstructed_labour_ip': LinearModel.custom(labour_lm.predict_obstructed_labour_ip,
-                                                       module=self),
+            'obstruction_cpd_ip': LinearModel.custom(labour_lm.predict_obstruction_cpd_ip, parameters=params),
 
-            # This equation is used to calculate a womans risk of developing chorioamnionitis infection during the
-            # intrapartum phase of labour and is mitigated by clean delivery
-            'chorioamnionitis_ip': LinearModel.custom(labour_lm.predict_chorioamnionitis_ip,
-                                                      parameters=params),
+            # This equation is used to calculate a womans risk of developing sepsis due to chorioamnionitis infection
+            # during the intrapartum phase of labour and is mitigated by clean delivery
+            'sepsis_chorioamnionitis_ip': LinearModel.custom(labour_lm.predict_sepsis_chorioamnionitis_ip,
+                                                             parameters=params),
 
-            # This equation is used to calculate a womans risk of developing other undefined infection during the
-            # intrapartum phase of labour and is mitigated by clean delivery
-            'other_maternal_infection_ip': LinearModel.custom(labour_lm.predict_other_maternal_infections_ip,
-                                                              parameters=params),
+            # This equation is used to calculate a womans risk of developing sepsis due to endometritis infection
+            # during the postpartum phase of labour and is mitigated by clean delivery
+            'sepsis_endometritis_pp': LinearModel.custom(labour_lm.predict_sepsis_endometritis_pp, parameters=params),
 
-            # This equation is used to calculate a womans risk of developing endometritis infection during the
+            # This equation is used to calculate a womans risk of developing sepsis due to skin or soft tissue
+            # infection during the
             # postpartum phase of labour and is mitigated by clean delivery
-            'endometritis_pp': LinearModel.custom(labour_lm.predict_endometritis_pp, parameters=params),
-
-            # This equation is used to calculate a womans risk of developing skin or soft tissue infection during the
-            # postpartum phase of labour and is mitigated by clean delivery
-            'skin_soft_tissue_inf_pp': LinearModel.custom(labour_lm.predict_skin_soft_tissue_inf_pp, parameters=params),
+            'sepsis_skin_soft_tissue_pp': LinearModel.custom(labour_lm.predict_sepsis_skin_soft_tissue_pp,
+                                                             parameters=params),
 
             # This equation is used to calculate a womans risk of developing a urinary tract infection during the
             # postpartum phase of labour and is mitigated by clean delivery
-            'urinary_tract_inf_pp': LinearModel.custom(labour_lm.predict_urinary_tract_inf_pp, parameters=params),
-
-            # This equation is used to calculate a womans risk of developing other undefined infection during the
-            # postpartum phase of labour and is mitigated by clean delivery
-            'other_maternal_infection_pp': LinearModel.custom(labour_lm.predict_other_maternal_infection_pp,
-                                                              parameters=params),
-
-            # This equation is used to calculate a womans risk risk of developing intrapartum sepsis. We assume sepsis
-            # can only occur in the presence of a preceding infection therefore this model is additive
-            'sepsis_ip': LinearModel.custom(labour_lm.predict_sepsis_ip, module=self),
+            'sepsis_urinary_tract_pp': LinearModel.custom(labour_lm.predict_sepsis_urinary_tract_pp,
+                                                          parameters=params),
 
             # This equation is used to calculate a womans risk of death following sepsis during labour and is mitigated
             # by treatment
             'sepsis_death': LinearModel.custom(labour_lm.predict_sepsis_death, parameters=params),
-
-            # This equation is used to calculate a womans risk risk of developing postpartum sepsis. We assume sepsis
-            # can only occur in the presence of a preceding infection therefore this model is additive
-            'sepsis_pp': LinearModel.custom(labour_lm.predict_sepsis_pp, module=self),
 
             # This equation is used to calculate a womans risk of death following postpartum sepsis and is mitigated
             # by treatment
@@ -738,10 +724,12 @@ class Labour(Module):
             # mitigated by treatment
             'antepartum_haem_death': LinearModel.custom(labour_lm.predict_antepartum_haem_death, parameters=params),
 
-            # This equation is used to calculate a womans risk of postpartum haemorrhage. We assume PPH can only occur
-            # in the presence of a preceding causes (uterine atony/retained placenta/lacerations/other) therefore this
-            # model is additive
-            'postpartum_haem_pp': LinearModel.custom(labour_lm.predict_postpartum_haem_pp, module=self),
+            # This equation is used to calculate a womans risk of postpartum haemorrhage due to uterine atony
+            'pph_uterine_atony_pp': LinearModel.custom(labour_lm.predict_pph_uterine_atony_pp, parameters=params),
+
+            # This equation is used to calculate a womans risk of postpartum haemorrhage due to retained placenta
+            'pph_retained_placenta_pp': LinearModel.custom(labour_lm.predict_pph_retained_placenta_pp,
+                                                           parameters=params),
 
             # This equation is used to calculate a womans risk of death following postpartum haemorrhage. Risk is
             # mitigated by treatment
@@ -785,7 +773,6 @@ class Labour(Module):
         df.at[child_id, 'la_previous_cs_delivery'] = False
         df.at[child_id, 'la_has_previously_delivered_preterm'] = False
         df.at[child_id, 'la_obstructed_labour'] = False
-        df.at[child_id, 'la_obstructed_labour_causes'] = 0
         df.at[child_id, 'la_placental_abruption'] = False
         df.at[child_id, 'la_antepartum_haem'] = 'none'
         df.at[child_id, 'la_antepartum_haem_treatment'] = False
@@ -793,8 +780,6 @@ class Labour(Module):
         df.at[child_id, 'la_uterine_rupture_treatment'] = False
         df.at[child_id, 'la_sepsis'] = False
         df.at[child_id, 'la_sepsis_pp'] = False
-        df.at[child_id, 'la_maternal_ip_infection'] = 0
-        df.at[child_id, 'la_maternal_pp_infection'] = 0
         df.at[child_id, 'la_sepsis_treatment'] = False
         df.at[child_id, 'la_eclampsia_treatment'] = False
         df.at[child_id, 'la_severe_pre_eclampsia_treatment'] = False
@@ -899,13 +884,20 @@ class Labour(Module):
         mode_of_delivery = mni[person_id]['mode_of_delivery']
         received_clean_delivery = mni[person_id]['clean_birth_practices']
         received_abx_for_prom = mni[person_id]['abx_for_prom_given']
+        amtsl_given = mni[person_id]['amtsl_given']
+        if df.at[person_id, 'ps_gestational_age_in_weeks'] < 37:
+            preterm_labour = True
+        else:
+            preterm_labour = False
 
         # We run a random draw and return the outcome
         return self.rng.random_sample() < eq.predict(person,
                                                      received_clean_delivery=received_clean_delivery,
                                                      received_abx_for_prom=received_abx_for_prom,
                                                      mode_of_delivery=mode_of_delivery,
-                                                     received_blood_transfusion=has_rbt)[person_id]
+                                                     received_blood_transfusion=has_rbt,
+                                                     preterm_labour=preterm_labour,
+                                                     amtsl_given=amtsl_given)[person_id]
 
     def reset_due_date(self, ind_or_df, id_or_index, new_due_date):
         """
@@ -989,8 +981,8 @@ class Labour(Module):
          are set accordingly including properties which map to disability weights to capture DALYs
         :param individual_id: individual_id
         :param complication: (STR) the complication passed to the function which is being evaluated
-        ['cephalopelvic_dis', 'malposition', 'malpresentation','obstructed_labour', 'placental_abruption',
-        'antepartum_haem', 'chorioamnionitis', 'other_maternal_infection', 'uterine_rupture', 'sepsis']
+        ['obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other', 'placental_abruption',
+        'antepartum_haem', 'sepsis_chorioamnionitis', 'uterine_rupture']
         """
         df = self.sim.population.props
         params = self.parameters
@@ -1017,7 +1009,8 @@ class Labour(Module):
                 return
 
             # Women admitted with histological chorioamnionitis from the community are more at risk of sepsis
-            if (complication == 'chorioamnionitis') and (df.at[individual_id, 'ps_chorioamnionitis'] == 'histological'):
+            if (complication == 'sepsis_chorioamnionitis') and (df.at[individual_id, 'ps_chorioamnionitis'] ==
+                                                                'histological'):
                 return
 
             # Women admitted with clinical chorioamnionitis from the community are assumed to be septic in labour
@@ -1026,8 +1019,7 @@ class Labour(Module):
                 return
 
         # For the preceding complications that can cause obstructed labour, we apply risk using a set probability
-        if (complication == 'cephalopelvic_dis') or (complication == 'malposition') or (complication ==
-                                                                                        'malpresentation'):
+        if (complication == 'obstruction_malpos_malpres') or (complication == 'obstruction_other'):
             result = self.rng.random_sample() < params[f'prob_{complication}']
 
         # Otherwise we use the linear model to predict likelihood of a complication
@@ -1041,12 +1033,17 @@ class Labour(Module):
                                              f'{self.sim.date}')
 
             # For 'complications' stored in a biset property - they are set here
-            if (complication == 'cephalopelvic_dis') or (complication == 'malposition') or (complication ==
-                                                                                            'malpresentation'):
-                self.cause_of_obstructed_labour.set(individual_id, complication)
+            if (complication == 'obstruction_cpd') or (complication == 'obstruction_malpres_malpos') or \
+              (complication == 'obstruction_other'):
 
-            elif (complication == 'chorioamnionitis') or (complication == 'other_maternal_infection'):
-                self.intrapartum_infections.set(individual_id, complication)
+                df.at[individual_id, 'la_obstructed_labour'] = True
+                self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'obstructed_labour_onset')
+
+                if complication == 'obstruction_cpd':
+                    mni[individual_id]['cpd'] = True
+
+            # TODO: this WILL double count
+            # self.labour_tracker[f'{complication}'] += 1
 
             # Otherwise they are stored as individual properties (women with undiagnosed placental abruption may present
             # to labour)
@@ -1062,11 +1059,16 @@ class Labour(Module):
                 else:
                     self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'severe_aph_onset')
 
+            elif complication == 'sepsis_chorioamnionitis':
+                df.at[individual_id, 'la_sepsis'] = True
+                mni[individual_id]['chorio_lab'] = True
+                self.labour_tracker['sepsis'] += 1
+                self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'sepsis_onset')
+
             else:
-                df.at[individual_id, f'la_{complication}'] = True
-                self.labour_tracker[f'{complication}'] += 1
-                if complication == 'obstructed_labour' or complication == 'uterine_rupture' or complication == 'sepsis':
-                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, f'{complication}_onset')
+                df.at[individual_id, 'la_uterine_rupture'] = True
+                self.labour_tracker['uterine_rupture'] += 1
+                self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, f'{complication}_onset')
 
     def set_postpartum_complications(self, individual_id, complication):
         """
@@ -1078,8 +1080,8 @@ class Labour(Module):
          are set accordingly including properties which map to disability weights to capture DALYs
         :param individual_id: individual_id
         :param complication: (STR) the complication passed to the function which is being evaluated [
-        'endometritis', 'skin_soft_tissue_inf', 'urinary_tract_inf', 'other_maternal_infection', 'sepsis',
-        'uterine_atony','lacerations', 'retained_placenta', 'other_pph_cause','postpartum_haem']
+        'sepsis_endometritis', 'sepsis_skin_soft_tissue', 'sepsis_urinary_tract', 'pph_uterine_atony',
+        'pph_retained_placenta', 'pph_other']
         """
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -1089,21 +1091,9 @@ class Labour(Module):
         assert mni[individual_id]['delivery_setting'] != 'none'
         assert complication in self.possible_postpartum_complications
 
-        # For the complications than can contribute to postpartum bleeding we use a fixed probability to apply risk
-        # (not a linear equation). Women who received active management of labour have a reduced risk of uterine atony
-        # or retained placenta- both of which can contribute to postpartum bleeding
-        if complication == 'uterine_atony' or complication == 'retained_placenta':
-
-            if mni[individual_id]['amtsl_given']:
-                risk_of_pph_cause = params[f'prob_{complication}'] * params['rr_pph_amtsl']
-                result = risk_of_pph_cause > self.rng.random_sample()
-
-            else:
-                result = params[f'prob_{complication}'] > self.rng.random_sample()
-
-        # Next we determine if this woman has experienced any of the other potential preceding causes of PPH
-        elif complication == 'lacerations' or complication == 'other_pph_cause':
-            result = self.rng.random_sample() < params[f'prob_{complication}']
+        #  We determine if this woman has experienced any of the other potential preceding causes of PPH
+        if complication == 'pph_other':
+            result = self.rng.random_sample() < params['prob_pph_other_causes']
 
         # For the other complications which can be passed to this function we use the linear model to return a womans
         # risk and compare that to a random draw
@@ -1116,45 +1106,37 @@ class Labour(Module):
             logger.debug(key='message', data=f'person {individual_id} has developed {complication} during the'
                                              f' postpartum phase of a birth on date {self.sim.date}')
 
-            if complication == 'endometritis' or \
-                complication == 'skin_soft_tissue_inf' or \
-                complication == 'urinary_tract_inf' or \
-               complication == 'other_maternal_infection':
-                self.postpartum_infections.set(individual_id, complication)
+            if complication == 'sepsis_endometritis' or complication == 'sepsis_urinary_tract' or \
+               complication == 'sepsis_skin_soft_tissue':
 
-            if complication == 'sepsis':
-                # We run a check here to ensure only women with an infection can develop sepsis
-                assert self.postpartum_infections.has_any([individual_id], 'endometritis', 'urinary_tract_inf',
-                                                          'skin_soft_tissue_inf', 'other_maternal_infection',
-                                                          first=True)
+                df.at[individual_id, 'la_sepsis_pp'] = True
+                # TODO: this would cause double counting
+                # self.labour_tracker['sepsis_pp'] += 1
+                self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'sepsis_onset')
 
-                df.at[individual_id, f'la_{complication}_pp'] = True
-                self.labour_tracker[f'{complication}_pp'] += 1
-                self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, f'{complication}_onset')
+            if complication == 'pph_uterine_atony' or complication == 'pph_retained_placenta' or \
+               complication == 'pph_other':
+                # Set primary complication to true
+                df.at[individual_id, 'la_postpartum_haem'] = True
+                # self.labour_tracker[f'{complication}'] += 1 # TODO: same issue r.e. double counting
 
-            if complication == 'uterine_atony' or \
-                complication == 'lacerations' or \
-                complication == 'retained_placenta' or \
-               complication == 'other_pph_cause':
-                self.cause_of_primary_pph.set([individual_id], complication)
-
-            if complication == 'postpartum_haem':
-
-                # Similarly we make sure that PPH can only occur after a preceding cause
-                assert self.cause_of_primary_pph.has_any([individual_id], 'uterine_atony', 'lacerations',
-                                                         'retained_placenta', 'other_pph_cause', first=True)
-
-                df.at[individual_id, f'la_{complication}'] = True
-                self.labour_tracker[f'{complication}'] += 1
+                # Store mni variables used during treatment
+                if complication == 'pph_uterine_atony':
+                    mni[individual_id]['uterine_atony'] = True
+                if complication == 'pph_retained_placenta':
+                    mni[individual_id]['retained_placenta'] = True
 
                 # We set the severity to map to DALY weights
-                random_choice = self.rng.choice(['non_severe', 'severe'], size=1,
-                                                p=params['severity_maternal_haemorrhage'])
+                if pd.isnull(mni[individual_id]['mild_mod_pph_onset']) and pd.isnull(mni[individual_id]['severe_pph_'
+                                                                                                        'onset']):
 
-                if random_choice == 'non_severe':
-                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'mild_mod_pph_onset')
-                else:
-                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'severe_pph_onset')
+                    random_choice = self.rng.choice(['non_severe', 'severe'], size=1,
+                                                    p=params['severity_maternal_haemorrhage'])
+
+                    if random_choice == 'non_severe':
+                        self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'mild_mod_pph_onset')
+                    else:
+                        self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'severe_pph_onset')
 
     def progression_of_hypertensive_disorders(self, individual_id, property_prefix):
         """
@@ -1328,18 +1310,7 @@ class Labour(Module):
             df.at[individual_id, 'la_currently_in_labour'] = False
             df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
 
-            # Followed by all bitset variables
-            self.intrapartum_infections.unset(
-                [individual_id], 'chorioamnionitis', 'other_maternal_infection')
-            self.postpartum_infections.unset(
-                [individual_id], 'endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                'other_maternal_infection')
-            self.cause_of_obstructed_labour.unset(
-                [individual_id], 'cephalopelvic_dis', 'malpresentation', 'malposition')
-            self.cause_of_primary_pph.unset(
-                [individual_id], 'uterine_atony', 'lacerations', 'retained_placenta', 'other_pph_cause')
-
-            # Other complication variables
+            #  complication variables
             df.at[individual_id, 'la_intrapartum_still_birth'] = False
             df.at[individual_id, 'la_postpartum_haem'] = False
             df.at[individual_id, 'la_obstructed_labour'] = False
@@ -1742,7 +1713,7 @@ class Labour(Module):
                                                      f'as the equipment is available')
 
                     # We assume women with CPD cannot be delivered via AVD and will require a caesarean
-                    if self.cause_of_obstructed_labour.has_any([person_id], 'cephalopelvic_dis', first=True):
+                    if mni[person_id]['cpd']:
                         treatment_success = False
                     else:
                         treatment_success = params['prob_successful_assisted_vaginal_delivery'] > \
@@ -2034,10 +2005,10 @@ class Labour(Module):
         person_id = hsi_event.target
         df = self.sim.population.props
         params = self.parameters
+        mni = self.mother_and_newborn_info
 
-        if df.at[person_id, 'la_postpartum_haem'] and \
-            self.cause_of_primary_pph.has_any([person_id], 'uterine_atony', first=True) \
-           and not self.pph_treatment.has_all(person_id, 'uterotonics'):
+        if df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['uterine_atony'] \
+            and not self.pph_treatment.has_all(person_id, 'uterotonics'):
 
             # We apply a probability that surgical techniques will be effective
             treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
@@ -2057,9 +2028,8 @@ class Labour(Module):
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # Next we apply the effect of surgical treatment for women with retained placenta
-        if df.at[person_id, 'la_postpartum_haem'] and self.cause_of_primary_pph.has_any(
-            [person_id], 'retained_placenta', first=True) and not self.pph_treatment.has_all(person_id,
-                                                                                             'manual_removal_placenta'):
+        if df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['retained_placenta'] \
+            and not self.pph_treatment.has_all(person_id, 'manual_removal_placenta'):
 
             self.pph_treatment.set(person_id, 'surgery')
             logger.debug(key='msg',
@@ -2188,7 +2158,11 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                 'clean_birth_practices': False,
                                 'abx_for_prom_given': False,
                                 'abx_for_pprom_given': False,
+                                'chorio_lab': False,
+                                'retained_placenta': False,
+                                'uterine_atony': False,
                                 'amtsl_given': False,
+                                'cpd': False,
                                 'mode_of_delivery': 'vaginal_delivery',
                                 # vaginal_delivery, instrumental, caesarean_section
                                 'squeeze_to_high_for_hsi': False,  # True (T) or False (F)
@@ -2219,28 +2193,29 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
             # We use parameters containing the upper and lower limits, in days, that a mothers pregnancy has to be to be
             # categorised accordingly
-            if params['lower_limit_term_days'] <= gestational_age_in_days <= params['upper_limit_term_days']:
+            if params['list_limits_for_defining_term_status'][0] <= gestational_age_in_days <= \
+                params['list_limits_for_defining_term_status'][1]:
 
                 self.module.labour_tracker['term'] += 1
                 mni[individual_id]['labour_state'] = 'term_labour'
 
             # Here we allow a woman to go into early preterm labour with a gestational age of 23 (limit is 24) to
             # account for PregnancySupervisor only updating weekly
-            elif params['lower_limit_early_preterm_days'] <= gestational_age_in_days <= params['upper_limit_early_'
-                                                                                               'preterm_days']:
+            elif params['list_limits_for_defining_term_status'][2] <= gestational_age_in_days <= \
+                params['list_limits_for_defining_term_status'][3]:
 
                 mni[individual_id]['labour_state'] = 'early_preterm_labour'
                 self.module.labour_tracker['early_preterm'] += 1
                 df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
-            elif params['lower_limit_late_preterm_days'] <= gestational_age_in_days <= params['upper_limit_late_'
-                                                                                              'preterm_days']:
+            elif params['list_limits_for_defining_term_status'][4] <= gestational_age_in_days <= \
+                params['list_limits_for_defining_term_status'][5]:
 
                 mni[individual_id]['labour_state'] = 'late_preterm_labour'
                 self.module.labour_tracker['late_preterm'] += 1
                 df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
-            elif gestational_age_in_days >= params['lower_limit_postterm_days']:
+            elif gestational_age_in_days >= params['list_limits_for_defining_term_status'][6]:
 
                 mni[individual_id]['labour_state'] = 'postterm_labour'
                 self.module.labour_tracker['post_term'] += 1
@@ -2378,10 +2353,8 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
         # ===================================  APPLICATION OF COMPLICATIONS ===========================================
         # Using the complication_application function we loop through each complication and determine if a woman
         # will experience any of these if she has delivered at home
-
-        for complication in ['cephalopelvic_dis', 'malpresentation', 'malposition', 'obstructed_labour',
-                             'placental_abruption', 'antepartum_haem', 'chorioamnionitis',
-                             'other_maternal_infection', 'sepsis', 'uterine_rupture']:
+        for complication in ['obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other',
+                             'placental_abruption', 'antepartum_haem', 'sepsis_chorioamnionitis', 'uterine_rupture']:
             self.module.set_intrapartum_complications(individual_id, complication=complication)
 
         # And we determine if any existing hypertensive disorders would worsen
@@ -2564,9 +2537,8 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         # We first determine if this woman will experience any complications immediately following/ or in the days after
         # birth
-        for complication in ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf', 'other_maternal_infection',
-                             'sepsis', 'uterine_atony', 'lacerations', 'retained_placenta', 'other_pph_cause',
-                             'postpartum_haem']:
+        for complication in ['sepsis_endometritis', 'sepsis_urinary_tract', 'sepsis_skin_soft_tissue',
+                             'pph_uterine_atony', 'pph_retained_placenta', 'pph_other']:
             self.module.set_postpartum_complications(individual_id, complication=complication)
 
         self.module.progression_of_hypertensive_disorders(individual_id, property_prefix='pn')
@@ -2831,9 +2803,9 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # again
 
         if not mni[person_id]['sought_care_for_complication']:
-            for complication in ['cephalopelvic_dis', 'malpresentation', 'malposition', 'obstructed_labour',
-                                 'placental_abruption', 'antepartum_haem', 'chorioamnionitis',
-                                 'other_maternal_infection', 'sepsis']:
+            for complication in ['obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other',
+                                 'placental_abruption', 'antepartum_haem', 'sepsis_chorioamnionitis']:
+
                 # Uterine rupture is the only complication we dont apply the risk of here due to the causal link
                 # between obstructed labour and uterine rupture. Therefore we want interventions for obstructed labour
                 # to reduce the risk of uterine rupture
@@ -2985,10 +2957,8 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(HSI_Event, Indivi
         # complications using the set_complications_during_facility_birth function.
         if not mni[person_id]['sought_care_for_complication']:
 
-            for complication in ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                                 'other_maternal_infection', 'sepsis',
-                                 'uterine_atony', 'lacerations', 'retained_placenta', 'other_pph_cause',
-                                 'postpartum_haem']:
+            for complication in ['sepsis_endometritis', 'sepsis_urinary_tract', 'sepsis_skin_soft_tissue',
+                                 'pph_uterine_atony', 'pph_retained_placenta', 'pph_other']:
                 self.module.set_postpartum_complications(person_id, complication=complication)
             self.module.progression_of_hypertensive_disorders(person_id, property_prefix='pn')
 
@@ -3264,9 +3234,8 @@ class HSI_Labour_ReceivesCareFollowingCaesareanSection(HSI_Event, IndividualScop
         # ===================================== APPLYING COMPLICATION INCIDENCE =======================================
         # Here we apply the risk that this woman will develop and infection or experience worsening hypertension after
         # her caesarean
-        for complication in ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                             'other_maternal_infection', 'sepsis', 'uterine_atony', 'other_pph_cause',
-                             'postpartum_haem']:
+        for complication in ['sepsis_endometritis', 'sepsis_urinary_tract', 'sepsis_skin_soft_tissue',
+                             'pph_uterine_atony', 'pph_retained_placenta', 'pph_other']:
             self.module.set_postpartum_complications(person_id, complication=complication)
 
         self.module.progression_of_hypertensive_disorders(person_id, property_prefix='pn')
@@ -3299,8 +3268,7 @@ class HSI_Labour_ReceivesCareFollowingCaesareanSection(HSI_Event, IndividualScop
 
         # For simulation runs where the squeeze is set too high for the event to run we apply risk of complications and
         # death as this would have happened within the HSI
-        for complication in ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                             'other_maternal_infection', 'sepsis']:
+        for complication in ['sepsis_endometritis', 'sepsis_urinary_tract', 'sepsis_skin_soft_tissue']:
             self.module.set_postpartum_complications(person_id, complication=complication)
 
         self.module.progression_of_hypertensive_disorders(person_id, property_prefix='pn')
@@ -3315,8 +3283,7 @@ class HSI_Labour_ReceivesCareFollowingCaesareanSection(HSI_Event, IndividualScop
                                          f'current service availability, for mother {person_id} '
                                          f'and she is unable to receive care after caesarean section')
 
-        for complication in ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                             'other_maternal_infection', 'sepsis']:
+        for complication in ['sepsis_endometritis', 'sepsis_urinary_tract', 'sepsis_skin_soft_tissue']:
             self.module.set_postpartum_complications(person_id, complication=complication)
         self.module.progression_of_hypertensive_disorders(person_id, property_prefix='pn')
         self.module.apply_risk_of_early_postpartum_death(person_id)

@@ -141,8 +141,6 @@ class PostnatalSupervisor(Module):
             Types.REAL, 'case fatality rate of eclampsia in the postnatal period'),
         'cfr_severe_htn_pn': Parameter(
             Types.REAL, 'case fatality rate of severe hypertension in the postnatal period'),
-        'weekly_prob_postnatal_death': Parameter(
-            Types.REAL, 'Weekly risk of postnatal death'),
         'severity_late_infection_pn': Parameter(
             Types.LIST, 'probability of mild infection, sepsis or severe sepsis in the later postnatal period'),
 
@@ -575,19 +573,8 @@ class PostnatalSupervisor(Module):
             # Certain conditions experienced in pregnancy are liable to continue into the postnatal period
 
             # HYPERTENSIVE DISORDERS...
-            # The majority of hypertension related to pregnancy resolve with delivery of the foetus. However the
-            # condition
-            # may persist (and even onset within the postnatal period...)
             if df.at[mother_id, 'ps_htn_disorders'] != 'none':
-                if self.rng.random_sample() < params['prob_htn_persists']:
-                    logger.debug(key='message', data=f'mother {mother_id} will remain hypertensive despite '
-                                                     f'successfully delivering')
-                    df.at[mother_id, 'pn_htn_disorders'] = df.at[mother_id, 'ps_htn_disorders']
-
-                else:
-                    if not pd.isnull(mni[mother_id]['hypertension_onset']):
-                        store_dalys_in_mni(mother_id, 'hypertension_resolution')
-                    df.at[mother_id, 'pn_htn_disorders'] = 'resolved'
+                df.at[mother_id, 'pn_htn_disorders'] = df.at[mother_id, 'ps_htn_disorders']
 
             # Currently we assume women who received antihypertensive in the antenatal period will continue to use them
             if df.at[mother_id, 'ac_gest_htn_on_treatment']:

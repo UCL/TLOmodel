@@ -474,7 +474,7 @@ def test_function_which_applies_risk_of_death_following_birth():
     # set complications that should cause death
     sim.population.props.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
 
-    sim.modules['NewbornOutcomes'].set_death_and_disability_status(child_id)
+    sim.modules['NewbornOutcomes'].set_death_status(child_id)
 
     # Check the event has correctly scheduled the instantaneous death event
     events = sim.find_events_for_person(person_id=child_id)

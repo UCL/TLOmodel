@@ -54,10 +54,34 @@ class CareOfWomenDuringPregnancy(Module):
     }
 
     PARAMETERS = {
+
+        # CARE SEEKING...
         'prob_anc_continues': Parameter(
             Types.REAL, 'probability a woman will return for a subsequent ANC appointment'),
         'prob_an_ip_at_facility_level_1_2_3': Parameter(
             Types.LIST, 'probabilities that antenatal inpatient care will be scheduled at facility level 1, 2 or 3'),
+
+        # TREATMENT EFFECTS...
+        'effect_of_ifa_for_resolving_anaemia': Parameter(
+            Types.REAL, 'treatment effectiveness of starting iron and folic acid on resolving anaemia'),
+        'effect_of_iron_replacement_for_resolving_anaemia': Parameter(
+            Types.REAL, 'treatment effectiveness of iron replacement in resolving anaemia'),
+        'effect_of_folate_replacement_for_resolving_anaemia': Parameter(
+            Types.REAL, 'treatment effectiveness of folate replacement in resolving anaemia'),
+        'effect_of_b12_replacement_for_resolving_anaemia': Parameter(
+            Types.REAL, 'treatment effectiveness of b12 replacement in resolving anaemia'),
+        'treatment_effect_blood_transfusion_anaemia': Parameter(
+            Types.REAL, 'treatment effectiveness of blood transfusion for anaemia in pregnancy'),
+        'effect_of_iron_replacement_for_resolving_iron_def': Parameter(
+            Types.REAL, 'treatment effectiveness of iron replacement in resolving iron deficiency'),
+        'effect_of_folate_replacement_for_resolving_folate_def': Parameter(
+            Types.REAL, 'treatment effectiveness of folate replacement in resolving folate deficiency'),
+        'effect_of_b12_replacement_for_resolving_b12_def': Parameter(
+            Types.REAL, 'treatment effectiveness of b12 replacement in resolving b12 deficiency'),
+        'prob_evac_procedure_pac': Parameter(
+            Types.LIST, 'Probabilities that a woman will receive D&C, MVA or misoprostal as treatment for abortion '),
+
+        # INTERVENTION PROBABILITIES...
         'squeeze_factor_threshold_anc': Parameter(
             Types.REAL, 'squeeze factor threshold over which an ANC appointment cannot run'),
         'prob_intervention_delivered_urine_ds': Parameter(
@@ -108,6 +132,8 @@ class CareOfWomenDuringPregnancy(Module):
         'prob_intervention_delivered_gdm_test': Parameter(
             Types.REAL, 'probability a woman will receive the intervention "GDM screening" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
+
+        # ASSESSMENT SENSITIVITIES/SPECIFICITIES...
         'sensitivity_bp_monitoring': Parameter(
             Types.REAL, 'sensitivity of blood pressure monitoring to detect hypertension'),
         'specificity_bp_monitoring': Parameter(
@@ -128,42 +154,6 @@ class CareOfWomenDuringPregnancy(Module):
             Types.REAL, 'sensitivity of a blood test to detect raised blood glucose'),
         'specificity_blood_test_glucose': Parameter(
             Types.REAL, 'specificity of a blood test to detect raised blood glucose'),
-        'effect_of_ifa_for_resolving_anaemia': Parameter(
-            Types.REAL, 'treatment effectiveness of starting iron and folic acid on resolving anaemia'),
-        'treatment_effect_blood_transfusion_anaemia': Parameter(
-            Types.REAL, 'treatment effectiveness of blood transfusion for anaemia in pregnancy'),
-        'effect_of_iron_replacement_for_resolving_anaemia': Parameter(
-            Types.REAL, 'treatment effectiveness of iron replacement in resolving anaemia'),
-        'effect_of_iron_replacement_for_resolving_iron_def': Parameter(
-            Types.REAL, 'treatment effectiveness of iron replacement in resolving iron deficiency'),
-        'effect_of_folate_replacement_for_resolving_anaemia': Parameter(
-            Types.REAL, 'treatment effectiveness of folate replacement in resolving anaemia'),
-        'effect_of_folate_replacement_for_resolving_folate_def': Parameter(
-            Types.REAL, 'treatment effectiveness of folate replacement in resolving folate deficiency'),
-        'effect_of_b12_replacement_for_resolving_anaemia': Parameter(
-            Types.REAL, 'treatment effectiveness of b12 replacement in resolving anaemia'),
-        'effect_of_b12_replacement_for_resolving_b12_def': Parameter(
-            Types.REAL, 'treatment effectiveness of b12 replacement in resolving b12 deficiency'),
-        'cfr_severe_pre_eclampsia': Parameter(
-            Types.REAL, 'case fatality rate severe pre-eclampsia'),
-        'multiplier_spe_cfr_eclampsia': Parameter(
-            Types.REAL, 'cfr multiplier to generate cfr for eclampsia '),
-        'treatment_effect_mag_sulph': Parameter(
-            Types.REAL, 'treatment effectiveness magnesium sulphate on mortality due to severe pre-eclampsia/'
-                        'eclampsia'),
-        'treatment_effect_iv_anti_htn': Parameter(
-            Types.REAL, 'treatment effectiveness IV antihypertensives on mortality due to severe pre-eclampsia/'
-                        'eclampsia'),
-        'prob_still_birth_aph': Parameter(
-            Types.REAL, 'probability of a still birth following APH prior to treatment'),
-        'prob_still_birth_spe_ec': Parameter(
-            Types.REAL, 'probability of a still birth following severe pre-eclampsia/eclampsia prior to treatment'),
-        'cfr_aph': Parameter(
-            Types.REAL, 'case fatality rate antepartum haemorrhage'),
-        'treatment_effect_bt_aph': Parameter(
-            Types.REAL, 'treatment effect of blood transfusion on antepartum haemorrhage mortality '),
-        'prob_evac_procedure_pac': Parameter(
-            Types.LIST, 'Probabilities that a woman will receive D&C, MVA or misoprostal as treatment for abortion '),
     }
 
     PROPERTIES = {
@@ -215,24 +205,6 @@ class CareOfWomenDuringPregnancy(Module):
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
-
-        params = self.parameters
-
-        # ==================================== LINEAR MODEL EQUATIONS =================================================
-        # All linear equations used in this module are stored within the ac_linear_equations parameter below
-
-        # TODO: process of 'selection' of important predictors in linear equations is ongoing, a linear model that
-        #  is empty of predictors at the end of this process will be converted to a set probability
-
-        params['ac_linear_equations'] = {
-
-            # This equation is used to determine if a woman will choose to attend the next ANC contact in the routine
-            # schedule
-            'anc_continues': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_anc_continues']),
-
-        }
 
     def initialise_population(self, population):
 
@@ -529,13 +501,11 @@ class CareOfWomenDuringPregnancy(Module):
                     df.at[individual_id, 'ac_date_next_contact'] = visit_date
 
                 else:
-                    # If she is not predicted to attend 4 or more visits, we use an equation from the linear model to
-                    # determine if she will seek care for her next contact
-                    will_anc_continue = params['ac_linear_equations']['anc_continues'].predict(df.loc[[
-                        individual_id]])[individual_id]
+                    # If she is not predicted to attend 4 or more visits, we use a probability to determine if she will
+                    # seek care for her next contact
 
                     # If so, the HSI is scheduled in the same way
-                    if self.rng.random_sample() < will_anc_continue:
+                    if self.rng.random_sample() < params['prob_anc_continues']:
                         weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
                                                                                           'ps_gestational_age_in_'
                                                                                           'weeks'])
@@ -554,11 +524,10 @@ class CareOfWomenDuringPregnancy(Module):
                                                          f'antenatal care for this pregnancy')
 
             elif visit_to_be_scheduled > 4:
-                # After 4 or more visits we use the linear model equation to determine if the woman will seek care for
+                # After 4 or more visits we use this probability to determine if the woman will seek care for
                 # her next contact
 
-                if self.rng.random_sample() < \
-                  params['ac_linear_equations']['anc_continues'].predict(df.loc[[individual_id]])[individual_id]:
+                if self.rng.random_sample() < params['prob_anc_continues']:
                     weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
                                                                                       'ps_gestational_age_in_'
                                                                                       'weeks'])
