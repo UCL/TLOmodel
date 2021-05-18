@@ -144,6 +144,7 @@ class LinearModel(object):
         assert isinstance(intercept, (float, int)), (
             "Intercept is not specified or wrong type."
         )
+        assert np.isfinite(intercept), "Intercept must not be NaN or infinite"
         self._intercept = intercept
 
         # Store predictors as tuple and expose via read-only property to prevent
