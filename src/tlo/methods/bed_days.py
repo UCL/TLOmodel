@@ -137,6 +137,18 @@ class BedDays(Module):
                     description=f'dataframe of bed_tracker of type {bed_type}, broken down by day and facility'
                 )
 
+    def check_footprint_against_capacity(self, footprint):
+        """A function to check if the required bed days is within or beyond be capacity per facility.
+        throws an assertion error if the requested bed days is beyond capacity"""
+        is_true = False
+        bed_capacity = self.parameters['BedCapacity'].set_index('Facility_ID')
+        for bed_type in self.bed_types:
+            if (footprint[bed_type] > bed_capacity[bed_type]).any():
+                return is_true
+            else:
+                is_true = True
+                return is_true
+
     def get_blank_beddays_footprint(self):
         """
         Generate a blank footprint for the bed-days
@@ -191,6 +203,9 @@ class BedDays(Module):
         # check that the number of inpatient days does not exceed the maximum of 21 days
         assert self.parameters['days_until_last_day_of_bed_tracker'] >= sum(footprint.values()), \
             "total number of bed days is more than bed days tracking period"
+
+        # check that the required bed days in the footprint are within bed capacity
+        assert self.check_footprint_against_capacity(footprint), "footprint bed days beyond capacity"
 
         df = self.sim.population.props
 
