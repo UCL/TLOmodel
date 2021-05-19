@@ -60,9 +60,6 @@ class Demography(Module):
     # We should have 21 age range categories
     assert len(AGE_RANGE_CATEGORIES) == 21
 
-    # Declare Metadata
-    METADATA = {}
-
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
@@ -138,8 +135,8 @@ class Demography(Module):
         registered).
         """
 
-        # 1) Check and then register all the causes of death
-        self.causes_of_death = self.register_all_causes_of_death()
+        # 1) Register all the causes of death from the disease modules
+        self.causes_of_death = self.register_causes_of_death_in_disease_modules()
 
         # 2) Create a categorical property for the 'cause_of_death' (name of the module that causes death)
         disease_module_names = [
@@ -155,12 +152,14 @@ class Demography(Module):
 
 
 
-    def register_all_causes_of_death(self):
+    def register_causes_of_death_in_disease_modules(self):
         """Helper function to look through Disease Modules and register declared causes of death"""
+
         causes_of_death = dict()
         for m in self.sim.modules.values():
             if Metadata.DISEASE_MODULE in m.METADATA:
-                assert 'CAUSES_OF_DEATH' in dir(m), 'Disease modules must declare causes of death (even if none)'
+                assert 'CAUSES_OF_DEATH' in dir(m), \
+                    f'Disease module {m.name} must declare causes of death (even if none)'
                 assert type(m.CAUSES_OF_DEATH) is dict
 
                 for tlo_cause, cause in m.CAUSES_OF_DEATH.items():
@@ -311,7 +310,9 @@ class Demography(Module):
             return
 
         # Check that the cause is registered:
-        assert cause in self.causes_of_death, f'The cause of death {cause} is not recognised by the Demography module.'
+        if self is not originating_module:
+            assert cause in self.causes_of_death, \
+                f'The cause of death {cause} is not recognised by the Demography module.'
 
         # Register the death:
         df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = \

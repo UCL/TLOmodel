@@ -10,7 +10,7 @@ from tlo import Date, Simulation, Module
 from tlo.methods import demography, mockitis, Metadata, hiv, diarrhoea, symptommanager, enhanced_lifestyle, malaria, \
     ncds, oesophagealcancer, labour, newborn_outcomes, pregnancy_supervisor, care_of_women_during_pregnancy, \
     contraception, postnatal_supervisor, healthsystem
-from tlo.methods.demography import AgeUpdateEvent
+from tlo.methods.demography import AgeUpdateEvent, CauseOfDeath
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
@@ -52,6 +52,7 @@ def test_storage_of_module_name_that_causes_death():
 
     class DummyModule(Module):
         METADATA = {Metadata.DISEASE_MODULE}
+        CAUSES_OF_DEATH = {'a_cause': CauseOfDeath(gbd_causes='HIV/AIDS', label='a_cause')}
         def read_parameters(self, data_folder):
             pass
         def initialise_population(self, population):
