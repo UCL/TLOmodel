@@ -11,6 +11,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.util import BitsetHandler
+from tlo.methods.demography import CauseOfDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -49,6 +50,12 @@ class PostnatalSupervisor(Module):
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHSYSTEM,
                 Metadata.USES_HEALTHBURDEN}  # declare that this is a disease module (leave as empty set otherwise)
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'maternal': CauseOfDeath(gbd_causes='Maternal disorders', label='Maternal disorders'),
+        'neonatal': CauseOfDeath(gbd_causes='Neonatal disorders', label='Neonatal Disorders')
+    }
 
     PARAMETERS = {
 

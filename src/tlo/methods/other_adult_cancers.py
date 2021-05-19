@@ -39,6 +39,39 @@ class OtherAdultCancer(Module):
         Metadata.USES_HEALTHBURDEN
     }
 
+    # Declare Causes of Death (todo- these will be updated as further cancer modules are finalised)
+    CAUSES_OF_DEATH = {
+        'OtherAdultCancer': CauseOfDeath(gbd_causes=[
+            'Other malignant neoplasms',
+            'Nasopharynx cancer',
+            'Other pharynx cancer',
+            'Gallbladder and biliary tract cancer',
+            'Pancreatic cancer',
+            'Malignant skin melanoma',
+            'Non-melanoma skin cancer',
+            'Ovarian cancer',
+            'Testicular cancer',
+            'Kidney cancer',
+            'Bladder cancer',
+            'Brain and central nervous system cancer',
+            'Thyroid cancer',
+            'Mesothelioma',
+            'Hodgkin lymphoma',
+            'Non-Hodgkin lymphoma',
+            'Multiple myeloma',
+            'Leukemia',
+            'Other neoplasms',
+            'Breast cancer',
+            'Cervical cancer',
+            'Uterine cancer',
+            'Prostate cancer',
+            'Colon and rectum cancer',
+            'Lip and oral cavity cancer',
+            'Stomach cancer',
+            'Liver cancer'
+        ], label='Other Cancers'),
+    }
+
     PARAMETERS = {
         "init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage": Parameter(
             Types.LIST, "initial proportions of those with other adult cancer categories that have other_"

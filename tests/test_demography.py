@@ -7,7 +7,9 @@ import pandas as pd
 import pytest
 
 from tlo import Date, Simulation, Module
-from tlo.methods import demography, mockitis, Metadata
+from tlo.methods import demography, mockitis, Metadata, hiv, diarrhoea, symptommanager, enhanced_lifestyle, malaria, \
+    ncds, oesophagealcancer, labour, newborn_outcomes, pregnancy_supervisor, care_of_women_during_pregnancy, \
+    contraception, postnatal_supervisor, healthsystem
 from tlo.methods.demography import AgeUpdateEvent
 
 start_date = Date(2010, 1, 1)
@@ -80,6 +82,33 @@ def test_storage_of_module_name_that_causes_death():
     assert not person.is_alive
     assert person.cause_of_death == 'DummyModule'
     assert (df.dtypes == orig).all()
+
+
+def test_cause_of_death_being_registered():
+    """Test that the modules can declare causes of death, and that the mappers between tlo causes of death and gbd
+    causes of death can be created correctly."""
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
+        symptommanager.SymptomManager(resourcefilepath=rfp),
+        healthsystem.HealthSystem(resourcefilepath=rfp, disable_and_reject_all=True),
+        diarrhoea.Diarrhoea(resourcefilepath=rfp),
+        hiv.Hiv(resourcefilepath=rfp),
+        malaria.Malaria(resourcefilepath=rfp),
+        ncds.Ncds(resourcefilepath=rfp),
+        oesophagealcancer.OesophagealCancer(resourcefilepath=rfp),
+        contraception.Contraception(resourcefilepath=rfp),
+        labour.Labour(resourcefilepath=rfp),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=rfp),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
+    )
+    sim.make_initial_population(n=20)
+    sim.simulate(end_date=Date(2010, 1, 1))
 
 
 def test_py_calc(simulation):

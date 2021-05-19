@@ -37,6 +37,13 @@ class Depression(Module):
         Metadata.USES_HEALTHBURDEN
     }
 
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'Suicide': CauseOfDeath(gbd_causes='Self-harm', label='Depression / Self-harm'),
+        'Depression': CauseOfDeath(gbd_causes='Self-harm', label='Depression / Self-harm')
+        # todo - is one of these to do with DALYS?
+    }
+
     # Module parameters
     PARAMETERS = {
         'init_pr_depr_m_age1519_no_cc_wealth123': Parameter(
@@ -645,7 +652,10 @@ class DepressionSuicideEvent(Event, IndividualScopeEventMixin):
             return
 
         self.module.eventsTracker['SuicideEvents'] += 1
-        self.sim.schedule_event(InstantaneousDeath(self.module, person_id, 'Suicide'), self.sim.date)
+        self.sim.modules['Demography'].do_death(
+            individual_id=person_id,
+            cause='Suicide',
+            originating_module=self.module)
 
 
 # ---------------------------------------------------------------------------------------------------------

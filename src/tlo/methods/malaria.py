@@ -16,6 +16,7 @@ from tlo.methods import Metadata, demography
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.methods.demography import CauseOfDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -41,6 +42,13 @@ class Malaria(Module):
         Metadata.USES_HEALTHBURDEN,
         Metadata.USES_SYMPTOMMANAGER
     }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'severe_malaria': CauseOfDeath(gbd_causes='Malaria', label='Malaria'),
+        'Malaria': CauseOfDeath(gbd_causes='Malaria', label='Malaria'),
+    }  # todo - Why are there are these two different causes of death for Malaria?
+
 
     PARAMETERS = {
         "mal_inc": Parameter(Types.REAL, "monthly incidence of malaria in all ages"),
@@ -190,7 +198,14 @@ class Malaria(Module):
         irs_curr.loc[irs_curr.irs_rate <= p["irs_rates_boundary"], "irs_rate"] = p["irs_rates_lower"]
         irs_curr = irs_curr.set_index(["District", "Year"])
 
-        self.itn_irs = pd.concat([itn_curr, irs_curr], axis=1)
+        itn_irs = pd.concat([itn_curr, irs_curr], axis=1)
+
+        # Subsitute District Num for District Name
+        mapper_district_name_to_num = \
+            {v: k for k, v in self.sim.modules['Demography'].parameters['district_num_to_district_name'].items()}
+        self.itn_irs = itn_irs.reset_index().assign(
+            District_Num = lambda x: x['District'].map(mapper_district_name_to_num)
+        ).drop(columns=['District']).set_index(['District_Num', 'Year'])
 
         # ===============================================================================
         # put the all incidence data into single table with month/admin/llin/irs index
@@ -206,7 +221,12 @@ class Malaria(Module):
 
         all_inc = pd.concat([inf_inc, clin_inc, sev_inc], axis=1)
         # we don't want age to be part of index
-        self.all_inc = all_inc.reset_index().set_index(["month", "admin", "llin", "irs"])
+        all_inc = all_inc.reset_index()
+
+        all_inc['district_num'] = all_inc['admin'].map(mapper_district_name_to_num)
+        assert not all_inc['district_num'].isna().any()
+
+        self.all_inc = all_inc.drop(columns=['admin']).set_index(["month", "district_num", "llin", "irs"])
 
         # get the DALY weight that this module will use from the weight database
         if "HealthBurden" in self.sim.modules:
@@ -264,18 +284,18 @@ class Malaria(Module):
         if now.year > p["data_end"]:
             itn_irs_curr['itn_rate'] = self.itn
 
-        month_admin_itn_irs_lookup = [tuple(r) for r in itn_irs_curr.values]  # every row is a key in incidence table
+        month_districtnum_itn_irs_lookup = [tuple(r) for r in itn_irs_curr.values]  # every row is a key in incidence table
 
         # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
         # get all corresponding rows from the incidence table; drop unneeded column; set new index
-        curr_inc = self.all_inc.loc[month_admin_itn_irs_lookup]
-        curr_inc = curr_inc.reset_index().drop(["month", "llin", "irs"], axis=1).set_index(["admin", "age"])
+        curr_inc = self.all_inc.loc[month_districtnum_itn_irs_lookup]
+        curr_inc = curr_inc.reset_index().drop(["month", "llin", "irs"], axis=1).set_index(["district_num", "age"])
 
         # ----------------------------------- DISTRICT NEW INFECTIONS -----------------------------------
         def _draw_incidence_for(_col, _where):
             """a helper function to perform random draw for selected individuals on column of probabilities"""
             # create an index from the individuals to lookup entries in the current incidence table
-            district_age_lookup = df[_where].set_index(["district_of_residence", "ma_age_edited"]).index
+            district_age_lookup = df[_where].set_index(["district_num_of_residence", "ma_age_edited"]).index
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
             # update the index so it"s the same as the original population dataframe for these individuals

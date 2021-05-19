@@ -37,6 +37,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup
+from tlo.methods.demography import CauseOfDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -65,6 +66,11 @@ class Hiv(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'AIDS': CauseOfDeath(gbd_causes='HIV/AIDS', label='AIDS'),
     }
 
     PROPERTIES = {
@@ -1211,7 +1217,11 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
             return
 
         # Cause the death to happen immediately
-        demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS").apply(person_id)
+        self.sim.modules['Demography'].do_death(
+            individual_id=person_id,
+            cause="AIDS",
+            originating_module=self.module
+        )
 
 
 class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):

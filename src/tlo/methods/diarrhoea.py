@@ -32,6 +32,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.methods.demography import CauseOfDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -62,6 +63,12 @@ class Diarrhoea(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        f'Diarrhoea_{path}': CauseOfDeath(gbd_causes='Diarrheal diseases', label='Childhood Diarrhoea')
+        for path in pathogens
     }
 
     PARAMETERS = {
@@ -593,8 +600,8 @@ class Diarrhoea(Module):
         sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Get DALY weights
-        get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
         if 'HealthBurden' in self.sim.modules.keys():
+            get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
             self.daly_wts['mild_diarrhoea'] = get_daly_weight(sequlae_code=32)
             self.daly_wts['moderate_diarrhoea'] = get_daly_weight(sequlae_code=35)
             self.daly_wts['severe_diarrhoea'] = get_daly_weight(sequlae_code=34)
@@ -633,7 +640,8 @@ class Diarrhoea(Module):
             scaled_intercept = 1.0 * (target_mean / actual_mean) if (target_mean != 0 and actual_mean != 0) else 1.0
             scaled_lm = make_linear_model(patho, intercept=scaled_intercept)
             # check by applying the model to mean incidence of 0-year-olds
-            assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
+            if (df.is_alive & (df.age_years == 0)).sum() > 0:
+                assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
             return scaled_lm
 
         for pathogen in Diarrhoea.pathogens:

@@ -9,6 +9,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.labour import LabourOnsetEvent
 from tlo.util import BitsetHandler
+from tlo.methods.demography import CauseOfDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -42,6 +43,11 @@ class PregnancySupervisor(Module):
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHBURDEN}
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'maternal': CauseOfDeath(gbd_causes='Maternal disorders', label='Maternal disorders'),
+    }
 
     PARAMETERS = {
         'prob_ectopic_pregnancy': Parameter(

@@ -12,6 +12,7 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneEvent
 from tlo.util import BitsetHandler
+from tlo.methods.demography import CauseOfDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -47,6 +48,12 @@ class Labour(Module):
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'maternal': CauseOfDeath(gbd_causes='Maternal disorders', label='Maternal disorders'),
+        'intrapartum stillbirth': CauseOfDeath(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
     }
 
     PARAMETERS = {

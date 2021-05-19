@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+
 class CareOfWomenDuringPregnancy(Module):
     """This is the CareOfWomenDuringPregnancy module which contains health system interaction events relevant to
      pregnancy and pregnancy loss including:
@@ -52,6 +53,9 @@ class CareOfWomenDuringPregnancy(Module):
     METADATA = {
         Metadata.USES_HEALTHSYSTEM,
     }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {}
 
     PARAMETERS = {
         'prob_anc_continues': Parameter(

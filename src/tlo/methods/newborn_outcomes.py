@@ -12,6 +12,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.postnatal_supervisor import HSI_PostnatalSupervisor_NeonatalWardInpatientCare
+from tlo.methods.demography import CauseOfDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -47,6 +48,12 @@ class NewbornOutcomes(Module):
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'intrapartum stillbirth': CauseOfDeath(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'neonatal': CauseOfDeath(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
     }
 
     PARAMETERS = {
@@ -1112,7 +1119,7 @@ class NewbornOutcomes(Module):
             # If the mother has lost a baby who was part of a twin pair during labour, we schedule the death here (
             # to monitor stillbirths)
             if m['single_twin_still_birth']:
-                self.sim.modules['Demography'].do_death(individual_id=child_id, cause='intrapartum stillbirth ',
+                self.sim.modules['Demography'].do_death(individual_id=child_id, cause='intrapartum stillbirth',
                                                         originating_module=self.sim.modules['NewbornOutcomes'])
                 return
 

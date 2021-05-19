@@ -27,6 +27,11 @@ class Epilepsy(Module):
         Metadata.USES_HEALTHBURDEN
     }
 
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'Epilepsy': CauseOfDeath(gbd_causes='Other neurological disorders', label='Epilepsy'),
+    }
+
     # Module parameters
     PARAMETERS = {
         'init_epil_seiz_status': Parameter(Types.LIST, 'Proportions in each seizure status category at baseline'),

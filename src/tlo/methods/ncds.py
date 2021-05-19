@@ -15,6 +15,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods import demography as de
 from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.demography import CauseOfDeath
 
 # from tlo.methods.healthsystem import HSI_Event
 
@@ -50,6 +51,15 @@ class Ncds(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'diabetes': CauseOfDeath(gbd_causes='Diabetes mellitus', label='Diabetes'),
+        'chronic_ischemic_hd': CauseOfDeath(gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
+        'heart_attack': CauseOfDeath(gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
+        'stroke': CauseOfDeath(gbd_causes='Stroke', label='Stroke'),
+        'chronic_kidney_disease': CauseOfDeath(gbd_causes='Chronic kidney disease', label='Kidney Disease')
     }
 
     # create separate dicts for params for conditions and events

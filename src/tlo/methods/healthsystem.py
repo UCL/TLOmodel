@@ -261,8 +261,11 @@ class HealthSystem(Module):
         self.Facility_Levels = pd.unique(mfl['Facility_Level'])
 
         for person_id in pop.index[pop.is_alive]:
-            my_district = pop.at[person_id, 'district_of_residence']
-            my_health_facilities = fac_per_district.loc[fac_per_district['District'] == my_district]
+            my_district_num = pop.at[person_id, 'district_num_of_residence']
+            my_district_name = self.sim.modules['Demography'].parameters['district_num_to_district_name'][
+                my_district_num]
+            my_health_facilities = fac_per_district.loc[fac_per_district['District'] == my_district_name]
+            # todo use lookup instead
             my_health_facility_level = pd.unique(my_health_facilities.Facility_Level)
             assert len(my_health_facilities) == len(self.Facility_Levels)
             assert set(my_health_facility_level) == set(self.Facility_Levels)
