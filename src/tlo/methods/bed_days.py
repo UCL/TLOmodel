@@ -21,7 +21,7 @@ logger.setLevel(logging.INFO)
 
 class BedDays(Module):
     """
-    The BedDays modules class. This is expected to be instantiated by the HealthSystem module.
+    The BedDays modules class. This is expected to be registered in the simulation object.
     """
 
     METADATA = {}
