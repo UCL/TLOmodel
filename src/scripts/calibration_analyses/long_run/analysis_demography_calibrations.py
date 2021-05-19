@@ -5,9 +5,7 @@ This uses Scenario file: src/scripts/long_run/long_run.py
 
 """
 
-# TODO -- Coding -- ordering of each element;
-# TODO -- CODING -- use the helper_funcs (e.g. GBD age-group categories) i.e. format_gbd
-# TODO -- Observations -- very large variation in deaths: some runs seeming have almost no deaths
+# TODO -- Coding -- ordering of each element on the plot to get the consistent pattern of overlay;
 
 import pickle
 from datetime import datetime
@@ -115,8 +113,7 @@ ax.fill_between(pop_model.index,
                  pop_model['lower']/1e6,
                  pop_model['upper']/1e6,
                  color=colors['Model'],
-                 alpha=0.5,
-                 label='Model (range)',
+                 alpha=0.2,
                  zorder=5
                  )
 ax.set_title("Population Size 2010-2030")
@@ -263,19 +260,20 @@ for year in [2018, 2030]:
 # %% Births: Number over time
 
 # Births over time (Model)
-
-births_by_date = summarize(extract_results(results_folder,
-                                             module="tlo.methods.demography",
-                                             key="on_birth",
-                                             custom_generate_series="groupby(['date'])['date'].count()"
-                                             ),
-                             collapse_columns=True
-                             ).mul(sf)
+births_by_year = summarize(extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="on_birth",
+    custom_generate_series="assign(year = lambda x: x['date'].dt.year)"
+                           ".groupby(['year'])['year'].count()"
+),
+    collapse_columns=True
+).mul(sf)
 
 # Aggregate the model outputs into five year periods:
 calperiods, calperiodlookup = make_calendar_period_lookup()
-births_by_date['Period'] = births_by_date.index.year.map(calperiodlookup)
-births_model = births_by_date.loc[births_by_date.index.year < 2030].groupby(by='Period').sum()
+births_by_year['Period'] = births_by_year.index.map(calperiodlookup)
+births_model = births_by_year.loc[births_by_year.index < 2030].groupby(by='Period').sum()
 births_model.index = births_model.index.astype(make_calendar_period_type())
 births_model.columns = ['Model_' + col for col in births_model.columns]
 
@@ -347,26 +345,27 @@ for tp in time_period:
 
 # %% All-Cause Deaths
 
-# Get Model ouput
-deaths_by_age_and_date = summarize(extract_results(results_folder,
-                                         module="tlo.methods.demography",
-                                         key="death",
-                                         custom_generate_series="groupby(['sex', 'date', 'age'])['person_id'].count()"
-                                         ),
-                         collapse_columns=True
-                         ).mul(sf).reset_index()
-
+# Get Model ouput (aggregating by year before doing the summarize)
+deaths_by_age_and_year = summarize(extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="death",
+    custom_generate_series="assign(year = lambda x: x['date'].dt.year)"
+                           ".groupby(['sex', 'year', 'age'])['person_id'].count()"
+),
+    collapse_columns=True
+).mul(sf).reset_index()
 
 # Aggregate the model outputs into five year periods for age and time:
 calperiods, calperiodlookup = make_calendar_period_lookup()
-deaths_by_age_and_date["Period"] = deaths_by_age_and_date["date"].dt.year.map(calperiodlookup)
+deaths_by_age_and_year["Period"] = deaths_by_age_and_year["year"].map(calperiodlookup)
 
 (__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
-deaths_by_age_and_date["Age_Grp"] = deaths_by_age_and_date["age"].map(age_grp_lookup)
+deaths_by_age_and_year["Age_Grp"] = deaths_by_age_and_year["age"].map(age_grp_lookup)
 
-deaths_by_age_and_date =deaths_by_age_and_date.rename(columns={'sex': 'Sex'})
+deaths_by_age_and_year =deaths_by_age_and_year.rename(columns={'sex': 'Sex'})
 
-deaths_model = pd.DataFrame(deaths_by_age_and_date.loc[deaths_by_age_and_date["date"].dt.year < 2030].groupby(['Period', 'Sex', 'Age_Grp']).sum()).reset_index()
+deaths_model = pd.DataFrame(deaths_by_age_and_year.loc[deaths_by_age_and_year["year"] < 2030].groupby(['Period', 'Sex', 'Age_Grp']).sum()).reset_index()
 deaths_model = deaths_model.melt(
     id_vars=['Period', 'Sex', 'Age_Grp'], value_vars=['mean', 'lower', 'upper'], var_name='Variant' ,value_name='Count')
 deaths_model['Variant'] = 'Model_' + deaths_model['Variant']
@@ -374,9 +373,10 @@ deaths_model['Variant'] = 'Model_' + deaths_model['Variant']
 # Load WPP data
 wpp_deaths = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")
 
-# Load GBD (and collapse the ages for <5 together) #todo - instead, can this make use of format_gbd()
-gbd = pd.read_csv(rfp / "demography" / "ResourceFile_TotalDeaths_GBD.csv")
-gbd.loc[(gbd.Age_Grp == '<1year') | (gbd.Age_Grp == '1-4'), 'Age_Grp'] = '0-4'
+# Load GBD
+gbd = format_gbd(pd.read_csv(rfp / "demography" / "ResourceFile_TotalDeaths_GBD.csv"))
+
+# Compute sums by period
 gbd = pd.DataFrame(gbd.drop(columns=['Year']).groupby(by=['Period', 'Sex', 'Age_Grp', 'Variant']).sum()).reset_index()
 
 # Combine into one large dataframe
@@ -403,7 +403,7 @@ ax.fill_between(
     tot_deaths.index,
     tot_deaths['WPP_Low variant']/1e6,
     tot_deaths['WPP_High variant']/1e6,
-    facecolor=colors['WPP'], alpha=0.5)
+    facecolor=colors['WPP'], alpha=0.2)
 ax.plot(
     tot_deaths.index,
     tot_deaths['GBD_Est']/1e6,

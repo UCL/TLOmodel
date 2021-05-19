@@ -1,9 +1,7 @@
 """Produce comparisons between model and GBD of deaths by cause in a particular period."""
 
-# todo - get these plots working when the output comes from the batch system
-# todo - investigate causes of _extreme_ variation in deaths
 # todo - unify the labelling of causes in the HealthBurden module to simplify processing
-# todo - same for DALYS
+# todo - do all the same for DALYS
 
 from datetime import datetime
 from pathlib import Path
@@ -30,7 +28,6 @@ from tlo.analysis.utils import (
     get_causes_mappers
 )
 
-
 # %% Declare usual paths:
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
 rfp = Path('./resources')
@@ -49,15 +46,11 @@ colors = {
     'GBD': 'plum'
 }
 
-
 # %% Set the period for the analysis (comparison is made of the average annual number of deaths in this period)
 period = '2010-2014'
 
 # %% Load and process the GBD data
 gbd = format_gbd(pd.read_csv(rfp / 'demography' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'))
-
-# rename the uncertainity range to align with the model
-gbd = gbd.rename(columns={'val': 'mean'})
 
 
 # %% Load modelling results:
@@ -65,13 +58,16 @@ gbd = gbd.rename(columns={'val': 'mean'})
 # get the scaling_factor for the population run: todo - put this in the 'tlo.population' log
 sf = get_scaling_factor(results_folder=results_folder, resourcefilepath=rfp)
 
-deaths = summarize(extract_results(results_folder,
-                                         module="tlo.methods.demography",
-                                         key="death",
-                                         custom_generate_series="groupby(['sex', 'date', 'age', 'cause'])['person_id'].count()"
-                                         ),
-                         collapse_columns=True
-                         ).mul(sf).reset_index()
+# Extract results, summing by year
+deaths = summarize(extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="death",
+    custom_generate_series="assign(year = lambda x: x['date'].dt.year)"
+                           ".groupby(['sex', 'date', 'age', 'cause'])['person_id'].count()"
+),
+    collapse_columns=True
+).mul(sf).reset_index()
 
 # Sum by year/sex/age-group
 agegrps, agegrplookup = make_age_grp_lookup()
@@ -104,8 +100,15 @@ assert not gbd['unified_cause'].isna().any()
 
 deaths_pt = dict()
 
-# - GBD:
-deaths_pt['GBD'] = gbd.loc[(gbd.period == period) & (gbd.measure_name == 'Deaths')]\
+# - GBD (making some unifying name changes)
+deaths_pt['GBD'] = gbd.loc[(gbd.Period == period) & (gbd.measure_name == 'Deaths')]\
+    .rename(columns={
+                    'Sex': 'sex',
+                    'Age_Grp':'age_grp',
+                    'GBD_Est': 'mean',
+                    'GBD_Lower': 'lower',
+                    'GBD_Upper': 'upper'
+    })\
     .groupby(['sex', 'age_grp', 'unified_cause'])[['mean', 'lower', 'upper']].sum().unstack().div(5.0)
 
 # - TLO Model:
@@ -199,14 +202,16 @@ plt.show()
 sexes = ['F', 'M']
 dats = ['GBD', 'Model']
 
-x = list(deaths_this_cause.index.levels[1])
-xs = np.arange(len(x))
+reformat_cause = lambda x: x.replace(' / ', '_')
 
 for cause in all_causes:
     try:
         deaths_this_cause = pd.concat(
             {dat: deaths_pt[dat].loc[:,(slice(None), cause)] for dat in deaths_pt.keys()}, axis=1
         ).fillna(0.0) / 1e3
+
+        x = list(deaths_this_cause.index.levels[1])
+        xs = np.arange(len(x))
 
         fig, ax = plt.subplots(ncols=1, nrows=2, sharey=True, sharex=True)
         for row, sex in enumerate(sexes):
@@ -232,8 +237,8 @@ for cause in all_causes:
             ax[row].legend()
 
         fig.tight_layout()
-        plt.savefig(make_graph_file_name(f"Deaths_Scatter_Plot_{period}"))
+        plt.savefig(make_graph_file_name(f"Deaths_Scatter_Plot_{period}_{reformat_cause(cause)}"))
         plt.show()
 
     except KeyError:
-        print(f"Could not produce plot for {cause}")
+        print(f"Could not produce plot for {reformat_cause(cause)}")

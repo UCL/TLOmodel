@@ -9,6 +9,7 @@ The following files are created:
 * 'ResourceFile_Population_2010.csv': used in model
 * 'ResourceFile_Pop_Frac_Births_Male.csv': used in model
 * 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv': used in model
+* `ResourceFile_ASFR_WPP.csv`: used in model (SimplifiedBirths module)
 
 * `ResourceFile_PopulationSize_2018Census.csv`: used for scaling results to actual size of population in census
 * `ResourceFile_Pop_Annual_WPP.csv`: used for calibration checks
@@ -17,7 +18,7 @@ The following files are created:
 
 * 'ResourceFile_Birth_2018Census.csv': Not used currently
 * 'ResourceFile_Deaths_2018Census.csv': Not used currently
-* `ResourceFile_ASFR_WPP.csv`: Not used currently
+
 * `ResourceFile_Pop_DeathRates_WPP.csv`: Not used currently
 * `ResourceFile_Pop_WPP.csv`: Not used currently
 * `ResourceFile_ASFR_DHS.csv`: Not used currently
@@ -51,6 +52,7 @@ a1 = a1.drop(a1.index[0])
 a1.index = a1.iloc[:, 0]
 a1 = a1.drop(a1.columns[[0]], axis=1)
 column_titles = ['Total_2018', 'Male_2018', 'Female_2018', 'Total_2008', 'Male_2008', 'Female_2008']
+a1 = a1.dropna(how='all', axis=1)
 a1.columns = column_titles
 a1 = a1.dropna(axis=0)
 a1.index = [name.strip() for name in list(a1.index)]
@@ -212,7 +214,7 @@ Module-demography/Census_Main_Report/Series K. Mortality Tables.xlsx'
 
 k2 = pd.read_excel(workingfile_mortality, sheet_name='K2')
 
-k2 = k2.dropna()
+k2 = k2.dropna(how='all', axis=1)
 k2.columns = ['Age/Region', 'Pop_Total', 'Pop_Males', 'Pop_Females', 'Deaths_Total', 'Deaths_Males', 'Deaths_Females']
 
 k2 = k2.drop(list(range(2, 24)), axis=0)
@@ -286,7 +288,7 @@ ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
 ests_melt.to_csv(path_for_saved_files / 'ResourceFile_Pop_WPP.csv', index=False)
 
 # pop in 2010:
-ests_melt.loc[ests_melt['Year'] == 2010, 'Count'].sum()  # 14M
+ests_melt.loc[ests_melt['Year'] == 2010, 'Count'].sum()  # ~14M
 
 # %% Population size: single-year age/time steps
 wpp_pop_males_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
@@ -622,30 +624,60 @@ dhs_u5.to_csv(path_for_saved_files / 'ResourceFile_Under_Five_Mortality_DHS.csv'
 gbd_working_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/HealthBurden Module/Daly and deaths by cause estimates/IHME-GBD_2019_DATA-1db25232-1/IHME-GBD_2019_DATA-1db25232-1.csv'
 gbd = pd.read_csv(gbd_working_file)
 
-# 1) Save an un-edited version of the file as ResourceFile_Deaths_And_DALYS_GBD2019.csv
-gbd.to_csv(path_for_saved_files / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv', index=False)
+# 0) Do some basic processing of the file:
 
-# 2) Do some processing of the file, to create 'ResourceFile_TotalDeaths_GBD.csv'
+# Reformat sex variable
+gbd['Sex'] = gbd['sex_id'].replace({1: 'M', 2: 'F'})
+
 # Rename Year variable
 gbd.rename(columns={'year': 'Year'}, inplace=True)
 
-# Reformat the age-groups
-gbd['age_name'] = gbd['age_name'].str.replace('to', '-').str.replace('95 plus', '95+').str.replace(' ', '')
+# Reformat the age-groups: GBD-style age-groups (seperating out <1year and 1-4 year-olds)
+gbd['age_name'] = gbd['age_name']\
+    .str.replace('to', '-')\
+    .str.replace('95 plus', '95+')\
+    .str.replace(' ', '')
 gbd = gbd.drop(gbd.index[gbd['age_name'] == 'AllAges'])
-gbd = gbd.rename(columns={'age_name': 'Age_Grp'})
-gbd['Sex'] = gbd['sex_id'].replace({1: 'M', 2: 'F'})
+gbd = gbd.rename(columns={'age_name': 'Age_Grp_GBD'})
 
-# Deaths Database No Split by Cause
-gbd_deaths = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
-gbd_deaths = gbd_deaths[['Age_Grp', 'Sex', 'Year', 'val', 'upper', 'lower', 'cause_name', 'cause_id']]
-
-gbd_deaths = gbd_deaths.groupby(by=['Year', 'Sex', 'Age_Grp'], as_index=False)['val', 'upper', 'lower'].sum()
-gbd_deaths = gbd_deaths.melt(id_vars=['Year', 'Sex', 'Age_Grp'], var_name='Variant', value_name='Count')
-gbd_deaths['Variant'] = gbd_deaths['Variant'].replace({'val': 'GBD_Est', 'upper': 'GBD_Upper', 'lower': 'GBD_Lower'})
+# standard age-group style (0-4, 5-9, etc)
+gbd['Age_Grp'] = gbd['Age_Grp_GBD']\
+        .str.replace('1-4', '0-4')\
+        .str.replace('<1year', '0-4')
 
 # Add Period information:
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
-gbd_deaths['Period'] = gbd_deaths['Year'].map(calendar_period_lookup)
-assert not pd.isnull(gbd_deaths).any().any()
+gbd['Period'] = gbd['Year'].map(calendar_period_lookup)
 
+# Rename the 'variants'
+gbd = gbd.rename(columns={
+    'val': 'GBD_Est',
+    'upper': 'GBD_Upper',
+    'lower': 'GBD_Lower'
+})
+
+# drop ununsed columns
+gbd = gbd[['measure_name',
+           'Age_Grp',
+           'Age_Grp_GBD',
+           'Sex',
+           'Year',
+           'Period',
+           'cause_name',
+           'cause_id',
+           'GBD_Est',
+           'GBD_Upper',
+           'GBD_Lower'
+           ]]
+
+# checks
+assert not pd.isnull(gbd).any().any()
+
+# 1) Save all outputs as 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'
+gbd.to_csv(path_for_saved_files / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv', index=False)
+
+# 2) Output Deaths (all-cause) using standard Age-Grps to create 'ResourceFile_TotalDeaths_GBD.csv'
+gbd_deaths = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
+gbd_deaths = gbd_deaths.groupby(by=['Year', 'Sex', 'Age_Grp'], as_index=False)[['GBD_Est', 'GBD_Lower', 'GBD_Upper']].sum()
+gbd_deaths = gbd_deaths.melt(id_vars=['Year', 'Sex', 'Age_Grp'], var_name='Variant', value_name='Count')
 gbd_deaths.to_csv(path_for_saved_files / 'ResourceFile_TotalDeaths_GBD.csv', index=False)

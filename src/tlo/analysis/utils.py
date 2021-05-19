@@ -398,6 +398,7 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
 
     Finds mean value and 95% interval across the runs for each draw.
     """
+
     summary = pd.DataFrame(
         columns=pd.MultiIndex.from_product(
             [
@@ -469,23 +470,14 @@ def get_scaling_factor(results_folder, resourcefilepath):
 
 
 def format_gbd(gbd_df: pd.DataFrame):
-    """Format GBD data to give standarize categories for sex, age_group and period"""
+    """Format GBD data to give standarize categories for age_group and period"""
 
-    # sort out labelling of sex:
-    gbd_df['sex'] = gbd_df['sex_name'].map({'Male': 'M', 'Female': 'F'})
-
-    # sort out age-groups:
-    gbd_df['age_grp'] = gbd_df['age_name'].\
-        str.replace('to', '-')\
-        .str.replace('95 plus', '95+')\
-        .str.replace(' ', '')\
-        .str.replace('1-4', '0-4')\
-        .str.replace('<1year', '0-4')\
-        .astype(make_age_grp_types())
+    # Age-groups:
+    gbd_df['Age_Grp'] = gbd_df['Age_Grp'].astype(make_age_grp_types())
 
     # label periods:
     calperiods, calperiodlookup = make_calendar_period_lookup()
-    gbd_df['period']  = gbd_df['year'].map(calperiodlookup).astype(make_calendar_period_type())
+    gbd_df['Period']  = gbd_df['Year'].map(calperiodlookup).astype(make_calendar_period_type())
 
     return gbd_df
 
