@@ -27,7 +27,8 @@ class BedDays(Module):
     METADATA = {}
 
     PARAMETERS = {
-        'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id")
+        'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
+        'days_until_last_day_of_bed_tracker': Parameter(Types.INT, "Number of days to the last day of bed_tracker")
     }
 
     PROPERTIES = {
@@ -38,6 +39,8 @@ class BedDays(Module):
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
+        self.bed_tracker = dict()
+        self.list_of_cols_with_internal_dates = dict()
         self.resourcefilepath = resourcefilepath
         self.bed_types = list()  # List of bed-types
 
@@ -46,6 +49,8 @@ class BedDays(Module):
         self.parameters['BedCapacity'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Bed_Capacity.csv'
         )
+        # Limit bed days tracking period to 21 days
+        self.parameters['days_until_last_day_of_bed_tracker'] = 21
 
     def get_bed_types(self):
         """Helper function to get the bed_types from the resoure file imported to 'BedCapacity'"""
@@ -63,7 +68,6 @@ class BedDays(Module):
                 f"Date of the last day in the next stay in bed_type {bed_type}. (pd.NaT) is nothing scheduled")
 
         # Create store columns names
-        self.list_of_cols_with_internal_dates = dict()
         self.list_of_cols_with_internal_dates['entries'] = [
             f"bd_next_first_day_in_bed_{bed_type}" for bed_type in self.bed_types]
         self.list_of_cols_with_internal_dates['exits'] = [
@@ -104,10 +108,12 @@ class BedDays(Module):
         """
 
         capacity = self.parameters['BedCapacity'].set_index('Facility_ID')
+        max_number_of_bed_days = self.parameters['days_until_last_day_of_bed_tracker']
 
-        date_range = pd.date_range(self.sim.start_date, self.sim.end_date, freq='D')
+        end_date = self.sim.start_date + pd.DateOffset(days=max_number_of_bed_days)
 
-        self.bed_tracker = dict()
+        date_range = pd.date_range(self.sim.start_date, end_date, freq='D')
+
         for bed_type in self.bed_types:
             df = pd.DataFrame(
                 index=date_range,  # <- Days in the simulation
@@ -159,7 +165,6 @@ class BedDays(Module):
 
         df = self.sim.population.props
         new_footprint = footprint
-
         if not df.at[person_id, 'bd_is_inpatient']:
             # apply the new footprint if the person is not already an in-patient
             self.apply_footprint(person_id, new_footprint)
@@ -182,6 +187,11 @@ class BedDays(Module):
 
     def apply_footprint(self, person_id, footprint):
         """Edit the internal properties in the dataframe to reflect this in-patient stay"""
+
+        # check that the number of inpatient days does not exceed the maximum of 21 days
+        assert self.parameters['days_until_last_day_of_bed_tracker'] >= sum(footprint.values()), \
+            "total number of bed days is more than bed days tracking period"
+
         df = self.sim.population.props
 
         # reset all internal properties about dates of transition between bed use states:
@@ -218,7 +228,11 @@ class BedDays(Module):
         for bed_type in self.bed_types:
             date_start_this_bed = dates_of_bed_use[f"bd_next_first_day_in_bed_{bed_type}"]
             date_end_this_bed = dates_of_bed_use[f"bd_next_last_day_in_bed_{bed_type}"]
-            self.bed_tracker[bed_type].loc[date_start_this_bed: date_end_this_bed, the_facility_id] += operation
+
+            if pd.isna(date_start_this_bed or date_end_this_bed):  # filter empty bed days
+                pass
+            else:
+                self.bed_tracker[bed_type].loc[date_start_this_bed: date_end_this_bed, the_facility_id] += operation
 
     def compute_dates_of_bed_use(self, footprint):
         """Helper function to compute the dates of entry/exit from beds of each type according to a bed-days footprint
@@ -267,7 +281,6 @@ class BedDays(Module):
                                                     - max(now, d[f'bd_next_first_day_in_bed_{bed_type}'])
                                                 ).days
                 # NB. The '+1' accounts for the fact that 'today' is included
-
         return remaining_footprint
 
     def remove_beddays_footprint(self, person_id):
@@ -276,7 +289,6 @@ class BedDays(Module):
         # todo - error at the moment that it 'removes' day even when the person does not have days, and so adds days
 
         remaining_footprint = self.get_remaining_footprint(person_id)
-
         dates_of_bed_use = self.compute_dates_of_bed_use(remaining_footprint)
         self.edit_bed_tracker(
             dates_of_bed_use=dates_of_bed_use,
