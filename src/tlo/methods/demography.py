@@ -61,6 +61,8 @@ class Demography(Module):
         'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
+        'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident'),
+
         # Age calculation is handled by demography module
         'age_exact_years': Property(Types.REAL, 'The age of the individual in exact years'),
         'age_years': Property(Types.INT, 'The age of the individual in years'),
@@ -68,9 +70,6 @@ class Demography(Module):
                               'The age range category of the individual',
                               categories=AGE_RANGE_CATEGORIES),
         'age_days': Property(Types.INT, 'The age of the individual in whole days'),
-        'region_of_residence': Property(Types.STRING, 'The region in which the person in resident'),
-        'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
-        'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident')
     }
 
     def read_parameters(self, data_folder):
@@ -104,14 +103,10 @@ class Demography(Module):
             m.name for m in self.sim.modules.values() if Metadata.DISEASE_MODULE in m.METADATA
         ]
 
-        for m in self.sim.modules.values():
-            print(m.name)
-            print(m.METADATA)
-
         self.PROPERTIES['cause_of_death'] = Property(
             Types.CATEGORICAL,
             'The name of the module that caused of death of this individual',
-            categories=disease_module_names
+            categories=disease_module_names + [self.name]
         )
 
     def initialise_population(self, population):
@@ -150,19 +145,13 @@ class Demography(Module):
         df['cause_of_death'].values[:] = np.nan
         df['sex'].values[:] = demog_char_to_assign['Sex']
         df.loc[df.is_alive, 'mother_id'] = -1
+        df['district_num_of_residence'] = demog_char_to_assign['District_Num']
+
         df.loc[df.is_alive, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
         df.loc[df.is_alive, 'age_days'] = demog_char_to_assign['age_in_days'].dt.days
-        df['region_of_residence'] = demog_char_to_assign['Region']
-        df['district_of_residence'] = demog_char_to_assign['District']
-        df['district_num_of_residence'] = demog_char_to_assign['District_Num']
 
-        # Check for no bad values being assigned to persons in the dataframe:
-        assert (not pd.isnull(df['region_of_residence']).any())
-        assert (not pd.isnull(df['district_of_residence']).any())
-
-        # Update other age properties
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -203,11 +192,10 @@ class Demography(Module):
             'cause_of_death': np.nan,
             'sex': 'M' if rng.random_sample() < fraction_of_births_male else 'F',
             'mother_id': mother_id,
+            'district_num_of_residence': df.at[mother_id, 'district_num_of_residence'],
             'age_exact_years': 0.0,
             'age_years': 0,
-            'age_range': self.AGE_RANGE_LOOKUP[0],
-            'region_of_residence': df.at[mother_id, 'region_of_residence'],
-            'district_of_residence': df.at[mother_id, 'district_of_residence']
+            'age_range': self.AGE_RANGE_LOOKUP[0]
         }
 
         df.loc[child_id, child.keys()] = child.values()

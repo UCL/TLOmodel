@@ -27,6 +27,7 @@ def simulation():
 def test_run(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
+    assert set(['Demography']) == set(simulation.population.props['cause_of_death'].cat.categories)
 
 
 def test_dypes(simulation):
@@ -42,6 +43,43 @@ def test_mothers_female(simulation):
     mothers = df.loc[df.mother_id >= 0, 'mother_id']
     is_female = mothers.apply(lambda mother_id: df.at[mother_id, 'sex'] == 'F')
     assert is_female.all()
+
+
+def test_storage_of_module_name_that_causes_death():
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+        def read_parameters(self, data_folder):
+            pass
+        def initialise_population(self, population):
+            pass
+        def initialise_simulation(self, sim):
+            pass
+
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+        DummyModule()
+    )
+    sim.make_initial_population(n=20)
+    df = sim.population.props
+    orig = df.dtypes
+    assert type(orig['cause_of_death']) == pd.CategoricalDtype
+    assert set(['Demography', 'DummyModule']) == set(df['cause_of_death'].cat.categories)
+
+    # Cause a person to die by the DummyModule
+    person_id = 0
+    sim.modules['Demography'].do_death(
+        individual_id=person_id,
+        originating_module=sim.modules['DummyModule'],
+        cause='a_cause'
+    )
+
+    person = df.loc[person_id]
+    assert not person.is_alive
+    assert person.cause_of_death == 'DummyModule'
+    assert (df.dtypes == orig).all()
 
 
 def test_py_calc(simulation):
@@ -180,40 +218,6 @@ def test_py_calc_w_mask(simulation):
     df_py = calc_py_lived_in_last_year(delta=one_year, mask=mask)
     np.testing.assert_almost_equal(1.0, df_py['M'][19])
 
-def test_storage_of_module_name_that_causes_death():
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-
-    class DummyModule(Module):
-        METADATA = {Metadata.DISEASE_MODULE}
-        def read_parameters(self, data_folder):
-            pass
-        def initialise_population(self, population):
-            pass
-        def initialise_simulation(self, sim):
-            pass
-
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
-    sim.register(
-        demography.Demography(resourcefilepath=rfp),
-        DummyModule()
-    )
-    sim.make_initial_population(n=20)
-    df = sim.population.props
-    orig = df.dtypes
-    assert type(orig['cause_of_death']) == pd.CategoricalDtype
-
-    # Cause a person to die by the DummyModule
-    person_id = 0
-    sim.modules['Demography'].do_death(
-        individual_id=person_id,
-        originating_module=sim.modules['DummyModule'],
-        cause='a_cause'
-    )
-
-    person = df.loc[person_id]
-    assert not person.is_alive
-    assert person.cause_of_death == 'DummyModule'
-    assert (df.dtypes == orig).all()
 
 if __name__ == '__main__':
     t0 = time.time()
