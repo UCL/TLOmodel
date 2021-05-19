@@ -28,7 +28,7 @@ class BedDays(Module):
 
     PARAMETERS = {
         'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
-        'days_until_last_day_of_bed_tracker': Parameter(Types.INT, "Number of days to last day of bed_tracker")
+        'days_until_last_day_of_bed_tracker': Parameter(Types.INT, "Number of days to the last day of bed_tracker")
     }
 
     PROPERTIES = {
