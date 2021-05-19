@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tlo import Date, Simulation
-from tlo.methods import demography
+from tlo import Date, Simulation, Module
+from tlo.methods import demography, mockitis, Metadata
 from tlo.methods.demography import AgeUpdateEvent
 
 start_date = Date(2010, 1, 1)
@@ -180,6 +180,40 @@ def test_py_calc_w_mask(simulation):
     df_py = calc_py_lived_in_last_year(delta=one_year, mask=mask)
     np.testing.assert_almost_equal(1.0, df_py['M'][19])
 
+def test_storage_of_module_name_that_causes_death():
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+        def read_parameters(self, data_folder):
+            pass
+        def initialise_population(self, population):
+            pass
+        def initialise_simulation(self, sim):
+            pass
+
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+        DummyModule()
+    )
+    sim.make_initial_population(n=20)
+    df = sim.population.props
+    orig = df.dtypes
+    assert type(orig['cause_of_death']) == pd.CategoricalDtype
+
+    # Cause a person to die by the DummyModule
+    person_id = 0
+    sim.modules['Demography'].do_death(
+        individual_id=person_id,
+        originating_module=sim.modules['DummyModule'],
+        cause='a_cause'
+    )
+
+    person = df.loc[person_id]
+    assert not person.is_alive
+    assert person.cause_of_death == 'DummyModule'
+    assert (df.dtypes == orig).all()
 
 if __name__ == '__main__':
     t0 = time.time()

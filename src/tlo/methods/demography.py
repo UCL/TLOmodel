@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
+from tlo.methods import Metadata
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.util import create_age_range_lookup
@@ -59,7 +59,6 @@ class Demography(Module):
         'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
         'date_of_birth': Property(Types.DATE, 'Date of birth of this individual'),
         'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
-        'cause_of_death': Property(Types.STRING, 'Cause of death of this individual, as entered to the logger'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
         # Age calculation is handled by demography module
@@ -96,6 +95,25 @@ class Demography(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
         )
 
+    def pre_initialise_population(self):
+        """Add another property (module that has caused the death) - this could not be defined until this point as
+         it is a categorical variable and all categories are not known until after all modules have been registered."""
+
+        # Find all the disease modules;
+        disease_module_names = [
+            m.name for m in self.sim.modules.values() if Metadata.DISEASE_MODULE in m.METADATA
+        ]
+
+        for m in self.sim.modules.values():
+            print(m.name)
+            print(m.METADATA)
+
+        self.PROPERTIES['cause_of_death'] = Property(
+            Types.CATEGORICAL,
+            'The name of the module that caused of death of this individual',
+            categories=disease_module_names
+        )
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         This method is called by the simulation when creating the initial population, and is
@@ -129,7 +147,7 @@ class Demography(Module):
         df.is_alive.values[:] = True
         df['date_of_birth'] = demog_char_to_assign['date_of_birth']
         df['date_of_death'] = pd.NaT
-        df['cause_of_death'] = ''
+        df['cause_of_death'].values[:] = np.nan
         df['sex'].values[:] = demog_char_to_assign['Sex']
         df.loc[df.is_alive, 'mother_id'] = -1
         df.loc[df.is_alive, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
@@ -182,7 +200,7 @@ class Demography(Module):
             'is_alive': True,
             'date_of_birth': self.sim.date,
             'date_of_death': pd.NaT,
-            'cause_of_death': '',
+            'cause_of_death': np.nan,
             'sex': 'M' if rng.random_sample() < fraction_of_births_male else 'F',
             'mother_id': mother_id,
             'age_exact_years': 0.0,
@@ -212,7 +230,8 @@ class Demography(Module):
             return
 
         # Register the death:
-        df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = (False, self.sim.date, cause)
+        df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = \
+            (False, self.sim.date, originating_module.name)
 
         # Log the death:
         logger.info(
