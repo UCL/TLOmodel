@@ -8,7 +8,6 @@ from typing import Any, Callable, Dict, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from pandas.core.computation.parsing import clean_column_name
-from pandas.core.dtypes.generic import ABCSeries
 
 from tlo import logging
 
@@ -125,11 +124,11 @@ class LinearModelType(Enum):
 class LinearModel(object):
 
     def __init__(
-            self,
-            lm_type: LinearModelType,
-            intercept: Union[float, int],
-            *predictors: Predictor
-        ):
+        self,
+        lm_type: LinearModelType,
+        intercept: Union[float, int],
+        *predictors: Predictor
+    ):
         """A linear model has an intercept and zero or more ``Predictor`` variables.
 
         :param lm_type: Model type to use.
@@ -254,7 +253,7 @@ class LinearModel(object):
                             # first condition any other conditions will be ignored as
                             # this condition matches all
                             predictor_str = f"{value}"
-                            any_prev_conds = f"True"
+                            any_prev_conds = "True"
                             has_catch_all_condition = True
                             break
                         else:
@@ -297,7 +296,6 @@ class LinearModel(object):
             self._model_string = " + ".join(predictor_strings)
         else:
             self._model_string = " * ".join(predictor_strings)
-
 
     def _get_column_resolvers(
         self,
