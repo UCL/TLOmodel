@@ -1,6 +1,8 @@
 """Progress bar for visualising progress of simulation runs."""
 
 import html
+import os
+import platform
 import sys
 from timeit import default_timer as timer
 from typing import Dict, Optional
@@ -29,6 +31,19 @@ def _in_zmq_interactive_shell():
                 return False
         except NameError:
             return False
+
+
+def _in_terminal_with_ansi_support(io=None):
+    """Check if running in terminal with support for ANSI escape characters.
+
+    Based on https://gist.github.com/ssbarnea/1316877
+    """
+    if io is None:
+        io = sys.stdout
+    return (
+        (hasattr(io, "isatty") and io.isatty() and platform.system() != 'Windows')
+        or ('TERM' in os.environ and os.environ['TERM']=='ANSI')
+    )
 
 
 def _create_display(obj):
