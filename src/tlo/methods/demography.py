@@ -215,7 +215,7 @@ class Demography(Module):
         df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = (False, self.sim.date, cause)
 
         # Log the death:
-        if 'Contraception' or 'SimplifiedBirths' in self.sim.modules.keys():
+        if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
             logger.info(
                 key='death',
                 data={'age': person['age_years'],
