@@ -742,6 +742,36 @@ class Tb(Module):
         return drugs_available
 
     def clinical_monitoring(self, person_id):
+        """
+        schedule appointments for repeat clinical monitoring events
+        treatment given using DOTS strategy, this can be health worker/guardian/community member
+        therefore no HSI event for DOTS
+
+        :param person_id:
+        :return:
+        """
+        df = self.sim.population.props
+        p = self.parameters
+
+        # if strain is ds:
+        if df.at[person_id, 'tb_strain'] == 'ds':
+
+        clinical_fup = p['followup_times'].loc['ds_clinical_monitor']
+
+        # if strain is ds and person previously treated:
+        clinical_fup = p['followup_times'].loc['ds_retreatment_clinical']
+
+        # if strain is mdr:
+        clinical_fup = p['followup_times'].loc['mdr_clinical']
+
+        for appt in len(clinical_fup):
+            # schedule a clinical check-up appointment
+            date_appt = self.sim.date + \
+                               pd.DateOffset(months=clinical_fup[appt])
+            self.sim.schedule_event(
+                HSI_Tb_FollowUp(self, person_id), date_appt
+            )
+
         pass
 
     def end_treatment(self, person_id):
@@ -1080,7 +1110,6 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.progression_to_active(population)
 
     def latent_transmission(self, strain):
-        # todo this is within-district transmission only
         # assume while on treatment, not infectious
         # consider relative infectivity of smear positive/negative and pulmonary / extrapulmonary
 
