@@ -322,13 +322,14 @@ class LinearModel(object):
                 cleaned_name = clean_column_name(name)
                 if (
                     isinstance(col.dtype, pd.CategoricalDtype)
-                    and col.dtype.categories.dtype == "int"
+                    and np.issubdtype(col.dtype.categories.dtype, np.integer)
                 ):
                     # `pandas.eval` raises an error when using boolean
                     # operations on series with a categorical dtype with integer
                     # categories therefore if any such columns are present we
-                    # convert to integer type
-                    column_resolvers[cleaned_name] = col.astype("int")
+                    # convert to the corresponding integer type
+                    dtype = col.dtype.categories.dtype
+                    column_resolvers[cleaned_name] = col.astype(dtype)
                 else:
                     column_resolvers[cleaned_name] = col
         for name, value in external_variables.items():
