@@ -81,6 +81,8 @@ class Demography(Module):
         'district_num_to_region_name': Parameter(Types.DICT, 'Mapping from district_num to region name'),
         'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec mortality rates from WPP'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
+        'gbd_data': Parameter(Types.DATA_FRAME,
+                              'Data from GBD, including deaths and dalys by cause, age, sex and year'),
         'gbd_causes_of_death': Parameter(Types.LIST, 'List of the strings of causes of death defined in the GBD data')
     }
 
@@ -133,11 +135,15 @@ class Demography(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
         )
 
-        # GBD causes of death
+        # GBD causes of death todo - this might not be needed
         self.parameters['gbd_causes_of_death'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv'
         )['cause_name'].unique().tolist()
 
+        # GBD causes of death
+        self.parameters['gbd_data'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv'
+        )
 
 
     def pre_initialise_population(self):
@@ -379,17 +385,17 @@ class Demography(Module):
             lookup[label]['tlo_causes'].add(tlo_string)
             for gbd_cause in list_of_gbd_causes: lookup[label]['gbd_causes'].add(gbd_cause)
 
-        # 2) Create the catch-all label, 'Other'
-        all_gbd_causes_mapped = []
-        for v in lookup.values():
-            all_gbd_causes_mapped.extend(v['gbd_causes'])
-
-        gbd_causes_not_assigned = set(self.parameters['gbd_causes_of_death']) - set(all_gbd_causes_mapped)
-
-        lookup['Other'] = {
-            'gbd_causes': gbd_causes_not_assigned,
-            'tlo_causes': set(['Other'])
-        }
+        # # 2) Create the catch-all label, 'Other' todo - won't need this if OtherDeathPoll has registerd causes of death
+        # all_gbd_causes_mapped = []
+        # for v in lookup.values():
+        #     all_gbd_causes_mapped.extend(v['gbd_causes'])
+        #
+        # gbd_causes_not_assigned = set(self.parameters['gbd_causes_of_death']) - set(all_gbd_causes_mapped)
+        #
+        # lookup['Other'] = {
+        #     'gbd_causes': gbd_causes_not_assigned,
+        #     'tlo_causes': set(['Other'])
+        # }
 
         # 3) Create dicts for mapping (gbd_cause --> label) and (tlo_cause --> label)
         lookup_df = pd.DataFrame.from_dict(lookup, orient='index').applymap(lambda x: list(x))
@@ -488,17 +494,57 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
     """
-    This event looks across each person in the population to see if they should die.
-    During development this will be applying WPP all-cause death rates...
-    ... But once we have diseases causing their own deaths, it will become the mortality schedule
-    ... from all cases other than those explicitly modelled
+    This event looks across each person in the population to see if they should die of a cause that is _not_ being
+    modelled explicitly by a disease module.
+    It does this by computing the GBD death rates that are implied by all causes of death other than those that are
+    covered by the cause of death that are declared by the disease module that are registerd in this simulation.
     """
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
+        self.mort_risk_per_poll = self.compute_other_death_rates()
+
+    def compute_other_death_rates(self):
+        """Compute the death-rates to use (that exclude causes of death represented by disease module).
+        Adjust the rates of death so that it is a risk of death per the occurrence of the polling event"""
+
+        # 1) Find the gbd_causes that are included:
+        all_gbd_causes_mapped = []
+        for v in self.module.causes_of_death.values():
+            all_gbd_causes_mapped.extend(v.gbd_causes)
+
+        # 2) Find gbd_causes that are not included (todo - consider if this is needed)
+        gbd_causes_not_assigned_by_disease_modules = set(self.module.parameters['gbd_causes_of_death']) - set(all_gbd_causes_mapped)
+
+        # 3) Register that the OtherDeathPoll will cover these causes of death (todo - confirm ordering of this step)
+        # {'Other': CauseOfDeath(gbd_causes=gbd_causes_not_assigned_by_disease_modules, label='Other')}
+
+        # 4) Compute death rates for the simulation that do not included these causes of death
+        # todo - with updates to this file, processing may be a little different
+        gbd = self.module.parameters['gbd_data']
+        gbd_filt = gbd.loc[(gbd.measure_name =='Deaths') & ~(gbd.cause_name.isin(all_gbd_causes_mapped)),
+                      ['Sex', 'Age_Grp', 'Year', 'val']]
+
+
+        # 5) Align Age_Grp index and confirm that any person above age of MAX_AGE will die immidiateity
+
+
+        # 6) Produce pd.Series with death rates with multi-index (Sex, Age_Grp, Year) covering all Years of simulation
+        gbd_death_rate_filt = gbd_filt.groupby(by=['Sex', 'Age_Grp', 'Year'])['val'].sum()
+
+        # todo - gbd data is not a "death rate"
+
+
+        # 7) Adjust so that the rate is a risk of death per poll
+        dur_in_years_between_polls = np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y')
+        prob_of_dying_before_next_poll = 1.0 - np.exp(-gbd_death_rate_filt * dur_in_years_between_polls)
+
+        return prob_of_dying_before_next_poll
 
     def apply(self, population):
         logger.debug(key='death_poll_start', data='Checking to see if anyone should die...')
+
+        # todo - this will be edited!
 
         # Get shortcut to main dataframe
         df = population.props

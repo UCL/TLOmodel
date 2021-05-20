@@ -55,11 +55,16 @@ class Ncds(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'diabetes': CauseOfDeath(gbd_causes='Diabetes mellitus', label='Diabetes'),
-        'chronic_ischemic_hd': CauseOfDeath(gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
-        'heart_attack': CauseOfDeath(gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
-        'stroke': CauseOfDeath(gbd_causes='Stroke', label='Stroke'),
-        'chronic_kidney_disease': CauseOfDeath(gbd_causes='Chronic kidney disease', label='Kidney Disease')
+        'diabetes': CauseOfDeath(
+            gbd_causes='Diabetes mellitus', label='Diabetes'),
+        'chronic_ischemic_hd': CauseOfDeath(
+            gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
+        'heart_attack': CauseOfDeath(
+            gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
+        'stroke': CauseOfDeath(
+            gbd_causes='Stroke', label='Stroke'),
+        'chronic_kidney_disease': CauseOfDeath(
+            gbd_causes='Chronic kidney disease', label='Kidney Disease')
     }
 
     # create separate dicts for params for conditions and events

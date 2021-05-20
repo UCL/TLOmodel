@@ -9,7 +9,7 @@ import pytest
 from tlo import Date, Simulation, Module
 from tlo.methods import demography, mockitis, Metadata, hiv, diarrhoea, symptommanager, enhanced_lifestyle, malaria, \
     ncds, oesophagealcancer, labour, newborn_outcomes, pregnancy_supervisor, care_of_women_during_pregnancy, \
-    contraception, postnatal_supervisor, healthsystem
+    contraception, postnatal_supervisor, healthsystem, depression, bladder_cancer
 from tlo.methods.demography import AgeUpdateEvent, CauseOfDeath
 
 start_date = Date(2010, 1, 1)
@@ -96,6 +96,8 @@ def test_cause_of_death_being_registered():
         enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
         symptommanager.SymptomManager(resourcefilepath=rfp),
         healthsystem.HealthSystem(resourcefilepath=rfp, disable_and_reject_all=True),
+        bladder_cancer.BladderCancer(resourcefilepath=rfp),
+        depression.Depression(resourcefilepath=rfp),
         diarrhoea.Diarrhoea(resourcefilepath=rfp),
         hiv.Hiv(resourcefilepath=rfp),
         malaria.Malaria(resourcefilepath=rfp),
@@ -109,7 +111,7 @@ def test_cause_of_death_being_registered():
         newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
     )
     sim.make_initial_population(n=20)
-    sim.simulate(end_date=Date(2010, 1, 1))
+    sim.simulate(end_date=Date(2010, 1, 2))
 
 
 def test_py_calc(simulation):
