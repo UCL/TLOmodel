@@ -202,9 +202,10 @@ class CareOfWomenDuringPregnancy(Module):
     }
 
     def read_parameters(self, data_folder):
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
-                            sheet_name='parameter_values')
-        self.load_parameters_from_dataframe(dfd)
+
+        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
+                                            sheet_name=None)
+        self.load_parameters_from_dataframe(parameter_dataframe['parameter_values_2010'])
 
     def initialise_population(self, population):
 

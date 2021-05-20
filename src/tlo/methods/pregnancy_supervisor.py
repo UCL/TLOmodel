@@ -368,9 +368,10 @@ class PregnancySupervisor(Module):
     def read_parameters(self, data_folder):
 
         params = self.parameters
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
-                            sheet_name='parameter_values')
-        self.load_parameters_from_dataframe(dfd)
+
+        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
+                                            sheet_name=None)
+        self.load_parameters_from_dataframe(parameter_dataframe['parameter_values_2010'])
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
         # Currently this module calculates and reports all DALY weights from all maternal modules
@@ -1535,6 +1536,7 @@ class PregnancySupervisor(Module):
         # We turn the 'delete_mni' key to true- so after the next daly poll this womans entry is deleted
         for person in women.index:
             mni[person]['delete_mni'] = True
+            logger.info(key='stillbirth', data={'mother': women})
 
         # Call functions across the modules to ensure properties are rest
         self.sim.modules['Labour'].reset_due_date(
@@ -1549,6 +1551,7 @@ class PregnancySupervisor(Module):
         if not women.empty:
             logger.debug(key='message', data=f'The following women have have experienced an antepartum'
                                              f' stillbirth,{women}')
+
 
     def update_variables_post_still_birth_for_individual(self, individual_id):
         """
@@ -1567,6 +1570,7 @@ class PregnancySupervisor(Module):
         df.at[individual_id, 'ps_prev_stillbirth'] = True
         df.at[individual_id, 'is_pregnant'] = False
         mni[individual_id]['delete_mni'] = True
+        logger.info(key='stillbirth', data={'mother': individual_id})
 
         self.sim.modules['Labour'].reset_due_date(
             ind_or_df='individual', id_or_index=individual_id, new_due_date=pd.NaT)
@@ -2168,8 +2172,10 @@ class ParameterUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props
 
-        # todo, shouldnt repeat
-        # todo dont really know how to make this work correctly?
+        parameter_dataframe = pd.read_excel(Path(self.module.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
+                                            sheet_name=None)
+        self.module.load_parameters_from_dataframe(parameter_dataframe['parameter_values_2015'])
+        # todo this is wrong...
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
