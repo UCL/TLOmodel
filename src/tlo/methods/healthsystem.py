@@ -11,6 +11,7 @@ Todo:   - speed up
 import heapq as hp
 import inspect
 from pathlib import Path
+from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -23,6 +24,12 @@ from tlo.methods.dxmanager import DxManager
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+class FacilityInfo(NamedTuple):
+    """Information about a specific health facility."""
+    id: int
+    name: str
 
 
 class HealthSystem(Module):
@@ -54,7 +61,7 @@ class HealthSystem(Module):
         ),
         'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
         'Facilities_For_Each_District': Parameter(
-            Types.DATA_FRAME,
+            Types.DICT,
             'Mapping between a district and all of the health facilities to which its \
                       population have access.',
         ),
@@ -171,9 +178,28 @@ class HealthSystem(Module):
         mfl = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Master_Facilities_List.csv')
         self.parameters['Master_Facilities_List'] = mfl.iloc[:, 1:]  # get rid of extra column
 
-        self.parameters['Facilities_For_Each_District'] = pd.read_csv(
+        facilities_per_district_data = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Facilities_For_Each_District.csv'
         )
+        districts = set(
+            facilities_per_district_data['District'].unique()
+        )
+        levels = set(
+            facilities_per_district_data['Facility_Level'].unique()
+        )
+        # Check that levels are consecutive integers starting from 0
+        assert levels == set(range(len(levels)))
+        self._facility_levels = levels
+        facilities_per_district_dict = {
+            district: [None] * len(levels) for district in districts
+        }
+        for _, facility in facilities_per_district_data.iterrows():
+            facilities_per_district_dict[
+                facility["District"]
+            ][
+                facility["Facility_Level"]
+            ] = FacilityInfo(facility["Facility_ID"], facility["Facility_Name"])
+        self.parameters['Facilities_For_Each_District'] = facilities_per_district_dict
 
         caps = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv')
         self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
@@ -256,14 +282,19 @@ class HealthSystem(Module):
 
         # Check that each person is being associated with a facility of each type
         pop = self.sim.population.props
-        fac_per_district = self.parameters['Facilities_For_Each_District']
         mfl = self.parameters['Master_Facilities_List']
         self.Facility_Levels = pd.unique(mfl['Facility_Level'])
 
         for person_id in pop.index[pop.is_alive]:
             my_district = pop.at[person_id, 'district_of_residence']
-            my_health_facilities = fac_per_district.loc[fac_per_district['District'] == my_district]
-            my_health_facility_level = pd.unique(my_health_facilities.Facility_Level)
+            my_health_facilities = self.parameters[
+                "Facilities_For_Each_District"
+            ][my_district]
+            my_health_facility_level = [
+                level
+                for level, facility_info in enumerate(my_health_facilities)
+                if facility_info is not None
+            ]
             assert len(my_health_facilities) == len(self.Facility_Levels)
             assert set(my_health_facility_level) == set(self.Facility_Levels)
 
@@ -367,9 +398,7 @@ class HealthSystem(Module):
             # (Integer specificying the facility level at which HSI_Event must occur)
             assert 'ACCEPTED_FACILITY_LEVEL' in dir(hsi_event)
             assert type(hsi_event.ACCEPTED_FACILITY_LEVEL) is int
-            assert hsi_event.ACCEPTED_FACILITY_LEVEL in list(
-                pd.unique(self.parameters['Facilities_For_Each_District']['Facility_Level'])
-            )
+            assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels
 
             assert 'BEDDAYS_FOOTPRINT' in dir(hsi_event)
             self.check_beddays_footrpint_format(hsi_event.BEDDAYS_FOOTPRINT)
@@ -660,29 +689,16 @@ class HealthSystem(Module):
         """
         raise Exception('Do not use get_prob_seek_care().')
 
-    def get_facility_id(self, hsi_event):
-        """Helper function to find the facility_id (the integer value) at which an HSI event will take place"""
-        # Gather useful information
-
-        df = self.sim.population.props
-        fac_per_district = self.parameters['Facilities_For_Each_District']
-
+    def get_facility_info(self, hsi_event) -> FacilityInfo:
+        """Helper function to find the facility at which an HSI event will take place"""
         # Gather information about the HSI event
-        the_person_id = hsi_event.target
-        the_district = df.at[the_person_id, 'district_of_residence']
+        the_district = self.sim.population.props.at[
+            hsi_event.target, 'district_of_residence']
+        the_level = hsi_event.ACCEPTED_FACILITY_LEVEL
 
-        # Get the (one) health_facility available to this person (based on their district), which is accepted by the
-        # hsi_event.ACCEPTED_FACILITY_LEVEL:
-        the_facility_info = fac_per_district.loc[
-            (fac_per_district['District'] == the_district)
-            & (fac_per_district['Facility_Level'] == hsi_event.ACCEPTED_FACILITY_LEVEL),
-            ['Facility_ID', 'Facility_Name'],
-        ].iloc[0]
-
-        the_facility_id = the_facility_info.Facility_ID
-        the_facility_name = the_facility_info.Facility_Name
-
-        return the_facility_id, the_facility_name
+        # Return the (one) health_facility available to this person (based on their
+        # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL
+        return self.parameters["Facilities_For_Each_District"][the_district][the_level]
 
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
@@ -713,7 +729,7 @@ class HealthSystem(Module):
 
         # Get the (one) health_facility available to this person (based on their district), which is accepted by the
         # hsi_event.ACCEPTED_FACILITY_LEVEL:
-        the_facility_id, the_facility_name = self.get_facility_id(hsi_event)
+        the_facility = self.get_facility_info(hsi_event)
 
         # Transform the treatment footprint into a demand for time for officers of each type, for this
         # facility level (it varies by facility level)
@@ -731,7 +747,7 @@ class HealthSystem(Module):
 
         # Using f string or format method throws and error when df_appt_footprint is empty so hybrid used
         df_appt_footprint.set_index(
-            f'FacilityID_{the_facility_id}_Officer_' + df_appt_footprint['Officer_Type_Code'].astype(str), inplace=True
+            f'FacilityID_{the_facility.id}_Officer_' + df_appt_footprint['Officer_Type_Code'].astype(str), inplace=True
         )
 
         # Create Series of summed required time for each officer type
