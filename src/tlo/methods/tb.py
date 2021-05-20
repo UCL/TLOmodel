@@ -470,16 +470,12 @@ class Tb(Module):
 
         # linear model for relative risk of active tb infection
         # intercept= prog_active
-        self.lm['active_tb'] = LinearModel.multiplicative(
-            Predictor('va_bcg').when(True, p['rr_tb_bcg']),
-        )
+
         # adults progressing to active disease
-        # baseline risk is overall progression rate, scaled by RR
-        # duration of protection from ipt is one year from end of treatment,
-        # currently assume ipt only protects whilst person is on drug
         self.lm['active_tb'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prog_active"],
+            Predictor('va_bcg').when(True, p['rr_tb_bcg']),
             Predictor('hv_inf').when(True, p['rr_tb_hiv']),
             Predictor('sy_aids_symptoms').when(True, p['rr_tb_aids']),
             Predictor('hv_art').when("on_VL_suppressed", p['rr_tb_art_adult']),
@@ -488,18 +484,17 @@ class Tb(Module):
             Predictor('li_ex_alc').when(True, p['rr_tb_alcohol']),
             Predictor('li_tob').when(True, p['rr_tb_smoking']),
             Predictor().when(
-                'df.tb_on_ipt & ~df.hv_inf', p['rr_ipt_adult']),  # ipt, hiv-
+                '(tb_on_ipt == True) & (hv_inf == False)', p['rr_ipt_adult']),  # ipt, hiv-
             Predictor().when(
-                'df.tb_on_ipt & df.hv_inf & (df.hv_art == "on_VL_suppressed")',
+                '(tb_on_ipt == True) & (hv_inf == True) & (hv_art == "on_VL_suppressed")',
                 p['rr_ipt_art_adult']),  # ipt, hiv+ on ART (suppressed)
             Predictor().when(
-                'df.tb_on_ipt & df.hv_inf & (df.hv_art != "on_VL_suppressed")',
+                '(tb_on_ipt == True) & (hv_inf == True) & (hv_art != "on_VL_suppressed")',
                 p['rr_ipt_adult_hiv']),  # ipt, hiv+ not on ART (or on ART and not suppressed)
 
         )
 
         # children progressing to active disease
-        # set intercept by age and include RR
         self.lm['active_tb_child'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1,
@@ -513,12 +508,12 @@ class Tb(Module):
                 p['rr_tb_bcg']),
             Predictor('hv_art').when("on_VL_suppressed", p['rr_tb_art_child']),
             Predictor().when(
-                'df.tb_on_ipt & ~df.hv_inf', p['rr_ipt_child']),  # ipt, hiv-
+                '(tb_on_ipt) & (hv_inf == False)', p['rr_ipt_child']),  # ipt, hiv-
             Predictor().when(
-                'df.tb_on_ipt & df.hv_inf & (df.hv_art == "on_VL_suppressed")',
+                '(tb_on_ipt == True) & (hv_inf == True) & (hv_art == "on_VL_suppressed")',
                 p['rr_ipt_art_child']),  # ipt, hiv+ on ART (suppressed)
             Predictor().when(
-                'df.tb_on_ipt & df.hv_inf & (df.hv_art != "on_VL_suppressed")',
+                '(tb_on_ipt == True) & (hv_inf == True) & (hv_art != "on_VL_suppressed")',
                 p['rr_ipt_child_hiv']),  # ipt, hiv+ not on ART (or on ART and not suppressed)
         )
 
@@ -555,72 +550,147 @@ class Tb(Module):
 
             df.loc[idx_new_latent_mdr, 'tb_strain'] = 'mdr'
 
-    def baseline_active(self, population):
-        """
-        1) sample from the baseline population to assign active infections by district
-        2) subset some active infections to be mdr
-        3) schedule onset of active disease randomly across year
-        """
+    # def baseline_active(self, population):
+    #     """
+    #     1) sample from the baseline population to assign active infections by district
+    #     2) subset some active infections to be mdr
+    #     3) schedule onset of active disease randomly across year
+    #     """
+    #
+    #     df = population.props
+    #     now = self.sim.date
+    #     p = self.parameters
+    #     active_tb_data = p['prop_active_2010']
+    #
+    #     # 1) -------- assign active infections to baseline population --------
+    #
+    #     # prob of active case by district
+    #     df_active_prob = df.merge(
+    #         active_tb_data,
+    #         left_on=['district_of_residence'],
+    #         right_on=['district'],
+    #         how='left',
+    #     )
+    #     assert (
+    #         df_active_prob.general_prob.isna().sum() == 0
+    #     )  # check there is a probability for every individual
+    #
+    #     # determine relative risk of active tb for all uninfected
+    #     # currently only uses bcg, could include age/sex in future
+    #     uninfected_idx = df.loc[df.is_alive & (df.tb_inf == 'uninfected')].index
+    #     rel_risk_active_tb = self.lm['active_tb'].predict(df.loc[uninfected_idx])
+    #
+    #     # Rescale the relative risks of active infection so that its average is 1.0 within each district
+    #     # across district prevalence will still equal original value
+    #     # include age/sex here also if needed in future
+    #     df1 = pd.DataFrame({
+    #         'district': df['district_of_residence'],
+    #         'prob_of_active': df_active_prob['general_prob'],
+    #         'rel_prob_by_risk_factor': rel_risk_active_tb
+    #     })
+    #
+    #     df1['mean_of_rel_risk'] = df1.groupby(['district'])[
+    #         'rel_prob_by_risk_factor'].transform('mean')
+    #     df1['scaled_rel_prob_by_risk_factor'] = df1['rel_prob_by_risk_factor'] / df1['mean_of_rel_risk']
+    #     df1['overall_prob_of_active_inf'] = df1['scaled_rel_prob_by_risk_factor'] * df1['prob_of_active']
+    #     new_active = self.rng.random_sample(len(df1['overall_prob_of_active_inf'])) < df1['overall_prob_of_active_inf']
+    #     idx_new_active = new_active[new_active].index
+    #
+    #     # assign tb strain
+    #     df.loc[idx_new_active, 'tb_strain'] = 'ds'
+    #
+    #     # 2) -------- subset some active infections to be mdr --------
+    #     # if some new active cases, sample from them to get new active mdr cases
+    #     idx_new_active_mdr = []
+    #     if len(idx_new_active):
+    #         # sample from active to get mdr-tb cases
+    #         idx_new_active_mdr = df.loc[idx_new_active].sample(frac=p['prop_mdr2010']).index
+    #
+    #         # assign property strain
+    #         df.loc[idx_new_active_mdr, 'tb_strain'] = 'mdr'
+    #
+    #     # 3) -------- schedule active infection onset --------
+    #     # Schedule the date of infection for each new infection:
+    #     # res_list = [*test_list1, *test_list2] how to concatenate these two indices??? union?
+    #
+    #     for idx in [*idx_new_active, *idx_new_active_mdr]:
+    #         date_of_infection = now + pd.DateOffset(days=self.rng.randint(0, 365))
+    #         self.sim.schedule_event(TbActiveEvent(self, idx), date_of_infection)
+
+    def progression_to_active(self, population):
+        # from the new latent infections, select and schedule progression to active disease
 
         df = population.props
+        p = self.module.parameters
+        rng = self.module.rng
         now = self.sim.date
-        p = self.parameters
-        active_tb_data = p['prop_active_2010']
 
-        # 1) -------- assign active infections to baseline population --------
+        # ------------------ fast progressors ------------------ #
+        # adults only
+        fast = df.loc[(df.tb_date_latent == now) &
+                      df.is_alive &
+                      (df.age_years >= 15) &
+                      (rng.rand() < p['prop_fast_progressor'])].index
 
-        # prob of active case by district
-        df_active_prob = df.merge(
-            active_tb_data,
-            left_on=['district_of_residence'],
-            right_on=['district'],
-            how='left',
-        )
-        assert (
-            df_active_prob.general_prob.isna().sum() == 0
-        )  # check there is a probability for every individual
+        fast_hiv = df.loc[(df.tb_date_latent == now) &
+                          df.is_alive &
+                          (df.age_years >= 15) &
+                          df.hv_inf &
+                          (rng.rand() < p['prop_fast_progressor_hiv'])].index
 
-        # determine relative risk of active tb for all uninfected
-        # currently only uses bcg, could include age/sex in future
-        uninfected_idx = df.loc[df.is_alive & (df.tb_inf == 'uninfected')].index
-        rel_risk_active_tb = self.lm['active_tb'].predict(df.loc[uninfected_idx])
+        all_fast = fast + fast_hiv  # todo does this add them or join indices
 
-        # Rescale the relative risks of active infection so that its average is 1.0 within each district
-        # across district prevalence will still equal original value
-        # include age/sex here also if needed in future
-        df1 = pd.DataFrame({
-            'district': df['district_of_residence'],
-            'prob_of_active': df_active_prob['general_prob'],
-            'rel_prob_by_risk_factor': rel_risk_active_tb
-        })
+        for person in all_fast:
 
-        df1['mean_of_rel_risk'] = df1.groupby(['district'])[
-            'rel_prob_by_risk_factor'].transform('mean')
-        df1['scaled_rel_prob_by_risk_factor'] = df1['rel_prob_by_risk_factor'] / df1['mean_of_rel_risk']
-        df1['overall_prob_of_active_inf'] = df1['scaled_rel_prob_by_risk_factor'] * df1['prob_of_active']
-        new_active = self.rng.random_sample(len(df1['overall_prob_of_active_inf'])) < df1['overall_prob_of_active_inf']
-        idx_new_active = new_active[new_active].index
+            self.sim.schedule_event(TbActiveEvent(self, person), now)
 
-        # assign tb strain
-        df.loc[idx_new_active, 'tb_strain'] = 'ds'
+        # ------------------ slow progressors ------------------ #
 
-        # 2) -------- subset some active infections to be mdr --------
-        # if some new active cases, sample from them to get new active mdr cases
-        idx_new_active_mdr = []
-        if len(idx_new_active):
-            # sample from active to get mdr-tb cases
-            idx_new_active_mdr = df.loc[idx_new_active].sample(frac=p['prop_mdr2010']).index
+        # slow progressors, based on risk factors (via a linear model)
+        # select population eligible for progression to active disease
+        # includes all new latent infections
+        # excludes those just fast-tracked above (all_fast)
 
-            # assign property strain
-            df.loc[idx_new_active_mdr, 'tb_strain'] = 'mdr'
+        # adults
+        eligible_adults = df.loc[(df.tb_date_latent == now) &
+                      df.is_alive &
+                      (df.age_years >= 15)]
+        eligible_adults = eligible_adults[-all_fast]  # todo check this removes anyone in all_fast
 
-        # 3) -------- schedule active infection onset --------
-        # Schedule the date of infection for each new infection:
-        # res_list = [*test_list1, *test_list2] how to concatenate these two indices???
+        assert all_fast not in eligible_adults
 
-        for idx in [*idx_new_active, *idx_new_active_mdr]:
-            date_of_infection = now + pd.DateOffset(days=self.rng.randint(0, 365))
-            self.sim.schedule_event(TbActiveEvent(self, idx), date_of_infection)
+        # todo check what this return for non-eligible people - zero or NA? Length?
+        risk_of_progression = self.lm['active_tb'].predict(df.loc[eligible_adults])
+        will_progress = self.rng.random_sample(len(risk_of_progression)) < risk_of_progression
+        idx_will_progress = will_progress[will_progress].index
+
+        # schedule for time now up to 2 years
+        for person_id in idx_will_progress:
+            date_progression = self.sim.date + \
+                        pd.DateOffset(days=self.rng.randint(0, 732))
+            self.sim.schedule_event(
+                TbActiveEvent(self, person_id), date_progression
+            )
+
+        # children
+        eligible_children = df.loc[(df.tb_date_latent == now) &
+                                 df.is_alive &
+                                 (df.age_years < 15)]
+        eligible_children = eligible_children[-all_fast]  # todo check this removes anyone in all_fast
+        assert all_fast not in eligible_children
+
+        # todo check what this return for non-eligible people - zero or NA? Length?
+        risk_of_progression = self.lm['active_tb'].predict(df.loc[eligible_children])
+        will_progress = self.rng.random_sample(len(risk_of_progression)) < risk_of_progression
+        idx_will_progress = will_progress[will_progress].index
+
+        # schedule for time now up to 1 year
+        for person_id in idx_will_progress:
+            date_progression = self.sim.date + \
+                               pd.DateOffset(days=self.rng.randint(0, 365))
+            self.sim.schedule_event(
+                TbActiveEvent(self, person_id), date_progression
+            )
 
     def select_treatment(self, person_id):
         """
@@ -730,7 +800,8 @@ class Tb(Module):
         # ------------------ infection status ------------------ #
 
         self.baseline_latent(population)  # allocate baseline prevalence of latent infections
-        self.baseline_active(population)  # allocate baseline prevalence of active infections
+        # self.baseline_active(population)  # allocate baseline prevalence of active infections
+        self.progression_to_active(population)  # allocate active infections from baseline prevalence
 
     def initialise_simulation(self, sim):
         """
@@ -1006,7 +1077,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         self.latent_transmission(strain='mdr')
 
         # check who should progress from latent to active disease
-        self.progression_to_active(population)
+        self.module.progression_to_active(population)
 
     def latent_transmission(self, strain):
         # todo this is within-district transmission only
@@ -1096,77 +1167,77 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[tb_idx, 'tb_date_latent'] = now
         df.loc[tb_idx, 'tb_strain'] = strain
 
-    def progression_to_active(self, population):
-        # check each month who should move from latent to active disease
-
-        df = population.props
-        p = self.module.parameters
-        rng = self.module.rng
-        now = self.sim.date
-
-        # ------------------ fast progressors ------------------ #
-
-        fast = df.loc[(df.tb_date_latent == now) &
-                      df.is_alive &
-                      (df.age_years < 15) &
-                      (rng.rand() < p['prop_fast_progressor'])].index
-
-        fast_hiv = df.loc[(df.tb_date_latent == now) &
-                          df.is_alive &
-                          (df.age_years < 15) &
-                          df.hv_inf &
-                          (rng.rand() < p['prop_fast_progressor_hiv'])].index
-
-        all_fast = fast + fast_hiv
-
-        for person in all_fast:
-
-            self.sim.schedule_event(TbActiveEvent(self.module, person), now)
-
-        # ------------------ slow progressors ------------------ #
-
-        # slow progressors, based on risk factors (via a linear model)
-        # select population eligible for progression to active disease
-        # includes all new latent infections
-        # excludes those just fast-tracked above (all_fast)
-
-        # adults
-        eligible_adults = df.loc[(df.tb_date_latent == now) &
-                      df.is_alive &
-                      (df.age_years >= 15)]
-        eligible_adults = eligible_adults[-all_fast]  # todo check this removes anyone in all_fast
-
-        # todo check what this return for non-eligible people - zero or NA? Length?
-        risk_of_progression = self.module.lm['active_tb'].predict(df.loc[eligible_adults])
-        will_progress = self.module.rng.random_sample(len(risk_of_progression)) < risk_of_progression
-        idx_will_progress = will_progress[will_progress].index
-
-        # schedule for time now up to 2 years
-        for person_id in idx_will_progress:
-            date_progression = self.sim.date + \
-                        pd.DateOffset(days=self.module.rng.randint(0, 732))
-            self.sim.schedule_event(
-                TbActiveEvent(self.module, person_id), date_progression
-            )
-
-        # children
-        eligible_children = df.loc[(df.tb_date_latent == now) &
-                                 df.is_alive &
-                                 (df.age_years < 15)]
-        eligible_children = eligible_children[-all_fast]  # todo check this removes anyone in all_fast
-
-        # todo check what this return for non-eligible people - zero or NA? Length?
-        risk_of_progression = self.module.lm['active_tb'].predict(df.loc[eligible_children])
-        will_progress = self.module.rng.random_sample(len(risk_of_progression)) < risk_of_progression
-        idx_will_progress = will_progress[will_progress].index
-
-        # schedule for time now up to 1 year
-        for person_id in idx_will_progress:
-            date_progression = self.sim.date + \
-                               pd.DateOffset(days=self.module.rng.randint(0, 365))
-            self.sim.schedule_event(
-                TbActiveEvent(self.module, person_id), date_progression
-            )
+    # def progression_to_active(self, population):
+    #     # from the new latent infections, select and schedule progression to active disease
+    #
+    #     df = population.props
+    #     p = self.module.parameters
+    #     rng = self.module.rng
+    #     now = self.sim.date
+    #
+    #     # ------------------ fast progressors ------------------ #
+    #
+    #     fast = df.loc[(df.tb_date_latent == now) &
+    #                   df.is_alive &
+    #                   (df.age_years < 15) &
+    #                   (rng.rand() < p['prop_fast_progressor'])].index
+    #
+    #     fast_hiv = df.loc[(df.tb_date_latent == now) &
+    #                       df.is_alive &
+    #                       (df.age_years < 15) &
+    #                       df.hv_inf &
+    #                       (rng.rand() < p['prop_fast_progressor_hiv'])].index
+    #
+    #     all_fast = fast + fast_hiv  # todo does this add them or join indices
+    #
+    #     for person in all_fast:
+    #
+    #         self.sim.schedule_event(TbActiveEvent(self.module, person), now)
+    #
+    #     # ------------------ slow progressors ------------------ #
+    #
+    #     # slow progressors, based on risk factors (via a linear model)
+    #     # select population eligible for progression to active disease
+    #     # includes all new latent infections
+    #     # excludes those just fast-tracked above (all_fast)
+    #
+    #     # adults
+    #     eligible_adults = df.loc[(df.tb_date_latent == now) &
+    #                   df.is_alive &
+    #                   (df.age_years >= 15)]
+    #     eligible_adults = eligible_adults[-all_fast]  # todo check this removes anyone in all_fast
+    #
+    #     # todo check what this return for non-eligible people - zero or NA? Length?
+    #     risk_of_progression = self.module.lm['active_tb'].predict(df.loc[eligible_adults])
+    #     will_progress = self.module.rng.random_sample(len(risk_of_progression)) < risk_of_progression
+    #     idx_will_progress = will_progress[will_progress].index
+    #
+    #     # schedule for time now up to 2 years
+    #     for person_id in idx_will_progress:
+    #         date_progression = self.sim.date + \
+    #                     pd.DateOffset(days=self.module.rng.randint(0, 732))
+    #         self.sim.schedule_event(
+    #             TbActiveEvent(self.module, person_id), date_progression
+    #         )
+    #
+    #     # children
+    #     eligible_children = df.loc[(df.tb_date_latent == now) &
+    #                              df.is_alive &
+    #                              (df.age_years < 15)]
+    #     eligible_children = eligible_children[-all_fast]  # todo check this removes anyone in all_fast
+    #
+    #     # todo check what this return for non-eligible people - zero or NA? Length?
+    #     risk_of_progression = self.module.lm['active_tb'].predict(df.loc[eligible_children])
+    #     will_progress = self.module.rng.random_sample(len(risk_of_progression)) < risk_of_progression
+    #     idx_will_progress = will_progress[will_progress].index
+    #
+    #     # schedule for time now up to 1 year
+    #     for person_id in idx_will_progress:
+    #         date_progression = self.sim.date + \
+    #                            pd.DateOffset(days=self.module.rng.randint(0, 365))
+    #         self.sim.schedule_event(
+    #             TbActiveEvent(self.module, person_id), date_progression
+    #         )
 
 
 class TbActiveEvent(Event, IndividualScopeEventMixin):
