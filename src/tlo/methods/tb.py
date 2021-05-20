@@ -753,16 +753,19 @@ class Tb(Module):
         df = self.sim.population.props
         p = self.parameters
 
-        # if strain is ds:
-        if df.at[person_id, 'tb_strain'] == 'ds':
-
+        # default clinical monitoring schedule for first infection ds-tb
         clinical_fup = p['followup_times'].loc['ds_clinical_monitor']
 
-        # if strain is ds and person previously treated:
-        clinical_fup = p['followup_times'].loc['ds_retreatment_clinical']
+        # if previously treated:
+        if df.at[person_id, 'tb_ever_treated'] == 'ds':
 
-        # if strain is mdr:
-        clinical_fup = p['followup_times'].loc['mdr_clinical']
+            # if strain is ds and person previously treated:
+            clinical_fup = p['followup_times'].loc['ds_retreatment_clinical']
+
+        elif df.at[person_id, 'tb_strain'] == 'mdr':
+
+            # if strain is mdr:
+            clinical_fup = p['followup_times'].loc['mdr_clinical']
 
         for appt in len(clinical_fup):
             # schedule a clinical check-up appointment
