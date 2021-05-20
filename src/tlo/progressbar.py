@@ -5,7 +5,7 @@ import os
 import platform
 import sys
 from timeit import default_timer as timer
-from typing import Dict, Optional
+from typing import Dict, Optional, TextIO, Union
 
 try:
     from IPython import get_ipython
@@ -16,7 +16,7 @@ except ImportError:
     IPYTHON_AVAILABLE = False
 
 
-def _in_zmq_interactive_shell():
+def _in_zmq_interactive_shell() -> bool:
     """Check if in interactive ZMQ shell which supports updateable displays"""
     if not IPYTHON_AVAILABLE:
         return False
@@ -33,37 +33,40 @@ def _in_zmq_interactive_shell():
             return False
 
 
-def _in_terminal_with_ansi_support(io=None):
-    """Check if running in terminal with support for ANSI escape characters.
+def _in_shell_with_ansi_support() -> bool:
+    """Check if running in shell with support for ANSI escape characters.
 
     Based on https://gist.github.com/ssbarnea/1316877
     """
-    if io is None:
-        io = sys.stdout
     return (
-        (hasattr(io, "isatty") and io.isatty() and platform.system() != 'Windows')
-        or ('TERM' in os.environ and os.environ['TERM']=='ANSI')
+        (
+            hasattr(sys.stdout, "isatty")
+            and sys.stdout.isatty()
+            and platform.system() != 'Windows'
+        )
+        or os.environ.get('TERM') == "ANSI"
+        or os.environ.get('PYCHARM_HOSTED') == "1"
     )
 
 
 def _create_display(obj):
     """Create an updateable display object.
 
-    Args:
-        obj (object): Initial object to display.
-
-    Returns:
-        Object with `update` method to update displayed content.
+    :param obj: Initial object to display.
+    :return: Object with `update` method to update displayed content.
     """
     if _in_zmq_interactive_shell():
         return ipython_display(obj, display_id=True)
     else:
-        display = FileDisplay()
+        display = (
+            AnsiStreamDisplay() if _in_shell_with_ansi_support()
+            else BasicStreamDisplay()
+        )
         display.update(obj)
         return display
 
 
-def _format_time(total_seconds):
+def _format_time(total_seconds: Union[int, float]) -> str:
     """Format a time interval in seconds as a colon-delimited string [h:]m:s"""
     total_mins, seconds = divmod(int(total_seconds), 60)
     hours, mins = divmod(total_mins, 60)
@@ -73,7 +76,7 @@ def _format_time(total_seconds):
         return f"{mins:02d}:{seconds:02d}"
 
 
-def _format_stat(stat):
+def _format_stat(stat) -> str:
     """Format numeric stat at fixed precision otherwise convert to string."""
     if isinstance(stat, (int, float)):
         return f"{stat:.4g}"
@@ -264,11 +267,11 @@ class ProgressBar:
         self._stats_dict = {}
 
     def update(
-            self,
-            step : int,
-            stats_dict: Optional[Dict] = None,
-            refresh: bool = True
-        ):
+        self,
+        step: int,
+        stats_dict: Optional[Dict] = None,
+        refresh: bool = True
+    ):
         """Update progress bar state.
 
         :param step: New value for step counter.
@@ -307,6 +310,8 @@ class ProgressBar:
         self._active = False
         if self.step != self.n_step:
             self.refresh()
+        if isinstance(self._display, StreamDisplay):
+            self._display.close()
 
     def __str__(self):
         return f"{self.prefix}{self.progress_bar}{self.postfix}"
@@ -342,22 +347,42 @@ class ProgressBar:
         """
 
 
-class FileDisplay:
-    """Use file which supports ANSI escape sequences as an updatable display"""
+class StreamDisplay:
+    """Base class for using I/O streams as an updatable display."""
 
-    def __init__(self, file=None):
+    def __init__(self, io: Optional[TextIO] = None):
         """
-        Args:
-            file (None or File): File object to write updates to. Must support
-                ANSI escape sequences `\\\x1b[2K` (erase in line) and `\\r`
-                (carriage return). Defaults to `sys.stdout` if `None`.
+        :param io: I/O stream to write updates to. Defaults to `sys.stdout` if `None`.
         """
-        self._file = file if file is not None else sys.stdout
+        self._io = io if io is not None else sys.stdout
 
-    def _clear_line(self):
-        self._file.write("\x1b[2K\r")
+    def close(self):
+        self._io.write("\n")
+        self._io.flush()
 
     def update(self, obj):
-        self._clear_line()
-        self._file.write(str(obj))
-        self._file.flush()
+        """Update display with string representation of `obj`."""
+        raise NotImplementedError()
+
+
+class AnsiStreamDisplay(StreamDisplay):
+    """Use I/O stream which supports ANSI escape sequences as an updatable display."""
+
+    def update(self, obj):
+        self._io.write("\x1b[2K\r")
+        self._io.write(str(obj))
+        self._io.flush()
+
+
+class BasicStreamDisplay(StreamDisplay):
+    """Use I/O stream without ANSI escape sequence support as an updatable display."""
+
+    def __init__(self, io: Optional[TextIO] = None):
+        super().__init__(io)
+        self._last_string_length = 0
+
+    def update(self, obj):
+        string = str(obj)
+        self._io.write(f"\r{string: <{self._last_string_length}}")
+        self._last_string_length = len(string)
+        self._io.flush()
