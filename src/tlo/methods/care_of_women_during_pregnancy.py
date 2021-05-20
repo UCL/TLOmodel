@@ -838,11 +838,9 @@ class CareOfWomenDuringPregnancy(Module):
             hsi_event=hsi_event,
             cons_req_as_footprint=consumables_hb_test)
 
-        # If the consumables are available and the HCW will provide the test, the test is given
-        if (outcome_of_request_for_consumables['Item_Code'][item_code_hb_test]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_blood_tube]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_needle]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_gloves]) and (self.rng.random_sample() <
+        # We log all the consumables required above but we only condition the event test happening on the availability
+        # of the test itself
+        if (outcome_of_request_for_consumables['Item_Code'][item_code_hb_test]) and (self.rng.random_sample() <
                                                                                      params['prob_intervention_'
                                                                                             'delivered_poct']):
 
@@ -910,12 +908,11 @@ class CareOfWomenDuringPregnancy(Module):
             hsi_event=hsi_event,
             cons_req_as_footprint=consumables_hep_b_test)
 
-        # If the consumables are available and the HCW will provide the test, the test is delivered
-        if (outcome_of_request_for_consumables['Item_Code'][item_code_hep_test]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_needle]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_gloves]) and (self.rng.random_sample() <
-                                                                                     params['prob_intervention_'
-                                                                                            'delivered_hepb_test']):
+        # We log all the consumables required above but we only condition the event test happening on the availability
+        # of the test itself
+        if (outcome_of_request_for_consumables['Item_Code'][item_code_hep_test]) and (self.rng.random_sample() <
+                                                                                      params['prob_intervention_'
+                                                                                             'delivered_hepb_test']):
             logger.debug(key='msg', data=f'Mother {person_id} has received Hep B testing during ANC')
 
     def syphilis_testing(self, hsi_event):
@@ -947,13 +944,12 @@ class CareOfWomenDuringPregnancy(Module):
             hsi_event=hsi_event,
             cons_req_as_footprint=consumables_syphilis)
 
-        # If the consumables are available and the HCW will provide the test, the test is delivered
-        if (outcome_of_request_for_consumables['Item_Code'][item_code_syphilis_test]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_blood_tube]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_needle]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_gloves]) and (self.rng.random_sample() <
-                                                                                     params['prob_intervention_'
-                                                                                            'delivered_syph_test']):
+        # We log all the consumables required above but we only condition the event test happening on the availability
+        # of the test itself
+        if (outcome_of_request_for_consumables['Item_Code'][item_code_syphilis_test]) and (self.rng.random_sample() <
+                                                                                           params['prob_intervention_'
+                                                                                                  'delivered_syph_'
+                                                                                                  'test']):
             logger.debug(key='msg', data=f'Mother {person_id} has received syphilis testing during ANC')
 
     def hiv_testing(self, hsi_event):
@@ -1042,13 +1038,10 @@ class CareOfWomenDuringPregnancy(Module):
                 hsi_event=hsi_event,
                 cons_req_as_footprint=consumables_gdm_testing)
 
-            # If they are available, the test is conducted
-            if (outcome_of_request_for_consumables['Item_Code'][item_code_glucose_test]) and \
-                (outcome_of_request_for_consumables['Item_Code'][item_code_blood_tube]) and \
-                (outcome_of_request_for_consumables['Item_Code'][item_code_needle]) and \
-                (outcome_of_request_for_consumables['Item_Code'][item_code_gloves]) and (self.rng.random_sample() <
-                                                                                         params['prob_intervention_'
-                                                                                                'delivered_gdm_test']):
+            # We log all the consumables required above but we only condition the event test happening on the
+            # availability of the test itself
+            if outcome_of_request_for_consumables['Item_Code'][item_code_glucose_test] and \
+                (self.rng.random_sample() < params['prob_intervention_delivered_gdm_test']):
 
                 # If the test accurately detects a woman has gestational diabetes the consumables are recorded and she
                 # is referred for treatment
@@ -1240,10 +1233,7 @@ class CareOfWomenDuringPregnancy(Module):
             cons_req_as_footprint=consumables_hb_test)
 
         # Check consumables
-        if (outcome_of_request_for_consumables['Item_Code'][item_code_hb_test]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_blood_tube]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_needle]) and \
-           (outcome_of_request_for_consumables['Item_Code'][item_code_gloves]):
+        if outcome_of_request_for_consumables['Item_Code'][item_code_hb_test]:
 
             # Run dx_test for anaemia...
             # If a woman is not truly anaemic but the FBC returns a result of anaemia, due to tests specificity, we
@@ -1433,9 +1423,8 @@ class CareOfWomenDuringPregnancy(Module):
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=hsi_event, cons_req_as_footprint=consumables_needed_bt)
 
-        # If the consumables are available the intervention is delivered
-        if (outcome_of_request_for_consumables['Item_Code'][item_code_blood]) and \
-           (outcome_of_request_for_consumables['Item_Code'][item_code_giving_set]):
+        # If the blood is available we assume the intervention can be delivered
+        if outcome_of_request_for_consumables['Item_Code'][item_code_blood]:
 
             logger.debug(key='msg', data=f'Mother {individual_id} is receiving an antenatal blood transfusion due '
                                          f'to {cause}')
@@ -1524,11 +1513,8 @@ class CareOfWomenDuringPregnancy(Module):
             hsi_event=hsi_event,
             cons_req_as_footprint=consumables_gest_htn_treatment)
 
-        # If they are available then the woman is started on treatment
-        if (outcome_of_request_for_consumables['Item_Code'][item_code_hydralazine]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_wfi]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_needle]) and \
-           (outcome_of_request_for_consumables['Item_Code'][item_code_gloves]):
+        # If they hydralazine is available we assume the intervention can be delivered
+        if outcome_of_request_for_consumables['Item_Code'][item_code_hydralazine]:
 
             # We assume women treated with antihypertensives would no longer be severely hypertensive- meaning they
             # are not at risk of death from severe gestational hypertension in the PregnancySupervisor event
@@ -1604,10 +1590,8 @@ class CareOfWomenDuringPregnancy(Module):
             hsi_event=hsi_event,
             cons_req_as_footprint=consumables_abx_for_prom)
 
-        if (outcome_of_request_for_consumables['Item_Code'][item_code_benpen]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_wfi]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_needle]) and \
-           (outcome_of_request_for_consumables['Item_Code'][item_code_gloves]):
+        # If the antibiotics are available we assume the intervention can be delivered
+        if outcome_of_request_for_consumables['Item_Code'][item_code_benpen]:
             df.at[individual_id, 'ac_received_abx_for_prom'] = True
             logger.debug(key='msg', data=f'Mother {individual_id} has received antibiotics following admission due to '
                                          f'PROM')
@@ -1646,11 +1630,9 @@ class CareOfWomenDuringPregnancy(Module):
             hsi_event=hsi_event,
             cons_req_as_footprint=consumables_abx_for_chorio)
 
+        # If the antibiotics are available we assume the intervention can be delivered
         if (outcome_of_request_for_consumables['Item_Code'][item_code_benpen]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_genta]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_wfi]) and \
-            (outcome_of_request_for_consumables['Item_Code'][item_code_needle]) and \
-           (outcome_of_request_for_consumables['Item_Code'][item_code_gloves]):
+            (outcome_of_request_for_consumables['Item_Code'][item_code_genta]):
             df.at[individual_id, 'ac_received_abx_for_chorioamnionitis'] = True
             logger.debug(key='msg', data=f'Mother {individual_id} has received antibiotics after being admitted for '
                                          f'chorioamnionitis')

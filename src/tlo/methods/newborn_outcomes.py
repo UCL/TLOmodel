@@ -51,13 +51,6 @@ class NewbornOutcomes(Module):
     }
 
     PARAMETERS = {
-        # BIRTH WEIGHT...
-        'mean_birth_weights': Parameter(
-            Types.LIST, 'list of mean birth weights from gestational age at birth 24-41 weeks'),
-        'standard_deviation_birth_weights': Parameter(
-            Types.LIST, 'list of standard deviations associated with mean birth weights from gestational age at '
-                        'birth 24-41 weeks'),
-
         # CARE SEEKING
         'prob_care_seeking_for_complication': Parameter(
             Types.REAL, 'baseline probability that a mother will seek care for an unwell neonate following delivery'),
@@ -259,9 +252,9 @@ class NewbornOutcomes(Module):
         'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'extremely low birth weight (<1000g), '
                                                                   ' very low birth weight (<1500g), '
                                                                   'low birth weight (<2500g),'
-                                                                  'normal birth weight (>2500g)',
+                                                                  'normal birth weight (>2500g), macrosomia (>4000g)',
                                                categories=['extremely_low_birth_weight', 'very_low_birth_weight',
-                                                           'low_birth_weight', 'normal_birth_weight']),
+                                                           'low_birth_weight', 'normal_birth_weight', 'macrosomia']),
         'nb_size_for_gestational_age': Property(Types.CATEGORICAL, 'size for gestational age categories',
                                                 categories=['small_for_gestational_age', 'average_for_gestational_age',
                                                             'large_for_gestational_age']),
@@ -476,7 +469,7 @@ class NewbornOutcomes(Module):
         steroid_status = nci[person_id]['corticosteroids_given']
         abx_for_prom = nci[person_id]['abx_for_prom_given']
         prom = df.at[mother, 'ps_premature_rupture_of_membranes']
-        # diabetes_mellitus = df.at[mother, 'nc_diabetes']
+        diabetes_mellitus = df.at[mother, 'nc_diabetes']
 
         if nci[person_id]['maternal_gest_diab'] != 'none':
             gest_diab = True
@@ -494,7 +487,6 @@ class NewbornOutcomes(Module):
             obstructed_labour = False
 
         # TODO: define 'hypoxic event'
-        # TODO: a/w diabetes property
 
         # We return a BOOLEAN
         return self.rng.random_sample(size=1) < eq.predict(person,
@@ -505,7 +497,7 @@ class NewbornOutcomes(Module):
                                                            obstructed_labour=obstructed_labour,
                                                            hypoxic_event=False,
                                                            gestational_diabetes=gest_diab,
-                                                           # diabetes_mellitus=diabetes_mellitus
+                                                           diabetes_mellitus=diabetes_mellitus
                                                            )[person_id]
 
     # ========================================= OUTCOME FUNCTIONS  ===================================================
@@ -513,68 +505,6 @@ class NewbornOutcomes(Module):
     # HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant depending on location of delivery. Generally they
     # output an individuals probability of an outcome (complication, disability, death) and make the relevant changes
     # to the data frame
-
-    def set_birth_weight(self, child_id, gestation_at_birth):
-        """
-        This function generates a birth weight for each newborn, drawn randomly from a normal
-        distribution around a mean birth weight for each gestational age in weeks. Babies below the
-        10th percentile for their gestational age are classified as small for gestational age. Other cut offs for birth
-        weight status are evident from the code below
-        :param child_id: child_id
-        :param gestation_at_birth: The gestational age, in weeks, of this newborn at birth
-        """
-        params = self.parameters
-        df = self.sim.population.props
-
-        # Mean birth weights for each gestational age are listed in a parameter starting at 24 weeks
-        # We select the correct mean birth weight from the parameter
-        if gestation_at_birth < 24:
-            mean_birth_weight_list_location = 1
-        else:
-            mean_birth_weight_list_location = int(min(41, gestation_at_birth) - 24)
-
-        standard_deviation = params['standard_deviation_birth_weights'][mean_birth_weight_list_location]
-
-        # We randomly draw this newborns weight from a normal distribution around the mean for their gestation
-        birth_weight = np.random.normal(loc=params['mean_birth_weights'][mean_birth_weight_list_location],
-                                        scale=standard_deviation)
-
-        # Then we calculate the 10th and 90th percentile, these are the case definition for 'small for gestational age'
-        # and 'large for gestational age'
-        small_for_gestational_age_cutoff = scipy.stats.norm.ppf(
-            0.1, loc=params['mean_birth_weights'][mean_birth_weight_list_location], scale=standard_deviation)
-
-        large_for_gestational_age_cutoff = scipy.stats.norm.ppf(
-            0.9, loc=params['mean_birth_weights'][mean_birth_weight_list_location], scale=standard_deviation)
-
-        # Make the appropriate changes to the data frame
-        if birth_weight >= 2500:
-            df.at[child_id, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
-            logger.debug(key='message', data=f'Child {child_id} has been born normal birth weight')
-
-        elif 1500 <= birth_weight < 2500:
-            df.at[child_id, 'nb_low_birth_weight_status'] = 'low_birth_weight'
-            logger.debug(key='message', data=f'Child {child_id} has been born low birth weight')
-
-        elif 1000 <= birth_weight < 1500:
-            df.at[child_id, 'nb_low_birth_weight_status'] = 'very_low_birth_weight'
-            logger.debug(key='message', data=f'Child {child_id} has been born very low birth weight')
-
-        elif birth_weight < 1000:
-            df.at[child_id, 'nb_low_birth_weight_status'] = 'extremely_low_birth_weight'
-            logger.debug(key='message', data=f'Child {child_id} has been born extremely low birth weight')
-
-        if birth_weight < small_for_gestational_age_cutoff:
-            df.at[child_id, 'nb_size_for_gestational_age'] = 'small_for_gestational_age'
-            logger.debug(key='message', data=f'Child {child_id} has been born small for gestational age')
-
-        elif birth_weight > large_for_gestational_age_cutoff:
-            df.at[child_id, 'nb_size_for_gestational_age'] = 'large_for_gestational_age'
-            logger.debug(key='message', data=f'Child {child_id} has been born large for gestational age')
-
-        else:
-            df.at[child_id, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
-            logger.debug(key='message', data=f'Child {child_id} has been born average for gestational age')
 
     def apply_risk_of_congenital_anomaly(self, child_id):
         """
@@ -727,8 +657,8 @@ class NewbornOutcomes(Module):
             df.at[individual_id, 'nb_death_after_birth'] = True
             df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
 
-            # The death is counted by the tracker
-            self.newborn_complication_tracker[f'{complication}_death'] += 1
+            # The death is counted by the tracker # todo: replace
+            # self.newborn_complication_tracker[f'{complication}_death'] += 1
 
             # And we store this 'cause' of death in the nci dictionary
             nci[individual_id]['cause_of_death_after_birth'].append(complication)
@@ -801,6 +731,7 @@ class NewbornOutcomes(Module):
             else:
                 death_date = self.sim.date
 
+            del nci[individual_id]
             self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
                                                                   cause='neonatal'), death_date)
 
@@ -812,8 +743,6 @@ class NewbornOutcomes(Module):
                                                               (mni[mother_id]['twin_count'] == 2)):
                 if mother_id in mni:
                     del mni[mother_id]
-
-        del nci[individual_id]
 
     def set_disability_status(self, individual_id):
         """
@@ -827,45 +756,45 @@ class NewbornOutcomes(Module):
         df = self.sim.population.props
         child = df.loc[individual_id]
 
-        # TODO: add call to postnatal supervisor
-
         logger.debug(key='message', data=f'Child {individual_id} will have now their DALYs calculated following '
                                          f'complications after birth')
 
         choice = self.rng.choice
 
         if nci[individual_id]['ga_at_birth'] < 32:
-            if self.module.rng.random_sample() < params['prob_mild_disability_preterm_<32weeks']:
+            if self.rng.random_sample() < params['prob_mild_disability_preterm_<32weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = choice(['mild_motor_and_cog', 'mild_motor'])
 
-            elif self.module.rng.random_sample() < params['prob_mod_severe_disability_preterm_<32weeks']:
+            elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_<32weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = choice(['moderate_motor', 'severe_motor'])
 
         elif 32 <= nci[individual_id]['ga_at_birth'] < 37:
-            if self.module.rng.random_sample() < params['prob_mild_disability_preterm_32_36weeks']:
+            if self.rng.random_sample() < params['prob_mild_disability_preterm_32_36weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = choice(['mild_motor_and_cog', 'mild_motor'])
 
-            elif self.module.rng.random_sample() < params['prob_mod_severe_disability_preterm_32_36weeks']:
+            elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_32_36weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = choice(['moderate_motor', 'severe_motor'])
 
         if child.nb_encephalopathy != 'none':
-            if self.module.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
+            if self.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
                 df.at[individual_id, 'nb_encephalopathy_disab'] = choice(['mild_motor_and_cog', 'mild_motor'])
 
-            elif self.module.rng.random_sample() < params['prob_mod_severe_impairment_post_enceph']:
+            elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_enceph']:
                 df.at[individual_id, 'nb_encephalopathy_disab'] = choice(['moderate_motor', 'severe_motor'])
 
         # n.b. no data data on sepsis long term outcomes, using encephalopathy data as a proxy for now...
-        if child.nb_early_onset_neonatal_sepsis:
-            if self.module.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
+        if child.nb_early_onset_neonatal_sepsis or nci[individual_id]['sepsis_postnatal']:
+            if self.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
                 df.at[individual_id, 'nb_neonatal_sepsis_disab'] = choice(['mild_motor_and_cog', 'mild_motor'])
 
-            elif self.module.rng.random_sample() < params['prob_mod_severe_impairment_post_enceph']:
+            elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_enceph']:
                 df.at[individual_id, 'nb_neonatal_sepsis_disab'] = choice(['moderate_motor', 'severe_motor'])
 
             # TODO: congenital anomaly disability
             # TODO: IF all of these weights are the same regardless of the cause...which i think they are...then we
             #  should just use one variable? - it can be overridden by a more severe insult
+
+        del nci[individual_id]
 
     # ======================================== HSI INTERVENTION FUNCTIONS =============================================
     # These functions are called by HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant and broadly represent
@@ -917,8 +846,7 @@ class NewbornOutcomes(Module):
             logger.debug(key='message', data='This facility has no tetracycline and therefore was not given')
 
         # This process is repeated for vitamin K
-        if (outcome_of_request_for_consumables['Item_Code'][item_code_vit_k]) and \
-           (outcome_of_request_for_consumables['Item_Code'][item_code_vit_k_syringe]):
+        if outcome_of_request_for_consumables['Item_Code'][item_code_vit_k]:
 
             logger.debug(key='message', data=f'Neonate {person_id} has received vitamin k prophylaxis following'
                                              f' a facility delivery')
@@ -1129,8 +1057,7 @@ class NewbornOutcomes(Module):
                dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event):
 
                 if (outcome_of_request_for_consumables['Item_Code'][item_code_iv_penicillin]) and \
-                    (outcome_of_request_for_consumables['Item_Code'][item_code_iv_gentamicin]) and \
-                   (outcome_of_request_for_consumables['Item_Code'][item_code_giving_set]):
+                   (outcome_of_request_for_consumables['Item_Code'][item_code_iv_gentamicin]):
 
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
                     self.newborn_complication_tracker['sep_treatment'] += 1
@@ -1285,20 +1212,33 @@ class NewbornOutcomes(Module):
                              'delivery_setting': mni[mother_id]['delivery_setting'],
                              'clean_birth_practices': mni[mother_id]['clean_birth_practices'],
                              'sought_care_for_complication': False,
-                             'cause_of_death_after_birth': []}
+                             'cause_of_death_after_birth': [],
+                             'sepsis_postnatal': False}
 
             # Check these variables are not unassigned
             assert nci[child_id]['delivery_setting'] != 'none'
             # TODO: AT - this crashes when ga_at_birth doesnt equal 0 and I cant work out why...
             # assert nci[child_id]['ga_at_birth'] != 0
 
+            # --------------------------------------- Breastfeeding -------------------------------------------------
+            # Check see if this newborn will start breastfeeding
+            if m['delivery_setting'] == 'home_birth':
+                self.breast_feeding(child_id, birth_setting='hb')  # hb = home birth
+            else:
+                self.breast_feeding(child_id, birth_setting='hf')  # hf = health facility
+
+            # --------------------------------------- Birth weight  -------------------------------------------------
+            # We store a child's birth weight and size as properties of the individual, weight and side are calculated
+            # as when labour onsets
+            df.at[child_id, 'nb_low_birth_weight_status'] = mni[mother_id]['birth_weight']
+            df.at[child_id, 'nb_size_for_gestational_age'] = mni[mother_id]['birth_size']
+            logger.debug(key='msg', data=f'Child {child_id} has been born'
+                                         f'{df.at[child_id, "nb_low_birth_weight_status"]} and '
+                                         f'{df.at[child_id, "nb_size_for_gestational_age"]}')
+
             # ====================================== COMPLICATIONS ====================================================
             # Next we determine if this child has been born with a congenital anomaly
             self.apply_risk_of_congenital_anomaly(child_id)
-
-            # The set birth weight function is then used to determine this newborns birth weight and size for
-            # gestational age
-            self.set_birth_weight(child_id, nci[child_id]['ga_at_birth'])
 
             # For all preterm newborns we apply a risk of retinopathy of prematurity
             if (df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']) and self.eval(
@@ -1327,11 +1267,6 @@ class NewbornOutcomes(Module):
                 # Following the application of the above complications, we determine if this newborn will or will not
                 # breathe at birth
                 self.apply_risk_of_not_breathing_at_birth(child_id)
-
-                # And we see if this newborn will start breastfeeding
-                self.breast_feeding(child_id, birth_setting='hb')  # hb = home birth
-            else:
-                self.breast_feeding(child_id, birth_setting='hf')  # hf = 'health facility'
 
             # Neonates who were delivered in a facility are automatically scheduled to receive care after birth at the
             # same level of facility that they were delivered in
@@ -1446,10 +1381,6 @@ class NewbornOutcomes(Module):
 
         df = self.sim.population.props
         p = self.parameters['nb_daly_weights']
-
-        # TODO: AT- currently this works as all these disabilities are life long, so mapping to the property
-        #  (which doesnt get reset) is perfect - however, on the month that someone is born they will only need to
-        #  accrue disability for the days theyve been alive- can we discuss
 
         # Disability properties are mapped to DALY weights and stored for the health burden module
         health_values_1 = df.loc[df.is_alive, 'nb_retinopathy_prem'].map(

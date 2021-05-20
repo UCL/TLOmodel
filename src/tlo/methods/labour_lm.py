@@ -49,8 +49,8 @@ def predict_obstruction_cpd_ip(self, df, rng=None, **externals):
 
     # if person['SOME_STUNTING_PROPERTY']:
     #    result *= params['rr_obstruction_cpd_stunted_mother']
-    # if externals['macrosomia']:
-    #    result *= params['rr_obstruction_foetal_macrosomia']
+    if externals['macrosomia']:
+        result *= params['rr_obstruction_foetal_macrosomia']
     # caller expects a series to be returned
     return pd.Series(data=[result], index=df.index)
 
@@ -256,8 +256,8 @@ def predict_pph_uterine_atony_pp(self, df, rng=None, **externals):
         # TODO: replace with MNI property as this will be reset by the time this eq is called
         result *= params['rr_pph_ua_placental_abruption']
 
-    # if externals['macrosomia']:
-    #    result *= params['rr_pph_ua_macrosomia']
+    if externals['macrosomia']:
+        result *= params['rr_pph_ua_macrosomia']
 
     return pd.Series(data=[result], index=df.index)
 
@@ -470,7 +470,7 @@ def predict_probability_delivery_at_home(self, df, rng=None, **externals):
         result *= params['rrr_hb_delivery_parity_>4_2010']
 
     if person['li_mar_stat'] == 3:
-        result *= params['rrr_hb_married_past_2010']
+        result *= params['rrr_hb_delivery_married_2010']
 
     result = result / (1 + result)
     return pd.Series(data=[result], index=df.index)

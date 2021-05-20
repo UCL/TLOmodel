@@ -220,7 +220,8 @@ class Demography(Module):
             data={'age': person['age_years'],
                   'sex': person['sex'],
                   'cause': cause,
-                  'person_id': individual_id
+                  'person_id': individual_id,
+                  'pregnant': person['is_pregnant']
                   })
 
         # Release any beds-days that would be used by this person:
