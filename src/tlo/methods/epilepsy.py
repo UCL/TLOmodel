@@ -7,6 +7,7 @@ from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, Reg
 from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.demography import CauseOfDeath
 
 # todo: code specific clinic visits
 

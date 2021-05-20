@@ -13,6 +13,7 @@ from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneEvent
 from tlo.util import BitsetHandler
 from tlo.methods.demography import CauseOfDeath
+from tlo.methods.demography import CauseOfDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

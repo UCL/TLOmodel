@@ -45,7 +45,7 @@ class OesophagealCancer(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'OesophagealCancer': CauseOfDeath(gbd_causes='Esophageal cancer', label='Oesophageal Cancer'),
+        'OesophagealCancer': CauseOfDeath(gbd_causes='Esophageal cancer', label='Cancer'),
     }
 
     PARAMETERS = {

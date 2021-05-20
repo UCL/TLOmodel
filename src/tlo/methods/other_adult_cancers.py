@@ -17,6 +17,7 @@ from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.methods.demography import CauseOfDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -69,7 +70,7 @@ class OtherAdultCancer(Module):
             'Lip and oral cavity cancer',
             'Stomach cancer',
             'Liver cancer'
-        ], label='Other Cancers'),
+        ], label='Cancer'),
     }
 
     PARAMETERS = {

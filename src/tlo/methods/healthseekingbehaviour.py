@@ -17,7 +17,7 @@ from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,
     HSI_GenericFirstApptAtFacilityLevel1,
 )
-
+from collections import defaultdict
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -100,41 +100,10 @@ class HealthSeekingBehaviour(Module):
         self.force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
 
     def read_parameters(self, data_folder):
-        """Construct the LinearModel for healthcare seeking of the 'average symptom'.
-        This is from the Ng'ambia et al.
-        """
-
+        """Read in ResourceFile"""
         # Load parameters from resource file:
         self.load_parameters_from_dataframe(
             pd.DataFrame(pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv'))
-        )
-
-        # Define the LinearModel for health seeking behaviour for the 'average symptom'
-        p = self.parameters
-
-        self.hsb['children'] = LinearModel(
-            LinearModelType.LOGISTIC,
-            p['baseline_odds_of_healthcareseeking_children'],
-            Predictor('li_urban').when(True, p['odds_ratio_children_setting_urban']),
-            Predictor('sex').when('F', p['odds_ratio_children_sex_Female']),
-            Predictor('age_years').when('>=5', p['odds_ratio_children_age_5to14']),
-            Predictor('region_of_residence').when('Central', p['odds_ratio_children_region_Central'])
-                                            .when('Southern', p['odds_ratio_children_region_Southern']),
-            Predictor('li_wealth').when(4, p['odds_ratio_children_wealth_higher'])
-                                  .when(5, p['odds_ratio_children_wealth_higher'])
-        )
-
-        self.hsb['adults'] = LinearModel(
-            LinearModelType.LOGISTIC,
-            p['baseline_odds_of_healthcareseeking_adults'],
-            Predictor('li_urban').when(True, p['odds_ratio_adults_setting_urban']),
-            Predictor('sex').when('F', p['odds_ratio_adults_sex_Female']),
-            Predictor('age_years').when('.between(35,59)', p['odds_ratio_adults_age_35to59'])
-                                  .when('>=60', p['odds_ratio_adults_age_60plus']),
-            Predictor('region_of_residence').when('Central', p['odds_ratio_adults_region_Central'])
-                                            .when('Southern', p['odds_ratio_adults_region_Southern']),
-            Predictor('li_wealth').when(4, p['odds_ratio_adults_wealth_higher'])
-                                  .when(5, p['odds_ratio_adults_wealth_higher'])
         )
 
     def initialise_population(self, population):
@@ -144,9 +113,13 @@ class HealthSeekingBehaviour(Module):
 
     def initialise_simulation(self, sim):
         """
+        * define the linear models that govern healthcare seeking
         * set the first occurrence of the repeating HealthSeekingBehaviourPoll
         * assemble the health-care seeking information from the symptoms that have been registered
         """
+
+        # Define the linear models that govern healthcare seeking
+        self.define_linear_models()
 
         # Schedule the HealthSeekingBehaviourPoll
         self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
@@ -175,6 +148,40 @@ class HealthSeekingBehaviour(Module):
         """
         pass
 
+    def define_linear_models(self):
+        """Construct the LinearModel for healthcare seeking of the 'average symptom'.
+        This is from the Ng'ambia et al. papers
+        """
+
+        # Define the LinearModel for health seeking behaviour for the 'average symptom'
+        p = self.parameters
+
+        self.hsb['children'] = LinearModel(
+            LinearModelType.LOGISTIC,
+            p['baseline_odds_of_healthcareseeking_children'],
+            Predictor('li_urban').when(True, p['odds_ratio_children_setting_urban']),
+            Predictor('sex').when('F', p['odds_ratio_children_sex_Female']),
+            Predictor('age_years').when('>=5', p['odds_ratio_children_age_5to14']),
+            Predictor('region_of_residence', external=True)
+                                            .when('Central', p['odds_ratio_children_region_Central'])
+                                            .when('Southern', p['odds_ratio_children_region_Southern']),
+            Predictor('li_wealth').when(4, p['odds_ratio_children_wealth_higher'])
+                                  .when(5, p['odds_ratio_children_wealth_higher'])
+        )
+
+        self.hsb['adults'] = LinearModel(
+            LinearModelType.LOGISTIC,
+            p['baseline_odds_of_healthcareseeking_adults'],
+            Predictor('li_urban').when(True, p['odds_ratio_adults_setting_urban']),
+            Predictor('sex').when('F', p['odds_ratio_adults_sex_Female']),
+            Predictor('age_years').when('.between(35,59)', p['odds_ratio_adults_age_35to59'])
+                                  .when('>=60', p['odds_ratio_adults_age_60plus']),
+            Predictor('region_of_residence', external=True)
+                                            .when('Central', p['odds_ratio_adults_region_Central'])
+                                            .when('Southern', p['odds_ratio_adults_region_Southern']),
+            Predictor('li_wealth').when(4, p['odds_ratio_adults_wealth_higher'])
+                                  .when(5, p['odds_ratio_adults_wealth_higher'])
+        )
 
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT
@@ -189,6 +196,10 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         """
         super().__init__(module, frequency=DateOffset(days=1))
         assert isinstance(module, HealthSeekingBehaviour)
+
+        # As the linear models rely on 'region' but this is not in the main dataframe, this will passed in as an
+        # external variables. Get a pointed here to the mapper (from Demography) for doing this
+        self.num_to_region_name = self.sim.modules['Demography'].parameters['district_num_to_region_name']
 
     def apply(self, population):
         """Determine if persons with newly onset acute generic symptoms will seek care.
@@ -208,10 +219,20 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         # clear the list of persons with newly onset symptoms
         symptom_manager.reset_persons_with_newly_onset_symptoms()
 
+        # Defint the region of residence  # todo - integreate this into the lm without resorting to external var
+        region_of_residence = selected_persons['district_num_of_residence'].map(self.num_to_region_name)
+
         # calculate the baseline probability for adults and children to seek care & put them in single series
         # (index remains the person_id)
-        baseline_prob_child = m.hsb['children'].predict(selected_persons[selected_persons.age_years < 15])
-        baseline_prob_adult = m.hsb['adults'].predict(selected_persons[selected_persons.age_years >= 15])
+        baseline_prob_child = m.hsb['children'].predict(
+            selected_persons[selected_persons.age_years < 15],
+            region_of_residence=region_of_residence[selected_persons.age_years < 15]
+        )
+        baseline_prob_adult = m.hsb['adults'].predict(
+            selected_persons[selected_persons.age_years >= 15],
+            region_of_residence=region_of_residence[selected_persons.age_years >= 15]
+        )
+
         baseline_prob = baseline_prob_child.append(baseline_prob_adult, verify_integrity=True).rename('baseline_prob')
 
         # Get the symptoms that each person (who has newly onset symptoms) has currently.

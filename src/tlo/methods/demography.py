@@ -6,6 +6,7 @@ population structure' worksheet within to initialise the age & sex distribution 
 import math
 from pathlib import Path
 
+import numpy
 import numpy as np
 import pandas as pd
 from tlo.methods import Metadata
@@ -30,15 +31,27 @@ class CauseOfDeath():
     'gbd_causes': list of strings, to which this cause of death is equivalent
     'label': the (single) category in which this cause_of_death should be labelled in output statistics
     """
-    def __init__(self, gbd_causes: list = [], label: str = ''):
-        "Do basic type checking"
-        gbd_causes = gbd_causes if type(gbd_causes) is list else list([gbd_causes])
-        assert all([(type(c) is str) and (c is not '') for c in gbd_causes])
+    def __init__(self, gbd_causes: list = None, label: str = None, ignore: bool = False):
+        """Do basic type checking.
+        If ignore=True, then other arguments are not provided and this cause of death is defined but not represented
+        in data structures that allow comparison to the GBD datasets."""
 
-        self.gbd_causes = gbd_causes
+        if not ignore:
+            gbd_causes = gbd_causes if type(gbd_causes) is list else list([gbd_causes])
+            assert all([(type(c) is str) and (c is not '') for c in gbd_causes])
 
-        assert (type(label) is str) and (label is not '')
-        self.label = label
+            self.gbd_causes = gbd_causes
+
+            assert (type(label) is str) and (label is not '')
+            self.label = label
+
+        else:
+            assert gbd_causes is None
+            assert label is None
+            logger.warning(key="message",
+                           data=f"A cause of death has been defined but will be ignored."
+                           )
+
 
 
 class Demography(Module):
@@ -309,10 +322,10 @@ class Demography(Module):
         if not person['is_alive']:
             return
 
-        # Check that the cause is registered:
+        # Check that the cause is declared for use by this module:
         if self is not originating_module:
-            assert cause in self.causes_of_death, \
-                f'The cause of death {cause} is not recognised by the Demography module.'
+            assert cause in originating_module.CAUSES_OF_DEATH, \
+                f'The cause of death {cause} is not declared for use by the module {originating_module.name}.'
 
         # Register the death:
         df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = \

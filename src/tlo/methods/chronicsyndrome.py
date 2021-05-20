@@ -7,6 +7,7 @@ from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.methods.demography import CauseOfDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -36,6 +37,13 @@ class ChronicSyndrome(Module):
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
     }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'ChronicSyndrome': CauseOfDeath(ignore=True),
+        # (ignore=True means that we do not associate this with GBD causes of death)
+    }
+
 
     PARAMETERS = {
         'p_acquisition_per_year': Parameter(Types.REAL, 'Probability that an uninfected individual becomes infected'),
