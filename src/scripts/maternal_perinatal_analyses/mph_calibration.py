@@ -35,14 +35,14 @@ seed = 567
 seed = 1111
 
 # The resource files
-try:
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-except NameError:
-    # running interactively
-    resourcefilepath = Path('./resources')
+# %%
+outputpath = Path("./outputs")
+resourcefilepath = Path("./resources")
+
+# Create name for log-file
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
-
 
 log_config = {
         "filename": "calibration_test",  # The name of the output file (a timestamp will be appended).
@@ -92,9 +92,12 @@ sim.simulate(end_date=Date(2011, 1, 1))
 log_df = parse_log_file(sim.log_filepath)
 
 # define the log DFs required
+# Calculate indirect deaths
 deaths = log_df['tlo.methods.demography']['death']
 deaths['date'] = pd.to_datetime(deaths['date'])
 deaths['year'] = deaths['date'].dt.year
+
+
 
 live_births = log_df['tlo.methods.labour']['live_birth']
 live_births['date'] = pd.to_datetime(live_births['date'])

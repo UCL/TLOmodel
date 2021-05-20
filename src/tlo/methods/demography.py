@@ -215,14 +215,23 @@ class Demography(Module):
         df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = (False, self.sim.date, cause)
 
         # Log the death:
-        logger.info(
-            key='death',
-            data={'age': person['age_years'],
-                  'sex': person['sex'],
-                  'cause': cause,
-                  'person_id': individual_id,
-                  'pregnant': person['is_pregnant']
-                  })
+        if 'Contraception' or 'SimplifiedBirths' in self.sim.modules.keys():
+            logger.info(
+                key='death',
+                data={'age': person['age_years'],
+                      'sex': person['sex'],
+                      'cause': cause,
+                      'pregnancy': person['is_pregnant'],
+                      'person_id': individual_id
+                      })
+        else:
+            logger.info(
+                key='death',
+                data={'age': person['age_years'],
+                      'sex': person['sex'],
+                      'cause': cause,
+                      'person_id': individual_id
+                      })
 
         # Release any beds-days that would be used by this person:
         if 'HealthSystem' in self.sim.modules:
