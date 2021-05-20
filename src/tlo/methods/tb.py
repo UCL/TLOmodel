@@ -757,25 +757,26 @@ class Tb(Module):
         clinical_fup = p['followup_times'].loc['ds_clinical_monitor']
 
         # if previously treated:
-        if df.at[person_id, 'tb_ever_treated'] == 'ds':
+        if df.at[person_id, 'tb_ever_treated']:
 
             # if strain is ds and person previously treated:
             clinical_fup = p['followup_times'].loc['ds_retreatment_clinical']
 
+        # if strain is mdr - this treatment schedule takes precedence
         elif df.at[person_id, 'tb_strain'] == 'mdr':
 
             # if strain is mdr:
             clinical_fup = p['followup_times'].loc['mdr_clinical']
 
-        for appt in len(clinical_fup):
+        # todo does this use the right value for appt?
+        for appt in clinical_fup:
+            print (appt)
             # schedule a clinical check-up appointment
             date_appt = self.sim.date + \
-                               pd.DateOffset(months=clinical_fup[appt])
+                               pd.DateOffset(days=appt*30.5)
             self.sim.schedule_event(
                 HSI_Tb_FollowUp(self, person_id), date_appt
             )
-
-        pass
 
     def end_treatment(self, person_id):
         """
@@ -3386,18 +3387,22 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 # # ---------------------------------------------------------------------------
 # #   Follow-up appts
 # # ---------------------------------------------------------------------------
-# class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
-#     '''
-#     This is a Health System Interaction Event - start tb treatment
-#     '''
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#         assert isinstance(module, Tb)
-#
-#         # Get a blank footprint and then edit to define call on resources of this treatment event
-#         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-#         the_appt_footprint['TBFollowUp'] = 1
+class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
+    """
+        This is a Health System Interaction Event
+        clinical monitoring for tb patients on treatment
+        will schedule sputum smear test if needed
+        if positive sputum smear, schedule xpert test for drug sensitivity
+    """
+
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Tb)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['TBFollowUp'] = 1
 #
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = 'Tb_FollowUp'
