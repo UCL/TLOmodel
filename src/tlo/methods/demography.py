@@ -338,13 +338,23 @@ class Demography(Module):
             (False, self.sim.date, originating_module.name)
 
         # Log the death:
-        logger.info(
-            key='death',
-            data={'age': person['age_years'],
-                  'sex': person['sex'],
-                  'cause': cause,
-                  'person_id': individual_id
-                  })
+        if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
+            logger.info(
+                key='death',
+                data={'age': person['age_years'],
+                      'sex': person['sex'],
+                      'cause': cause,
+                      'pregnancy': person['is_pregnant'],
+                      'person_id': individual_id
+                      })
+        else:
+            logger.info(
+                key='death',
+                data={'age': person['age_years'],
+                      'sex': person['sex'],
+                      'cause': cause,
+                      'person_id': individual_id
+                      })
 
         # Release any beds-days that would be used by this person:
         if 'HealthSystem' in self.sim.modules:
