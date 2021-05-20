@@ -220,6 +220,7 @@ class Demography(Module):
             data={'age': person['age_years'],
                   'sex': person['sex'],
                   'cause': cause,
+                  'pregnancy': person['is_pregnant'],
                   'person_id': individual_id
                   })
 
