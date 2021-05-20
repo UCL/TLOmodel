@@ -221,11 +221,19 @@ def make_calendar_period_lookup():
 
     return ranges, lookup
 
+def make_calendar_period_type():
+    """
+    Make an ordered categorical type for calendar periods
+    Returns CategoricalDType
+    """
+    keys, _ = make_calendar_period_lookup()
+    return pd.CategoricalDtype(categories=keys, ordered=True)
+
+
 def make_age_grp_lookup():
     """Returns a dictionary mapping age (in years) to five year period
     i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
     """
-    # todo - remove usage
     return create_age_range_lookup(min_age=0, max_age=100, range_size=5)
 
 
@@ -238,13 +246,7 @@ def make_age_grp_types():
     return pd.CategoricalDtype(categories=keys, ordered=True)
 
 
-def make_calendar_period_type():
-    """
-    Make an ordered categorical type for calendar periods
-    Returns CategoricalDType
-    """
-    keys, _ = make_calendar_period_lookup()
-    return pd.CategoricalDtype(categories=keys, ordered=True)
+
 
 
 def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
