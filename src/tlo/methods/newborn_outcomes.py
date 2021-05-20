@@ -1112,6 +1112,11 @@ class NewbornOutcomes(Module):
 
         logger.info(key='twin_birth', data=twin_birth, description='A record of each birth of twin pairs')
 
+        # Finally we log the second live birth and add another to the womans parity
+        if not self.sim.modules['PregnancySupervisor'].mother_and_newborn_info['single_twin_still_birth']:
+            df.at[mother_id, 'la_parity'] += 1
+            logger.info(key='live_birth', data={'mother': mother_id, 'child': child_two})
+
     def on_birth(self, mother_id, child_id):
         """The on_birth function of this module sets key properties of all newborns, including prematurity
         status and schedules functions to set weight and size. For newborns delivered at home it determines if they will

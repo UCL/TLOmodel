@@ -837,7 +837,7 @@ class Labour(Module):
             df.at[mother_id, 'la_parity'] += 1  # Only live births contribute to parity
             logger.info(key='live_birth', data={'mother': mother_id, 'child': child_id})
 
-        if mother.la_intrapartum_still_birth: # todo: this will only kill one twin?
+        if mother.la_intrapartum_still_birth:
             self.sim.modules['Demography'].do_death(individual_id=child_id, cause='intrapartum stillbirth',
                                                     originating_module=self.sim.modules['Labour'])
 
