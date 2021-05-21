@@ -23,8 +23,8 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-pop_size = 3000
-seed = 123
+pop_size = 1000
+seed = 129
 
 log_config = {
     "filename": "one_child",   # The name of the output file (a timestamp will be appended).
@@ -46,13 +46,13 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))  # service_availability=service_availability
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath))
-# sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-# sim.register(postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
-# sim.register(care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
-# sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-# sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-# sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
+# sim.register(simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath))
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
+sim.register(care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
+sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
+sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(wasting.Wasting(resourcefilepath=resourcefilepath))
