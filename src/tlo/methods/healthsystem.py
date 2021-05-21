@@ -10,6 +10,7 @@ Todo:   - speed up
 
 import heapq as hp
 import inspect
+from collections import Counter
 from pathlib import Path
 from typing import NamedTuple
 
@@ -30,6 +31,12 @@ class FacilityInfo(NamedTuple):
     """Information about a specific health facility."""
     id: int
     name: str
+
+
+class AppointmentInfo(NamedTuple):
+    """Information about a specific appointment type."""
+    officer_type: str
+    time_taken: float
 
 
 class HealthSystem(Module):
@@ -54,7 +61,7 @@ class HealthSystem(Module):
         ),
         'Appt_Types_Table': Parameter(Types.DATA_FRAME, 'The names of the type of appointments with the health system'),
         'Appt_Time_Table': Parameter(
-            Types.DATA_FRAME, 'The time taken for each appointment, according to officer and facility type.'
+            Types.DICT, 'The time taken for each appointment, according to officer and facility type.'
         ),
         'ApptType_By_FacLevel': Parameter(
             Types.DATA_FRAME, 'Indicates whether an appointment type can occur at a facility level.'
@@ -167,9 +174,25 @@ class HealthSystem(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Appt_Types_Table.csv'
         )
 
-        self.parameters['Appt_Time_Table'] = pd.read_csv(
+        appt_time_data = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Appt_Time_Table.csv'
         )
+        levels = set(
+            appt_time_data['Facility_Level'].unique()
+        )
+        # Check that levels are consecutive integers starting from 0
+        assert levels == set(range(len(levels)))
+        appt_time_dict = [{} for _ in levels]
+        for appt_time_tuple in appt_time_data.itertuples():
+            appt_time_dict[
+                appt_time_tuple.Facility_Level
+            ][
+                appt_time_tuple.Appt_Type_Code
+            ] = AppointmentInfo(
+                officer_type=appt_time_tuple.Officer_Type_Code,
+                time_taken=appt_time_tuple.Time_Taken
+            )
+        self.parameters['Appt_Time_Table'] = appt_time_dict
 
         self.parameters['ApptType_By_FacLevel'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_ApptType_By_FacLevel.csv'
@@ -193,12 +216,15 @@ class HealthSystem(Module):
         facilities_per_district_dict = {
             district: [None] * len(levels) for district in districts
         }
-        for _, facility in facilities_per_district_data.iterrows():
+        for facility_tuple in facilities_per_district_data.itertuples():
             facilities_per_district_dict[
-                facility["District"]
+                facility_tuple.District
             ][
-                facility["Facility_Level"]
-            ] = FacilityInfo(facility["Facility_ID"], facility["Facility_Name"])
+                facility_tuple.Facility_Level
+            ] = FacilityInfo(
+                id=facility_tuple.Facility_ID,
+                name=facility_tuple.Facility_Name
+            )
         self.parameters['Facilities_For_Each_District'] = facilities_per_district_dict
 
         caps = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv')
@@ -727,37 +753,32 @@ class HealthSystem(Module):
             # use the actual_appt_provided
             the_appt_footprint = actual_appt_footprint
 
-        # Get the (one) health_facility available to this person (based on their district), which is accepted by the
-        # hsi_event.ACCEPTED_FACILITY_LEVEL:
+        # Get the (one) health_facility available to this person (based on their
+        # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL:
         the_facility = self.get_facility_info(hsi_event)
 
-        # Transform the treatment footprint into a demand for time for officers of each type, for this
-        # facility level (it varies by facility level)
-        appts_with_duration = [appt_type for appt_type in appt_types if the_appt_footprint[appt_type] > 0]
-        df_appt_footprint = appt_times.loc[
-            (appt_times['Facility_Level'] == the_facility_level) & appt_times.Appt_Type_Code.isin(appts_with_duration),
-            ['Officer_Type_Code', 'Time_Taken'],
-        ].copy()
+        # Transform the treatment footprint into a demand for time for officers of each
+        # type, for this facility level (it varies by facility level)
+        appts_with_duration = [
+            appt_type for appt_type in appt_types if the_appt_footprint[appt_type] > 0
+        ]
+        # [appt_times[the_facility_level][appt_type] for appt_type in appts_with_duration]
+        appt_footprint_times = Counter()
+        for appt_type in appts_with_duration:
+            try:
+                appt_info = appt_times[the_facility_level][appt_type]
+            except KeyError as e:
+                raise KeyError(
+                    f"The time needed for this appointment is not defined for this "
+                    f"specified facility level in the Appt_Time_Table. "
+                    f"Event treatment ID: {hsi_event.TREATMENT_ID}"
+                ) from e
+            appt_footprint_times[
+                f"FacilityID_{the_facility.id}_Officer_{appt_info.officer_type}"
+            ] += appt_info.time_taken
 
-        assert len(df_appt_footprint) > 0, \
-            "The time needed for this appointment" \
-            " is not defined for this specified facility level in the Appt_Time_Table. " \
-            "And it should not go to this point" \
-            ": " + hsi_event.TREATMENT_ID
+        return pd.Series(appt_footprint_times)
 
-        # Using f string or format method throws and error when df_appt_footprint is empty so hybrid used
-        df_appt_footprint.set_index(
-            f'FacilityID_{the_facility.id}_Officer_' + df_appt_footprint['Officer_Type_Code'].astype(str), inplace=True
-        )
-
-        # Create Series of summed required time for each officer type
-        appt_footprint_as_time_request = df_appt_footprint['Time_Taken'].groupby(level=0).sum()
-
-        # Check that indicies are unique
-        assert not any(appt_footprint_as_time_request.index.duplicated())
-
-        # Return
-        return appt_footprint_as_time_request
 
     def get_squeeze_factors(self, all_calls_today, current_capabilities):
         """
@@ -1635,8 +1656,7 @@ class HSI_Event:
         assert all([isinstance(v, (float, int)) for v in dict_of_appts.values()])
 
         # make footprint (defaulting to zero where a type of appointment is not specified)
-        for k, v in dict_of_appts.items():
-            footprint[k] = v
+        footprint.update(dict_of_appts)
 
         return footprint
 
