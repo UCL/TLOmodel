@@ -10,9 +10,9 @@ Contents
    readme
    azure_batch
    reference/index
-   contributing
    publications
    authors
+   contributing
 
 Indices and tables
 ==================
