@@ -11,7 +11,7 @@ The overall framework is design to be self-documented. However, a brief introduc
 Core Modules
 ============
 * Demography: Determines population structure and deaths from causes not represented in the model. :download:`.docx <./write-ups/Demography.docx>`
-* Lifestyle: (Forthcoming)
+* Lifestyle: :download:`.docx <./write-ups/LifeStyle.docx>`
 * HealthBurden: :download:`.docx <./write-ups/HealthBurden.docx>`
 * SymptomManager: Manages the onset and resolution of symptoms, including symptoms caused by conditions not included in the model. :download:`.docx <./write-ups/SymptomManager.docx>`
 * HealthCareSeeking: Determines if and how persons seek care following the development of a symptom of ill-health. :download:`.docx <./write-ups/HealthSeekingBehaviour.docx>`
@@ -74,7 +74,7 @@ Non-Communicable Conditions
 
     * Chronic Kidney Disease :download:`.docx <./write-ups/Ncds.docx>`
 
-
+    * Epilepsy FORTHCMGI
 
 
 
