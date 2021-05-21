@@ -1,14 +1,3 @@
-====================================
-The TLO Model Documentation
-====================================
-The documents linked to below provide a complete technical description of the model in its current state.
-
-
-Thanzi La Onse
-========================
-The TLO Model is a part of the `Thanzi La Onse <https://thanzi.org>`_ (Health for All) Collaboration, funded by `GCRF <https://www.newton-gcrf.org>`_ and `UKRI <https://www.ukri.org>`_ in the United Kingdom.
-
-
 Overall Framework Design
 ========================
 The overall framework is design to be self-documented. However, a brief introductory overview of the design is provided in _here_.

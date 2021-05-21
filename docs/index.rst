@@ -5,7 +5,8 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   about
+   welcome
+   writeups
    readme
    installation
    usage
