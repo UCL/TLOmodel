@@ -66,18 +66,12 @@ class Stunting(Module):
         # effect of risk factors on stunting prevalence
         'or_stunting_male': Parameter(
             Types.REAL, 'odds ratio of stunting if male gender'),
-        'or_stunting_no_recent_diarrhoea': Parameter(
-            Types.REAL, 'odds ratio of stunting if no recent diarrhoea in past 2 weeks, compared to recent episode'),
-        'or_stunting_single_birth': Parameter(
-            Types.REAL, 'odds ratio of stunting if single birth, ref group multiple birth (twins)'),
-        'or_stunting_mother_no_education': Parameter(
-            Types.REAL, 'odds ratio of stunting if mother has no formal education, ref group secondary education'),
-        'or_stunting_mother_primary_education': Parameter(
-            Types.REAL, 'odds ratio of stunting if mother has primary education, ref group secondary education'),
-        'or_stunting_motherBMI_underweight': Parameter(
-            Types.REAL, 'odds ratio of stunting if mother has low BMI, ref group high BMI (overweight)'),
-        'or_stunting_motherBMI_normal': Parameter(
-            Types.REAL, 'odds ratio of stunting if mother has normal BMI, ref group high BMI (overweight)'),
+        'or_stunting_preterm_and_AGA': Parameter(
+            Types.REAL, 'odds ratio of stunting if born preterm and adequate for gestational age'),
+        'or_stunting_SGA_and_term': Parameter(
+            Types.REAL, 'odds ratio of stunting if born term and small for geatational age'),
+        'or_stunting_SGA_and_preterm': Parameter(
+            Types.REAL, 'odds ratio of stunting if born preterm and small for gestational age'),
         'or_stunting_hhwealth_Q5': Parameter(
             Types.REAL, 'odds ratio of stunting if household wealth is poorest Q5, ref group Q1'),
         'or_stunting_hhwealth_Q4': Parameter(
@@ -107,28 +101,15 @@ class Stunting(Module):
             Types.REAL, 'relative risk of stunting for not continued breasfed infants 6-24 months'),
         'rr_stunting_per_diarrhoeal_episode': Parameter(
             Types.REAL, 'relative risk of stunting for recent diarrhoea episode'),
-
         # progression parameters
         'r_progression_severe_stunting_by_agegp': Parameter(
             Types.LIST, 'list with rates of progression to severe stunting by age group'),
-        'rr_progress_severe_stunting_preterm_and_AGA': Parameter(
-            Types.REAL, 'relative risk of severe stunting if born preterm and adequate for gestational age'),
-        'rr_progress_severe_stunting_SGA_and_term': Parameter(
-            Types.REAL, 'relative risk of severe stunting if born term and small for gestational age'),
-        'rr_progress_severe_stunting_SGA_and_preterm': Parameter(
-            Types.REAL, 'relative risk of severe stunting if born preterm and small for gestational age'),
         'rr_progress_severe_stunting_untreated_HIV': Parameter(
             Types.REAL, 'relative risk of severe stunting for untreated HIV+'),
         'rr_progress_severe_stunting_previous_wasting': Parameter(
             Types.REAL, 'relative risk of severe stunting if previously wasted'),
-
-        'baseline_rate_of_HAZ_improvement_by_1sd': Parameter(
-            Types.REAL, 'baseline rate or natural recovery rate for HAZ improvement by 1 standard deviation'),
         'prob_remained_stunted_in_the_next_3months': Parameter(
             Types.REAL, 'probability of stunted remained stunted in the next 3 month period'),
-        'rr_stunting_improvement_with_continued_breastfeeding': Parameter(
-            Types.REAL, 'relative rate of improvement in stunting HAZ with continued breastfeeding'),
-
         # intervention parameters
         'un_effectiveness_complementary_feeding_promo_education_only_in_stunting_reduction': Parameter(
             Types.REAL, 'effectiveness of complementary feeding promotion (education only) in reducing stunting'),
@@ -137,19 +118,19 @@ class Stunting(Module):
             'effectiveness of complementary feeding promotion with food supplementation in reducing stunting'),
         'un_effectiveness_zinc_supplementation_in_stunting_reduction': Parameter(
             Types.REAL, 'effectiveness of zinc supplementation in reducing stunting'),
-
     }
 
     PROPERTIES = {
-        'un_HAZ_score': Property(Types.REAL, 'height-for-age z-score'),
         'un_ever_stunted': Property(Types.BOOL, 'had stunting before (HAZ <-2)'),
         'un_HAZ_category': Property(Types.CATEGORICAL, 'height-for-age z-score group',
                                     categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
         'un_last_stunting_date_of_onset': Property(Types.DATE, 'date of onset of lastest stunting episode'),
-        'un_CM_treatment_type': Property(Types.CATEGORICAL, 'treatment types for of chronic malnutrition',
-                                         categories=['continued_breastfeeding', 'education_on_complementary_feeding',
-                                                     'complementary_feeding_with_food_supplementation']),
-        'un_chronic_malnutrition_tx_start_date': Property(Types.DATE, 'start date of treatment for stunting')
+        'un_stunting_recovery_date': Property(Types.DATE, 'recovery date, when HAZ>=-2'),
+        'un_cm_treatment_type': Property(Types.CATEGORICAL, 'treatment types for of chronic malnutrition',
+                                         categories=['education_on_complementary_feeding',
+                                                     'complementary_feeding_with_food_supplementation'] +
+                                                    ['none'] + ['not_applicable']),
+        'un_stunting_tx_start_date': Property(Types.DATE, 'start date of treatment for stunting')
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -179,7 +160,7 @@ class Stunting(Module):
         }
 
         # dict to hold the DALY weights
-        self.daly_wts = dict()
+        self.daly_wts = dict()  # no dalys directly from stunting, but will have cognitive deficiencies in the future
 
         # --------------------- linear models of the natural history --------------------- #
         # set the linear model equations for prevalence and incidence
@@ -188,9 +169,6 @@ class Stunting(Module):
 
         # set the linear model equation for progression to severe stunting state
         self.severe_stunting_progression_equation = dict()
-
-        # set the linear model equation for recovery of stunting
-        self.stunting_improvement_rate = dict()
 
         # --------------------- linear models following HSI interventions --------------------- #
 
@@ -218,7 +196,7 @@ class Stunting(Module):
                               param_type.python_type), f'Parameter "{param_name}" is not read in correctly from the ' \
                                                        f'resourcefile.'
 
-        # Stunting does not have specific symptoms, but a consequence of poor nutrition and repeated infections
+        # Stunting does not have specific symptoms, but is a consequence of poor nutrition and repeated infections
 
         # no DALYs for stunting in the TLO daly weights
 
@@ -236,12 +214,21 @@ class Stunting(Module):
         df = population.props
         p = self.parameters
 
+        # Set initial properties
+        df.loc[df.is_alive, 'un_ever_stunted'] = False
+        df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'  # not undernourished
+        df.loc[df.is_alive, 'un_last_stunting_date_of_onset'] = pd.NaT
+        df.loc[df.is_alive, 'un_stunting_recovery_date'] = pd.NaT
+        df.loc[df.is_alive, 'un_cm_treatment_type'] = 'not_applicable'
+        df.loc[df.is_alive, 'un_stunting_tx_start_date'] = pd.NaT
+
+        # -----------------------------------------------------------------------------------------------------
         # # # # # allocate initial prevalence of stunting at the start of the simulation # # # # #
 
         def make_scaled_linear_model_stunting(agegp):
             """Makes the unscaled linear model with intercept of baseline odds of stunting (HAZ <-2).
             Calculates the mean odds of stunting by age group and then creates a new linear model
-            with adjusted intercept so odds in 0-year-olds matches the specified value in the model
+            with adjusted intercept so odds in 1-year-olds matches the specified value in the model
             when averaged across the population
             """
             def get_odds_stunting(agegp):
@@ -264,22 +251,27 @@ class Stunting(Module):
 
                 return base_odds_of_stunting
 
-            def make_linear_model_stunting(agegp, intercept=1.0):
+            def make_linear_model_stunting(agegp, intercept=get_odds_stunting(agegp=agegp)):
                 return LinearModel(
                     LinearModelType.LOGISTIC,
                     get_odds_stunting(agegp=agegp),  # base odds
-                    # Predictor('gi_last_diarrhoea_date_of_onset').when(range(self.sim.date - DateOffset(weeks=2)),
-                    #                                                   p['or_stunting_no_recent_diarrhoea']),
                     Predictor('sex').when('M', p['or_stunting_male']),
-                    Predictor('li_ed_lev').when(1, p['or_stunting_mother_no_education'])
-                        .when(2, p['or_stunting_mother_primary_education']),
                     Predictor('li_wealth').when(2, p['or_stunting_hhwealth_Q2'])
                         .when(3, p['or_stunting_hhwealth_Q3'])
                         .when(4, p['or_stunting_hhwealth_Q4'])
                         .when(5, p['or_stunting_hhwealth_Q5']),
+                    Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
+                                     '& (nb_late_preterm == False) & (nb_early_preterm == False)',
+                                     p['or_stunting_SGA_and_term']),
+                    Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
+                                     '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
+                                     p['or_stunting_SGA_and_preterm']),
+                    Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
+                                     '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
+                                     p['or_stunting_preterm_and_AGA']),
                 )
 
-            unscaled_lm = make_linear_model_stunting(agegp)  # intercept=get_odds_stunting(agegp)
+            unscaled_lm = make_linear_model_stunting(agegp, intercept=get_odds_stunting(agegp=agegp))
             target_mean = get_odds_stunting(agegp='12_23mo')
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1)]).mean()
             scaled_intercept = get_odds_stunting(agegp) * (target_mean / actual_mean) if \
@@ -291,6 +283,7 @@ class Stunting(Module):
         for agegp in ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo']:
             self.prevalence_equations_by_age[agegp] = make_scaled_linear_model_stunting(agegp)
 
+        # get the initial prevalence values for each age group using the lm equation (scaled)
         prevalence_of_stunting = pd.DataFrame(index=df.loc[df.is_alive & (df.age_exact_years < 5)].index)
 
         prevalence_of_stunting['0_5mo'] = self.prevalence_equations_by_age['0_5mo']\
@@ -309,6 +302,7 @@ class Stunting(Module):
         def get_prob_severe_in_overall_stunting(agegp):
             """
             This function will calculate the HAZ scores by categories and return probability of severe stunting
+            among those with stunting
             :param agegp: age grouped in months
             :return:
             """
@@ -320,22 +314,15 @@ class Stunting(Module):
             # get all stunting: HAZ <-2
             probability_over_or_equal_minus2sd = HAZ_normal_distribution.sf(-2)
             probability_less_than_minus2sd = 1 - probability_over_or_equal_minus2sd
-
             # get severe stunting zcores: HAZ <-3
             probability_over_or_equal_minus3sd = HAZ_normal_distribution.sf(-3)
             probability_less_than_minus3sd = 1 - probability_over_or_equal_minus3sd
-
-            # get moderate stunting zcores: <=-3 HAZ <-2
-            probability_between_minus3_minus2sd =\
-                probability_over_or_equal_minus3sd - probability_over_or_equal_minus2sd
 
             # make HAZ <-2 as the 100% and get the adjusted probability of severe stunting
             proportion_severe_in_overall_stunting = probability_less_than_minus3sd * probability_less_than_minus2sd
 
             # get a list with probability of severe stunting, and moderate stunting
             return proportion_severe_in_overall_stunting
-
-        # # # # # allocate initial prevalence of stunting at the start of the simulation # # # # #
 
         # further differentiate between severe stunting and moderate stunting, and normal HAZ
         for agegp in ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo']:
@@ -345,11 +332,18 @@ class Stunting(Module):
                 stunted_category = self.rng.choice(['HAZ<-3', '-3<=HAZ<-2'],
                                                    p=[probability_of_severe, 1 - probability_of_severe])
                 df.at[id, 'un_HAZ_category'] = stunted_category
+                df.at[id, 'un_last_stunting_date_of_onset'] = self.sim.date
+                df.at[id, 'un_ever_stunted'] = True
+                df.at[id, 'un_cm_treatment_type'] = 'none'  # start without treatment
+
             df.loc[stunted[stunted==False].index, 'un_HAZ_category'] = 'HAZ>=-2'
+
+        # -----------------------------------------------------------------------------------------------------
 
     def count_all_previous_diarrhoea_episodes(self, today, index):
         """
-        Get all diarrhoea episodes since birth prior to today's date
+        Get all diarrhoea episodes since birth prior to today's date for non-stunted children;
+        for already moderately stunted children, get all diarrhoea episodes since the onset of stunting
         :param today:
         :param index:
         :return:
@@ -358,11 +352,19 @@ class Stunting(Module):
         list_dates = []
 
         for person in index:
-            delta_dates = df.at[person, 'date_of_birth'] - today
-            for i in range(delta_dates.days):
-                day = today - DateOffset(days=i)
-                while df.gi_last_diarrhoea_date_of_onset[person] == day:
-                    list_dates.append(day)
+            if df.at[person, 'un_HAZ_category'] == 'HAZ>=-2':
+                delta_dates = df.at[person, 'date_of_birth'] - today
+                for i in range(delta_dates.days):
+                    day = today - DateOffset(days=i)
+                    while df.gi_last_diarrhoea_date_of_onset[person] == day:
+                        list_dates.append(day)
+
+            if df.at[person, 'un_HAZ_category'] == '-3<=HAZ<-2':
+                delta_dates = df.at[person, 'un_last_stunting_date_of_onset'] - today
+                for i in range(delta_dates.days):
+                    day = today - DateOffset(days=i)
+                    while df.gi_last_diarrhoea_date_of_onset[person] == day:
+                        list_dates.append(day)
 
         total_diarrhoea_count_to_date = len(list_dates)
 
@@ -379,19 +381,18 @@ class Stunting(Module):
         p = self.parameters
 
         # Schedule the main polling event
-        sim.schedule_event(StuntingPollingEvent(self), sim.date + DateOffset(months=6))
+        sim.schedule_event(StuntingPollingEvent(self), sim.date + DateOffset(months=3))
 
-        # Schedule progression to severe stunting
-        # sim.schedule_event(SevereStuntingPollingEvent(self), sim.date + DateOffset(months=9))
+        # Schedule recoveries by interventions
+        sim.schedule_event(StuntingRecoveryPollingEvent(self), sim.date + DateOffset(months=3))
 
         # Schedule the main logging event (to first occur in one year)
-        # sim.schedule_event(StuntingLoggingEvent(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(StuntingLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Get DALY weights
         # no DALYs for stunting directly, but cognitive impairment should be added later
 
         # --------------------------------------------------------------------------------------------
-        # # # # # # # # # # INCIDENCE # # # # # # # # # #
         # Make a linear model equation that govern the probability that a person becomes stunted HAZ<-2
         def make_scaled_lm_stunting_incidence():
             """
@@ -422,7 +423,7 @@ class Stunting(Module):
                                      p['rr_stunting_preterm_and_AGA']),
                     Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_stunting_untreated_HIV']),
                     Predictor('li_wealth').apply(lambda x: 1 if x == 1 else (x - 1) ** (p['rr_stunting_wealth_level'])),
-                    Predictor('un_ever_wasted').when(True, p['rr_stunting_prior_wasting']),  # This should be prior wasting in the 3 months before
+                    Predictor('un_ever_wasted').when(True, p['rr_stunting_prior_wasting']),
                     Predictor('nb_breastfeeding_status').when('non_exclusive | none',
                                                               p['rr_stunting_no_exclusive_breastfeeding']),
                     Predictor().when('((nb_breastfeeding_status == "non_exclusive") | '
@@ -449,8 +450,8 @@ class Stunting(Module):
         self.stunting_incidence_equation = make_scaled_lm_stunting_incidence()
 
         # --------------------------------------------------------------------------------------------
-        # # # # # # # # # # SEVERITY PROGRESSION # # # # # # # # # #
         # Make a linear model equation that govern the probability that a person becomes severely stunted HAZ<-3
+        # (natural history only, no interventions)
         def make_scaled_lm_severe_stunting():
             """
             Makes the unscaled linear model with default intercept of 1. Calculates the mean progression rate for
@@ -469,23 +470,19 @@ class Stunting(Module):
                         .when('.between(3,3.9999)', p['r_progression_severe_stunting_by_agegp'][4])
                         .when('.between(4,4.9999)', p['r_progression_severe_stunting_by_agegp'][5])
                         .otherwise(0.0),
-                    Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
-                                     '& (nb_late_preterm == False) & (nb_early_preterm == False)',
-                                     p['rr_progress_severe_stunting_SGA_and_term']),
-                    Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
-                                     '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
-                                     p['rr_progress_severe_stunting_SGA_and_preterm']),
-                    Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
-                                     '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
-                                     p['rr_progress_severe_stunting_preterm_and_AGA']),
                     Predictor('un_ever_wasted').when(True, p['rr_progress_severe_stunting_previous_wasting']),
                     Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_stunting_untreated_HIV']),
+                    Predictor('previous_diarrhoea_episodes', external=True).apply(
+                        lambda x: x ** (p['rr_stunting_per_diarrhoeal_episode'])),
                 )
 
             unscaled_lm = make_lm_severe_stunting()
             target_mean = p[f'base_inc_rate_stunting_by_agegp'][2]
-            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1) &
-                                                     (df.un_HAZ_category == '-3<=HAZ<-2')]).mean()
+            actual_mean = unscaled_lm.predict(
+                df.loc[df.is_alive & (df.age_years == 1) & (df.un_HAZ_category == '-3<=HAZ<-2')],
+                previous_diarrhoea_episodes=self.count_all_previous_diarrhoea_episodes(
+                    today=sim.date, index=df.loc[df.is_alive & (df.age_years == 1) &
+                                                 (df.un_HAZ_category == '-3<=HAZ<-2')].index)).mean()
             scaled_intercept = 1.0 * (target_mean / actual_mean) if (target_mean != 0 and actual_mean != 0) else 1.0
             scaled_lm = make_lm_severe_stunting(intercept=scaled_intercept)
             return scaled_lm
@@ -493,20 +490,18 @@ class Stunting(Module):
         self.severe_stunting_progression_equation = make_scaled_lm_severe_stunting()
 
         # --------------------------------------------------------------------------------------------
-        # # # # # # # # # # RECOVERY # # # # # # # # # #
         # Make a linear model equation that govern the probability that a person improves in stunting state
         self.stunting_improvement_based_on_interventions = \
             LinearModel(LinearModelType.MULTIPLICATIVE,
                         1.0,
-                        Predictor('un_CM_treatment_type')
-                        .when('continued_breastfeeding', p['rr_stunting_improvement_with_continued_breastfeeding'])
+                        Predictor('un_cm_treatment_type')
                         .when('complementary_feeding_with_food_supplementation',
                               p['un_effectiveness_complementary_feeding_promo_'
                                 'with_food_supplementation_in_stunting_reduction'])
                         .when('education_on_complementary_feeding',
                               p['un_effectiveness_complementary_feeding_promo_'
                                 'education_only_in_stunting_reduction'])
-                        .otherwise(p['baseline_rate_of_HAZ_improvement_by_1sd']),
+                        .otherwise(0.0)
                         )
 
     def on_birth(self, mother_id, child_id):
@@ -521,7 +516,7 @@ class Stunting(Module):
 
     def do_when_chronic_malnutrition_assessment(self, person_id):
         """
-        This is called by the a generic HSI event when chronic malnutrition is checked.
+        This is called by the a generic HSI event when chronic malnutrition/ stunting is checked.
         :param person_id:
         :param hsi_event: The HSI event that has called this event
         :return:
@@ -529,13 +524,10 @@ class Stunting(Module):
         df = self.sim.population.props
         p = self.parameters
 
-        # get the clinical states
-        stunting_state = df.at[person_id, 'un_HAZ_category']
-
         # Interventions for stunting
 
-        # Check for coverage of complementary feeding,
-        # assume these interventions are given in supplementary feeding programes
+        # Check for coverage of complementary feeding, by assuming
+        # these interventions are given in supplementary feeding programmes (in wasting)
         if self.sim.modules['Wasting'].parameters['coverage_supplementary_feeding_program'] > self.rng.rand():
             # schedule HSI for complementary feeding program
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -555,6 +547,7 @@ class Stunting(Module):
                 priority=0,
                 topen=self.sim.date
             )
+            # ASSUMPTION : ALL PATIENTS WILL GET ADVICE/COUNSELLING AT OUTPATIENT VISITS
 
     def do_when_cm_treatment(self, person_id):
         """
@@ -571,10 +564,10 @@ class Stunting(Module):
             # schedule recovery date
             self.sim.schedule_event(
                 event=StuntingRecoveryEvent(module=self, person_id=person_id),
-                date=df.at[person_id, 'un_chronic_malnutrition_tx_start_date'] + DateOffset(weeks=3))
+                date=df.at[person_id, 'un_stunting_tx_start_date'] + DateOffset(weeks=4))
             # cancel progression to severe stunting date (in ProgressionEvent)
         else:
-            # remained stunted/severe stunted
+            # remained stunted or severe stunted
             return
 
 
@@ -613,23 +606,21 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # Create the event for the onset of stunting (start with moderate stunting)
             self.sim.schedule_event(
                 event=StuntingOnsetEvent(module=self.module,
-                                         person_id=person_id),
-                date=date_onset)
+                                         person_id=person_id), date=date_onset)
 
 
 class StuntingRecoveryPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that determines those that will improve their stunting state
-     and schedules individual recoveries.
+     and schedules individual recoveries, these are based on interventions
     """
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=6))
+        super().__init__(module, frequency=DateOffset(months=3))
         assert isinstance(module, Stunting)
 
     def apply(self, population):
         df = population.props
         rng = self.module.rng
-        p = self.module.parameters
 
         days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'D')
 
@@ -643,17 +634,10 @@ class StuntingRecoveryPollingEvent(RegularEvent, PopulationScopeEventMixin):
         for person_id in improved_stunting_state[improved_stunting_state].index:
             # Allocate a date of onset for stunting episode
             date_recovery_stunting = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
-            if df.at[person_id, 'un_HAZ_category'] == '-3<=HAZ<-2':
-                improved_state = 'HAZ>=-2'
-            if df.at[person_id, 'un_HAZ_category'] == 'HAZ<-3':
-                improved_state = '-3<=HAZ<-2'
-
             # Create the event for the onset of stunting recovery by 1sd in HAZ
             self.sim.schedule_event(
                 event=StuntingRecoveryEvent(module=self.module,
-                                            person_id=person_id,
-                                            stunting_state=improved_state), date=date_recovery_stunting
-            )
+                                            person_id=person_id), date=date_recovery_stunting)
 
 
 class StuntingOnsetEvent(Event, IndividualScopeEventMixin):
@@ -672,8 +656,8 @@ class StuntingOnsetEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
-        p = self.parameters
         m = self.module
+        p = m.parameters
         rng = m.rng
 
         df.at[person_id, 'un_ever_stunted'] = True
@@ -689,7 +673,10 @@ class StuntingOnsetEvent(Event, IndividualScopeEventMixin):
 
         # determine if this person will progress to severe stunting # # # # # # # # # # #
         progression_to_severe_stunting = self.module.severe_stunting_progression_equation.predict(
-            df.loc[[person_id]])
+            df.loc[[person_id]],
+            previous_diarrhoea_episodes=self.module.count_all_previous_diarrhoea_episodes(
+                today=self.sim.date, index=df.loc[[person_id]].index))
+
         if rng.rand() < progression_to_severe_stunting:
             # Allocate a date of onset for stunting episode
             date_onset_severe_stunting = self.sim.date + DateOffset(months=3)
@@ -726,7 +713,7 @@ class ProgressionSevereStuntingEvent(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
         m = self.module
-        p = self.parameters
+        p = m.parameters
         rng = m.rng
 
         if not df.at[person_id, 'is_alive']:
@@ -735,7 +722,7 @@ class ProgressionSevereStuntingEvent(Event, IndividualScopeEventMixin):
         # before progression to severe stunting, check those who started complementary feeding interventions
         if df.at[person_id,
                  'un_last_stunting_date_of_onset'] < df.at[person_id,
-                                                           'un_chronic_malnutrition_tx_start_date'] < self.sim.date:
+                                                           'un_stunting_tx_start_date'] < self.sim.date:
             return
 
         # update properties
@@ -776,6 +763,7 @@ class StuntingRecoveryEvent(Event, IndividualScopeEventMixin):
 
         if df.at[person_id, 'un_HAZ_category'] == '-3<=HAZ<-2':
             df.at[person_id, 'un_HAZ_category'] = 'HAZ>=-2'
+            df.at[person_id, 'un_stunting_recovery_date'] = self.sim.date
         if df.at[person_id, 'un_HAZ_category'] == 'HAZ<-3':
             df.at[person_id, 'un_HAZ_category'] = '-3<=HAZ<-2'
 
@@ -823,8 +811,8 @@ class HSI_complementary_feeding_education_only(HSI_Event, IndividualScopeEventMi
         if self.get_all_consumables(item_codes=item_code_complementary_feeding_education):
             logger.debug(key='debug', data='item_code_complementary_feeding_education is available, so use it.')
             # Update properties
-            df.at[person_id, 'un_chronic_malnutrition_tx_start_date'] = self.sim.date
-            df.at[person_id, 'un_CM_treatment_type'] = 'education_on_complementary_feeding'
+            df.at[person_id, 'un_stunting_tx_start_date'] = self.sim.date
+            df.at[person_id, 'un_cm_treatment_type'] = 'education_on_complementary_feeding'
             self.module.do_when_cm_treatment(person_id)
         else:
             logger.debug(key='debug', data="item_code_complementary_feeding_education is not available, "
@@ -884,8 +872,8 @@ class HSI_complementary_feeding_with_supplementary_foods(HSI_Event, IndividualSc
         if self.get_all_consumables(item_codes=item_code_complementary_feeding_with_supplements):
             logger.debug(key='debug', data='item_code_complementary_feeding_with_supplements is available, so use it.')
             # Update properties
-            df.at[person_id, 'un_chronic_malnutrition_tx_start_date'] = self.sim.date
-            df.at[person_id, 'un_CM_treatment_type'] = 'complementary_feeding_with_food_supplementation'
+            df.at[person_id, 'un_stunting_tx_start_date'] = self.sim.date
+            df.at[person_id, 'un_cm_treatment_type'] = 'complementary_feeding_with_food_supplementation'
             self.module.do_when_cm_treatment(person_id)
         else:
             logger.debug(key='debug', data="item_code_complementary_feeding_with_supplements is not available, "
@@ -900,3 +888,35 @@ class HSI_complementary_feeding_with_supplementary_foods(HSI_Event, IndividualSc
     def did_not_run(self):
         logger.debug("HSI_complementary_feeding_with_supplementary_foods: did not run")
         pass
+
+
+class StuntingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+        This Event logs the number of incident cases that have occurred since the previous logging event.
+        Analysis scripts expect that the frequency of this logging event is once per year.
+        """
+
+    def __init__(self, module):
+        # This event to occur every year
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        self.date_last_run = self.sim.date
+
+    def apply(self, population):
+        df = self.sim.population.props
+        # Convert the list of timestamps into a number of timestamps
+        # and check that all the dates have occurred since self.date_last_run
+        counts_cm = copy.deepcopy(self.module.stunting_incident_case_tracker_zeros)
+
+        for age_grp in self.module.stunting_incident_case_tracker.keys():
+            for state in self.module.stunting_states:
+                list_of_times = self.module.stunting_incident_case_tracker[age_grp][state]
+                counts_cm[age_grp][state] = len(list_of_times)
+                for t in list_of_times:
+                    assert self.date_last_run <= t <= self.sim.date
+
+        logger.info(key='stunting_incidence_count', data=counts_cm)
+
+        # Reset the counters and the date_last_run
+        self.module.stunting_incident_case_tracker = copy.deepcopy(self.module.stunting_incident_case_tracker_blank)
+        self.date_last_run = self.sim.date
