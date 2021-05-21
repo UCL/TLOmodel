@@ -59,7 +59,7 @@ Non-Communicable Conditions
 -----------------------
 
 * Cancers:
-    * Bladder Cancer (Forthcoming)
+    * Bladder Cancer :download:`.docx <./write-ups/BladderCancer.docx>`
     * Oesophageal Cancer (Forthcoming)
     * Bladder Cancer: (Forthcoming)
 
