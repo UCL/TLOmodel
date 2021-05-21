@@ -39,6 +39,10 @@ class BedDays(Module):
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
+        # a dictionary to create a footprint according to facility bed days capacity
+        self.available_footprint = {}
+
+        # a dictionary to track inpatient bed days
         self.bed_tracker = dict()
         self.list_of_cols_with_internal_dates = dict()
         self.resourcefilepath = resourcefilepath
@@ -137,17 +141,20 @@ class BedDays(Module):
                     description=f'dataframe of bed_tracker of type {bed_type}, broken down by day and facility'
                 )
 
-    def check_footprint_against_capacity(self, footprint):
-        """A function to check if the required bed days is within or beyond be capacity per facility.
-        throws an assertion error if the requested bed days is beyond capacity"""
-        is_true = False
-        bed_capacity = self.parameters['BedCapacity'].set_index('Facility_ID')
+    def get_footprint_according_to_capacity(self, footprint):
+        """A function to check if the required bed days are within or beyond the facility bed days capacity.
+        it sets the requested bed days to a facility bed days capacity if the requested bed days are
+        beyond facility bed days capacity"""
+
+        bed_capacity = self.parameters['BedCapacity']
+
         for bed_type in self.bed_types:
             if (footprint[bed_type] > bed_capacity[bed_type]).any():
-                return is_true
+                self.available_footprint[bed_type] = int(bed_capacity.loc[bed_capacity.index[0], bed_type])
             else:
-                is_true = True
-                return is_true
+                self.available_footprint[bed_type] = footprint[bed_type]
+
+        return self.available_footprint
 
     def get_blank_beddays_footprint(self):
         """
@@ -176,10 +183,13 @@ class BedDays(Module):
          """
 
         df = self.sim.population.props
-        new_footprint = footprint
+
+        # # check the footprint against capacity and issue bed days according to capacity
+        # available_bed_days_footprint = self.get_footprint_according_to_capacity(footprint)
+
         if not df.at[person_id, 'bd_is_inpatient']:
             # apply the new footprint if the person is not already an in-patient
-            self.apply_footprint(person_id, new_footprint)
+            self.apply_footprint(person_id, footprint)
             # label person as an in-patient
             df.at[person_id, 'bd_is_inpatient'] = True
 
@@ -189,7 +199,7 @@ class BedDays(Module):
             remaining_footprint = self.get_remaining_footprint(person_id)
 
             # combine the remaining footprint with the new footprint, with days in each bed-type running concurrently:
-            combo_footprint = {bed_type: max(new_footprint[bed_type], remaining_footprint[bed_type])
+            combo_footprint = {bed_type: max(footprint[bed_type], remaining_footprint[bed_type])
                                for bed_type in self.bed_types
                                }
 
@@ -203,9 +213,6 @@ class BedDays(Module):
         # check that the number of inpatient days does not exceed the maximum of 21 days
         assert self.parameters['days_until_last_day_of_bed_tracker'] >= sum(footprint.values()), \
             "total number of bed days is more than bed days tracking period"
-
-        # check that the required bed days in the footprint are within bed capacity
-        assert self.check_footprint_against_capacity(footprint), "footprint bed days beyond capacity"
 
         df = self.sim.population.props
 
@@ -253,7 +260,6 @@ class BedDays(Module):
         """Helper function to compute the dates of entry/exit from beds of each type according to a bed-days footprint
          (which provides information in terms of number of whole days).
         NB. It is always assumed that the footprint begins with today's date. """
-
         now = self.sim.date
         start_allbeds = now
         end_allbeds = now + pd.DateOffset(days=sum(footprint.values()) - 1)
@@ -326,3 +332,5 @@ class RefreshInPatientStatus(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.is_alive, "bd_is_inpatient"] = \
             ((~df.loc[df.is_alive, exit_cols].isnull()) & ~(
                 df.loc[df.is_alive, exit_cols] < self.sim.date)).any(axis=1)
+
+
