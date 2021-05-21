@@ -447,7 +447,7 @@ def check_bed_days_released_on_death(hs_disable):
 
     tracker = sim.modules['BedDays'].bed_tracker['general_bed']
     bed_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
-    # assert all([0] * 2 + [2] * 3 + [1] * 7 + [0] * 9 == bed_occupied.values)
+    assert all([0] * 2 + [2] * 3 + [1] * 7 + [0] * 10 == bed_occupied.values)
 
 
 def test_bed_days_if_healthsystem_not_disabled():
