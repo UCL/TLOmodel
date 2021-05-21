@@ -60,6 +60,7 @@ sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 # Register the appropriate modules
 sim.register(
     # Standard modules:
+
     demography.Demography(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
