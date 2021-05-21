@@ -5,8 +5,9 @@ Model Documentation
 
 Overall Framework Design
 ========================
- However, a brief introductory overview of the design is provided here.
-**** todo***
+A high-level overview of the design of the model is provided `here <./write-ups/Framework.docx>`.
+The entire code is fully documented under the `Reference tab <reference_>`.
+
 
 Core Functions
 ===============
