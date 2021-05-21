@@ -177,14 +177,18 @@ class HealthSystem(Module):
         appt_time_data = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Appt_Time_Table.csv'
         )
-        levels = set(
-            appt_time_data['Facility_Level'].unique()
-        )
-        # Check that levels are consecutive integers starting from 0
-        assert levels == set(range(len(levels)))
-        appt_time_dict = [{} for _ in levels]
+        facility_levels = set(appt_time_data['Facility_Level'].unique())
+        # Check that facility levels are consecutive integers starting from 0
+        assert facility_levels == set(range(len(facility_levels)))
+        # Store facility levels in module for check in schedule_hsi_event and for
+        # check against levels in facilities per district resource file
+        self._facility_levels = facility_levels
+        # Store data as tuple of dicts, with tuple indexed by integer facility level and
+        # dict indexed by string type code with values corresponding to (named) tuples
+        # of appointment office type code and time taken
+        appt_time_per_level_and_type = tuple({} for _ in facility_levels)
         for appt_time_tuple in appt_time_data.itertuples():
-            appt_time_dict[
+            appt_time_per_level_and_type[
                 appt_time_tuple.Facility_Level
             ][
                 appt_time_tuple.Appt_Type_Code
@@ -192,7 +196,7 @@ class HealthSystem(Module):
                 officer_type=appt_time_tuple.Officer_Type_Code,
                 time_taken=appt_time_tuple.Time_Taken
             )
-        self.parameters['Appt_Time_Table'] = appt_time_dict
+        self.parameters['Appt_Time_Table'] = appt_time_per_level_and_type
 
         self.parameters['ApptType_By_FacLevel'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_ApptType_By_FacLevel.csv'
@@ -204,28 +208,31 @@ class HealthSystem(Module):
         facilities_per_district_data = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Facilities_For_Each_District.csv'
         )
-        districts = set(
-            facilities_per_district_data['District'].unique()
+        districts = set(facilities_per_district_data['District'].unique())
+        facility_levels = set(facilities_per_district_data['Facility_Level'].unique())
+        # Check facility levels match those from appointment time table
+        assert facility_levels == self._facility_levels, (
+            "Mismatch between facility levels in Facilities_For_Each_District "
+            "resource file and Appt_Time_Table resource files"
         )
-        levels = set(
-            facilities_per_district_data['Facility_Level'].unique()
-        )
-        # Check that levels are consecutive integers starting from 0
-        assert levels == set(range(len(levels)))
-        self._facility_levels = levels
-        facilities_per_district_dict = {
-            district: [None] * len(levels) for district in districts
-        }
+        # Store data as tuple of dicts, with tuple indexed by integer facility level and
+        # dict indexed by district name with values corresponding to (named) tuples of
+        # facility ID and name
+        facilities_per_level_and_district = tuple({} for _ in facility_levels)
         for facility_tuple in facilities_per_district_data.itertuples():
-            facilities_per_district_dict[
-                facility_tuple.District
-            ][
+            facilities_per_level_and_district[
                 facility_tuple.Facility_Level
+            ][
+                facility_tuple.District
             ] = FacilityInfo(
                 id=facility_tuple.Facility_ID,
                 name=facility_tuple.Facility_Name
             )
-        self.parameters['Facilities_For_Each_District'] = facilities_per_district_dict
+        assert all(d.keys() == districts for d in facilities_per_level_and_district), (
+            "Facilities_For_Each_District resource file does not contain facilities "
+            "at all levels for all districts"
+        )
+        self.parameters['Facilities_For_Each_District'] = facilities_per_level_and_district
 
         caps = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv')
         self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
@@ -306,23 +313,17 @@ class HealthSystem(Module):
             m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHSYSTEM in m.METADATA
         ]
 
-        # Check that each person is being associated with a facility of each type
+        # Check that set of districts of residence in population are subset o districts from
+        # Facilities_For_Each_District resource file
         pop = self.sim.population.props
-        mfl = self.parameters['Master_Facilities_List']
-        self.Facility_Levels = pd.unique(mfl['Facility_Level'])
-
-        for person_id in pop.index[pop.is_alive]:
-            my_district = pop.at[person_id, 'district_of_residence']
-            my_health_facilities = self.parameters[
-                "Facilities_For_Each_District"
-            ][my_district]
-            my_health_facility_level = [
-                level
-                for level, facility_info in enumerate(my_health_facilities)
-                if facility_info is not None
-            ]
-            assert len(my_health_facilities) == len(self.Facility_Levels)
-            assert set(my_health_facility_level) == set(self.Facility_Levels)
+        districts_of_residence = set(pop[pop.is_alive]["district_of_residence"].unique())
+        assert all(
+            districts_of_residence.issubset(per_level_facilities.keys())
+            for per_level_facilities in self.parameters["Facilities_For_Each_District"]
+        ), (
+            "At least one district_of_residence value in population not present in "
+            "Facilities_For_Each_District resource file"
+        )
 
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
         if not (self.disable or self.disable_and_reject_all):
@@ -724,7 +725,7 @@ class HealthSystem(Module):
 
         # Return the (one) health_facility available to this person (based on their
         # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL
-        return self.parameters["Facilities_For_Each_District"][the_district][the_level]
+        return self.parameters["Facilities_For_Each_District"][the_level][the_district]
 
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
@@ -778,7 +779,6 @@ class HealthSystem(Module):
             ] += appt_info.time_taken
 
         return pd.Series(appt_footprint_times)
-
 
     def get_squeeze_factors(self, all_calls_today, current_capabilities):
         """
