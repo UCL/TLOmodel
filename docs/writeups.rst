@@ -3,10 +3,12 @@
 Model Documentation
 ====================
 
-Overall Framework Design
-========================
-A high-level overview of the design of the model is provided `here <./write-ups/Framework.docx>`.
-The entire code is fully documented under the `Reference tab <reference_>`.
+This page provides links to "user-friendly" write-ups of all the major modules that comprise the TLO Model.
+In addition,
+
+* A high-level overview of the design of the model is provided here: :download:`.docx <./write-ups/Framework.docx>`;
+
+* The entire code is fully documented under the `Reference tab <reference/index_>`.
 
 
 Core Functions
