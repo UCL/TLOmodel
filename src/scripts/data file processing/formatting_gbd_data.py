@@ -23,14 +23,22 @@ from tlo.analysis.utils import (
 
 path_for_saved_files = Path("./resources/demography")
 
-(__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
-
-
 # %%
 # *** USE OF THE GBD DATA ****
 
 # GBD working file: downoaded 22/11/20. This is the version of the data from "GBD 2019"
+
+permalink = 'http://ghdx.healthdata.org/gbd-results-tool?params=gbd-api-2019-permalink/ac9e2a238375d6f6ddec288f174646b7'
 gbd_working_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/HealthBurden Module/Daly and deaths by cause estimates/IHME-GBD_2019_DATA-1db25232-1/IHME-GBD_2019_DATA-1db25232-1.csv'
+
+# %%
+(__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
+make_calendar_type = make_calendar_period_type()
+(__tmp__, calendar_period_lookup) = make_age_grp_lookup()
+age_grp_type= make_age_grp_types()
+
+# %% Load, format and save ResourceFile_XXXX
+
 gbd = pd.read_csv(gbd_working_file)
 
 # 0) Do some basic processing of the file:
