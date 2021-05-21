@@ -4,6 +4,11 @@ The TLO Model Documentation
 The documents linked to below provide a complete technical description of the model in its current state.
 
 
+Thanzi La Onse
+========================
+The TLO Model is a part of the `Thanzi La Onse <https://thanzi.org>`_ (Health for All) Collaboration, funded by `GCRF <https://www.newton-gcrf.org>`_ and `UKRI <https://www.ukri.org>`_ in the United Kingdom.
+
+
 Overall Framework Design
 ========================
 The overall framework is design to be self-documented. However, a brief introductory overview of the design is provided in _here_.
@@ -18,6 +23,7 @@ Core Modules
 * SymptomManager: manages the onset and resolution of symptoms, including symptoms caused by conditions not included in the model.
 * HealthCareSeeking: determines if and how persons seek care following the development of a symptom of ill-health.
 
+Click :download:`here <./write-ups/Labour.docx>` to read about the Labour Module.
 
 Contraception, Pregnancy and Labour
 ===================================
@@ -31,13 +37,14 @@ Diseases and Other Causes of Death and Ill-Health
 
 Communicable Conditions
 -----------------------
-* HIV
-* Tuberculosis
-* Malaria
+* HIV https://github.com/UCL/TLOmodel/blob/master/docs/write-ups/Diarrhoea.docx
+* Tuberculosis (Forthcoming)
+* Malaria (Forthcoming)
 
 Diseases of Early Childhood
 -----------------------
-* Diarrhoea
+* `Diarrhoea <https://github.com/UCL/TLOmodel/blob/master/docs/write-ups/Diarrhoea.docx>`_
+* Acute Lower Respiratory Infection (Forthcoming)
 
 Non-Communicable Conditions
 -----------------------
