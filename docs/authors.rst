@@ -4,9 +4,9 @@ Authors
 
 Scientific Leads
 ================
-* `Timothy Hallett <https://www.imperial.ac.uk/people/timothy.hallett`_ (Joint-Lead Epidemiology)
-* `Andrew Phillips <https://iris.ucl.ac.uk/iris/browse/profile?upi=APHIL63`_ (Joint-Lead Epidemiology)
-* `Asif Tamuri <https://www.homepages.ucl.ac.uk/~ucbtaut/`_ (Lead Developer)
+* `Timothy Hallett <https://www.imperial.ac.uk/people/timothy.hallett>`_ (Joint-Lead Epidemiology)
+* `Andrew Phillips <https://iris.ucl.ac.uk/iris/browse/profile?upi=APHIL63>`_ (Joint-Lead Epidemiology)
+* `Asif Tamuri <https://www.homepages.ucl.ac.uk/~ucbtaut/>`_ (Lead Developer)
 
 Epidemiologists/Modellers
 =========================
@@ -21,8 +21,8 @@ Epidemiologists/Modellers
 
 Software Development
 =====================
-* `Matt Graham <https://matt-graham.github.io/#>`_
 * `Mathew Gill <https://github.com/mattgillucl>`_
 * `Mosè Giordano <https://giordano.github.io/aboutme/>`_
-* `Stef Piatek <https://github.com/stefpiatek>`_
+* `Matt Graham <https://matt-graham.github.io/#>`_
 * `Emmanuel Mnjowe <https://www.linkedin.com/in/emmanuel-mnjowe-067481162>`_
+* `Stef Piatek <https://github.com/stefpiatek>`_
