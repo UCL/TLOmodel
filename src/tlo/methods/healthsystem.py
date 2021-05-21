@@ -1365,7 +1365,10 @@ class HSI_Event:
             for k, v in dict_of_beddays.items():
                 footprint[k] = v
 
-            return footprint
+            # check the footprint against capacity and return bed days according to capacity
+            available_footprint = self.module.sim.modules['BedDays'].get_footprint_according_to_capacity(
+                footprint)
+            return available_footprint
 
         else:
             return {}
