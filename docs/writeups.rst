@@ -47,6 +47,7 @@ Communicable Conditions
 
 * Malaria (Forthcoming)
 
+* Schistosomiasis :download:`.docx <./write-ups/Schistosomiasis.docx>`
 
 Diseases of Early Childhood
 -----------------------
@@ -60,7 +61,7 @@ Non-Communicable Conditions
 
 * Cancers:
     * Bladder Cancer :download:`.docx <./write-ups/BladderCancer.docx>`
-    * Oesophageal Cancer (Forthcoming)
+    * Oesophageal Cancer :download:`.docx <./write-ups/OesophagealCancer.docx>`
     * Bladder Cancer: :download:`.docx <./write-ups/BladderCancer.docx>`
 
 * Depression: :download:`.docx <./write-ups/Depression.docx>`
