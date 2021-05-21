@@ -11,6 +11,7 @@ Contents
    azure_batch
    reference/index
    contributing
+   publications
    authors
 
 Indices and tables

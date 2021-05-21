@@ -16,13 +16,13 @@ Core Functions
 
 * **SymptomManager**: Manages the onset and resolution of symptoms, including symptoms caused by conditions not included in the model. :download:`.docx <./write-ups/SymptomManager.docx>`
 
-* **HealthCareSeeking**: Determines if and how persons seek care following the development of a symptom of ill-health. :download:`.docx <./write-ups/HealthSeekingBehaviour.docx>`
+* **HealthSeekingBehaviour**: Determines if and how persons seek care following the development of a symptom of ill-health. :download:`.docx <./write-ups/HealthSeekingBehaviour.docx>`
 
 * **HealthBurden**: Tracks the occurrence of Disability-Adjusted Life-Years in the population. :download:`.docx <./write-ups/HealthBurden.docx>`
 
 
 Representation of the Healthcare System
----------------------------------------
+========================================
 * **HealthSystem**: Tracks the capabilities and usage and determines availability of healthcare work time, consumables and equipment for in-patient care. :download:`.docx <./write-ups/HealthSystem.docx>`
 
 * **Routine Immunization**: The services that deliver a standard set of immunizations to children. (Forthcoming)
