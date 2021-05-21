@@ -8,8 +8,6 @@ Contents
    welcome
    writeups
    readme
-   installation
-   usage
    azure_batch
    reference/index
    contributing

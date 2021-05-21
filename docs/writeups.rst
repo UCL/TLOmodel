@@ -1,24 +1,39 @@
+
+====================
+Model Documentation
+====================
+
 Overall Framework Design
 ========================
-The overall framework is design to be self-documented. However, a brief introductory overview of the design is provided in _here_.
-
+The overall framework is design to be self-documented. However, a brief introductory overview of the design is provided here.
+**** todo***
 
 Core Modules
 ============
+* Demography: Determines population structure and deaths from causes not represented in the model. :download:`.docx <./write-ups/Demography.docx>`
+* Lifestyle: (Forthcoming)
+* HealthBurden: :download:`.docx <./write-ups/HealthBurden.docx>`
+* SymptomManager: Manages the onset and resolution of symptoms, including symptoms caused by conditions not included in the model. :download:`.docx <./write-ups/SymptomManager.docx>`
+* HealthCareSeeking: Determines if and how persons seek care following the development of a symptom of ill-health. :download:`.docx <./write-ups/HealthSeekingBehaviour.docx>`
 
-* `Demography <https://github.com/UCL/TLOmodel/issues>`_: determines population structure and deaths from causes not represented in the model.
-* Lifestyle:
-* HealthBurden
-* SymptomManager: manages the onset and resolution of symptoms, including symptoms caused by conditions not included in the model.
-* HealthCareSeeking: determines if and how persons seek care following the development of a symptom of ill-health.
+Representation of the Healthcare System
+---------------------------------------
+* HealthSystem: Tracks the capabilities and usage and determines availability of healthcare work time, consumables and equipment for in-patient care. :download:`.docx <./write-ups/HealthSystem.docx>`
 
-Click :download:`here <./write-ups/Labour.docx>` to read about the Labour Module.
 
 Contraception, Pregnancy and Labour
 ===================================
-* `Contraception <https://github.com/UCL/TLOmodel/issues>`_:
-* `Pregnancy & Labour <https://github.com/UCL/TLOmodel/issues>`_:
-* `Newborn Conditions <https://github.com/UCL/TLOmodel/issues>`_:
+* Contraception: :download:`.docx <./write-ups/Contraception.docx>`
+
+* Care of Women During Pregnancy :download:`.docx <./write-ups/CareOfWomenDuringPregnancy.docx>`
+
+* Labour :download:`.docx <./write-ups/Labour.docx>`
+
+* Pregnancy :download:`.docx <./write-ups/PregnancySupervisor.docx>`
+
+* Newborns :download:`.docx <./write-ups/NewbornOutcomes.docx>`
+
+* Postnatal Women: :download:`.docx <./write-ups/PostnatalSupervisor.docx>`
 
 
 Diseases and Other Causes of Death and Ill-Health
@@ -26,28 +41,40 @@ Diseases and Other Causes of Death and Ill-Health
 
 Communicable Conditions
 -----------------------
-* HIV https://github.com/UCL/TLOmodel/blob/master/docs/write-ups/Diarrhoea.docx
+* HIV :download:`.docx <./write-ups/Hiv.docx>`
+
 * Tuberculosis (Forthcoming)
+
 * Malaria (Forthcoming)
+
 
 Diseases of Early Childhood
 -----------------------
-* `Diarrhoea <https://github.com/UCL/TLOmodel/blob/master/docs/write-ups/Diarrhoea.docx>`_
+* Diarrhoea :download:`.docx <./write-ups/Diarrhoea.docx>`
+
 * Acute Lower Respiratory Infection (Forthcoming)
+
 
 Non-Communicable Conditions
 -----------------------
 
 * Cancers:
-    * Bladder Cancer
-    * Oesophageal Cancer
-* Depression
-* Other non-communicable conditions:
-    *
+    * Bladder Cancer (Forthcoming)
+    * Oesophageal Cancer (Forthcoming)
+    * Bladder Cancer: (Forthcoming)
+
+* Depression (Forthcoming)
 
 
-Representation of the Healthcare System
----------------------------------------
+* Caridometabolic Diorders:
+    * Diabetes Type 2, Hypertension, Stroke, Ischaermic Heart Disease, Myocardial Infarction :download:`.docx <./write-ups/Ncds.docx>`
 
-* HealthSystem: tracks the capabilities and usage and determines availability of healthcare work time, consumables and equipment for in-patient care.
-* DxManager
+* Other Non-Communicable and Chronic Conditions
+    * Chronic Lower Back Pain :download:`.docx <./write-ups/Ncds.docx>`
+
+    * Chronic Kidney Disease :download:`.docx <./write-ups/Ncds.docx>`
+
+
+
+
+

@@ -1,5 +1,5 @@
 =====================
-Installing the Model
+Getting Started
 =====================
 
 

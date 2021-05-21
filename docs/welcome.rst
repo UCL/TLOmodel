@@ -2,15 +2,10 @@
 .. image:: https://thanzi.org/img/thanzi-la-onse.png
 
 
+===========================================
+Welcome To The Thanzi La Onse (TLO) Model
+===========================================
 
-=========================================
-Welcome To The Thanzi La Onse TLO Model
-=========================================
-
-The documents linked to below provide a complete technical description of the model in its current state.
-
-Thanzi La Onse
-========================
 The TLO Model is a part of the `Thanzi La Onse <https://thanzi.org>`_ (Health for All) Collaboration, funded by `GCRF <https://www.newton-gcrf.org>`_ and `UKRI <https://www.ukri.org>`_ in the United Kingdom.
 
 It is a collaboration between:
