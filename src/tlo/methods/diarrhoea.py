@@ -638,7 +638,7 @@ class Diarrhoea(Module):
             unscaled_lm = make_linear_model(patho)
             target_mean = p[f'base_inc_rate_diarrhoea_by_{patho}'][0]
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean) if (target_mean != 0 and actual_mean != 0) else 1.0
+            scaled_intercept = 1.0 * (target_mean / actual_mean) if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
             scaled_lm = make_linear_model(patho, intercept=scaled_intercept)
             # check by applying the model to mean incidence of 0-year-olds
             if (df.is_alive & (df.age_years == 0)).sum() > 0:
