@@ -6,6 +6,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from tlo.core import Cause, collect_causes_from_disease_modules
+
 from tlo import DateOffset, Module, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
@@ -28,7 +30,7 @@ class HealthBurden(Module):
         self.YearsLifeLost = None
         self.YearsLivedWithDisability = None
         self.recognised_modules_names = None
-        self.causes_of_death_and_disability = None
+        self.causes_of_disability = None
 
     # Declare Metadata
     METADATA = {}
@@ -53,7 +55,7 @@ class HealthBurden(Module):
         """Do before simulation starts:
         1) Prepare data storage structures
         2) Collect the module that will use this HealthBuren module
-        3) Collect causes of deaths and disability (from the Demography module)
+        3) Collect causes of disability that are declared by the Disease Modules
         4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
         """
 
@@ -83,7 +85,11 @@ class HealthBurden(Module):
                    callable(self.sim.modules[module_name].report_daly_values)
 
         # 3) Collect causes of deaths from the demography module
-        self.causes_of_death_and_disability = []
+        self.causes_of_disability = collect_causes_from_disease_modules(
+            all_modules=self.sim.modules.values(),
+            collect='CAUSES_OF_DISABILITY',
+            acceptable_causes=None,   # todo - add acceptable causes
+        )
 
         # 4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))

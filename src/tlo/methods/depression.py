@@ -39,8 +39,12 @@ class Depression(Module):
     }
 
     # Declare Causes of Death
-    CAUSES_OF_DEATH_AND_DISABILITY = {
+    CAUSES_OF_DEATH = {
         'Suicide': Cause(gbd_causes='Self-harm', label='Depression / Self-harm'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
         'SevereDepression': Cause(gbd_causes='Self-harm', label='Depression / Self-harm')
     }
 
