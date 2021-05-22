@@ -44,7 +44,7 @@ class Malaria(Module):
     }
 
     # Declare Causes of Death
-    CAUSES_OF_DEATH_AND_DISABILITY = {
+    CAUSES_OF_DEATH = {
         'severe_malaria': Cause(gbd_causes='Malaria', label='Malaria'),
         'Malaria': Cause(gbd_causes='Malaria', label='Malaria'),
     }
@@ -53,7 +53,7 @@ class Malaria(Module):
     CAUSES_OF_DISABILITY = {
         'Malaria_Symptoms': Cause(gbd_causes=['Malaria'], label='Malaria')
     }
-    # todo - @Tara: would it make sense to simplify these different causes into 1?
+    # todo - @Tara: would it make sense to simplify these different causes into one?
 
     PARAMETERS = {
         "mal_inc": Parameter(Types.REAL, "monthly incidence of malaria in all ages"),
@@ -1256,7 +1256,6 @@ class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
 # Logging
 # ---------------------------------------------------------------------------------
 
-
 class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         self.repeat = 12
@@ -1402,9 +1401,9 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo this could be PfPR in 2-10 yr olds and clinical incidence too
         # ------------------------------------ PREVALENCE OF INFECTION ------------------------------------
         infected = (
-            df[df.is_alive & df.ma_is_infected].groupby("district_of_residence").size()
+            df[df.is_alive & df.ma_is_infected].groupby("district_num_of_residence").size()
         )
-        pop = df[df.is_alive].groupby("district_of_residence").size()
+        pop = df[df.is_alive].groupby("district_num_of_residence").size()
         prev = infected / pop
         prev_ed = prev.fillna(0)
         assert prev_ed.all() >= 0  # checks
