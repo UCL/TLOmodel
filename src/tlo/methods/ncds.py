@@ -15,7 +15,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods import demography as de
 from tlo.methods.demography import InstantaneousDeath
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
 
 # from tlo.methods.healthsystem import HSI_Event
 
@@ -55,16 +55,29 @@ class Ncds(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'diabetes': CauseOfDeath(
+        'diabetes': Cause(
             gbd_causes='Diabetes mellitus', label='Diabetes'),
-        'chronic_ischemic_hd': CauseOfDeath(
+        'chronic_ischemic_hd': Cause(
             gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
-        'heart_attack': CauseOfDeath(
+        'heart_attack': Cause(
             gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
-        'stroke': CauseOfDeath(
+        'stroke': Cause(
             gbd_causes='Stroke', label='Stroke'),
-        'chronic_kidney_disease': CauseOfDeath(
+        'chronic_kidney_disease': Cause(
             gbd_causes='Chronic kidney disease', label='Kidney Disease')
+    }
+
+    # Declare Causes of Disability #todo - to be updated when DALYS calc are completed
+    CAUSES_OF_DISABILITY = {
+        'any_ncd':
+            Cause(gbd_causes=[
+                'Diabetes mellitus',
+                'Ischemic heart disease',
+                'Hypertensive heart disease',
+                'Stroke',
+                'chronic_kidney_disease'
+            ],
+                  label='NCD')
     }
 
     # create separate dicts for params for conditions and events

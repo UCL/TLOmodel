@@ -10,7 +10,8 @@ from tlo import Date, Simulation, Module
 from tlo.methods import demography, mockitis, Metadata, hiv, diarrhoea, symptommanager, enhanced_lifestyle, malaria, \
     ncds, oesophagealcancer, labour, newborn_outcomes, pregnancy_supervisor, care_of_women_during_pregnancy, \
     contraception, postnatal_supervisor, healthsystem, depression, bladder_cancer
-from tlo.methods.demography import AgeUpdateEvent, CauseOfDeath
+from tlo.methods.demography import AgeUpdateEvent
+from tlo.core import Cause
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
@@ -52,7 +53,7 @@ def test_storage_of_module_name_that_causes_death():
 
     class DummyModule(Module):
         METADATA = {Metadata.DISEASE_MODULE}
-        CAUSES_OF_DEATH = {'a_cause': CauseOfDeath(gbd_causes='HIV/AIDS', label='a_cause')}
+        CAUSES_OF_DEATH = {'a_cause': Cause(gbd_causes='HIV/AIDS', label='a_cause')}
         def read_parameters(self, data_folder):
             pass
         def initialise_population(self, population):
@@ -249,11 +250,6 @@ def test_py_calc_w_mask(simulation):
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year, mask=mask)
     np.testing.assert_almost_equal(1.0, df_py['M'][19])
-
-def test_output_of_scaling_ratio_in_the_log():
-    """Test the model successfully logs the scaling-ratio, and safely gives np.nan if simulation does not include the
-    year of the census."""
-    pass
 
 
 if __name__ == '__main__':

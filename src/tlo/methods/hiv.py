@@ -37,7 +37,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -70,7 +70,11 @@ class Hiv(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'AIDS': CauseOfDeath(gbd_causes='HIV/AIDS', label='AIDS'),
+        'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
+    }
+
+    CAUSES_OF_DISABILITY = {
+        'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
     }
 
     PROPERTIES = {
@@ -821,7 +825,6 @@ class Hiv(Module):
         # Overwrite the value for those that currently have symptoms of AIDS with the 'AIDS' daly_wt:
         dalys.loc[self.sim.modules['SymptomManager'].who_has('aids_symptoms')] = self.daly_wts['aids']
 
-        dalys.name = 'hiv'
         return dalys
 
     def mtct_during_breastfeeding(self, mother_id, child_id):

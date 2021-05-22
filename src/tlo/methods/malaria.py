@@ -16,7 +16,7 @@ from tlo.methods import Metadata, demography
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -44,11 +44,16 @@ class Malaria(Module):
     }
 
     # Declare Causes of Death
-    CAUSES_OF_DEATH = {
-        'severe_malaria': CauseOfDeath(gbd_causes='Malaria', label='Malaria'),
-        'Malaria': CauseOfDeath(gbd_causes='Malaria', label='Malaria'),
-    }  # todo - Why are there are these two different causes of death for Malaria?
+    CAUSES_OF_DEATH_AND_DISABILITY = {
+        'severe_malaria': Cause(gbd_causes='Malaria', label='Malaria'),
+        'Malaria': Cause(gbd_causes='Malaria', label='Malaria'),
+    }
 
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'Malaria_Symptoms': Cause(gbd_causes=['Malaria'], label='Malaria')
+    }
+    # todo - @Tara: would it make sense to simplify these different causes into 1?
 
     PARAMETERS = {
         "mal_inc": Parameter(Types.REAL, "monthly incidence of malaria in all ages"),

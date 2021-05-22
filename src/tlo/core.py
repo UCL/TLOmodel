@@ -158,6 +158,29 @@ class Property(Specifiable):
 
         return s
 
+class Cause():
+    """Data structrue to store information about a Cause (of Death or Disability) used in the model
+    'gbd_causes': list of strings, to which this cause is equivalent.
+    'label': the (single) category within which this cause belongs and should be labelled in output statistics.
+    """
+    def __init__(self, gbd_causes: list = None, label: str = None, ignore: bool = False):
+        """Do basic type checking.
+        If ignore=True, then other arguments are not provided and this cause is defined but not represented
+        in data structures that allow comparison to the GBD datasets."""
+
+        if not ignore:
+            gbd_causes = gbd_causes if type(gbd_causes) is list else list([gbd_causes])
+            assert all([(type(c) is str) and (c is not '') for c in gbd_causes])
+
+            self.gbd_causes = gbd_causes
+
+            assert (type(label) is str) and (label is not '')
+            self.label = label
+
+        else:
+            assert gbd_causes is None
+            assert label is None
+
 
 class Module:
     """The base class for disease modules.
@@ -185,6 +208,14 @@ class Module:
     # Subclasses can override this set to add metadata tags to their class
     # See tlo.methods.Metadata class
     METADATA = {}
+
+    # Subclasses can override this set to declare the causes death that this module contributes to
+    # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
+    CAUSES_OF_DEATH = dict()
+
+    # Subclasses can override this set to declare the causes disability that this module contributes to
+    # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
+    CAUSES_OF_DISABILITY = dict()
 
     # Subclasses may declare this dictionary to specify module-level parameters.
     # We give an empty definition here as default.

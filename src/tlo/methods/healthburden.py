@@ -13,33 +13,6 @@ from tlo.methods import Metadata
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class CauseOfDisability():
-    """Data structrue to store information about a Cause of Disability
-    'gbd_causes': list of strings, to which this cause is equivalent
-    'label': the (single) category in which this cause should be labelled in output statistics
-    """
-    def __init__(self, gbd_causes: list = None, label: str = None, ignore: bool = False):
-        """Do basic type checking.
-        If ignore=True, then other arguments are not provided and this cause is defined but not represented
-        in data structures that allow comparison to the GBD datasets."""
-
-        if not ignore:
-            gbd_causes = gbd_causes if type(gbd_causes) is list else list([gbd_causes])
-            assert all([(type(c) is str) and (c is not '') for c in gbd_causes])
-
-            self.gbd_causes = gbd_causes
-
-            assert (type(label) is str) and (label is not '')
-            self.label = label
-
-        else:
-            assert gbd_causes is None
-            assert label is None
-            logger.warning(key="message",
-                           data=f"A cause of death has been defined but will be ignored."
-                           )
-
-
 
 class HealthBurden(Module):
     """
@@ -55,6 +28,7 @@ class HealthBurden(Module):
         self.YearsLifeLost = None
         self.YearsLivedWithDisability = None
         self.recognised_modules_names = None
+        self.causes_of_death_and_disability = None
 
     # Declare Metadata
     METADATA = {}
@@ -76,7 +50,14 @@ class HealthBurden(Module):
         pass
 
     def initialise_simulation(self, sim):
+        """Do before simulation starts:
+        1) Prepare data storage structures
+        2) Collect the module that will use this HealthBuren module
+        3) Collect causes of deaths and disability (from the Demography module)
+        4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
+        """
 
+        # 1) Prepare data storage structures
         # Create the sex/age_range/year multi-index for YLL and YLD storage dataframes
         first_year = self.sim.start_date.year
         last_year = self.sim.end_date.year
@@ -91,7 +72,7 @@ class HealthBurden(Module):
         self.YearsLifeLost = pd.DataFrame(index=multi_index)
         self.YearsLivedWithDisability = pd.DataFrame(index=multi_index)
 
-        # Store the name of all disease modules
+        # 2) Collect the module that will use this HealthBuren module
         self.recognised_modules_names = [
             m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHBURDEN in m.METADATA
         ]
@@ -101,7 +82,10 @@ class HealthBurden(Module):
             assert getattr(self.sim.modules[module_name], 'report_daly_values', None) and \
                    callable(self.sim.modules[module_name].report_daly_values)
 
-        # Launch the DALY Logger to run every month, starting with the end of month 1
+        # 3) Collect causes of deaths from the demography module
+        self.causes_of_death_and_disability = []
+
+        # 4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
@@ -156,7 +140,7 @@ class HealthBurden(Module):
         (assuming that the person has died on today's date in the simulation).
         :param sex: sex of the person that had died
         :param date_of_birth: date_of_birth of the person that has died
-        :param label: title for the column in YLL dataframe (of form <ModuleName>_<CauseOfDeath>)
+        :param label: title for the column in YLL dataframe (of form <ModuleName>_<Cause>)
         """
 
         assert self.YearsLifeLost.index.equals(self.multi_index)
@@ -242,6 +226,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         disease_specific_daly_values_this_month = pd.DataFrame(index=df.index[df.is_alive])
 
         # 1) Ask each disease module to log the DALYS for the previous month
+        # todo - do the check using self.causes_of_death_and_disability and get labelling right
 
         for disease_module_name in self.module.recognised_modules_names:
 

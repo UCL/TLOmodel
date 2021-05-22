@@ -32,8 +32,8 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods.demography import CauseOfDeath
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
+from tlo.methods.demography import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -67,8 +67,8 @@ class Diarrhoea(Module):
     }
 
     # Declare Causes of Death
-    CAUSES_OF_DEATH = {
-        f'Diarrhoea_{path}': CauseOfDeath(gbd_causes='Diarrheal diseases', label='Childhood Diarrhoea')
+    CAUSES_OF_DEATH_AND_DISABILITY = {
+        f'Diarrhoea_{path}': Cause(gbd_causes='Diarrheal diseases', label='Childhood Diarrhoea')
         for path in pathogens
     }
 

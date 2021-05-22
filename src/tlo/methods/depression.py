@@ -15,7 +15,7 @@ from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -39,10 +39,9 @@ class Depression(Module):
     }
 
     # Declare Causes of Death
-    CAUSES_OF_DEATH = {
-        'Suicide': CauseOfDeath(gbd_causes='Self-harm', label='Depression / Self-harm'),
-        'Depression': CauseOfDeath(gbd_causes='Self-harm', label='Depression / Self-harm')
-        # todo - is one of these to do with DALYS?
+    CAUSES_OF_DEATH_AND_DISABILITY = {
+        'Suicide': Cause(gbd_causes='Self-harm', label='Depression / Self-harm'),
+        'SevereDepression': Cause(gbd_causes='Self-harm', label='Depression / Self-harm')
     }
 
     # Module parameters

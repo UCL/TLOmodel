@@ -19,7 +19,7 @@ from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -45,7 +45,12 @@ class OesophagealCancer(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'OesophagealCancer': CauseOfDeath(gbd_causes='Esophageal cancer', label='Cancer'),
+        'OesophagealCancer': Cause(gbd_causes='Esophageal cancer', label='Cancer'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'OesophagealCancer': Cause(gbd_causes='Esophageal cancer', label='Cancer'),
     }
 
     PARAMETERS = {

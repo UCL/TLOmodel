@@ -12,7 +12,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.postnatal_supervisor import HSI_PostnatalSupervisor_NeonatalWardInpatientCare
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -52,8 +52,20 @@ class NewbornOutcomes(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'intrapartum stillbirth': CauseOfDeath(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
-        'neonatal': CauseOfDeath(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'intrapartum stillbirth': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'neonatal': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'Retinopathy of Prematurity':
+            Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'Neonatal Encephalopathy':
+            Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'Neonatal Sepsis Long term Disability':
+            Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'Preterm Birth Disability':
+            Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders')
     }
 
     PARAMETERS = {

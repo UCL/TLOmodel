@@ -17,7 +17,7 @@ from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -40,38 +40,42 @@ class OtherAdultCancer(Module):
         Metadata.USES_HEALTHBURDEN
     }
 
-    # Declare Causes of Death (todo- these will be updated as further cancer modules are finalised)
-    CAUSES_OF_DEATH = {
-        'OtherAdultCancer': CauseOfDeath(gbd_causes=[
-            'Other malignant neoplasms',
-            'Nasopharynx cancer',
-            'Other pharynx cancer',
-            'Gallbladder and biliary tract cancer',
-            'Pancreatic cancer',
-            'Malignant skin melanoma',
-            'Non-melanoma skin cancer',
-            'Ovarian cancer',
-            'Testicular cancer',
-            'Kidney cancer',
-            'Bladder cancer',
-            'Brain and central nervous system cancer',
-            'Thyroid cancer',
-            'Mesothelioma',
-            'Hodgkin lymphoma',
-            'Non-Hodgkin lymphoma',
-            'Multiple myeloma',
-            'Leukemia',
-            'Other neoplasms',
-            'Breast cancer',
-            'Cervical cancer',
-            'Uterine cancer',
-            'Prostate cancer',
-            'Colon and rectum cancer',
-            'Lip and oral cavity cancer',
-            'Stomach cancer',
-            'Liver cancer'
-        ], label='Cancer'),
+    gbd_causes_of_cancer_represented_in_this_module = [
+        'Other malignant neoplasms',
+        'Nasopharynx cancer',
+        'Other pharynx cancer',
+        'Gallbladder and biliary tract cancer',
+        'Pancreatic cancer',
+        'Malignant skin melanoma',
+        'Non-melanoma skin cancer',
+        'Ovarian cancer',
+        'Testicular cancer',
+        'Kidney cancer',
+        'Brain and central nervous system cancer',
+        'Thyroid cancer',
+        'Mesothelioma',
+        'Hodgkin lymphoma',
+        'Non-Hodgkin lymphoma',
+        'Multiple myeloma',
+        'Leukemia',
+        'Other neoplasms',
+        'Cervical cancer',
+        'Uterine cancer',
+        'Colon and rectum cancer',
+        'Lip and oral cavity cancer',
+        'Stomach cancer',
+        'Liver cancer']
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH_AND_DISABILITY= {
+        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer')
     }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer')
+    }
+
 
     PARAMETERS = {
         "init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage": Parameter(

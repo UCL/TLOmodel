@@ -6,9 +6,9 @@ population structure' worksheet within to initialise the age & sex distribution 
 import math
 from pathlib import Path
 
-import numpy
 import numpy as np
 import pandas as pd
+from tlo.core import Cause
 from tlo.methods import Metadata
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -24,34 +24,6 @@ MIN_AGE_FOR_RANGE = 0
 MAX_AGE_FOR_RANGE = 100
 AGE_RANGE_SIZE = 5
 MAX_AGE = 120
-
-
-class CauseOfDeath():
-    """Data structrue to store information about a Cause of Death used in the model
-    'gbd_causes': list of strings, to which this cause is equivalent
-    'label': the (single) category in which this cause should be labelled in output statistics
-    """
-    def __init__(self, gbd_causes: list = None, label: str = None, ignore: bool = False):
-        """Do basic type checking.
-        If ignore=True, then other arguments are not provided and this cause is defined but not represented
-        in data structures that allow comparison to the GBD datasets."""
-
-        if not ignore:
-            gbd_causes = gbd_causes if type(gbd_causes) is list else list([gbd_causes])
-            assert all([(type(c) is str) and (c is not '') for c in gbd_causes])
-
-            self.gbd_causes = gbd_causes
-
-            assert (type(label) is str) and (label is not '')
-            self.label = label
-
-        else:
-            assert gbd_causes is None
-            assert label is None
-            logger.warning(key="message",
-                           data=f"A cause has been defined but will be ignored."
-                           )
-
 
 
 class Demography(Module):
@@ -182,7 +154,7 @@ class Demography(Module):
                     self.check_cause_of_death(cause)
 
                     # prevent over-writing of causes_of_death: throw error if the name is already in use but the new
-                    # CauseOfDeath is not the same as that already registered/
+                    # Cause is not the same as that already registered/
                     if tlo_cause in causes_of_death:
                         assert (
                             (causes_of_death[tlo_cause].gbd_causes == cause.gbd_causes) and
@@ -196,10 +168,10 @@ class Demography(Module):
 
         return causes_of_death
 
-    def check_cause_of_death(self, cause: CauseOfDeath):
-        """Helper function to check that a 'CauseOfDeath' has been defined in a way that is acceptable."""
+    def check_cause_of_death(self, cause: Cause):
+        """Helper function to check that a 'Cause' has been defined in a way that is acceptable."""
         # 0) Check type
-        assert isinstance(cause, CauseOfDeath)
+        assert isinstance(cause, Cause)
 
         # 1) Check that the declared gbd_cause is a recognised cause of death in the GBD dataset
         for c in cause.gbd_causes:
@@ -319,11 +291,13 @@ class Demography(Module):
         """Things to do at end of the simulation:
         * Compute and log the scaling-factor
         """
-        logger.info(
-            key='scaling_factor',
-            data=self.compute_scaling_factor(),
-            description='The scaling factor (if can be computed)'
-        )
+        sf = self.compute_scaling_factor()
+        if not np.isnan(sf):
+            logger.info(
+                key='scaling_factor',
+                data=sf,
+                description='The scaling factor (if can be computed)'
+            )
 
     def do_death(self, individual_id, cause, originating_module):
         """Register and log the death of an individual from a specific cause"""
@@ -369,7 +343,7 @@ class Demography(Module):
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
         if 'HealthBurden' in self.sim.modules.keys():
             label = originating_module.name + '_' + cause
-            # creates a label for these YLL of the form: <ModuleName>_<CauseOfDeath>
+            # creates a label for these YLL of the form: <ModuleName>_<Cause>
             self.sim.modules['HealthBurden'].report_live_years_lost(sex=person['sex'],
                                                                     date_of_birth=person['date_of_birth'],
                                                                     label=label)
@@ -504,10 +478,10 @@ class Demography(Module):
         """
 
         # Get Census data
-        # todo - move this to parameters, and update filename later (when other changes merged in)
+        # todo - move this to parameters, and update filename later (when other changes in different branch merged in)
         year_of_census = 2018
-        census = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
-        census_popsize = census[year_of_census]
+        census_popsize  = \
+            pd.read_csv(Path(self.resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
 
         # Get model total population size in that same year
         if not year_of_census in self.popsize_by_year:
@@ -568,7 +542,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # gbd_causes_not_assigned_by_disease_modules = set(self.module.parameters['gbd_causes_of_death']) - set(all_gbd_causes_mapped)
         #
         # # 3) Register that the OtherDeathPoll will cover these causes of death (todo - confirm ordering of this step)
-        # # {'Other': CauseOfDeath(gbd_causes=gbd_causes_not_assigned_by_disease_modules, label='Other')}
+        # # {'Other': Cause(gbd_causes=gbd_causes_not_assigned_by_disease_modules, label='Other')}
         #
         # # 4) Compute death rates for the simulation that do not included these causes of death
         # # todo - with updates to this file, processing may be a little different

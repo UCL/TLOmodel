@@ -11,7 +11,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.util import BitsetHandler
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -53,8 +53,14 @@ class PostnatalSupervisor(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'maternal': CauseOfDeath(gbd_causes='Maternal disorders', label='Maternal disorders'),
-        'neonatal': CauseOfDeath(gbd_causes='Neonatal disorders', label='Neonatal Disorders')
+        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal disorders'),
+        'neonatal': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders')
+    }
+
+    # Declare Causes of Disability
+    # todo - distinguish the dalys bewteen maternal and neonatal (here, lumping all under maternal)
+    CAUSES_OF_DISABILITY = {
+        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal disorders')
     }
 
     PARAMETERS = {

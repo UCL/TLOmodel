@@ -7,7 +7,7 @@ from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -34,9 +34,14 @@ class Mockitis(Module):
     }
 
     # Declare Causes of Death
-    CAUSES_OF_DEATH = {
-        'Mockitis': CauseOfDeath(ignore=True),
+    CAUSES_OF_DEATH_AND_DISABILITY = {
+        'Mockitis': Cause(ignore=True),
         # (ignore=True means that we do not associate this with GBD causes of death)
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        '': Cause(ignore=True)
     }
 
     PARAMETERS = {

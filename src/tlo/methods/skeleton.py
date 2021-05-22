@@ -6,7 +6,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -41,11 +41,11 @@ class Skeleton(Module):
         Metadata.USES_HEALTHBURDEN
     }
 
-    # Declare Causes of Death
-    CAUSES_OF_DEATH = {
+    # Declare Causes of Death and Causes of Disability
+    CAUSES_OF_DEATH_AND_DISABILITY= {
         'name_of_each_cause_of_death_in_this_module':
-            CauseOfDeath(gbd_causes=['list_of_strings_of_gbd_causes_to_which_this_cause_corresponds'],
-                         label='the_category_of_deaths_of_which_this_cause_is_a_part')
+            Cause(gbd_causes=['list_of_strings_of_gbd_causes_to_which_this_cause_corresponds'],
+                  label='the_category_of_which_this_cause_is_a_part')
     }
 
     # Here we declare parameters for this module. Each parameter has a name, data type,

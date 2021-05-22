@@ -7,9 +7,10 @@ from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, Reg
 from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
 
-# todo: code specific clinic visits
+# todo: note this code is becoming very depracated and does not include health interactions
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -30,7 +31,12 @@ class Epilepsy(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'Epilepsy': CauseOfDeath(gbd_causes='Other neurological disorders', label='Epilepsy'),
+        'Epilepsy': Cause(gbd_causes='Other neurological disorders', label='Epilepsy'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'Epilepsy': Cause(gbd_causes='Other neurological disorders', label='Epilepsy'),
     }
 
     # Module parameters

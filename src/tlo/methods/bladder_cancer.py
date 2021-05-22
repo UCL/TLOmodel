@@ -18,7 +18,7 @@ from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods.demography import CauseOfDeath
+from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -44,7 +44,12 @@ class BladderCancer(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'BladderCancer': CauseOfDeath(gbd_causes='Bladder cancer', label='Cancer'),
+        'BladderCancer': Cause(gbd_causes='Bladder cancer', label='Cancer'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'BladderCancer': Cause(gbd_causes='Bladder cancer', label='Cancer'),
     }
 
     PARAMETERS = {

@@ -54,9 +54,6 @@ class CareOfWomenDuringPregnancy(Module):
         Metadata.USES_HEALTHSYSTEM,
     }
 
-    # Declare Causes of Death
-    CAUSES_OF_DEATH = {}
-
     PARAMETERS = {
         'prob_anc_continues': Parameter(
             Types.REAL, 'probability a woman will return for a subsequent ANC appointment'),
