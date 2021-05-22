@@ -1,6 +1,7 @@
 """
 A run of the full model at scale (20k population size) using all disease modules currently included in Master for 20
-years, including all the modules for birth/labour/newborn outcome. (No logging)
+years, including all the modules for birth/labour/newborn outcome - but with healthsystem disabled [i.e. no processing
+happens by the healthsystem but all HSI Events run.] (No logging)
 
 For use in profiling.
 
@@ -60,7 +61,6 @@ sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 # Register the appropriate modules
 sim.register(
     # Standard modules:
-
     demography.Demography(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
@@ -69,8 +69,7 @@ sim.register(
 
     # HealthSystem
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                              mode_appt_constraints=2,
-                              capabilities_coefficient=0.01
+                              disable=True
                               ),
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
     dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
