@@ -13,13 +13,14 @@ We are doing this by developing a model that represents the generation of health
 Objective
 =========
 To accomplish this aim, the model represents each step in the generation of health gains:
-(i) the means by which resources for health generate capabilities to deliver services;
 
-(ii) the need  for healthcare, as it arises from the multiple causes of ill-health that affect each person individually over their life;
+* The means by which resources for health generate capabilities to deliver services;
 
-(iii) decisions that are taken to manage mismatches between demand and supply for healthcare services;
+* The need  for healthcare, as it arises from the multiple causes of ill-health that affect each person individually over their life;
 
-(iv) the effectiveness of the care as delivered, accounting for gaps in quality in the healthcare system.
+* Decisions that are taken to manage mismatches between demand and supply for healthcare services;
+
+* The effectiveness of the care as delivered, accounting for gaps in quality in the healthcare system.
 
 
 These distinct processes are represented within an internally consistent model framework that mediates dynamic feedback among them.
