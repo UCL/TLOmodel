@@ -1127,7 +1127,7 @@ class HealthSystem(Module):
         if not df.at[person_id, 'hs_is_inpatient']:
             # apply the new footprint if the person is not already an in-patient
             apply_footprint(new_footprint)
-            # label person as an in-patient
+            # cause_of_death person as an in-patient
             df.at[person_id, 'hs_is_inpatient'] = True
 
         else:

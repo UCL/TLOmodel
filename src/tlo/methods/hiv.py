@@ -1482,7 +1482,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
         # If test is positive, flag as diagnosed and refer to ART
         if test_result is True:
-            # label as diagnosed
+            # cause_of_death as diagnosed
             df.at[person_id, 'hv_diagnosed'] = True
 
             # Do actions for when a person has been diagnosed with HIV

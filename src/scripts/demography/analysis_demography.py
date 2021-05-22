@@ -16,7 +16,7 @@ from tlo.util import create_age_range_lookup
 
 outputpath = "."
 
-# date-stamp to label log files and any other outputs
+# date-stamp to cause_of_death log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module

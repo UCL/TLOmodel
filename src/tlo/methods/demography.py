@@ -133,6 +133,9 @@ class Demography(Module):
             acceptable_causes=set(self.parameters['gbd_causes_of_death'])
         )
 
+        # -- add 'Other' into the causes: todo: let this be declared with the right causes
+        self.causes_of_death['Other'] = Cause(label='Other', gbd_causes=None)
+
         # 2) Create a categorical property for the 'cause_of_death' (name of the module that causes death)
         disease_module_names = [
             m.name for m in self.sim.modules.values() if Metadata.DISEASE_MODULE in m.METADATA
@@ -309,40 +312,40 @@ class Demography(Module):
 
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
         if 'HealthBurden' in self.sim.modules.keys():
-            label = originating_module.name + '_' + cause
-            # creates a label for these YLL of the form: <ModuleName>_<Cause>
+            # report the death so that a computation of lost life-years due to this cause to be recorded
             self.sim.modules['HealthBurden'].report_live_years_lost(sex=person['sex'],
                                                                     date_of_birth=person['date_of_birth'],
-                                                                    label=label)
+                                                                    cause_of_death=cause)
 
     def create_mappers_between_causes_of_death(self, causes_of_death):
         """Helper function to create mapping dicts to map to a common set of categories, either the causes of death
         defined in the model, or the causes defined in the GBD. This is specific to a run of the simulation as the
-        configuration of modules determine which causes of death are counted under the label "Other".
+        configuration of modules determine which causes of death are counted under the cause_of_death "Other".
 
-        'label' is the commmon category in which any type of death is classified (for ouput in statistics and graphs)
+        'cause_of_death' is the commmon category in which any type of death is classified (for ouput in statistics and graphs)
         'tlo_cause' is the name of cause of death in this model
         'gbd_cause' is the name of cause of death in the GBD dataset
 
         * The labels exhausitvely define all the types of death.
-        * Each label is associated with a set of 'tlo_causes' and a set of 'gbd_causes'.
-        * The label 'Other' subsumes the tlo_cause of 'Other' and all the gbd_causes that are not associated with
-         another label.
+        * Each cause_of_death is associated with a set of 'tlo_causes' and a set of 'gbd_causes'.
+        * The cause_of_death 'Other' subsumes the tlo_cause of 'Other' and all the gbd_causes that are not associated with
+         another cause_of_death.
 
         """
 
         # 1) Reorganise the causes of death so that we have:
-        #   lookup = dict(<label> : dict(<tlo_causes>:<list of tlo_strings>, <gbd_causes>: <list_of_gbd_causes))
+        #   lookup = dict(<cause_of_death> : dict(<tlo_causes>:<list of tlo_strings>, <gbd_causes>: <list_of_gbd_causes))
         lookup = defaultdict(lambda: {'tlo_causes': set(), 'gbd_causes': set()})
 
         for tlo_string, cause in causes_of_death.items():
-            label = cause.label
-            list_of_gbd_causes = cause.gbd_causes
+            if cause.gbd_causes:
+                label = cause.label
+                list_of_gbd_causes = cause.gbd_causes
 
-            lookup[label]['tlo_causes'].add(tlo_string)
-            for gbd_cause in list_of_gbd_causes: lookup[label]['gbd_causes'].add(gbd_cause)
+                lookup[label]['tlo_causes'].add(tlo_string)
+                for gbd_cause in list_of_gbd_causes: lookup[label]['gbd_causes'].add(gbd_cause)
 
-        #  2) Create the catch-all label, 'Other'
+        #  2) Create the catch-all cause_of_death, 'Other'
         # todo - won't need this if OtherDeathPoll has registerd causes of death
         all_gbd_causes_mapped = []
         for v in lookup.values():
@@ -355,7 +358,7 @@ class Demography(Module):
             'tlo_causes': set(['Other'])
         }
 
-        # 3) Create dicts for mapping (gbd_cause --> label) and (tlo_cause --> label)
+        # 3) Create dicts for mapping (gbd_cause --> cause_of_death) and (tlo_cause --> cause_of_death)
         lookup_df = pd.DataFrame.from_dict(lookup, orient='index').applymap(lambda x: list(x))
 
         #  - from tlo_strings (key=tlo_string, value=unified_name)
@@ -509,7 +512,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # gbd_causes_not_assigned_by_disease_modules = set(self.module.parameters['gbd_causes_of_death']) - set(all_gbd_causes_mapped)
         #
         # # 3) Register that the OtherDeathPoll will cover these causes of death (todo - confirm ordering of this step)
-        # # {'Other': Cause(gbd_causes=gbd_causes_not_assigned_by_disease_modules, label='Other')}
+        # # {'Other': Cause(gbd_causes=gbd_causes_not_assigned_by_disease_modules, cause_of_death='Other')}
         #
         # # 4) Compute death rates for the simulation that do not included these causes of death
         # # todo - with updates to this file, processing may be a little different

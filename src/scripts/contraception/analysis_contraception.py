@@ -14,7 +14,7 @@ from tlo.methods import contraception, demography
 # Where will outputs go - by default, wherever this script is run
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
-# date-stamp to label log files and any other outputs
+# date-stamp to cause_of_death log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource directory for modules

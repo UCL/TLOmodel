@@ -34,14 +34,13 @@ class Mockitis(Module):
     }
 
     # Declare Causes of Death
-    CAUSES_OF_DEATH_AND_DISABILITY = {
-        'Mockitis': Cause(ignore=True),
-        # (ignore=True means that we do not associate this with GBD causes of death)
+    CAUSES_OF_DEATH = {
+        'Mockitis': Cause(label='Mockitis_Disability_And_Death'),
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        '': Cause(ignore=True)
+        'Mockitis': Cause(label='Mockitis_Disability_And_Death')
     }
 
     PARAMETERS = {
@@ -267,7 +266,7 @@ class Mockitis(Module):
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # The names of the series of columns is taken to be the cause_of_death of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
         logger.debug(key='debug', data='This is mockitis reporting my daly values')
