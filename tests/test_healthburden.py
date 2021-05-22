@@ -76,13 +76,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir):
     output_multi_index = dalys.set_index(['sex', 'age_range', 'year']).index
     assert output_multi_index.equals(correct_multi_index)
 
-    # check that there is a YLD for each module registered
-    yld_colnames = list()
-    for colname in list(dalys.columns):
-        if 'YLD' in colname:
-            yld_colnames.append(colname)
+    # check that there is a column for each 'label' that is registered
+    assert set(dalys.set_index(['sex','age_range','year']).columns) == {'Other', 'Mockitis_Disability_And_Death', 'ChronicSyndrome_Disability_And_Death'}
 
-    module_names_in_output = set()
-    for yld_colname in yld_colnames:
-        module_names_in_output.add(yld_colname.split('_', 2)[1])
-    assert module_names_in_output == {'Mockitis', 'ChronicSyndrome'}
