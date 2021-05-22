@@ -46,7 +46,16 @@ Contraception, Pregnancy and Labour
 * **Postnatal Women** Represents the key conditions/complications experienced by a mother (and by association, a neonate) in the period immediately postpartum and the treatments associated. :download:`.docx <./write-ups/PostnatalSupervisor.docx>`
 
 
-Communicable Conditions
+Conditions of Early Childhood
+==============================
+* **Acute Lower Respiratory Infection**: Childhood viral pneumonia, bacterial pneumonia and viral bronchiolitis and the treatments associated with each. (Forthcoming)
+
+* **Diarrhoea**: Childhood diarrhoea caused by virus or bacteria resulting in dehydration, and the treatments associated. :download:`.docx <./write-ups/Diarrhoea.docx>`
+
+* **Malnutrition**: Childhood malnutrition, short and long-term outcomes and treatments. (Forthcoming)
+
+
+Communicable Diseases
 ========================
 * **HIV**: HIV/AIDS and associated prevention and treatment programmes. :download:`.docx <./write-ups/Hiv.docx>`
 
@@ -57,16 +66,6 @@ Communicable Conditions
 * **Schistosomiasis**: Schistosomiasis disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Schistosomiasis.docx>`
 
 * **Tuberculosis**: Tuberculosis disease and associated prevention and treatment programmes. (Forthcoming)
-
-
-Conditions of Early Childhood
-==============================
-* **Acute Lower Respiratory Infection**: Childhood viral pneumonia, bacterial pneumonia and viral bronchiolitis and the treatments associated with each. (Forthcoming)
-
-* **Diarrhoea**: Childhood diarrhoea caused by virus or bacteria resulting in dehydration, and the treatments associated. :download:`.docx <./write-ups/Diarrhoea.docx>`
-
-* **Malnutrition**: Childhood malnutrition, short and long-term outcomes and treatments. (Forthcoming)
-
 
 
 Non-Communicable Conditions
@@ -88,7 +87,7 @@ Non-Communicable Conditions
 * Injuries:
     * **Road Traffic Injuries**: Injuries arising from road traffic incidents and their treatment. (Forthcoming)
 
-* Other Non-Communicable and Chronic Conditions
+* Other Non-Communicable Conditions
     * **Chronic Lower Back Pain**: Summary representation of chronic lower back pain as part of a set of common non-communicable conditions. :download:`.docx <./write-ups/Ncds.docx>`
 
     * **Chronic Kidney Disease**: Summary representation of chronic kidney disease as part of a set of common non-communicable conditions. :download:`.docx <./write-ups/Ncds.docx>`

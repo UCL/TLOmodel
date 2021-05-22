@@ -6,6 +6,7 @@ Contents
    :maxdepth: 2
 
    welcome
+   aims
    writeups
    readme
    azure_batch
