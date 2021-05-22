@@ -251,7 +251,6 @@ class Demography(Module):
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
         df.loc[df.is_alive, 'age_days'] = demog_char_to_assign['age_in_days'].dt.days
 
-
     def initialise_simulation(self, sim):
         """
         * Schedule the age updating
@@ -318,6 +317,13 @@ class Demography(Module):
                   'child': child_id,
                   'mother_age': df.at[mother_id, 'age_years']}
         )
+
+    def on_simulation_end(self):
+        """Things to do at end of the simulation:
+        * Compute and log the scaling-factor
+        """
+        pass
+
 
     def do_death(self, individual_id, cause, originating_module):
         """Register and log the death of an individual from a specific cause"""

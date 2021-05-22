@@ -250,6 +250,10 @@ def test_py_calc_w_mask(simulation):
     df_py = calc_py_lived_in_last_year(delta=one_year, mask=mask)
     np.testing.assert_almost_equal(1.0, df_py['M'][19])
 
+def test_output_of_scaling_ratio_in_the_log():
+    """Test the model successfully logs the scaling-ratio"""
+    pass
+
 
 if __name__ == '__main__':
     t0 = time.time()

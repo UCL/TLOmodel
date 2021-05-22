@@ -325,6 +325,11 @@ class Module:
         """
         raise NotImplementedError
 
+    def on_simulation_end(self):
+        """This is called after the simulation has ended.
+        Modules do not need to declare this."""
+        pass
+
     def __getattr__(self, name):
         """Look up a module parameter as though it is an object property.
 
