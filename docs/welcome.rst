@@ -1,5 +1,5 @@
 
-.. image:: https://thanzi.org/img/thanzi-la-onse.png
+.. image:: thanzi-la-onse.png
 
 
 ========
