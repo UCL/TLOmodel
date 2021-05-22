@@ -13,6 +13,33 @@ from tlo.methods import Metadata
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+class CauseOfDisability():
+    """Data structrue to store information about a Cause of Disability
+    'gbd_causes': list of strings, to which this cause is equivalent
+    'label': the (single) category in which this cause should be labelled in output statistics
+    """
+    def __init__(self, gbd_causes: list = None, label: str = None, ignore: bool = False):
+        """Do basic type checking.
+        If ignore=True, then other arguments are not provided and this cause is defined but not represented
+        in data structures that allow comparison to the GBD datasets."""
+
+        if not ignore:
+            gbd_causes = gbd_causes if type(gbd_causes) is list else list([gbd_causes])
+            assert all([(type(c) is str) and (c is not '') for c in gbd_causes])
+
+            self.gbd_causes = gbd_causes
+
+            assert (type(label) is str) and (label is not '')
+            self.label = label
+
+        else:
+            assert gbd_causes is None
+            assert label is None
+            logger.warning(key="message",
+                           data=f"A cause of death has been defined but will be ignored."
+                           )
+
+
 
 class HealthBurden(Module):
     """
@@ -27,7 +54,6 @@ class HealthBurden(Module):
         self.multi_index = None
         self.YearsLifeLost = None
         self.YearsLivedWithDisability = None
-
         self.recognised_modules_names = None
 
     # Declare Metadata
@@ -35,7 +61,6 @@ class HealthBurden(Module):
 
     PARAMETERS = {
         'DALY_Weight_Database': Property(Types.DATA_FRAME, 'DALY Weight Database from GBD'),
-
         'Age_Limit_For_YLL': Property(Types.REAL,
                                       'The age up to which deaths are recorded as having induced a lost of life years')
     }
@@ -45,7 +70,7 @@ class HealthBurden(Module):
     def read_parameters(self, data_folder):
         p = self.parameters
         p['DALY_Weight_Database'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_DALY_Weights.csv')
-        p['Age_Limit_For_YLL'] = 70.0  # Assumption that deaths younger than 70y incur years of lost life
+        p['Age_Limit_For_YLL'] = 70.0  # Assumption that only deaths younger than 70y incur years of lost life
 
     def initialise_population(self, population):
         pass
@@ -83,10 +108,7 @@ class HealthBurden(Module):
         pass
 
     def on_simulation_end(self):
-        logger.debug(
-            key="message",
-            data="This is being called at the end of the simulation. Time to output to the logs...."
-        )
+        """Log records of DALYs"""
 
         # Label and concantenate YLL and YLD dataframes
         assert self.YearsLifeLost.index.equals(self.multi_index)
@@ -130,7 +152,8 @@ class HealthBurden(Module):
 
     def report_live_years_lost(self, sex, date_of_birth, label):
         """
-        Calculate the start and end dates of the period for which there is 'years of lost life'
+        Calculate the start and end dates of the period for which there is 'years of lost life' when someone died
+        (assuming that the person has died on today's date in the simulation).
         :param sex: sex of the person that had died
         :param date_of_birth: date_of_birth of the person that has died
         :param label: title for the column in YLL dataframe (of form <ModuleName>_<CauseOfDeath>)

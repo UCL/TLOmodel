@@ -251,7 +251,8 @@ def test_py_calc_w_mask(simulation):
     np.testing.assert_almost_equal(1.0, df_py['M'][19])
 
 def test_output_of_scaling_ratio_in_the_log():
-    """Test the model successfully logs the scaling-ratio"""
+    """Test the model successfully logs the scaling-ratio, and safely gives np.nan if simulation does not include the
+    year of the census."""
     pass
 
 

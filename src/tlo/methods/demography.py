@@ -28,12 +28,12 @@ MAX_AGE = 120
 
 class CauseOfDeath():
     """Data structrue to store information about a Cause of Death used in the model
-    'gbd_causes': list of strings, to which this cause of death is equivalent
-    'label': the (single) category in which this cause_of_death should be labelled in output statistics
+    'gbd_causes': list of strings, to which this cause is equivalent
+    'label': the (single) category in which this cause should be labelled in output statistics
     """
     def __init__(self, gbd_causes: list = None, label: str = None, ignore: bool = False):
         """Do basic type checking.
-        If ignore=True, then other arguments are not provided and this cause of death is defined but not represented
+        If ignore=True, then other arguments are not provided and this cause is defined but not represented
         in data structures that allow comparison to the GBD datasets."""
 
         if not ignore:
@@ -49,7 +49,7 @@ class CauseOfDeath():
             assert gbd_causes is None
             assert label is None
             logger.warning(key="message",
-                           data=f"A cause of death has been defined but will be ignored."
+                           data=f"A cause has been defined but will be ignored."
                            )
 
 
@@ -64,6 +64,7 @@ class Demography(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.causes_of_death = dict()  # will store all the causes of death that are possible in the simulation
+        self.popsize_by_year = dict()  # will store total population size each year
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
@@ -145,7 +146,6 @@ class Demography(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv'
         )
 
-
     def pre_initialise_population(self):
         """
         1) Register all causes of deaths;
@@ -167,9 +167,6 @@ class Demography(Module):
             'The name of the module that caused of death of this individual',
             categories=disease_module_names + [self.name]
         )
-
-
-
 
     def register_causes_of_death_in_disease_modules(self):
         """Helper function to look through Disease Modules and register declared causes of death"""
@@ -322,8 +319,11 @@ class Demography(Module):
         """Things to do at end of the simulation:
         * Compute and log the scaling-factor
         """
-        pass
-
+        logger.info(
+            key='scaling_factor',
+            data=self.compute_scaling_factor(),
+            description='The scaling factor (if can be computed)'
+        )
 
     def do_death(self, individual_id, cause, originating_module):
         """Register and log the death of an individual from a specific cause"""
@@ -488,6 +488,34 @@ class Demography(Module):
 
         return py
 
+    def compute_scaling_factor(self):
+        """
+        Compute the scaling factor, if it is possible to do so.
+
+        The scaling factor is the ratio of {Real Population} to {Model Pop Size}. It is used to mulitply model ouputs
+        in order to produce statistics that will be of the same scale as the real population.
+
+        It is estimated by comparing the population size with the National Census in the year that the census was
+        conducted.
+
+        If the simulation does not include that year, the scaling factor cannot be computed (and np.nan is returned)
+
+        :return: floating point number that is the scaling factor, or np.nan if it cannot be computed.
+        """
+
+        # Get Census data
+        # todo - move this to parameters, and update filename later (when other changes merged in)
+        year_of_census = 2018
+        census = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
+        census_popsize = census[year_of_census]
+
+        # Get model total population size in that same year
+        if not year_of_census in self.popsize_by_year:
+            return np.nan
+        else:
+            model_popsize_in_year_of_census = self.popsize_by_year[year_of_census]
+            return census_popsize / model_popsize_in_year_of_census
+
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -629,7 +657,11 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
 
 class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        """comments...
+        """
+        Logging event running every year.
+        * Update internal storage of population size
+        * Output statistics to the log
+
         """
         # run this event every 12 months (every year)
         self.repeat = 12
@@ -638,6 +670,10 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
 
+        # 1) Update internal storage of the total population size each year.
+        self.module.popsize_by_year[self.sim.date.year] = df.is_alive.sum()
+
+        # 2) Compute Statistics for the log
         sex_count = df[df.is_alive].groupby('sex').size()
 
         logger.info(
@@ -672,6 +708,9 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False):
     """
+
+    DO NOT USE THIS FUNCTION IN NEW CODE --- IT IS PROVIDED TO ENABLE LEGACY CODE TO RUN.
+
     This helper function scales certain outputs so that they can create statistics for the whole population.
     e.g. Population Size, Number of deaths are scaled by the factor of {Model Pop Size at Start of Simulation} to {
     {Real Population at the same time}.
@@ -732,6 +771,4 @@ def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False
     births_groupby_scaled.rename(columns={'mother': 'count'}, inplace=True)
     o['tlo.methods.demography'].update({'birth_groupby_scaled': births_groupby_scaled})
 
-    # TODO: Do this kind of manipulation for all things in the log that are /
-    #  flagged are being subject to scaling - issue raised.
     return o
