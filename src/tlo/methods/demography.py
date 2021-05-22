@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from tlo.core import Cause
+from tlo.core import Cause, collect_causes_from_disease_modules
 from tlo.methods import Metadata
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -127,7 +127,11 @@ class Demography(Module):
         """
 
         # 1) Register all the causes of death from the disease modules
-        self.causes_of_death = self.register_causes_of_death_in_disease_modules()
+        self.causes_of_death = collect_causes_from_disease_modules(
+            all_modules=self.sim.modules.values(),
+            collect='CAUSES_OF_DEATH',
+            acceptable_causes=set(self.parameters['gbd_causes_of_death'])
+        )
 
         # 2) Create a categorical property for the 'cause_of_death' (name of the module that causes death)
         disease_module_names = [
@@ -139,43 +143,6 @@ class Demography(Module):
             'The name of the module that caused of death of this individual',
             categories=disease_module_names + [self.name]
         )
-
-    def register_causes_of_death_in_disease_modules(self):
-        """Helper function to look through Disease Modules and register declared causes of death"""
-
-        causes_of_death = dict()
-        for m in self.sim.modules.values():
-            if Metadata.DISEASE_MODULE in m.METADATA:
-                assert 'CAUSES_OF_DEATH' in dir(m), \
-                    f'Disease module {m.name} must declare causes of death (even if none)'
-                assert type(m.CAUSES_OF_DEATH) is dict
-
-                for tlo_cause, cause in m.CAUSES_OF_DEATH.items():
-                    self.check_cause_of_death(cause)
-
-                    # prevent over-writing of causes_of_death: throw error if the name is already in use but the new
-                    # Cause is not the same as that already registered/
-                    if tlo_cause in causes_of_death:
-                        assert (
-                            (causes_of_death[tlo_cause].gbd_causes == cause.gbd_causes) and
-                            (causes_of_death[tlo_cause].label == cause.label)
-                        ), \
-                            f"Conflict in declared cause of death {tlo_cause} by {m.name}. " \
-                            f"A different specification has already been registered."
-
-                    # If ok, update these causes to the master dict of all causes of death
-                    causes_of_death.update({tlo_cause: cause})
-
-        return causes_of_death
-
-    def check_cause_of_death(self, cause: Cause):
-        """Helper function to check that a 'Cause' has been defined in a way that is acceptable."""
-        # 0) Check type
-        assert isinstance(cause, Cause)
-
-        # 1) Check that the declared gbd_cause is a recognised cause of death in the GBD dataset
-        for c in cause.gbd_causes:
-            assert c in self.parameters['gbd_causes_of_death'], f'The declared gbd_cause {c} is not recognised.'
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
