@@ -17,9 +17,8 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, demography
+from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -256,10 +255,10 @@ class Stunting(Module):
                     LinearModelType.LOGISTIC,
                     get_odds_stunting(agegp=agegp),  # base odds
                     Predictor('sex').when('M', p['or_stunting_male']),
-                    Predictor('li_wealth').when(2, p['or_stunting_hhwealth_Q2'])
-                        .when(3, p['or_stunting_hhwealth_Q3'])
-                        .when(4, p['or_stunting_hhwealth_Q4'])
-                        .when(5, p['or_stunting_hhwealth_Q5']),
+                    Predictor('li_wealth')  .when(2, p['or_stunting_hhwealth_Q2'])
+                                            .when(3, p['or_stunting_hhwealth_Q3'])
+                                            .when(4, p['or_stunting_hhwealth_Q4'])
+                                            .when(5, p['or_stunting_hhwealth_Q5']),
                     Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                      '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                      p['or_stunting_SGA_and_term']),
@@ -336,7 +335,7 @@ class Stunting(Module):
                 df.at[id, 'un_ever_stunted'] = True
                 df.at[id, 'un_cm_treatment_type'] = 'none'  # start without treatment
 
-            df.loc[stunted[stunted==False].index, 'un_HAZ_category'] = 'HAZ>=-2'
+            df.loc[stunted[stunted == False].index, 'un_HAZ_category'] = 'HAZ>=-2'
 
         # -----------------------------------------------------------------------------------------------------
 
@@ -404,14 +403,13 @@ class Stunting(Module):
                 return LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
-                    Predictor('age_exact_years')
-                        .when('<0.5', p['base_inc_rate_stunting_by_agegp'][0])
-                        .when('.between(0.5,0.9999)', p['base_inc_rate_stunting_by_agegp'][1])
-                        .when('.between(1,1.9999)', p['base_inc_rate_stunting_by_agegp'][2])
-                        .when('.between(2,2.9999)', p['base_inc_rate_stunting_by_agegp'][3])
-                        .when('.between(3,3.9999)', p['base_inc_rate_stunting_by_agegp'][4])
-                        .when('.between(4,4.9999)', p['base_inc_rate_stunting_by_agegp'][5])
-                        .otherwise(0.0),
+                    Predictor('age_exact_years').when('<0.5', p['base_inc_rate_stunting_by_agegp'][0])
+                                                .when('.between(0.5,0.9999)', p['base_inc_rate_stunting_by_agegp'][1])
+                                                .when('.between(1,1.9999)', p['base_inc_rate_stunting_by_agegp'][2])
+                                                .when('.between(2,2.9999)', p['base_inc_rate_stunting_by_agegp'][3])
+                                                .when('.between(3,3.9999)', p['base_inc_rate_stunting_by_agegp'][4])
+                                                .when('.between(4,4.9999)', p['base_inc_rate_stunting_by_agegp'][5])
+                                                .otherwise(0.0),
                     Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                      '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                      p['rr_stunting_SGA_and_term']),
@@ -439,8 +437,7 @@ class Stunting(Module):
             target_mean = p[f'base_inc_rate_stunting_by_agegp'][2]
             actual_mean = unscaled_lm.predict(
                 df.loc[df.is_alive & (df.age_years == 1) & (df.un_HAZ_category == 'HAZ>=-2')],
-                previous_diarrhoea_episodes=
-                self.count_all_previous_diarrhoea_episodes(
+                previous_diarrhoea_episodes=self.count_all_previous_diarrhoea_episodes(
                     today=sim.date, index=df.loc[df.is_alive & (df.age_years == 1) &
                                                  (df.un_HAZ_category == 'HAZ>=-2')].index)).mean()
             scaled_intercept = 1.0 * (target_mean / actual_mean) if (target_mean != 0 and actual_mean != 0) else 1.0
@@ -462,14 +459,18 @@ class Stunting(Module):
                 return LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
-                    Predictor('age_exact_years')
-                        .when('<0.5', p['r_progression_severe_stunting_by_agegp'][0])
-                        .when('.between(0.5,0.9999)', p['r_progression_severe_stunting_by_agegp'][1])
-                        .when('.between(1,1.9999)', p['r_progression_severe_stunting_by_agegp'][2])
-                        .when('.between(2,2.9999)', p['r_progression_severe_stunting_by_agegp'][3])
-                        .when('.between(3,3.9999)', p['r_progression_severe_stunting_by_agegp'][4])
-                        .when('.between(4,4.9999)', p['r_progression_severe_stunting_by_agegp'][5])
-                        .otherwise(0.0),
+                    Predictor('age_exact_years').when('<0.5', p['r_progression_severe_stunting_by_agegp'][0])
+                                                .when('.between(0.5,0.9999)',
+                                                      p['r_progression_severe_stunting_by_agegp'][1])
+                                                .when('.between(1,1.9999)',
+                                                      p['r_progression_severe_stunting_by_agegp'][2])
+                                                .when('.between(2,2.9999)',
+                                                      p['r_progression_severe_stunting_by_agegp'][3])
+                                                .when('.between(3,3.9999)',
+                                                      p['r_progression_severe_stunting_by_agegp'][4])
+                                                .when('.between(4,4.9999)',
+                                                      p['r_progression_severe_stunting_by_agegp'][5])
+                                                .otherwise(0.0),
                     Predictor('un_ever_wasted').when(True, p['rr_progress_severe_stunting_previous_wasting']),
                     Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_stunting_untreated_HIV']),
                     Predictor('previous_diarrhoea_episodes', external=True).apply(
@@ -521,9 +522,6 @@ class Stunting(Module):
         :param hsi_event: The HSI event that has called this event
         :return:
         """
-        df = self.sim.population.props
-        p = self.parameters
-
         # Interventions for stunting
 
         # Check for coverage of complementary feeding, by assuming
@@ -586,7 +584,6 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
         rng = self.module.rng
-        p = self.module.parameters
 
         days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'D')
 
@@ -805,8 +802,6 @@ class HSI_complementary_feeding_education_only(HSI_Event, IndividualScopeEventMi
             consumables.loc[consumables['Items'] ==
                             'Complementary feeding--education only drugs/supplies to service a client', 'Item_Code'])[0]
 
-        consumables_needed = {'Item_Code': {item_code_complementary_feeding_education: 1}}
-
         # check availability of consumables
         if self.get_all_consumables(item_codes=item_code_complementary_feeding_education):
             logger.debug(key='debug', data='item_code_complementary_feeding_education is available, so use it.')
@@ -866,8 +861,6 @@ class HSI_complementary_feeding_with_supplementary_foods(HSI_Event, IndividualSc
             consumables.loc[consumables['Items'] ==
                             'Supplementary spread, sachet 92g/CAR-150', 'Item_Code'])[0]
 
-        consumables_needed = {'Item_Code': {item_code_complementary_feeding_with_supplements: 1}}
-
         # check availability of consumables
         if self.get_all_consumables(item_codes=item_code_complementary_feeding_with_supplements):
             logger.debug(key='debug', data='item_code_complementary_feeding_with_supplements is available, so use it.')
@@ -903,7 +896,6 @@ class StuntingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.date_last_run = self.sim.date
 
     def apply(self, population):
-        df = self.sim.population.props
         # Convert the list of timestamps into a number of timestamps
         # and check that all the dates have occurred since self.date_last_run
         counts_cm = copy.deepcopy(self.module.stunting_incident_case_tracker_zeros)
