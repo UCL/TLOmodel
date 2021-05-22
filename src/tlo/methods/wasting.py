@@ -11,7 +11,6 @@ import copy
 from pathlib import Path
 from scipy.stats import norm
 
-import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
@@ -295,7 +294,7 @@ class Wasting(Module):
             low_muac_in_severe_wasting = self.rng.random_sample(size=len(idx)) < p['proportion_WHZ<-3_with_MUAC<115mm']
             df.loc[idx[low_muac_in_severe_wasting], 'un_am_MUAC_category'] = '<115mm'
             # other severe wasting will have MUAC between 115-<125mm
-            df.loc[idx[low_muac_in_severe_wasting==False], 'un_am_MUAC_category'] = '115-<125mm'
+            df.loc[idx[low_muac_in_severe_wasting == False], 'un_am_MUAC_category'] = '115-<125mm'
 
         if whz == '-3<=WHZ<-2':
             # apply probability of MUAC<115mm in moderate wasting
@@ -304,11 +303,11 @@ class Wasting(Module):
             df.loc[idx[low_muac_in_moderate_wasting], 'un_am_MUAC_category'] = '<115mm'
             # apply probability of MUAC between 115-<125mm in moderate wasting
             moderate_low_muac_in_moderate_wasting = self.rng.random_sample(size=len(
-                idx[low_muac_in_moderate_wasting==False])) < p['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm']
-            df.loc[idx[low_muac_in_moderate_wasting==False][moderate_low_muac_in_moderate_wasting],
+                idx[low_muac_in_moderate_wasting == False])) < p['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm']
+            df.loc[idx[low_muac_in_moderate_wasting == False][moderate_low_muac_in_moderate_wasting],
                    'un_am_MUAC_category'] = '115-<125mm'
             # other moderate wasting will have normal MUAC
-            df.loc[idx[low_muac_in_moderate_wasting==False][moderate_low_muac_in_moderate_wasting==False],
+            df.loc[idx[low_muac_in_moderate_wasting == False][moderate_low_muac_in_moderate_wasting == False],
                    'un_am_MUAC_category'] = '>=125mm'
 
         if whz == 'WHZ>=-2':
@@ -394,7 +393,7 @@ class Wasting(Module):
             df.at[person_id, 'un_sam_with_complications'] = False
 
         assert not (df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM') & \
-                   (df.at[person_id, 'un_sam_with_complications'] == True)
+                   (df.at[person_id, 'un_sam_with_complications'])
 
     def date_of_outcome_for_untreated_am(self, person_id, duration_am):
         """
@@ -609,7 +608,7 @@ class Wasting(Module):
                 event=ClinicalAcuteMalnutritionRecoveryEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
 
-        for person in sam_requiring_inpatient_care[recovered_complic_sam==False]:
+        for person in sam_requiring_inpatient_care[recovered_complic_sam == False]:
             self.sim.schedule_event(
                 event=SevereAcuteMalnutritionDeathEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
@@ -623,7 +622,7 @@ class Wasting(Module):
             self.sim.schedule_event(
                 event=ClinicalAcuteMalnutritionRecoveryEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
-        for person in uncomplicated_sam[recovered_uncompl_sam==False]:
+        for person in uncomplicated_sam[recovered_uncompl_sam == False]:
             self.sim.schedule_event(
                 event=SevereAcuteMalnutritionDeathEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
@@ -637,7 +636,7 @@ class Wasting(Module):
             self.sim.schedule_event(
                 event=ClinicalAcuteMalnutritionRecoveryEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
-        for person in children_with_mam[recovered_mam==False]:
+        for person in children_with_mam[recovered_mam == False]:
             self.sim.schedule_event(
                 event=SevereAcuteMalnutritionDeathEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
@@ -1057,7 +1056,7 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # # # # # # # # # # # # # # # # # MODERATE WASTING NATURAL RECOVERY # # # # # # # # # # # # # # # # #
 
         # moderate wasting not progressed to severe, schedule recovery
-        for person in will_be_severely_wasted[will_be_severely_wasted==False].index:
+        for person in will_be_severely_wasted[will_be_severely_wasted == False].index:
             outcome_date = self.module.date_of_outcome_for_untreated_am(person_id=person, duration_am='MAM')
             if outcome_date <= self.sim.date:
                 # schedule recovery for today
@@ -1176,7 +1175,7 @@ class AcuteMalnutritionDeathPollingEvent(RegularEvent, PopulationScopeEventMixin
         # Those not scheduled to die, will have improved WHZ status by 1sd (-3<=WHZ<-2)
 
         # schedule improvement to MAM for those not scheduled to die
-        for person in will_die[will_die==False].index:
+        for person in will_die[will_die == False].index:
             outcome_date = self.module.date_of_outcome_for_untreated_am(person_id=person, duration_am='SAM')
             if outcome_date <= self.sim.date:
                 # schedule improvement to moderate wasting date for today
@@ -1279,38 +1278,6 @@ class ClinicalAcuteMalnutritionRecoveryEvent(Event, IndividualScopeEventMixin):
         self.sim.modules["SymptomManager"].clear_symptoms(
             person_id=person_id, disease_module=self.module
         )
-
-
-# class ClinicalAcuteMalnutritionRecoveryEvent(Event, IndividualScopeEventMixin):
-#     """
-#     This event sets the properties back to normal state for those children with clinical acute malnutrition,
-#         with and without wasting state.
-#     """
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#
-#     def apply(self, person_id):
-#         df = self.sim.population.props  # shortcut to the dataframe
-#         m = self.module
-#
-#         if not df.at[person_id, 'is_alive']:
-#             return
-#
-#         df.at[person_id, 'un_am_recovery_date'] = self.sim.date
-#         df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
-#         df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
-#         df.at[person_id, 'un_sam_death_date'] = pd.NaT
-#         df.at[person_id, 'un_am_bilateral_oedema'] = False
-#         df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
-#         df.at[person_id, 'un_sam_with_complications'] = False
-#         df.at[person_id, 'un_acute_malnutrition_tx_start_date'] = pd.NaT
-#         df.at[person_id, 'un_am_treatment_type'] = 'not_applicable'
-#
-#         # this will clear all wasting symptoms
-#         self.sim.modules["SymptomManager"].clear_symptoms(
-#             person_id=person_id, disease_module=self.module
-#         )
 
 
 class UpdateToMAM(Event, IndividualScopeEventMixin):
