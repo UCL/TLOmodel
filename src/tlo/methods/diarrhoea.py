@@ -67,7 +67,13 @@ class Diarrhoea(Module):
     }
 
     # Declare Causes of Death
-    CAUSES_OF_DEATH_AND_DISABILITY = {
+    CAUSES_OF_DEATH = {
+        f'Diarrhoea_{path}': Cause(gbd_causes='Diarrheal diseases', label='Childhood Diarrhoea')
+        for path in pathogens
+    }
+
+    # Declare Causes of Death and Disability
+    CAUSES_OF_DISABILITY = {
         f'Diarrhoea_{path}': Cause(gbd_causes='Diarrheal diseases', label='Childhood Diarrhoea')
         for path in pathogens
     }
