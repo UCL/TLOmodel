@@ -195,6 +195,10 @@ class PostnatalSupervisor(Module):
             Types.REAL, 'effect of iron and folic acid treatment on risk of iron deficiency'),
         'rr_folate_def_ifa_pn': Parameter(
             Types.REAL, 'effect of iron and folic acid treatment on risk of folate deficiency '),
+        'effect_of_ifa_for_resolving_anaemia': Parameter(
+            Types.REAL, 'treatment effectiveness of starting iron and folic acid on resolving anaemia'),
+        'treatment_effect_blood_transfusion_anaemia': Parameter(
+            Types.REAL, 'treatment effectiveness of blood transfusion for anaemia following pregnancy'),
         'treatment_effect_early_init_bf': Parameter(
             Types.REAL, 'effect of early initiation of breastfeeding on neonatal sepsis rates '),
         'treatment_effect_abx_prom': Parameter(
@@ -234,6 +238,10 @@ class PostnatalSupervisor(Module):
             Types.REAL, 'sensitivity of point of care testing during PNC'),
         'specificity_poc_hb_test_pn': Parameter(
             Types.REAL, 'specificity of urine dipstick monitoring during PNC'),
+        'sensitivity_fbc_hb_test_pn': Parameter(
+            Types.REAL, 'sensitivity of full blood count'),
+        'specificity_fbc_hb_test_pn': Parameter(
+            Types.REAL, 'specificity of full blood count'),
         'sensitivity_maternal_sepsis_assessment': Parameter(
             Types.REAL, 'sensitivity of assessment for maternal sepsis'),
         'sensitivity_pph_assessment': Parameter(
@@ -385,6 +393,11 @@ class PostnatalSupervisor(Module):
                 property='pn_anaemia_following_pregnancy', target_categories=['mild', 'moderate', 'severe'],
                 sensitivity=params['sensitivity_poc_hb_test_pn'],
                 specificity=params['specificity_poc_hb_test_pn']),
+
+            full_blood_count_hb_pn=DxTest(
+                property='pn_anaemia_following_pregnancy', target_categories=['mild', 'moderate', 'severe'],
+                sensitivity=params['sensitivity_fbc_hb_test_pn'],
+                specificity=params['specificity_fbc_hb_test_pn']),
 
             # This test represents clinical assessment of a mother for signs of sepsis
             assessment_for_postnatal_sepsis=DxTest(
@@ -1900,14 +1913,18 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
         df = self.sim.population.props
         mother = df.loc[person_id]
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        params = self.module.parameters
 
         assert df.at[person_id, 'la_is_postpartum']
 
         if not mother.is_alive:
             return
 
+        logger.debug(key='msg', data=f'Mother {person_id} has been admitted to the postnatal ward')
+
         # These event cycles through each of the key maternal complications that a mother could be admitted due to and
         # delivers treatment accordingly
+        approx_days_of_pn_period = (6 - df.at[person_id, 'pn_postnatal_period_in_weeks']) * 7
 
         # --------------------------------------- SEPSIS TREATMENT ---------------------------------------------------
         if mother.pn_sepsis_late_postpartum:
@@ -1955,7 +1972,6 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
         # Treatment for complications of hypertension include two interventions, anti hypertensive therapy and
         # magnesium
         if mother.pn_htn_disorders == 'gest_htn' or mother.pn_htn_disorders == 'mild_pre_eclamp':
-            approx_days_of_pn_period = (6 - df.at[person_id, 'pn_postnatal_period_in_weeks']) * 7
 
             # Define the consumables and check their availability
             item_code_methyldopa = pd.unique(
@@ -2025,9 +2041,80 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
 
         # ------------------------------------- ANAEMIA TREATMENT -----------------------------------------------
         if mother.pn_anaemia_following_pregnancy != 'none':
-            pass
+            if mother.ps_anaemia_in_pregnancy != 'none':
 
-        # Todo: add v1.1
+                item_code_hb_test = pd.unique(
+                    consumables.loc[consumables['Items'] == 'Complete blood count', 'Item_Code'])[0]
+                item_code_blood_tube = pd.unique(
+                    consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+                item_code_needle = pd.unique(
+                    consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+                item_code_gloves = pd.unique(
+                    consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+
+                consumables_hb_test = {
+                    'Intervention_Package_Code': {},
+                    'Item_Code': {item_code_hb_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
+                                  item_code_gloves: 1}}
+
+                # Confirm their availability
+                outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=self,
+                    cons_req_as_footprint=consumables_hb_test)
+
+                # Check consumables
+                if outcome_of_request_for_consumables['Item_Code'][item_code_hb_test]:
+                    test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                        dx_tests_to_run='full_blood_count_hb_pn', hsi_event=self)
+
+                    if test_result:
+                        if ~mother.la_iron_folic_acid_postnatal:
+                            item_code_iron_folic_acid = pd.unique(
+                                consumables.loc[
+                                    consumables['Items'] ==
+                                    'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
+
+                            consumables_ifa = {
+                                'Intervention_Package_Code': {},
+                                'Item_Code': {item_code_iron_folic_acid: approx_days_of_pn_period}}
+
+                            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                                hsi_event=self,
+                                cons_req_as_footprint=consumables_ifa)
+
+                            # Start iron and folic acid treatment
+                            if outcome_of_request_for_consumables['Item_Code'][item_code_iron_folic_acid]:
+                                df.at[person_id, 'la_iron_folic_acid_postnatal'] = True
+
+                                if self.module.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
+                                    # Store date of resolution for daly calculations
+                                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(
+                                        person_id, f'{df.at[person_id, "pn_anaemia_in_pregnancy"]}_anaemia_resolution')
+
+                                    df.at[person_id, 'pn_anaemia_in_pregnancy'] = 'none'
+
+                        if mother.pn_anaemia_following_pregnancy == 'severe':
+
+                            item_code_blood = pd.unique(
+                                consumables.loc[consumables['Items'] == 'Blood, one unit',  'Item_Code'])[0]
+                            item_code_giving_set = pd.unique(
+                                consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
+                                                'Item_Code'])[0]
+
+                            consumables_needed_bt = {'Intervention_Package_Code': {},
+                                                     'Item_Code': {item_code_blood: 2, item_code_giving_set: 2}}
+
+                            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                                hsi_event=self, cons_req_as_footprint=consumables_needed_bt)
+
+                            # If the blood is available we assume the intervention can be delivered
+                            if outcome_of_request_for_consumables['Item_Code'][item_code_blood]:
+                                if params['treatment_effect_blood_transfusion_anaemia'] > self.module.rng.random_sample():
+                                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(
+                                        person_id, 'severe_anaemia_resolution')
+                                    df.at[person_id, 'pn_anaemia_in_pregnancy'] = 'none'
+
+                # todo: follow up??
 
         # Following treatment we use this function to determine if this woman will survive
         self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother',

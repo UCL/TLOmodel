@@ -180,6 +180,21 @@ def predict_severe_pre_eclamp_death(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+def predict_severe_pre_eclamp_pp_death(self, df, rng=None, **externals):
+    """individual level"""
+    person = df.iloc[0]
+    params = self.parameters
+    result = params['cfr_severe_pre_eclamp']
+
+    if person['la_maternal_hypertension_treatment']:
+        result *= params['anti_htns_treatment_effect_md']
+    if person['ac_iv_anti_htn_treatment']:
+        result *= params['anti_htns_treatment_effect_md']
+
+    # caller expects a series to be returned
+    return pd.Series(data=[result], index=df.index)
+
+
 def predict_placental_abruption_ip(self, df, rng=None, **externals):
     """individual level"""
     person = df.iloc[0]

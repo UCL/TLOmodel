@@ -80,6 +80,10 @@ class Labour(Module):
             Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
                         'parity at 2010 base line'),
 
+        # POSTTERM RATE
+        'risk_post_term_labour': Parameter(
+            Types.REAL, 'risk of remaining pregnant past 42 weeks'),
+
         # MISC...
         'list_limits_for_defining_term_status': Parameter(
             Types.LIST, 'List of number of days of gestation used to define term, early preterm, late preterm and '
@@ -737,6 +741,8 @@ class Labour(Module):
             # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
             # by treatment delivered either immediately prior to admission for delivery or during labour
             'severe_pre_eclamp_death': LinearModel.custom(labour_lm.predict_severe_pre_eclamp_death, parameters=params),
+            'severe_pre_eclamp_pp_death': LinearModel.custom(labour_lm.predict_severe_pre_eclamp_death,
+                                                             parameters=params),
 
             # This equation is used to calculate a womans risk of placental abruption in labour
             'placental_abruption_ip': LinearModel.custom(labour_lm.predict_placental_abruption_ip, parameters=params),
@@ -869,6 +875,7 @@ class Labour(Module):
         :param individual_id: individual_id
         """
         df = self.sim.population.props
+        params = self.parameters
         logger.debug(key='message', data=f'person {individual_id} is having their labour scheduled on date '
                                          f'{self.sim.date}', )
 
@@ -876,13 +883,17 @@ class Labour(Module):
         assert df.at[individual_id, 'is_alive'] and df.at[individual_id, 'is_pregnant']
         assert df.at[individual_id, 'date_of_last_pregnancy'] == self.sim.date
 
-        # At the point of conception we schedule labour to onset for all women between 37 and 44 weeks gestation age.
-        # As a womans pregnancy progresses she has a risk of early labour onset applied from 24 weeks within the
-        # pregnancy supervisor module
+        # At the point of conception we schedule labour to onset for all women between after 37 weeks gestation - first
+        # we determine if she will go into labour post term (41+ weeks)
+        if self.rng.random_sample() < params['risk_post_term_labour']:
+            df.at[individual_id, 'la_due_date_current_pregnancy'] = \
+                (df.at[individual_id, 'date_of_last_pregnancy'] + pd.DateOffset(
+                    days=(7 * 39) + self.rng.randint(0, 7 * 4)))
 
-        # n.b 35 weeks from conception = 37 weeks gestational age (see PregnancySupervisorEvent)
-        df.at[individual_id, 'la_due_date_current_pregnancy'] = \
-            (df.at[individual_id, 'date_of_last_pregnancy'] + pd.DateOffset(days=(7 * 35) + self.rng.randint(0, 7 * 7)))
+        else:
+            df.at[individual_id, 'la_due_date_current_pregnancy'] = \
+                (df.at[individual_id, 'date_of_last_pregnancy'] + pd.DateOffset(
+                    days=(7 * 35) + self.rng.randint(0, 7 * 4)))
 
         self.sim.schedule_event(LabourOnsetEvent(self, individual_id),
                                 df.at[individual_id, 'la_due_date_current_pregnancy'])
@@ -1317,6 +1328,9 @@ class Labour(Module):
         # todo: SPE should cause death here too? (or will this leead to really high death in SPE?)
 
         # We then move through each complication to calculate risk of death
+        if df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclamp':
+            self.set_maternal_death_status_postpartum(individual_id, cause='eclampsia')
+
         if df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia':
             self.set_maternal_death_status_postpartum(individual_id, cause='eclampsia')
 
@@ -2848,6 +2862,9 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
         elif mni[person_id]['delivery_setting'] == 'hospital':
             self.module.labour_tracker['hospital_birth'] += 1
+
+        logger.info(key='facility_delivery', data={'mother': person_id,
+                                                   'facility_type': mni[person_id]['delivery_setting']})
 
         # Next we check this woman has the right characteristics to be at this event
         self.module.labour_characteristics_checker(person_id)

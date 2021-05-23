@@ -1729,6 +1729,9 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             # event
             assert mother.ac_total_anc_visits_current_pregnancy == 0
 
+            logger.info(key='anc1', data={'mother': person_id,
+                                          'gestation': df.at[person_id, 'ps_gestational_age_in_weeks']})
+
             # We generate the facility type that this HSI is occurring at (dependent on facility level) - we currently
             # assume women will present to the same facility level and type for any future ANC visits
 
@@ -2044,6 +2047,8 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
             assert mother.ps_gestational_age_in_weeks >= 29
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
+            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4:
+                logger.info(key='anc4+', data={'mother': person_id})
 
             #  =================================== INTERVENTIONS ====================================================
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -2129,6 +2134,8 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
             assert mother.ac_total_anc_visits_current_pregnancy == 4
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
+            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4:
+                logger.info(key='anc4+', data={'mother': person_id})
 
             #  =================================== INTERVENTIONS ====================================================
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -2216,6 +2223,8 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
             assert mother.ps_gestational_age_in_weeks >= 35
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
+            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4:
+                logger.info(key='anc4+', data={'mother': person_id})
 
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
 
@@ -2294,6 +2303,8 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
             assert mother.ps_gestational_age_in_weeks >= 37
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
+            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4:
+                logger.info(key='anc4+', data={'mother': person_id})
 
             #  =================================== INTERVENTIONS ====================================================
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -2371,6 +2382,10 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
             assert mother.ps_gestational_age_in_weeks >= 39
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
+            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4:
+                logger.info(key='anc4+', data={'mother': person_id})
+
+            logger.info(key='anc8+', data={'mother': person_id})
             self.module.anc_tracker['anc8+'] += 1
 
             self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)

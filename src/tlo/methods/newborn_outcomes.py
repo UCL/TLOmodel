@@ -1080,16 +1080,12 @@ class NewbornOutcomes(Module):
 
             if df.at[individual_id, 'nb_early_preterm'] or df.at[individual_id, 'nb_late_preterm']:
                 self.apply_risk_of_preterm_respiratory_distress_syndrome(individual_id)
-                self.apply_risk_of_neonatal_infection_and_sepsis(individual_id)
-                self.apply_risk_of_not_breathing_at_birth(individual_id)
-                self.set_death_status(individual_id)
 
-            else:
-                self.apply_risk_of_neonatal_infection_and_sepsis(individual_id)
-                self.apply_risk_of_encephalopathy(individual_id, timing='on_birth')
-                self.apply_risk_of_not_breathing_at_birth(individual_id)
-                self.apply_risk_of_encephalopathy(individual_id, timing='after_birth')
-                self.set_death_status(individual_id)
+            self.apply_risk_of_neonatal_infection_and_sepsis(individual_id)
+            self.apply_risk_of_encephalopathy(individual_id, timing='on_birth')
+            self.apply_risk_of_not_breathing_at_birth(individual_id)
+            self.apply_risk_of_encephalopathy(individual_id, timing='after_birth')
+            self.set_death_status(individual_id)
 
     def link_twins(self, child_one, child_two, mother_id):
         """
@@ -1262,9 +1258,7 @@ class NewbornOutcomes(Module):
             # changes to the data frame. Otherwise this is done during the HSI
             if nci[child_id]['delivery_setting'] == 'home_birth':
                 self.apply_risk_of_neonatal_infection_and_sepsis(child_id)
-
-                if ~df.at[child_id, 'nb_early_preterm'] and ~df.at[child_id, 'nb_late_preterm']:
-                    self.apply_risk_of_encephalopathy(child_id, timing='on_birth')
+                self.apply_risk_of_encephalopathy(child_id, timing='on_birth')
 
                 if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
                     self.apply_risk_of_preterm_respiratory_distress_syndrome(child_id)
@@ -1351,8 +1345,7 @@ class NewbornOutcomes(Module):
 
                 else:
                     if df.at[child_id, 'nb_not_breathing_at_birth'] and\
-                        (df.at[child_id, 'nb_encephalopathy'] == 'none') and (~df.at[child_id, 'nb_early_preterm'] and
-                                                                              ~df.at[child_id, 'nb_late_preterm']):
+                        (df.at[child_id, 'nb_encephalopathy'] == 'none'):
                         self.apply_risk_of_encephalopathy(child_id, timing='after_birth')
 
                     if (m['delivery_setting'] == 'home_birth') and (df.at[child_id, 'nb_not_breathing_at_birth'] or
@@ -1487,8 +1480,7 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(HSI_Event, Individu
 
         if ~nci[person_id]['sought_care_for_complication']:
             self.module.apply_risk_of_neonatal_infection_and_sepsis(person_id)
-            if ~df.at[person_id, 'nb_early_preterm'] and ~df.at[person_id, 'nb_late_preterm']:
-                self.module.apply_risk_of_encephalopathy(person_id, timing='on_birth')
+            self.module.apply_risk_of_encephalopathy(person_id, timing='on_birth')
             if df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm']:
                 self.module.apply_risk_of_preterm_respiratory_distress_syndrome(person_id)
 
