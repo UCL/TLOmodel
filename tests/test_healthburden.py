@@ -43,9 +43,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir):
     # Establish the simulation object
     sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': tmpdir})
 
-    # Define the service availability as null
-    service_availability = []
-
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
@@ -77,5 +74,5 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir):
     assert output_multi_index.equals(correct_multi_index)
 
     # check that there is a column for each 'label' that is registered
-    assert set(dalys.set_index(['sex','age_range','year']).columns) == {'Other', 'Mockitis_Disability_And_Death', 'ChronicSyndrome_Disability_And_Death'}
-
+    assert set(dalys.set_index(['sex', 'age_range', 'year']).columns) == \
+           {'Other', 'Mockitis_Disability_And_Death', 'ChronicSyndrome_Disability_And_Death'}

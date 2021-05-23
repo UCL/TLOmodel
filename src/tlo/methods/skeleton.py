@@ -3,10 +3,10 @@ A skeleton template for disease methods.
 
 """
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import Cause
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
-from tlo.core import Cause
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -41,9 +41,16 @@ class Skeleton(Module):
         Metadata.USES_HEALTHBURDEN
     }
 
-    # Declare Causes of Death and Causes of Disability
-    CAUSES_OF_DEATH_AND_DISABILITY= {
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
         'name_of_each_cause_of_death_in_this_module':
+            Cause(gbd_causes=['list_of_strings_of_gbd_causes_to_which_this_cause_corresponds'],
+                  label='the_category_of_which_this_cause_is_a_part')
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'name_of_each_cause_of_disability_in_this_module':
             Cause(gbd_causes=['list_of_strings_of_gbd_causes_to_which_this_cause_corresponds'],
                   label='the_category_of_which_this_cause_is_a_part')
     }
@@ -117,8 +124,9 @@ class Skeleton(Module):
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the cause_of_death of the cause of this disability.
-        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
+        # If multiple causes in CAUSES_OF_DISABILITY are defined, a pd.DataFrame must be returned with a column
+        # corresponding to each cause (but if only one cause in CAUSES_OF_DISABILITY is defined, the pd.Series does not
+        # need to be given a specific name).
 
         # To return a value of 0.0 (fully health) for everyone, use:
         # df = self.sim.popultion.props

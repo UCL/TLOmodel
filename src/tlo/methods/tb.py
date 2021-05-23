@@ -2430,7 +2430,8 @@ class Tb(Module):
 #         df = self.sim.population.props
 #
 #         # check across all disease modules if patient has: cough, fever, night sweat, weight loss
-#         # if any of the above conditions are present, cause_of_death as presumptive tb case and request appropriate test
+#         # if any of the above conditions are present, cause_of_death as presumptive tb case and request appropriate
+#         # test
 #
 #         # hiv-negative adults or undiagnosed hiv-positive
 #         if (

@@ -17,7 +17,7 @@ from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,
     HSI_GenericFirstApptAtFacilityLevel1,
 )
-from collections import defaultdict
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -162,9 +162,8 @@ class HealthSeekingBehaviour(Module):
             Predictor('li_urban').when(True, p['odds_ratio_children_setting_urban']),
             Predictor('sex').when('F', p['odds_ratio_children_sex_Female']),
             Predictor('age_years').when('>=5', p['odds_ratio_children_age_5to14']),
-            Predictor('region_of_residence', external=True)
-                                            .when('Central', p['odds_ratio_children_region_Central'])
-                                            .when('Southern', p['odds_ratio_children_region_Southern']),
+            Predictor('region_of_residence', external=True).when('Central', p['odds_ratio_children_region_Central'])
+                                                           .when('Southern', p['odds_ratio_children_region_Southern']),
             Predictor('li_wealth').when(4, p['odds_ratio_children_wealth_higher'])
                                   .when(5, p['odds_ratio_children_wealth_higher'])
         )
@@ -176,16 +175,17 @@ class HealthSeekingBehaviour(Module):
             Predictor('sex').when('F', p['odds_ratio_adults_sex_Female']),
             Predictor('age_years').when('.between(35,59)', p['odds_ratio_adults_age_35to59'])
                                   .when('>=60', p['odds_ratio_adults_age_60plus']),
-            Predictor('region_of_residence', external=True)
-                                            .when('Central', p['odds_ratio_adults_region_Central'])
-                                            .when('Southern', p['odds_ratio_adults_region_Southern']),
+            Predictor('region_of_residence', external=True).when('Central', p['odds_ratio_adults_region_Central'])
+                                                           .when('Southern', p['odds_ratio_adults_region_Southern']),
             Predictor('li_wealth').when(4, p['odds_ratio_adults_wealth_higher'])
                                   .when(5, p['odds_ratio_adults_wealth_higher'])
         )
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT
 # ---------------------------------------------------------------------------------------------------------
+
 
 class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
     """This event occurs every day and determines if persons with newly onset symptoms will seek care.

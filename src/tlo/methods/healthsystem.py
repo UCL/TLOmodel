@@ -672,7 +672,8 @@ class HealthSystem(Module):
 
         # Gather information about the HSI event
         the_person_id = hsi_event.target
-        the_district = self.sim.modules['Demography'].parameters['district_num_to_district_name'][df.at[the_person_id, 'district_num_of_residence']]
+        the_district = self.sim.modules['Demography'].parameters['district_num_to_district_name'][
+            df.at[the_person_id, 'district_num_of_residence']]
 
         # Get the (one) health_facility available to this person (based on their district), which is accepted by the
         # hsi_event.ACCEPTED_FACILITY_LEVEL:

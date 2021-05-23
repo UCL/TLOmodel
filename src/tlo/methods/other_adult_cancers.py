@@ -10,6 +10,7 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import Cause
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -17,7 +18,6 @@ from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -67,7 +67,7 @@ class OtherAdultCancer(Module):
         'Liver cancer']
 
     # Declare Causes of Death
-    CAUSES_OF_DEATH_AND_DISABILITY= {
+    CAUSES_OF_DEATH_AND_DISABILITY = {
         'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer')
     }
 
@@ -75,7 +75,6 @@ class OtherAdultCancer(Module):
     CAUSES_OF_DISABILITY = {
         'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer')
     }
-
 
     PARAMETERS = {
         "init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage": Parameter(

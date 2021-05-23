@@ -3,11 +3,11 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import Cause
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
-from tlo.core import Cause
 
 # todo: note this code is becoming very depracated and does not include health interactions
 

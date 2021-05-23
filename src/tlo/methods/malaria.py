@@ -11,12 +11,12 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import Cause
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -209,7 +209,7 @@ class Malaria(Module):
         mapper_district_name_to_num = \
             {v: k for k, v in self.sim.modules['Demography'].parameters['district_num_to_district_name'].items()}
         self.itn_irs = itn_irs.reset_index().assign(
-            District_Num = lambda x: x['District'].map(mapper_district_name_to_num)
+            District_Num=lambda x: x['District'].map(mapper_district_name_to_num)
         ).drop(columns=['District']).set_index(['District_Num', 'Year'])
 
         # ===============================================================================
@@ -289,7 +289,8 @@ class Malaria(Module):
         if now.year > p["data_end"]:
             itn_irs_curr['itn_rate'] = self.itn
 
-        month_districtnum_itn_irs_lookup = [tuple(r) for r in itn_irs_curr.values]  # every row is a key in incidence table
+        month_districtnum_itn_irs_lookup = [
+            tuple(r) for r in itn_irs_curr.values]  # every row is a key in incidence table
 
         # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
         # get all corresponding rows from the incidence table; drop unneeded column; set new index
@@ -705,10 +706,10 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        district = df.at[person_id, "district_of_residence"]
+        district = df.at[person_id, "district_num_of_residence"]
         logger.debug(key='message',
                      data=f'HSI_Malaria_rdt: rdt test for person {person_id} '
-                          f'in district {district}')
+                          f'in district num {district}')
 
         # call the DxTest RDT to diagnose malaria
         dx_result = hs.dx_manager.run_dx_test(

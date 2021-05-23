@@ -7,9 +7,11 @@ disease modules.
 import json
 import typing
 from enum import Enum, auto
-from tlo.methods import Metadata
+
 import numpy as np
 import pandas as pd
+
+from tlo.methods import Metadata
 
 
 class Types(Enum):
@@ -366,39 +368,36 @@ class Module:
 
 class Cause():
     """Data structrue to store information about a Cause (of Death or Disability) used in the model
-    'gbd_causes': list of strings, to which this cause is equivalent.
-    'cause_of_death': the (single) category within which this cause belongs and should be labelled in output statistics.
+    'gbd_causes': list of strings for causess in the GBD datasets to which this cause is equivalent.
+    'cause_of_death': the (single) category to which this cause belongs and should be labelled in output statistics.
     """
-    def __init__(self, label, gbd_causes: list = None):
-        """Do basic type checking.
-        If ignore=True, then other arguments are not provided and this cause is defined but not represented
-        in data structures that allow comparison to the GBD datasets."""
-
+    def __init__(self, label: str, gbd_causes: list = None):
+        """Do basic type checking."""
+        assert (type(label) is str) and (label != '')
         self.label = label
 
         if gbd_causes:
             gbd_causes = gbd_causes if type(gbd_causes) is list else list([gbd_causes])
-            assert all([(type(c) is str) and (c is not '') for c in gbd_causes])
-            assert (type(label) is str) and (label is not '')
-
+            assert all([(type(c) is str) and (c != '') for c in gbd_causes])
         self.gbd_causes = gbd_causes
 
 
-
 def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes: set = None):
-    """Helper function to look through Disease Modules and register declaration for either 'CAUSES_OF_DEATH'
+    """Helper function to look through Disease Modules and register declarations for either 'CAUSES_OF_DEATH'
      or 'CAUSES_OF_DISABILITY'.
-     Optionally, it will check the gbd_causes defined in each Cause are contained in a set of acceptable causes
+     It will check that a gbd_cause is not associated with more than label (a requirement of this scheme).
+     Optionally, for each cause that is collected, it will check the gbd_causes defined within are in a set of
+     acceptable causes.
      """
 
-    def check_cause(cause: Cause, acceptable_causes: list):
+    def check_cause(cause: Cause, acceptable_causes: set):
         """Helper function to check that a 'Cause' has been defined in a way that is acceptable."""
         # 0) Check type
         assert isinstance(cause, Cause)
 
-        # 1) Check that the declared gbd_cause is a recognised cause of death in the GBD dataset
+        # 1) Check that the declared gbd_cause is among the acceptable causes.
         for c in cause.gbd_causes:
-            assert c in acceptable_causes, f'The declared gbd_cause {c} is not recognised.'
+            assert c in acceptable_causes, f'The declared gbd_cause {c} is not among the acceptable causes.'
 
     collected_causes = dict()
     for m in all_modules:
@@ -412,12 +411,12 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
                 if (acceptable_causes is not None) and cause.gbd_causes:
                     check_cause(cause=cause, acceptable_causes=acceptable_causes)
 
-                # prevent over-writing of causes: throw error if the name is already in use but the new
-                # Cause is not the same as that already registered/
+                # Prevent over-writing of causes: throw error if the name is already in use but the new Cause is not
+                # the same as that already registered.
                 if tlo_cause in collected_causes:
                     assert (
-                        (collected_causes [tlo_cause].gbd_causes == cause.gbd_causes) and
-                        (collected_causes [tlo_cause].label == cause.label)
+                        (collected_causes[tlo_cause].gbd_causes == cause.gbd_causes) and
+                        (collected_causes[tlo_cause].label == cause.label)
                     ), \
                         f"Conflict in declared cause {tlo_cause} by {m.name}. " \
                         f"A different specification has already been registered."
@@ -425,6 +424,14 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
                 # If ok, update these causes to the master dict of all causes of death
                 collected_causes.update({tlo_cause: cause})
 
+    # Check that each gbd_cause is not defined in respect of more than one label
+    gbd_causes = dict() # dict(<gbd_cause: label>)
+    for c in collected_causes:
+        for g in c.gbd_causes:
+            if g in gbd_causes:
+                assert gbd_causes[g] == c.label, f"The gbd cause {g} is defined under more than one label: " \
+                                                 f"{gbd_causes[g]} and {c.label}."
+            else:
+                gbd_causes[g] = c.label
+
     return collected_causes
-
-

@@ -152,7 +152,7 @@ class Epi(Module):
 
         # look up coverage of every vaccine
         # anything delivered after 12months needs the estimate from the following year
-        district = df.at[child_id, 'district_of_residence']
+        district = df.at[child_id, 'district_num_of_residence']
 
         # Initialise all the properties that this module looks after:
         df.at[child_id, "va_bcg"] = False

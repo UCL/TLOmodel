@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-
 class CareOfWomenDuringPregnancy(Module):
     """This is the CareOfWomenDuringPregnancy module which contains health system interaction events relevant to
      pregnancy and pregnancy loss including:

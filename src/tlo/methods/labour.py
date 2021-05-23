@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import Cause
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour_lm
@@ -12,8 +13,6 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneEvent
 from tlo.util import BitsetHandler
-from tlo.core import Cause
-from tlo.methods.demography import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

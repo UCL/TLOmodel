@@ -272,7 +272,7 @@ def test_check_progression_through_stages_is_happening():
 
     # check that some people have died of bladder cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
-    assert yll['YLL_BladderCancer_BladderCancer'].sum() > 0
+    assert yll['BladderCancer'].sum() > 0
 
     # check that people are being diagnosed, going onto treatment and palliative care:
     assert (df.bc_date_diagnosis > start_date).any()
@@ -321,13 +321,14 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
 
     # check that some people have died of bladder cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
-    assert yll['YLL_BladderCancer_BladderCancer'].sum() > 0
+    assert yll['BladderCancer'].sum() > 0
 
     # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
-#   assert not (df.bc_date_diagnosis > start_date).any()
-#   assert not (df.bc_date_treatment > start_date).any()
-#   assert not (df.bc_stage_at_which_treatment_applied != 'none').any()
-#   assert not (df.bc_date_palliative_care > start_date).any()
+    # **** th is un-commenting this as it should work! ****
+    assert not (df.bc_date_diagnosis > start_date).any()
+    assert not (df.bc_date_treatment > start_date).any()
+    assert not (df.bc_stage_at_which_treatment_applied != 'none').any()
+    assert not (df.bc_date_palliative_care > start_date).any()
 
 
 def test_check_progression_through_stages_is_blocked_by_treatment():

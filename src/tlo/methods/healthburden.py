@@ -1,14 +1,14 @@
 """
 This Module runs the counting of DALYS
+#todo -- let this module output a mapper similar to what is done in demography:
 """
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from tlo.core import Cause, collect_causes_from_disease_modules
-
-from tlo import DateOffset, Module, Property, Types, logging, Parameter
+from tlo import DateOffset, Module, Parameter, Types, logging
+from tlo.core import collect_causes_from_disease_modules
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 
@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 
 class HealthBurden(Module):
     """
-    This module holds all the stuff to do with DALYS
+    This module holds all the stuff to do with recording DALYS
     """
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -36,11 +36,12 @@ class HealthBurden(Module):
     METADATA = {}
 
     PARAMETERS = {
-        'DALY_Weight_Database': Parameter(Types.DATA_FRAME, 'DALY Weight Database from GBD'),
-        'Age_Limit_For_YLL': Parameter(Types.REAL,
-                                      'The age up to which deaths are recorded as having induced a lost of life years'),
-        'gbd_causes_of_disability':
-            Parameter(Types.LIST, 'List of the strings of causes of death defined in the GBD data'),
+        'DALY_Weight_Database': Parameter(
+            Types.DATA_FRAME, 'DALY Weight Database from GBD'),
+        'Age_Limit_For_YLL': Parameter(
+            Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
+        'gbd_causes_of_disability': Parameter(
+            Types.LIST, 'List of the strings of causes of death defined in the GBD data'),
     }
 
     PROPERTIES = {}
@@ -55,7 +56,6 @@ class HealthBurden(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv'
         )['cause_name'].unique().tolist()
 
-
     def initialise_population(self, population):
         pass
 
@@ -69,11 +69,8 @@ class HealthBurden(Module):
 
         # 1) Prepare data storage structures
         # Create the sex/age_range/year multi-index for YLL and YLD storage dataframes
-        first_year = self.sim.start_date.year
-        last_year = self.sim.end_date.year
-
         sex_index = ['M', 'F']
-        year_index = list(range(first_year, last_year + 1))
+        year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
         age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         multi_index = pd.MultiIndex.from_product([sex_index, age_index, year_index], names=['sex', 'age_range', 'year'])
         self.multi_index = multi_index
@@ -92,7 +89,7 @@ class HealthBurden(Module):
             assert getattr(self.sim.modules[module_name], 'report_daly_values', None) and \
                    callable(self.sim.modules[module_name].report_daly_values)
 
-        # 3) Collect causes of deaths from the demography module
+        # 3) Collect causes of disability that are reported by each module
         self.causes_of_disability = collect_causes_from_disease_modules(
             all_modules=self.sim.modules.values(),
             collect='CAUSES_OF_DISABILITY',
@@ -107,16 +104,17 @@ class HealthBurden(Module):
 
     def on_simulation_end(self):
         """Log records of:
-        1) The Years Lived With Disability (YLD) (by the tlo cause that is delcared by each disease module)
-        2) The Years Life Lost (YLL) (by the tlo cause declared by each disease module)
-        3) The total DALYS recorded (YLD + YLL) (by the labels declared).
+        1) The Years Lived With Disability (YLD) (by the 'causes of disability' delcared by the disease modules)
+        2) The Years Life Lost (YLL) (by the 'causes of death' delcared by the disease module)
+        3) The total DALYS recorded (YLD + YLL) (by the labels that are declared for 'causes of death' and 'causes of
+        disability').
         """
 
         # Check that the multi-index of the dataframes are as expected
         assert self.YearsLifeLost.index.equals(self.multi_index)
         assert self.YearsLivedWithDisability.index.equals(self.multi_index)
 
-        # 1) Log the Years Lived With Disability (YLD) (by the tlo cause that is delcared by each disease module)
+        # 1) Log the Years Lived With Disability (YLD) (by the 'causes of disability' delcared by disease modules).
         for index, row in self.YearsLivedWithDisability.reset_index().iterrows():
             logger.info(
                 key='yld_by_causes_of_disability',
@@ -125,7 +123,7 @@ class HealthBurden(Module):
                             'broken down by year, sex, age-group'
             )
 
-        # 2) Log the Years of Live Lost (YLL)  (by the tlo cause declared by each disease module)
+        # 2) Log the Years of Live Lost (YLL) (by the 'causes of death' delcared by disease modules).
         for index, row in self.YearsLifeLost.reset_index().iterrows():
             logger.info(
                 key='yll_by_causes_of_death',
@@ -133,12 +131,10 @@ class HealthBurden(Module):
                 description='Years of live lost by the declared cause_of_death, '
                             'broken down by year, sex, age-group'
             )
-            print(row)
 
         # 3) Log total DALYS recorded (YLD + LYL) (by the labels declared)
 
         # - Sum YLD and LYL with respect to the label of the corresponding cause of each:
-
         yld = self.YearsLivedWithDisability.rename(
             columns={c: self.causes_of_disability[c].label for c in self.YearsLivedWithDisability.columns}
         )
@@ -149,12 +145,13 @@ class HealthBurden(Module):
 
         dalys = yld.add(yll, fill_value=0)
 
-        # - dump to log line-by-line
+        # - dump to log, line-by-line
         for index, row in dalys.reset_index().iterrows():
             logger.info(
                 key='dalys',
                 data=row.to_dict(),
-                description='dataframe of dalys, broken down by year, sex, age-group'
+                description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
+                            ', broken down by year, sex, age-group'
             )
 
     def get_daly_weight(self, sequlae_code):
@@ -254,60 +251,53 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         # Running the DALY Logger
-        logger.debug(
-            key="message",
-            data="The DALY Logger is occuring now!"
-        )
+
+        # Do nothing if no disease modules are regsisterd
+        if not self.module.recognised_modules_names:
+            return
 
         # Get the population dataframe
         df = self.sim.population.props
-
-        # Create temporary dataframe for the reporting of daly weights from all disease modules for the previous month
-        # (Each column of this dataframe gives the reports from each module.)
-        disease_specific_daly_values_this_month = pd.DataFrame(index=df.index[df.is_alive])
+        idx_alive = set(df.loc[df.is_alive].index)
 
         # 1) Ask each disease module to log the DALYS for the previous month
-        # todo - what to do if two modules declare a 'cause of disability' with the same name? (add them up?)
-
+        dalys_from_each_disease_module = list()
         for disease_module_name in self.module.recognised_modules_names:
 
             disease_module = self.sim.modules[disease_module_name]
-            declared_causes_of_disability_module = disease_module.CAUSES_OF_DISABILITY
+            declared_causes_of_disability_module = disease_module.CAUSES_OF_DISABILITY.keys()
 
             dalys_from_disease_module = disease_module.report_daly_values()
 
-            # Check type is acceptable and make into dataframe if not already
+            # Check type is in acceptable form and make into dataframe if not already
             assert type(dalys_from_disease_module) in (pd.Series, pd.DataFrame)
-
             if type(dalys_from_disease_module) is pd.Series:
                 # if a pd.Series is returned, it implies there is only one cause of disability registered by the module:
                 assert 1 == len(declared_causes_of_disability_module)
 
                 # name the returned pd.Series as the only cause of disability that is defined by the module
-                dalys_from_disease_module.name = list(declared_causes_of_disability_module.keys())[0]
+                dalys_from_disease_module.name = list(declared_causes_of_disability_module)[0]
 
                 # convert to pd.DataFrame
                 dalys_from_disease_module = pd.DataFrame(dalys_from_disease_module)
 
             # Perform checks on what has been returned
-            assert df.index.name == dalys_from_disease_module.index.name
-            assert len(dalys_from_disease_module) == df.is_alive.sum()
-            assert df.is_alive[dalys_from_disease_module.index].all()
+            assert set(dalys_from_disease_module.columns) == set(declared_causes_of_disability_module)
+            assert set(dalys_from_disease_module.index) == idx_alive
             assert (~pd.isnull(dalys_from_disease_module)).all().all()
             assert ((dalys_from_disease_module >= 0) & (dalys_from_disease_module <= 1)).all().all()
             assert (dalys_from_disease_module.sum(axis=1) <= 1).all()
 
-            # Check that dalys_from_disease_module has the expected number and naming of columns with respect to the
-            # CAUSES_OF_DISABILITY defined by the module
-            assert set(dalys_from_disease_module.columns) == set(declared_causes_of_disability_module)
+            # Append to list of dalys reported by each module
+            dalys_from_each_disease_module.append(dalys_from_disease_module)
 
-            # Add to overall data-frame for this month of report dalys
-            disease_specific_daly_values_this_month = pd.concat([disease_specific_daly_values_this_month,
-                                                                 dalys_from_disease_module],
-                                                                axis=1)
+        # 2) Combine into a single dataframe (each column of this dataframe gives the reports from each module), and
+        # add together dalys reported by different modules that have the same cause (i.e., add together columns with
+        # the same name).
+        disease_specific_daly_values_this_month = pd.concat(
+            dalys_from_each_disease_module, axis=1).groupby(axis=1, level=0).sum()
 
-        # 2) Rescale the DALY weights
-
+        # 3) Rescale the DALY weights
         # Create a scaling-factor (if total DALYS for one person is more than 1, all DALYS weights are scaled so that
         #   their sum equals one).
         scaling_factor = (disease_specific_daly_values_this_month.sum(axis=1).clip(lower=0, upper=1) /
@@ -315,41 +305,40 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         disease_specific_daly_values_this_month = disease_specific_daly_values_this_month.multiply(scaling_factor,
                                                                                                    axis=0)
+        assert (disease_specific_daly_values_this_month.sum(axis=1) <= 1.0).all()
 
         # Multiply 1/12 as these weights are for one month only
         disease_specific_daly_values_this_month = disease_specific_daly_values_this_month * (1 / 12)
 
-        # 3) Summarise the results for this month wrt age and sex
-
-        # merge in age/sex information
+        # 4) Summarise the results for this month wrt age and sex
+        # - merge in age/sex information
         disease_specific_daly_values_this_month = disease_specific_daly_values_this_month.merge(
-            df.loc[df.is_alive, ['sex', 'age_range']], left_index=True, right_index=True, how='left')
+            df.loc[idx_alive, ['sex', 'age_range']], left_index=True, right_index=True, how='left')
 
-        # Sum of daly_weight, by sex and age
+        # - sum of daly_weight, by sex and age
         disability_monthly_summary = pd.DataFrame(
             disease_specific_daly_values_this_month.groupby(['sex', 'age_range']).sum().fillna(0))
 
-        # Add the year into the multi-index
+        # - add the year into the multi-index
         disability_monthly_summary['year'] = self.sim.date.year
         disability_monthly_summary.set_index('year', append=True, inplace=True)
         disability_monthly_summary = disability_monthly_summary.reorder_levels(['sex', 'age_range', 'year'])
 
-        # 4) Add the monthly summary to the overall datafrom for YearsLivedWithDisability
-
+        # 5) Add the monthly summary to the overall datafrom for YearsLivedWithDisability
         dalys_to_add = disability_monthly_summary.sum().sum()     # for checking
-        dalys_current = self.module.YearsLivedWithDisability.sum().sum()
+        dalys_current = self.module.YearsLivedWithDisability.sum().sum()  # for checking
 
-        # This will add columns that are not otherwise present and add values to columns where they are
+        # (Nb. this will add columns that are not otherwise present and add values to columns where they are.)
         combined = self.module.YearsLivedWithDisability.combine(
             disability_monthly_summary,
             fill_value=0.0,
             func=np.add,
             overwrite=False)
 
-        # merge into a dataframe with the correct multi-index (the multindex from combine is subtly different)
+        # Merge into a dataframe with the correct multi-index (the multindex from combine is subtly different)
         self.module.YearsLivedWithDisability = pd.DataFrame(index=self.module.multi_index).merge(
             combined, left_index=True, right_index=True, how='left')
 
-        # check multi-index is in check and that the addition of DALYS has worked
+        # Check multi-index is in check and that the addition of DALYS has worked
         assert self.module.YearsLivedWithDisability.index.equals(self.module.multi_index)
         assert abs(self.module.YearsLivedWithDisability.sum().sum() - (dalys_to_add + dalys_current)) < 1e-5

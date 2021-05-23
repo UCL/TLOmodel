@@ -206,7 +206,6 @@ class Simulation:
         for module in self.modules.values():
             module.on_simulation_end()
 
-
         # complete logging
         if self.output_file:
             self.output_file.flush()
