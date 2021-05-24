@@ -301,8 +301,9 @@ class Demography(Module):
         * 'originating_module' is the disease module that is causing the death.
         """
 
+        assert not hasattr(individual_id, '__iter__'), 'do_death must be called for one individual at a time.'
+
         df = self.sim.population.props
-        assert type(individual_id) is int
         person = df.loc[individual_id]
 
         if not person['is_alive']:
