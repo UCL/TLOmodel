@@ -24,7 +24,7 @@ logger.setLevel(logging.INFO)
 
 
 class OtherAdultCancer(Module):
-    """Other_adult Cancer Disease Module"""
+    """Other Adult Cancers Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -51,7 +51,7 @@ class OtherAdultCancer(Module):
         'Ovarian cancer',
         'Testicular cancer',
         'Kidney cancer',
-        'Brain and central nervous system cancer',
+        # 'Brain and central nervous system cancer',
         'Thyroid cancer',
         'Mesothelioma',
         'Hodgkin lymphoma',
@@ -67,7 +67,7 @@ class OtherAdultCancer(Module):
         'Liver cancer']
 
     # Declare Causes of Death
-    CAUSES_OF_DEATH_AND_DISABILITY = {
+    CAUSES_OF_DEATH = {
         'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer')
     }
 
@@ -78,7 +78,7 @@ class OtherAdultCancer(Module):
 
     PARAMETERS = {
         "init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of those with other adult cancer categories that have other_"
+            Types.LIST, "initial proportions of those with other adult cancer categories that have other "
                         "adult_ca_symptom"
         ),
         "in_prop_other_adult_cancer_stage": Parameter(

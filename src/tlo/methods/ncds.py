@@ -75,7 +75,7 @@ class Ncds(Module):
                 'Ischemic heart disease',
                 'Hypertensive heart disease',
                 'Stroke',
-                'chronic_kidney_disease'
+                'Chronic kidney disease'
             ],
                   label='NCD')
     }
