@@ -260,8 +260,7 @@ class Malaria(Module):
         df.loc[df.is_alive, "ma_tx"] = False
         df.loc[df.is_alive, "ma_date_tx"] = pd.NaT
         df.loc[df.is_alive, "ma_inf_type"] = "none"
-        # df.loc[df.is_alive, "ma_district_edited"] = df["district_of_residence"]
-        df.loc[df.is_alive, "ma_age_edited"] = 0
+        df.loc[df.is_alive, "ma_age_edited"] = 0.0
 
         df.loc[df.is_alive, "ma_clinical_counter"] = 0
         df.loc[df.is_alive, "ma_tx_counter"] = 0
@@ -315,9 +314,9 @@ class Malaria(Module):
         alive = df.is_alive & (df.age_years < 80)
 
         alive_over_one = alive & (df.age_exact_years >= 1)
-        df.loc[alive & df.age_exact_years.between(0, 0.5), "ma_age_edited"] = 0
+        df.loc[alive & df.age_exact_years.between(0, 0.5), "ma_age_edited"] = 0.0
         df.loc[alive & df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
-        df.loc[alive_over_one, "ma_age_edited"] = df.loc[alive_over_one, "age_years"]
+        df.loc[alive_over_one, "ma_age_edited"] = df.loc[alive_over_one, "age_years"].astype(float)
 
         alive_uninfected = alive & ~df.ma_is_infected
         now_infected = _draw_incidence_for("monthly_prob_inf", alive_uninfected)
@@ -427,7 +426,7 @@ class Malaria(Module):
         df.at[child_id, "ma_tx"] = False
         df.at[child_id, "ma_date_tx"] = pd.NaT
         df.at[child_id, "ma_inf_type"] = "none"
-        df.at[child_id, "ma_age_edited"] = 0
+        df.at[child_id, "ma_age_edited"] = 0.0
         df.at[child_id, "ma_clinical_counter"] = 0
         df.at[child_id, "ma_clinical_preg_counter"] = 0
         df.at[child_id, "ma_tx_counter"] = 0
