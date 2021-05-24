@@ -89,7 +89,8 @@ def get_classes_in_module(fqn, module_obj):
         if inspect.isclass(obj) and fqn in str(obj):
             # only generate documentation for tlo subclasses (considers other classes internal implementation detail)
             bases = inspect.getmro(obj)
-            if any(base in bases for base in [Module, Event, HSI_Event]):
+            # skip this filtering if we're working with classes for testing
+            if fqn.startswith("test_docs_data") or any(base in bases for base in [Module, Event, HSI_Event]):
                 # print(name)  # e.g. MockitisEvent
                 # print(obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
                 source, start_line = inspect.getsourcelines(obj)
