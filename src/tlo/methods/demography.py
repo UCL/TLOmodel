@@ -218,8 +218,8 @@ class Demography(Module):
         df['sex'].values[:] = demog_char_to_assign['Sex']
         df.loc[df.is_alive, 'mother_id'] = -1
         df['district_num_of_residence'].values[:] = demog_char_to_assign['District_Num'].values[:]
-        df['district_of_residence'].values[:]  = demog_char_to_assign['District'].values[:]
-        df['region_of_residence'].values[:]  = demog_char_to_assign['Region'].values[:]
+        df['district_of_residence'].values[:] = demog_char_to_assign['District'].values[:]
+        df['region_of_residence'].values[:] = demog_char_to_assign['Region'].values[:]
 
         df.loc[df.is_alive, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')

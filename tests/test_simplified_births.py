@@ -245,6 +245,7 @@ def test_standard_run_using_simplified_birth_module():
             ).all()
     check_dtypes(sim)
 
+
 def test_other_modules_running_with_simplified_births_module():
     """Run a "full simulation" using the simplified_births module and other disease modules"""
     sim = Simulation(
