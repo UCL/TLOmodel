@@ -34,7 +34,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
-popsize = 5000
+popsize = 15000
 
 # Establish the simulation object
 log_config = {
@@ -87,5 +87,6 @@ with open(outputpath / 'default_run.pickle', 'wb') as f:
 
 # plot numbers of sputum tests / xpert tests per month
 
+# plot ipt for HIV+ and contacts of TB cases
 
 

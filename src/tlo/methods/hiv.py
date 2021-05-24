@@ -32,7 +32,7 @@ import pandas as pd
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, demography
+from tlo.methods import Metadata, demography, tb
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
@@ -1645,27 +1645,28 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         return drugs_available
 
     def consider_tb(self, person_id):
-        # todo - TB treatment when person starts ART - complete when TB module is completed.
-        pass
         """
         Consider whether IPT is needed at this time. This is run only when treatment is initiated.
-        # if 'Tb' in self.sim.modules:
+        """
+        df = self.sim.population.props
+        p = self.sim.module.parameters
+
+        if 'Tb' in self.sim.modules:
+            high_risk_districts = self.sim.modules["Tb"].parameters["tb_high_risk_distr"]
             district = df.at[person_id, "district_of_residence"]
-            eligible = df.at[person_id, "tb_inf"].startswith("active")
+            eligible = df.at[person_id, "tb_inf"] == "active"
             if (
-                (district in params["tb_high_risk_distr"].values)
+                (district in high_risk_districts.values)
                 & (self.sim.date.year > 2012)
                 & eligible
-                & (self.module.rng.rand() < params["???"])
             ):
                 # Schedule the TB treatment event:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    tb.HSI_Tb_IptHiv(self.module['Tb'], person_id=person_id),
+                    tb.HSI_Tb_Start_or_Continue_Ipt(self.module['Tb'], person_id=person_id),
                     priority=1,
                     topen=self.sim.date,
                     tclose=None
                 )
-            """
 
     def never_ran(self):
         """This is called if this HSI was never run.
