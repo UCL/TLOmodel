@@ -143,15 +143,11 @@ class Demography(Module):
         # -- add 'Other' into the causes: todo: let this be declared with the right causes
         self.causes_of_death['Other'] = Cause(label='Other', gbd_causes=None)
 
-        # 2) Create a categorical property for the 'cause_of_death' (name of the module that causes death)
-        disease_module_names = [
-            m.name for m in self.sim.modules.values() if Metadata.DISEASE_MODULE in m.METADATA
-        ]
-
+        # 2) Create a categorical property for the 'cause_of_death'
         self.PROPERTIES['cause_of_death'] = Property(
             Types.CATEGORICAL,
-            'The name of the module that caused of death of this individual',
-            categories=disease_module_names + [self.name]
+            'The cause of death of this individual (the tlo_cause defined by the module',
+            categories=list(self.causes_of_death.keys())
         )
 
     def initialise_population(self, population):
@@ -324,7 +320,6 @@ class Demography(Module):
         # Release any beds-days that would be used by this person:
         if 'HealthSystem' in self.sim.modules:
             self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
-
 
     def create_mappers_between_causes_of_death(self, causes_of_death):
         """Helper function to create mapping dicts to map to a common set of categories, either the causes of death

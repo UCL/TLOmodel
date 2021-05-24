@@ -51,16 +51,16 @@ def routine_checks(sim):
     assert df.nc_ever_heart_attack.any()
 
     # check that someone dies of each condition that has a death rate associated with it
-
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('diabetes').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_ischemic_hd').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_kidney_disease').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('stroke').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('heart_attack').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'diabetes').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'chronic_ischemic_hd').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'chronic_kidney_disease').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'stroke').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'heart_attack').any()
 
     # check that no one dies of each condition that has a death rate of zero
-    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_lower_back_pain').any()
-    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('hypertension').any()
+    # todo - NB. the below are not causes of death so this test isn't really checking anything
+    assert not (df.cause_of_death.loc[~df.is_alive] == 'chronic_lower_back_pain').any()
+    assert not (df.cause_of_death.loc[~df.is_alive] == 'hypertension').any()
 
 
 def test_basic_run():
@@ -147,12 +147,9 @@ def test_basic_run_with_high_incidence_hypertension():
     assert ~df.nc_chronic_lower_back_pain.all()
     assert ~df.nc_chronic_kidney_disease.all()
 
-    # check that no one has died from conditions that were set to zero incidence
-    assert not df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'].str.startswith('diabetes').any()
-    assert not df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'].str.startswith(
-        'chronic_lower_back_pain').any()
-    assert not df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'].str.startswith(
-        'chronic_kidney_disease').any()
+    # check that no one has died from conditions that were set to zero incidence todo-- these need to be updated
+    assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == 'diabetes').any()
+    assert not (df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'] == 'chronic_kidney_disease').any()
 
     # restrict population to individuals aged >=20 at beginning of sim
     start_date = pd.Timestamp(year=2010, month=1, day=1)

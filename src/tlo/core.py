@@ -425,8 +425,8 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
                 collected_causes.update({tlo_cause: cause})
 
     # Check that each gbd_cause is not defined in respect of more than one label
-    gbd_causes = dict() # dict(<gbd_cause: label>)
-    for c in collected_causes:
+    gbd_causes = dict()  # dict(<gbd_cause: label>)
+    for c in collected_causes.values():
         for g in c.gbd_causes:
             if g in gbd_causes:
                 assert gbd_causes[g] == c.label, f"The gbd cause {g} is defined under more than one label: " \
