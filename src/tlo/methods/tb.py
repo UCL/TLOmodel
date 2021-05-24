@@ -644,8 +644,8 @@ class Tb(Module):
         # from the new latent infections, select and schedule progression to active disease
 
         df = population.props
-        p = self.module.parameters
-        rng = self.module.rng
+        p = self.parameters
+        rng = self.rng
         now = self.sim.date
 
         # ------------------ fast progressors ------------------ #
@@ -676,10 +676,11 @@ class Tb(Module):
         # adults
         eligible_adults = df.loc[(df.tb_date_latent == now) &
                                  df.is_alive &
-                                 (df.age_years >= 15)]
-        eligible_adults = eligible_adults[-all_fast]  # todo check this removes anyone in all_fast
+                                 (df.age_years >= 15)].index
+        eligible_adults = eligible_adults[~np.isin(eligible_adults, all_fast)]
 
-        assert all_fast not in eligible_adults
+        # check no fast progressors included in the slow progressors risk
+        assert not any(elem in all_fast for elem in eligible_adults)
 
         # todo check what this return for non-eligible people - zero or NA? Length?
         risk_of_progression = self.lm['active_tb'].predict(df.loc[eligible_adults])
@@ -1237,10 +1238,17 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
         rng = self.module.rng
         now = self.sim.date
+        p = self.module.parameters
 
         # need a monthly relapse for every person in df
         # should return risk=0 for everyone not eligible for relapse
         risk_of_relapse = self.module.lm['risk_relapse'].predict(df.loc[df.is_alive])
+
+        # adjust risk of relapse to account for HIV status
+        hiv_risk = pd.Series(data=0, index=df.loc[df.is_alive].index)
+        hiv_risk.loc[df.hv_inf] = p['rr_relapse_hiv']
+        risk_of_relapse = risk_of_relapse * hiv_risk
+
         will_relapse = rng.random_sample(len(risk_of_relapse)) < risk_of_relapse
         idx_will_relapse = will_relapse[will_relapse].index
 
@@ -1314,6 +1322,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
     """
     regular monthly check for people currently on treatment
     if treatment has finished, change individual properties
+    todo treatment success rates not included
     """
 
     def __init__(self, module):
@@ -1323,6 +1332,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
         p = self.module.parameters
+        rng = self.sim.module.rng
 
         # check across population on tb treatment
 
@@ -1330,6 +1340,19 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         end_ds_idx = df.loc[df.is_alive & df.tb_on_treatment &
                             (df.tb_date_treated < (self.sim.date - DateOffset(days=p['ds_treatment_length']))) &
                             ~df.tb_ever_treated].index
+        # sample some to have treatment failure
+        ds_tx_failure = rng.random_sample(size=len(end_ds_idx)) < (1-p['prob_tx_success_new'])
+        idx_ds_tx_failure = ds_tx_failure[ds_tx_failure]
+
+
+
+        prob_spontaneous_test = self.module.lm['lm_spontaneous_test_12m'].predict(
+            df.loc[df.is_alive]) * fraction_of_year_between_polls
+        will_test = self.module.rng.random_sample(len(prob_spontaneous_test)) < prob_spontaneous_test
+        idx_will_test = will_test[will_test].index
+
+
+
 
         # retreatment ds-tb (7 months)
         # defined as a current ds-tb cases with property tb_ever_treated as true
@@ -1343,6 +1366,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
                                  (df.tb_date_treated < (
                                      self.sim.date - DateOffset(days=p['mdr_treatment_length'])))].index
 
+        # todo check index appends
         end_tx_indx = end_ds_idx + end_ds_retx_idx + end_ds_retx_idx
 
         # change individual properties to off treatment
@@ -1359,265 +1383,6 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[end_tx_indx, 'tb_stage'] = 'latent'
 
 
-
-# class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
-#     ''' relapse from latent to active
-#     '''
-#
-#     def __init__(self, module):
-#         super().__init__(module, frequency=DateOffset(months=1))  # every 1 month
-#
-#     def apply(self, population):
-#
-#         df = self.sim.population.props
-#         params = self.module.parameters
-#         now = self.sim.date
-#         rng = self.module.rng
-#
-#         # ----------------------------------- RELAPSE -----------------------------------
-#         random_draw = rng.random_sample(size=len(df))
-#
-#         # HIV-NEGATIVE
-#
-#         # relapse after treatment completion, tb_date_treated + six months
-#         relapse_tx_complete = df[
-#             (df.tb_inf == 'latent_susc_tx')
-#             & ~df.tb_on_ipt
-#             & df.is_alive
-#             & ~df.hv_inf
-#             & (self.sim.date - df.tb_date_treated > pd.to_timedelta(182.625, unit='d'))
-#             & (self.sim.date - df.tb_date_treated < pd.to_timedelta(732.5, unit='d'))
-#             & ~df.tb_treatment_failure
-#             & (random_draw < params['monthly_prob_relapse_tx_complete'])
-#         ].index
-#
-#         # relapse after treatment default, tb_treatment_failure=True, but make sure not tb-mdr
-#         relapse_tx_incomplete = df[
-#             (df.tb_inf == 'latent_susc_tx')
-#             & ~df.tb_on_ipt
-#             & df.is_alive
-#             & ~df.hv_inf
-#             & df.tb_treatment_failure
-#             & (self.sim.date - df.tb_date_treated > pd.to_timedelta(182.625, unit='d'))
-#             & (self.sim.date - df.tb_date_treated < pd.to_timedelta(732.5, unit='d'))
-#             & (random_draw < params['monthly_prob_relapse_tx_incomplete'])
-#         ].index
-#
-#         # relapse after >2 years following completion of treatment (or default)
-#         # use tb_date_treated + 2 years + 6 months of treatment
-#         relapse_tx_2yrs = df[
-#             (df.tb_inf == 'latent_susc_tx')
-#             & ~df.tb_on_ipt
-#             & df.is_alive
-#             & ~df.hv_inf
-#             & (self.sim.date - df.tb_date_treated >= pd.to_timedelta(913.125, unit='d'))
-#             & (random_draw < params['monthly_prob_relapse_2yrs'])
-#         ].index
-#
-#         df.loc[
-#             relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_inf'
-#         ] = 'active_susc_tx'
-#         df.loc[
-#             relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs,
-#             'tb_date_active',
-#         ] = now
-#         df.loc[
-#             relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_ever_tb'
-#         ] = True
-#         df.loc[
-#             relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_stage'
-#         ] = 'active_pulm'
-#
-#         # HIV-POSITIVE
-#
-#         # relapse after treatment completion, tb_date_treated + six months
-#         relapse_tx_complete = df[
-#             (df.tb_inf == 'latent_susc_tx')
-#             & ~df.tb_on_ipt
-#             & df.is_alive
-#             & df.hv_inf
-#             & (self.sim.date - df.tb_date_treated > pd.to_timedelta(182.625, unit='d'))
-#             & (self.sim.date - df.tb_date_treated < pd.to_timedelta(732.5, unit='d'))
-#             & ~df.tb_treatment_failure
-#             & (
-#                 random_draw
-#                 < (
-#                     params['monthly_prob_relapse_tx_complete']
-#                     * params['rr_relapse_hiv']
-#                 )
-#             )
-#         ].index
-#
-#         # relapse after treatment default, tb_treatment_failure=True, but make sure not tb-mdr
-#         relapse_tx_incomplete = df[
-#             (df.tb_inf == 'latent_susc_tx')
-#             & ~df.tb_on_ipt
-#             & df.is_alive
-#             & df.hv_inf
-#             & df.tb_treatment_failure
-#             & (self.sim.date - df.tb_date_treated > pd.to_timedelta(182.625, unit='d'))
-#             & (self.sim.date - df.tb_date_treated < pd.to_timedelta(732.5, unit='d'))
-#             & (
-#                 random_draw
-#                 < (
-#                     params['monthly_prob_relapse_tx_complete']
-#                     * params['rr_relapse_hiv']
-#                 )
-#             )
-#         ].index
-#
-#         # relapse after >2 years following completion of treatment (or default)
-#         # use tb_date_treated + 2 years + 6 months of treatment
-#         relapse_tx_2yrs = df[
-#             (df.tb_inf == 'latent_susc_tx')
-#             & ~df.tb_on_ipt
-#             & df.is_alive
-#             & df.hv_inf
-#             & (self.sim.date - df.tb_date_treated >= pd.to_timedelta(913.125, unit='d'))
-#             & (
-#                 random_draw
-#                 < (
-#                     params['monthly_prob_relapse_tx_complete']
-#                     * params['rr_relapse_hiv']
-#                 )
-#             )
-#         ].index
-#
-#         df.loc[
-#             relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_inf'
-#         ] = 'active_susc_tx'
-#         df.loc[
-#             relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs,
-#             'tb_date_active',
-#         ] = now
-#         df.loc[
-#             relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_ever_tb'
-#         ] = True
-#         df.loc[
-#             relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_stage'
-#         ] = 'active_pulm'
-#         df.loc[
-#             relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_symptoms'
-#         ] = True
-#
-#         all_relapse_complete = relapse_tx_complete.append(relapse_tx_2yrs)
-#         all_relapse = all_relapse_complete.append(relapse_tx_incomplete)
-#
-#         # ----------------------------------- SYMPTOMS -----------------------------------
-#         df.loc[all_relapse, 'tb_any_resp_symptoms'] = now
-#
-#         self.sim.modules['SymptomManager'].change_symptom(
-#             person_id=list(all_relapse),
-#             symptom_string='fever',
-#             add_or_remove='+',
-#             disease_module=self.module,
-#             duration_in_days=None,
-#         )
-#
-#         self.sim.modules['SymptomManager'].change_symptom(
-#             person_id=list(all_relapse),
-#             symptom_string='respiratory_symptoms',
-#             add_or_remove='+',
-#             disease_module=self.module,
-#             duration_in_days=None,
-#         )
-#
-#         self.sim.modules['SymptomManager'].change_symptom(
-#             person_id=list(all_relapse),
-#             symptom_string='fatigue',
-#             add_or_remove='+',
-#             disease_module=self.module,
-#             duration_in_days=None,
-#         )
-#
-#         self.sim.modules['SymptomManager'].change_symptom(
-#             person_id=list(all_relapse),
-#             symptom_string='night_sweats',
-#             add_or_remove='+',
-#             disease_module=self.module,
-#             duration_in_days=None,
-#         )
-#
-#         # ----------------------------------- RELAPSE CASES SEEKING CARE -----------------------------------
-#         # relapse after complete treatment course - refer for xpert testing
-#         # TODO leave this in here for now until diagnostic algorithm updated
-#         # TODO: calibrate / input these data from MOH reports
-#         prob_care = 0.47
-#         if now.year == 2013:
-#             prob_care = 0.44
-#         elif now.year == 2014:
-#             prob_care = 0.45
-#         elif now.year == 2015:
-#             prob_care = 0.5
-#         elif now.year == 2016:
-#             prob_care = 0.57
-#         elif now.year > 2016:
-#             prob_care = 0.73
-#
-#         # if relapse after complete treatment course
-#         seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_2yrs].index)
-#         for i in df.loc[all_relapse_complete].index:
-#             prob = rng.rand() < prob_care
-#             seeks_care[i] = rng.rand() < prob
-#
-#         if seeks_care.sum() > 0:
-#             for person_index in seeks_care.index[seeks_care]:
-#                 logger.debug(
-#                     f'This is TbRelapseEvent, scheduling HSI_Tb_XpertTest for {person_index}',
-#                     person_index,
-#                 )
-#                 event = HSI_Tb_XpertTest(self.module, person_id=person_index)
-#                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-#                     event,
-#                     priority=2,
-#                     topen=self.sim.date,
-#                     tclose=self.sim.date + DateOffset(weeks=2),
-#                 )
-#
-#                 # add back-up check if xpert is not available, then schedule sputum smear
-#                 self.sim.schedule_event(
-#                     TbCheckXpert(self.module, person_index),
-#                     self.sim.date + DateOffset(weeks=2),
-#                 )
-#
-#         # relapse after incomplete treatment course - repeat treatment course
-#         seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_incomplete].index)
-#         for i in df.loc[relapse_tx_incomplete].index:
-#             prob = rng.rand() < prob_care
-#             seeks_care[i] = rng.rand() < prob
-#
-#         if seeks_care.sum() > 0:
-#             for person_index in seeks_care.index[seeks_care]:
-#                 if df.at[person_index, 'age_years'] < 15:
-#
-#                     logger.debug(
-#                         f'TbRelapseEvent, scheduling HSI_Tb_StartTreatmentChild for relapsed child {person_index}'
-#                     )
-#
-#                     event = HSI_Tb_StartTreatmentChild(
-#                         self.module, person_id=person_index
-#                     )
-#                     self.sim.modules['HealthSystem'].schedule_hsi_event(
-#                         event,
-#                         priority=2,
-#                         topen=self.sim.date,
-#                         tclose=self.sim.date + DateOffset(weeks=2),
-#                     )
-#                 else:
-#                     logger.debug(
-#                         f'TbRelapseEvent, scheduling HSI_Tb_StartTreatmentAdult for relapsed adult {person_index}'
-#                     )
-#                     event = HSI_Tb_StartTreatmentAdult(
-#                         self.module, person_id=person_index
-#                     )
-#                     self.sim.modules['HealthSystem'].schedule_hsi_event(
-#                         event,
-#                         priority=2,
-#                         topen=self.sim.date,
-#                         tclose=self.sim.date + DateOffset(weeks=2),
-#                     )
-#
-#
 # class TbScheduleTesting(RegularEvent, PopulationScopeEventMixin):
 #     ''' additional TB testing happening outside the symptom-driven generic HSI event
 #     to increase tx coverage up to reported levels
@@ -3271,13 +3036,15 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         if any(x in self.module.symptom_list for x in persons_symptoms):
 
             # if screening indicates presumptive tb
-            # child under 5 -> chest x-ray
+            # child under 5 -> chest x-ray, has to be health system level 2 or above
             if person['age_years'] < 5:
-                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1, 'DiagRadio': 1})
-                test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                    dx_tests_to_run='tb_xray',
-                    hsi_event=self
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    HSI_Tb_Xray(person_id=person_id, module=self.module),
+                    topen=self.sim.date,
+                    tclose=None,
+                    priority=0
                 )
+
             # never diagnosed/treated before and hiv-neg -> sputum smear
             elif not person['tb_ever_treated'] and not person['hv_inf']:
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'LabTBMicro': 1})
@@ -3296,7 +3063,15 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 if test_result and (person['tb_strain'] == 'mdr'):
                     person['tb_diagnosed_mdr'] = True
 
-        # what happens if any of the tests are not available (particularly xpert)
+                # if xpert not available perform sputum test
+                if test_result is None:
+                    ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'LabTBMicro': 1})
+                    test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                        dx_tests_to_run='tb_sputum_test',
+                        hsi_event=self
+                    )
+
+        # if any of the tests are not available (particularly xpert)
         if test_result is None:
             pass
 
@@ -3320,6 +3095,54 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({})
         else:
             return ACTUAL_APPT_FOOTPRINT
+
+
+class HSI_Tb_Xray(HSI_Event, IndividualScopeEventMixin):
+    """
+    The is the x-ray HSI
+    usually used for testing children unable to produce sputum
+    positive result will prompt referral to start treatment
+
+    """
+
+    def __init__(self, module, person_id, suppress_footprint=False):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(
+            module, Tb
+        )
+
+        assert isinstance(suppress_footprint, bool)
+        self.suppress_footprint = suppress_footprint
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "Tb_Xray"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'DiagRadio': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 2
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        if not person['is_alive']:
+            return
+
+        test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            dx_tests_to_run='tb_xray',
+            hsi_event=self
+        )
+
+        # if test returns positive result, refer for appropriate treatment
+        if test_result:
+            person['tb_diagnosed'] = True
+
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+            topen=self.sim.date,
+            tclose=None,
+            priority=0
+        )
 
 
 # # ---------------------------------------------------------------------------

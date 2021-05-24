@@ -74,3 +74,18 @@ output = parse_log_file(sim.log_filepath)
 with open(outputpath / 'default_run.pickle', 'wb') as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
+
+
+#
+# plot active tb incidence per 1000 population
+
+# plot latent prevalence
+
+# plot proportion of active tb cases on treatment
+
+# plot number tb-mdr
+
+# plot numbers of sputum tests / xpert tests per month
+
+
+
