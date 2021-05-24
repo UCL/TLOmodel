@@ -45,6 +45,10 @@ class CareOfWomenDuringPregnancy(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+        # First we define dictionaries which will store the current parameters of interest (to allow parameters to
+        # change between 2010 and 2020)
+        self.current_parameters = dict()
+
         # This dictionary is used to track the frequency of certain events in the module which are processed by the
         # logging event
         self.anc_tracker = dict()
@@ -57,103 +61,103 @@ class CareOfWomenDuringPregnancy(Module):
 
         # CARE SEEKING...
         'prob_anc_continues': Parameter(
-            Types.REAL, 'probability a woman will return for a subsequent ANC appointment'),
+            Types.LIST, 'probability a woman will return for a subsequent ANC appointment'),
         'prob_an_ip_at_facility_level_1_2_3': Parameter(
             Types.LIST, 'probabilities that antenatal inpatient care will be scheduled at facility level 1, 2 or 3'),
 
         # TREATMENT EFFECTS...
         'effect_of_ifa_for_resolving_anaemia': Parameter(
-            Types.REAL, 'treatment effectiveness of starting iron and folic acid on resolving anaemia'),
+            Types.LIST, 'treatment effectiveness of starting iron and folic acid on resolving anaemia'),
         'effect_of_iron_replacement_for_resolving_anaemia': Parameter(
-            Types.REAL, 'treatment effectiveness of iron replacement in resolving anaemia'),
+            Types.LIST, 'treatment effectiveness of iron replacement in resolving anaemia'),
         'effect_of_folate_replacement_for_resolving_anaemia': Parameter(
-            Types.REAL, 'treatment effectiveness of folate replacement in resolving anaemia'),
+            Types.LIST, 'treatment effectiveness of folate replacement in resolving anaemia'),
         'effect_of_b12_replacement_for_resolving_anaemia': Parameter(
-            Types.REAL, 'treatment effectiveness of b12 replacement in resolving anaemia'),
+            Types.LIST, 'treatment effectiveness of b12 replacement in resolving anaemia'),
         'treatment_effect_blood_transfusion_anaemia': Parameter(
-            Types.REAL, 'treatment effectiveness of blood transfusion for anaemia in pregnancy'),
+            Types.LIST, 'treatment effectiveness of blood transfusion for anaemia in pregnancy'),
         'effect_of_iron_replacement_for_resolving_iron_def': Parameter(
-            Types.REAL, 'treatment effectiveness of iron replacement in resolving iron deficiency'),
+            Types.LIST, 'treatment effectiveness of iron replacement in resolving iron deficiency'),
         'effect_of_folate_replacement_for_resolving_folate_def': Parameter(
-            Types.REAL, 'treatment effectiveness of folate replacement in resolving folate deficiency'),
+            Types.LIST, 'treatment effectiveness of folate replacement in resolving folate deficiency'),
         'effect_of_b12_replacement_for_resolving_b12_def': Parameter(
-            Types.REAL, 'treatment effectiveness of b12 replacement in resolving b12 deficiency'),
+            Types.LIST, 'treatment effectiveness of b12 replacement in resolving b12 deficiency'),
         'prob_evac_procedure_pac': Parameter(
             Types.LIST, 'Probabilities that a woman will receive D&C, MVA or misoprostal as treatment for abortion '),
 
         # INTERVENTION PROBABILITIES...
         'squeeze_factor_threshold_anc': Parameter(
-            Types.REAL, 'squeeze factor threshold over which an ANC appointment cannot run'),
+            Types.LIST, 'squeeze factor threshold over which an ANC appointment cannot run'),
         'prob_intervention_delivered_urine_ds': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "urine dipstick" given that the HSI has ran '
+            Types.LIST, 'probability a woman will receive the intervention "urine dipstick" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_bp': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "blood pressure measurement" given that the '
+            Types.LIST, 'probability a woman will receive the intervention "blood pressure measurement" given that the '
                         'HSI has ran and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_ifa': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "iron and folic acid" given that the HSI'
+            Types.LIST, 'probability a woman will receive the intervention "iron and folic acid" given that the HSI'
                         ' has ran and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_bep': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "Balance energy and protein supplements" '
+            Types.LIST, 'probability a woman will receive the intervention "Balance energy and protein supplements" '
                         'given that the HSI has ran and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_depression_screen': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "depression screen" '
+            Types.LIST, 'probability a woman will receive the intervention "depression screen" '
                         'given that the HSI has ran and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_llitn': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "Long lasting insecticide treated net" '
+            Types.LIST, 'probability a woman will receive the intervention "Long lasting insecticide treated net" '
                         'given that the HSI has ran and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_tb_screen': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "TB screen" given that the HSI has ran '
+            Types.LIST, 'probability a woman will receive the intervention "TB screen" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_tt': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "tetanus toxoid" given that the HSI has '
+            Types.LIST, 'probability a woman will receive the intervention "tetanus toxoid" given that the HSI has '
                         'ran and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_calcium': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "urine dipstick" given that the HSI has ran '
+            Types.LIST, 'probability a woman will receive the intervention "urine dipstick" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_poct': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "point of care Hb testing" given that the '
+            Types.LIST, 'probability a woman will receive the intervention "point of care Hb testing" given that the '
                         'HSI has ran and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_albendazole': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "albendazole" given that the HSI has ran '
+            Types.LIST, 'probability a woman will receive the intervention "albendazole" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_hepb_test': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "Hepatitis B test" given that the HSI has '
+            Types.LIST, 'probability a woman will receive the intervention "Hepatitis B test" given that the HSI has '
                         'ran and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_syph_test': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "Syphilis test" given that the HSI has ran '
+            Types.LIST, 'probability a woman will receive the intervention "Syphilis test" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_hiv_test': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "HIV test" given that the HSI has ran '
+            Types.LIST, 'probability a woman will receive the intervention "HIV test" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_iptp': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "IPTp" given that the HSI has ran '
+            Types.LIST, 'probability a woman will receive the intervention "IPTp" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_gdm_test': Parameter(
-            Types.REAL, 'probability a woman will receive the intervention "GDM screening" given that the HSI has ran '
+            Types.LIST, 'probability a woman will receive the intervention "GDM screening" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
 
         # ASSESSMENT SENSITIVITIES/SPECIFICITIES...
         'sensitivity_bp_monitoring': Parameter(
-            Types.REAL, 'sensitivity of blood pressure monitoring to detect hypertension'),
+            Types.LIST, 'sensitivity of blood pressure monitoring to detect hypertension'),
         'specificity_bp_monitoring': Parameter(
-            Types.REAL, 'specificity of blood pressure monitoring to detect hypertension'),
+            Types.LIST, 'specificity of blood pressure monitoring to detect hypertension'),
         'sensitivity_urine_protein_1_plus': Parameter(
-            Types.REAL, 'sensitivity of a urine dipstick test to detect proteinuria at 1+'),
+            Types.LIST, 'sensitivity of a urine dipstick test to detect proteinuria at 1+'),
         'specificity_urine_protein_1_plus': Parameter(
-            Types.REAL, 'specificity of a urine dipstick test to detect proteinuria at 1+'),
+            Types.LIST, 'specificity of a urine dipstick test to detect proteinuria at 1+'),
         'sensitivity_poc_hb_test': Parameter(
-            Types.REAL, 'sensitivity of a point of care Hb test to detect anaemia'),
+            Types.LIST, 'sensitivity of a point of care Hb test to detect anaemia'),
         'specificity_poc_hb_test': Parameter(
-            Types.REAL, 'specificity of a point of care Hb test to detect anaemia'),
+            Types.LIST, 'specificity of a point of care Hb test to detect anaemia'),
         'sensitivity_fbc_hb_test': Parameter(
-            Types.REAL, 'sensitivity of a Full Blood Count test to detect anaemia'),
+            Types.LIST, 'sensitivity of a Full Blood Count test to detect anaemia'),
         'specificity_fbc_hb_test': Parameter(
-            Types.REAL, 'specificity of a Full Blood Count test to detect anaemia'),
+            Types.LIST, 'specificity of a Full Blood Count test to detect anaemia'),
         'sensitivity_blood_test_glucose': Parameter(
-            Types.REAL, 'sensitivity of a blood test to detect raised blood glucose'),
+            Types.LIST, 'sensitivity of a blood test to detect raised blood glucose'),
         'specificity_blood_test_glucose': Parameter(
-            Types.REAL, 'specificity of a blood test to detect raised blood glucose'),
+            Types.LIST, 'specificity of a blood test to detect raised blood glucose'),
     }
 
     PROPERTIES = {
@@ -202,10 +206,13 @@ class CareOfWomenDuringPregnancy(Module):
     }
 
     def read_parameters(self, data_folder):
-
         parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
-                                            sheet_name=None)
-        self.load_parameters_from_dataframe(parameter_dataframe['parameter_values_2010'])
+                                            sheet_name='parameter_values')
+        self.load_parameters_from_dataframe(parameter_dataframe)
+
+        # For the first period (2010-2015) we use the first value in each list as a parameter
+        for key, value in self.parameters.items():
+            self.current_parameters[key] = self.parameters[key][0]
 
     def initialise_population(self, population):
 
@@ -247,7 +254,7 @@ class CareOfWomenDuringPregnancy(Module):
                             'anc8+': 0, 'timely_ANC3': 0, 'diet_supp_6_months': 0}
 
         # ==================================== REGISTERING DX_TESTS =================================================
-        params = self.parameters
+        params = self.current_parameters
         # Next we register the relevant dx_tests used within this module...
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
 
@@ -436,7 +443,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param facility_level: facility level that the next ANC contact in the schedule will occur at
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
 
         # Prevent women returning to ANC at very late gestations- this needs to be reviewed and linked with induction
         if df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 42:
@@ -589,7 +596,7 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         hypertension_diagnosed = False
@@ -672,7 +679,7 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
 
         # We calculate an approximate number of days left of a womans pregnancy to capture the consumables required for
         # daily iron/folic acid tablets
@@ -760,7 +767,7 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
 
         # Define required consumables
         pkg_code_tet = pd.unique(
@@ -781,7 +788,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
@@ -817,7 +824,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
         person_id = hsi_event.target
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # Define the required consumables
@@ -860,7 +867,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        params = self.parameters
+        params = self.current_parameters
         person_id = hsi_event.target
 
         # We run this function to store the associated consumables with albendazole administration. This intervention
@@ -889,7 +896,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        params = self.parameters
+        params = self.current_parameters
         person_id = hsi_event.target
 
         # This intervention is a place holder prior to the Hepatitis B module being coded
@@ -923,7 +930,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        params = self.parameters
+        params = self.current_parameters
         person_id = hsi_event.target
 
         # Define the consumables
@@ -959,7 +966,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         person_id = hsi_event.target
 
         if 'Hiv' in self.sim.modules:
@@ -978,7 +985,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         person_id = hsi_event.target
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
@@ -1011,7 +1018,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         person_id = hsi_event.target
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
@@ -1091,7 +1098,7 @@ class CareOfWomenDuringPregnancy(Module):
         :returns True/False as to whether the event can run
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
 
         visit = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
             self.sim.modules['CareOfWomenDuringPregnancy'],
@@ -1161,7 +1168,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
 
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
 
         date_difference = self.sim.date - df.at[individual_id, 'ac_date_next_contact']
 
@@ -1268,7 +1275,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        params = self.parameters
+        params = self.current_parameters
         pregnancy_deficiencies = self.sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
@@ -1360,7 +1367,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
@@ -1409,7 +1416,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        params = self.parameters
+        params = self.current_parameters
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
         # Check for consumables
@@ -3005,7 +3012,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
-        params = self.module.parameters
+        params = self.module.current_parameters
         abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
