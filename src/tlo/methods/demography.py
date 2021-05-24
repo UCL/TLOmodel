@@ -5,9 +5,6 @@ The core demography module and its associated events.
 * Runs the OtherDeathPoll which represents the deaths due to causes other than those represented by disease modules.
 """
 
-# todo - refactor here and in wiki to refer to 'tlo_cause'
-# todo - the indirection
-
 import math
 from collections import defaultdict
 from pathlib import Path
@@ -40,7 +37,7 @@ class Demography(Module):
         self.resourcefilepath = resourcefilepath
         self.causes_of_death = dict()  # will store all the causes of death that are possible in the simulation
         self.popsize_by_year = dict()  # will store total population size each year
-        self.gbd_causes_of_death_not_represented_in_disease_module = set()
+        self.gbd_causes_of_death_not_represented_in_disease_modules = set()
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
@@ -116,7 +113,7 @@ class Demography(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
         )
 
-        # GBD causes of death todo - this might not be needed
+        # GBD causes of death
         self.parameters['gbd_causes_of_death'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv'
         )['cause_name'].unique().tolist()
@@ -132,28 +129,41 @@ class Demography(Module):
         2) Define the "Other" causes of death (that is managed in this module by the OtherDeathPoll)
         3) Add the 'cause_of_death' property (this could not be defined until this point as it is a categorical variable
          and all categories are not known until after all modules have been registered).
+        4) Output to the log mappers for causes of death (tlo_cause --> label; gbd_cause --> label).
         """
 
-        # 1) Register all the causes of death from the disease modules
+        # 1) Register all the causes of death from the disease modules: gives dict(<tlo_cause>: <Cause instance>)
         self.causes_of_death = collect_causes_from_disease_modules(
             all_modules=self.sim.modules.values(),
             collect='CAUSES_OF_DEATH',
             acceptable_causes=set(self.parameters['gbd_causes_of_death'])
         )
 
-        # 2) Define the "Other" causes of death (that is managed in this module by the OtherDeathPoll)
-        self.gbd_causes_of_death_not_represented_in_disease_module = \
-            self.get_gbd_causes_of_death_not_represented_in_disease_module()
+        # 2) Define the "Other" tlo_cause of death (that is managed in this module by the OtherDeathPoll)
+        self.gbd_causes_of_death_not_represented_in_disease_modules = \
+            self.get_gbd_causes_of_death_not_represented_in_disease_modules()
         self.causes_of_death['Other'] = Cause(
             label='Other',
-            gbd_causes=self.gbd_causes_of_death_not_represented_in_disease_module
+            gbd_causes=self.gbd_causes_of_death_not_represented_in_disease_modules
         )
 
-        # 2) Create a categorical property for the 'cause_of_death'
+        # 3) Create a categorical property for the 'cause_of_death' (this is the "tlo_cause" defined by modules).
         self.PROPERTIES['cause_of_death'] = Property(
             Types.CATEGORICAL,
-            'The cause of death of this individual (the tlo_cause defined by the module',
+            'The cause of death of this individual (the tlo_cause defined by the module)',
             categories=list(self.causes_of_death.keys())
+        )
+
+        # 4) Output to the log mappers for causes of death
+        mapper_from_tlo_causes, mapper_from_gbd_causes = \
+            self.create_mappers_from_causes_of_death_to_label()
+        logger.info(
+            key='mapper_from_tlo_cause_to_common_label',
+            data=mapper_from_tlo_causes
+        )
+        logger.info(
+            key='mapper_from_gbd_cause_to_common_label',
+            data=mapper_from_gbd_causes
         )
 
     def initialise_population(self, population):
@@ -205,7 +215,6 @@ class Demography(Module):
         * Output to the log the dicts that can be used for mapping from causes of death defined here, and those defined
         in the GBD datasets, to a common 'label'.
         """
-
         # Update age information every day
         sim.schedule_event(AgeUpdateEvent(self, self.AGE_RANGE_LOOKUP), sim.date + DateOffset(days=1))
 
@@ -219,18 +228,6 @@ class Demography(Module):
         # Check that the simulation does not run too long
         if self.sim.end_date.year >= 2100:
             raise Exception('Year is after 2100: Demographic data do not extend that far.')
-
-        # Output to the log mappers for causes of death
-        mapper_from_tlo_causes, mapper_from_gbd_causes = \
-            self.create_mappers_from_causes_of_death_to_label()
-        logger.info(
-            key='mapper_from_tlo_cause_to_common_label',
-            data=mapper_from_tlo_causes
-        )
-        logger.info(
-            key='mapper_from_gbd_cause_to_common_label',
-            data=mapper_from_gbd_causes
-        )
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -278,24 +275,28 @@ class Demography(Module):
                 description='The scaling factor (if can be computed)'
             )
 
-    def do_death(self, individual_id, cause, originating_module):
-        """Register and log the death of an individual from a specific cause"""
+    def do_death(self, individual_id: int, cause: str, originating_module: Module):
+        """Register and log the death of an individual from a specific cause.
+        * 'individual_id' is the index in the population.props dataframe to the (one) person.
+        * 'cause' is the "tlo cause" that is defined by the disease module.
+        * 'originating_module' is the disease module that is causing the death.
+        """
 
         df = self.sim.population.props
+        assert type(individual_id) is int
         person = df.loc[individual_id]
 
         if not person['is_alive']:
             return
 
-        # Check that the cause is declared and declare for use by this module:
+        # Check that the cause is declared, and declared for use by the originating module:
         assert cause in self.causes_of_death, f'The cause of death {cause} is not declared.'
         if originating_module is not self:
             assert cause in originating_module.CAUSES_OF_DEATH, \
                 f'The cause of death {cause} is not declared for use by the module {originating_module.name}.'
 
         # Register the death:
-        df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = \
-            (False, self.sim.date, cause)
+        df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = (False, self.sim.date, cause)
 
         # Log the death:
         data_to_log_for_each_death = {
@@ -307,6 +308,7 @@ class Demography(Module):
         }
 
         if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
+            # If possible, append to the log additional information about pregnancy:
             data_to_log_for_each_death.update({
                 'pregnancy': person['is_pregnant'],
             })
@@ -324,9 +326,9 @@ class Demography(Module):
         if 'HealthSystem' in self.sim.modules:
             self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
 
-    def get_gbd_causes_of_death_not_represented_in_disease_module(self):
+    def get_gbd_causes_of_death_not_represented_in_disease_modules(self):
         """
-        Find the causes of death in the GBD datasets that are not represented by the the causes of death defined in the
+        Find the causes of death in the GBD datasets that are not represented within the causes of death defined in the
         modules registered in this simulation.
         :return: set of gbd_causes that are not represented in disease modules
         """
@@ -337,19 +339,13 @@ class Demography(Module):
         return set(self.parameters['gbd_causes_of_death']) - all_gbd_causes_in_sim
 
     def create_mappers_from_causes_of_death_to_label(self):
-        """Helper function to create mapping dicts to map to a common set of categories, either the causes of death
-        defined in the model, or the causes defined in the GBD. This is specific to a run of the simulation as the
-        configuration of modules determine which causes of death are counted under the cause_of_death "Other".
+        """Helper function to create mapping dicts to map to from either the tlo_cause or the gbd_cause to the common
+        'label'. Note that this is specific to a run of the simulation as the configuration of modules determine
+        which causes of death are counted under the tlo_cause named "Other".
 
-        'label' is the commmon category in which any type of death is classified (for ouput in statistics etc)
-        'tlo_cause' is the name of cause of death in this model (that upon which the declaration is made).
-        'gbd_cause' is the name of cause of death in the GBD dataset
-
-        * The labels exhausitvely define all the types of death.
-        * Each cause_of_death is associated with a set of 'tlo_causes' and a set of 'gbd_causes'.
-        * Neither a 'tlo_cause' or a 'gbd_cause' can be associated with more than one label.
-        * The cause_of_death 'Other' subsumes the tlo_cause of 'Other' and all the gbd_causes that are not associated
-         with another cause_of_death.
+        'label' is the commmon category in which any type of death is classified (for ouput in statistics etc);
+        'tlo_cause' is the name of cause of death used by the module;
+        'gbd_cause' is the name of cause of death in the GBD dataset.
         """
 
         # 1) Reorganise the causes of death so that we have:
@@ -357,12 +353,11 @@ class Demography(Module):
         lookup = defaultdict(lambda: {'tlo_causes': set(), 'gbd_causes': set()})
 
         for tlo_cause_name, cause in self.causes_of_death.items():
-            if cause.gbd_causes:
-                label = cause.label
-                list_of_gbd_causes = cause.gbd_causes
-                lookup[label]['tlo_causes'].add(tlo_cause_name)
-                for gbd_cause in list_of_gbd_causes:
-                    lookup[label]['gbd_causes'].add(gbd_cause)
+            label = cause.label
+            list_of_gbd_causes = cause.gbd_causes
+            lookup[label]['tlo_causes'].add(tlo_cause_name)
+            for gbd_cause in list_of_gbd_causes:
+                lookup[label]['gbd_causes'].add(gbd_cause)
 
         # 2) Create dicts for mapping (gbd_cause --> label) and (tlo_cause --> label)
         lookup_df = pd.DataFrame.from_dict(lookup, orient='index').applymap(lambda x: list(x))
@@ -380,7 +375,7 @@ class Demography(Module):
         # -- checks
         assert set(mapper_from_tlo_causes.keys()) == set(self.causes_of_death)
         assert set(mapper_from_gbd_causes.keys()) == set(self.parameters['gbd_causes_of_death'])
-        assert set(mapper_from_tlo_causes.values()) == set(mapper_from_gbd_causes.values())
+        assert set(mapper_from_gbd_causes.values()).issubset(mapper_from_tlo_causes.values())
 
         return mapper_from_tlo_causes, mapper_from_gbd_causes
 
@@ -495,20 +490,18 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
     """
-    This event looks across each person in the population to see if they should die of a cause that is _not_ being
-    modelled explicitly by a disease module.
-    It does this by computing the GBD death rates that are implied by all causes of death other than those that are
-    covered by the cause of death that are declared by the disease module that are registerd in this simulation.
+    This event causes deaths to persons from cause that are _not_ being modelled explicitly by a disease module.
+    It does this by computing the GBD death rates that are implied by all the causes of death other than those that are
+    represented in the disease module registerd in this simulation.
     """
-
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
-        self.causes_to_represent = self.module.get_gbd_causes_of_death_not_represented_in_disease_module
+        self.causes_to_represent = self.module.gbd_causes_of_death_not_represented_in_disease_modules
         self.mort_risk_per_poll = self.get_mort_risk_per_poll()
 
     def get_mort_risk_per_poll(self):
-        """Compute the death-rates to use (limited to those causes of death defined in `self.causes_to_represent`).
-        Adjust the rates of death so that it is a risk of death per the occurrence of the polling event
+        """Compute the death-rates to use (i.e., those from causes of death defined in `self.causes_to_represent`).
+        Adjust the rates of death so that it is a risk of death per person per occurrence of the polling event.
         """
         # todo - this is pending a further PR that brings in newest GBD data. For now, just retrn the mortality
         #  schedule from WPP
@@ -521,10 +514,8 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         ).drop(columns={'death_rate'})
 
     def apply(self, population):
-        """Randomly select some persons to die of the 'Other' (the causes of death that are not represented by the
-        disease modules)."""
-        logger.debug(key='death_poll_start', data='Checking to see if anyone should die...')
-
+        """Randomly select some persons to die of the 'Other' tlo cause (the causes of death that are not represented
+        by the disease modules)."""
         # Get shortcut to main dataframe
         df = population.props
 
@@ -566,6 +557,11 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 class InstantaneousDeath(Event, IndividualScopeEventMixin):
     """
     Call the do_death function to cause the person to die.
+
+    Note that no checking is done here. (Checking is done within `do_death` which can also be called directly.)
+
+    The 'individual_id' is the index in the population.props dataframe. It is for _one_ person only.
+    The 'cause' is the cause that is defined by the disease module (aka, "tlo cause").
     The 'module' passed to this event is the disease module that is causing the death.
     """
 
@@ -604,8 +600,8 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                   'female': sex_count['F']
                   })
 
-        # if you groupby both sex and age_range, you weirdly lose categories where size==0, so
-        # get the counts separately
+        # (nb. if you groupby both sex and age_range, you weirdly lose categories where size==0, so
+        # get the counts separately.)
         m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
         f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 

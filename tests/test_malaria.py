@@ -171,10 +171,11 @@ def test_remove_malaria_test(tmpdir):
         assert not pd.isnull(df.at[person, "ma_date_death"])
 
     # Check deaths are occurring
-    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'Malaria').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()].isin({'severe_malaria', 'Malaria'})).any()
 
     # Check that those with a scheduled malaria death in the past, are now dead with a cause of death severe_malaria
-    dead_due_to_malaria = ~df.is_alive & ~df.date_of_birth.isna() & (df.cause_of_death == 'Malaria')
+    dead_due_to_malaria = ~df.is_alive & ~df.date_of_birth.isna() & df.cause_of_death.isin(
+        {'severe_malaria', 'Malaria'})
     malaria_death_date_in_past = ~pd.isnull(df.ma_date_death) & (df.ma_date_death <= sim.date)
     assert (dead_due_to_malaria == malaria_death_date_in_past).all()
 

@@ -234,7 +234,7 @@ def test_generation_of_natural_history_process_no_art():
     # confirm the person is dead
     assert False is bool(df.at[person_id, "is_alive"])
     assert sim.date == df.at[person_id, "date_of_death"]
-    assert "Hiv" == df.at[person_id, "cause_of_death"]
+    assert "AIDS" == df.at[person_id, "cause_of_death"]
 
 
 def test_generation_of_natural_history_process_with_art_before_aids():

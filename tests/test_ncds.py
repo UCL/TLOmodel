@@ -147,7 +147,7 @@ def test_basic_run_with_high_incidence_hypertension():
     assert ~df.nc_chronic_lower_back_pain.all()
     assert ~df.nc_chronic_kidney_disease.all()
 
-    # check that no one has died from conditions that were set to zero incidence todo-- these need to be updated
+    # check that no one has died from conditions that were set to zero incidence
     assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == 'diabetes').any()
     assert not (df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'] == 'chronic_kidney_disease').any()
 

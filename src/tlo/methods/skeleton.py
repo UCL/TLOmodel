@@ -43,15 +43,15 @@ class Skeleton(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'name_of_each_cause_of_death_in_this_module':
-            Cause(gbd_causes=['list_of_strings_of_gbd_causes_to_which_this_cause_corresponds'],
+        'tlo_name_of_a_cause_of_death_in_this_module':
+            Cause(gbd_causes={'set_of_strings_of_gbd_causes_to_which_this_cause_corresponds'},
                   label='the_category_of_which_this_cause_is_a_part')
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'name_of_each_cause_of_disability_in_this_module':
-            Cause(gbd_causes=['list_of_strings_of_gbd_causes_to_which_this_cause_corresponds'],
+        'tlo_name_of_a_cause_of_disability_in_this_module':
+            Cause(gbd_causes={'set_of_strings_of_gbd_causes_to_which_this_cause_corresponds'},
                   label='the_category_of_which_this_cause_is_a_part')
     }
 

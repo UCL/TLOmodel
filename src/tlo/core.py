@@ -371,7 +371,7 @@ class Cause():
     'gbd_causes': set of strings for causess in the GBD datasets to which this cause is equivalent.
     'cause_of_death': the (single) category to which this cause belongs and should be labelled in output statistics.
     """
-    def __init__(self, label: str, gbd_causes: set = None):
+    def __init__(self, label: str, gbd_causes: set = {}):
         """Do basic type checking."""
         assert (type(label) is str) and (label != '')
         self.label = label
@@ -427,7 +427,9 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
     # Check that each gbd_cause is not defined in respect of more than one label
     gbd_causes = dict()  # dict(<gbd_cause: label>)
     for c in collected_causes.values():
+        print(f'c={c}')
         for g in c.gbd_causes:
+            print(f'g={g}')
             if g in gbd_causes:
                 assert gbd_causes[g] == c.label, f"The gbd cause {g} is defined under more than one label: " \
                                                  f"{gbd_causes[g]} and {c.label}."
