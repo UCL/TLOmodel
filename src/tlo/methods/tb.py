@@ -641,7 +641,6 @@ class Tb(Module):
         all_fast = fast + fast_hiv  # todo does this add them or join indices
 
         for person in all_fast:
-
             self.sim.schedule_event(TbActiveEvent(self, person), now)
 
         # ------------------ slow progressors ------------------ #
@@ -653,8 +652,8 @@ class Tb(Module):
 
         # adults
         eligible_adults = df.loc[(df.tb_date_latent == now) &
-                      df.is_alive &
-                      (df.age_years >= 15)]
+                                 df.is_alive &
+                                 (df.age_years >= 15)]
         eligible_adults = eligible_adults[-all_fast]  # todo check this removes anyone in all_fast
 
         assert all_fast not in eligible_adults
@@ -667,15 +666,15 @@ class Tb(Module):
         # schedule for time now up to 2 years
         for person_id in idx_will_progress:
             date_progression = self.sim.date + \
-                        pd.DateOffset(days=self.rng.randint(0, 732))
+                               pd.DateOffset(days=self.rng.randint(0, 732))
             self.sim.schedule_event(
                 TbActiveEvent(self, person_id), date_progression
             )
 
         # children
         eligible_children = df.loc[(df.tb_date_latent == now) &
-                                 df.is_alive &
-                                 (df.age_years < 15)]
+                                   df.is_alive &
+                                   (df.age_years < 15)]
         eligible_children = eligible_children[-all_fast]  # todo check this removes anyone in all_fast
         assert all_fast not in eligible_children
 
@@ -770,10 +769,10 @@ class Tb(Module):
 
         # todo does this use the right value for appt?
         for appt in clinical_fup:
-            print (appt)
+            print(appt)
             # schedule a clinical check-up appointment
             date_appt = self.sim.date + \
-                               pd.DateOffset(days=appt*30.5)
+                        pd.DateOffset(days=appt * 30.5)
             self.sim.schedule_event(
                 HSI_Tb_FollowUp(self, person_id), date_appt
             )
@@ -1100,7 +1099,6 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-
         df = population.props
 
         # transmission ds-tb
@@ -3377,12 +3375,6 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             # schedule clinical monitoring
             self.module.clinical_monitoring(person_id)
 
-            # schedule repeat tb testing
-            self.sim.schedule_event(
-                HSI_Tb_ScreeningAndRefer(person_id=person_id, module=self.module),
-                self.sim.date + pd.DateOffset(months=6)
-            )
-
 
 # # ---------------------------------------------------------------------------
 # #   Follow-up appts
@@ -3395,7 +3387,6 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         if positive sputum smear, schedule xpert test for drug sensitivity
     """
 
-
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
@@ -3403,82 +3394,67 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['TBFollowUp'] = 1
-#
-#         # Define the necessary information for an HSI
-#         self.TREATMENT_ID = 'Tb_FollowUp'
-#         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
-#         self.ALERT_OTHER_DISEASES = []
-#
-#     def apply(self, person_id, squeeze_factor):
-#         # nothing needs to happen here, just log the appt
-#         logger.debug('Follow up appt for tb case %d', person_id)
-#
-#     def did_not_run(self):
-#         pass
-#
-#
-# class HSI_Tb_FollowUp_SputumTest(HSI_Event, IndividualScopeEventMixin):
-#     '''
-#     This is a follow-up sputum test for confirmed tb cases
-#     doesn't change any properties except for date latest sputum test
-#     '''
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#         assert isinstance(module, Tb)
-#
-#         # Get a blank footprint and then edit to define call on resources of this event
-#         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-#         the_appt_footprint[
-#             'ConWithDCSA'
-#         ] = 1  # This requires one generic outpatient appt
-#         the_appt_footprint[
-#             'LabTBMicro'
-#         ] = 1  # This requires one lab appt for microscopy
-#
-#         # Define the necessary information for an HSI
-#         self.TREATMENT_ID = 'Tb_FollowUpSputumTest'
-#         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
-#         self.ALERT_OTHER_DISEASES = []
-#
-#     def apply(self, person_id, squeeze_factor):
-#         logger.debug(
-#             'This is HSI_Tb_FollowUp_SputumTest, a follow-up sputum smear test for person %d',
-#             person_id,
-#         )
-#
-#         df = self.sim.population.props
-#         now = self.sim.date
-#
-#         # Get the consumables required
-#         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-#         pkg_code1 = pd.unique(
-#             consumables.loc[
-#                 consumables['Intervention_Pkg'] == 'Microscopy Test',
-#                 'Intervention_Pkg_Code',
-#             ]
-#         )[0]
-#
-#         the_cons_footprint = {
-#             'Intervention_Package_Code': [{pkg_code1: 1}],
-#             'Item_Code': [],
-#         }
-#
-#         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-#             hsi_event=self, cons_req_as_footprint=the_cons_footprint
-#         )
-#
-#         if is_cons_available:
-#             df.at[person_id, 'tb_ever_tested'] = True
-#             df.at[person_id, 'tb_smear_test'] = True
-#             df.at[person_id, 'tb_date_smear_test'] = now
-#
-#     def did_not_run(self):
-#         pass
-#
-#
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Tb_FollowUp'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        p = self.module.parameters
+        df = self.sim.population.props
+
+        # months since treatment start - to compare with monitoring schedule
+        # round to lower integer value
+        months_since_tx = int((self.sim.date - df.at[person_id, 'tb_date_treated']).days / 30.5)
+
+        # default clinical monitoring schedule for first infection ds-tb
+        sputum_fup = p['followup_times'].loc['ds_sputum']
+
+        # if previously treated:
+        if df.at[person_id, 'tb_ever_treated']:
+
+            # if strain is ds and person previously treated:
+            sputum_fup = p['followup_times'].loc['ds_retreatment_sputum']
+
+        # if strain is mdr - this treatment schedule takes precedence
+        elif df.at[person_id, 'tb_strain'] == 'mdr':
+
+            # if strain is mdr:
+            sputum_fup = p['followup_times'].loc['mdr_sputum']
+
+        # check schedule for sputum test and perform if necessary
+        if months_since_tx in sputum_fup:
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'TBFollowUp': 1, 'LabTBMicro': 1})
+            test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                dx_tests_to_run='tb_sputum_test',
+                hsi_event=self
+            )
+
+            # if sputum test was available and returned positive, schedule xpert test
+            if test_result:
+                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'TBFollowUp': 1, 'LabTBMicro': 1, 'LabMolec': 1})
+                test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                    dx_tests_to_run='tb_xpert_test',
+                    hsi_event=self
+                )
+                
+                # if xpert test returns mdr-tb diagnosis
+                if test_result and (df.at[person_id, 'tb_strain'] == 'mdr'):
+                    df.at[person_id, 'tb_diagnosed_mdr'] = True
+
+                    # restart treatment (new regimen) if newly diagnosed with mdr-tb
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                        topen=self.sim.date,
+                        tclose=None,
+                        priority=0
+                    )
+
+        return ACTUAL_APPT_FOOTPRINT
+
+
 # # ---------------------------------------------------------------------------
 # #   Cure
 # # ---------------------------------------------------------------------------
