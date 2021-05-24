@@ -517,6 +517,29 @@ class Tb(Module):
                 p['rr_ipt_child_hiv']),  # ipt, hiv+ not on ART (or on ART and not suppressed)
         )
 
+        # individual risk of relapse
+        self.lm['risk_relapse'] = LinearModel(
+            LinearModelType.ADDITIVE,
+            0,
+            Predictor().when(
+                '(df.tb_inf == "latent") & '
+                'df.tb_ever_treated & '
+                '~df.tb_treatment_failure & '
+                '(self.sim.date < (df.tb_date_treated + pd.DateOffset(days=2*365.25)))',
+                p['monthly_prob_relapse_tx_complete']),  # ever treated, no tx failure and <2 years post active disease
+            Predictor().when(
+                '(df.tb_inf == "latent") & '
+                'df.tb_ever_treated & '
+                'df.tb_treatment_failure & '
+                '(self.sim.date < (df.tb_date_treated + pd.DateOffset(days=2*365.25)))',
+                p['monthly_prob_relapse_tx_incomplete']),  # ever treated, tx failure and <2 years post active disease
+            Predictor().when(
+                '(df.tb_inf == "latent") & '
+                'df.tb_ever_treated & '
+                '(self.sim.date >= (df.tb_date_treated + pd.DateOffset(days=2*365.25)))',
+                p['monthly_prob_relapse_2yrs']),  # <2 years post active disease
+        )
+
     def baseline_latent(self, population):
         """
         sample from the baseline population to assign latent infections
@@ -679,7 +702,7 @@ class Tb(Module):
         assert all_fast not in eligible_children
 
         # todo check what this return for non-eligible people - zero or NA? Length?
-        risk_of_progression = self.lm['active_tb'].predict(df.loc[eligible_children])
+        risk_of_progression = self.lm['active_tb_child'].predict(df.loc[eligible_children])
         will_progress = self.rng.random_sample(len(risk_of_progression)) < risk_of_progression
         idx_will_progress = will_progress[will_progress].index
 
@@ -1117,6 +1140,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # apply a force of infection to produce new latent cases
         # no age distribution for FOI but the relative risks would affect distribution of active infections
+        # this comprises both new infections and reinfections
 
         df = self.sim.population.props
         p = self.module.parameters
@@ -1198,77 +1222,31 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[tb_idx, 'tb_date_latent'] = now
         df.loc[tb_idx, 'tb_strain'] = strain
 
-    # def progression_to_active(self, population):
-    #     # from the new latent infections, select and schedule progression to active disease
-    #
-    #     df = population.props
-    #     p = self.module.parameters
-    #     rng = self.module.rng
-    #     now = self.sim.date
-    #
-    #     # ------------------ fast progressors ------------------ #
-    #
-    #     fast = df.loc[(df.tb_date_latent == now) &
-    #                   df.is_alive &
-    #                   (df.age_years < 15) &
-    #                   (rng.rand() < p['prop_fast_progressor'])].index
-    #
-    #     fast_hiv = df.loc[(df.tb_date_latent == now) &
-    #                       df.is_alive &
-    #                       (df.age_years < 15) &
-    #                       df.hv_inf &
-    #                       (rng.rand() < p['prop_fast_progressor_hiv'])].index
-    #
-    #     all_fast = fast + fast_hiv  # todo does this add them or join indices
-    #
-    #     for person in all_fast:
-    #
-    #         self.sim.schedule_event(TbActiveEvent(self.module, person), now)
-    #
-    #     # ------------------ slow progressors ------------------ #
-    #
-    #     # slow progressors, based on risk factors (via a linear model)
-    #     # select population eligible for progression to active disease
-    #     # includes all new latent infections
-    #     # excludes those just fast-tracked above (all_fast)
-    #
-    #     # adults
-    #     eligible_adults = df.loc[(df.tb_date_latent == now) &
-    #                   df.is_alive &
-    #                   (df.age_years >= 15)]
-    #     eligible_adults = eligible_adults[-all_fast]  # todo check this removes anyone in all_fast
-    #
-    #     # todo check what this return for non-eligible people - zero or NA? Length?
-    #     risk_of_progression = self.module.lm['active_tb'].predict(df.loc[eligible_adults])
-    #     will_progress = self.module.rng.random_sample(len(risk_of_progression)) < risk_of_progression
-    #     idx_will_progress = will_progress[will_progress].index
-    #
-    #     # schedule for time now up to 2 years
-    #     for person_id in idx_will_progress:
-    #         date_progression = self.sim.date + \
-    #                     pd.DateOffset(days=self.module.rng.randint(0, 732))
-    #         self.sim.schedule_event(
-    #             TbActiveEvent(self.module, person_id), date_progression
-    #         )
-    #
-    #     # children
-    #     eligible_children = df.loc[(df.tb_date_latent == now) &
-    #                              df.is_alive &
-    #                              (df.age_years < 15)]
-    #     eligible_children = eligible_children[-all_fast]  # todo check this removes anyone in all_fast
-    #
-    #     # todo check what this return for non-eligible people - zero or NA? Length?
-    #     risk_of_progression = self.module.lm['active_tb'].predict(df.loc[eligible_children])
-    #     will_progress = self.module.rng.random_sample(len(risk_of_progression)) < risk_of_progression
-    #     idx_will_progress = will_progress[will_progress].index
-    #
-    #     # schedule for time now up to 1 year
-    #     for person_id in idx_will_progress:
-    #         date_progression = self.sim.date + \
-    #                            pd.DateOffset(days=self.module.rng.randint(0, 365))
-    #         self.sim.schedule_event(
-    #             TbActiveEvent(self.module, person_id), date_progression
-    #         )
+
+class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
+    """ The Tb Regular Relapse Events
+    * Schedules persons who have previously been infected to relapse
+    * Schedules progression to active tb
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+
+    def apply(self, population):
+
+        df = self.sim.population.props
+        rng = self.module.rng
+        now = self.sim.date
+
+        # need a monthly relapse for every person in df
+        # should return risk=0 for everyone not eligible for relapse
+        risk_of_relapse = self.module.lm['risk_relapse'].predict(df.loc[df.is_alive])
+        will_relapse = rng.random_sample(len(risk_of_relapse)) < risk_of_relapse
+        idx_will_relapse = will_relapse[will_relapse].index
+
+        # schedule progression to active
+        for person in idx_will_relapse:
+            self.sim.schedule_event(TbActiveEvent(self, person), now)
 
 
 class TbActiveEvent(Event, IndividualScopeEventMixin):
@@ -1373,6 +1351,13 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # this will indicate that this person has had one complete course of tb treatment
         # subsequent infections will be classified as retreatment
         df.loc[end_tx_indx, 'tb_ever_treated'] = True
+
+        # move infection status back to latent
+        df.loc[end_tx_indx, 'tb_inf'] = 'latent'
+        df.loc[end_tx_indx, 'tb_strain'] = 'none'
+        df.loc[end_tx_indx, 'tb_smear'] = False
+        df.loc[end_tx_indx, 'tb_stage'] = 'latent'
+
 
 
 # class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
@@ -3439,10 +3424,11 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                     dx_tests_to_run='tb_xpert_test',
                     hsi_event=self
                 )
-                
+
                 # if xpert test returns mdr-tb diagnosis
                 if test_result and (df.at[person_id, 'tb_strain'] == 'mdr'):
                     df.at[person_id, 'tb_diagnosed_mdr'] = True
+                    df.at[person_id, 'tb_treatment_failure'] = True
 
                     # restart treatment (new regimen) if newly diagnosed with mdr-tb
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
