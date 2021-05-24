@@ -4,8 +4,8 @@ from matplotlib import pyplot as plt
 from tlo.analysis.utils import parse_log_file
 
 # ================================= Maternal Mortality Ratio =========================================================
-log_df = parse_log_file(filepath="./outputs/dummy_test"
-                                 ".log")
+log_df = parse_log_file(filepath="./outputs/sejjj49@ucl.ac.uk/long_run_2010_calib-2021-05-23T134938Z/0/0/long_run_2010_"
+                                 "_2021-05-23T135229.log")
 
 # define the log DFs required
 # 1.) Calculate indirect deaths
@@ -57,7 +57,7 @@ def get_live_births(module):
     else:
         return 0
 
-
+# TODO: THIS OUTPUTS MORE BIRTHS THAN ON_BIRTH LOGGING FROM DEMOGRAPHY
 live_births_2010 = 0
 live_births_2010 += get_live_births('labour')
 live_births_2010 += get_live_births('newborn_outcomes')
@@ -167,37 +167,28 @@ early_anc1 = 0
 total_anc4 = 0
 total_anc8 = 0
 
-if f'tlo.methods.antenatal_care' in log_df:
-    if 'anc1' in log_df['tlo.methods.antenatal_care']:
+anc1 = log_df['tlo.methods.care_of_women_during_pregnancy']['anc1']
+anc1['date'] = pd.to_datetime(anc1['date'])
+anc1['year'] = anc1['date'].dt.year
 
-        anc1 = log_df[f'tlo.methods.antenatal_care']['anc1']
-        anc1['date'] = pd.to_datetime(anc1['date'])
-        anc1['year'] = anc1['date'].dt.year
+total_anc = log_df['tlo.methods.care_of_women_during_pregnancy']['anc_count_on_birth']
+total_anc['date'] = pd.to_datetime(total_anc['date'])
+total_anc['year'] = total_anc['date'].dt.year
 
-        total_anc1 = len(anc1.loc[anc1['year'] == 2010])
-        early_anc1 = len(anc1.loc[(anc1['year'] == 2010) & (anc1['gestation'] <= 17)])
-        anc1_months_5 = len(anc1.loc[(anc1['year'] == 2010) & (22 > anc1['gestation'] > 17)]) #calibrating to months 5-6
-        anc1_months_6_7 = len(anc1.loc[(anc1['year'] == 2010) & (35 > anc1['gestation'] > 22)])
-        anc1_months_8 = len(anc1.loc[(anc1['year'] == 2010) & (anc1['gestation'] > 34)])
+total_anc1 = len(total_anc.loc[total_anc['total_anc'] > 0])
+early_anc1 = len(anc1.loc[(anc1['year'] == 2010) & (anc1['gestation'] <= 17)])
+anc1_months_5 = len(anc1.loc[(anc1['year'] == 2010) & (anc1['gestation'] > 17) & (anc1['gestation'] < 22)]) #calibrating to months 5-6
+anc1_months_6_7 = len(anc1.loc[(anc1['year'] == 2010) & (anc1['gestation'] > 22) & (anc1['gestation'] < 35)]) #calibrating to months 5-6
+anc1_months_8 = len(anc1.loc[(anc1['year'] == 2010) & (anc1['gestation'] > 34)])
 
-    if 'anc4+' in log_df['tlo.methods.antenatal_care']:
-        anc4 = log_df[f'tlo.methods.antenatal_care']['anc4+']
-        anc4['date'] = pd.to_datetime(anc4['date'])
-        anc4['year'] = anc4['date'].dt.year
+total_anc4 = len(total_anc.loc[total_anc['total_anc'] > 3])
+total_anc8 = len(total_anc.loc[total_anc['total_anc'] > 7])
 
-        total_anc4 = len(anc4.loc[anc4['year'] == 2010])
-
-    if 'anc8+' in log_df['tlo.methods.antenatal_care']:
-        anc8 = log_df[f'tlo.methods.antenatal_care']['anc8+']
-        anc8['date'] = pd.to_datetime(anc8['date'])
-        anc8['year'] = anc8['date'].dt.year
-
-        total_anc8 = len(anc8.loc[anc8['year'] == 2010])
 
 # 2.) calculate the rates
-anc1_rate = (total_anc1 / live_births_2010) * 100
-anc4_rate = (total_anc4 / live_births_2010) * 100
-anc8_rate = (total_anc8 / live_births_2010) * 100
+anc1_rate = (total_anc1 / len(total_anc)) * 100
+anc4_rate = (total_anc4 / len(total_anc)) * 100
+anc8_rate = (total_anc8 / len(total_anc)) * 100
 
 objects = ('ANC 1', 'Calibration', 'ANC4+', 'Calibration', 'ANC8+')
 y_pos = np.arange(len(objects))

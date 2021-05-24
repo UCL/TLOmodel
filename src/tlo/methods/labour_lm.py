@@ -291,7 +291,7 @@ def predict_pph_retained_placenta_pp(self, df, rng=None, **externals):
 def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
     """individual level"""
     person = df.iloc[0]
-    params = self.module.parameters
+    params = self.module.current_parameters
     treatment = self.module.pph_treatment.to_strings(person.la_postpartum_haem_treatment)
     result = params['cfr_pp_pph']
 
@@ -398,41 +398,41 @@ def predict_probability_delivery_health_centre(self, df, rng=None, **externals):
     result = params['odds_deliver_in_health_centre']
 
     if 19 < person['age_years'] < 25:
-        result *= params['rrr_hc_delivery_age_20_24_2010']
+        result *= params['rrr_hc_delivery_age_20_24']
     if 24 < person['age_years'] < 30:
-        result *= params['rrr_hc_delivery_age_25_29_2010']
+        result *= params['rrr_hc_delivery_age_25_29']
     if 29 < person['age_years'] < 35:
-        result *= params['rrr_hc_delivery_age_30_34_2010']
+        result *= params['rrr_hc_delivery_age_30_34']
     if 34 < person['age_years'] < 40:
-        result *= params['rrr_hc_delivery_age_35_39_2010']
+        result *= params['rrr_hc_delivery_age_35_39']
     if 39 < person['age_years'] < 45:
-        result *= params['rrr_hc_delivery_age_40_44_2010']
+        result *= params['rrr_hc_delivery_age_40_44']
     if 44 < person['age_years'] < 50:
-        result *= params['rrr_hc_delivery_age_45_49_2010']
+        result *= params['rrr_hc_delivery_age_45_49']
 
     # TODO: level 3 is secondary and tertiarty combined...
     # if person['li_ed_lev'] == 3:
-    #    result *= params['rrr_hc_delivery_tertiary_education_2010']
+    #    result *= params['rrr_hc_delivery_tertiary_education']
 
     if person['li_wealth'] == 1:
-        result *= params['rrr_hc_delivery_wealth_1_2010']
+        result *= params['rrr_hc_delivery_wealth_1']
     if person['li_wealth'] == 2:
-        result *= params['rrr_hc_delivery_wealth_2_2010']
+        result *= params['rrr_hc_delivery_wealth_2']
     if person['li_wealth'] == 3:
-        result *= params['rrr_hc_delivery_wealth_3_2010']
+        result *= params['rrr_hc_delivery_wealth_3']
     if person['li_wealth'] == 4:
-        result *= params['rrr_hc_delivery_wealth_4_2010']
+        result *= params['rrr_hc_delivery_wealth_4']
 
     if 2 < person['la_parity'] < 5:
-        result *= params['rrr_hc_delivery_parity_3_to_4_2010']
+        result *= params['rrr_hc_delivery_parity_3_to_4']
     if person['la_parity'] > 4:
-        result *= params['rrr_hc_delivery_parity_>4_2010']
+        result *= params['rrr_hc_delivery_parity_>4']
 
     if ~person['li_urban']:
-        result *= params['rrr_hc_delivery_rural_2010']
+        result *= params['rrr_hc_delivery_rural']
 
     if person['li_mar_stat'] == 2:
-        result *= params['rrr_hc_delivery_married_2010']
+        result *= params['rrr_hc_delivery_married']
 
     result = result / (1 + result)
     return pd.Series(data=[result], index=df.index)
@@ -445,47 +445,49 @@ def predict_probability_delivery_at_home(self, df, rng=None, **externals):
     result = params['odds_deliver_at_home']
 
     if 19 < person['age_years'] < 25:
-        result *= params['rrr_hb_delivery_age_20_24_2010']
+        result *= params['rrr_hb_delivery_age_20_24']
+    if 24 < person['age_years'] < 30:
+        result *= params['rrr_hb_delivery_age_25_29']
     if 29 < person['age_years'] < 35:
-        result *= params['rrr_hb_delivery_age_30_34_2010']
+        result *= params['rrr_hb_delivery_age_30_34']
     if 34 < person['age_years'] < 40:
-        result *= params['rrr_hb_delivery_age_35_39_2010']
+        result *= params['rrr_hb_delivery_age_35_39']
     if 39 < person['age_years'] < 45:
-        result *= params['rrr_hb_delivery_age_40_44_2010']
+        result *= params['rrr_hb_delivery_age_40_44']
     if 44 < person['age_years'] < 50:
-        result *= params['rrr_hb_delivery_age_45_49_2010']
+        result *= params['rrr_hb_delivery_age_45_49']
 
     if ~person['li_urban']:
-        result *= params['rrr_hb_delivery_rural_2010']
+        result *= params['rrr_hb_delivery_rural']
 
     if 2 < person['la_parity'] < 5:
-        result *= params['rrr_hb_delivery_parity_3_to_4_2010']
+        result *= params['rrr_hb_delivery_parity_3_to_4']
     if person['la_parity'] > 4:
-        result *= params['rrr_hb_delivery_parity_>4_2010']
+        result *= params['rrr_hb_delivery_parity_>4']
 
     if person['li_ed_lev'] == 2:
-       result *= params['rrr_hb_delivery_primary_education_2010']
+       result *= params['rrr_hb_delivery_primary_education']
     # if person['li_ed_lev'] == 3:
-    #   result *= params['rrr_hb_delivery_secondary_education_2010']
+    #   result *= params['rrr_hb_delivery_secondary_education']
     # if person['li_ed_lev'] == 3:
-    #    result *= params['rrr_hb_delivery_tertiary_education_2010']
+    #    result *= params['rrr_hb_delivery_tertiary_education']
 
     if person['li_wealth'] == 1:
-        result *= params['rrr_hb_delivery_wealth_1_2010']
+        result *= params['rrr_hb_delivery_wealth_1']
     if person['li_wealth'] == 2:
-        result *= params['rrr_hb_delivery_wealth_2_2010']
+        result *= params['rrr_hb_delivery_wealth_2']
     if person['li_wealth'] == 3:
-        result *= params['rrr_hb_delivery_wealth_3_2010']
+        result *= params['rrr_hb_delivery_wealth_3']
     if person['li_wealth'] == 4:
-        result *= params['rrr_hb_delivery_wealth_4_2010']
+        result *= params['rrr_hb_delivery_wealth_4']
 
     if 2 < person['la_parity'] < 5:
-        result *= params['rrr_hb_delivery_parity_3_to_4_2010']
+        result *= params['rrr_hb_delivery_parity_3_to_4']
     if person['la_parity'] > 4:
-        result *= params['rrr_hb_delivery_parity_>4_2010']
+        result *= params['rrr_hb_delivery_parity_>4']
 
     if person['li_mar_stat'] == 3:
-        result *= params['rrr_hb_delivery_married_2010']
+        result *= params['rrr_hb_delivery_married']
 
     result = result / (1 + result)
     return pd.Series(data=[result], index=df.index)
