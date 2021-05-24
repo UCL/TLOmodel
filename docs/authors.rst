@@ -21,7 +21,7 @@ Epidemiologists/Modellers
 
 Software Development
 =====================
-* `Mathew Gill <https://github.com/mattgillucl>`_
+* `Matthew Gill <https://github.com/mattgillucl>`_
 * `Mosè Giordano <https://giordano.github.io/aboutme/>`_
 * `Matt Graham <https://matt-graham.github.io/#>`_
 * `Emmanuel Mnjowe <https://www.linkedin.com/in/emmanuel-mnjowe-067481162>`_
