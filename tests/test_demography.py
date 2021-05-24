@@ -104,7 +104,7 @@ def test_storage_of_cause_of_death():
     assert not person.is_alive
     assert person.cause_of_death == 'a_cause'
     assert (df.dtypes == orig).all()
-
+    test_dypes(sim)
 
 def test_cause_of_death_being_registered():
     """Test that the modules can declare causes of death, and that the mappers between tlo causes of death and gbd
@@ -133,7 +133,7 @@ def test_cause_of_death_being_registered():
     )
     sim.make_initial_population(n=20)
     sim.simulate(end_date=Date(2010, 1, 2))
-
+    test_dypes(sim)
 
 def test_py_calc(simulation):
     # make population of one person:

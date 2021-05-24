@@ -243,7 +243,7 @@ def test_standard_run_using_simplified_birth_module():
                 (df.age_exact_years < 0.5),
                 'nb_breastfeeding_status'] == 'exclusive'
             ).all()
-
+    check_dtypes(sim)
 
 def test_other_modules_running_with_simplified_births_module():
     """Run a "full simulation" using the simplified_births module and other disease modules"""

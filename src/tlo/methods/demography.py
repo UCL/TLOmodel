@@ -130,6 +130,8 @@ class Demography(Module):
         3) Add the 'cause_of_death' property (this could not be defined until this point as it is a categorical variable
          and all categories are not known until after all modules have been registered).
         4) Output to the log mappers for causes of death (tlo_cause --> label; gbd_cause --> label).
+        5) Define categorical properties for 'region_of_residence' and 'district_of_residence'
+
         """
 
         # 1) Register all the causes of death from the disease modules: gives dict(<tlo_cause>: <Cause instance>)
@@ -166,6 +168,19 @@ class Demography(Module):
             data=mapper_from_gbd_causes
         )
 
+        # 5) Define categorical properties for 'region_of_residence' and 'district_of_residence'
+        self.PROPERTIES['district_of_residence'] = Property(
+            Types.CATEGORICAL,
+            'The district (name) of residence (mapped from district_num_of_residence).',
+            categories=self.parameters['pop_2010']['District'].unique().tolist()
+        )
+
+        self.PROPERTIES['region_of_residence'] = Property(
+            Types.CATEGORICAL,
+            'The region of residence (mapped from district_num_of_residence).',
+            categories=self.parameters['pop_2010']['Region'].unique().tolist()
+        )
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         This method is called by the simulation when creating the initial population, and is
@@ -183,7 +198,7 @@ class Demography(Module):
                                                              size=len(df),
                                                              replace=True,
                                                              p=init_pop.prob)][
-            ['District_Num', 'Sex', 'Age']] \
+            ['District', 'District_Num', 'Region', 'Sex', 'Age']] \
             .reset_index(drop=True)
 
         # make a date of birth that is consistent with the allocated age of each person
@@ -202,7 +217,9 @@ class Demography(Module):
         df['cause_of_death'].values[:] = np.nan
         df['sex'].values[:] = demog_char_to_assign['Sex']
         df.loc[df.is_alive, 'mother_id'] = -1
-        df['district_num_of_residence'] = demog_char_to_assign['District_Num']
+        df['district_num_of_residence'].values[:] = demog_char_to_assign['District_Num'].values[:]
+        df['district_of_residence'].values[:]  = demog_char_to_assign['District'].values[:]
+        df['region_of_residence'].values[:]  = demog_char_to_assign['Region'].values[:]
 
         df.loc[df.is_alive, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
@@ -248,6 +265,8 @@ class Demography(Module):
             'sex': 'M' if rng.random_sample() < fraction_of_births_male else 'F',
             'mother_id': mother_id,
             'district_num_of_residence': df.at[mother_id, 'district_num_of_residence'],
+            'district_of_residence': df.at[mother_id, 'district_of_residence'],
+            'region_of_residence': df.at[mother_id, 'region_of_residence'],
             'age_exact_years': 0.0,
             'age_years': 0,
             'age_range': self.AGE_RANGE_LOOKUP[0]

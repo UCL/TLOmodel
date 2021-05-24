@@ -162,8 +162,8 @@ class HealthSeekingBehaviour(Module):
             Predictor('li_urban').when(True, p['odds_ratio_children_setting_urban']),
             Predictor('sex').when('F', p['odds_ratio_children_sex_Female']),
             Predictor('age_years').when('>=5', p['odds_ratio_children_age_5to14']),
-            Predictor('region_of_residence', external=True).when('Central', p['odds_ratio_children_region_Central'])
-                                                           .when('Southern', p['odds_ratio_children_region_Southern']),
+            Predictor('region_of_residence').when('Central', p['odds_ratio_children_region_Central'])
+                                            .when('Southern', p['odds_ratio_children_region_Southern']),
             Predictor('li_wealth').when(4, p['odds_ratio_children_wealth_higher'])
                                   .when(5, p['odds_ratio_children_wealth_higher'])
         )
@@ -175,8 +175,8 @@ class HealthSeekingBehaviour(Module):
             Predictor('sex').when('F', p['odds_ratio_adults_sex_Female']),
             Predictor('age_years').when('.between(35,59)', p['odds_ratio_adults_age_35to59'])
                                   .when('>=60', p['odds_ratio_adults_age_60plus']),
-            Predictor('region_of_residence', external=True).when('Central', p['odds_ratio_adults_region_Central'])
-                                                           .when('Southern', p['odds_ratio_adults_region_Southern']),
+            Predictor('region_of_residence').when('Central', p['odds_ratio_adults_region_Central'])
+                                            .when('Southern', p['odds_ratio_adults_region_Southern']),
             Predictor('li_wealth').when(4, p['odds_ratio_adults_wealth_higher'])
                                   .when(5, p['odds_ratio_adults_wealth_higher'])
         )
@@ -197,10 +197,6 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(days=1))
         assert isinstance(module, HealthSeekingBehaviour)
 
-        # As the linear models rely on 'region' but this is not in the main dataframe, this will passed in as an
-        # external variables. Get a pointed here to the mapper (from Demography) for doing this
-        self.num_to_region_name = self.sim.modules['Demography'].parameters['district_num_to_region_name']
-
     def apply(self, population):
         """Determine if persons with newly onset acute generic symptoms will seek care.
 
@@ -219,20 +215,10 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         # clear the list of persons with newly onset symptoms
         symptom_manager.reset_persons_with_newly_onset_symptoms()
 
-        # Defint the region of residence  # todo - integreate this into the lm without resorting to external var
-        region_of_residence = selected_persons['district_num_of_residence'].map(self.num_to_region_name)
-
         # calculate the baseline probability for adults and children to seek care & put them in single series
         # (index remains the person_id)
-        baseline_prob_child = m.hsb['children'].predict(
-            selected_persons[selected_persons.age_years < 15],
-            region_of_residence=region_of_residence[selected_persons.age_years < 15]
-        )
-        baseline_prob_adult = m.hsb['adults'].predict(
-            selected_persons[selected_persons.age_years >= 15],
-            region_of_residence=region_of_residence[selected_persons.age_years >= 15]
-        )
-
+        baseline_prob_child = m.hsb['children'].predict(selected_persons[selected_persons.age_years < 15])
+        baseline_prob_adult = m.hsb['adults'].predict(selected_persons[selected_persons.age_years >= 15])
         baseline_prob = baseline_prob_child.append(baseline_prob_adult, verify_integrity=True).rename('baseline_prob')
 
         # Get the symptoms that each person (who has newly onset symptoms) has currently.
