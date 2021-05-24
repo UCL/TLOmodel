@@ -47,7 +47,7 @@ def simulation():
 def test_run(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
-    assert set(['Demography']) == set(simulation.population.props['cause_of_death'].cat.categories)
+    assert set(['Other']) == set(simulation.population.props['cause_of_death'].cat.categories)
 
 
 def test_dypes(simulation):
@@ -65,7 +65,7 @@ def test_mothers_female(simulation):
     assert is_female.all()
 
 
-def test_storage_of_module_name_that_causes_death():
+def test_storage_of_cause_of_death():
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     class DummyModule(Module):
@@ -90,7 +90,7 @@ def test_storage_of_module_name_that_causes_death():
     df = sim.population.props
     orig = df.dtypes
     assert type(orig['cause_of_death']) == pd.CategoricalDtype
-    assert set(['Demography', 'DummyModule']) == set(df['cause_of_death'].cat.categories)
+    assert set(['Other', 'a_cause']) == set(df['cause_of_death'].cat.categories)
 
     # Cause a person to die by the DummyModule
     person_id = 0
@@ -102,7 +102,7 @@ def test_storage_of_module_name_that_causes_death():
 
     person = df.loc[person_id]
     assert not person.is_alive
-    assert person.cause_of_death == 'DummyModule'
+    assert person.cause_of_death == 'a_cause'
     assert (df.dtypes == orig).all()
 
 

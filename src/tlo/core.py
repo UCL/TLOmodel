@@ -368,16 +368,16 @@ class Module:
 
 class Cause():
     """Data structrue to store information about a Cause (of Death or Disability) used in the model
-    'gbd_causes': list of strings for causess in the GBD datasets to which this cause is equivalent.
+    'gbd_causes': set of strings for causess in the GBD datasets to which this cause is equivalent.
     'cause_of_death': the (single) category to which this cause belongs and should be labelled in output statistics.
     """
-    def __init__(self, label: str, gbd_causes: list = None):
+    def __init__(self, label: str, gbd_causes: set = None):
         """Do basic type checking."""
         assert (type(label) is str) and (label != '')
         self.label = label
 
         if gbd_causes:
-            gbd_causes = gbd_causes if type(gbd_causes) is list else list([gbd_causes])
+            gbd_causes = set(gbd_causes) if type(gbd_causes) in (list, set) else set([gbd_causes])
             assert all([(type(c) is str) and (c != '') for c in gbd_causes])
         self.gbd_causes = gbd_causes
 
