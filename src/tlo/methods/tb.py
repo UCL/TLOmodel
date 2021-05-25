@@ -1838,6 +1838,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         # ---------------------------------- HIV-TB DEATHS ------------------------------------
         # only active infections result in death
         # if HIV+ and virally suppressed, monthly death rates same as HIV-
+        # assume all on ART will also receive cotrimoxazole
 
         mort_hiv = pd.Series(0, index=df.index)
 
@@ -1876,147 +1877,24 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
         deaths = df.is_alive & (probs < mortality_rate)
-        # print('deaths: ', deaths)
         will_die = (df[deaths]).index
 
         for person in will_die:
             if df.at[person, 'is_alive']:
-                df.at[person, 'tb_date_death_occurred'] = self.sim.date
 
                 self.sim.schedule_event(
                     demography.InstantaneousDeath(
-                        self.module, individual_id=person, cause='hiv'
+                        self.module, individual_id=person, cause='AIDS'
                     ),
                     now,
                 )
-                df.at[person, 'tb_date_death'] = now
 
 
-# class TbMdrDeathEvent(RegularEvent, PopulationScopeEventMixin):
-#     '''The regular event that kills people with active MDR tb
-#     HIV-positive deaths due to TB counted as HIV deaths
-#     '''
-#
-#     def __init__(self, module):
-#         super().__init__(module, frequency=DateOffset(months=1))
-#
-#     def apply(self, population):
-#         params = self.module.parameters
-#         df = population.props
-#         now = self.sim.date
-#         rng = self.module.rng
-#
-#         # ---------------------------------- TB DEATHS - HIV-NEGATIVE ------------------------------------
-#         # only active infections result in death
-#         mortality_rate = pd.Series(0, index=df.index)
-#
-#         # hiv-negative, tb untreated
-#         mortality_rate.loc[
-#             df['tb_inf'].str.contains('active_mdr')
-#             & ~df.hv_inf
-#             & ~df.tb_treated_mdr
-#             & ~df.hv_on_cotrim
-#         ] = params['monthly_prob_tb_mortality']
-#
-#         # hiv-negative on cotrim - shouldn't be any, tb untreated
-#         mortality_rate.loc[
-#             df['tb_inf'].str.contains('active_mdr')
-#             & ~df.hv_inf
-#             & ~df.tb_treated_mdr
-#             & df.hv_on_cotrim
-#         ] = (params['monthly_prob_tb_mortality'] * params['mort_cotrim'])
-#
-#         # hiv-negative, tb treated
-#         mortality_rate.loc[
-#             df['tb_inf'].str.contains('active_mdr')
-#             & ~df.hv_inf
-#             & df.tb_treated_mdr
-#             & ~df.hv_on_cotrim
-#         ] = (params['monthly_prob_tb_mortality'] * params['mort_tx'])
-#
-#         # Generate a series of random numbers, one per individual
-#         probs = rng.rand(len(df))
-#         deaths = df.is_alive & (probs < mortality_rate)
-#         # print('deaths: ', deaths)
-#         will_die = (df[deaths]).index
-#         # print('will_die: ', will_die)
-#
-#         for person in will_die:
-#             if df.at[person, 'is_alive']:
-#                 df.at[person, 'tb_date_death_occurred'] = self.sim.date
-#
-#                 self.sim.schedule_event(
-#                     demography.InstantaneousDeath(
-#                         self.module, individual_id=person, cause='tb'
-#                     ),
-#                     now,
-#                 )
-#                 df.at[person, 'tb_date_death'] = now
-#
-#         # ---------------------------------- HIV-TB DEATHS ------------------------------------
-#         # only active infections result in death, no deaths on treatment
-#         mort_hiv = pd.Series(0, index=df.index)
-#
-#         # hiv-positive no ART, tb untreated
-#         mort_hiv.loc[
-#             df['tb_inf'].str.contains('active_mdr')
-#             & df.hv_inf
-#             & (~df.tb_on_treatment | ~df.tb_treated_mdr)
-#             & (df.hv_on_art != 2)
-#             & ~df.hv_on_cotrim
-#         ] = params['monthly_prob_tb_mortality_hiv']
-#
-#         # hiv-positive on ART, tb untreated
-#         mort_hiv.loc[
-#             df['tb_inf'].str.contains('active_mdr')
-#             & df.hv_inf
-#             & (~df.tb_on_treatment | ~df.tb_treated_mdr)
-#             & (df.hv_on_art == 2)
-#             & ~df.hv_on_cotrim
-#         ] = params['monthly_prob_tb_mortality']
-#
-#         # hiv-positive on cotrim and ART, tb untreated
-#         mort_hiv.loc[
-#             df['tb_inf'].str.contains('active_mdr')
-#             & df.hv_inf
-#             & (~df.tb_on_treatment | ~df.tb_treated_mdr)
-#             & (df.hv_on_art == 2)
-#             & df.hv_on_cotrim
-#         ] = (params['monthly_prob_tb_mortality_hiv'] * params['mort_cotrim'])
-#
-#         # hiv-positive no ART, tb treated
-#         mort_hiv.loc[
-#             df['tb_inf'].str.contains('active_mdr')
-#             & df.hv_inf
-#             & df.tb_treated_mdr
-#             & (df.hv_on_art == 2)
-#             & ~df.hv_on_cotrim
-#         ] = (params['monthly_prob_tb_mortality'] * params['mort_tx'])
-#
-#         # Generate a series of random numbers, one per individual
-#         probs = rng.rand(len(df))
-#         deaths = df.is_alive & (probs < mortality_rate)
-#         # print('deaths: ', deaths)
-#         will_die = (df[deaths]).index
-#
-#         for person in will_die:
-#             if df.at[person, 'is_alive']:
-#                 df.at[person, 'tb_date_death_occurred'] = self.sim.date
-#
-#                 self.sim.schedule_event(
-#                     demography.InstantaneousDeath(
-#                         self.module, individual_id=person, cause='hiv'
-#                     ),
-#                     now,
-#                 )
-#                 df.at[person, 'tb_date_death'] = now
-#
-#
-# # ---------------------------------------------------------------------------
-# #   Logging
-# # ---------------------------------------------------------------------------
-#
-#
+# ---------------------------------------------------------------------------
+#   Logging
+# ---------------------------------------------------------------------------
+
+
 class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """ produce some outputs to check
@@ -2029,58 +1907,56 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
         now = self.sim.date
-        #
-        #         # ------------------------------------ INCIDENCE ------------------------------------
-        #         # total number of new active cases in last year - susc + mdr
-        #         # may have died in the last year but still counted as active case for the year
-        #         new_tb_cases = len(
-        #             df[(df.tb_date_active > (now - DateOffset(months=self.repeat)))]
-        #         )
-        #
-        #         # incidence per 100k
-        #         inc100k = (new_tb_cases / len(df[df.is_alive])) * 100000
-        #
-        # latent cases
+
+        # ------------------------------------ INCIDENCE ------------------------------------
+        # total number of new active cases in last year - ds + mdr
+        # may have died in the last year but still counted as active case for the year
+
+        # number of new active cases
+        new_tb_cases = len(
+            df[(df.tb_date_active > (now - DateOffset(months=self.repeat)))]
+        )
+
+        # incidence per 100k
+        inc100k = (new_tb_cases / len(df[df.is_alive])) * 100000
+
+        # number of latent cases
         new_latent_cases = len(
             df[(df.tb_date_latent > (now - DateOffset(months=self.repeat)))]
         )
-        #
-        #         # percentage of active TB cases in the last year who are HIV-positive
-        #         inc_active_hiv = len(
-        #             df[(df.tb_date_active > (now - DateOffset(months=self.repeat))) & df.hv_inf]
-        #         )
-        #
-        #         prop_hiv = inc_active_hiv / new_tb_cases if new_tb_cases else 0
-        #
-        #         # incidence of TB-HIV per 100k
-        #         inc100k_hiv = (inc_active_hiv / len(df[df.is_alive])) * 100000
-        #
-        #         # proportion of new active cases that are mdr-tb
-        #         # technically this is EVER HAD MDR doesn't mean the last episode necessarily
-        #         inc_active_mdr = len(
-        #             df[
-        #                 df.tb_ever_tb_mdr
-        #                 & (df.tb_date_active > (now - DateOffset(months=self.repeat)))
-        #             ]
-        #         )
-        #
-        #         if new_tb_cases > 0:
-        #             prop_inc_active_mdr = inc_active_mdr / new_tb_cases
-        #         else:
-        #             prop_inc_active_mdr = 0
-        #
-        #         assert prop_inc_active_mdr <= 1
-        #
+
+        # number of new active cases in HIV+
+        inc_active_hiv = len(
+            df[(df.tb_date_active > (now - DateOffset(months=self.repeat))) & df.hv_inf]
+        )
+
+        # proportion of active TB cases in the last year who are HIV-positive
+        prop_hiv = inc_active_hiv / new_tb_cases if new_tb_cases else 0
+
+        # incidence of TB-HIV per 100k
+        inc100k_hiv = (inc_active_hiv / len(df[df.is_alive])) * 100000
+
+        # number new mdr tb cases
+        # TODO this will exclude mdr cases occurring in the last timeperiod but already cured
+        new_mdr_cases = len(
+            df[(df.tb_strain == 'mdr')
+            & (df.tb_date_active > (now - DateOffset(months=self.repeat)))]
+        )
+
+        # incidence of mdr-tb per 100k
+        inc_mdr100k = (new_mdr_cases / len(df[df.is_alive])) * 100000
+
         logger.info(
             '%s|tb_incidence|%s',
             now,
             {
-                # 'tbNewActiveCases': new_tb_cases,
+                'tbNewActiveCases': new_tb_cases,
                 'tbNewLatentCases': new_latent_cases,
-                # 'tbIncActive100k': inc100k,
-                # 'tbIncActive100k_hiv': inc100k_hiv,
-                # 'tbPropIncActiveMdr': prop_inc_active_mdr,
-                # 'tb_prop_hiv_pos': prop_hiv,
+                'tbIncActive100k': inc100k,
+                'tb_prop_hiv_pos': prop_hiv,
+                'tbNewActiveMdrCases': new_mdr_cases,
+                'tbIncActive100k_hiv': inc100k_hiv,
+                'tbIncActiveMdr100k': inc_mdr100k,
             },
         )
 #
@@ -2249,42 +2125,4 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #             },
 #         )
 #
-#         # ------------------------------------ BCG ------------------------------------
-#         # bcg vaccination coverage in <1 year old children
-#         bcg = len(df[df.is_alive & df.tb_bcg & (df.age_years <= 1)])
-#         infants = len(df[df.is_alive & (df.age_years <= 1)])
-#
-#         coverage = ((bcg / infants) * 100) if infants else 0
-#         assert coverage <= 100
-#
-#         logger.info(
-#             '%s|tb_bcg|%s',
-#             now,
-#             {
-#                 'tbNumInfantsBcg': bcg,
-#                 'tbNumInfantsEligibleBcg': infants,
-#                 'tbBcgCoverage': coverage,
-#             },
-#         )
-#
-#         # ------------------------------------ MORTALITY ------------------------------------
-#         # tb deaths (incl hiv) reported in the last 12 months / pop size
-#         deaths = len(df[(df.tb_date_death > (now - DateOffset(months=self.repeat)))])
-#
-#         mort_rate100k = (deaths / len(df[df.is_alive])) * 100000
-#
-#         # tb deaths (hiv+ only) reported in the last 12 months / pop size
-#         deaths_tb_hiv = len(
-#             df[df.hv_inf & (df.tb_date_death > (now - DateOffset(months=self.repeat)))]
-#         )
-#
-#         mort_rate_tb_hiv100k = (deaths_tb_hiv / len(df[df.is_alive])) * 100000
-#
-#         logger.info(
-#             '%s|tb_mortality|%s',
-#             now,
-#             {
-#                 'tbMortRate100k': mort_rate100k,
-#                 'tbMortRateHiv100k': mort_rate_tb_hiv100k,
-#             },
-#         )
+
