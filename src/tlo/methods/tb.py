@@ -2024,64 +2024,20 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 'tbPrevLatentChild': prev_latent_child,
             },
         )
-#
-#         # ------------------------------------ TREATMENT ------------------------------------
-#         # number of new cases in the last time period / number new treatment starts in last time period
-#
-#         # percentage all cases which occurred in last time period and treated in last time period
-#         new_tx = len(df[(df.tb_date_treated > (now - DateOffset(months=self.repeat)))])
-#
-#         percent_treated = ((new_tx / new_tb_cases) * 100) if new_tb_cases else 0
-#         # assert percent_treated <= 100
-#
-#         # percentage all adult cases which occurred in last time period and treated in last time period
-#         new_tb_cases_adult = len(
-#             df[
-#                 (df.age_years >= 15)
-#                 & (df.tb_date_active > (now - DateOffset(months=self.repeat)))
-#             ]
-#         )
-#
-#         new_tb_tx_adult = len(
-#             df[
-#                 (df.age_years >= 15)
-#                 & (df.tb_date_treated > (now - DateOffset(months=self.repeat)))
-#             ]
-#         )
-#
-#         percent_treated_adult = (
-#             ((new_tb_tx_adult / new_tb_cases_adult) * 100) if new_tb_cases_adult else 0
-#         )
-#         # assert percent_treated_adult <= 100
-#
-#         # percentage all child cases which occurred in last time period and treated in last time period
-#         new_tb_cases_child = len(
-#             df[
-#                 (df.age_years < 15)
-#                 & (df.tb_date_active > (now - DateOffset(months=self.repeat)))
-#             ]
-#         )
-#
-#         new_tb_tx_child = len(
-#             df[
-#                 (df.age_years < 15)
-#                 & (df.tb_date_treated > (now - DateOffset(months=self.repeat)))
-#             ]
-#         )
-#
-#         percent_treated_child = (
-#             ((new_tb_tx_child / new_tb_cases_child) * 100) if new_tb_cases_child else 0
-#         )
-#         # assert percent_treated_child <= 100
-#
-#         logger.info(
-#             '%s|tb_treatment|%s',
-#             now,
-#             {
-#                 'tbTreat': percent_treated,
-#                 'tbTreatAdult': percent_treated_adult,
-#                 'tbTreatChild': percent_treated_child,
-#             },
-#         )
-#
+
+        # ------------------------------------ TREATMENT ------------------------------------
+        # number of tb cases currently on treatment
+        num_tb_tx = len(df[(df.tb_inf == 'active') & df.tb_on_treatment & df.is_alive])
+        tx_coverage = num_tb_tx / num_active_tb_cases
+
+        assert tx_coverage <= 1
+
+        logger.info(
+            '%s|tb_treatment|%s',
+            now,
+            {
+                'tbTreatmentCoverage': tx_coverage,
+            },
+        )
+
 
