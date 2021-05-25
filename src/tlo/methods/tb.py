@@ -67,11 +67,11 @@ class Tb(Module):
         ),
         'tb_date_active': Property(Types.DATE, 'Date active tb started'),
         'tb_smear': Property(Types.BOOL, 'smear positivity with active infection: False=negative, True=positive'),
-        'tb_stage': Property(
-            Types.CATEGORICAL,
-            'Level of symptoms for tb',
-            categories=['none', 'latent', 'active_pulm', 'active_extra'],
-        ),
+        # 'tb_stage': Property(
+        #     Types.CATEGORICAL,
+        #     'Level of symptoms for tb',
+        #     categories=['none', 'latent', 'active_pulm', 'active_extra'],
+        # ),
         'tb_date_death': Property(Types.DATE, 'date of scheduled tb death'),
 
         # ------------------ testing status ------------------ #
@@ -586,6 +586,7 @@ class Tb(Module):
         fast = df.loc[(df.tb_date_latent == now) &
                       df.is_alive &
                       (df.age_years >= 15) &
+                      ~df.hv_inf &
                       (rng.rand() < p['prop_fast_progressor'])].index
 
         fast_hiv = df.loc[(df.tb_date_latent == now) &
@@ -594,7 +595,8 @@ class Tb(Module):
                           df.hv_inf &
                           (rng.rand() < p['prop_fast_progressor_hiv'])].index
 
-        all_fast = fast + fast_hiv  # join indices (checked)
+        all_fast = fast.union(fast_hiv)  # join indices (checked)
+        print(all_fast)
 
         for person in all_fast:
             self.sim.schedule_event(TbActiveEvent(self, person), now)
@@ -615,7 +617,6 @@ class Tb(Module):
         # check no fast progressors included in the slow progressors risk
         assert not any(elem in all_fast for elem in eligible_adults)
 
-        # todo check what this return for non-eligible people - zero or NA? Length?
         risk_of_progression = self.lm['active_tb'].predict(df.loc[eligible_adults])
         will_progress = self.rng.random_sample(len(risk_of_progression)) < risk_of_progression
         idx_will_progress = will_progress[will_progress].index
@@ -635,7 +636,6 @@ class Tb(Module):
         eligible_children = eligible_children[~np.isin(eligible_children, all_fast)]
         assert not any(elem in all_fast for elem in eligible_children)
 
-        # todo check what this return for non-eligible people - zero or NA? Length?
         risk_of_progression = self.lm['active_tb_child'].predict(df.loc[eligible_children])
         will_progress = self.rng.random_sample(len(risk_of_progression)) < risk_of_progression
         idx_will_progress = will_progress[will_progress].index
@@ -734,24 +734,24 @@ class Tb(Module):
                 HSI_Tb_FollowUp(self, person_id), date_appt
             )
 
-    def end_treatment(self, person_id):
-        """
-        end treatment (any type) for person
-        and reset individual properties
-        if person has died, no further action
-
-        """
-        df = self.sim.population.props
-
-        if not df.at[person_id, "is_alive"]:
-            return
-
-        if df.at[person_id, 'tb_on_treatment']:
-            df.at[person_id, 'tb_on_treatment'] = False
-        if df.at[person_id, 'tb_treated_mdr']:
-            df.at[person_id, 'tb_treated_mdr'] = False
-        if df.at[person_id, 'tb_on_ipt']:
-            df.at[person_id, 'tb_on_ipt'] = False
+    # def end_treatment(self, person_id):
+    #     """
+    #     end treatment (any type) for person
+    #     and reset individual properties
+    #     if person has died, no further action
+    #
+    #     """
+    #     df = self.sim.population.props
+    #
+    #     if not df.at[person_id, "is_alive"]:
+    #         return
+    #
+    #     if df.at[person_id, 'tb_on_treatment']:
+    #         df.at[person_id, 'tb_on_treatment'] = False
+    #     if df.at[person_id, 'tb_treated_mdr']:
+    #         df.at[person_id, 'tb_treated_mdr'] = False
+    #     if df.at[person_id, 'tb_on_ipt']:
+    #         df.at[person_id, 'tb_on_ipt'] = False
 
     def initialise_population(self, population):
 
@@ -764,7 +764,7 @@ class Tb(Module):
         df['tb_date_latent'] = pd.NaT
         df['tb_date_active'] = pd.NaT
         df['tb_smear'] = False
-        df['tb_stage'].values[:] = 'none'
+        # df['tb_stage'].values[:] = 'none'
         df['tb_date_death'] = pd.NaT
 
         # ------------------ testing status ------------------ #
@@ -794,24 +794,12 @@ class Tb(Module):
         * 4) Define the treatment options
         """
 
+        # 1) Regular events
         sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(days=30.5))
+        sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=1))
 
-        # sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=1))
-        # sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
-        #
-        # sim.schedule_event(TbMdrEvent(self), sim.date + DateOffset(months=12))
-        # sim.schedule_event(TbMdrRelapseEvent(self), sim.date + DateOffset(months=1))
-        # sim.schedule_event(TbMdrSelfCureEvent(self), sim.date + DateOffset(months=1))
-
-        # sim.schedule_event(TbScheduleTesting(self), sim.date + DateOffset(days=1))
-
-        # sim.schedule_event(NonTbSymptomsEvent(self), sim.date + DateOffset(months=1))
-
-        # sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(months=1))
-        # sim.schedule_event(TbMdrDeathEvent(self), sim.date + DateOffset(months=1))
-        #
-        # # Logging
+        # 2) Logging
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
 
         # 3) -------- Define the DxTests and get the consumables required --------
@@ -961,7 +949,7 @@ class Tb(Module):
         df.at[child_id, 'tb_date_latent'] = pd.NaT
         df.at[child_id, 'tb_date_active'] = pd.NaT
         df.at[child_id, 'tb_smear'] = False
-        df.at[child_id, 'tb_stage'] = 'none'
+        # df.at[child_id, 'tb_stage'] = 'none'
         df.at[child_id, 'tb_date_death'] = pd.NaT
 
         # ------------------ testing status ------------------ #
@@ -984,6 +972,7 @@ class Tb(Module):
         df.at[child_id, 'tb_on_ipt'] = False
         df.at[child_id, 'tb_date_ipt'] = pd.NaT
 
+        # todo
         # if mother is diagnosed with TB, give IPT to infant
         # if df.at[mother_id, 'tb_diagnosed']:
         #     event = HSI_Tb_Start_or_Continue_Ipt(self, person_id=child_id)
@@ -1159,7 +1148,6 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-
         df = self.sim.population.props
         rng = self.module.rng
         now = self.sim.date
@@ -1212,9 +1200,9 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'tb_date_active'] = now
 
             # -------- 2) if HIV+ schedule AIDS onset --------
-
+            # todo think about logging COD in HIV/TB
             if df.at[person_id, 'hv_inf']:
-                self.sim.schedule_event(hiv.HivAidsOnsetEvent(self.module, person_id), now)
+                self.sim.schedule_event(hiv.HivAidsOnsetEvent(self.sim.modules['Hiv'], person_id), now)
 
             # -------- 3) assign smear status --------
 
@@ -1261,38 +1249,33 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
 
         # check across population on tb treatment
 
-        # first case ds-tb (6 months)
-        end_ds_idx = df.loc[df.is_alive & df.tb_on_treatment &
-                            (df.tb_date_treated < (self.sim.date - DateOffset(days=p['ds_treatment_length']))) &
+        # ---------------------- first case ds-tb (6 months) ---------------------- #
+        end_ds_idx = df.loc[df.is_alive & df.tb_on_treatment & ~df.tb_treated_mdr &
+                            (df.tb_date_treated < (now - DateOffset(days=p['ds_treatment_length']))) &
                             ~df.tb_ever_treated].index
         # sample some to have treatment failure
-        ds_tx_failure = rng.random_sample(size=len(end_ds_idx)) < (1-p['prob_tx_success_new'])
-        idx_ds_tx_failure = ds_tx_failure[ds_tx_failure]
+        # todo check whether this returns series of tx failure selected from end_ds_idx
+        ds_tx_failure = rng.random_sample(size=len(end_ds_idx)) < (1 - p['prob_tx_success_new'])
+        # idx_ds_tx_failure = ds_tx_failure[ds_tx_failure]
+        idx_ds_tx_failure = ds_tx_failure[ds_tx_failure].index
 
-
-
-        prob_spontaneous_test = self.module.lm['lm_spontaneous_test_12m'].predict(
-            df.loc[df.is_alive]) * fraction_of_year_between_polls
-        will_test = self.module.rng.random_sample(len(prob_spontaneous_test)) < prob_spontaneous_test
-        idx_will_test = will_test[will_test].index
-
-
-
-
-        # retreatment ds-tb (7 months)
+        # ----------------------retreatment ds-tb (7 months) ---------------------- #
         # defined as a current ds-tb cases with property tb_ever_treated as true
         # has completed full tb treatment course previously
-        end_ds_retx_idx = df.loc[df.is_alive & df.tb_on_treatment &
-                                 (df.tb_date_treated < (self.sim.date - DateOffset(days=p['ds_retreatment_length']))) &
+        end_ds_retx_idx = df.loc[df.is_alive & df.tb_on_treatment & ~df.tb_treated_mdr &
+                                 (df.tb_date_treated < (now - DateOffset(days=p['ds_retreatment_length']))) &
                                  df.tb_ever_treated].index
 
-        # mdr-tb (24 months)
-        end_ds_retx_idx = df.loc[df.is_alive & df.tb_treated_mdr &
-                                 (df.tb_date_treated < (
-                                     self.sim.date - DateOffset(days=p['mdr_treatment_length'])))].index
+        # ---------------------- mdr-tb (24 months) ---------------------- #
+        end_mdr_tx_idx = df.loc[df.is_alive & df.tb_treated_mdr &
+                                (df.tb_date_treated < (
+                                    now - DateOffset(days=p['mdr_treatment_length'])))].index
 
         # todo check index appends
-        end_tx_indx = end_ds_idx + end_ds_retx_idx + end_ds_retx_idx
+        end_tx_indx = end_ds_idx.union(end_ds_retx_idx, end_mdr_tx_idx)
+        # end_tx_indx = end_ds_idx + end_ds_retx_idx + end_mdr_tx_idx
+        # idx_tx_failure = idx_ds_tx_failure.union(idx_ds_retx_failure, idx_mdr_tx_failure)
+        # idx_tx_failure = idx_ds_tx_failure + idx_ds_retx_failure + idx_mdr_tx_failure
 
         # change individual properties to off treatment
         df.loc[end_tx_indx, 'tb_on_treatment'] = False
@@ -1305,7 +1288,6 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[end_tx_indx, 'tb_inf'] = 'latent'
         df.loc[end_tx_indx, 'tb_strain'] = 'none'
         df.loc[end_tx_indx, 'tb_smear'] = False
-        df.loc[end_tx_indx, 'tb_stage'] = 'latent'
 
 
 # class TbScheduleTesting(RegularEvent, PopulationScopeEventMixin):

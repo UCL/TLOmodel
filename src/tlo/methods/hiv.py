@@ -1377,7 +1377,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # If person is a man, and not circumcised, then consider referring to VMMC
                     if (person['sex'] == 'M') & (~person['li_is_circ']):
                         x = self.module.lm['lm_circ'].predict(df.loc[[person_id]], self.module.rng)
-                        print('here x=', x, type(x))  # x= False <class 'numpy.bool_'> in new thing
                         if x:
                             self.sim.modules['HealthSystem'].schedule_hsi_event(
                                 HSI_Hiv_Circ(person_id=person_id, module=self.module),
@@ -1649,7 +1648,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         Consider whether IPT is needed at this time. This is run only when treatment is initiated.
         """
         df = self.sim.population.props
-        p = self.sim.module.parameters
+        p = self.module.parameters
 
         if 'Tb' in self.sim.modules:
             high_risk_districts = self.sim.modules["Tb"].parameters["tb_high_risk_distr"]

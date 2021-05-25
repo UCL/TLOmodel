@@ -89,4 +89,5 @@ with open(outputpath / 'default_run.pickle', 'wb') as f:
 
 # plot ipt for HIV+ and contacts of TB cases
 
+# plot by district
 
