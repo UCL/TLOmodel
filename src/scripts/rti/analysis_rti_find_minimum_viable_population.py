@@ -2,10 +2,12 @@ from matplotlib import pyplot as plt
 import numpy as np
 import os
 import pandas as pd
-import sys, math
+import sys
+import math
 # create helper function to get the summary statistics
-def get_summary_stats(df):
 
+
+def get_summary_stats(df):
     # get the columns of interest: all the rti columns and the cause of death column
     rti_columns_filter = df.filter(like='rt_').columns
     df = df[rti_columns_filter]
@@ -56,7 +58,7 @@ def get_summary_stats(df):
                       'mean_iss_score': mean_iss_score,
                       'std_mean_iss_score': std_iss_score,
                       'percent_sought_treatment': percent_sought_treatment,
-                      'std_percent_sought_treatment':std_percent_sought_treatment,
+                      'std_percent_sought_treatment': std_percent_sought_treatment,
                       'percent_recieving_medical_care': percent_recieving_med,
                       'std_percent_recieving_medical_care': std_percent_recieving_med,
                       'percent_patients_in_icu': percent_patients_in_icu,
@@ -69,9 +71,12 @@ def get_summary_stats(df):
 
 def tidy(x, n):
     """Return 'x' rounded to 'n' significant digits."""
-    y=abs(x)
-    if y <= sys.float_info.min: return 0.0
-    return round( x, int( n-math.ceil(math.log10(y)) ) )
+    y = abs(x)
+    if y <= sys.float_info.min:
+        return 0.0
+    return round(x, int(n - math.ceil(math.log10(y))))
+
+
 # create a sample run which samples the dataframe for various size n, see when changes to result stop
 # create sample sizes
 sample_size_list = np.linspace(50000, 1000000, 100).tolist()
@@ -120,8 +125,8 @@ for column in summary_df.columns[1:]:
 plt.bar(np.arange(len(column_names)), min_viable_pop_size_for_estimate)
 plt.xticks(np.arange(len(column_names)), column_names, rotation=90)
 plt.ylabel('Minimum viable population')
-plt.title(f"The minimum viable population size for each estimate, based on \n"
-          f"a 90% certainty that the sample mean represents the population mean")
+plt.title("The minimum viable population size for each estimate, based on \n"
+          "a 90% certainty that the sample mean represents the population mean")
 plt.savefig(save_path + 'Min_viab_pop_size_each_estimate.png')
 plt.clf()
 # create sample sizes
@@ -257,4 +262,3 @@ for result in y_coords.keys():
     plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/MinimumViablePopulation/" + result + ".png",
                 bbox_inches='tight')
     plt.clf()
-

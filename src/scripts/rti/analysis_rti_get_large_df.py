@@ -1,8 +1,6 @@
 from pathlib import Path
 import numpy as np
-import pandas as pd
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     dx_algorithm_adult,
@@ -66,4 +64,3 @@ logfile = sim.configure_logging(filename="LogFile")
 sim.make_initial_population(n=pop_size)
 # run the simulation
 sim.simulate(end_date=end_date)
-

@@ -44,11 +44,14 @@ smaller_pop_size = 10000
 nsim = 3
 larger_pop_size = smaller_pop_size * nsim
 # Create function to get the simulation run time
+
+
 def get_simulation_time(df):
     sim_time_string = df['tlo.simulation']['info'].loc[df['tlo.simulation']['info']['date'] == sim.end_date,
                                                        'message'].to_list()[0]
     seconds = [float(s) for s in re.findall(r'-?\d+\.?\d*', sim_time_string)][0]
     return seconds
+
 
 # Run a small population size multiple times, storing a few outputs and the simulation time for each run
 # create lists to store outputs from the multiple simulations
@@ -138,7 +141,7 @@ cumulative_list_of_rti_death_incidence = [sum(per_run_incidence_of_rti_death[0:i
                                           range(len(per_run_incidence_of_rti_death))]
 # sample enhanced lifestyle outputs
 cumulative_list_of_prop_circumcised = [sum(per_run_prop_circumcised[0:i+1], []) for i in
-                                          range(len(per_run_prop_circumcised))]
+                                       range(len(per_run_prop_circumcised))]
 cumulative_list_prop_female_sex_worker = [sum(per_run_prop_female_sex_worker[0:i+1], []) for i in
                                           range(len(per_run_prop_female_sex_worker))]
 # calculate the mean estimate of rti incidence for each additional simulation
@@ -187,7 +190,7 @@ plt.ylabel('Incidence of RTI')
 plt.title(f"The effect of number of repeated simulations \n on the estimated incidence of RTI and the \n"
           f"variation seen in model outputs, {nsim} simulations, {smaller_pop_size} population")
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsReps/Reps_inc_rti.png",
-                bbox_inches='tight')
+            bbox_inches='tight')
 plt.clf()
 # plot the effect of additional simulations of the estimated incidence of RTI death and the variation
 plt.bar(np.arange(len(sim_time_intervals)), mean_rti_death_inc_per_extra_sim, yerr=std_rti_death_inc_per_extra_sim,
@@ -198,7 +201,7 @@ plt.ylabel('Incidence of RTI death')
 plt.title(f"The effect of number of repeated simulations \n on the estimated incidence of RTI death and the \n"
           f"variation seen in model outputs, {nsim} simulations, {smaller_pop_size} population")
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsReps/Reps_inc_rti_deaths.png",
-                bbox_inches='tight')
+            bbox_inches='tight')
 plt.clf()
 # plot the effect of additional simulations of the estimated incidence of RTI standard deviation
 plt.bar(np.arange(len(sim_time_intervals)), std_rti_inc_per_extra_sim, color='lightsalmon')
@@ -208,7 +211,7 @@ plt.ylabel('Standard deviation of incidence of RTI')
 plt.title(f"The effect of number of repeated simulations \n on the standard deviation of the incidence of RTI and the "
           f"\n variation seen in model outputs, {nsim} simulations, {smaller_pop_size} population")
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsReps/Reps_std_inc_rti.png",
-                bbox_inches='tight')
+            bbox_inches='tight')
 plt.clf()
 # plot the effect of additional simulations of the estimated incidence of RTI death standard deviation
 plt.bar(np.arange(len(sim_time_intervals)), std_rti_death_inc_per_extra_sim, color='lightsalmon')
@@ -218,7 +221,7 @@ plt.ylabel('Standard deviation of incidence of RTI death')
 plt.title(f"The effect of number of repeated simulations \n on the standard deviation of the incidence of RTI death and"
           f"the \n variation seen in model outputs, {nsim} simulations, {smaller_pop_size} population")
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsReps/Reps_std_inc_rti_death.png",
-                bbox_inches='tight')
+            bbox_inches='tight')
 plt.clf()
 # plot the effect of additional simulations of the estimated incidence of enhanced lifestyle proportion of adult males
 # who are circumcised
@@ -262,7 +265,7 @@ plt.ylabel('Standard deviation of the proportion of circumcised adult males')
 plt.title(f"The effect of number of repeated simulations \n on the standard deviation of the proportion of cirumcised\n"
           f"adult males, {nsim} simulations, {smaller_pop_size} population")
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsReps/Reps_std_prop_circ.png",
-                bbox_inches='tight')
+            bbox_inches='tight')
 plt.clf()
 
 # create a single larger run of the model
@@ -389,7 +392,7 @@ plt.ylabel('Proportion of adult males who are circumcised')
 plt.title('Comparing simulation time for simulations with multiple runs vs \n'
           'single run with large population size on the proportion of adult males who are circumcised')
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsReps/multi_vs_single_prop_adult_male_"
-            "circumcised.png",bbox_inches='tight')
+            "circumcised.png", bbox_inches='tight')
 plt.clf()
 # plot the values for the standard deviation of proprtion of adult males who are circumcised for the multiple
 # simulations with a small population size and the large population size,
@@ -416,7 +419,7 @@ plt.ylabel('Proportion of females aged \n15-49 who are sex workers')
 plt.title('Comparing simulation time for simulations with multiple runs vs \n'
           'single run with large population size on the proportion of females ages 15-49 who are sex workers')
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsReps/multi_vs_single_prop_females_aged_"
-            "1549_sex_workers.png",bbox_inches='tight')
+            "1549_sex_workers.png", bbox_inches='tight')
 plt.clf()
 # plot the values for the standard deviation of proprtion of females ages 15-49 who are circumcised for the multiple
 # simulations with a small population size and the large population size,

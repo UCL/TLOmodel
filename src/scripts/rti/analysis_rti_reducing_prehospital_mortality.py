@@ -123,7 +123,7 @@ for i in range(0, nsim):
         # group the dalys by year
         dalys_df = dalys_df.groupby('year').sum()
         # get the YLL caused by RTI
-        cdalys_df_RTI_YLL = dalys_df.filter(like='YLL_RTI').columns
+        dalys_df_RTI_YLL = dalys_df.filter(like='YLL_RTI').columns
         # calculate dalys caused by rti
         dalys_df['dalys'] = dalys_df[dalys_df_RTI_YLL].sum(axis=1) + dalys_df['YLD_RTI_rt_disability']
         # get the dalys occurring in each full year of the simulation
@@ -154,7 +154,7 @@ average_extrapolated_dalys = [float(sum(col)) / len(col) for col in zip(*extrapo
 mortality_reduction = [1 - deaths / average_deaths[0] for deaths in average_deaths]
 mortality_reduction = np.multiply(mortality_reduction, 100)
 # Create the percentage reduction in dalys
-disability_reduction =  [1 - dalys / average_tot_dalys[0] for dalys in average_tot_dalys]
+disability_reduction = [1 - dalys / average_tot_dalys[0] for dalys in average_tot_dalys]
 disability_reduction = np.multiply(disability_reduction, 100)
 
 # Create the xtick labels

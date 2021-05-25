@@ -98,8 +98,6 @@ for i in range(0, nsim):
     rti_deaths = deaths_in_sim.loc[deaths_in_sim['cause'] != 'Other']
     sing_inj_cause_of_death_in_sim.append(rti_deaths['cause'].to_list())
 
-
-
 mult_inj_incidences_of_rti = []
 mult_inj_incidences_of_death = []
 mult_inj_incidences_of_injuries = []
@@ -224,7 +222,7 @@ for result in cause_of_death_dict.keys():
     plt.bar(np.arange(len(cause_of_death_dict[result][0])), cause_of_death_as_percent, color='lightsteelblue')
     plt.xticks(np.arange(len(cause_of_death_dict[result][0])), cause_of_death_dict[result][1])
     plt.ylabel('Percent')
-    plt.title(f"The percentage cause of death from\n road traffic injuries in the "
+    plt.title("The percentage cause of death from\n road traffic injuries in the "
               + result + f" run.\n Number of simulations: {nsim}, population size: {pop_size}, years ran: {yearsrun}")
     plt.savefig(save_file_path + result + f" cause of death by percentage, imm death {imm_death}.png",
                 bbox_inches='tight')

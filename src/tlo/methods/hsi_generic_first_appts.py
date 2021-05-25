@@ -420,10 +420,6 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         # =============================== Adjust generic first appt for RTI requirements ============================
         if 'RTI' in self.sim.modules:
             road_traffic_injuries = self.sim.modules['RTI']
-            columns = \
-                ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                 'rt_injury_7', 'rt_injury_8']
-            df = self.sim.population.props
             road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
 
         # Define the necessary information for an HSI

@@ -1779,7 +1779,6 @@ class RTI(Module):
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
-
     def rti_ask_for_burn_treatment(self, person_id):
         """
         Function called by HSI_RTI_MedicalIntervention to centralise all burn treatment requests. This function
@@ -5478,7 +5477,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         # create placeholder footprint requirements
         df = self.sim.population.props
         if df.loc[person_id, 'age_years'] < 5:
-            the_appt_footprint['Under5OPD'] = 1 # Placeholder requirement
+            the_appt_footprint['Under5OPD'] = 1  # Placeholder requirement
         else:
             the_appt_footprint['Over5OPD'] = 1  # Placeholder requirement
         # determine if this is a child
@@ -5496,14 +5495,13 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-        road_traffic_injuries = self.sim.modules['RTI']
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         consumables_shock = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
         # TODO: find a more complete list of required consumables for adults
         if self.is_child:
             item_code_fluid_replacement = pd.unique(
                 consumables.loc[consumables['Items'] ==
-                                "ringer's lactate (Hartmann's solution), 500 ml_20_IDA", 'Item_Code'])[0]
+                                "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
             item_code_dextrose = pd.unique(consumables.loc[consumables['Items'] ==
                                                            "Dextrose (glucose) 5%, 1000ml_each_CMST", 'Item_Code'])[0]
             item_code_cannula = pd.unique(consumables.loc[consumables['Items'] ==
@@ -5518,7 +5516,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         else:
             item_code_fluid_replacement = pd.unique(
                 consumables.loc[consumables['Items'] ==
-                                "ringer's lactate (Hartmann's solution), 500 ml_20_IDA", 'Item_Code'])[0]
+                                "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
             item_code_oxygen = pd.unique(consumables.loc[consumables['Items'] ==
                                                          "Oxygen, 1000 liters, primarily with oxygen cylinders",
                                                          'Item_Code'])[0]
@@ -5533,13 +5531,14 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             cons_req_as_footprint=consumables_shock,
             to_log=True)
         if is_cons_available:
-            logger.debug(f"Hypovolemic shock treatment available for person %d",
+            logger.debug("Hypovolemic shock treatment available for person %d",
                          person_id)
             df.at[person_id, 'rt_in_shock'] = False
 
     def did_not_run(self, person_id):
         # Assume that untreated shock leads to death for now
         # Schedule the death
+        df = self.sim.population.props
         df.at[person_id, 'rt_death_from_shock'] = True
         self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
                                                               cause='RTI_death_shock'), self.sim.date)
@@ -6030,7 +6029,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
 
                 item_code_fluid_replacement = pd.unique(
                     consumables.loc[consumables['Items'] ==
-                                    "ringer's lactate (Hartmann's solution), 500 ml_20_IDA", 'Item_Code'])[0]
+                                    "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
                 consumables_burns = {
                     'Intervention_Package_Code': dict(),
                     'Item_Code': {item_code_cetrimide_chlorhexidine: burncounts,
@@ -6140,7 +6139,7 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
         if counts > 0:
             consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
             item_code_tetanus = pd.unique(
-                consumables.loc[consumables['Items'] == 'Tetanus toxin vaccine (TTV)', 'Item_Code'])[0]
+                consumables.loc[consumables['Items'] == 'Tetanus toxoid, injection', 'Item_Code'])[0]
             consumables_tetanus = {
                 'Intervention_Package_Code': dict(),
                 'Item_Code': {item_code_tetanus: 1}
@@ -6974,6 +6973,9 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 hsi_event=self,
                 cons_req_as_footprint=consumables_external_fixation,
                 to_log=True)
+            if is_external_fixator_available:
+                logger.debug('An external fixator is available for this minor surgery'
+                             'person %d.', person_id)
 
         swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a',
                           'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884',

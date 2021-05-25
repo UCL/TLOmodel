@@ -5,13 +5,10 @@ The results of the bachrun were put into the 'outputs' results_folder
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import os
 import json
 from tlo.analysis.utils import (
-    extract_params,
-    extract_results,
     get_grid,
     get_scenario_info,
     get_scenario_outputs,
@@ -21,6 +18,7 @@ from tlo.analysis.utils import (
 
 # create a function that extracts results in the same way as the utils function, but allows failed
 # runs to pass
+
 
 def rti_extract_params(results_folder: Path) -> pd.DataFrame:
     """Utility function to get overridden parameters from scenario runs
@@ -69,6 +67,7 @@ def rti_extract_params(results_folder: Path) -> pd.DataFrame:
 
     return params
 
+
 def rti_extract_results(results_folder: Path, module: str, key: str, column: str, index: str = None) -> pd.DataFrame:
     """Utility function to unpack results
 
@@ -112,6 +111,7 @@ def rti_extract_results(results_folder: Path, module: str, key: str, column: str
         results.index = results_index
 
     return results
+
 
 outputspath = Path('./outputs/')
 
