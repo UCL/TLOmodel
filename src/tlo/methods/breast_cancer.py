@@ -238,8 +238,9 @@ class BreastCancer(Module):
                                    .when("stage1", bc_init_prop_discernible_lump[0])
                                    .when("stage2", bc_init_prop_discernible_lump[1])
                                    .when("stage3", bc_init_prop_discernible_lump[2])
-                                   .when("stage4", [3])
+                                   .when("stage4", bc_init_prop_discernible_lump[3])
         )
+
         has_breast_lump_discernible_at_init = lm_init_breast_lump_discernible.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=has_breast_lump_discernible_at_init.index[has_breast_lump_discernible_at_init].tolist(),
