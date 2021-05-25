@@ -1,0 +1,549 @@
+tlo.methods.hiv module
+======================
+
+.. automodule:: tlo.methods.hiv
+
+
+.. autoclass:: Hiv
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - time_inf
+          - DATA_FRAME
+          - prob of time since infection for baseline adult pop
+        * - art_coverage
+          - DATA_FRAME
+          - coverage of ART at baseline
+        * - fraction_of_those_infected_that_have_aids_at_initiation
+          - REAL
+          - Fraction of persons living with HIV at baseline that have developed AIDS
+        * - testing_coverage_male
+          - REAL
+          - proportion of adult male population tested
+        * - testing_coverage_female
+          - REAL
+          - proportion of adult female population tested
+        * - beta
+          - REAL
+          - Transmission rate
+        * - prob_mtct_untreated
+          - REAL
+          - Probability of mother to child transmission
+        * - prob_mtct_treated
+          - REAL
+          - Probability of mother to child transmission, mother on ART
+        * - prob_mtct_incident_preg
+          - REAL
+          - Probability of mother to child transmission, mother infected during pregnancy
+        * - monthly_prob_mtct_bf_untreated
+          - REAL
+          - Probability of mother to child transmission during breastfeeding
+        * - monthly_prob_mtct_bf_treated
+          - REAL
+          - Probability of mother to child transmission, mother infected during breastfeeding
+        * - rr_fsw
+          - REAL
+          - Relative risk of HIV with female sex work
+        * - rr_circumcision
+          - REAL
+          - Relative risk of HIV with circumcision
+        * - rr_rural
+          - REAL
+          - Relative risk of HIV in rural location
+        * - rr_windex_poorer
+          - REAL
+          - Relative risk of HIV with wealth level poorer
+        * - rr_windex_middle
+          - REAL
+          - Relative risk of HIV with wealth level middle
+        * - rr_windex_richer
+          - REAL
+          - Relative risk of HIV with wealth level richer
+        * - rr_windex_richest
+          - REAL
+          - Relative risk of HIV with wealth level richest
+        * - rr_sex_f
+          - REAL
+          - Relative risk of HIV if female
+        * - rr_age_gp20
+          - REAL
+          - Relative risk of HIV if age 20-24 compared with 15-19
+        * - rr_age_gp25
+          - REAL
+          - Relative risk of HIV if age 25-29
+        * - rr_age_gp30
+          - REAL
+          - Relative risk of HIV if age 30-34
+        * - rr_age_gp35
+          - REAL
+          - Relative risk of HIV if age 35-39
+        * - rr_age_gp40
+          - REAL
+          - Relative risk of HIV if age 40-44
+        * - rr_age_gp45
+          - REAL
+          - Relative risk of HIV if age 45-49
+        * - rr_age_gp50
+          - REAL
+          - Relative risk of HIV if age 50+
+        * - rr_edlevel_primary
+          - REAL
+          - Relative risk of HIV with primary education
+        * - rr_edlevel_secondary
+          - REAL
+          - Relative risk of HIV with secondary education
+        * - rr_edlevel_higher
+          - REAL
+          - Relative risk of HIV with higher education
+        * - rr_behaviour_change
+          - REAL
+          - Relative risk of HIV with behaviour modification
+        * - proportion_reduction_in_risk_of_hiv_aq_if_on_prep
+          - REAL
+          - Proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; 1.0 for perfect efficacy.
+        * - mean_months_between_aids_and_death
+          - REAL
+          - Mean number of months (distributed exponentially) for the time between AIDS and AIDS Death
+        * - mean_months_between_aids_and_death_infant
+          - REAL
+          - Mean number of months for the time between AIDS and AIDS Death for infants
+        * - infection_to_death_weibull_shape_1519
+          - REAL
+          - Shape parameter for Weibull describing time between infection and death for 15-19 yo (units: years)
+        * - infection_to_death_weibull_shape_2024
+          - REAL
+          - Shape parameter for Weibull describing time between infection and death for 20-24 yo (units: years)
+        * - infection_to_death_weibull_shape_2529
+          - REAL
+          - Shape parameter for Weibull describing time between infection and death for 25-29 yo (units: years)
+        * - infection_to_death_weibull_shape_3034
+          - REAL
+          - Shape parameter for Weibull describing time between infection and death for 30-34 yo (units: years)
+        * - infection_to_death_weibull_shape_3539
+          - REAL
+          - Shape parameter for Weibull describing time between infection and death for 35-39 yo (units: years)
+        * - infection_to_death_weibull_shape_4044
+          - REAL
+          - Shape parameter for Weibull describing time between infection and death for 40-44 yo (units: years)
+        * - infection_to_death_weibull_shape_4549
+          - REAL
+          - Shape parameter for Weibull describing time between infection and death for 45-49 yo (units: years)
+        * - infection_to_death_weibull_scale_1519
+          - REAL
+          - Scale parameter for Weibull describing time between infection and death for 15-19 yo (units: years)
+        * - infection_to_death_weibull_scale_2024
+          - REAL
+          - Scale parameter for Weibull describing time between infection and death for 20-24 yo (units: years)
+        * - infection_to_death_weibull_scale_2529
+          - REAL
+          - Scale parameter for Weibull describing time between infection and death for 25-29 yo (units: years)
+        * - infection_to_death_weibull_scale_3034
+          - REAL
+          - Scale parameter for Weibull describing time between infection and death for 30-34 yo (units: years)
+        * - infection_to_death_weibull_scale_3539
+          - REAL
+          - Scale parameter for Weibull describing time between infection and death for 35-39 yo (units: years)
+        * - infection_to_death_weibull_scale_4044
+          - REAL
+          - Scale parameter for Weibull describing time between infection and death for 40-44 yo (units: years)
+        * - infection_to_death_weibull_scale_4549
+          - REAL
+          - Scale parameter for Weibull describing time between infection and death for 45-49 yo (units: years)
+        * - art_default_to_aids_mean_years
+          - REAL
+          - Mean years between when a person (any change) stops being on treatment to when AIDS is onset (if the absence of resuming treatment).
+        * - mean_survival_for_infants_infected_prior_to_birth
+          - REAL
+          - Exponential rate parameter for mortality in infants who are infected before birth
+        * - infection_to_death_infant_infection_after_birth_weibull_scale
+          - REAL
+          - Weibull scale parameter for mortality in infants who are infected after birth
+        * - infection_to_death_infant_infection_after_birth_weibull_shape
+          - REAL
+          - Weibull shape parameter for mortality in infants who are infected after birth
+        * - prob_spontaneous_test_12m
+          - REAL
+          - Probability that a person will seek HIV testing per 12 month period.
+        * - prob_start_art_after_hiv_test
+          - REAL
+          - Probability that a person will start treatment, if HIV-positive, following testing
+        * - rr_start_art_if_aids_symptoms
+          - REAL
+          - Relative probability of a person starting treatment if they have aids_symptoms compared to ifthey do not.
+        * - prob_behav_chg_after_hiv_test
+          - REAL
+          - Probability that a person will change risk behaviours, if HIV-negative, following testing
+        * - prob_prep_for_fsw_after_hiv_test
+          - REAL
+          - Probability that a FSW will start PrEP, if HIV-negative, following testing
+        * - prob_circ_after_hiv_test
+          - REAL
+          - Probability that a male will be circumcised, if HIV-negative, following testing
+        * - probability_of_being_retained_on_prep_every_3_months
+          - REAL
+          - Probability that someone who has initiated on prep will attend an appointment and be on prep for the next 3 months, until the next appointment.
+        * - probability_of_being_retained_on_art_every_6_months
+          - REAL
+          - Probability that someone who has initiated on treatment will attend an appointment and be on treatment for next 6 months, until the next appointment.
+        * - probability_of_seeking_further_art_appointment_if_drug_not_available
+          - REAL
+          - Probability that a person who 'should' be on art will seek another appointment (the following day and try for each of the next 7 days) if drugs were not available.
+        * - probability_of_seeking_further_art_appointment_if_appointment_not_available
+          - REAL
+          - Probability that a person who 'should' be on art will seek another appointment if the health-system has not been able to provide them with an appointment
+        * - vls_m
+          - REAL
+          - Rates of viral load suppression males
+        * - vls_f
+          - REAL
+          - Rates of viral load suppression males
+        * - vls_child
+          - REAL
+          - Rates of viral load suppression in children 0-14 years
+        * - prep_start_year
+          - REAL
+          - Year from which PrEP is available
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - hv_inf
+          - BOOL
+          - Is person currently infected with HIV (NB. AIDS status is determined by prescence of the AIDS Symptom.
+        * - hv_art
+          - CATEGORICAL
+          - ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART..  Possible values are: [not, on_VL_suppressed, on_not_VL_suppressed, ]
+        * - hv_is_on_prep
+          - BOOL
+          - Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis.
+        * - hv_behaviour_change
+          - BOOL
+          - Has this person been exposed to HIV prevention counselling following a negative HIV test result
+        * - hv_diagnosed
+          - BOOL
+          - Knows that they are HIV+: i.e. is HIV+ and tested as HIV+
+        * - hv_number_tests
+          - INT
+          - Number of HIV tests ever taken
+        * - hv_last_test_date
+          - DATE
+          - Date of last HIV test
+        * - hv_date_inf
+          - DATE
+          - Date infected with HIV
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     **Functions (defined or overridden in class Hiv):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: pre_initialise_population
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_baseline_prevalence
+
+     .. automethod:: initialise_baseline_art
+
+     .. automethod:: initialise_baseline_tested
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: mtct_during_breastfeeding
+
+     .. automethod:: do_new_infection
+
+     .. automethod:: get_time_from_infection_to_aids
+
+     .. automethod:: get_time_from_aids_to_death
+
+     .. automethod:: do_when_hiv_diagnosed
+
+     .. automethod:: stops_treatment
+
+     .. automethod:: per_capita_testing_rate
+
+     .. automethod:: check_config_of_properties
+
+
+
+
+
+
+
+
+.. autoclass:: HivRegularPollingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HivRegularPollingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HivInfectionEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HivInfectionEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HivInfectionDuringBreastFeedingEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HivInfectionDuringBreastFeedingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HivAidsOnsetEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HivAidsOnsetEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HivAidsDeathEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HivAidsDeathEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: Hiv_DecisionToContinueOnPrEP
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class Hiv_DecisionToContinueOnPrEP):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: Hiv_DecisionToContinueTreatment
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class Hiv_DecisionToContinueTreatment):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Hiv_TestAndRefer
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Hiv_TestAndRefer):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Hiv_Circ
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Hiv_Circ):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Hiv_StartOrContinueOnPrep
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Hiv_StartOrContinueOnPrep):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: never_ran
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Hiv_StartOrContinueTreatment
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Hiv_StartOrContinueTreatment):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: do_at_initiation
+
+     .. automethod:: do_at_continuation
+
+     .. automethod:: determine_vl_status
+
+     .. automethod:: get_drugs
+
+     .. automethod:: consider_tb
+
+     .. automethod:: never_ran
+
+
+
+
+
+
+
+
+.. autoclass:: HivLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HivLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HivCheckPropertiesEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HivCheckPropertiesEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

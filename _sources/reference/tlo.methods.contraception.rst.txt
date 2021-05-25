@@ -1,0 +1,183 @@
+tlo.methods.contraception module
+================================
+
+.. automodule:: tlo.methods.contraception
+
+
+.. autoclass:: Contraception
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - fertility_schedule
+          - DATA_FRAME
+          - Age_spec fertility
+        * - contraception_initiation1
+          - DATA_FRAME
+          - irate1_
+        * - contraception_initiation2
+          - DATA_FRAME
+          - irate2_
+        * - contraception_switching
+          - DATA_FRAME
+          - Switching
+        * - contraception_switching_matrix
+          - DATA_FRAME
+          - switching_matrix
+        * - contraception_discontinuation
+          - DATA_FRAME
+          - Discontinuation
+        * - contraception_failure
+          - DATA_FRAME
+          - Failure
+        * - r_init1_age
+          - REAL
+          - proportioniate change in irate1 for each age in years
+        * - r_discont_age
+          - REAL
+          - proportioniate change in drate for each age in years
+        * - rr_fail_under25
+          - REAL
+          - Increase in Failure rate for under-25s
+        * - r_init_year
+          - REAL
+          - proportional change in contraception initiation rates for each year, 2010 to 2100
+        * - r_discont_year
+          - REAL
+          - proportional change in contraception_discontinuation rate for each year,                                     2010 to 2100
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - co_contraception
+          - CATEGORICAL
+          - Current contraceptive method.  Possible values are: [not_using, pill, IUD, injections, implant, male_condom, female_sterilization, other_modern, periodic_abstinence, withdrawal, other_traditional, ]
+        * - co_date_of_childbirth
+          - DATE
+          - Due date of child for those who become pregnant
+        * - is_pregnant
+          - BOOL
+          - Whether this individual is currently pregnant
+        * - date_of_last_pregnancy
+          - DATE
+          - Date of the last pregnancy of this individual
+        * - co_unintended_preg
+          - BOOL
+          - Unintended pregnancies following contraception failure
+
+
+
+     **Class attributes:**
+
+     METADATA : {}
+
+     **Functions (defined or overridden in class Contraception):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+
+
+
+
+
+
+
+.. autoclass:: ContraceptionSwitchingPoll
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class ContraceptionSwitchingPoll):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: init1
+
+     .. automethod:: switch
+
+     .. automethod:: discontinue
+
+
+
+
+
+
+
+
+.. autoclass:: Fail
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class Fail):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: PregnancyPoll
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class PregnancyPoll):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: ContraceptionLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class ContraceptionLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

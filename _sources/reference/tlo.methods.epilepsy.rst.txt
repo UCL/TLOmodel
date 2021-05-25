@@ -1,0 +1,194 @@
+tlo.methods.epilepsy module
+===========================
+
+.. automodule:: tlo.methods.epilepsy
+
+
+.. autoclass:: Epilepsy
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - init_epil_seiz_status
+          - LIST
+          - Proportions in each seizure status category at baseline
+        * - init_prop_antiepileptic_seiz_stat_1
+          - REAL
+          - initial proportions on antiepileptic by if seizure status = 1
+        * - init_prop_antiepileptic_seiz_stat_2
+          - REAL
+          - initial proportions on antiepileptic by if seizure status = 2
+        * - init_prop_antiepileptic_seiz_stat_3
+          - REAL
+          - initial proportions on antiepileptic by if seizure status = 3
+        * - base_3m_prob_epilepsy
+          - REAL
+          - base probability of epilepsy per 3 month period if age < 20
+        * - rr_epilepsy_age_ge20
+          - REAL
+          - relative rate of epilepsy if age over 20
+        * - prop_inc_epilepsy_seiz_freq
+          - REAL
+          - proportion of incident epilepsy cases with frequent seizures
+        * - base_prob_3m_seiz_stat_freq_infreq
+          - REAL
+          - base probability per 3 months of seizure status frequent if current infrequent
+        * - rr_effectiveness_antiepileptics
+          - REAL
+          - relative rate of seizure status frequent if current infrequent if on antiepileptic
+        * - base_prob_3m_seiz_stat_infreq_freq
+          - REAL
+          - base probability per 3 months of seizure status infrequent if current frequent
+        * - base_prob_3m_seiz_stat_infreq_none
+          - REAL
+          - base probability per 3 months of seizure status infrequent if current nonenow
+        * - base_prob_3m_seiz_stat_none_freq
+          - REAL
+          - base probability per 3 months of seizure status nonenow if current frequent
+        * - base_prob_3m_seiz_stat_none_infreq
+          - REAL
+          - base probability per 3 months of seizure status nonenow if current infrequent
+        * - base_prob_3m_antiepileptic
+          - REAL
+          - base probability per 3 months of starting antiepileptic, if frequent seizures
+        * - rr_antiepileptic_seiz_infreq
+          - REAL
+          - relative rate of starting antiepileptic if infrequent seizures
+        * - base_prob_3m_stop_antiepileptic
+          - REAL
+          - base probability per 3 months of stopping antiepileptic, if nonenow seizures
+        * - rr_stop_antiepileptic_seiz_infreq_or_freq
+          - REAL
+          - relative rate of stopping antiepileptic if infrequent or frequent seizures
+        * - base_prob_3m_epi_death
+          - REAL
+          - base probability per 3 months of epilepsy death
+        * - daly_wt_epilepsy_severe
+          - REAL
+          - disability weight for severe epilepsycontrolled phase - code 860
+        * - daly_wt_epilepsy_less_severe
+          - REAL
+          - disability weight for less severe epilepsycontrolled phase - code 861
+        * - daly_wt_epilepsy_seizure_free
+          - REAL
+          - disability weight for less severe epilepsycontrolled phase - code 862
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - ep_seiz_stat
+          - CATEGORICAL
+          - (0 = never epilepsy, 1 = previous seizures none now, 2 = infrequent seizures, 3 = frequent seizures).  Possible values are: [0, 1, 2, 3, ]
+        * - ep_antiep
+          - BOOL
+          - on antiepileptic
+        * - ep_epi_death
+          - BOOL
+          - epilepsy death this 3 month period
+        * - ep_unified_symptom_code
+          - CATEGORICAL
+          - .  Possible values are: [0, 1, 2, 3, ]
+        * - ep_disability
+          - REAL
+          - disability weight for current 3 month period
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     TREATMENT_ID : antiepileptic
+
+     **Functions (defined or overridden in class Epilepsy):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: query_symptoms_now
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+
+
+
+
+
+
+
+.. autoclass:: EpilepsyEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class EpilepsyEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: EpilepsyLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class EpilepsyLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Epilepsy_Start_Anti_Epilpetic
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Epilepsy_Start_Anti_Epilpetic):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

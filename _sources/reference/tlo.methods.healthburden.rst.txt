@@ -1,0 +1,75 @@
+tlo.methods.healthburden module
+===============================
+
+.. automodule:: tlo.methods.healthburden
+
+
+.. autoclass:: HealthBurden
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - DALY_Weight_Database
+          - DATA_FRAME
+          - DALY Weight Database from GBD
+        * - Age_Limit_For_YLL
+          - REAL
+          - The age up to which deaths are recorded as having induced a lost of life years
+
+
+
+     **Class attributes:**
+
+     METADATA : {}
+
+     **Functions (defined or overridden in class HealthBurden):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_simulation_end
+
+     .. automethod:: get_daly_weight
+
+     .. automethod:: report_live_years_lost
+
+     .. automethod:: decompose_yll_by_age_and_time
+
+
+
+
+
+
+
+
+.. autoclass:: Get_Current_DALYS
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class Get_Current_DALYS):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

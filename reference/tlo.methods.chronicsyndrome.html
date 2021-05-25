@@ -1,0 +1,644 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.methods.chronicsyndrome module &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.methods.contraception module" href="tlo.methods.contraception.html" />
+    <link rel="prev" title="tlo.methods.care_of_women_during_pregnancy module" href="tlo.methods.care_of_women_during_pregnancy.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Reference</a> &raquo;</li>
+        
+          <li><a href="tlo.html">tlo package</a> &raquo;</li>
+        
+          <li><a href="tlo.methods.html">tlo.methods package</a> &raquo;</li>
+        
+      <li>tlo.methods.chronicsyndrome module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/tlo.methods.chronicsyndrome.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tlo.methods.chronicsyndrome">
+<span id="tlo-methods-chronicsyndrome-module"></span><h1>tlo.methods.chronicsyndrome module<a class="headerlink" href="#module-tlo.methods.chronicsyndrome" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">ChronicSyndrome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndrome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a dummy chronic disease
+It demonstrates the following behaviours in respect of the healthsystem module:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Registration of the disease module with health system</p></li>
+<li><p>Internal symptom tracking and health care seeking</p></li>
+<li><p>Outreach campaigns</p></li>
+<li><p>Piggy-backing appointments</p></li>
+<li><p>Reporting two sets of DALY weights with specific labels</p></li>
+<li><p>Usual HSI behaviour</p></li>
+<li><p>Population-wide HSI event</p></li>
+<li><p>On-the-fly consumables access</p></li>
+<li><p>Returning an update footprint</p></li>
+<li><p>Receiving a ‘squeeze factor’</p></li>
+<li><p>Use of the SymptomManager</p></li>
+</ul>
+</div></blockquote>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p><strong>PARAMETERS:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>p_acquisition_per_year</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that an uninfected individual becomes infected</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_of_symptoms</p></td>
+<td><p>DICT</p></td>
+<td><p>Probabilities of developing each type of symptom at onset</p></td>
+</tr>
+<tr class="row-even"><td><p>p_cure</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a treatment is succesful in curing the individual</p></td>
+</tr>
+<tr class="row-odd"><td><p>initial_prevalence</p></td>
+<td><p>REAL</p></td>
+<td><p>Prevalence of the disease in the initial population</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_dev_symptom_craving_sandwiches</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability per year of developing severe symptoms of craving sandwiches</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_seek_emergency_care_if_craving_sandwiches</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that an individual will seak emergency care following onset of craving sandwiches</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wts</p></td>
+<td><p>DICT</p></td>
+<td><p>DALY weights for conditions</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>PROPERTIES:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>cs_has_cs</p></td>
+<td><p>BOOL</p></td>
+<td><p>Current status of mockitis</p></td>
+</tr>
+<tr class="row-odd"><td><p>cs_status</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Historical status: N=never; C=currently 2; P=previously.  Possible values are: [N, C, P, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>cs_date_acquired</p></td>
+<td><p>DATE</p></td>
+<td><p>Date of latest infection</p></td>
+</tr>
+<tr class="row-odd"><td><p>cs_scheduled_date_death</p></td>
+<td><p>DATE</p></td>
+<td><p>Date of scheduled death of infected individual</p></td>
+</tr>
+<tr class="row-even"><td><p>cs_date_cure</p></td>
+<td><p>DATE</p></td>
+<td><p>Date an infected individual was cured</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Class attributes:</strong></p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p><strong>Functions (defined or overridden in class ChronicSyndrome):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndrome.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndrome.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome.read_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read parameter values from file, if required.
+For now, we are going to hard code them explicity.
+Register the module with the health system and register the symptoms</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndrome.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome.initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set our property values for the initial population.</p>
+<p>This method is called by the simulation when creating the initial population, and is
+responsible for assigning initial values, for every individual, of those properties
+‘owned’ by this module, i.e. those declared in the PROPERTIES dictionary above.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the population of individuals</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndrome.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get ready for simulation start.</p>
+<p>This method is called just before the main simulation loop begins, and after all
+modules have read their parameters and the initial population has been created.
+It is a good place to add initial events to the event queue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndrome.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome.on_birth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise our properties for a newborn individual.</p>
+<p>This is called by the simulation whenever a new person is born.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mother_id</strong> – the ID for the mother for this child</p></li>
+<li><p><strong>child_id</strong> – the ID for the new child</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome.on_hsi_alert">
+<span class="sig-name descname"><span class="pre">on_hsi_alert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndrome.on_hsi_alert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome.on_hsi_alert" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called whenever there is an HSI event commissioned by one of the other disease modules.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome.report_daly_values">
+<span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndrome.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome.report_daly_values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndromeEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">ChronicSyndromeEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndromeEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndromeEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class ChronicSyndromeEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndromeEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndromeEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndromeEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndromeEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndromeEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndromeEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndromeDeathEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">ChronicSyndromeDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndromeDeathEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndromeDeathEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class ChronicSyndromeDeathEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndromeDeathEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndromeDeathEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndromeDeathEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndromeDeathEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndromeDeathEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndromeDeathEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome_LaunchOutreachEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">ChronicSyndrome_LaunchOutreachEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndrome_LaunchOutreachEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome_LaunchOutreachEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the event that is run by ChronicSyndrome and it is the Outreach Event.
+It will now submit the individual HSI events that occur when each individual is met.
+(i.e. Any large campaign that involves contct with individual is composed of many individual outreach events).</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class ChronicSyndrome_LaunchOutreachEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome_LaunchOutreachEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndrome_LaunchOutreachEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome_LaunchOutreachEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome_LaunchOutreachEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndrome_LaunchOutreachEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome_LaunchOutreachEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a Health System Interaction Event.
+It is the event when a person with the severe symptoms of chronic syndrome presents for emergency care
+and is immediately provided with treatment.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_Outreach_Individual">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_ChronicSyndrome_Outreach_Individual</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#HSI_ChronicSyndrome_Outreach_Individual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_Outreach_Individual" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a Health System Interaction Event.</p>
+<p>This event can be used to simulate the occurrence of an ‘outreach’ intervention.</p>
+<p>NB. This needs to be created and run for each individual that benefits from the outreach campaign.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_ChronicSyndrome_Outreach_Individual):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_Outreach_Individual.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#HSI_ChronicSyndrome_Outreach_Individual.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_Outreach_Individual.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_Outreach_Individual.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#HSI_ChronicSyndrome_Outreach_Individual.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_Outreach_Individual.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_Outreach_Individual.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#HSI_ChronicSyndrome_Outreach_Individual.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_Outreach_Individual.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_PopulationWideBehaviourChange">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_ChronicSyndrome_PopulationWideBehaviourChange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#HSI_ChronicSyndrome_PopulationWideBehaviourChange"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_PopulationWideBehaviourChange" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a Population-Wide Health System Interaction Event - will change the variables to do with risk for
+ChronicSyndrome</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_ChronicSyndrome_PopulationWideBehaviourChange):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_PopulationWideBehaviourChange.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#HSI_ChronicSyndrome_PopulationWideBehaviourChange.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_PopulationWideBehaviourChange.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_PopulationWideBehaviourChange.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#HSI_ChronicSyndrome_PopulationWideBehaviourChange.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_PopulationWideBehaviourChange.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndromeLoggingEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">ChronicSyndromeLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndromeLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndromeLoggingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class ChronicSyndromeLoggingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndromeLoggingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndromeLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndromeLoggingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>There is no logging done here.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndromeLoggingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndromeLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndromeLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tlo.methods.contraception.html" class="btn btn-neutral float-right" title="tlo.methods.contraception module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.care_of_women_during_pregnancy.html" class="btn btn-neutral float-left" title="tlo.methods.care_of_women_during_pregnancy module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

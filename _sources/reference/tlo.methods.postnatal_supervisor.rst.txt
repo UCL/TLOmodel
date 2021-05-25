@@ -1,0 +1,545 @@
+tlo.methods.postnatal_supervisor module
+=======================================
+
+.. automodule:: tlo.methods.postnatal_supervisor
+
+
+.. autoclass:: PostnatalSupervisor
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - prob_htn_resolves
+          - REAL
+          - weekly probability hypertension resolves during postpartum
+        * - prob_secondary_pph
+          - REAL
+          - baseline probability of secondary PPH
+        * - cfr_secondary_pph
+          - REAL
+          - case fatality rate for secondary pph
+        * - cfr_postnatal_sepsis
+          - REAL
+          - case fatality rate for postnatal sepsis
+        * - prob_secondary_pph_severity
+          - LIST
+          - probability of mild, moderate or severe secondary PPH
+        * - prob_obstetric_fistula
+          - REAL
+          - probability of a woman developing an obstetric fistula after birth
+        * - prevalence_type_of_fistula
+          - LIST
+          - prevalence of 1.) vesicovaginal 2.)rectovaginal fistula 
+        * - prob_iron_def_per_week_pn
+          - REAL
+          - weekly probability of a women developing iron deficiency following pregnancy
+        * - prob_folate_def_per_week_pn
+          - REAL
+          - weekly probability of a women developing folate deficiency following pregnancy 
+        * - prob_b12_def_per_week_pn
+          - REAL
+          - weekly probability of a women developing b12 deficiency following pregnancy 
+        * - baseline_prob_anaemia_per_week
+          - REAL
+          - Weekly probability of anaemia in pregnancy
+        * - prob_type_of_anaemia_pn
+          - LIST
+          - probability of a woman with anaemia having mild, moderate or severe anaemia
+        * - rr_anaemia_if_iron_deficient_pn
+          - REAL
+          - risk of developing anaemia when iron deficient
+        * - rr_anaemia_if_folate_deficient_pn
+          - REAL
+          - risk of developing anaemia when folate deficient
+        * - rr_anaemia_if_b12_deficient_pn
+          - REAL
+          - risk of developing anaemia when b12 deficient
+        * - prob_early_onset_neonatal_sepsis_week_1
+          - REAL
+          - Baseline probability of a newborn developing sepsis in week one of life
+        * - cfr_early_onset_neonatal_sepsis
+          - REAL
+          - case fatality for early onset neonatal sepsis
+        * - prob_sepsis_disabilities
+          - LIST
+          - Probabilities of varying disability levels after neonatal sepsis
+        * - prob_endometritis_pn
+          - REAL
+          - probability of endometritis in week one
+        * - prob_urinary_tract_inf_pn
+          - REAL
+          - probability of urinary tract infection in week one
+        * - prob_skin_soft_tissue_inf_pn
+          - REAL
+          - probability of skin and soft tissue infection in week one
+        * - prob_other_inf_pn
+          - REAL
+          - probability of other maternal infections in week one
+        * - prob_late_sepsis_endometritis
+          - REAL
+          - probability of developing sepsis following postpartum endometritis infection
+        * - prob_late_sepsis_urinary_tract_inf
+          - REAL
+          - probability of developing sepsis following postpartum UTI
+        * - prob_late_sepsis_skin_soft_tissue_inf
+          - REAL
+          - probability of developing sepsis following postpartum skin/soft tissue infection
+        * - prob_late_sepsis_other_maternal_infection_pp
+          - REAL
+          - probability of developing sepsis following postpartum other infection
+        * - prob_late_onset_neonatal_sepsis
+          - REAL
+          - probability of late onset neonatal sepsis (all cause)
+        * - cfr_late_neonatal_sepsis
+          - REAL
+          - Risk of death from late neonatal sepsis
+        * - prob_htn_persists
+          - REAL
+          - Probability that women who are hypertensive during pregnancy remain hypertensive in the postnatal period
+        * - weekly_prob_gest_htn_pn
+          - REAL
+          - weekly probability of a woman developing gestational hypertension during the postnatal period
+        * - weekly_prob_pre_eclampsia_pn
+          - REAL
+          - weekly probability of a woman developing mild pre-eclampsia during the postnatal period
+        * - probs_for_mgh_matrix_pn
+          - LIST
+          - probability of mild gestational hypertension moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia
+        * - probs_for_sgh_matrix_pn
+          - LIST
+          - probability of severe gestational hypertension moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia
+        * - probs_for_mpe_matrix_pn
+          - LIST
+          - probability of mild pre-eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia
+        * - probs_for_spe_matrix_pn
+          - LIST
+          - probability of severe pre-eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia
+        * - probs_for_ec_matrix_pn
+          - LIST
+          - probability of eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia
+        * - cfr_eclampsia_pn
+          - REAL
+          - case fatality rate of eclampsia in the postnatal period
+        * - cfr_severe_htn_pn
+          - REAL
+          - case fatality rate of severe hypertension in the postnatal period
+        * - weekly_prob_postnatal_death
+          - REAL
+          - Weekly risk of postnatal death
+        * - severity_late_infection_pn
+          - LIST
+          - probability of mild infection, sepsis or severe sepsis in the later postnatal period
+        * - rr_iron_def_ifa_pn
+          - REAL
+          - effect of iron and folic acid treatment on risk of iron deficiency
+        * - rr_folate_def_ifa_pn
+          - REAL
+          - effect of iron and folic acid treatment on risk of folate deficiency 
+        * - treatment_effect_early_init_bf
+          - REAL
+          - effect of early initiation of breastfeeding on neonatal sepsis rates 
+        * - treatment_effect_abx_prom
+          - REAL
+          - effect of early antibiotics given to a mother with PROM on neonatal sepsis rates 
+        * - treatment_effect_inj_abx_sep
+          - REAL
+          - effect of injectable antibiotics on neonatal sepsis mortality
+        * - treatment_effect_supp_care_sep
+          - REAL
+          - effect of full supportive care on neonatal sepsis mortality
+        * - treatment_effect_parenteral_antibiotics
+          - REAL
+          - Treatment effect of parenteral antibiotics on maternal sepsis mortality 
+        * - treatment_effect_bemonc_care_pph
+          - REAL
+          - Treatment effect of BEmONC care on postpartum haemorrhage mortality
+        * - treatment_effect_anti_htns
+          - REAL
+          - Treatment effect of hypertensive therapy on death from eclampsia
+        * - treatment_effect_mag_sulph
+          - REAL
+          - Treatment effect of magnesium sulphate therapy on death from eclampsia
+        * - neonatal_sepsis_treatment_effect
+          - REAL
+          - Treatment effect for neonatal sepsis
+        * - treatment_effect_clean_birth
+          - REAL
+          - Treatment effect of clean birth practices on early onset neonatal sepsis risk
+        * - treatment_effect_cord_care
+          - REAL
+          - Treatment effect of chlorhexidine cord care on early onset neonatal sepsis risk
+        * - treatment_effect_anti_htns_progression_pn
+          - REAL
+          - Treatment effect of oral anti hypertensives on progression from mild/mod to severe gestationalhypertension
+        * - prob_attend_pnc2
+          - REAL
+          - Probability that a woman receiving PNC1 care will return for PNC2 care
+        * - prob_attend_pnc3
+          - REAL
+          - Probability that a woman receiving PNC2 care will return for PNC3 care
+        * - prob_care_seeking_postnatal_emergency
+          - REAL
+          - baseline probability of emergency care seeking for women in the postnatal period
+        * - prob_care_seeking_postnatal_emergency_neonate
+          - REAL
+          - baseline probability care will be sought for a neonate with a complication
+        * - odds_care_seeking_fistula_repair
+          - REAL
+          - odds of a woman seeking care for treatment of obstetric fistula
+        * - aor_cs_fistula_age_15_19
+          - REAL
+          - odds ratio for care seeking for treatment of obstetric fistula in 15-19 year olds
+        * - aor_cs_fistula_age_lowest_education
+          - REAL
+          - odds ratio for care seeking for treatment of obstetric fistula in women in the lowest education quintile
+        * - prob_pnc1_at_day_7
+          - REAL
+          - baseline probability a woman will seek PNC for her and her newborn at day + 7 
+        * - multiplier_for_care_seeking_with_comps
+          - REAL
+          - number by which prob_pnc1_at_day_7 is multiplied by to increase care seeking for PNC1 in women with complications 
+        * - sensitivity_bp_monitoring_pn
+          - REAL
+          - sensitivity of BP monitoring during PNC
+        * - specificity_bp_monitoring_pn
+          - REAL
+          - specificity of BP monitoring during PNC
+        * - sensitivity_urine_protein_1_plus_pn
+          - REAL
+          - sensitivity of urine dipstick during PNC
+        * - specificity_urine_protein_1_plus_pn
+          - REAL
+          - specificity of urine dipstick monitoring during PNC
+        * - sensitivity_poc_hb_test_pn
+          - REAL
+          - sensitivity of point of care testing during PNC
+        * - specificity_poc_hb_test_pn
+          - REAL
+          - specificity of urine dipstick monitoring during PNC
+        * - sensitivity_maternal_sepsis_assessment
+          - REAL
+          - sensitivity of assessment for maternal sepsis
+        * - sensitivity_pph_assessment
+          - REAL
+          - sensitivity of assessment for secondary pph
+        * - sensitivity_lons_assessment
+          - REAL
+          - sensitivity of assessment for late onset neonatal sepsis
+        * - sensitivity_eons_assessment
+          - REAL
+          - sensitivity of assessment for earl onset neonatal sepsis
+        * - prob_intervention_delivered_sep_assessment_pnc
+          - REAL
+          - probability a woman will be assessed for sepsis during PNC
+        * - prob_intervention_delivered_pph_assessment_pnc
+          - REAL
+          - probability a woman will be assessed for PPH during PNC
+        * - prob_intervention_delivered_urine_ds_pnc
+          - REAL
+          - probability a woman will receive a urine disptick during PNC
+        * - prob_intervention_delivered_bp_pnc
+          - REAL
+          - probability a woman will receive blood pressure testing during PNC
+        * - prob_intervention_poct_pnc
+          - REAL
+          - probability a woman will receive point of care Hb testing during PNC
+        * - prob_intervention_neonatal_sepsis_pnc
+          - REAL
+          - probability a newborn will be assessed for sepsis during PNC
+        * - prob_intervention_delivered_hiv_test_pnc
+          - REAL
+          - probability a newborn will receive a HIV test at 6 weeks postnatal 
+        * - prob_intervention_delivered_depression_screen_pnc
+          - REAL
+          - probability a mother will receive a depression screen during PNC
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - pn_id_most_recent_child
+          - INT
+          - person_id of a mothers most recent child (if twins id of the first born)
+        * - pn_postnatal_period_in_weeks
+          - REAL
+          - The number of weeks a woman is in the postnatal period (1-6)
+        * - pn_pnc_visits_maternal
+          - INT
+          - The number of postnatal care visits a woman has undergone following her most recent delivery
+        * - pn_pnc_visits_neonatal
+          - INT
+          - The number of postnatal care visits a neonate has undergone following delivery
+        * - pn_htn_disorders
+          - CATEGORICAL
+          - Hypertensive disorders of the postnatal period.  Possible values are: [none, resolved, gest_htn, severe_gest_htn, mild_pre_eclamp, severe_pre_eclamp, eclampsia, ]
+        * - pn_mag_sulph_treatment
+          - BOOL
+          - Whether this woman has received magnesium sulphate as treatment for eclampsia/ severe pre-eclampsia
+        * - pn_gest_htn_on_treatment
+          - BOOL
+          - Whether this woman is receiving regular oral medication for hypertension in the postnatal period
+        * - pn_iv_anti_htn_treatment
+          - BOOL
+          - Whether this woman has received IV anti hypertensive therapy during a hypertensive emergency
+        * - pn_postpartum_haem_secondary
+          - BOOL
+          - Whether this woman is experiencing a secondary postpartum haemorrhage
+        * - pn_postpartum_haem_secondary_treatment
+          - BOOL
+          - Whether this woman has received treatment for secondary PPH
+        * - pn_sepsis_late_postpartum
+          - BOOL
+          - Whether this woman is experiencing postnatal (day7+) sepsis
+        * - pn_sepsis_late_postpartum_treatment
+          - BOOL
+          - Whether this woman has received treatment for postpartum sepsis
+        * - pn_maternal_pp_infection
+          - INT
+          - bitset column for infection
+        * - pn_obstetric_fistula
+          - CATEGORICAL
+          - Type of fistula developed after birth.  Possible values are: [none, vesicovaginal, rectovaginal, ]
+        * - pn_sepsis_early_neonatal
+          - BOOL
+          - Whether this neonate has developed early onset neonatal sepsis during week one of life
+        * - pn_sepsis_late_neonatal
+          - BOOL
+          - Whether this neonate has developed late neonatal sepsis following discharge
+        * - pn_neonatal_sepsis_disab
+          - CATEGORICAL
+          - Level of disability experience from a neonate post sepsis.  Possible values are: [none, mild_motor_and_cog, mild_motor, moderate_motor, severe_motor, ]
+        * - pn_sepsis_neonatal_inj_abx
+          - BOOL
+          - Whether this neonate has received injectable antibiotics as treatment for late onset sepsis
+        * - pn_sepsis_neonatal_full_supp_care
+          - BOOL
+          - Whether this neonate has received full supportive care as treatment for late onset sepsis
+        * - pn_deficiencies_following_pregnancy
+          - INT
+          - bitset column, stores types of anaemia causing deficiencies following pregnancy
+        * - pn_anaemia_following_pregnancy
+          - CATEGORICAL
+          - severity of anaemia following pregnancy.  Possible values are: [none, mild, moderate, severe, ]
+        * - pn_emergency_event_mother
+          - BOOL
+          - Whether a mother is experiencing an emergency complication postnatally
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     **Functions (defined or overridden in class PostnatalSupervisor):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: further_on_birth_postnatal_supervisor
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: set_infections
+
+     .. automethod:: set_postnatal_complications_mothers
+
+     .. automethod:: apply_risk_of_neonatal_complications_in_week_one
+
+     .. automethod:: set_postnatal_complications_neonates
+
+     .. automethod:: assessment_for_maternal_complication_during_pnc
+
+     .. automethod:: assessment_for_neonatal_complications_during_pnc
+
+     .. automethod:: apply_risk_of_maternal_or_neonatal_death_postnatal
+
+     .. automethod:: maternal_postnatal_care_care_seeking
+
+
+
+
+
+
+
+
+.. autoclass:: PostnatalSupervisorEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class PostnatalSupervisorEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: PostnatalWeekOneEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class PostnatalWeekOneEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_PostnatalSupervisor_PostnatalCareContactOne
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_PostnatalSupervisor_PostnatalCareContactOne):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_PostnatalSupervisor_PostnatalCareContactTwo
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_PostnatalSupervisor_PostnatalCareContactTwo):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_PostnatalSupervisor_PostnatalWardInpatientCare
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_PostnatalSupervisor_PostnatalWardInpatientCare):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_PostnatalSupervisor_TreatmentForObstetricFistula
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_PostnatalSupervisor_TreatmentForObstetricFistula):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_PostnatalSupervisor_NeonatalWardInpatientCare
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_PostnatalSupervisor_NeonatalWardInpatientCare):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: PostnatalLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class PostnatalLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

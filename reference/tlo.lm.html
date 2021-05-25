@@ -1,0 +1,357 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.lm module &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.population module" href="tlo.population.html" />
+    <link rel="prev" title="tlo.events module" href="tlo.events.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Reference</a> &raquo;</li>
+        
+          <li><a href="tlo.html">tlo package</a> &raquo;</li>
+        
+      <li>tlo.lm module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/tlo.lm.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tlo.lm">
+<span id="tlo-lm-module"></span><h1>tlo.lm module<a class="headerlink" href="#module-tlo.lm" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.lm.Predictor">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Predictor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">property_name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">external</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/lm.html#Predictor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.Predictor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.lm.Predictor.when">
+<span class="sig-name descname"><span class="pre">when</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#tlo.lm.Predictor" title="tlo.lm.Predictor"><span class="pre">tlo.lm.Predictor</span></a><a class="reference internal" href="../_modules/tlo/lm.html#Predictor.when"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.Predictor.when" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.lm.Predictor.otherwise">
+<span class="sig-name descname"><span class="pre">otherwise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#tlo.lm.Predictor" title="tlo.lm.Predictor"><span class="pre">tlo.lm.Predictor</span></a><a class="reference internal" href="../_modules/tlo/lm.html#Predictor.otherwise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.Predictor.otherwise" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.lm.Predictor.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#tlo.lm.Predictor" title="tlo.lm.Predictor"><span class="pre">tlo.lm.Predictor</span></a><a class="reference internal" href="../_modules/tlo/lm.html#Predictor.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.Predictor.apply" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.lm.LinearModelType">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">LinearModelType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/lm.html#LinearModelType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.LinearModelType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>The type of model specifies how the results from the predictor are combined:
+‘additive’ -&gt; adds the effect_sizes from the predictors
+‘logisitic’ -&gt; multiples the effect_sizes from the predictors and applies the transform x/(1+x)
+[Thus, the intercept can be taken to be an Odds and effect_sizes Odds Ratios,
+and the prediction is a probability.]
+‘multiplicative’ -&gt; multiplies the effect_sizes from the predictors</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tlo.lm.LinearModelType.ADDITIVE">
+<span class="sig-name descname"><span class="pre">ADDITIVE</span></span><em class="property"> <span class="pre">=</span> <span class="pre">1</span></em><a class="headerlink" href="#tlo.lm.LinearModelType.ADDITIVE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tlo.lm.LinearModelType.LOGISTIC">
+<span class="sig-name descname"><span class="pre">LOGISTIC</span></span><em class="property"> <span class="pre">=</span> <span class="pre">2</span></em><a class="headerlink" href="#tlo.lm.LinearModelType.LOGISTIC" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tlo.lm.LinearModelType.MULTIPLICATIVE">
+<span class="sig-name descname"><span class="pre">MULTIPLICATIVE</span></span><em class="property"> <span class="pre">=</span> <span class="pre">3</span></em><a class="headerlink" href="#tlo.lm.LinearModelType.MULTIPLICATIVE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tlo.lm.LinearModelType.CUSTOM">
+<span class="sig-name descname"><span class="pre">CUSTOM</span></span><em class="property"> <span class="pre">=</span> <span class="pre">4</span></em><a class="headerlink" href="#tlo.lm.LinearModelType.CUSTOM" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.lm.LinearModel">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">LinearModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lm_type</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#tlo.lm.LinearModelType" title="tlo.lm.LinearModelType"><span class="pre">tlo.lm.LinearModelType</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">intercept</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">predictors</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#tlo.lm.Predictor" title="tlo.lm.Predictor"><span class="pre">tlo.lm.Predictor</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/lm.html#LinearModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.LinearModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="tlo.lm.LinearModel.lm_type">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">lm_type</span></span><em class="property"><span class="pre">:</span> <span class="pre">tlo.lm.LinearModelType</span></em><a class="headerlink" href="#tlo.lm.LinearModel.lm_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>The model type.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tlo.lm.LinearModel.intercept">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">intercept</span></span><em class="property"><span class="pre">:</span> <span class="pre">Union[float,</span> <span class="pre">int]</span></em><a class="headerlink" href="#tlo.lm.LinearModel.intercept" title="Permalink to this definition">¶</a></dt>
+<dd><p>The intercept value for the model.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tlo.lm.LinearModel.predictors">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">predictors</span></span><em class="property"><span class="pre">:</span> <span class="pre">Tuple[tlo.lm.Predictor]</span></em><a class="headerlink" href="#tlo.lm.LinearModel.predictors" title="Permalink to this definition">¶</a></dt>
+<dd><p>The predictors used in calculating the model output.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.lm.LinearModel.multiplicative">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">multiplicative</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">predictors</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#tlo.lm.Predictor" title="tlo.lm.Predictor"><span class="pre">tlo.lm.Predictor</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/lm.html#LinearModel.multiplicative"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.LinearModel.multiplicative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a multplicative LinearModel with intercept=1.0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>predictors</strong> – One or more Predictor objects defining the model</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.lm.LinearModel.custom">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">custom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predict_function</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/lm.html#LinearModel.custom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.LinearModel.custom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define a linear model using the supplied function</p>
+<p>The function acts as a drop-in replacement to the predict function and must
+implement the interface:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>(</dt><dd><p>self: LinearModel,
+df: Union[pd.DataFrame, pd.Series],
+rng: Optional[np.random.RandomState] = None,
+<a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs</p>
+</dd>
+</dl>
+<p>) -&gt; pd.Series</p>
+</div></blockquote>
+<p>It is the responsibility of the caller of predict to ensure they pass either
+a dataframe or an individual record as expected by the custom function.</p>
+<p>See test_custom() in test_lm.py for a couple of examples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.lm.LinearModel.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.random.mtrand.RandomState</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.series.Series</span><a class="reference internal" href="../_modules/tlo/lm.html#LinearModel.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.LinearModel.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate linear model output for a given set of input data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – The input <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> containing the input data to evaluate the
+model with.</p></li>
+<li><p><strong>rng</strong> – If set to a NumPy <code class="docutils literal notranslate"><span class="pre">RandomState</span></code> instance, returned output will
+be boolean <code class="docutils literal notranslate"><span class="pre">Series</span></code> corresponding to Bernoulli random variables sampled
+according to probabilities specified by model output. Otherwise model
+output directly returned.</p></li>
+<li><p><strong>**kwargs</strong> – <p>Values for any external variables included in model
+predictors.</p>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tlo.population.html" class="btn btn-neutral float-right" title="tlo.population module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.events.html" class="btn btn-neutral float-left" title="tlo.events module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

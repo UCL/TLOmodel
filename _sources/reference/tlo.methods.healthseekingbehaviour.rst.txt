@@ -1,0 +1,109 @@
+tlo.methods.healthseekingbehaviour module
+=========================================
+
+.. automodule:: tlo.methods.healthseekingbehaviour
+
+
+.. autoclass:: HealthSeekingBehaviour
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - baseline_odds_of_healthcareseeking_children
+          - REAL
+          - odds of health-care seeking (children: 0-14) if male, 0-5 years-old, living in a rural setting in the Northern region, and not in the wealth categories 4 or 5
+        * - odds_ratio_children_sex_Female
+          - REAL
+          - odds ratio for health-care seeking (children) if sex is Female
+        * - odds_ratio_children_age_5to14
+          - REAL
+          - odds ratio for health-care seeking (children) if aged 5-14
+        * - odds_ratio_children_setting_urban
+          - REAL
+          - odds ratio for health-care seeking (children) if setting is Urban
+        * - odds_ratio_children_region_Central
+          - REAL
+          - odds ratio for health-care seeking (children) if region is Central
+        * - odds_ratio_children_region_Southern
+          - REAL
+          - odds ratio for health-care seeking (children) if region is Southern
+        * - odds_ratio_children_wealth_higher
+          - REAL
+          - odds ratio for health-care seeking (children) if wealth is in categories 4 or 5
+        * - baseline_odds_of_healthcareseeking_adults
+          - REAL
+          - odds of health-care seeking (adults: 15+) if male, 15-34 year-olds, living in a rural setting in the Northern region, and not in the wealth categories 4 or 5.
+        * - odds_ratio_adults_sex_Female
+          - REAL
+          - odds ratio for health-care seeking (adults) if sex is Female
+        * - odds_ratio_adults_age_35to59
+          - REAL
+          - odds ratio for health-care seeking (adults) if aged 35-59
+        * - odds_ratio_adults_age_60plus
+          - REAL
+          - odds ratio for health-care seeking (adults) if aged 60+
+        * - odds_ratio_adults_setting_urban
+          - REAL
+          - odds ratio for health-care seeking (adults) if setting is Urban
+        * - odds_ratio_adults_region_Central
+          - REAL
+          - odds ratio for health-care seeking (adults) if region is Central
+        * - odds_ratio_adults_region_Southern
+          - REAL
+          - odds ratio for health-care seeking (adults) if region is Southern
+        * - odds_ratio_adults_wealth_higher
+          - REAL
+          - odds ratio for health-care seeking (adults) if wealth is in categories 4 or 5
+        * - max_days_delay_to_generic_HSI_after_symptoms
+          - INT
+          - Maximum days delay between symptom onset and firstgeneric HSI. Actual delay is sample between 0 and this value.
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
+
+     **Functions (defined or overridden in class HealthSeekingBehaviour):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+
+
+
+
+
+
+
+.. autoclass:: HealthSeekingBehaviourPoll
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HealthSeekingBehaviourPoll):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

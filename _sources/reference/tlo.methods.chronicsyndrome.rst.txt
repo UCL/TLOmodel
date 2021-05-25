@@ -1,0 +1,224 @@
+tlo.methods.chronicsyndrome module
+==================================
+
+.. automodule:: tlo.methods.chronicsyndrome
+
+
+.. autoclass:: ChronicSyndrome
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - p_acquisition_per_year
+          - REAL
+          - Probability that an uninfected individual becomes infected
+        * - prob_of_symptoms
+          - DICT
+          - Probabilities of developing each type of symptom at onset
+        * - p_cure
+          - REAL
+          - Probability that a treatment is succesful in curing the individual
+        * - initial_prevalence
+          - REAL
+          - Prevalence of the disease in the initial population
+        * - prob_dev_symptom_craving_sandwiches
+          - REAL
+          - Probability per year of developing severe symptoms of craving sandwiches
+        * - prob_seek_emergency_care_if_craving_sandwiches
+          - REAL
+          - Probability that an individual will seak emergency care following onset of craving sandwiches
+        * - daly_wts
+          - DICT
+          - DALY weights for conditions
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - cs_has_cs
+          - BOOL
+          - Current status of mockitis
+        * - cs_status
+          - CATEGORICAL
+          - Historical status: N=never; C=currently 2; P=previously.  Possible values are: [N, C, P, ]
+        * - cs_date_acquired
+          - DATE
+          - Date of latest infection
+        * - cs_scheduled_date_death
+          - DATE
+          - Date of scheduled death of infected individual
+        * - cs_date_cure
+          - DATE
+          - Date an infected individual was cured
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     **Functions (defined or overridden in class ChronicSyndrome):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+
+
+
+
+
+
+
+.. autoclass:: ChronicSyndromeEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class ChronicSyndromeEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: ChronicSyndromeDeathEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class ChronicSyndromeDeathEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: ChronicSyndrome_LaunchOutreachEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class ChronicSyndrome_LaunchOutreachEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_ChronicSyndrome_Outreach_Individual
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_ChronicSyndrome_Outreach_Individual):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_ChronicSyndrome_PopulationWideBehaviourChange
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_ChronicSyndrome_PopulationWideBehaviourChange):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: ChronicSyndromeLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class ChronicSyndromeLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

@@ -1,0 +1,791 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.methods.depression module &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.methods.diarrhoea module" href="tlo.methods.diarrhoea.html" />
+    <link rel="prev" title="tlo.methods.demography module" href="tlo.methods.demography.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Reference</a> &raquo;</li>
+        
+          <li><a href="tlo.html">tlo package</a> &raquo;</li>
+        
+          <li><a href="tlo.methods.html">tlo.methods package</a> &raquo;</li>
+        
+      <li>tlo.methods.depression module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/tlo.methods.depression.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tlo.methods.depression">
+<span id="tlo-methods-depression-module"></span><h1>tlo.methods.depression module<a class="headerlink" href="#module-tlo.methods.depression" title="Permalink to this headline">¶</a></h1>
+<p>This is the Depression Module. Documentation at:
+<a class="reference external" href="https://www.dropbox.com/s/8q9etj23owwlubx/Depression%20and%20Antidepressants%20-%20Description%20-%20Feb%2020.docx?dl=0">https://www.dropbox.com/s/8q9etj23owwlubx/Depression%20and%20Antidepressants%20-%20Description%20-%20Feb%2020.docx?dl=0</a></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.depression.Depression">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Depression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#Depression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.Depression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p><strong>PARAMETERS:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>init_pr_depr_m_age1519_no_cc_wealth123</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial probability of being depressed in male age1519 with no chronic condition with wealth level 1 or 2 or 3</p></td>
+</tr>
+<tr class="row-odd"><td><p>init_rp_depr_f_not_rec_preg</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial relative prevalence of being depressed in females not recently pregnant</p></td>
+</tr>
+<tr class="row-even"><td><p>init_rp_depr_f_rec_preg</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial relative prevalence of being depressed in females recently pregnant</p></td>
+</tr>
+<tr class="row-odd"><td><p>init_rp_depr_age2059</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial relative prevalence of being depressed in 20-59 year olds vs 15-19</p></td>
+</tr>
+<tr class="row-even"><td><p>init_rp_depr_agege60</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial relative prevalence of being depressed in 60+ year olds vs 15-19</p></td>
+</tr>
+<tr class="row-odd"><td><p>init_rp_depr_cc</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial relative prevalence of being depressed in people with chronic condition</p></td>
+</tr>
+<tr class="row-even"><td><p>init_rp_depr_wealth45</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial relative prevalence of being depressed in people with wealth level 4 or 5 vs 1 or 2 or 3</p></td>
+</tr>
+<tr class="row-odd"><td><p>init_rp_ever_depr_per_year_older_m</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial relative prevalence ever depression per year older in men</p></td>
+</tr>
+<tr class="row-even"><td><p>init_rp_ever_depr_per_year_older_f</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial relative prevalence ever depression per year older in women</p></td>
+</tr>
+<tr class="row-odd"><td><p>init_pr_ever_talking_therapy_if_diagnosed</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial probability of ever having had talking therapy if ever diagnosed with depression</p></td>
+</tr>
+<tr class="row-even"><td><p>init_pr_antidepr_curr_depr</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial probability of being on antidepressants if currently depressed</p></td>
+</tr>
+<tr class="row-odd"><td><p>init_rp_antidepr_ever_depr_not_curr</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial relative prevalence of being on antidepressants if ever depressed but not currently</p></td>
+</tr>
+<tr class="row-even"><td><p>init_pr_ever_diagnosed_depression</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial probability of having ever been diagnosed with depression, amongst people with ever depression and not on antidepressants</p></td>
+</tr>
+<tr class="row-odd"><td><p>init_pr_ever_self_harmed_if_ever_depr</p></td>
+<td><p>REAL</p></td>
+<td><p>Initial probability of having ever self harmed if ever depressed</p></td>
+</tr>
+<tr class="row-even"><td><p>base_3m_prob_depr</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability of onset of depression in a 3 month period if male, wealth 1 2 or 3, no chronic condition and never previously depressed</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_depr_wealth45</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative rate of depression when in wealth level 4 or 5 vs 1 or 2 or 3</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_depr_cc</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative rate of depression if has any chronic disease</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_depr_pregnancy</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative rate of depression when pregnant or recently pregnant</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_depr_female</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative rate of depression for females vs males</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_depr_prev_epis</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative rate of depression associated with previous depression vs never previously depressed</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_depr_on_antidepr</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative rate of depression episode if on antidepressants</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_depr_age1519</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative rate of depression associated with 15-20 year olds</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_depr_agege60</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative rate of depression associated with age &gt; 60</p></td>
+</tr>
+<tr class="row-odd"><td><p>depr_resolution_rates</p></td>
+<td><p>LIST</p></td>
+<td><p>Risk of depression resolving in 3 months if no chronic conditions and no treatments.Each individual is equally likely to be assigned each of these risks</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_resol_depr_cc</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative rate of resolving depression if has any chronic disease</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_resol_depr_on_antidepr</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative rate of resolving depression if on antidepressants</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_resol_depr_current_talk_ther</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative rate of resolving depression if has ever had talking therapy vs has never had talking therapy</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_3m_stop_antidepr</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability per 3 months of stopping antidepressants when not currently depressed.</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_3m_default_antidepr</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability per 3 months of stopping antidepressants when still depressed.</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_3m_suicide_depr_m</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability per 3 months of suicide in currently depressed men</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_suicide_depr_f</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of suicide in women compared with men</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_3m_selfharm_depr</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability per 3 months of non-fatal self harm in those currently depressed</p></td>
+</tr>
+<tr class="row-even"><td><p>sensitivity_of_assessment_of_depression</p></td>
+<td><p>REAL</p></td>
+<td><p>The sensitivity of the clinical assessment in detecting the true current status of depression</p></td>
+</tr>
+<tr class="row-odd"><td><p>pr_assessed_for_depression_in_generic_appt_level1</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a person is assessed for depression during a non-emergency generic appointmentlevel 1</p></td>
+</tr>
+<tr class="row-even"><td><p>anti_depressant_medication_item_code</p></td>
+<td><p>INT</p></td>
+<td><p>The item code used for one month of anti-depressant treatment</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>PROPERTIES:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>de_depr</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this person is currently depressed</p></td>
+</tr>
+<tr class="row-odd"><td><p>de_ever_depr</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this person has ever experienced depression</p></td>
+</tr>
+<tr class="row-even"><td><p>de_date_init_most_rec_depr</p></td>
+<td><p>DATE</p></td>
+<td><p>date this person last initiated a depression episode</p></td>
+</tr>
+<tr class="row-odd"><td><p>de_date_depr_resolved</p></td>
+<td><p>DATE</p></td>
+<td><p>date this person resolved last episode of depression</p></td>
+</tr>
+<tr class="row-even"><td><p>de_intrinsic_3mo_risk_of_depr_resolution</p></td>
+<td><p>REAL</p></td>
+<td><p>the risk per 3 mo of an episode of depression being resolved in absence of any treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>de_ever_diagnosed_depression</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether ever diagnosed with depression</p></td>
+</tr>
+<tr class="row-even"><td><p>de_on_antidepr</p></td>
+<td><p>BOOL</p></td>
+<td><p>is currently on anti-depressants</p></td>
+</tr>
+<tr class="row-odd"><td><p>de_ever_talk_ther</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this person has ever had a session of talking therapy</p></td>
+</tr>
+<tr class="row-even"><td><p>de_ever_non_fatal_self_harm_event</p></td>
+<td><p>BOOL</p></td>
+<td><p>ever had a non-fatal self harm event</p></td>
+</tr>
+<tr class="row-odd"><td><p>de_cc</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this person has chronic condition</p></td>
+</tr>
+<tr class="row-even"><td><p>de_recently_pregnant</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this person is female and is either currently pregnant or had a last pregnancy less than one year ago</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Class attributes:</strong></p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p><strong>Functions (defined or overridden in class Depression):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.Depression.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#Depression.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.Depression.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.Depression.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#Depression.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.Depression.read_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>read parameters, register disease module with healthsystem and register symptoms</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.Depression.apply_linear_model">
+<span class="sig-name descname"><span class="pre">apply_linear_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#Depression.apply_linear_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.Depression.apply_linear_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function will apply the linear model (lm) on the dataframe (df) to get a probability of some event
+happening to each individual. It then returns a series with same index with bools indicating the outcome based
+on the toss of the biased coin.
+:param lm: The linear model
+:param df: The dataframe
+:return: Series with same index containing outcomes (bool)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.Depression.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#Depression.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.Depression.initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set our property values for the initial population.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called by the simulation when creating the initial population, and is
+responsible for assigning initial values, for every individual, of those properties
+‘owned’ by this module, i.e. those declared in its PROPERTIES dictionary.</p>
+<p>TODO: We probably need to declare somehow which properties we ‘read’ here, so the
+simulation knows what order to initialise modules in!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the population of individuals</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.Depression.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#Depression.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.Depression.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Launch the main polling event and the logging event.
+Schedule the refill prescriptions for those on antidepressants.
+Register the assessment of depression with the DxManager.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.Depression.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#Depression.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.Depression.on_birth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise our properties for a newborn individual – they will not have depression or any history of it.
+:param mother_id: the mother for this child
+:param child_id: the new child</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.Depression.on_hsi_alert">
+<span class="sig-name descname"><span class="pre">on_hsi_alert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#Depression.on_hsi_alert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.Depression.on_hsi_alert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Nothing happens if this module is alerted to a person attending an HSI</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.Depression.report_daly_values">
+<span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#Depression.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.Depression.report_daly_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Report DALYs based status in the previous month.
+A DALY weight is attached to a status of depression for as long as the depression lasted in the previous month.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.Depression.do_when_suspected_depression">
+<span class="sig-name descname"><span class="pre">do_when_suspected_depression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#Depression.do_when_suspected_depression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.Depression.do_when_suspected_depression" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called by the a generic HSI event when depression is suspected or otherwise investigated.
+:param person_id:
+:param hsi_event: The HSI event that has called this event
+:return:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.depression.DepressionPollingEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DepressionPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionPollingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionPollingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>The regular event that actually changes individuals’ depression status.
+It occurs every 3 months and this cannot be changed.
+The onset and resolution of depression events occurs at the polling event and synchronously for
+all persons. Individual level events (HSI, self-harm/suicide events) may occur at other times.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class DepressionPollingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.DepressionPollingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionPollingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionPollingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.DepressionPollingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionPollingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionPollingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.depression.DepressionSelfHarmEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DepressionSelfHarmEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionSelfHarmEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionSelfHarmEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a Self-Harm event. It has been scheduled to occur by the DepressionPollingEvent.
+It imposes the Injuries_From_Self_Harm symptom, which will lead to emergency care being sought</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class DepressionSelfHarmEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.DepressionSelfHarmEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionSelfHarmEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionSelfHarmEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.DepressionSelfHarmEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionSelfHarmEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionSelfHarmEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.depression.DepressionSuicideEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DepressionSuicideEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionSuicideEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionSuicideEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a Suicide event. It has been scheduled to occur by the DepressionPollingEvent.
+It causes the immediate death of the person.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class DepressionSuicideEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.DepressionSuicideEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionSuicideEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionSuicideEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.DepressionSuicideEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionSuicideEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionSuicideEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.depression.DepressionLoggingEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DepressionLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionLoggingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the LoggingEvent for Depression. It runs every 3 months and gives:
+* population summaries for statuses for Depression at that time.
+* counts of events of self-harm and suicide that have occurred in the 3 months prior</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class DepressionLoggingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.DepressionLoggingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionLoggingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.DepressionLoggingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_TalkingTherapy">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Depression_TalkingTherapy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#HSI_Depression_TalkingTherapy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_TalkingTherapy" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a Health System Interaction Event in which a person receives a short period of talking therapy.
+This only happens if the squeeze-factor is sufficiently low.
+The facility_level is modified as a input parameter.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_Depression_TalkingTherapy):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_TalkingTherapy.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#HSI_Depression_TalkingTherapy.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_TalkingTherapy.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_TalkingTherapy.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#HSI_Depression_TalkingTherapy.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_TalkingTherapy.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_Start_Antidepressant">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Depression_Start_Antidepressant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#HSI_Depression_Start_Antidepressant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_Start_Antidepressant" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a Health System Interaction Event in which a person is started on anti-depressants.
+The facility_level is modified as a input parameter.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_Depression_Start_Antidepressant):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_Start_Antidepressant.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#HSI_Depression_Start_Antidepressant.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_Start_Antidepressant.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_Start_Antidepressant.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#HSI_Depression_Start_Antidepressant.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_Start_Antidepressant.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_Refill_Antidepressant">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Depression_Refill_Antidepressant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#HSI_Depression_Refill_Antidepressant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_Refill_Antidepressant" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a Health System Interaction Event in which a person seeks a refill prescription of anti-depressants.
+The next refill of anti-depressants is also scheduled.
+If the person is flagged as not being on antidepressants, then the event does nothing and returns a blank footprint.
+If it does not run, then person ceases to be on anti-depressants and no further refill HSI are scheduled.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_Depression_Refill_Antidepressant):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_Refill_Antidepressant.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#HSI_Depression_Refill_Antidepressant.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_Refill_Antidepressant.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_Refill_Antidepressant.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#HSI_Depression_Refill_Antidepressant.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_Refill_Antidepressant.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_Refill_Antidepressant.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#HSI_Depression_Refill_Antidepressant.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_Refill_Antidepressant.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tlo.methods.diarrhoea.html" class="btn btn-neutral float-right" title="tlo.methods.diarrhoea module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.demography.html" class="btn btn-neutral float-left" title="tlo.methods.demography module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

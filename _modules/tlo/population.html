@@ -1,0 +1,323 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.population &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>tlo.population</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tlo.population</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;The Person and Population classes.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Population"><a class="viewcode-back" href="../../reference/tlo.population.html#tlo.population.Population">[docs]</a><span class="k">class</span> <span class="nc">Population</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A complete population of individuals.</span>
+
+<span class="sd">    Useful properties of a population:</span>
+
+<span class="sd">    `sim`</span>
+<span class="sd">        The Simulation instance controlling this population.</span>
+
+<span class="sd">    `props`</span>
+<span class="sd">        A pandas DataFrame with the properties of all individuals as columns.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;props&#39;</span><span class="p">,</span> <span class="s1">&#39;sim&#39;</span><span class="p">,</span> <span class="s1">&#39;initial_size&#39;</span><span class="p">,</span> <span class="s1">&#39;new_row&#39;</span><span class="p">,</span> <span class="s1">&#39;next_person_id&#39;</span><span class="p">,</span> <span class="s1">&#39;new_rows&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">,</span> <span class="n">initial_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">append_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new population.</span>
+
+<span class="sd">        This will create the required Person objects and initialise their</span>
+<span class="sd">        properties with &#39;empty&#39; values. The simulation will then ask disease</span>
+<span class="sd">        modules to fill in suitable starting values.</span>
+
+<span class="sd">        :param sim: the Simulation containing this population</span>
+<span class="sd">        :param initial_size: the initial population size</span>
+<span class="sd">        :param append_size: how many rows to append when growing the population dataframe (optional)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span> <span class="o">=</span> <span class="n">sim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_size</span> <span class="o">=</span> <span class="n">initial_size</span>
+
+        <span class="c1"># Create empty property arrays</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">props</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_props</span><span class="p">(</span><span class="n">initial_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;person&#39;</span>
+
+        <span class="k">if</span> <span class="n">append_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># approximation based on runs to increase capacity of dataframe ~twice a year</span>
+            <span class="c1"># TODO: profile adjustment of this and more clever calculation</span>
+            <span class="n">append_size</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">initial_size</span> <span class="o">*</span> <span class="mf">0.02</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">append_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Number of rows to append when growing must be greater than 0&quot;</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Dataframe capacity append size: </span><span class="si">{</span><span class="n">append_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># keep a copy of a new rows to quickly append as population grows</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_rows</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">new_row</span><span class="p">]</span> <span class="o">*</span> <span class="n">append_size</span>
+
+        <span class="c1"># use the person_id of the next person to be added to the dataframe to increase capacity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">next_person_id</span> <span class="o">=</span> <span class="n">initial_size</span>
+
+    <span class="k">def</span> <span class="nf">_create_props</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Internal helper function to create a properties dataframe.</span>
+
+<span class="sd">        :param size: the number of rows to create</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">prop_name</span><span class="p">,</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">PROPERTIES</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">props</span><span class="p">[</span><span class="n">prop_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">create_series</span><span class="p">(</span><span class="n">prop_name</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">props</span>
+
+<div class="viewcode-block" id="Population.do_birth"><a class="viewcode-back" href="../../reference/tlo.population.html#tlo.population.Population.do_birth">[docs]</a>    <span class="k">def</span> <span class="nf">do_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new person within the population.</span>
+
+<span class="sd">        TODO: This will over-allocate capacity in the population dataframe for efficiency.</span>
+
+<span class="sd">        :return: id of the new person</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get index of the last row</span>
+        <span class="n">index_of_last_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># the index of the next person</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_person_id</span> <span class="o">&gt;</span> <span class="n">index_of_last_row</span><span class="p">:</span>
+            <span class="c1"># we need to add some rows</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">props</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">new_rows</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;person&#39;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Increased capacity of population dataframe to </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">props</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">new_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_person_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">next_person_id</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">new_index</span></div>
+
+<div class="viewcode-block" id="Population.make_test_property"><a class="viewcode-back" href="../../reference/tlo.population.html#tlo.population.Population.make_test_property">[docs]</a>    <span class="k">def</span> <span class="nf">make_test_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">type_</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new property for test purposes.</span>
+
+<span class="sd">        When testing a particular method in isolation, it&#39;s helpful to be able to define</span>
+<span class="sd">        the properties it reads that would normally be provided by other methods. That is</span>
+<span class="sd">        what this is for. It adds an extra column into the property DataFrame for this</span>
+<span class="sd">        population, set up with the appropriate type.</span>
+
+<span class="sd">        This should only be used in tests, not in your actual module code!</span>
+
+<span class="sd">        :param name: the name of the property to add</span>
+<span class="sd">        :param type_: a member of the :py:class:`Types` enumeration giving the type of</span>
+<span class="sd">            the property</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Property</span>
+        <span class="n">prop</span> <span class="o">=</span> <span class="n">Property</span><span class="p">(</span><span class="n">type_</span><span class="p">,</span> <span class="s1">&#39;A test property&#39;</span><span class="p">)</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_size</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">empty</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">props</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">create_series</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

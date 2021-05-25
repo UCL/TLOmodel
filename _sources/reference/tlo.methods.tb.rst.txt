@@ -1,0 +1,33 @@
+tlo.methods.tb module
+=====================
+
+.. automodule:: tlo.methods.tb
+
+
+.. autoclass:: Tb
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **Functions (defined or overridden in class Tb):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: bcg
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+
+
+
+

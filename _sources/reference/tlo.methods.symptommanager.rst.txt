@@ -1,0 +1,179 @@
+tlo.methods.symptommanager module
+=================================
+
+.. automodule:: tlo.methods.symptommanager
+
+
+.. autoclass:: Symptom
+
+
+
+     **Functions (defined or overridden in class Symptom):**
+
+     .. automethod:: __init__
+
+
+
+
+
+
+
+
+.. autoclass:: DuplicateSymptomWithNonIdenticalPropertiesError
+
+     Bases: :class:`Exception`, :class:`BaseException`
+
+
+     **Functions (defined or overridden in class DuplicateSymptomWithNonIdenticalPropertiesError):**
+
+     .. automethod:: __init__
+
+
+
+
+
+
+
+
+.. autoclass:: SymptomManager
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - generic_symptoms_spurious_occurrence
+          - DATA_FRAME
+          - probability and duration of spurious occureneces of generic symptoms
+
+
+
+     **Class attributes:**
+
+     METADATA : {}
+
+     **Functions (defined or overridden in class SymptomManager):**
+
+     .. automethod:: __init__
+
+     .. automethod:: get_column_name_for_symptom
+
+     .. automethod:: read_parameters
+
+     .. automethod:: register_symptom
+
+     .. automethod:: register_generic_symptoms
+
+     .. automethod:: pre_initialise_population
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: change_symptom
+
+     .. automethod:: who_has
+
+     .. automethod:: who_not_have
+
+     .. automethod:: has_what
+
+     .. automethod:: have_what
+
+     .. automethod:: causes_of
+
+     .. automethod:: clear_symptoms
+
+     .. automethod:: get_persons_with_newly_onset_symptoms
+
+     .. automethod:: reset_persons_with_newly_onset_symptoms
+
+
+
+
+
+
+
+
+.. autoclass:: SymptomManager_AutoOnsetEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class SymptomManager_AutoOnsetEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: SymptomManager_AutoResolveEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class SymptomManager_AutoResolveEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: SymptomManager_SpuriousSymptomOnset
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class SymptomManager_SpuriousSymptomOnset):**
+
+     .. automethod:: __init__
+
+     .. automethod:: get_generic_symptoms_dict
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: SymptomManager_SpuriousSymptomResolve
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class SymptomManager_SpuriousSymptomResolve):**
+
+     .. automethod:: __init__
+
+     .. automethod:: schedule_symptom_resolve
+
+     .. automethod:: apply
+
+
+
+
+

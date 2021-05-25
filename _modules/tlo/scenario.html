@@ -1,0 +1,598 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.scenario &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>tlo.scenario</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tlo.scenario</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Creating and running simulation scenarios for TLOmodel</span>
+
+<span class="sd">Scenarios are used to specify, configure and run a single or set of TLOmodel simulations. A scenario is created by</span>
+<span class="sd">by subclassing BaseScenario and specifying the scenario options therein. You can override parameters of the module</span>
+<span class="sd">in various ways in the scenario. See the BaseScenario class for more information.</span>
+
+<span class="sd">The subclass of BaseScenario is then used to create *draws*, which can be considered a fully-specified configuration</span>
+<span class="sd">of the scenario, or a parameter draw.</span>
+
+<span class="sd">Each draw is *run* one or more times - run is a single execution of the simulation. Each run of a draw has</span>
+<span class="sd">a different seed but is otherwise identical. Each run has its own simulation seed, introducing randomness into each</span>
+<span class="sd">simulation. A collection of runs for a given draw describes the random variation in the simulation.</span>
+
+<span class="sd">A simple example of a subclass of BaseScenario::</span>
+
+<span class="sd">    class MyTestScenario(BaseScenario):</span>
+<span class="sd">        def __init__(self):</span>
+<span class="sd">            super().__init__()</span>
+<span class="sd">            self.seed = 12</span>
+<span class="sd">            self.start_date = Date(2010, 1, 1)</span>
+<span class="sd">            self.end_date = Date(2011, 1, 1)</span>
+<span class="sd">            self.pop_size = 200</span>
+<span class="sd">            self.number_of_draws = 2</span>
+<span class="sd">            self.runs_per_draw = 2</span>
+
+<span class="sd">        def log_configuration(self):</span>
+<span class="sd">            return {</span>
+<span class="sd">                &#39;filename&#39;: &#39;my_test_scenario&#39;,</span>
+<span class="sd">                &#39;directory&#39;: &#39;./outputs&#39;,</span>
+<span class="sd">                &#39;custom_levels&#39;: {&#39;*&#39;: logging.INFO}</span>
+<span class="sd">            }</span>
+
+<span class="sd">        def modules(self):</span>
+<span class="sd">            return [</span>
+<span class="sd">                demography.Demography(resourcefilepath=self.resources),</span>
+<span class="sd">                enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),</span>
+<span class="sd">            ]</span>
+
+<span class="sd">        def draw_parameters(self, draw_number, rng):</span>
+<span class="sd">            return {</span>
+<span class="sd">                &#39;Lifestyle&#39;: {</span>
+<span class="sd">                    &#39;init_p_urban&#39;: rng.randint(10, 20) / 100.0,</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">In summary:</span>
+
+<span class="sd">* A *scenario* specifies the configuration of the simulation. The simulation start and end dates, initial population</span>
+<span class="sd">  size, logging setup and registered modules. Optionally, you can also override parameters of modules.</span>
+<span class="sd">* A *draw* is a realisation of a scenario configuration. A scenario can have one or more draws. Draws are uninteresting</span>
+<span class="sd">  unless you are overriding parameters. If you do not override any model parameters, you would only have one draw.</span>
+<span class="sd">* A *run* is the result of running the simulation using a specific configuration. Each draw would run one or more</span>
+<span class="sd">  times. Each run for the same draw would have identical configuration except the simulation seed.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PurePosixPath</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Simulation</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">tlo.analysis.utils</span> <span class="kn">import</span> <span class="n">parse_log_file</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="n">MAX_INT</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span>
+
+
+<div class="viewcode-block" id="BaseScenario"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.BaseScenario">[docs]</a><span class="k">class</span> <span class="nc">BaseScenario</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;An abstract base class for creating Scenarios</span>
+
+<span class="sd">    A scenario is a configuration of a simulation. Users should subclass this class and implement the following methods:</span>
+
+<span class="sd">    * ``__init__`` - to set scenario attributes</span>
+<span class="sd">    * ``log_configuration`` - to configure filename, directory and logging levels for simulation output</span>
+<span class="sd">    * ``modules`` - to list disease, intervention and health system modules for the simulation</span>
+<span class="sd">    * ``draw_parameters`` - override parameters for draws from the scenario</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor for BaseScenario</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resources</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;./resources&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">number_of_draws</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runs_per_draw</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scenario_path</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="BaseScenario.log_configuration"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.BaseScenario.log_configuration">[docs]</a>    <span class="k">def</span> <span class="nf">log_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Implementation must return a dictionary configuring logging.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            return {</span>
+<span class="sd">                &#39;filename&#39;: &#39;test_scenario&#39;,</span>
+<span class="sd">                &#39;directory&#39;: &#39;./outputs&#39;,</span>
+<span class="sd">                &#39;custom_levels&#39;: {</span>
+<span class="sd">                    &#39;*&#39;: logging.WARNING,</span>
+<span class="sd">                    &#39;tlo.methods.demography&#39;: logging.INFO</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="BaseScenario.modules"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.BaseScenario.modules">[docs]</a>    <span class="k">def</span> <span class="nf">modules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Implementation must return a list of instances of TLOmodel modules to register in the simulation.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            return [</span>
+<span class="sd">                demography.Demography(resourcefilepath=self.resources),</span>
+<span class="sd">                enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),</span>
+<span class="sd">                healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True, service_availability=[&#39;*&#39;]),</span>
+<span class="sd">                ...</span>
+<span class="sd">            ]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="BaseScenario.draw_parameters"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.BaseScenario.draw_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">draw_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draw_number</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Implementation must return a dictionary of parameters to override for each draw.</span>
+
+<span class="sd">        The overridden parameters must be scalar (i.e. float, integer or string) as the following examples demonstrate.</span>
+<span class="sd">        The argument ``draw_number`` and a random number generator are available, if required.</span>
+
+<span class="sd">        * Change a parameter to a fixed value: ``{&#39;Labour&#39;: {&#39;average_age_at_pregnancy&#39;: 25}}``</span>
+<span class="sd">        * Sample a value from a distribution: ``{&#39;Lifestyle&#39;: {&#39;init_p_urban&#39;: rng.randint(10, 20) / 100.0}}``</span>
+<span class="sd">        * Set a value based on the draw number: ``{&#39;Labour&#39;: {&#39;average_age_at_pregnancy&#39;: [25, 30, 35][draw_number]}}``</span>
+
+<span class="sd">        Implementation of this method in a subclass is optional. If no parameters are to be overridden,</span>
+<span class="sd">        returns ``None``. If no parameters are overridden, only one draw of the scenario is required.</span>
+
+<span class="sd">        A full example for a scenario with 10 draws::</span>
+
+<span class="sd">            return {</span>
+<span class="sd">                &#39;Lifestyle&#39;: {</span>
+<span class="sd">                    &#39;init_p_urban&#39;: rng.randint(10, 20) / 100.0,</span>
+<span class="sd">                },</span>
+<span class="sd">                &#39;Labour&#39;: {</span>
+<span class="sd">                    &#39;average_age_at_pregnancy&#39;: -10 * rng.exponential(0.1),</span>
+<span class="sd">                    &#39;some_other_parameter&#39;: np.arange(0.1, 1.1, 0.1)[draw_number]</span>
+<span class="sd">                },</span>
+<span class="sd">            }</span>
+
+<span class="sd">        :param int draw_number: the specific draw number currently being executed by the simulation engine</span>
+<span class="sd">        :param numpy.random.RandomState rng: the scenario&#39;s random number generator for sampling from distributions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="BaseScenario.save_draws"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.BaseScenario.save_draws">[docs]</a>    <span class="k">def</span> <span class="nf">save_draws</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">DrawGenerator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_draws</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">runs_per_draw</span><span class="p">)</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scenario_path</span><span class="o">.</span><span class="n">stem</span><span class="si">}</span><span class="s2">_draws.json&quot;</span>
+        <span class="c1"># assert not os.path.exists(output_path), f&#39;Cannot save run config to {output_path} - file already exists&#39;</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">get_run_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scenario_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">config</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="k">if</span> <span class="s2">&quot;commit&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="n">github_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://github.com/UCL/TLOmodel/blob/</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;commit&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;scenario_script_path&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">config</span><span class="p">[</span><span class="s2">&quot;github&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">github_url</span>
+        <span class="n">generator</span><span class="o">.</span><span class="n">save_config</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">output_path</span></div>
+
+<div class="viewcode-block" id="BaseScenario.make_grid"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.BaseScenario.make_grid">[docs]</a>    <span class="k">def</span> <span class="nf">make_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ranges</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Utility method to flatten an n-dimension grid of parameters for use in scenarios</span>
+
+<span class="sd">        Typically used in draw_parameters determining a set of parameters for a draw. This function will check that the</span>
+<span class="sd">        number of draws of the scenario is equal to the number of coordinates in the grid.</span>
+
+<span class="sd">        Parameter ``ranges`` is a dictionary of { string key: iterable }, where iterable can be, for example, an</span>
+<span class="sd">        np.array or list. The function will return a DataFrame where each key is a column and each row represents a</span>
+<span class="sd">        single coordinate in the grid.</span>
+
+<span class="sd">        Usage (in ``draw_parameters``)::</span>
+
+<span class="sd">            grid = self.make_grid({&#39;p_one&#39;: np.linspace(0, 1.0, 5), &#39;p_two&#39;: np.linspace(3.0, 4.0, 2)})</span>
+<span class="sd">            return {</span>
+<span class="sd">                &#39;Mockitis&#39;: {</span>
+<span class="sd">                    grid[&#39;p_one&#39;][draw_number],</span>
+<span class="sd">                    grid[&#39;p_two&#39;][draw_number]</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">        :param dict ranges: each item of dict represents points across a single dimension</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="o">*</span><span class="n">ranges</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">flattened</span> <span class="o">=</span> <span class="p">[</span><span class="n">g</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">grid</span><span class="p">]</span>
+        <span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">flattened</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">grid_lookup</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">positions</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">ranges</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_draws</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid_lookup</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">grid_lookup</span><span class="p">)</span><span class="si">}</span><span class="s2"> coordinates in grid, &quot;</span> \
+                                                         <span class="sa">f</span><span class="s2">&quot;but number_of_draws is </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_draws</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="k">return</span> <span class="n">grid_lookup</span></div></div>
+
+
+<div class="viewcode-block" id="ScenarioLoader"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.ScenarioLoader">[docs]</a><span class="k">class</span> <span class="nc">ScenarioLoader</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A utility class to load a scenario class from a file path&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_path</span><span class="p">):</span>
+        <span class="n">scenario_module</span> <span class="o">=</span> <span class="n">ScenarioLoader</span><span class="o">.</span><span class="n">_load_scenario_script</span><span class="p">(</span><span class="n">scenario_path</span><span class="p">)</span>
+        <span class="n">scenario_class</span> <span class="o">=</span> <span class="n">ScenarioLoader</span><span class="o">.</span><span class="n">_get_scenario_class</span><span class="p">(</span><span class="n">scenario_module</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span> <span class="o">=</span> <span class="n">scenario_class</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">scenario_path</span> <span class="o">=</span> <span class="n">scenario_path</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_load_scenario_script</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">importlib.util</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="n">foo</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+        <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">foo</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_scenario_class</span><span class="p">(</span><span class="n">scenario_module</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">inspect</span>
+        <span class="n">classes</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">scenario_module</span><span class="p">,</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">)</span>
+        <span class="n">classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="ow">in</span> <span class="n">classes</span> <span class="k">if</span> <span class="n">BaseScenario</span> <span class="o">==</span> <span class="n">c</span><span class="o">.</span><span class="n">__base__</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">classes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Exactly one subclass of BaseScenario should be defined in the scenario script&quot;</span>
+        <span class="k">return</span> <span class="n">classes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<div class="viewcode-block" id="ScenarioLoader.get_scenario"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.ScenarioLoader.get_scenario">[docs]</a>    <span class="k">def</span> <span class="nf">get_scenario</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span></div></div>
+
+
+<div class="viewcode-block" id="DrawGenerator"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.DrawGenerator">[docs]</a><span class="k">class</span> <span class="nc">DrawGenerator</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Creates and saves a JSON representation of draws from a scenario.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_class</span><span class="p">,</span> <span class="n">number_of_draws</span><span class="p">,</span> <span class="n">runs_per_draw</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span> <span class="o">=</span> <span class="n">scenario_class</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Must set a seed for the scenario. Add `self.seed = &lt;integer&gt;`&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">number_of_draws</span> <span class="o">=</span> <span class="n">number_of_draws</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runs_per_draw</span> <span class="o">=</span> <span class="n">runs_per_draw</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">draws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_draws</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DrawGenerator.setup_draws"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.DrawGenerator.setup_draws">[docs]</a>    <span class="k">def</span> <span class="nf">setup_draws</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">number_of_draws</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Number of draws must be greater than one&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">runs_per_draw</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Number of samples/draw must be greater than 0&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">draw_parameters</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">number_of_draws</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Number of draws should equal one if no variable parameters&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_draw</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">number_of_draws</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="DrawGenerator.get_draw"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.DrawGenerator.get_draw">[docs]</a>    <span class="k">def</span> <span class="nf">get_draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draw_number</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;draw_number&quot;</span><span class="p">:</span> <span class="n">draw_number</span><span class="p">,</span>
+            <span class="s2">&quot;draw_seed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">MAX_INT</span><span class="p">),</span>
+            <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">draw_parameters</span><span class="p">(</span><span class="n">draw_number</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">rng</span><span class="p">),</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="DrawGenerator.get_run_config"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.DrawGenerator.get_run_config">[docs]</a>    <span class="k">def</span> <span class="nf">get_run_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;scenario_script_path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">PurePosixPath</span><span class="p">(</span><span class="n">scenario_path</span><span class="p">)),</span>
+            <span class="s2">&quot;scenario_seed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+            <span class="s2">&quot;runs_per_draw&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">runs_per_draw</span><span class="p">,</span>
+            <span class="s2">&quot;draws&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">draws</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="DrawGenerator.save_config"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.DrawGenerator.save_config">[docs]</a>    <span class="k">def</span> <span class="nf">save_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">output_path</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="SampleRunner"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.SampleRunner">[docs]</a><span class="k">class</span> <span class="nc">SampleRunner</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Reads scenario draws from a JSON configuration and handles running of samples&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_configuration_path</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">run_configuration_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span> <span class="o">=</span> <span class="n">ScenarioLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_config</span><span class="p">[</span><span class="s2">&quot;scenario_script_path&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">get_scenario</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Loaded scenario using </span><span class="si">{</span><span class="n">run_configuration_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_draws</span><span class="si">}</span><span class="s2"> draws; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">runs_per_draw</span><span class="si">}</span><span class="s2"> runs/draw&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">number_of_draws</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_config</span><span class="p">[</span><span class="s2">&quot;draws&quot;</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">runs_per_draw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_config</span><span class="p">[</span><span class="s2">&quot;runs_per_draw&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="SampleRunner.get_draw"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.SampleRunner.get_draw">[docs]</a>    <span class="k">def</span> <span class="nf">get_draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draw_number</span><span class="p">):</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_draws</span>
+        <span class="k">assert</span> <span class="n">draw_number</span> <span class="o">&lt;</span> <span class="n">total</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Cannot get draw </span><span class="si">{</span><span class="n">draw_number</span><span class="si">}</span><span class="s2">; only </span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2"> defined.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_config</span><span class="p">[</span><span class="s2">&quot;draws&quot;</span><span class="p">][</span><span class="n">draw_number</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="SampleRunner.get_samples_for_draw"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.SampleRunner.get_samples_for_draw">[docs]</a>    <span class="k">def</span> <span class="nf">get_samples_for_draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draw</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">sample_number</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_config</span><span class="p">[</span><span class="s2">&quot;runs_per_draw&quot;</span><span class="p">]):</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sample</span><span class="p">(</span><span class="n">draw</span><span class="p">,</span> <span class="n">sample_number</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SampleRunner.get_sample"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.SampleRunner.get_sample">[docs]</a>    <span class="k">def</span> <span class="nf">get_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draw</span><span class="p">,</span> <span class="n">sample_number</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">sample_number</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">runs_per_draw</span><span class="p">,</span> \
+            <span class="sa">f</span><span class="s2">&quot;Cannot get sample </span><span class="si">{</span><span class="n">sample_number</span><span class="si">}</span><span class="s2">; samples/draw=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">runs_per_draw</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">draw</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;sample_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_number</span>
+
+        <span class="c1"># Instead of using the random number generator to create a seed for the simulation, we use an integer hash</span>
+        <span class="c1"># function to create an integer based on the sum of the draw_number and sample_number. This means the</span>
+        <span class="c1"># seed can be created independently and out-of-order (i.e. instead of sampling a seed for each sample in order)</span>
+        <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;simulation_seed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SampleRunner</span><span class="o">.</span><span class="n">low_bias_32</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="s2">&quot;draw_seed&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">sample_number</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sample</span></div>
+
+<div class="viewcode-block" id="SampleRunner.run_sample_by_number"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.SampleRunner.run_sample_by_number">[docs]</a>    <span class="k">def</span> <span class="nf">run_sample_by_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_directory</span><span class="p">,</span> <span class="n">draw_number</span><span class="p">,</span> <span class="n">sample_number</span><span class="p">):</span>
+        <span class="n">draw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_draw</span><span class="p">(</span><span class="n">draw_number</span><span class="p">)</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sample</span><span class="p">(</span><span class="n">draw</span><span class="p">,</span> <span class="n">sample_number</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_sample</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">output_directory</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SampleRunner.run_sample"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.SampleRunner.run_sample">[docs]</a>    <span class="k">def</span> <span class="nf">run_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">log_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">log_configuration</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">output_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;directory&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_directory</span>
+
+        <span class="n">sim</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span>
+            <span class="n">start_date</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">start_date</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">sample</span><span class="p">[</span><span class="s2">&quot;simulation_seed&quot;</span><span class="p">],</span>
+            <span class="n">log_config</span><span class="o">=</span><span class="n">log_config</span>
+        <span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">modules</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">override_parameters</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span> <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">])</span>
+
+        <span class="n">sim</span><span class="o">.</span><span class="n">make_initial_population</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">pop_size</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">end_date</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">end_date</span><span class="p">)</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="n">parse_log_file</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">log_filepath</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;tlo.&quot;</span><span class="p">):</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;directory&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">.pickle&quot;</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SampleRunner.run"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.SampleRunner.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># this method will execute all runs of each draw, so we save output in directory</span>
+        <span class="n">log_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">log_configuration</span><span class="p">()</span>
+        <span class="n">root_dir</span> <span class="o">=</span> <span class="n">draw_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">]:</span>  <span class="c1"># i.e. save output?</span>
+            <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H%M%SZ&quot;</span><span class="p">)</span>
+            <span class="n">root_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;directory&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">stem</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span> <span class="o">+</span> <span class="n">timestamp</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">draw</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">number_of_draws</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">runs_per_draw</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">root_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">draw_dir</span> <span class="o">=</span> <span class="n">root_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">draw</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">sample</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">draw_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_sample_by_number</span><span class="p">(</span><span class="n">draw_dir</span><span class="p">,</span> <span class="n">draw</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SampleRunner.override_parameters"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.SampleRunner.override_parameters">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">override_parameters</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span> <span class="n">overridden_params</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">module_name</span><span class="p">,</span> <span class="n">overrides</span> <span class="ow">in</span> <span class="n">overridden_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">module_name</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+                <span class="n">module</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">module_name</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param_val</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">assert</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">PARAMETERS</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2"> does not have parameter &#39;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">param_val</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Parameter value &#39;</span><span class="si">{</span><span class="n">param_val</span><span class="si">}</span><span class="s2">&#39; is not scalar type (float, int, str)&quot;</span>
+
+                    <span class="n">old_value</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span>
+                    <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">old_value</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">param_val</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Cannot override parameter &#39;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">&#39; - wrong type&quot;</span>
+
+                    <span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">param_val</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;override_parameter&quot;</span><span class="p">,</span>
+                        <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                            <span class="s2">&quot;module&quot;</span><span class="p">:</span> <span class="n">module_name</span><span class="p">,</span>
+                            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">param_name</span><span class="p">,</span>
+                            <span class="s2">&quot;old_value&quot;</span><span class="p">:</span> <span class="n">old_value</span><span class="p">,</span>
+                            <span class="s2">&quot;new_value&quot;</span><span class="p">:</span> <span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span>
+                        <span class="p">}</span>
+                    <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SampleRunner.low_bias_32"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.SampleRunner.low_bias_32">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">low_bias_32</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A simple integer hash function with uniform distribution. Following description taken from</span>
+<span class="sd">        https://github.com/skeeto/hash-prospector</span>
+
+<span class="sd">            The integer hash function transforms an integer hash key into an integer hash result. For a hash function,</span>
+<span class="sd">            the distribution should be uniform. This implies when the hash result is used to calculate hash bucket</span>
+<span class="sd">            address, all buckets are equally likely to be picked. In addition, similar hash keys should be hashed to</span>
+<span class="sd">            very different hash results. Ideally, a single bit change in the hash key should influence all bits of the</span>
+<span class="sd">            hash result.</span>
+
+<span class="sd">        :param: x an integer</span>
+<span class="sd">        :returns: an integer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">*=</span> <span class="mh">0x7feb352d</span>
+        <span class="n">x</span> <span class="o">^=</span> <span class="n">x</span> <span class="o">&gt;&gt;</span> <span class="mi">15</span>
+        <span class="n">x</span> <span class="o">*=</span> <span class="mh">0x846ca68b</span>
+        <span class="n">x</span> <span class="o">^=</span> <span class="n">x</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">32</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

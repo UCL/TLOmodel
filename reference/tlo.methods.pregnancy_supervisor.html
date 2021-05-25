@@ -1,0 +1,1188 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.methods.pregnancy_supervisor module &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.methods.prostate_cancer module" href="tlo.methods.prostate_cancer.html" />
+    <link rel="prev" title="tlo.methods.postnatal_supervisor_lm module" href="tlo.methods.postnatal_supervisor_lm.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Reference</a> &raquo;</li>
+        
+          <li><a href="tlo.html">tlo package</a> &raquo;</li>
+        
+          <li><a href="tlo.methods.html">tlo.methods package</a> &raquo;</li>
+        
+      <li>tlo.methods.pregnancy_supervisor module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/tlo.methods.pregnancy_supervisor.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tlo.methods.pregnancy_supervisor">
+<span id="tlo-methods-pregnancy-supervisor-module"></span><h1>tlo.methods.pregnancy_supervisor module<a class="headerlink" href="#module-tlo.methods.pregnancy_supervisor" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">PregnancySupervisor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor" title="Permalink to this definition">¶</a></dt>
+<dd><p>This module is responsible for simulating the antenatal period of pregnancy (the period from conception until
+the termination of pregnancy). A number of outcomes are managed by this module including early pregnancy loss
+(induced/spontaneous abortion, ectopic pregnancy and antenatal stillbirth) and pregnancy complications of the
+antenatal period (nutritional deficiencies , anaemia, placental praevia/abruption,
+premature rupture of membranes (PROM), chorioamnionitis, hypertensive disorders (gestational hypertension,
+pre-eclampsia, eclampsia), gestational diabetes, maternal death). This module calculates likelihood of care seeking
+for routine antenatal care and emergency obstetric care in the event of severe complications.</p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p><strong>PARAMETERS:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>prob_ectopic_pregnancy</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of ectopic pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_ectopic_smoker</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of ectopic pregnancy in a smoker</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_multiples</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that a woman is currently carrying more than one pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_placenta_praevia</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that this womans pregnancy will be complicated by placenta praevia</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_spontaneous_abortion_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>underlying risk of spontaneous abortion per month</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_spont_abortion_age_35</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of spontaneous abortion in women aged 35 years or older</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_spont_abortion_age_31_34</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of spontaneous abortion in women aged 31-34 years old</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_spont_abortion_prev_sa</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of spontaneous abortion in women who have previously experiences spontaneous abortion</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_induced_abortion_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>underlying risk of induced abortion per month</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_haemorrhage_post_abortion</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of haemorrhage following an abortion</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_sepsis_post_abortion</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of sepsis following an abortion</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_injury_post_abortion</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of injury following an abortion</p></td>
+</tr>
+<tr class="row-even"><td><p>baseline_prob_early_labour_onset</p></td>
+<td><p>REAL</p></td>
+<td><p>monthly baseline risk of labour onsetting before term</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_calcium_ptl</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of early labour onset for women receiving calcium supplementation</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_preterm_labour_post_prom</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of early labour onset following PROM</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_iron_def_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>monthly risk of a pregnant woman becoming iron deficient</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_folate_def_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>monthly risk of a pregnant woman becoming folate deficient</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_iron_def_ifa</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effect of iron supplementation on iron deficiency</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_folate_def_ifa</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effect of folate supplementation on folate deficiency</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_b12_def_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>monthly risk of a pregnant woman becoming b12 deficient</p></td>
+</tr>
+<tr class="row-even"><td><p>baseline_prob_anaemia_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>baseline risk of a woman developing anaemia secondary only to pregnant</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_anaemia_if_iron_deficient</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of a woman developing anaemia in pregnancy if she is iron deficient</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_anaemia_if_folate_deficient</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of a woman developing anaemia in pregnancy if she is folate deficient</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_anaemia_if_b12_deficient</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of a woman developing anaemia in pregnancy if she is b12 deficient</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_anaemia_iron_folic_acid</p></td>
+<td><p>REAL</p></td>
+<td><p>risk reduction of maternal anaemia for women taking daily iron/folic acid</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_anaemia_maternal_malaria</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of anaemia secondary to malaria infection</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_mild_mod_sev_anaemia</p></td>
+<td><p>LIST</p></td>
+<td><p>probabilities that a womans anaemia will be mild, moderate or severe</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_pre_eclampsia_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>underlying risk of pre-eclampsia per month without the impact of risk factors</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_calcium_pre_eclamp</p></td>
+<td><p>REAL</p></td>
+<td><p>risk reduction of pre-eclampsia for women taking daily calcium supplementation</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_gest_htn_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>underlying risk of gestational hypertension per month without the impact of risk factors</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_gest_htn_calcium</p></td>
+<td><p>REAL</p></td>
+<td><p>Effect of calcium supplementation on risk of developing gestational hypertension</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_anti_htns_progression</p></td>
+<td><p>REAL</p></td>
+<td><p>Effect of anti hypertensive medication in reducing the risk of progression from mild to severe hypertension</p></td>
+</tr>
+<tr class="row-even"><td><p>probs_for_mgh_matrix</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of mild gestational hypertension moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
+</tr>
+<tr class="row-odd"><td><p>probs_for_sgh_matrix</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of severe gestational hypertension moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>probs_for_mpe_matrix</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of mild pre-eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
+</tr>
+<tr class="row-odd"><td><p>probs_for_spe_matrix</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of severe pre-eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>probs_for_ec_matrix</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_gest_diab_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>underlying risk of gestational diabetes per month without the impact of risk factors</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_gest_diab_obesity</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of gestational diabetes for women who are obese</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_glycaemic_control_diet_exercise</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a womans GDM is controlled by diet and exercise during the first month of treatment</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_glycaemic_control_orals</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a womans GDM is controlled by oral anti-diabetics during the first month of treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_glycaemic_control_insulin</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a womans GDM is controlled by insulin during the first month of treatment</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_placental_abruption_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>monthly probability that a woman will develop placental abruption</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_antepartum_haem_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>monthly probability that a woman will develop antepartum bleeding during pregnancy</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_aph_placenta_praevia</p></td>
+<td><p>REAL</p></td>
+<td><p>risk of antepartum haemorrhage due to ongoing placenta praevia</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_aph_placental_abruption</p></td>
+<td><p>REAL</p></td>
+<td><p>risk of antepartum haemorrhage due to placental abruption</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_mod_sev_aph</p></td>
+<td><p>LIST</p></td>
+<td><p>probabilities that APH is mild/moderate or severe</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_prom_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>monthly probability that a woman will experience premature rupture of membranes</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_chorioamnionitis</p></td>
+<td><p>REAL</p></td>
+<td><p>monthly probability of a women developing chorioamnionitis</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_chorio_post_prom</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of chorioamnionitis after PROM</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_clinical_chorio</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that a woman with chorioamnionitis will have clinical presentation</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_progression_to_clinical_chorio</p></td>
+<td><p>REAL</p></td>
+<td><p>Risk that histological chorioamnionitis will progress to clinical disease</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_still_birth_per_month</p></td>
+<td><p>REAL</p></td>
+<td><p>underlying risk of stillbirth per month without the impact of risk factors</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_still_birth_gest_diab</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of still birth in women with gestational diabetes</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_still_birth_mild_pre_eclamp</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of still birth in women with mild pre-eclampsia</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_still_birth_gest_htn</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of still birth in women with mild gestational hypertension</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_still_birth_severe_gest_htn</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of still birth in women with severe gestational hypertension</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_still_birth_severe_pre_eclamp</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of still birth in women with severe pre-eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_still_birth_maternal_malaria</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of still birth in women with malaria</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_still_birth_food_sups</p></td>
+<td><p>REAL</p></td>
+<td><p>risk reduction of still birth for women receiving nutritional supplements</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_gdm_case_management</p></td>
+<td><p>REAL</p></td>
+<td><p>Treatment effect of GDM case management on mothers risk of stillbirth</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_ectopic_pregnancy_death</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of a woman dying from a ruptured ectopic pregnancy</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_ectopic_pregnancy_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>Treatment effect of ectopic pregnancy case management</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_induced_abortion_death</p></td>
+<td><p>REAL</p></td>
+<td><p>underlying risk of death following an induced abortion</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_spontaneous_abortion_death</p></td>
+<td><p>REAL</p></td>
+<td><p>underlying risk of death following an spontaneous abortion</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_post_abortion_care</p></td>
+<td><p>REAL</p></td>
+<td><p>Treatment effect of post abortion care</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_antepartum_haem_stillbirth</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of stillbirth for a woman suffering acute antepartum haemorrhage</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_antepartum_haem_death</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of death for a woman suffering acute antepartum haemorrhage</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_antenatal_spe_death</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of death for a woman experiencing acute severe pre-eclampsia</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_antenatal_ec_death</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of death for a woman experiencing eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_monthly_death_severe_htn</p></td>
+<td><p>REAL</p></td>
+<td><p>monthly risk of death for a woman with severe hypertension</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_antenatal_ec_still_birth</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of a stillbirth following an episode of eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>cfr_chorioamnionitis</p></td>
+<td><p>REAL</p></td>
+<td><p>case fatality rate for chorioamnionitis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_still_birth_chorioamnionitis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of still birth for chorioamnionitis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_first_anc_visit_gestational_age</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of initiation of ANC by month</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_four_or_more_anc_visits</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of a woman undergoing 4 or more basic ANC visits</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_eight_or_more_anc_visits</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of a woman undergoing 8 or more basic ANC visits</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_anc_at_facility_level_1_2</p></td>
+<td><p>LIST</p></td>
+<td><p>probabilities a woman will attend ANC 1 at facility levels 1 or 2</p></td>
+</tr>
+<tr class="row-even"><td><p>probability_htn_persists</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of a womans hypertension persisting post birth</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_seek_care_pregnancy_complication</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a woman who is pregnant will seek care in the event of a complication</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_seek_care_pregnancy_loss</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a woman who has developed complications post pregnancy loss will seek care</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_seek_care_induction</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a woman who is post term will seek care for induction of labour</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>PROPERTIES:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ps_gestational_age_in_weeks</p></td>
+<td><p>REAL</p></td>
+<td><p>current gestational age, in weeks, of a womans pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>ps_date_of_anc1</p></td>
+<td><p>DATE</p></td>
+<td><p>Date first ANC visit is scheduled for</p></td>
+</tr>
+<tr class="row-even"><td><p>ps_ectopic_pregnancy</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Whether a womans is experiencing ectopic pregnancy and its current state.  Possible values are: [none, not_ruptured, ruptured, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>ps_multiple_pregnancy</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether a womans is pregnant with multiple fetuses</p></td>
+</tr>
+<tr class="row-even"><td><p>ps_placenta_praevia</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether a womans pregnancy will be complicated by placentapraevia</p></td>
+</tr>
+<tr class="row-odd"><td><p>ps_deficiencies_in_pregnancy</p></td>
+<td><p>INT</p></td>
+<td><p>bitset column, stores types of anaemia causing deficiencies in pregnancy</p></td>
+</tr>
+<tr class="row-even"><td><p>ps_anaemia_in_pregnancy</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Whether a woman has anaemia in pregnancy and its severity.  Possible values are: [none, mild, moderate, severe, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>ps_will_attend_four_or_more_anc</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this womans is predicted to attend 4 or more antenatal care visits during her pregnancy</p></td>
+</tr>
+<tr class="row-even"><td><p>ps_abortion_complications</p></td>
+<td><p>INT</p></td>
+<td><p>Bitset column holding types of abortion complication</p></td>
+</tr>
+<tr class="row-odd"><td><p>ps_prev_spont_abortion</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has had any previous pregnancies end in spontaneous abortion</p></td>
+</tr>
+<tr class="row-even"><td><p>ps_prev_stillbirth</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has had any previous pregnancies end in still birth</p></td>
+</tr>
+<tr class="row-odd"><td><p>ps_htn_disorders</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>if this woman suffers from a hypertensive disorder of pregnancy.  Possible values are: [none, gest_htn, severe_gest_htn, mild_pre_eclamp, severe_pre_eclamp, eclampsia, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>ps_prev_pre_eclamp</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this woman has experienced pre-eclampsia in a previous pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>ps_gest_diab</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>whether this woman is experiencing gestational diabetes.  Possible values are: [none, uncontrolled, controlled, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>ps_prev_gest_diab</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this woman has ever suffered from gestational diabetes during a previous pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>ps_placental_abruption</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman is experiencing placental abruption</p></td>
+</tr>
+<tr class="row-even"><td><p>ps_antepartum_haemorrhage</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>severity of this womans antepartum haemorrhage.  Possible values are: [none, mild_moderate, severe, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>ps_premature_rupture_of_membranes</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this woman has experience rupture of membranes before the onset of labour. If this is &lt;37 weeks from gestation the woman has preterm premature rupture of membranes</p></td>
+</tr>
+<tr class="row-even"><td><p>ps_chorioamnionitis</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Whether a womans is experiencing chorioamnionitis andits current state.  Possible values are: [none, histological, clinical, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>ps_emergency_event</p></td>
+<td><p>BOOL</p></td>
+<td><p>signifies a woman in undergoing an acute emergency event in her pregnancy- used to consolidated care seeking in the instance of multiple complications</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Class attributes:</strong></p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p><strong>Functions (defined or overridden in class PregnancySupervisor):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.read_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read parameter values from file, if required.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
+Typically modules would read a particular file within here.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set our property values for the initial population.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called by the simulation when creating the initial population, and is
+responsible for assigning initial values, for every individual, of those properties
+‘owned’ by this module, i.e. those declared in its PROPERTIES dictionary.</p>
+<p>TODO: We probably need to declare somehow which properties we ‘read’ here, so the
+simulation knows what order to initialise modules in!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the population of individuals</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get ready for simulation start.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called just before the main simulation loop begins, and after all
+modules have read their parameters and the initial population has been created.
+It is a good place to add initial events to the event queue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.on_birth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise our properties for a newborn individual.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This is called by the simulation whenever a new person is born.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mother</strong> – the mother for this child</p></li>
+<li><p><strong>child</strong> – the new child</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.further_on_birth_pregnancy_supervisor">
+<span class="sig-name descname"><span class="pre">further_on_birth_pregnancy_supervisor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.further_on_birth_pregnancy_supervisor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.further_on_birth_pregnancy_supervisor" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by the on_birth function of NewbornOutcomes module. This function contains additional
+code related to the pregnancy supervisor module that should be ran on_birth for all births - it has been
+parcelled into functions to ensure each modules (pregnancy,antenatal care, labour, newborn, postnatal) on_birth
+code is ran in the correct sequence (as this can vary depending on how modules are registered)
+:param mother_id: mothers individual id</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.on_hsi_alert">
+<span class="sig-name descname"><span class="pre">on_hsi_alert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.on_hsi_alert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.on_hsi_alert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.report_daly_values">
+<span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.report_daly_values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.store_dalys_in_mni">
+<span class="sig-name descname"><span class="pre">store_dalys_in_mni</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mni_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.store_dalys_in_mni"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.store_dalys_in_mni" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called across the maternal health modules and stores onset/resolution dates for complications
+in an indiviudals MNI dictionary
+:param individual_id: individual_id
+:param mni_variable: key of mni dict being assigned
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.pregnancy_supervisor_property_reset">
+<span class="sig-name descname"><span class="pre">pregnancy_supervisor_property_reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind_or_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_or_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.pregnancy_supervisor_property_reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.pregnancy_supervisor_property_reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called when properties housed in the PregnancySupervisorModule should be reset. For example
+following pregnancy loss
+:param ind_or_df: “individual/data_frame”(STR) whether this function has been called to reset properties for an</p>
+<blockquote>
+<div><p>individual row of the DF or a slice of the data frame</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>id_or_index</strong> – pass the function either an individual ID (INT) or index of subset of data frame</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_linear_model">
+<span class="sig-name descname"><span class="pre">apply_linear_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_linear_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_linear_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function will apply the linear model (lm) on the dataframe (df) to get a probability of some event
+happening to each individual. It then returns a series with same index with bools indicating the outcome based
+on the toss of the biased coin.
+:param lm: The linear model
+:param df: The dataframe
+:return: Series with same index containing outcomes (bool)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_spontaneous_abortion">
+<span class="sig-name descname"><span class="pre">apply_risk_of_spontaneous_abortion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_spontaneous_abortion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_spontaneous_abortion" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of spontaneous abortion to a slice of data frame and is called by
+PregnancySupervisorEvent. It calls the apply_risk_of_abortion_complications function for women who loose their
+pregnancy.
+:param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_induced_abortion">
+<span class="sig-name descname"><span class="pre">apply_risk_of_induced_abortion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_induced_abortion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_induced_abortion" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of induced abortion to a slice of data frame and is called by
+PregnancySupervisorEvent. It calls the apply_risk_of_abortion_complications for women who loose their pregnancy.
+:param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_abortion_complications">
+<span class="sig-name descname"><span class="pre">apply_risk_of_abortion_complications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_abortion_complications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_abortion_complications" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function makes changes to the data frame for women who have experienced induced or spontaneous abortion.
+Additionally it determines if a woman will develop complications associated with pregnancy loss, manages care
+seeking and schedules potential death
+:param individual_id: individual_id
+:param cause: ‘type’ of abortion (spontaneous abortion OR induced abortion) (str)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_deficiencies_and_anaemia">
+<span class="sig-name descname"><span class="pre">apply_risk_of_deficiencies_and_anaemia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_deficiencies_and_anaemia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_deficiencies_and_anaemia" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of deficiencies and anaemia to a slice of the data frame. It is called by
+PregnancySupervisorEvent
+:param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_gestational_diabetes">
+<span class="sig-name descname"><span class="pre">apply_risk_of_gestational_diabetes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_gestational_diabetes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_gestational_diabetes" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of gestational diabetes to a slice of the data frame. It is called by
+PregnancySupervisorEvent.
+:param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_hypertensive_disorders">
+<span class="sig-name descname"><span class="pre">apply_risk_of_hypertensive_disorders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_hypertensive_disorders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_hypertensive_disorders" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of mild pre-eclampsia and mild gestational diabetes to a slice of the data frame. It
+is called by PregnancySupervisorEvent.
+:param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_progression_of_hypertension">
+<span class="sig-name descname"><span class="pre">apply_risk_of_progression_of_hypertension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_progression_of_hypertension"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_progression_of_hypertension" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies a risk of progression of hypertensive disorders to women who are experiencing one of the
+hypertensive disorders. It is called by PregnancySupervisorEvent
+:param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_death_from_hypertension">
+<span class="sig-name descname"><span class="pre">apply_risk_of_death_from_hypertension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_death_from_hypertension"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_death_from_hypertension" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of death to women with severe hypertensive disease (severe gestational hypertension/
+severe pre-eclampsia). For women who die this function schedules InstantaneousDeathEvent.
+:param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_placental_abruption">
+<span class="sig-name descname"><span class="pre">apply_risk_of_placental_abruption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_placental_abruption"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_placental_abruption" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of placental abruption to a slice of the dataframe. It is called by
+PregnancySupervisorEvent.
+:param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_antepartum_haemorrhage">
+<span class="sig-name descname"><span class="pre">apply_risk_of_antepartum_haemorrhage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_antepartum_haemorrhage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_antepartum_haemorrhage" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of antepartum haemorrhage to a slice of the dataframe. It is called by
+PregnancySupervisorEvent.
+:param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_onset_and_progression_antenatal_infections">
+<span class="sig-name descname"><span class="pre">apply_risk_of_onset_and_progression_antenatal_infections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_onset_and_progression_antenatal_infections"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_onset_and_progression_antenatal_infections" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of new onset chorioamnionitis and risk of progression of chorioamnionitis state
+to a slice of the dataframe. It is called by PregnancySupervisorEvent.
+:param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_premature_rupture_of_membranes">
+<span class="sig-name descname"><span class="pre">apply_risk_of_premature_rupture_of_membranes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_premature_rupture_of_membranes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_premature_rupture_of_membranes" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of premature rupture of membranes to a slice of the dataframe. It is called by
+PregnancySupervisorEvent.
+:param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_preterm_labour">
+<span class="sig-name descname"><span class="pre">apply_risk_of_preterm_labour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_preterm_labour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_preterm_labour" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of preterm labour to a slice of the dataframe. It is called by
+PregnancySupervisorEvent.
+:param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.update_variables_post_still_birth_for_data_frame">
+<span class="sig-name descname"><span class="pre">update_variables_post_still_birth_for_data_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">women</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.update_variables_post_still_birth_for_data_frame"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.update_variables_post_still_birth_for_data_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function updates variables for a slice of the dataframe who have experience antepartum stillbirth
+:param women: women who are experiencing stillbirth</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.update_variables_post_still_birth_for_individual">
+<span class="sig-name descname"><span class="pre">update_variables_post_still_birth_for_individual</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.update_variables_post_still_birth_for_individual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.update_variables_post_still_birth_for_individual" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called to reset all the relevant pregnancy and treatment variables for a woman who undergoes
+stillbirth outside of the PregnancySupervisor polling event.
+:param individual_id: individual_id</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_still_birth">
+<span class="sig-name descname"><span class="pre">apply_risk_of_still_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_still_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_still_birth" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of still birth to a slice of the data frame. It is called by PregnancySupervisorEvent
+:param gestation_of_interest: INT used to select women from the data frame at certain gestation</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.induction_care_seeking_and_still_birth_risk">
+<span class="sig-name descname"><span class="pre">induction_care_seeking_and_still_birth_risk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.induction_care_seeking_and_still_birth_risk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.induction_care_seeking_and_still_birth_risk" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called for post term women and applies a probability that they will seek care for induction
+and if not will experience antenatal stillbirth
+:param gestation_of_interest: INT used to select women from the data frame at certain gestation</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.care_seeking_pregnancy_loss_complications">
+<span class="sig-name descname"><span class="pre">care_seeking_pregnancy_loss_complications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.care_seeking_pregnancy_loss_complications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.care_seeking_pregnancy_loss_complications" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function manages care seeking for women experiencing ectopic pregnancy or complications following
+spontaneous/induced abortion.
+:param individual_id: individual_id
+:return: Returns True/False value to signify care seeking</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.generate_mother_and_newborn_dictionary_for_individual">
+<span class="sig-name descname"><span class="pre">generate_mother_and_newborn_dictionary_for_individual</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.generate_mother_and_newborn_dictionary_for_individual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.generate_mother_and_newborn_dictionary_for_individual" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function generates variables within the mni dictionary for women. It is abstracted to a function for
+testing purposes</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisorEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">PregnancySupervisorEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisorEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisorEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the PregnancySupervisorEvent, it is a weekly event which has two primary functions.
+1.) It updates the gestational age (in weeks) of all women who are pregnant.
+2.) It applies risk of complications/outcomes and care seeking during the antenatal period at pre-defined time
+points of pregnancy (defined below)</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class PregnancySupervisorEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisorEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisorEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisorEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisorEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisorEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisorEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.EctopicPregnancyEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">EctopicPregnancyEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#EctopicPregnancyEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.EctopicPregnancyEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is EctopicPregnancyEvent. It is scheduled by the set_pregnancy_complications function within
+PregnancySupervisorEvent for women who have experienced ectopic pregnancy. This event makes changes to the data
+frame for women with ectopic pregnancies, applies a probability of care seeking and schedules the
+EctopicRuptureEvent.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class EctopicPregnancyEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.EctopicPregnancyEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#EctopicPregnancyEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.EctopicPregnancyEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.EctopicPregnancyEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#EctopicPregnancyEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.EctopicPregnancyEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.EctopicPregnancyRuptureEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">EctopicPregnancyRuptureEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#EctopicPregnancyRuptureEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.EctopicPregnancyRuptureEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is EctopicPregnancyRuptureEvent. It is scheduled by the EctopicPregnancyEvent for women who have
+experienced an ectopic pregnancy which has ruptured due to lack of treatment. This event manages care seeking post
+rupture and schedules EarlyPregnancyLossDeathEvent</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class EctopicPregnancyRuptureEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.EctopicPregnancyRuptureEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#EctopicPregnancyRuptureEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.EctopicPregnancyRuptureEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.EctopicPregnancyRuptureEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#EctopicPregnancyRuptureEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.EctopicPregnancyRuptureEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.EarlyPregnancyLossDeathEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">EarlyPregnancyLossDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#EarlyPregnancyLossDeathEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.EarlyPregnancyLossDeathEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is EarlyPregnancyLossDeathEvent. It is scheduled by the EctopicPregnancyRuptureEvent &amp; abortion for
+women who are at risk of death following a loss of their pregnancy</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class EarlyPregnancyLossDeathEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.EarlyPregnancyLossDeathEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#EarlyPregnancyLossDeathEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.EarlyPregnancyLossDeathEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.EarlyPregnancyLossDeathEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#EarlyPregnancyLossDeathEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.EarlyPregnancyLossDeathEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">GestationalDiabetesGlycaemicControlEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#GestationalDiabetesGlycaemicControlEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is GestationalDiabetesGlycaemicControlEvent. It is scheduled by CareOfWomenDuringPregnancy module after a
+woman is started on treatment for gestational diabetes. This event determines if the treatment a woman has been
+started on for GDM will effectively control her blood sugars</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class GestationalDiabetesGlycaemicControlEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#GestationalDiabetesGlycaemicControlEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#GestationalDiabetesGlycaemicControlEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancyLoggingEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">PregnancyLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancyLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancyLoggingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is PregnancyLoggingEvent. It runs yearly to produce summary statistics around pregnancy.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class PregnancyLoggingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancyLoggingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancyLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancyLoggingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancyLoggingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancyLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancyLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tlo.methods.prostate_cancer.html" class="btn btn-neutral float-right" title="tlo.methods.prostate_cancer module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.postnatal_supervisor_lm.html" class="btn btn-neutral float-left" title="tlo.methods.postnatal_supervisor_lm module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

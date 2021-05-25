@@ -1,0 +1,202 @@
+tlo.methods.mockitis module
+===========================
+
+.. automodule:: tlo.methods.mockitis
+
+
+.. autoclass:: Mockitis
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - p_infection
+          - REAL
+          - Probability that an uninfected individual becomes infected
+        * - level_of_symptoms
+          - CATEGORICAL
+          - Level of symptoms that the individual will have.  Possible values are: [low, high, ]
+        * - p_cure
+          - REAL
+          - Probability that a treatment is successful in curing the individual
+        * - initial_prevalence
+          - REAL
+          - Prevalence of the disease in the initial population
+        * - daly_wts
+          - DICT
+          - DALY weights for conditions
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - mi_is_infected
+          - BOOL
+          - Current status of mockitis
+        * - mi_status
+          - CATEGORICAL
+          - Historical status: N=never; C=currently; P=previously.  Possible values are: [N, C, P, ]
+        * - mi_date_infected
+          - DATE
+          - Date of latest infection
+        * - mi_scheduled_date_death
+          - DATE
+          - Date of scheduled death of infected individual
+        * - mi_date_cure
+          - DATE
+          - Date an infected individual was cured
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     **Functions (defined or overridden in class Mockitis):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+
+
+
+
+
+
+
+.. autoclass:: MockitisEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MockitisEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MockitisDeathEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MockitisDeathEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Mockitis_PresentsForCareWithSevereSymptoms
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Mockitis_PresentsForCareWithSevereSymptoms):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Mockitis_StartTreatment
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Mockitis_StartTreatment):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Mockitis_TreatmentMonitoring
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Mockitis_TreatmentMonitoring):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: MockitisLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MockitisLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

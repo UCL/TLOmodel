@@ -1,0 +1,392 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.methods.healthseekingbehaviour module &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.methods.healthsystem module" href="tlo.methods.healthsystem.html" />
+    <link rel="prev" title="tlo.methods.healthburden module" href="tlo.methods.healthburden.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Reference</a> &raquo;</li>
+        
+          <li><a href="tlo.html">tlo package</a> &raquo;</li>
+        
+          <li><a href="tlo.methods.html">tlo.methods package</a> &raquo;</li>
+        
+      <li>tlo.methods.healthseekingbehaviour module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/tlo.methods.healthseekingbehaviour.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tlo.methods.healthseekingbehaviour">
+<span id="tlo-methods-healthseekingbehaviour-module"></span><h1>tlo.methods.healthseekingbehaviour module<a class="headerlink" href="#module-tlo.methods.healthseekingbehaviour" title="Permalink to this headline">¶</a></h1>
+<p>Health Seeking Behaviour Module
+This module determines if care is sought once a symptom is developed.</p>
+<p>The write-up of these estimates is: Health-seeking behaviour estimates for adults and children.docx</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HealthSeekingBehaviour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_any_symptom_to_lead_to_healthcareseeking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour" title="Permalink to this definition">¶</a></dt>
+<dd><p>This modules determines if the onset of symptoms will lead to that person presenting at the health
+facility for a HSI_GenericFirstAppointment.</p>
+<p>An equation gives the probability of seeking care in response to the “average” symptom. This is modified according
+to if the symptom is associated with a particular effect.</p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p><strong>PARAMETERS:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>baseline_odds_of_healthcareseeking_children</p></td>
+<td><p>REAL</p></td>
+<td><p>odds of health-care seeking (children: 0-14) if male, 0-5 years-old, living in a rural setting in the Northern region, and not in the wealth categories 4 or 5</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_children_sex_Female</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (children) if sex is Female</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_children_age_5to14</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (children) if aged 5-14</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_children_setting_urban</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (children) if setting is Urban</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_children_region_Central</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (children) if region is Central</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_children_region_Southern</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (children) if region is Southern</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_children_wealth_higher</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (children) if wealth is in categories 4 or 5</p></td>
+</tr>
+<tr class="row-odd"><td><p>baseline_odds_of_healthcareseeking_adults</p></td>
+<td><p>REAL</p></td>
+<td><p>odds of health-care seeking (adults: 15+) if male, 15-34 year-olds, living in a rural setting in the Northern region, and not in the wealth categories 4 or 5.</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_adults_sex_Female</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (adults) if sex is Female</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_adults_age_35to59</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (adults) if aged 35-59</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_adults_age_60plus</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (adults) if aged 60+</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_adults_setting_urban</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (adults) if setting is Urban</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_adults_region_Central</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (adults) if region is Central</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_adults_region_Southern</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (adults) if region is Southern</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_adults_wealth_higher</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health-care seeking (adults) if wealth is in categories 4 or 5</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_days_delay_to_generic_HSI_after_symptoms</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum days delay between symptom onset and firstgeneric HSI. Actual delay is sample between 0 and this value.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Class attributes:</strong></p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p><strong>Functions (defined or overridden in class HealthSeekingBehaviour):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_any_symptom_to_lead_to_healthcareseeking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.read_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct the LinearModel for healthcare seeking of the ‘average symptom’.
+This is from the Ng’ambia et al.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Nothing to initialise in the population</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>set the first occurrence of the repeating HealthSeekingBehaviourPoll</p></li>
+<li><p>assemble the health-care seeking information from the symptoms that have been registered</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.on_birth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Nothing to handle on_birth</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HealthSeekingBehaviourPoll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviourPoll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll" title="Permalink to this definition">¶</a></dt>
+<dd><p>This event occurs every day and determines if persons with newly onset symptoms will seek care.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HealthSeekingBehaviourPoll):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviourPoll.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise the HealthSeekingBehaviourPoll
+:param module: the module that created this event</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviourPoll.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine if persons with newly onset acute generic symptoms will seek care.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tlo.methods.healthsystem.html" class="btn btn-neutral float-right" title="tlo.methods.healthsystem module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.healthburden.html" class="btn btn-neutral float-left" title="tlo.methods.healthburden module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

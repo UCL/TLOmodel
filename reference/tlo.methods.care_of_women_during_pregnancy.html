@@ -1,0 +1,1698 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.methods.care_of_women_during_pregnancy module &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.methods.chronicsyndrome module" href="tlo.methods.chronicsyndrome.html" />
+    <link rel="prev" title="tlo.methods.bladder_cancer module" href="tlo.methods.bladder_cancer.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Reference</a> &raquo;</li>
+        
+          <li><a href="tlo.html">tlo package</a> &raquo;</li>
+        
+          <li><a href="tlo.methods.html">tlo.methods package</a> &raquo;</li>
+        
+      <li>tlo.methods.care_of_women_during_pregnancy module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/tlo.methods.care_of_women_during_pregnancy.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tlo.methods.care_of_women_during_pregnancy">
+<span id="tlo-methods-care-of-women-during-pregnancy-module"></span><h1>tlo.methods.care_of_women_during_pregnancy module<a class="headerlink" href="#module-tlo.methods.care_of_women_during_pregnancy" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">CareOfWomenDuringPregnancy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy" title="Permalink to this definition">¶</a></dt>
+<dd><dl>
+<dt>This is the CareOfWomenDuringPregnancy module which contains health system interaction events relevant to</dt><dd><p>pregnancy and pregnancy loss including:</p>
+<dl class="simple">
+<dt>1.) HSI_CareOfWomenDuringPregnancy_AntenatalCareContact (1-8) representing all 8 routine antenatal care contacts</dt><dd><p>(ANC) recommended during pregnancy (with sequential scheduling of each event occurring within the HSI)</p>
+</dd>
+<dt>2.) HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement representing treatment for complications following</dt><dd><p>abortion (post abortion care of PAC) for women seeking care from the community</p>
+</dd>
+<dt>3.) HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy representing treatment for ectopic pregnancy for</dt><dd><p>women seeking care from the community</p>
+</dd>
+<dt>4.) HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare which represents antenatal inpatient care for women</dt><dd><p>who require admission following complications of pregnancy, detected via ANC or following care seeking from the
+community including treatment and/or referral for (hypertension, diabetes, antepartum haemorrhage, anaemia,
+premature of membranes, chorioamnionitis)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Additionally the module stores a number of HSIs which represent follow up for women who are scheduled for additional
+testing following an admission and initiation of treatment (i.e. anaemia or gestational diabetes). Individual
+interventions are stored as functions within the module to prevent repetition.</p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p><strong>PARAMETERS:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>prob_anc_continues</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will return for a subsequent ANC appointment</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_an_ip_at_facility_level_1_2_3</p></td>
+<td><p>LIST</p></td>
+<td><p>probabilities that antenatal inpatient care will be scheduled at facility level 1, 2 or 3</p></td>
+</tr>
+<tr class="row-even"><td><p>squeeze_factor_threshold_anc</p></td>
+<td><p>REAL</p></td>
+<td><p>squeeze factor threshold over which an ANC appointment cannot run</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_intervention_delivered_urine_ds</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “urine dipstick” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_intervention_delivered_bp</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “blood pressure measurement” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_intervention_delivered_ifa</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “iron and folic acid” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_intervention_delivered_bep</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “Balance energy and protein supplements” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_intervention_delivered_depression_screen</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “depression screen” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_intervention_delivered_llitn</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “Long lasting insecticide treated net” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_intervention_delivered_tb_screen</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “TB screen” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_intervention_delivered_tt</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “tetanus toxoid” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_intervention_delivered_calcium</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “urine dipstick” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_intervention_delivered_poct</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “point of care Hb testing” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_intervention_delivered_albendazole</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “albendazole” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_intervention_delivered_hepb_test</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “Hepatitis B test” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_intervention_delivered_syph_test</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “Syphilis test” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_intervention_delivered_hiv_test</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “HIV test” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_intervention_delivered_iptp</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “IPTp” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_intervention_delivered_gdm_test</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive the intervention “GDM screening” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
+</tr>
+<tr class="row-odd"><td><p>sensitivity_bp_monitoring</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of blood pressure monitoring to detect hypertension</p></td>
+</tr>
+<tr class="row-even"><td><p>specificity_bp_monitoring</p></td>
+<td><p>REAL</p></td>
+<td><p>specificity of blood pressure monitoring to detect hypertension</p></td>
+</tr>
+<tr class="row-odd"><td><p>sensitivity_urine_protein_1_plus</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of a urine dipstick test to detect proteinuria at 1+</p></td>
+</tr>
+<tr class="row-even"><td><p>specificity_urine_protein_1_plus</p></td>
+<td><p>REAL</p></td>
+<td><p>specificity of a urine dipstick test to detect proteinuria at 1+</p></td>
+</tr>
+<tr class="row-odd"><td><p>sensitivity_poc_hb_test</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of a point of care Hb test to detect anaemia</p></td>
+</tr>
+<tr class="row-even"><td><p>specificity_poc_hb_test</p></td>
+<td><p>REAL</p></td>
+<td><p>specificity of a point of care Hb test to detect anaemia</p></td>
+</tr>
+<tr class="row-odd"><td><p>sensitivity_fbc_hb_test</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of a Full Blood Count test to detect anaemia</p></td>
+</tr>
+<tr class="row-even"><td><p>specificity_fbc_hb_test</p></td>
+<td><p>REAL</p></td>
+<td><p>specificity of a Full Blood Count test to detect anaemia</p></td>
+</tr>
+<tr class="row-odd"><td><p>sensitivity_blood_test_glucose</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of a blood test to detect raised blood glucose</p></td>
+</tr>
+<tr class="row-even"><td><p>specificity_blood_test_glucose</p></td>
+<td><p>REAL</p></td>
+<td><p>specificity of a blood test to detect raised blood glucose</p></td>
+</tr>
+<tr class="row-odd"><td><p>effect_of_ifa_for_resolving_anaemia</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effectiveness of starting iron and folic acid on resolving anaemia</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_blood_transfusion_anaemia</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effectiveness of blood transfusion for anaemia in pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>effect_of_iron_replacement_for_resolving_anaemia</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effectiveness of iron replacement in resolving anaemia</p></td>
+</tr>
+<tr class="row-even"><td><p>effect_of_iron_replacement_for_resolving_iron_def</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effectiveness of iron replacement in resolving iron deficiency</p></td>
+</tr>
+<tr class="row-odd"><td><p>effect_of_folate_replacement_for_resolving_anaemia</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effectiveness of folate replacement in resolving anaemia</p></td>
+</tr>
+<tr class="row-even"><td><p>effect_of_folate_replacement_for_resolving_folate_def</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effectiveness of folate replacement in resolving folate deficiency</p></td>
+</tr>
+<tr class="row-odd"><td><p>effect_of_b12_replacement_for_resolving_anaemia</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effectiveness of b12 replacement in resolving anaemia</p></td>
+</tr>
+<tr class="row-even"><td><p>effect_of_b12_replacement_for_resolving_b12_def</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effectiveness of b12 replacement in resolving b12 deficiency</p></td>
+</tr>
+<tr class="row-odd"><td><p>cfr_severe_pre_eclampsia</p></td>
+<td><p>REAL</p></td>
+<td><p>case fatality rate severe pre-eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>multiplier_spe_cfr_eclampsia</p></td>
+<td><p>REAL</p></td>
+<td><p>cfr multiplier to generate cfr for eclampsia</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_mag_sulph</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effectiveness magnesium sulphate on mortality due to severe pre-eclampsia/eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_iv_anti_htn</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effectiveness IV antihypertensives on mortality due to severe pre-eclampsia/eclampsia</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_still_birth_aph</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of a still birth following APH prior to treatment</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_still_birth_spe_ec</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of a still birth following severe pre-eclampsia/eclampsia prior to treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>cfr_aph</p></td>
+<td><p>REAL</p></td>
+<td><p>case fatality rate antepartum haemorrhage</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_bt_aph</p></td>
+<td><p>REAL</p></td>
+<td><p>treatment effect of blood transfusion on antepartum haemorrhage mortality</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_evac_procedure_pac</p></td>
+<td><p>LIST</p></td>
+<td><p>Probabilities that a woman will receive D&amp;C, MVA or misoprostal as treatment for abortion</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>PROPERTIES:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ac_total_anc_visits_current_pregnancy</p></td>
+<td><p>INT</p></td>
+<td><p>rolling total of antenatal visits this woman has attended during her pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>ac_facility_type</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Type of facility that a woman will receive ANC in for her pregnancy.  Possible values are: [none, health_centre, hospital, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>ac_date_next_contact</p></td>
+<td><p>DATE</p></td>
+<td><p>Date on which this woman is scheduled to return for her next ANC contact</p></td>
+</tr>
+<tr class="row-odd"><td><p>ac_to_be_admitted</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman requires admission following an ANC visit</p></td>
+</tr>
+<tr class="row-even"><td><p>ac_receiving_iron_folic_acid</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this woman is receiving daily iron &amp; folic acid supplementation</p></td>
+</tr>
+<tr class="row-odd"><td><p>ac_receiving_bep_supplements</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this woman is receiving daily balanced energy and protein supplementation</p></td>
+</tr>
+<tr class="row-even"><td><p>ac_receiving_calcium_supplements</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this woman is receiving daily calcium supplementation</p></td>
+</tr>
+<tr class="row-odd"><td><p>ac_doses_of_iptp_received</p></td>
+<td><p>INT</p></td>
+<td><p>Number of doses of intermittent preventative treatment in pregnancy received during this pregnancy</p></td>
+</tr>
+<tr class="row-even"><td><p>ac_itn_provided</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman is provided with an insecticide treated bed net during the appropriate ANC visit</p></td>
+</tr>
+<tr class="row-odd"><td><p>ac_ttd_received</p></td>
+<td><p>INT</p></td>
+<td><p>Number of doses of tetanus toxoid administered during this pregnancy</p></td>
+</tr>
+<tr class="row-even"><td><p>ac_gest_htn_on_treatment</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has been initiated on treatment for gestational hypertension</p></td>
+</tr>
+<tr class="row-odd"><td><p>ac_gest_diab_on_treatment</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Treatment this woman is receiving for gestational diabetes.  Possible values are: [none, diet_exercise, orals, insulin, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>ac_ectopic_pregnancy_treated</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has received treatment for an ectopic pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>ac_post_abortion_care_interventions</p></td>
+<td><p>INT</p></td>
+<td><p>bitset list of interventions delivered to a woman undergoing post abortion care</p></td>
+</tr>
+<tr class="row-even"><td><p>ac_received_abx_for_prom</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has received antibiotics as treatment for premature rupture of membranes</p></td>
+</tr>
+<tr class="row-odd"><td><p>ac_received_abx_for_chorioamnionitis</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has received antibiotics as treatment for chorioamnionitis rupture of membranes</p></td>
+</tr>
+<tr class="row-even"><td><p>ac_mag_sulph_treatment</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has received magnesium sulphate for treatment of severe pre-eclampsia/eclampsia</p></td>
+</tr>
+<tr class="row-odd"><td><p>ac_iv_anti_htn_treatment</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has received intravenous antihypertensive drugs for treatment of severe hypertension</p></td>
+</tr>
+<tr class="row-even"><td><p>ac_received_blood_transfusion</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has received a blood transfusion antenatally</p></td>
+</tr>
+<tr class="row-odd"><td><p>ac_admitted_for_immediate_delivery</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Admission type for women needing urgent delivery in the antenatal period.  Possible values are: [none, induction_now, induction_future, caesarean_now, caesarean_future, ]</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Class attributes:</strong></p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p><strong>Functions (defined or overridden in class CareOfWomenDuringPregnancy):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.read_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read parameter values from file, if required.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
+Typically modules would read a particular file within here.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set our property values for the initial population.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called by the simulation when creating the initial population, and is
+responsible for assigning initial values, for every individual, of those properties
+‘owned’ by this module, i.e. those declared in its PROPERTIES dictionary.</p>
+<p>TODO: We probably need to declare somehow which properties we ‘read’ here, so the
+simulation knows what order to initialise modules in!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the population of individuals</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get ready for simulation start.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called just before the main simulation loop begins, and after all
+modules have read their parameters and the initial population has been created.
+It is a good place to add initial events to the event queue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.care_of_women_in_pregnancy_property_reset">
+<span class="sig-name descname"><span class="pre">care_of_women_in_pregnancy_property_reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind_or_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_or_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.care_of_women_in_pregnancy_property_reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.care_of_women_in_pregnancy_property_reset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.on_birth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise our properties for a newborn individual.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This is called by the simulation whenever a new person is born.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mother</strong> – the mother for this child</p></li>
+<li><p><strong>child</strong> – the new child</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.further_on_birth_care_of_women_in_pregnancy">
+<span class="sig-name descname"><span class="pre">further_on_birth_care_of_women_in_pregnancy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.further_on_birth_care_of_women_in_pregnancy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.further_on_birth_care_of_women_in_pregnancy" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by the on_birth function of NewbornOutcomes module. This function contains additional
+code related to the antenatal care module that should be ran on_birth for all births - it has been parcelled
+into functions to ensure each modules (pregnancy,antenatal care, labour, newborn, postnatal) on_birth code is
+ran in the correct sequence (as this can vary depending on how modules are registered)
+:param mother_id: mothers individual id</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.on_hsi_alert">
+<span class="sig-name descname"><span class="pre">on_hsi_alert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.on_hsi_alert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.on_hsi_alert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.determine_gestational_age_for_next_contact">
+<span class="sig-name descname"><span class="pre">determine_gestational_age_for_next_contact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.determine_gestational_age_for_next_contact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.determine_gestational_age_for_next_contact" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by each of the ANC HSIs to determine the number of weeks before a woman is required to
+return for her next ANC contact in the schedule
+:param person_id: individual_id</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.antenatal_care_scheduler">
+<span class="sig-name descname"><span class="pre">antenatal_care_scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visit_to_be_scheduled</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recommended_gestation_next_anc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.antenatal_care_scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.antenatal_care_scheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is responsible for scheduling a womans next ANC contact in the schedule if she chooses to seek
+care again.  It is called by each of the ANC HSIs.
+:param individual_id: individual_id
+:param visit_to_be_scheduled: Number if next visit in the schedule (2-8)
+:param recommended_gestation_next_anc: Gestational age in weeks a woman should be for the next visit in her
+schedule
+:param facility_level: facility level that the next ANC contact in the schedule will occur at</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.schedule_admission">
+<span class="sig-name descname"><span class="pre">schedule_admission</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.schedule_admission"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.schedule_admission" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called within each of the ANC HSIs for women who require admission due to a complication
+detected during ANC
+:param individual_id: individual_id</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.screening_interventions_delivered_at_every_contact">
+<span class="sig-name descname"><span class="pre">screening_interventions_delivered_at_every_contact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.screening_interventions_delivered_at_every_contact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.screening_interventions_delivered_at_every_contact" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains the screening interventions which are delivered at every ANC contact regardless of the
+womans gestational age and include blood pressure measurement and urine dipstick testing
+:param hsi_event: HSI event in which the function has been called:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.interventions_initiated_at_first_contact">
+<span class="sig-name descname"><span class="pre">interventions_initiated_at_first_contact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.interventions_initiated_at_first_contact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.interventions_initiated_at_first_contact" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains all the interventions that should be delivered during the initial ANC contact (contact 1)
+including initiation of daily iron and folic acid supplementation, daily balance energy and protein
+supplementation, provision of an insecticide treated bed net and screening for TB.
+:param hsi_event: HSI event in which the function has been called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.tetanus_vaccination">
+<span class="sig-name descname"><span class="pre">tetanus_vaccination</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.tetanus_vaccination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.tetanus_vaccination" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>This function contains the intervention tetanus vaccination. A booster dose of the vaccine is given to all women</dt><dd><p>during ANC. Effect of vaccination is managed by the EPI module and therefore here we just capture consumables
+and number of doses</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>hsi_event</strong> – HSI event in which the function has been called</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.calcium_supplementation">
+<span class="sig-name descname"><span class="pre">calcium_supplementation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.calcium_supplementation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.calcium_supplementation" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains the intervention calcium supplementation delivered during ANC.
+:param hsi_event: HSI event in which the function has been called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.point_of_care_hb_testing">
+<span class="sig-name descname"><span class="pre">point_of_care_hb_testing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.point_of_care_hb_testing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.point_of_care_hb_testing" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains the intervention point of care haemoglobin testing provided to women during ANC to detect
+anaemia during pregnancy
+:param hsi_event: HSI event in which the function has been called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.albendazole_administration">
+<span class="sig-name descname"><span class="pre">albendazole_administration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.albendazole_administration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.albendazole_administration" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>This function contains the intervention albendazole administration (de-worming) and is provided to women during</dt><dd><p>ANC</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>hsi_event</strong> – HSI event in which the function has been called</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.hep_b_testing">
+<span class="sig-name descname"><span class="pre">hep_b_testing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.hep_b_testing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.hep_b_testing" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains the intervention Hepatitis B testing and is provided to women during ANC. As Hepatitis
+B is not modelled currently this intervention just maps consumables used during ANC
+:param hsi_event: HSI event in which the function has been called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.syphilis_testing">
+<span class="sig-name descname"><span class="pre">syphilis_testing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.syphilis_testing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.syphilis_testing" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains the intervention Syphilis testing and is provided to women during ANC. As Syphilis is
+not modelled currently this intervention just maps consumables used during ANC
+:param hsi_event: HSI event in which the function has been called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.hiv_testing">
+<span class="sig-name descname"><span class="pre">hiv_testing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.hiv_testing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.hiv_testing" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains the scheduling for HIV testing and is provided to women during ANC.
+:param hsi_event: HSI event in which the function has been called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.iptp_administration">
+<span class="sig-name descname"><span class="pre">iptp_administration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.iptp_administration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.iptp_administration" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains the intervention intermittent preventative treatment in pregnancy (for malaria) for women
+during ANC
+:param hsi_event: HSI event in which the function has been called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.gdm_screening">
+<span class="sig-name descname"><span class="pre">gdm_screening</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.gdm_screening"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.gdm_screening" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>This function contains intervention of gestational diabetes screening during ANC. Screening is only conducted</dt><dd><p>on women with pre-specified risk factors for the disease.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>hsi_event</strong> – HSI event in which the function has been called</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.anc_catch_up_interventions">
+<span class="sig-name descname"><span class="pre">anc_catch_up_interventions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.anc_catch_up_interventions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.anc_catch_up_interventions" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>This function contains a collection of interventions that are delivered to women who present to ANC at later</dt><dd><p>gestations and have missed key interventions that should have been delivered towards the beggining of the ANC
+schedule</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>hsi_event</strong> – HSI event in which the function has been called</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.check_anc1_can_run">
+<span class="sig-name descname"><span class="pre">check_anc1_can_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gest_age_next_contact</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.check_anc1_can_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.check_anc1_can_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by the first ANC contact to determine if it can run
+:param hsi_event: HSI event in which the function has been called
+:param individual_id: individual id
+:param squeeze_factor: squeeze_factor of the HSI calling this function
+:param gest_age_next_contact: gestational age, in weeks, this woman is due to return for her next ANC
+:returns True/False as to whether the event can run</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.check_subsequent_anc_can_run">
+<span class="sig-name descname"><span class="pre">check_subsequent_anc_can_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">this_contact</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">this_visit_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gest_age_next_contact</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.check_subsequent_anc_can_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.check_subsequent_anc_can_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by all subsequent ANC contacts to determine if they can run
+:param hsi_event: HSI event in which the function has been called
+:param individual_id: individual id
+:param this_contact: HSI object of the current ANC contact that needs to be rebooked
+:param this_visit_number: Number of the next ANC contact in the schedule
+:param squeeze_factor: squeeze_factor of the HSI calling this function
+:param gest_age_next_contact: gestational age, in weeks, this woman is due to return for her next ANC
+:returns True/False as to whether the event can run</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.full_blood_count_testing">
+<span class="sig-name descname"><span class="pre">full_blood_count_testing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.full_blood_count_testing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.full_blood_count_testing" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains the intervention ‘full blood count testing’ and represents blood testing requiring a
+laboratory. It is called by HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare for women admitted due to
+anaemia
+:param hsi_event: HSI event in which the function has been called
+:returns: result of the FBC [‘no_test’, ‘none’, ‘mild_mod’, ‘severe’] (STR)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.treatment_of_anaemia_causing_deficiencies">
+<span class="sig-name descname"><span class="pre">treatment_of_anaemia_causing_deficiencies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.treatment_of_anaemia_causing_deficiencies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.treatment_of_anaemia_causing_deficiencies" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>This function contains treatment for deficiencies that may be contributing to anaemia in pregnancy. It is called</dt><dd><p>by HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare for women admitted due to anaemia</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>individual_id</strong> – individual_id</p></li>
+<li><p><strong>hsi_event</strong> – HSI event in which the function has been called</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.start_iron_and_folic_acid">
+<span class="sig-name descname"><span class="pre">start_iron_and_folic_acid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.start_iron_and_folic_acid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.start_iron_and_folic_acid" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains initiation of iron and folic acid supplementation. It is called
+by HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare for women admitted due to anaemia who have not been</p>
+<blockquote>
+<div><p>given iron and folic acid supplements during ANC</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>individual_id</strong> – individual_id</p></li>
+<li><p><strong>hsi_event</strong> – HSI event in which the function has been called</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.antenatal_blood_transfusion">
+<span class="sig-name descname"><span class="pre">antenatal_blood_transfusion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.antenatal_blood_transfusion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.antenatal_blood_transfusion" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains the intervention ‘blood transfusion’. It is called by either
+HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare or HSI_CareOfWomenDuringPregnancy_PostAbortionCase
+Management for women requiring blood for either haemorrhage or severe anaemia.
+given iron and folic acid supplements during ANC
+:param individual_id: individual_id
+:param hsi_event: HSI event in which the function has been called
+:param cause: (STR) cause of woman needed transfusion [‘antepartum_haem’, ‘abortion’, ‘severe_anaemia’]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.initiate_maintenance_anti_hypertensive_treatment">
+<span class="sig-name descname"><span class="pre">initiate_maintenance_anti_hypertensive_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.initiate_maintenance_anti_hypertensive_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.initiate_maintenance_anti_hypertensive_treatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains initiation of oral antihypertensive medication for women with high blood pressure. It is
+called by HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare for women who have been identified as having</p>
+<blockquote>
+<div><p>high blood pressure in pregnancy but are not yet receiving treatment</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>individual_id</strong> – individual_id</p></li>
+<li><p><strong>hsi_event</strong> – HSI event in which the function has been called</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.initiate_treatment_for_severe_hypertension">
+<span class="sig-name descname"><span class="pre">initiate_treatment_for_severe_hypertension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.initiate_treatment_for_severe_hypertension"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.initiate_treatment_for_severe_hypertension" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains initiation of intravenous antihypertensive medication for women with severely high blood
+pressure. It is called by HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare for women who have been
+admitted due to severely high blood pressure (severe gestational hypertension, severe pre-eclampsia or
+eclampsia)
+:param individual_id: individual_id
+:param hsi_event: HSI event in which the function has been called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.treatment_for_severe_pre_eclampsia_or_eclampsia">
+<span class="sig-name descname"><span class="pre">treatment_for_severe_pre_eclampsia_or_eclampsia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.treatment_for_severe_pre_eclampsia_or_eclampsia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.treatment_for_severe_pre_eclampsia_or_eclampsia" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains initiation of intravenous magnesium sulphate medication for women with severely
+pre-eclampsia/eclampsia It is called by HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare for women who
+have been admitted with those conditions
+:param individual_id: individual_id
+:param hsi_event: HSI event in which the function has been called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.antibiotics_for_prom">
+<span class="sig-name descname"><span class="pre">antibiotics_for_prom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.antibiotics_for_prom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.antibiotics_for_prom" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains initiation of antibiotics for women with who have been admitted following premature
+rupture of membranes .It is called by HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare
+:param individual_id: individual_id
+:param hsi_event: HSI event in which the function has been called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.antibiotics_for_chorioamnionitis">
+<span class="sig-name descname"><span class="pre">antibiotics_for_chorioamnionitis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.antibiotics_for_chorioamnionitis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.antibiotics_for_chorioamnionitis" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function contains initiation of antibiotics for women with who have been admitted due to chorioamnionitis
+infection .It is called by HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare
+:param individual_id: individual_id
+:param hsi_event: HSI event in which the function has been called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.ectopic_pregnancy_treatment_doesnt_run">
+<span class="sig-name descname"><span class="pre">ectopic_pregnancy_treatment_doesnt_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.ectopic_pregnancy_treatment_doesnt_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.ectopic_pregnancy_treatment_doesnt_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called within HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy if the event cannot
+run/the intervention cannot be delivered. This ensures that women with ectopic pregnancies that haven’t ruptured
+will experience rupture and risk of death without treatment
+:param individual_id: individual_id
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.calculate_beddays">
+<span class="sig-name descname"><span class="pre">calculate_beddays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.calculate_beddays"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.calculate_beddays" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare to calculate the number of
+beddays required by a women following admission. This is determined according to the reason for her admission
+and her gestation
+:param individual_id: individual_id
+:return:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the  HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact which represents the first routine
+antenatal care contact (ANC1). It is scheduled by the PregnancySupervisor Event for women who choose to seek
+routine antenatal care during their pregnancy. It is recommended that this visit occur before 12 weeks gestation.
+This event delivers the interventions to women which are part of ANC1. Additionally interventions that should be
+offered in the early ANC contacts are provided to women who present to ANC1 later in their pregnancy. Scheduling
+the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient ward in the
+case of complications</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the  HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact which represents the second routine
+antenatal care contact (ANC2). It is scheduled by the HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact for
+women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 20
+weeks gestation. This event delivers the interventions to women which are part of ANC2. Additionally interventions
+that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
+ward in the case of complications</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the  HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact which represents the third routine
+antenatal care contact (ANC3). It is scheduled by the HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact for
+women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 26
+weeks gestation. This event delivers the interventions to women which are part of ANC3. Additionally interventions
+that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
+ward in the case of complications</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the  HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact which represents the fourth routine
+antenatal care contact (ANC4). It is scheduled by the HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact for
+women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 30
+weeks gestation. This event delivers the interventions to women which are part of ANC4. Additionally interventions
+that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
+ward in the case of complications</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the  HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact which represents the fifth routine
+antenatal care contact (ANC5). It is scheduled by the HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact for
+women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 34
+weeks gestation. This event delivers the interventions to women which are part of ANC5. Additionally interventions
+that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
+ward in the case of complications</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the  HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact which represents the sixth routine
+antenatal care contact (ANC6). It is scheduled by the HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact for
+women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 36
+weeks gestation. This event delivers the interventions to women which are part of ANC6. Additionally interventions
+that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
+ward in the case of complications</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact" title="Permalink to this definition">¶</a></dt>
+<dd><p>“This is the  HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact which represents the seventh routine
+antenatal care contact (ANC7). It is scheduled by the HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact for
+women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 36
+weeks gestation. This event delivers the interventions to women which are part of ANC7. Additionally interventions
+that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
+ward in the case of complications</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact" title="Permalink to this definition">¶</a></dt>
+<dd><p>“This is the  HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact which represents the eighth routine
+antenatal care contact (ANC8). It is scheduled by the HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact for
+women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 36
+weeks gestation. This event delivers the interventions to women which are part of ANC8. Additionally interventions
+that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
+ward in the case of complications</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour. It is schedule by the PregnancySupervisor Event
+for women who present to the health system for induction as their labour has progressed longer than expected.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment. It is schedule by the PregnancySupervisor Event
+for women who choose to seek care for emergency treatment in pregnancy (due to severe pre-eclampsia/eclampsia,
+antepartum haemorrhage, premature rupture of membranes or chorioamnionitis). It is assumed women present to this
+event as their first point of contact for an emergency in pregnancy, and therefore circumnavigate regular A&amp;E.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare. This HSI can be scheduled by any of the ANC HSIs
+for women who have been identified as having complications or by <a href="#id1"><span class="problematic" id="id2">HSI_CareOfWomenDuringPregnancy_</span></a>
+MaternalEmergencyAssessment or HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientFollowUp.This HSI represents the
+antenatal ward which would deliver care to women experiencing complications associated with their pregnancy
+including anaemia, hypertension, gestational diabetes, antepartum haemorrhage, premature rupture of membranes or
+chorioamnionitis. For women whom delivery is indicated as part of treatment for a complications they are scheduled
+to the LabourOnset Event</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia" title="Permalink to this definition">¶</a></dt>
+<dd><p>HSI_CareOfWomenDuringPregnancy_AntenatalManagementOfAnaemia. It is scheduled by <a href="#id3"><span class="problematic" id="id4">HSI_CareOfWomenDuringPregnancy_</span></a>
+AntenatalWardInpatientCare for women who have developed anaemia during pregnancy. This event manages repeat blood
+testing for women who were found to be anaemic and treated. If the woman remains anaemic she is readmitted to the
+inpatient ward for further care.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes. It is scheduled by
+HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare for women who have developed gestational diabetes during
+pregnancy. This event manages repeat blood testing for women who were found to have GDM and treated. If the woman
+remains hyperglycaemic she is moved to the next line treatment and scheduled to return for follow up.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement. It is scheduled by
+HSI_GenericEmergencyFirstApptAtFacilityLevel1 for women who have presented to hospital due to the complications of
+either induced or spontaneous abortion. This event manages interventions delivered for women who are experiencing
+either sepsis, haemorrhage or injury post-abortion.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy. It is scheduled by
+HSI_GenericEmergencyFirstApptAtFacilityLevel1 for women who have presented to hospital due to ectopic pregnancy.
+This event manages interventions delivered as part of the case management of ectopic pregnancy</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.AntenatalCareLoggingEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">AntenatalCareLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#AntenatalCareLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.AntenatalCareLoggingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class AntenatalCareLoggingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.AntenatalCareLoggingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#AntenatalCareLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.AntenatalCareLoggingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.AntenatalCareLoggingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#AntenatalCareLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.AntenatalCareLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tlo.methods.chronicsyndrome.html" class="btn btn-neutral float-right" title="tlo.methods.chronicsyndrome module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.bladder_cancer.html" class="btn btn-neutral float-left" title="tlo.methods.bladder_cancer module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

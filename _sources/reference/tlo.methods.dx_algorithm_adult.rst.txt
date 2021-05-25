@@ -1,0 +1,29 @@
+tlo.methods.dx_algorithm_adult module
+=====================================
+
+.. automodule:: tlo.methods.dx_algorithm_adult
+
+
+.. autoclass:: DxAlgorithmAdult
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **Functions (defined or overridden in class DxAlgorithmAdult):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: diagnose
+
+
+
+
+

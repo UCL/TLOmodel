@@ -1,0 +1,36 @@
+tlo.methods.dx_algorithm_child module
+=====================================
+
+.. automodule:: tlo.methods.dx_algorithm_child
+
+
+.. autoclass:: DxAlgorithmChild
+
+     Bases: :class:`tlo.core.Module`
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
+
+     **Functions (defined or overridden in class DxAlgorithmChild):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: do_when_diarrhoea
+
+     .. automethod:: diagnose
+
+
+
+
+

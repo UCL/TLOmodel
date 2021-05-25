@@ -1,0 +1,7 @@
+tlo.test.random\_death module
+=============================
+
+.. automodule:: tlo.test.random_death
+   :members:
+   :undoc-members:
+   :show-inheritance:

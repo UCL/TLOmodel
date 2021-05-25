@@ -1,0 +1,328 @@
+tlo.methods.depression module
+=============================
+
+.. automodule:: tlo.methods.depression
+
+
+.. autoclass:: Depression
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - init_pr_depr_m_age1519_no_cc_wealth123
+          - REAL
+          - Initial probability of being depressed in male age1519 with no chronic condition with wealth level 1 or 2 or 3
+        * - init_rp_depr_f_not_rec_preg
+          - REAL
+          - Initial relative prevalence of being depressed in females not recently pregnant
+        * - init_rp_depr_f_rec_preg
+          - REAL
+          - Initial relative prevalence of being depressed in females recently pregnant
+        * - init_rp_depr_age2059
+          - REAL
+          - Initial relative prevalence of being depressed in 20-59 year olds vs 15-19
+        * - init_rp_depr_agege60
+          - REAL
+          - Initial relative prevalence of being depressed in 60+ year olds vs 15-19
+        * - init_rp_depr_cc
+          - REAL
+          - Initial relative prevalence of being depressed in people with chronic condition
+        * - init_rp_depr_wealth45
+          - REAL
+          - Initial relative prevalence of being depressed in people with wealth level 4 or 5 vs 1 or 2 or 3 
+        * - init_rp_ever_depr_per_year_older_m
+          - REAL
+          - Initial relative prevalence ever depression per year older in men
+        * - init_rp_ever_depr_per_year_older_f
+          - REAL
+          - Initial relative prevalence ever depression per year older in women
+        * - init_pr_ever_talking_therapy_if_diagnosed
+          - REAL
+          - Initial probability of ever having had talking therapy if ever diagnosed with depression
+        * - init_pr_antidepr_curr_depr
+          - REAL
+          - Initial probability of being on antidepressants if currently depressed
+        * - init_rp_antidepr_ever_depr_not_curr
+          - REAL
+          - Initial relative prevalence of being on antidepressants if ever depressed but not currently
+        * - init_pr_ever_diagnosed_depression
+          - REAL
+          - Initial probability of having ever been diagnosed with depression, amongst people with ever depression and not on antidepressants
+        * - init_pr_ever_self_harmed_if_ever_depr
+          - REAL
+          - Initial probability of having ever self harmed if ever depressed
+        * - base_3m_prob_depr
+          - REAL
+          - Probability of onset of depression in a 3 month period if male, wealth 1 2 or 3, no chronic condition and never previously depressed
+        * - rr_depr_wealth45
+          - REAL
+          - Relative rate of depression when in wealth level 4 or 5 vs 1 or 2 or 3
+        * - rr_depr_cc
+          - REAL
+          - Relative rate of depression if has any chronic disease
+        * - rr_depr_pregnancy
+          - REAL
+          - Relative rate of depression when pregnant or recently pregnant
+        * - rr_depr_female
+          - REAL
+          - Relative rate of depression for females vs males
+        * - rr_depr_prev_epis
+          - REAL
+          - Relative rate of depression associated with previous depression vs never previously depressed
+        * - rr_depr_on_antidepr
+          - REAL
+          - Relative rate of depression episode if on antidepressants
+        * - rr_depr_age1519
+          - REAL
+          - Relative rate of depression associated with 15-20 year olds
+        * - rr_depr_agege60
+          - REAL
+          - Relative rate of depression associated with age > 60
+        * - depr_resolution_rates
+          - LIST
+          - Risk of depression resolving in 3 months if no chronic conditions and no treatments.Each individual is equally likely to be assigned each of these risks
+        * - rr_resol_depr_cc
+          - REAL
+          - Relative rate of resolving depression if has any chronic disease
+        * - rr_resol_depr_on_antidepr
+          - REAL
+          - Relative rate of resolving depression if on antidepressants
+        * - rr_resol_depr_current_talk_ther
+          - REAL
+          - Relative rate of resolving depression if has ever had talking therapy vs has never had talking therapy 
+        * - prob_3m_stop_antidepr
+          - REAL
+          - Probability per 3 months of stopping antidepressants when not currently depressed.
+        * - prob_3m_default_antidepr
+          - REAL
+          - Probability per 3 months of stopping antidepressants when still depressed.
+        * - prob_3m_suicide_depr_m
+          - REAL
+          - Probability per 3 months of suicide in currently depressed men
+        * - rr_suicide_depr_f
+          - REAL
+          - Relative risk of suicide in women compared with men
+        * - prob_3m_selfharm_depr
+          - REAL
+          - Probability per 3 months of non-fatal self harm in those currently depressed
+        * - sensitivity_of_assessment_of_depression
+          - REAL
+          - The sensitivity of the clinical assessment in detecting the true current status of depression
+        * - pr_assessed_for_depression_in_generic_appt_level1
+          - REAL
+          - Probability that a person is assessed for depression during a non-emergency generic appointmentlevel 1
+        * - anti_depressant_medication_item_code
+          - INT
+          - The item code used for one month of anti-depressant treatment
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - de_depr
+          - BOOL
+          - whether this person is currently depressed
+        * - de_ever_depr
+          - BOOL
+          - whether this person has ever experienced depression
+        * - de_date_init_most_rec_depr
+          - DATE
+          - date this person last initiated a depression episode
+        * - de_date_depr_resolved
+          - DATE
+          - date this person resolved last episode of depression
+        * - de_intrinsic_3mo_risk_of_depr_resolution
+          - REAL
+          - the risk per 3 mo of an episode of depression being resolved in absence of any treatment
+        * - de_ever_diagnosed_depression
+          - BOOL
+          - whether ever diagnosed with depression
+        * - de_on_antidepr
+          - BOOL
+          - is currently on anti-depressants
+        * - de_ever_talk_ther
+          - BOOL
+          - whether this person has ever had a session of talking therapy
+        * - de_ever_non_fatal_self_harm_event
+          - BOOL
+          - ever had a non-fatal self harm event
+        * - de_cc
+          - BOOL
+          - whether this person has chronic condition
+        * - de_recently_pregnant
+          - BOOL
+          - whether this person is female and is either currently pregnant or had a last pregnancy less than one year ago
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     **Functions (defined or overridden in class Depression):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: apply_linear_model
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: do_when_suspected_depression
+
+
+
+
+
+
+
+
+.. autoclass:: DepressionPollingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DepressionPollingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DepressionSelfHarmEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DepressionSelfHarmEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DepressionSuicideEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DepressionSuicideEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DepressionLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DepressionLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Depression_TalkingTherapy
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Depression_TalkingTherapy):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Depression_Start_Antidepressant
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Depression_Start_Antidepressant):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Depression_Refill_Antidepressant
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Depression_Refill_Antidepressant):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+

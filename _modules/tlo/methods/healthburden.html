@@ -1,0 +1,512 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.methods.healthburden &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
+        
+      <li>tlo.methods.healthburden</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tlo.methods.healthburden</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This Module runs the counting of DALYS</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
+<span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="HealthBurden"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden">[docs]</a><span class="k">class</span> <span class="nc">HealthBurden</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This module holds all the stuff to do with DALYS</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HealthBurden.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
+
+        <span class="c1"># instance variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multi_index</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">recognised_modules_names</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+    <span class="c1"># Declare Metadata</span>
+    <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;DALY_Weight_Database&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;DALY Weight Database from GBD&#39;</span><span class="p">),</span>
+
+        <span class="s1">&#39;Age_Limit_For_YLL&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
+                                      <span class="s1">&#39;The age up to which deaths are recorded as having induced a lost of life years&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="HealthBurden.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;DALY_Weight_Database&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_DALY_Weights.csv&#39;</span><span class="p">)</span>
+        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;Age_Limit_For_YLL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">70.0</span>  <span class="c1"># Assumption that deaths younger than 70y incur years of lost life</span></div>
+
+<div class="viewcode-block" id="HealthBurden.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="HealthBurden.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+        <span class="c1"># Create the sex/age_range/year multi-index for YLL and YLD storage dataframes</span>
+        <span class="n">first_year</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">start_date</span><span class="o">.</span><span class="n">year</span>
+        <span class="n">last_year</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">end_date</span><span class="o">.</span><span class="n">year</span>
+
+        <span class="n">sex_index</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">]</span>
+        <span class="n">year_index</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">first_year</span><span class="p">,</span> <span class="n">last_year</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">age_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_CATEGORIES</span>
+        <span class="n">multi_index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_product</span><span class="p">([</span><span class="n">sex_index</span><span class="p">,</span> <span class="n">age_index</span><span class="p">,</span> <span class="n">year_index</span><span class="p">],</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multi_index</span> <span class="o">=</span> <span class="n">multi_index</span>
+
+        <span class="c1"># Create the YLL and YLD storage data-frame (using sex/age_range/year multi-index)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">multi_index</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">multi_index</span><span class="p">)</span>
+
+        <span class="c1"># Store the name of all disease modules</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recognised_modules_names</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHBURDEN</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">METADATA</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Check that all registered disease modules have the report_daly_values() function</span>
+        <span class="k">for</span> <span class="n">module_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">recognised_modules_names</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">module_name</span><span class="p">],</span> <span class="s1">&#39;report_daly_values&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> \
+                   <span class="n">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">module_name</span><span class="p">]</span><span class="o">.</span><span class="n">report_daly_values</span><span class="p">)</span>
+
+        <span class="c1"># Launch the DALY Logger to run every month, starting with the end of month 1</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">Get_Current_DALYS</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="HealthBurden.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="HealthBurden.on_simulation_end"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.on_simulation_end">[docs]</a>    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="s2">&quot;This is being called at the end of the simulation. Time to output to the logs....&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Label and concantenate YLL and YLD dataframes</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multi_index</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multi_index</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">add_prefix</span><span class="p">(</span><span class="s1">&#39;YLL_&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span><span class="o">.</span><span class="n">add_prefix</span><span class="p">(</span><span class="s1">&#39;YLD_&#39;</span><span class="p">)</span>
+
+        <span class="n">dalys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span><span class="p">)</span>
+
+        <span class="c1"># Dump the DALYS dateframe to the log</span>
+
+        <span class="c1"># 1) Turn multi-index into regular columns</span>
+        <span class="n">dalys</span> <span class="o">=</span> <span class="n">dalys</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+        <span class="c1"># 2) Go line-by-line and dump to the log</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">dalys</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="n">key</span><span class="o">=</span><span class="s1">&#39;dalys&#39;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">row</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                <span class="n">description</span><span class="o">=</span><span class="s1">&#39;dataframe of dalys, broken down by year, sex, age-group&#39;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="HealthBurden.get_daly_weight"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.get_daly_weight">[docs]</a>    <span class="k">def</span> <span class="nf">get_daly_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequlae_code</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This can be used to look up the DALY weight for a particular condition identified by the &#39;sequalue code&#39;</span>
+<span class="sd">        Sequalae code for particular conditions can be looked-up in ResourceFile_DALY_Weights.csv</span>
+<span class="sd">        :param sequlae_code:</span>
+<span class="sd">        :return: the daly weight associated with that sequalae code</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;DALY_Weight_Database&#39;</span><span class="p">]</span>
+        <span class="n">daly_wt</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">w</span><span class="p">[</span><span class="s1">&#39;TLO_Sequela_Code&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">sequlae_code</span><span class="p">,</span> <span class="s1">&#39;disability weight&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Check that the sequalae code was found</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">daly_wt</span><span class="p">))</span>
+
+        <span class="c1"># Check that the value is within bounds [0,1]</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">daly_wt</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">daly_wt</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">daly_wt</span></div>
+
+<div class="viewcode-block" id="HealthBurden.report_live_years_lost"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.report_live_years_lost">[docs]</a>    <span class="k">def</span> <span class="nf">report_live_years_lost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sex</span><span class="p">,</span> <span class="n">date_of_birth</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the start and end dates of the period for which there is &#39;years of lost life&#39;</span>
+<span class="sd">        :param sex: sex of the person that had died</span>
+<span class="sd">        :param date_of_birth: date_of_birth of the person that has died</span>
+<span class="sd">        :param label: title for the column in YLL dataframe (of form &lt;ModuleName&gt;_&lt;CauseOfDeath&gt;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multi_index</span><span class="p">)</span>
+
+        <span class="c1"># date from which years of life are lost</span>
+        <span class="n">start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+
+        <span class="c1"># data to count up to for years of life lost (the earliest of the age_limit or end of simulation)</span>
+        <span class="n">end_date</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">end_date</span><span class="p">,</span> <span class="p">(</span><span class="n">date_of_birth</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Age_Limit_For_YLL&#39;</span><span class="p">])))</span>
+
+        <span class="c1"># get the years of life lost split out by year and age-group</span>
+        <span class="n">yll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decompose_yll_by_age_and_time</span><span class="p">(</span><span class="n">start_date</span><span class="o">=</span><span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="n">end_date</span><span class="p">,</span> <span class="n">date_of_birth</span><span class="o">=</span><span class="n">date_of_birth</span><span class="p">)</span>
+
+        <span class="c1"># augment the multi-index of yll with sex so that it is sex/age_range/year</span>
+        <span class="n">yll</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sex</span>
+        <span class="n">yll</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">yll</span> <span class="o">=</span> <span class="n">yll</span><span class="o">.</span><span class="n">reorder_levels</span><span class="p">([</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Add the years-of-life-lost from this death to the overall YLL dataframe keeping track</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="c1"># cause has not been added to the LifeYearsLost dataframe, so make a new columns</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="c1"># Add the life-years-lost from this death to the running total in LifeYearsLost dataframe</span>
+        <span class="n">indx_before</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">yll</span><span class="p">[</span><span class="s1">&#39;person_years&#39;</span><span class="p">],</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">indx_after</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">index</span>
+
+        <span class="c1"># check that the index of the YLL dataframe is not changed</span>
+        <span class="k">assert</span> <span class="n">indx_after</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">indx_before</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">indx_after</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multi_index</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HealthBurden.decompose_yll_by_age_and_time"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.decompose_yll_by_age_and_time">[docs]</a>    <span class="k">def</span> <span class="nf">decompose_yll_by_age_and_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="p">,</span> <span class="n">date_of_birth</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This helper function will decompose a period of years of lost life into time-spent in each age group in each</span>
+<span class="sd">        calendar year</span>
+<span class="sd">        :return: a dataframe (X) of the person-time (in years) spent by age-group and time-period</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+        <span class="c1"># Get all the days between start and end</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;days&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">start_date</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">end_date</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">)</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;days&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span>
+
+        <span class="c1"># Get the age that this person will be on each day</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;age_in_years&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;days&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">date_of_birth</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span><span class="o">.</span><span class="n">values</span> <span class="o">/</span> <span class="mi">365</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="n">age_range_lookup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span>  <span class="c1"># get the age_range_lookup from demography</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;age_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;age_in_years&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">age_range_lookup</span><span class="p">)</span>
+
+        <span class="n">period</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">])[</span><span class="s1">&#39;days&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">())</span>
+        <span class="n">period</span><span class="p">[</span><span class="s1">&#39;person_years&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">period</span><span class="p">[</span><span class="s1">&#39;days&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">365</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="n">period</span> <span class="o">=</span> <span class="n">period</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;days&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">period</span></div></div>
+
+
+<div class="viewcode-block" id="Get_Current_DALYS"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.Get_Current_DALYS">[docs]</a><span class="k">class</span> <span class="nc">Get_Current_DALYS</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This event runs every months and asks each disease module to report the average disability</span>
+<span class="sd">    weight for each living person during the previous month. It reconciles this with reports from other disease modules</span>
+<span class="sd">    to ensure that no person has a total weight greater than one.</span>
+<span class="sd">    A known (small) limitation of this is that persons who died during the previous month do not contribute any YLD.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Get_Current_DALYS.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.Get_Current_DALYS.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Get_Current_DALYS.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.Get_Current_DALYS.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="c1"># Running the DALY Logger</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="s2">&quot;The DALY Logger is occuring now!&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Get the population dataframe</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+
+        <span class="c1"># Create temporary dataframe for the reporting of daly weights from all disease modules for the previous month</span>
+        <span class="c1"># (Each column of this dataframe gives the reports from each module.)</span>
+        <span class="n">disease_specific_daly_values_this_month</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">])</span>
+
+        <span class="c1"># 1) Ask each disease module to log the DALYS for the previous month</span>
+
+        <span class="k">for</span> <span class="n">disease_module_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">recognised_modules_names</span><span class="p">:</span>
+
+            <span class="n">disease_module</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">disease_module_name</span><span class="p">]</span>
+
+            <span class="n">dalys_from_disease_module</span> <span class="o">=</span> <span class="n">disease_module</span><span class="o">.</span><span class="n">report_daly_values</span><span class="p">()</span>
+
+            <span class="c1"># Check type is acceptable and make into dataframe if not already</span>
+            <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">dalys_from_disease_module</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">dalys_from_disease_module</span><span class="p">)</span> <span class="ow">is</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+                <span class="n">dalys_from_disease_module</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dalys_from_disease_module</span><span class="p">)</span>
+
+            <span class="c1"># Perform checks on what has been returned</span>
+            <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">dalys_from_disease_module</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">dalys_from_disease_module</span><span class="p">)</span> <span class="o">==</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">[</span><span class="n">dalys_from_disease_module</span><span class="o">.</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="p">(</span><span class="o">~</span><span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">dalys_from_disease_module</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="p">((</span><span class="n">dalys_from_disease_module</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">dalys_from_disease_module</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="p">(</span><span class="n">dalys_from_disease_module</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+            <span class="c1"># Label with the name of the disease module</span>
+            <span class="n">dalys_from_disease_module</span> <span class="o">=</span> <span class="n">dalys_from_disease_module</span><span class="o">.</span><span class="n">add_prefix</span><span class="p">(</span><span class="n">disease_module_name</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Add to overall data-frame for this month of report dalys</span>
+            <span class="n">disease_specific_daly_values_this_month</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">disease_specific_daly_values_this_month</span><span class="p">,</span>
+                                                                 <span class="n">dalys_from_disease_module</span><span class="p">],</span>
+                                                                <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># 2) Rescale the DALY weights</span>
+
+        <span class="c1"># Create a scaling-factor (if total DALYS for one person is more than 1, all DALYS weights are scaled so that</span>
+        <span class="c1">#   their sum equals one).</span>
+        <span class="n">scaling_factor</span> <span class="o">=</span> <span class="p">(</span><span class="n">disease_specific_daly_values_this_month</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span>
+                          <span class="n">disease_specific_daly_values_this_month</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="n">disease_specific_daly_values_this_month</span> <span class="o">=</span> <span class="n">disease_specific_daly_values_this_month</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">scaling_factor</span><span class="p">,</span>
+                                                                                                   <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Multiply 1/12 as these weights are for one month only</span>
+        <span class="n">disease_specific_daly_values_this_month</span> <span class="o">=</span> <span class="n">disease_specific_daly_values_this_month</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)</span>
+
+        <span class="c1"># 3) Summarise the results for this month wrt age and sex</span>
+
+        <span class="c1"># merge in age/sex information</span>
+        <span class="n">disease_specific_daly_values_this_month</span> <span class="o">=</span> <span class="n">disease_specific_daly_values_this_month</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">]],</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Sum of daly_weight, by sex and age</span>
+        <span class="n">disability_monthly_summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="n">disease_specific_daly_values_this_month</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1"># Add the year into the multi-index</span>
+        <span class="n">disability_monthly_summary</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span>
+        <span class="n">disability_monthly_summary</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">disability_monthly_summary</span> <span class="o">=</span> <span class="n">disability_monthly_summary</span><span class="o">.</span><span class="n">reorder_levels</span><span class="p">([</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">])</span>
+
+        <span class="c1"># 4) Add the monthly summary to the overall datafrom for YearsLivedWithDisability</span>
+
+        <span class="n">dalys_to_add</span> <span class="o">=</span> <span class="n">disability_monthly_summary</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>     <span class="c1"># for checking</span>
+        <span class="n">dalys_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="c1"># This will add columns that are not otherwise present and add values to columns where they are</span>
+        <span class="n">combined</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span>
+            <span class="n">disability_monthly_summary</span><span class="p">,</span>
+            <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+            <span class="n">func</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># merge into a dataframe with the correct multi-index (the multindex from combine is subtly different)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">multi_index</span><span class="p">)</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+            <span class="n">combined</span><span class="p">,</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+
+        <span class="c1"># check multi-index is in check and that the addition of DALYS has worked</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">multi_index</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="n">dalys_to_add</span> <span class="o">+</span> <span class="n">dalys_current</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">1e-5</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,1280 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.methods.hiv module &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.methods.hsi_generic_first_appts module" href="tlo.methods.hsi_generic_first_appts.html" />
+    <link rel="prev" title="tlo.methods.healthsystem module" href="tlo.methods.healthsystem.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Reference</a> &raquo;</li>
+        
+          <li><a href="tlo.html">tlo package</a> &raquo;</li>
+        
+          <li><a href="tlo.methods.html">tlo.methods package</a> &raquo;</li>
+        
+      <li>tlo.methods.hiv module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/tlo.methods.hiv.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tlo.methods.hiv">
+<span id="tlo-methods-hiv-module"></span><h1>tlo.methods.hiv module<a class="headerlink" href="#module-tlo.methods.hiv" title="Permalink to this headline">¶</a></h1>
+<p>The HIV Module
+Overview:
+HIV infection —&gt; AIDS onset Event (defined by the presence of AIDS symptoms) –&gt; AIDS Death Event
+Testing is spontaneously taken-up and can lead to accessing intervention services (ART, VMMC, PrEP).
+AIDS symptoms can also lead to care-seeking and there is routine testing for HIV at all non-emergency Generic HSI</p>
+<blockquote>
+<div><p>events.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Persons can be on ART -</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>with viral suppression: when the person with not develop AIDS, or if they have already, it is relieved and they</dt><dd><p>will not die of AIDS; and the person is not infectious</p>
+</dd>
+</dl>
+</li>
+<li><p>without viral suppression: when there is no benefit in avoiding AIDS and infectiousness is unchanged.</p></li>
+</ul>
+</dd>
+<dt>Maintenance on ART and PrEP is re-assessed at periodic ‘Decision Events’, at which is it is determined if the person</dt><dd><p>will attend the “next” HSI for continuation of the service; and if not, they are removed from that service and “stop
+treatment”. If a stock-out or non-availability of health system resources prevent treatment continuation, the person
+“stops treatment”. Stopping treatment leads to a new AIDS Event being scheduled. Persons can restart treatment. If a
+person has developed AIDS, starts treatment and then defaults from treatment, their ‘original’ AIDS Death Event will
+still occur.</p>
+</dd>
+</dl>
+<p>If PrEP is not available due to limitations in the HealthSystem, the person defaults to not being on PrEP.
+# Things to note:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Need to incorporate testing for HIV at first ANC appointment (as it does in generic HSI)</p></li>
+<li><p>Need to incorporate testing for infants born to HIV-positive mothers (currently done in on_birth here).</p></li>
+<li><p>Need to incorporate cotrim for infants born to HIV-positive mothers (not done here)</p></li>
+<li><p>Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).</p></li>
+<li><p>Calibration has not been done: most things look OK - except HIV-AIDS deaths</p></li>
+</ul>
+</div></blockquote>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Hiv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_with_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv" title="Permalink to this definition">¶</a></dt>
+<dd><p>The HIV Disease Module</p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p><strong>PARAMETERS:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>time_inf</p></td>
+<td><p>DATA_FRAME</p></td>
+<td><p>prob of time since infection for baseline adult pop</p></td>
+</tr>
+<tr class="row-odd"><td><p>art_coverage</p></td>
+<td><p>DATA_FRAME</p></td>
+<td><p>coverage of ART at baseline</p></td>
+</tr>
+<tr class="row-even"><td><p>fraction_of_those_infected_that_have_aids_at_initiation</p></td>
+<td><p>REAL</p></td>
+<td><p>Fraction of persons living with HIV at baseline that have developed AIDS</p></td>
+</tr>
+<tr class="row-odd"><td><p>testing_coverage_male</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of adult male population tested</p></td>
+</tr>
+<tr class="row-even"><td><p>testing_coverage_female</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of adult female population tested</p></td>
+</tr>
+<tr class="row-odd"><td><p>beta</p></td>
+<td><p>REAL</p></td>
+<td><p>Transmission rate</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_mtct_untreated</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability of mother to child transmission</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_mtct_treated</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability of mother to child transmission, mother on ART</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_mtct_incident_preg</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability of mother to child transmission, mother infected during pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>monthly_prob_mtct_bf_untreated</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability of mother to child transmission during breastfeeding</p></td>
+</tr>
+<tr class="row-even"><td><p>monthly_prob_mtct_bf_treated</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability of mother to child transmission, mother infected during breastfeeding</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_fsw</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV with female sex work</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_circumcision</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV with circumcision</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_rural</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV in rural location</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_windex_poorer</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV with wealth level poorer</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_windex_middle</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV with wealth level middle</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_windex_richer</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV with wealth level richer</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_windex_richest</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV with wealth level richest</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_sex_f</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV if female</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_age_gp20</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV if age 20-24 compared with 15-19</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_age_gp25</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV if age 25-29</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_age_gp30</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV if age 30-34</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_age_gp35</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV if age 35-39</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_age_gp40</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV if age 40-44</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_age_gp45</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV if age 45-49</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_age_gp50</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV if age 50+</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_edlevel_primary</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV with primary education</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_edlevel_secondary</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV with secondary education</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_edlevel_higher</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV with higher education</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_behaviour_change</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative risk of HIV with behaviour modification</p></td>
+</tr>
+<tr class="row-even"><td><p>proportion_reduction_in_risk_of_hiv_aq_if_on_prep</p></td>
+<td><p>REAL</p></td>
+<td><p>Proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; 1.0 for perfect efficacy.</p></td>
+</tr>
+<tr class="row-odd"><td><p>mean_months_between_aids_and_death</p></td>
+<td><p>REAL</p></td>
+<td><p>Mean number of months (distributed exponentially) for the time between AIDS and AIDS Death</p></td>
+</tr>
+<tr class="row-even"><td><p>mean_months_between_aids_and_death_infant</p></td>
+<td><p>REAL</p></td>
+<td><p>Mean number of months for the time between AIDS and AIDS Death for infants</p></td>
+</tr>
+<tr class="row-odd"><td><p>infection_to_death_weibull_shape_1519</p></td>
+<td><p>REAL</p></td>
+<td><p>Shape parameter for Weibull describing time between infection and death for 15-19 yo (units: years)</p></td>
+</tr>
+<tr class="row-even"><td><p>infection_to_death_weibull_shape_2024</p></td>
+<td><p>REAL</p></td>
+<td><p>Shape parameter for Weibull describing time between infection and death for 20-24 yo (units: years)</p></td>
+</tr>
+<tr class="row-odd"><td><p>infection_to_death_weibull_shape_2529</p></td>
+<td><p>REAL</p></td>
+<td><p>Shape parameter for Weibull describing time between infection and death for 25-29 yo (units: years)</p></td>
+</tr>
+<tr class="row-even"><td><p>infection_to_death_weibull_shape_3034</p></td>
+<td><p>REAL</p></td>
+<td><p>Shape parameter for Weibull describing time between infection and death for 30-34 yo (units: years)</p></td>
+</tr>
+<tr class="row-odd"><td><p>infection_to_death_weibull_shape_3539</p></td>
+<td><p>REAL</p></td>
+<td><p>Shape parameter for Weibull describing time between infection and death for 35-39 yo (units: years)</p></td>
+</tr>
+<tr class="row-even"><td><p>infection_to_death_weibull_shape_4044</p></td>
+<td><p>REAL</p></td>
+<td><p>Shape parameter for Weibull describing time between infection and death for 40-44 yo (units: years)</p></td>
+</tr>
+<tr class="row-odd"><td><p>infection_to_death_weibull_shape_4549</p></td>
+<td><p>REAL</p></td>
+<td><p>Shape parameter for Weibull describing time between infection and death for 45-49 yo (units: years)</p></td>
+</tr>
+<tr class="row-even"><td><p>infection_to_death_weibull_scale_1519</p></td>
+<td><p>REAL</p></td>
+<td><p>Scale parameter for Weibull describing time between infection and death for 15-19 yo (units: years)</p></td>
+</tr>
+<tr class="row-odd"><td><p>infection_to_death_weibull_scale_2024</p></td>
+<td><p>REAL</p></td>
+<td><p>Scale parameter for Weibull describing time between infection and death for 20-24 yo (units: years)</p></td>
+</tr>
+<tr class="row-even"><td><p>infection_to_death_weibull_scale_2529</p></td>
+<td><p>REAL</p></td>
+<td><p>Scale parameter for Weibull describing time between infection and death for 25-29 yo (units: years)</p></td>
+</tr>
+<tr class="row-odd"><td><p>infection_to_death_weibull_scale_3034</p></td>
+<td><p>REAL</p></td>
+<td><p>Scale parameter for Weibull describing time between infection and death for 30-34 yo (units: years)</p></td>
+</tr>
+<tr class="row-even"><td><p>infection_to_death_weibull_scale_3539</p></td>
+<td><p>REAL</p></td>
+<td><p>Scale parameter for Weibull describing time between infection and death for 35-39 yo (units: years)</p></td>
+</tr>
+<tr class="row-odd"><td><p>infection_to_death_weibull_scale_4044</p></td>
+<td><p>REAL</p></td>
+<td><p>Scale parameter for Weibull describing time between infection and death for 40-44 yo (units: years)</p></td>
+</tr>
+<tr class="row-even"><td><p>infection_to_death_weibull_scale_4549</p></td>
+<td><p>REAL</p></td>
+<td><p>Scale parameter for Weibull describing time between infection and death for 45-49 yo (units: years)</p></td>
+</tr>
+<tr class="row-odd"><td><p>art_default_to_aids_mean_years</p></td>
+<td><p>REAL</p></td>
+<td><p>Mean years between when a person (any change) stops being on treatment to when AIDS is onset (if the absence of resuming treatment).</p></td>
+</tr>
+<tr class="row-even"><td><p>mean_survival_for_infants_infected_prior_to_birth</p></td>
+<td><p>REAL</p></td>
+<td><p>Exponential rate parameter for mortality in infants who are infected before birth</p></td>
+</tr>
+<tr class="row-odd"><td><p>infection_to_death_infant_infection_after_birth_weibull_scale</p></td>
+<td><p>REAL</p></td>
+<td><p>Weibull scale parameter for mortality in infants who are infected after birth</p></td>
+</tr>
+<tr class="row-even"><td><p>infection_to_death_infant_infection_after_birth_weibull_shape</p></td>
+<td><p>REAL</p></td>
+<td><p>Weibull shape parameter for mortality in infants who are infected after birth</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_spontaneous_test_12m</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a person will seek HIV testing per 12 month period.</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_start_art_after_hiv_test</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a person will start treatment, if HIV-positive, following testing</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_start_art_if_aids_symptoms</p></td>
+<td><p>REAL</p></td>
+<td><p>Relative probability of a person starting treatment if they have aids_symptoms compared to ifthey do not.</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_behav_chg_after_hiv_test</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a person will change risk behaviours, if HIV-negative, following testing</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_prep_for_fsw_after_hiv_test</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a FSW will start PrEP, if HIV-negative, following testing</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_circ_after_hiv_test</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a male will be circumcised, if HIV-negative, following testing</p></td>
+</tr>
+<tr class="row-odd"><td><p>probability_of_being_retained_on_prep_every_3_months</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that someone who has initiated on prep will attend an appointment and be on prep for the next 3 months, until the next appointment.</p></td>
+</tr>
+<tr class="row-even"><td><p>probability_of_being_retained_on_art_every_6_months</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that someone who has initiated on treatment will attend an appointment and be on treatment for next 6 months, until the next appointment.</p></td>
+</tr>
+<tr class="row-odd"><td><p>probability_of_seeking_further_art_appointment_if_drug_not_available</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a person who ‘should’ be on art will seek another appointment (the following day and try for each of the next 7 days) if drugs were not available.</p></td>
+</tr>
+<tr class="row-even"><td><p>probability_of_seeking_further_art_appointment_if_appointment_not_available</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a person who ‘should’ be on art will seek another appointment if the health-system has not been able to provide them with an appointment</p></td>
+</tr>
+<tr class="row-odd"><td><p>vls_m</p></td>
+<td><p>REAL</p></td>
+<td><p>Rates of viral load suppression males</p></td>
+</tr>
+<tr class="row-even"><td><p>vls_f</p></td>
+<td><p>REAL</p></td>
+<td><p>Rates of viral load suppression males</p></td>
+</tr>
+<tr class="row-odd"><td><p>vls_child</p></td>
+<td><p>REAL</p></td>
+<td><p>Rates of viral load suppression in children 0-14 years</p></td>
+</tr>
+<tr class="row-even"><td><p>prep_start_year</p></td>
+<td><p>REAL</p></td>
+<td><p>Year from which PrEP is available</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>PROPERTIES:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>hv_inf</p></td>
+<td><p>BOOL</p></td>
+<td><p>Is person currently infected with HIV (NB. AIDS status is determined by prescence of the AIDS Symptom.</p></td>
+</tr>
+<tr class="row-odd"><td><p>hv_art</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART..  Possible values are: [not, on_VL_suppressed, on_not_VL_suppressed, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>hv_is_on_prep</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis.</p></td>
+</tr>
+<tr class="row-odd"><td><p>hv_behaviour_change</p></td>
+<td><p>BOOL</p></td>
+<td><p>Has this person been exposed to HIV prevention counselling following a negative HIV test result</p></td>
+</tr>
+<tr class="row-even"><td><p>hv_diagnosed</p></td>
+<td><p>BOOL</p></td>
+<td><p>Knows that they are HIV+: i.e. is HIV+ and tested as HIV+</p></td>
+</tr>
+<tr class="row-odd"><td><p>hv_number_tests</p></td>
+<td><p>INT</p></td>
+<td><p>Number of HIV tests ever taken</p></td>
+</tr>
+<tr class="row-even"><td><p>hv_last_test_date</p></td>
+<td><p>DATE</p></td>
+<td><p>Date of last HIV test</p></td>
+</tr>
+<tr class="row-odd"><td><p>hv_date_inf</p></td>
+<td><p>DATE</p></td>
+<td><p>Date infected with HIV</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Class attributes:</strong></p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p><strong>Functions (defined or overridden in class Hiv):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_with_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.read_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><ol class="arabic simple">
+<li><p>Reads the ResourceFiles</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple" start="2">
+<li><p>Declare the Symptoms</p></li>
+</ol>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.pre_initialise_population">
+<span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.pre_initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Establish the Linear Models</p></li>
+<li></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set our property values for the initial population.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.initialise_baseline_prevalence">
+<span class="sig-name descname"><span class="pre">initialise_baseline_prevalence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.initialise_baseline_prevalence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.initialise_baseline_prevalence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign baseline HIV prevalence, according to age, sex and key other variables (established in analysis of DHS
+data).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.initialise_baseline_art">
+<span class="sig-name descname"><span class="pre">initialise_baseline_art</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.initialise_baseline_art"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.initialise_baseline_art" title="Permalink to this definition">¶</a></dt>
+<dd><p>assign initial art coverage levels
+also assign hiv test properties if allocated ART</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.initialise_baseline_tested">
+<span class="sig-name descname"><span class="pre">initialise_baseline_tested</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.initialise_baseline_tested"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.initialise_baseline_tested" title="Permalink to this definition">¶</a></dt>
+<dd><p>assign initial hiv testing levels, only for adults
+all who have been allocated ART will already have property hv_number_tests=1
+use the hiv testing coverage levels to assign any remaining hiv tests</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><ol class="arabic simple">
+<li><p>Schedule the Main HIV Regular Polling Event</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple" start="2">
+<li><p>Schedule the Logging Event</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple" start="3">
+<li><p>Determine who has AIDS and impose the Symptoms ‘aids_symptoms’</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple" start="4">
+<li><p>Schedule the AIDS onset events and AIDS death event for those infected already</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple" start="5">
+<li><p>(Optionally) Schedule the event to check the configuration of all properties</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple" start="6">
+<li><p>Define the DxTests</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple" start="7">
+<li><p>Look-up and save the codes for consumables</p></li>
+</ol>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.on_birth" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Initialise our properties for a newborn individual;</p></li>
+<li><p>schedule testing;</p></li>
+<li><p>schedule infection during breastfeeding</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.on_hsi_alert">
+<span class="sig-name descname"><span class="pre">on_hsi_alert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.on_hsi_alert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.on_hsi_alert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.report_daly_values">
+<span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.report_daly_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Report DALYS for HIV, based on current symptomatic state of persons.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.mtct_during_breastfeeding">
+<span class="sig-name descname"><span class="pre">mtct_during_breastfeeding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.mtct_during_breastfeeding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.mtct_during_breastfeeding" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute risk of mother-to-child transmission and schedule HivInfectionDuringBreastFeedingEvent.
+If the child is breastfeeding currently, consider the time-until-infection assuming a constantly monthly risk of</p>
+<blockquote>
+<div><p>transmission. If the breastfeeding has ceased by the time of the scheduled infection, then it will not run.</p>
+</div></blockquote>
+<p>(This means that this event can be run at birth or at the time of the mother’s infection without the need for
+further polling etc.)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.do_new_infection">
+<span class="sig-name descname"><span class="pre">do_new_infection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.do_new_infection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.do_new_infection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enact that this person is infected with HIV
+* Update their hv_inf status and hv_date_inf
+* Schedule the AIDS onset event for this person</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.get_time_from_infection_to_aids">
+<span class="sig-name descname"><span class="pre">get_time_from_infection_to_aids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.get_time_from_infection_to_aids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.get_time_from_infection_to_aids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gives time between onset of infection and AIDS, returning a pd.DateOffset.
+For those infected prior to, or at, birth: (this is a draw from an exponential distribution)
+For those infected after birth but before reaching age 5.0 (this is drawn from a weibull distribution)
+For adults: (this is a drawn from a weibull distribution (with scale depending on age);
+* NB. It is further assumed that the time from aids to death is 18 months.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.get_time_from_aids_to_death">
+<span class="sig-name descname"><span class="pre">get_time_from_aids_to_death</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.get_time_from_aids_to_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.get_time_from_aids_to_death" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gives time between onset of AIDS and death, returning a pd.DateOffset.
+Assumes that the time between onset of AIDS symptoms and deaths is exponentially distributed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.do_when_hiv_diagnosed">
+<span class="sig-name descname"><span class="pre">do_when_hiv_diagnosed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.do_when_hiv_diagnosed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.do_when_hiv_diagnosed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Things to do when a person has been tested and found (newly) be be HIV-positive:.
+* Consier if ART should be initiated, and schedule HSI if so.
+The person should not yet be on ART.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.stops_treatment">
+<span class="sig-name descname"><span class="pre">stops_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.stops_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.stops_treatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function that is called when someone stops being on ART.
+Sets the flag for ART status. If the person was already on ART, it schedules a new AIDSEvent</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.per_capita_testing_rate">
+<span class="sig-name descname"><span class="pre">per_capita_testing_rate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.per_capita_testing_rate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.per_capita_testing_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>this calculates the numbers of hiv tests performed in each time period
+it looks at the cumulative number of tests ever performed and subtracts the
+number calculated at the last time point
+values are converted to per capita testing rates
+this function is called by the logger and can be called at any frequency</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.check_config_of_properties">
+<span class="sig-name descname"><span class="pre">check_config_of_properties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.check_config_of_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.check_config_of_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>check that the properties are currently configured correctly</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivRegularPollingEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HivRegularPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivRegularPollingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivRegularPollingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>The HIV Regular Polling Events
+* Schedules persons becoming newly infected through horizontal transmission
+* Schedules who will present for voluntary (“spontaneous”) testing</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HivRegularPollingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivRegularPollingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivRegularPollingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivRegularPollingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivRegularPollingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivRegularPollingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivRegularPollingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivInfectionEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HivInfectionEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivInfectionEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivInfectionEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This person will become infected.
+* Do the infection process
+* Check for onward transmission through MTCT if the infection is to a mother who is currently breastfeeding.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HivInfectionEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivInfectionEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivInfectionEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivInfectionEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivInfectionEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivInfectionEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivInfectionEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivInfectionDuringBreastFeedingEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HivInfectionDuringBreastFeedingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivInfectionDuringBreastFeedingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivInfectionDuringBreastFeedingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This person will become infected during breastfeeding
+* Do the infection process</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HivInfectionDuringBreastFeedingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivInfectionDuringBreastFeedingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivInfectionDuringBreastFeedingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivInfectionDuringBreastFeedingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivInfectionDuringBreastFeedingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivInfectionDuringBreastFeedingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivInfectionDuringBreastFeedingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivAidsOnsetEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HivAidsOnsetEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivAidsOnsetEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivAidsOnsetEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This person has developed AIDS.
+* Update their symptomatic status
+* Record the date at which AIDS onset
+* Schedule the AIDS death</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HivAidsOnsetEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivAidsOnsetEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivAidsOnsetEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivAidsOnsetEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivAidsOnsetEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivAidsOnsetEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivAidsOnsetEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivAidsDeathEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HivAidsDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivAidsDeathEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivAidsDeathEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Causes someone to die of AIDS, if they are not VL suppressed on ART.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HivAidsDeathEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivAidsDeathEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivAidsDeathEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivAidsDeathEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivAidsDeathEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivAidsDeathEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivAidsDeathEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv_DecisionToContinueOnPrEP">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Hiv_DecisionToContinueOnPrEP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv_DecisionToContinueOnPrEP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv_DecisionToContinueOnPrEP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper event that is used to ‘decide’ if someone on PrEP should continue on PrEP.
+This event is scheduled by ‘HSI_Hiv_StartOrContinueOnPrep’ 3 months after it is run.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class Hiv_DecisionToContinueOnPrEP):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv_DecisionToContinueOnPrEP.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv_DecisionToContinueOnPrEP.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv_DecisionToContinueOnPrEP.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv_DecisionToContinueOnPrEP.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv_DecisionToContinueOnPrEP.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv_DecisionToContinueOnPrEP.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv_DecisionToContinueTreatment">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Hiv_DecisionToContinueTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv_DecisionToContinueTreatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv_DecisionToContinueTreatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper event that is used to ‘decide’ if someone on Treatment should continue on Treatment.
+This event is scheduled by ‘HSI_Hiv_StartOrContinueTreatment’ 6 months after it is run.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class Hiv_DecisionToContinueTreatment):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv_DecisionToContinueTreatment.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv_DecisionToContinueTreatment.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv_DecisionToContinueTreatment.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv_DecisionToContinueTreatment.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv_DecisionToContinueTreatment.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv_DecisionToContinueTreatment.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_TestAndRefer">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Hiv_TestAndRefer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_not_refer_if_neg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_TestAndRefer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_TestAndRefer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to
+other services.
+This event is scheduled by:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>the main event poll,</p></li>
+<li><p>when someone presents for any care through a Generic HSI.</p></li>
+<li><p>when an infant is born to an HIV-positive mother</p></li>
+</ul>
+</div></blockquote>
+<p>Following the test, they may or may not go on to present for uptake an HIV service: ART (if HIV-positive), VMMC (if
+HIV-negative and male) or PrEP (if HIV-negative and a female sex worker).
+If this event is called within another HSI, it may be desirable to limit the functionality of the HSI: do this
+using the arguments:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>do_not_refer_if_neg=False : if the person is HIV-neg they will not be referred to VMMC or PrEP</p></li>
+<li><p>suppress_footprint=True : the HSI will not have any footprint</p></li>
+</ul>
+</div></blockquote>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_Hiv_TestAndRefer):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_TestAndRefer.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_not_refer_if_neg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_TestAndRefer.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_TestAndRefer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_TestAndRefer.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_TestAndRefer.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_TestAndRefer.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do the testing and referring to other services</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_Circ">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Hiv_Circ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_Circ"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_Circ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_Hiv_Circ):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_Circ.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_Circ.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_Circ.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_Circ.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_Circ.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_Circ.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do the circumcision for this man</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueOnPrep">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Hiv_StartOrContinueOnPrep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueOnPrep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueOnPrep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_Hiv_StartOrContinueOnPrep):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueOnPrep.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueOnPrep.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueOnPrep.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueOnPrep.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueOnPrep.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueOnPrep.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start PrEP for this person; or continue them on PrEP for 3 more months</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueOnPrep.never_ran">
+<span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueOnPrep.never_ran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueOnPrep.never_ran" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called if this HSI was never run.
+Default the person to being off PrEP</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Hiv_StartOrContinueTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_Hiv_StartOrContinueTreatment):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a Health System Interaction Event - start or continue HIV treatment for 6 more months</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.do_at_initiation">
+<span class="sig-name descname"><span class="pre">do_at_initiation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment.do_at_initiation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.do_at_initiation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Things to do when this the first appointment ART</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.do_at_continuation">
+<span class="sig-name descname"><span class="pre">do_at_continuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment.do_at_continuation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.do_at_continuation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Things to do when the person is already on ART</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.determine_vl_status">
+<span class="sig-name descname"><span class="pre">determine_vl_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sex_of_person</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_of_person</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment.determine_vl_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.determine_vl_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to determine the VL status that the person will have.
+Return what will be the status of “hv_art”</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.get_drugs">
+<span class="sig-name descname"><span class="pre">get_drugs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">age_of_person</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment.get_drugs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.get_drugs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to get the ART according to the age of the person being treated. Returns bool to indicate
+whether drugs were available</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.consider_tb">
+<span class="sig-name descname"><span class="pre">consider_tb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment.consider_tb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.consider_tb" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.never_ran">
+<span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment.never_ran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.never_ran" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called if this HSI was never run.
+* Default the person to being off ART.
+* Determine if they will re-seek care themselves in the future:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivLoggingEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HivLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivLoggingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HivLoggingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivLoggingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivLoggingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log Current status of the population, every year</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivLoggingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivCheckPropertiesEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HivCheckPropertiesEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivCheckPropertiesEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivCheckPropertiesEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HivCheckPropertiesEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivCheckPropertiesEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivCheckPropertiesEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivCheckPropertiesEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.HivCheckPropertiesEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HivCheckPropertiesEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HivCheckPropertiesEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tlo.methods.hsi_generic_first_appts.html" class="btn btn-neutral float-right" title="tlo.methods.hsi_generic_first_appts module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.healthsystem.html" class="btn btn-neutral float-left" title="tlo.methods.healthsystem module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

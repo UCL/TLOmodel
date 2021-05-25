@@ -1,0 +1,448 @@
+tlo.methods.epi module
+======================
+
+.. automodule:: tlo.methods.epi
+
+
+.. autoclass:: Epi
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - baseline_coverage
+          - DATA_FRAME
+          - baseline vaccination coverage (all vaccines)
+        * - vaccine_schedule
+          - SERIES
+          - vaccination schedule applicable from 2018 onwards
+        * - district_vaccine_coverage
+          - DATA_FRAME
+          - coverage of each vaccine type by year and district
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - va_bcg
+          - BOOL
+          - received bcg vaccination
+        * - va_opv
+          - INT
+          - number of doses of OPV vaccine received
+        * - va_dtp
+          - INT
+          - number of doses of DTP vaccine received
+        * - va_hib
+          - INT
+          - number of doses of Hib vaccine received
+        * - va_hep
+          - INT
+          - number of doses of HepB vaccine received
+        * - va_pneumo
+          - INT
+          - number of doses of pneumococcal vaccine received
+        * - va_rota
+          - INT
+          - number of doses of rotavirus vaccine received
+        * - va_measles
+          - INT
+          - number of doses of measles vaccine received
+        * - va_rubella
+          - INT
+          - number of doses of rubella vaccine received
+        * - va_hpv
+          - INT
+          - number of doses of hpv vaccine received
+        * - va_td
+          - INT
+          - number of doses of tetanus/diphtheria vaccine received by pregnant women
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
+
+     **Functions (defined or overridden in class Epi):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+
+
+
+
+
+
+
+.. autoclass:: BcgVaccineEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class BcgVaccineEvent):**
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: OpvEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class OpvEvent):**
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DtpHepVaccineEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DtpHepVaccineEvent):**
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DtpHibHepVaccineEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DtpHibHepVaccineEvent):**
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: RotavirusVaccineEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class RotavirusVaccineEvent):**
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: PneumococcalVaccineEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class PneumococcalVaccineEvent):**
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HibVaccineEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HibVaccineEvent):**
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MeaslesVaccineEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MeaslesVaccineEvent):**
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MeaslesRubellaVaccineEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MeaslesRubellaVaccineEvent):**
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HpvScheduleEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HpvScheduleEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HsiBaseVaccine
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HsiBaseVaccine):**
+
+     .. automethod:: __init__
+
+     .. automethod:: treatment_id
+
+     .. automethod:: apply
+
+     .. automethod:: request_vax_consumables
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_BcgVaccine
+
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_BcgVaccine):**
+
+     .. automethod:: treatment_id
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_opv
+
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_opv):**
+
+     .. automethod:: treatment_id
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_DtpHibHepVaccine
+
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_DtpHibHepVaccine):**
+
+     .. automethod:: treatment_id
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_RotaVaccine
+
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_RotaVaccine):**
+
+     .. automethod:: treatment_id
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_PneumoVaccine
+
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_PneumoVaccine):**
+
+     .. automethod:: treatment_id
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_MeaslesRubellaVaccine
+
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_MeaslesRubellaVaccine):**
+
+     .. automethod:: treatment_id
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_HpvVaccine
+
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_HpvVaccine):**
+
+     .. automethod:: treatment_id
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_TdVaccine
+
+     Bases: :class:`tlo.methods.epi.HsiBaseVaccine`, :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_TdVaccine):**
+
+     .. automethod:: treatment_id
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: EpiLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class EpiLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

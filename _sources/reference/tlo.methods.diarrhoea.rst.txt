@@ -1,0 +1,671 @@
+tlo.methods.diarrhoea module
+============================
+
+.. automodule:: tlo.methods.diarrhoea
+
+
+.. autoclass:: Diarrhoea
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - base_inc_rate_diarrhoea_by_rotavirus
+          - LIST
+          - incidence rate (per person-year) of diarrhoea caused by rotavirus in age groups 0-11, 12-23, 24-59 months 
+        * - base_inc_rate_diarrhoea_by_shigella
+          - LIST
+          - incidence rate (per person-year) of diarrhoea caused by shigella spp in age groups 0-11, 12-23, 24-59 months
+        * - base_inc_rate_diarrhoea_by_adenovirus
+          - LIST
+          - incidence rate (per person-year) of diarrhoea caused by adenovirus 40/41 in age groups 0-11, 12-23, 24-59 months
+        * - base_inc_rate_diarrhoea_by_cryptosporidium
+          - LIST
+          - incidence rate (per person-year) of diarrhoea caused by cryptosporidium in age groups 0-11, 12-23, 24-59 months
+        * - base_inc_rate_diarrhoea_by_campylobacter
+          - LIST
+          - incidence rate (per person-year) of diarrhoea caused by campylobacter spp in age groups 0-11, 12-23, 24-59 months
+        * - base_inc_rate_diarrhoea_by_ST-ETEC
+          - LIST
+          - incidence rate (per person-year) of diarrhoea caused by ST-ETEC in age groups 0-11, 12-23, 24-59 months
+        * - base_inc_rate_diarrhoea_by_sapovirus
+          - LIST
+          - incidence rate (per person-year) of diarrhoea caused by sapovirus in age groups 0-11, 12-23, 24-59 months
+        * - base_inc_rate_diarrhoea_by_norovirus
+          - LIST
+          - incidence rate (per person-year) of diarrhoea caused by norovirus in age groups 0-11, 12-23, 24-59 months
+        * - base_inc_rate_diarrhoea_by_astrovirus
+          - LIST
+          - incidence rate (per person-year) of diarrhoea caused by astrovirus in age groups 0-11, 12-23, 24-59 months
+        * - base_inc_rate_diarrhoea_by_tEPEC
+          - LIST
+          - incidence rate (per person-year) of diarrhoea caused by tEPEC in age groups 0-11, 12-23, 24-59 months
+        * - rr_diarrhoea_HHhandwashing
+          - REAL
+          - relative rate of diarrhoea with household handwashing with soap
+        * - rr_diarrhoea_improved_sanitation
+          - REAL
+          - relative rate of diarrhoea for improved sanitation
+        * - rr_diarrhoea_clean_water
+          - REAL
+          - relative rate of diarrhoea for access to clean drinking water
+        * - rr_diarrhoea_HIV
+          - REAL
+          - relative rate of diarrhoea for HIV positive status
+        * - rr_diarrhoea_SAM
+          - REAL
+          - relative rate of diarrhoea for severe malnutrition
+        * - rr_diarrhoea_excl_breast
+          - REAL
+          - relative rate of diarrhoea for exclusive breastfeeding upto 6 months
+        * - rr_diarrhoea_cont_breast
+          - REAL
+          - relative rate of diarrhoea for continued breastfeeding 6 months to 2 years
+        * - rr_diarrhoea_rotavirus_vaccination
+          - REAL
+          - relative rate of diarrhoea for rotavirus vaccine
+        * - proportion_AWD_by_rotavirus
+          - REAL
+          - acute diarrhoea type caused by rotavirus
+        * - proportion_AWD_by_shigella
+          - REAL
+          - acute diarrhoea type caused by shigella
+        * - proportion_AWD_by_adenovirus
+          - REAL
+          - acute diarrhoea type caused by adenovirus
+        * - proportion_AWD_by_cryptosporidium
+          - REAL
+          - acute diarrhoea type caused by cryptosporidium
+        * - proportion_AWD_by_campylobacter
+          - REAL
+          - acute diarrhoea type caused by campylobacter
+        * - proportion_AWD_by_ST-ETEC
+          - REAL
+          - acute diarrhoea type caused by ST-ETEC
+        * - proportion_AWD_by_sapovirus
+          - REAL
+          - acute diarrhoea type caused by sapovirus
+        * - proportion_AWD_by_norovirus
+          - REAL
+          - acute diarrhoea type caused by norovirus
+        * - proportion_AWD_by_astrovirus
+          - REAL
+          - acute diarrhoea type caused by astrovirus
+        * - proportion_AWD_by_tEPEC
+          - REAL
+          - acute diarrhoea type caused by tEPEC
+        * - fever_by_rotavirus
+          - REAL
+          - fever caused by rotavirus
+        * - fever_by_shigella
+          - REAL
+          - fever caused by shigella
+        * - fever_by_adenovirus
+          - REAL
+          - fever caused by adenovirus
+        * - fever_by_cryptosporidium
+          - REAL
+          - fever caused by cryptosporidium
+        * - fever_by_campylobacter
+          - REAL
+          - fever caused by campylobacter
+        * - fever_by_ST-ETEC
+          - REAL
+          - fever caused by ST-ETEC
+        * - fever_by_sapovirus
+          - REAL
+          - fever caused by sapovirus
+        * - fever_by_norovirus
+          - REAL
+          - fever caused by norovirus
+        * - fever_by_astrovirus
+          - REAL
+          - fever caused by astrovirus
+        * - fever_by_tEPEC
+          - REAL
+          - fever caused by tEPEC
+        * - vomiting_by_rotavirus
+          - REAL
+          - vomiting caused by rotavirus
+        * - vomiting_by_shigella
+          - REAL
+          - vomiting caused by shigella
+        * - vomiting_by_adenovirus
+          - REAL
+          - vomiting caused by adenovirus
+        * - vomiting_by_cryptosporidium
+          - REAL
+          - vomiting caused by cryptosporidium
+        * - vomiting_by_campylobacter
+          - REAL
+          - vomiting caused by campylobacter
+        * - vomiting_by_ST-ETEC
+          - REAL
+          - vomiting caused by ST-ETEC
+        * - vomiting_by_sapovirus
+          - REAL
+          - vomiting caused by sapovirus
+        * - vomiting_by_norovirus
+          - REAL
+          - vomiting caused by norovirus
+        * - vomiting_by_astrovirus
+          - REAL
+          - vomiting caused by astrovirus
+        * - vomiting_by_tEPEC
+          - REAL
+          - vomiting caused by tEPEC
+        * - dehydration_by_rotavirus
+          - REAL
+          - any dehydration caused by rotavirus
+        * - dehydration_by_shigella
+          - REAL
+          - any dehydration caused by shigella
+        * - dehydration_by_adenovirus
+          - REAL
+          - any dehydration caused by adenovirus
+        * - dehydration_by_cryptosporidium
+          - REAL
+          - any dehydration caused by cryptosporidium
+        * - dehydration_by_campylobacter
+          - REAL
+          - any dehydration caused by campylobacter
+        * - dehydration_by_ST-ETEC
+          - REAL
+          - any dehydration caused by ST-ETEC
+        * - dehydration_by_sapovirus
+          - REAL
+          - any dehydration caused by sapovirus
+        * - dehydration_by_norovirus
+          - REAL
+          - any dehydration caused by norovirus
+        * - dehydration_by_astrovirus
+          - REAL
+          - any dehydration caused by astrovirus
+        * - dehydration_by_tEPEC
+          - REAL
+          - any dehydration caused by tEPEC
+        * - prolonged_diarr_rotavirus
+          - REAL
+          - prolonged episode by rotavirus
+        * - prolonged_diarr_shigella
+          - REAL
+          - prolonged episode by shigella
+        * - prolonged_diarr_adenovirus
+          - REAL
+          - prolonged episode by adenovirus
+        * - prolonged_diarr_cryptosporidium
+          - REAL
+          - prolonged episode by cryptosporidium
+        * - prolonged_diarr_campylobacter
+          - REAL
+          - prolonged episode by campylobacter
+        * - prolonged_diarr_ST-ETEC
+          - REAL
+          - prolonged episode by ST-ETEC
+        * - prolonged_diarr_sapovirus
+          - REAL
+          - prolonged episode by sapovirus
+        * - prolonged_diarr_norovirus
+          - REAL
+          - prolonged episode by norovirus
+        * - prolonged_diarr_astrovirus
+          - REAL
+          - prolonged episode by norovirus
+        * - prolonged_diarr_tEPEC
+          - REAL
+          - prolonged episode by tEPEC
+        * - prob_prolonged_to_persistent_diarr
+          - REAL
+          - probability of prolonged diarrhoea becoming persistent diarrhoea
+        * - prob_dysentery_become_persistent
+          - REAL
+          - probability of dysentery becoming persistent diarrhoea
+        * - prob_watery_diarr_become_persistent
+          - REAL
+          - probability of acute watery diarrhoea becoming persistent diarrhoea, for children under 11 months, no SAM, no HIV
+        * - rr_bec_persistent_age12to23
+          - REAL
+          - relative rate of acute diarrhoea becoming persistent diarrhoea for age 12 to 23 months
+        * - rr_bec_persistent_age24to59
+          - REAL
+          - relative rate of acute diarrhoea becoming persistent diarrhoea for age 24 to 59 months
+        * - rr_bec_persistent_HIV
+          - REAL
+          - relative rate of acute diarrhoea becoming persistent diarrhoea for HIV positive
+        * - rr_bec_persistent_SAM
+          - REAL
+          - relative rate of acute diarrhoea becoming persistent diarrhoea for severely acute malnutrition
+        * - rr_bec_persistent_excl_breast
+          - REAL
+          - relative rate of acute diarrhoea becoming persistent diarrhoea for exclusive breastfeeding
+        * - rr_bec_persistent_cont_breast
+          - REAL
+          - relative rate of acute diarrhoea becoming persistent diarrhoea for continued breastfeeding
+        * - case_fatality_rate_AWD
+          - REAL
+          - case fatality rate for acute watery diarrhoea cases
+        * - case_fatality_rate_dysentery
+          - REAL
+          - case fatality rate for dysentery cases
+        * - case_fatality_rate_persistent
+          - REAL
+          - case fatality rate for persistent diarrhoea cases
+        * - rr_diarr_death_age12to23mo
+          - REAL
+          - relative risk of diarrhoea death for ages 12 to 23 months
+        * - rr_diarr_death_age24to59mo
+          - REAL
+          - relative risk of diarrhoea death for ages 24 to 59 months
+        * - rr_diarr_death_if_duration_longer_than_13_days
+          - REAL
+          - relative risk of diarrhoea death if the duration episode is 13 days or longer
+        * - rr_diarr_death_dehydration
+          - REAL
+          - relative risk of diarrhoea death for cases with (some) dehyadration
+        * - rr_diarr_death_HIV
+          - REAL
+          - relative risk of diarrhoea death for HIV
+        * - rr_diarr_death_SAM
+          - REAL
+          - relative risk of diarrhoea death for severe acute malnutrition
+        * - days_onset_severe_dehydration_before_death
+          - INT
+          - number of days before a death (in the untreated case) that dehydration would be classified as severe and child ought to be classified as positive for the dangersigns
+        * - mean_days_duration_with_rotavirus
+          - INT
+          - mean number of days duration with diarrhoea caused by rotavirus
+        * - mean_days_duration_with_shigella
+          - INT
+          - mean number of days duration with diarrhoea caused by shigella
+        * - mean_days_duration_with_adenovirus
+          - INT
+          - mean number of days duration with diarrhoea caused by adenovirus
+        * - mean_days_duration_with_cryptosporidium
+          - INT
+          - mean number of days duration with diarrhoea caused by cryptosporidium
+        * - mean_days_duration_with_campylobacter
+          - INT
+          - mean number of days duration with diarrhoea caused by campylobacter
+        * - mean_days_duration_with_ST-ETEC
+          - INT
+          - mean number of days duration with diarrhoea caused by ST-ETEC
+        * - mean_days_duration_with_sapovirus
+          - INT
+          - mean number of days duration with diarrhoea caused by sapovirus
+        * - mean_days_duration_with_norovirus
+          - INT
+          - mean number of days duration with diarrhoea caused by norovirus
+        * - mean_days_duration_with_astrovirus
+          - INT
+          - mean number of days duration with diarrhoea caused by astrovirus
+        * - mean_days_duration_with_tEPEC
+          - INT
+          - mean number of days duration with diarrhoea caused by tEPEC
+        * - prob_of_cure_given_Treatment_PlanA
+          - REAL
+          - probability of the person being cured if is provided with Treatment Plan A
+        * - prob_of_cure_given_Treatment_PlanB
+          - REAL
+          - probability of the person being cured if is provided with Treatment Plan B
+        * - prob_of_cure_given_Treatment_PlanC
+          - REAL
+          - probability of the person being cured if is provided with Treatment Plan C
+        * - max_number_of_days_for_onset_of_severe_dehydration_before_end_of_episode
+          - INT
+          - if severe dehydration occurs, it onsets a number of days before the end of the episode of diarrhoea; that number of days is chosen from a uniform distribution between 0 and this number
+        * - probability_of_severe_dehydration_if_some_dehydration
+          - REAL
+          - probability that someone with diarrhoea and some dehydration develops severe dehydration
+        * - min_days_duration_of_episode
+          - INT
+          - the shortest duration of any episode of diarrhoea
+        * - range_in_days_duration_of_episode
+          - INT
+          - the duration of an episode of diarrhoea is a uniform distribution around the mean with a range equal by this number.
+        * - prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea
+          - REAL
+          - probability of the person being cured if is provided with HSI_Diarrhoea_Severe_Persistent_Diarrhoea.
+        * - prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea
+          - REAL
+          - probability of the person being cured if is provided with HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea.
+        * - prob_of_cure_given_HSI_Diarrhoea_Dysentery
+          - REAL
+          - probability of the person being cured if is provided with HSI_Diarrhoea_Dysentery.
+        * - days_between_treatment_and_cure
+          - INT
+          - number of days between any treatment being given in an HSI and the cure occurring.
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - gi_ever_had_diarrhoea
+          - BOOL
+          - Whether or not the person has ever had an episode of diarrhoea.
+        * - gi_last_diarrhoea_pathogen
+          - CATEGORICAL
+          - Attributable pathogen for the last episode of diarrhoea.not_applicable is used if the person has never had an episode of diarrhoea.  Possible values are: [rotavirus, shigella, adenovirus, cryptosporidium, campylobacter, ST-ETEC, sapovirus, norovirus, astrovirus, tEPEC, not_applicable, ]
+        * - gi_last_diarrhoea_type
+          - CATEGORICAL
+          - Type of the last episode of diarrhoea: either watery or bloody.not_applicable is used if the person has never had an episode of diarrhoea..  Possible values are: [not_applicable, watery, bloody, ]
+        * - gi_last_diarrhoea_dehydration
+          - CATEGORICAL
+          - Severity of dehydration of last episode of diarrhoea.not_applicable is used if the person has never had an episode of diarrhoea.  Possible values are: [not_applicable, none, some, severe, ]
+        * - gi_last_diarrhoea_date_of_onset
+          - DATE
+          - date of onset of last episode of diarrhoea. pd.NaT if never had diarrhoea
+        * - gi_last_diarrhoea_duration
+          - REAL
+          - number of days of last episode of diarrhoea. pd.nan if never had diarrhoea
+        * - gi_last_diarrhoea_recovered_date
+          - DATE
+          - date of recovery from last episode of diarrhoea. pd.NaT if never had an episode or if the last episode causeddeath.This is scheduled when the episode is onset and may be revisedsubsequently if a cure is enacted by a treatment.
+        * - gi_last_diarrhoea_death_date
+          - DATE
+          - date of death caused by last episode of diarrhoea.pd.NaT if never had an episode or if the last episode did not cause death.This is scheduled when the episode is onset and may be revised to pd.NaT if a cure is enacted.
+        * - gi_last_diarrhoea_treatment_date
+          - DATE
+          - date of first treatment on the last episode of diarrhoea.pd.NaT is never had an episode or if the last episode did not receive treatment.It is set to pd.NaT at onset of the episode and may be revised iftreatment is received.
+        * - gi_end_of_last_episode
+          - DATE
+          - date on which the last episode of diarrhoea is resolved, (including allowing for the possibility that a cure is scheduled following onset). This is used to determine when a new episode can begin. This stops successive episodes interfering with one another.
+        * - tmp_malnutrition
+          - BOOL
+          - temporary property - malnutrition status
+        * - tmp_exclusive_breastfeeding
+          - BOOL
+          - temporary property - exclusive breastfeeding upto 6 mo
+        * - tmp_continued_breastfeeding
+          - BOOL
+          - temporary property - continued breastfeeding 6mo-2years
+        * - tmp_hv_inf
+          - BOOL
+          - Temporary property - current HIV infection
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     pathogens : ['rotavirus', 'shigella', 'adenovirus', 'cryptosporidium', 'campylobacter', 'ST-ETEC', 'sapovirus', 'norovirus', 'astrovirus', 'tEPEC']
+
+     **Functions (defined or overridden in class Diarrhoea):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: look_up_consumables
+
+     .. automethod:: do_treatment
+
+     .. automethod:: cancel_death_date
+
+
+
+
+
+
+
+
+.. autoclass:: DiarrhoeaPollingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DiarrhoeaPollingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DiarrhoeaIncidentCase
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     AGE_GROUPS : {0: '0y', 1: '1y', 2: '2-4y', 3: '2-4y', 4: '2-4y'}
+
+     **Functions (defined or overridden in class DiarrhoeaIncidentCase):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DiarrhoeaNaturalRecoveryEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DiarrhoeaNaturalRecoveryEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DiarrhoeaSevereDehydrationEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DiarrhoeaSevereDehydrationEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DiarrhoeaDeathEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DiarrhoeaDeathEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DiarrhoeaCureEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DiarrhoeaCureEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DiarrhoeaLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DiarrhoeaLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Diarrhoea_Treatment_PlanA
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Diarrhoea_Treatment_PlanA):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Diarrhoea_Treatment_PlanB
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Diarrhoea_Treatment_PlanB):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Diarrhoea_Treatment_PlanC
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Diarrhoea_Treatment_PlanC):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Diarrhoea_Severe_Persistent_Diarrhoea
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Diarrhoea_Severe_Persistent_Diarrhoea):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Diarrhoea_Dysentery
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Diarrhoea_Dysentery):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

@@ -1,0 +1,21 @@
+tlo.logging package
+===================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   tlo.logging.core
+   tlo.logging.encoding
+   tlo.logging.helpers
+   tlo.logging.reader
+
+Module contents
+---------------
+
+.. automodule:: tlo.logging
+   :members:
+   :undoc-members:
+   :show-inheritance:

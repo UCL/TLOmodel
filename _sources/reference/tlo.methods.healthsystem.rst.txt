@@ -1,0 +1,267 @@
+tlo.methods.healthsystem module
+===============================
+
+.. automodule:: tlo.methods.healthsystem
+
+
+.. autoclass:: HealthSystem
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - Officer_Types
+          - DATA_FRAME
+          - The names of the types of health workers ("officers")
+        * - Daily_Capabilities
+          - DATA_FRAME
+          - The capabilities by facility and officer type available each day
+        * - Appt_Types_Table
+          - DATA_FRAME
+          - The names of the type of appointments with the health system
+        * - Appt_Time_Table
+          - DATA_FRAME
+          - The time taken for each appointment, according to officer and facility type.
+        * - ApptType_By_FacLevel
+          - DATA_FRAME
+          - Indicates whether an appointment type can occur at a facility level.
+        * - Master_Facilities_List
+          - DATA_FRAME
+          - Listing of all health facilities.
+        * - Facilities_For_Each_District
+          - DATA_FRAME
+          - Mapping between a district and all of the health facilities to which its                       population have access.
+        * - BedCapacity
+          - DATA_FRAME
+          - Bed-days capacity by facility
+        * - Consumables
+          - DATA_FRAME
+          - List of consumables used in each intervention and their costs.
+        * - Consumables_Cost_List
+          - DATA_FRAME
+          - List of each consumable item and its cost
+        * - Service_Availability
+          - LIST
+          - List of services to be available.
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - hs_dist_to_facility
+          - REAL
+          - The distance for each person to their nearest clinic (of any type)
+        * - hs_is_inpatient
+          - BOOL
+          - Whether or not the person is currently an in-patient at any medical facility
+        * - hs_next_first_day_in_bed_high_dependency_bed
+          - DATE
+          - Date when person will next enter bed_type high_dependency_bed. (pd.NaT) is nothing scheduled
+        * - hs_next_last_day_in_bed_high_dependency_bed
+          - DATE
+          - Date of the last day in the next stay in bed_type high_dependency_bed. (pd.NaT) is nothing scheduled
+        * - hs_next_first_day_in_bed_general_bed
+          - DATE
+          - Date when person will next enter bed_type general_bed. (pd.NaT) is nothing scheduled
+        * - hs_next_last_day_in_bed_general_bed
+          - DATE
+          - Date of the last day in the next stay in bed_type general_bed. (pd.NaT) is nothing scheduled
+        * - hs_next_first_day_in_bed_non_bed_space
+          - DATE
+          - Date when person will next enter bed_type non_bed_space. (pd.NaT) is nothing scheduled
+        * - hs_next_last_day_in_bed_non_bed_space
+          - DATE
+          - Date of the last day in the next stay in bed_type non_bed_space. (pd.NaT) is nothing scheduled
+
+
+
+     **Class attributes:**
+
+     bed_type : non_bed_space
+
+     bed_types : ['high_dependency_bed', 'general_bed', 'non_bed_space']
+
+     **Functions (defined or overridden in class HealthSystem):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: process_consumables_file
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: set_service_availability
+
+     .. automethod:: on_birth
+
+     .. automethod:: register_disease_module
+
+     .. automethod:: schedule_hsi_event
+
+     .. automethod:: check_appt_footprint_format
+
+     .. automethod:: broadcast_healthsystem_interaction
+
+     .. automethod:: reformat_daily_capabilities
+
+     .. automethod:: get_capabilities_today
+
+     .. automethod:: get_blank_appt_footprint
+
+     .. automethod:: get_blank_cons_footprint
+
+     .. automethod:: get_prob_seek_care
+
+     .. automethod:: get_facility_id
+
+     .. automethod:: get_appt_footprint_as_time_request
+
+     .. automethod:: get_squeeze_factors
+
+     .. automethod:: request_consumables
+
+     .. automethod:: check_consumables_footprint_format
+
+     .. automethod:: get_consumables_as_individual_items
+
+     .. automethod:: determine_availability_of_consumables_today
+
+     .. automethod:: get_blank_beddays_footprint
+
+     .. automethod:: check_beddays_footrpint_format
+
+     .. automethod:: log_hsi_event
+
+     .. automethod:: log_current_capabilities
+
+     .. automethod:: find_events_for_person
+
+     .. automethod:: initialise_beddays_tracker
+
+     .. automethod:: impose_beddays_footprint
+
+     .. automethod:: edit_bed_tracker
+
+     .. automethod:: compute_dates_of_bed_use
+
+     .. automethod:: get_remaining_footprint
+
+     .. automethod:: remove_beddays_footprint
+
+     .. automethod:: on_simulation_end
+
+
+
+
+
+
+
+
+.. autoclass:: RefreshInPatient
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class RefreshInPatient):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HealthSystemScheduler
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HealthSystemScheduler):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Event
+
+
+
+
+     **Class attributes:**
+
+     bed_days_allocated_to_this_event : <property object at 0x7f87dd61c810>
+
+     **Functions (defined or overridden in class HSI_Event):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: never_ran
+
+     .. automethod:: not_available
+
+     .. automethod:: post_apply_hook
+
+     .. automethod:: run
+
+     .. automethod:: get_all_consumables
+
+     .. automethod:: make_beddays_footprint
+
+     .. automethod:: is_all_beddays_allocated
+
+     .. automethod:: make_appt_footprint
+
+
+
+
+
+
+
+
+.. autoclass:: HSIEventWrapper
+
+     Bases: :class:`tlo.events.Event`
+
+
+     **Functions (defined or overridden in class HSIEventWrapper):**
+
+     .. automethod:: __init__
+
+     .. automethod:: run
+
+
+
+
+

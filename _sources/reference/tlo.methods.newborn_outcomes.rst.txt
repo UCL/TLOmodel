@@ -1,0 +1,420 @@
+tlo.methods.newborn_outcomes module
+===================================
+
+.. automodule:: tlo.methods.newborn_outcomes
+
+
+.. autoclass:: NewbornOutcomes
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - mean_birth_weights
+          - LIST
+          - list of mean birth weights from gestational age at birth 24-41 weeks
+        * - standard_deviation_birth_weights
+          - LIST
+          - list of standard deviations associated with mean birth weights from gestational age at birth 24-41 weeks
+        * - prob_disability_<28wks
+          - LIST
+          - list of prevalence of levels of disability for neonates born at less than 28 weeks
+        * - prob_disability_28_32wks
+          - LIST
+          - list of prevalence of levels of disability for neonates born between 28 and 32 weeks
+        * - prob_disability_33_36wks
+          - LIST
+          - list of prevalence of levels of disability for neonates born between 33 and 36 weeks
+        * - prob_congenital_ba
+          - REAL
+          - baseline probability of a neonate being born with a congenital anomaly
+        * - prev_types_of_ca
+          - LIST
+          - list of prevalence of each type of congenial anomaly
+        * - prob_early_onset_neonatal_sepsis_day_0
+          - REAL
+          - baseline probability of a neonate developing early onset sepsis between birth and 24hrs
+        * - prob_sepsis_disabilities
+          - LIST
+          - list of prevalence of levels of disability for neonates who experience early onset sepsis 
+        * - prob_failure_to_transition
+          - REAL
+          - baseline probability of a neonate developing intrapartum related complications (previously birth asphyxia) following delivery 
+        * - prob_respiratory_distress_preterm
+          - REAL
+          - probability that a preterm infant will experience respiratory distress at birth
+        * - prob_encephalopathy
+          - REAL
+          - baseline odds of a neonate developing encephalopathy of any severity following birth
+        * - odds_enceph_neonatal_sepsis
+          - REAL
+          - odds ratio of neonatal encephalopathy if the neonate is also septic
+        * - odds_enceph_males
+          - REAL
+          - odds ratio for encephalopathy if the neonate is male
+        * - odds_enceph_obstructed_labour
+          - REAL
+          - odds ratio for encephalopathy if the mothers labour was obstructed
+        * - odds_enceph_hypertension
+          - REAL
+          - odds ratio for encephalopathy if the mothers suffered from hypertension in pregnancy
+        * - odds_enceph_acute_event
+          - REAL
+          - odds ratio for encephalopathy if the mothers experience an acute event in labour
+        * - prob_enceph_no_resus
+          - REAL
+          - Probability of a newborn who was not breathing at birth, and didnt receive resuscitation, developing encephalopathy 
+        * - prob_enceph_severity
+          - LIST
+          - probability of the severity of encephalopathy in a newborn who is encephalopathic
+        * - prob_mild_enceph_disabilities
+          - LIST
+          - list of prevalence levels of disability for neonates with mild encephalopathy
+        * - prob_mod_enceph_disabilities
+          - LIST
+          - list of prevalence levels of disability for neonates with moderate encephalopathy
+        * - prob_severe_enceph_disabilities
+          - LIST
+          - list of prevalence levels of disability for neonates with severe encephalopathy
+        * - prob_retinopathy_preterm
+          - REAL
+          - baseline probability of a preterm neonate developing retinopathy of prematurity 
+        * - prob_retinopathy_severity
+          - LIST
+          - probabilities of severity of retinopathy
+        * - prob_early_breastfeeding_hb
+          - REAL
+          - probability that a neonate will be breastfed within the first hour following birth when delivered at home
+        * - prob_breastfeeding_type
+          - LIST
+          - probabilities that a woman is 1.) not breastfeeding 2.) non-exclusively breastfeeding 3.)exclusively breastfeeding at birth (until 6 months)
+        * - prob_early_breastfeeding_hf
+          - REAL
+          - probability that a neonate will be breastfed within the first hour following birth when delivered at a health facility
+        * - treatment_effect_inj_abx_sep
+          - REAL
+          - effect of injectable antibiotics treatment on reducing mortality from sepsis
+        * - treatment_effect_supp_care_sep
+          - REAL
+          - effect of full supportive care treatment on reducing mortality from sepsis
+        * - treatment_effect_cord_care
+          - REAL
+          - effect of full supportive care treatment on reducing incidence of sepsis
+        * - treatment_effect_clean_birth
+          - REAL
+          - effect of clean birth practices on reducing incidence of sepsis
+        * - treatment_effect_early_init_bf
+          - REAL
+          - effect of early initiation of breastfeeding on reducing incidence of sepsis
+        * - treatment_effect_resuscitation
+          - REAL
+          - effect of resuscitation on newborn mortality associated with encephalopathy
+        * - treatment_effect_resuscitation_preterm
+          - REAL
+          - effect of delayed resuscitation on newborn mortality associated with prematurity
+        * - treatment_effect_abx_prom
+          - REAL
+          - effect of antibiotics given to mothers experience PROM on risk of newborn sepsis 
+        * - cfr_neonatal_sepsis
+          - REAL
+          - case fatality rate for a neonate due to neonatal sepsis
+        * - cfr_mild_enceph
+          - REAL
+          - case fatality rate for a neonate due to mild encephalopathy
+        * - cfr_moderate_enceph
+          - REAL
+          - case fatality rate for a neonate due to moderate encephalopathy
+        * - cfr_severe_enceph
+          - REAL
+          - case fatality rate for a neonate due to severe encephalopathy
+        * - cfr_failed_to_transition
+          - REAL
+          - case fatality rate for a neonate following failure to transition
+        * - cfr_preterm_birth
+          - REAL
+          - case fatality rate for a neonate born prematurely
+        * - rr_preterm_death_early_preterm
+          - REAL
+          - relative risk of preterm death in early preterm neonates 
+        * - prob_preterm_death_by_day
+          - LIST
+          - probability of death due to preterm complications occuring on days 0-14
+        * - treatment_effect_steroid_preterm
+          - REAL
+          - relative risk of death for preterm neonates following administration of antenatal corticosteroids
+        * - treatment_effect_kmc
+          - REAL
+          - treatment effect of kangaroo mother care on preterm mortality
+        * - cfr_congenital_anomaly
+          - REAL
+          - case fatality rate for congenital anomalies
+        * - cfr_rds_preterm
+          - REAL
+          - case fatality rate for respiratory distress syndrome of prematurity
+        * - prob_care_seeking_for_complication
+          - REAL
+          - baseline probability that a mother will seek care for an unwell neonate following delivery
+        * - sensitivity_of_assessment_of_neonatal_sepsis_hc
+          - REAL
+          - sensitivity of dx_test assessment of neonatal sepsis in level 1 health centre
+        * - sensitivity_of_assessment_of_neonatal_sepsis_hp
+          - REAL
+          - sensitivity of dx_test assessment of neonatal sepsis in level 1 hospital
+        * - sensitivity_of_assessment_of_ftt_hc
+          - REAL
+          - sensitivity of dx_test assessment of failure to transition in level 1 health centre
+        * - sensitivity_of_assessment_of_ftt_hp
+          - REAL
+          - sensitivity of dx_test assessment of failure to transition in level 1 hospital
+        * - sensitivity_of_assessment_of_lbw_hc
+          - REAL
+          - sensitivity of dx_test assessment of low birth weight in level 1 health centre
+        * - sensitivity_of_assessment_of_lbw_hp
+          - REAL
+          - sensitivity of dx_test assessment of low birth weight in level 1 hospital
+        * - squeeze_threshold_essential_newborn_care
+          - REAL
+          - squeeze factor threshold below which essential newborn care can be given
+        * - squeeze_threshold_kmc
+          - REAL
+          - squeeze factor threshold below which essential kangaroo mother care can be given
+        * - squeeze_threshold_assist_with_breast_feeding
+          - REAL
+          - squeeze factor threshold below which assistance with breastfeeding can be given
+        * - squeeze_threshold_neonatal_resus
+          - REAL
+          - squeeze factor threshold below which neonatal resuscitation can be given
+        * - squeeze_threshold_sepsis_treatment
+          - REAL
+          - squeeze factor threshold below which sepsis treatment can be given
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - nb_is_twin
+          - BOOL
+          - whether this is part of a twin pair
+        * - nb_twin_sibling_id
+          - INT
+          - id number of this twins sibling
+        * - nb_early_preterm
+          - BOOL
+          - whether this neonate has been born early preterm (24-33 weeks gestation)
+        * - nb_late_preterm
+          - BOOL
+          - whether this neonate has been born late preterm (34-36 weeks gestation)
+        * - nb_preterm_birth_disab
+          - CATEGORICAL
+          - Disability associated with preterm delivery.  Possible values are: [none, mild_motor_and_cog, mild_motor, moderate_motor, severe_motor, ]
+        * - nb_congenital_anomaly
+          - CATEGORICAL
+          - Types of congenital anomaly of the newborn.  Possible values are: [none, musculoskeletal, neural_tube, cardiovascular, gastrointestinal, oro_facial, uro_genital, down_syndrome, ]
+        * - nb_early_onset_neonatal_sepsis
+          - BOOL
+          - whether this neonate has developed neonatal sepsis following birth
+        * - nb_inj_abx_neonatal_sepsis
+          - BOOL
+          - If this neonate has injectable antibiotics as treatment for neonatal sepsis
+        * - nb_supp_care_neonatal_sepsis
+          - BOOL
+          - If this neonate has received full supportive care for neonatal sepsis (in hospital)
+        * - nb_neonatal_sepsis_disab
+          - CATEGORICAL
+          - Disability associated neonatal sepsis.  Possible values are: [none, mild_motor_and_cog, mild_motor, moderate_motor, severe_motor, ]
+        * - nb_preterm_respiratory_distress
+          - BOOL
+          - whether this preterm newborn has respiratory distress syndrome (RDS)
+        * - nb_not_breathing_at_birth
+          - BOOL
+          - whether this neonate has failed to transition to breathing on their own following birth
+        * - nb_received_neonatal_resus
+          - BOOL
+          - If this neonate has received resuscitation
+        * - nb_encephalopathy
+          - CATEGORICAL
+          - None, mild encephalopathy, moderate encephalopathy, severe encephalopathy.  Possible values are: [none, mild_enceph, moderate_enceph, severe_enceph, ]
+        * - nb_encephalopathy_disab
+          - CATEGORICAL
+          - Disability associated neonatal sepsis.  Possible values are: [none, mild_motor_and_cog, mild_motor, moderate_motor, severe_motor, ]
+        * - nb_retinopathy_prem
+          - CATEGORICAL
+          - Level of visual disturbance due to retinopathy of prematurity: None, mild, moderate, severe, blindness.  Possible values are: [none, mild, moderate, severe, blindness, ]
+        * - nb_low_birth_weight_status
+          - CATEGORICAL
+          - extremely low birth weight (<1000g),  very low birth weight (<1500g), low birth weight (<2500g),normal birth weight (>2500g).  Possible values are: [extremely_low_birth_weight, very_low_birth_weight, low_birth_weight, normal_birth_weight, ]
+        * - nb_size_for_gestational_age
+          - CATEGORICAL
+          - size for gestational age categories.  Possible values are: [small_for_gestational_age, average_for_gestational_age, large_for_gestational_age, ]
+        * - nb_early_init_breastfeeding
+          - BOOL
+          - whether this neonate initiated breastfeeding within 1 hour of birth 
+        * - nb_breastfeeding_status
+          - CATEGORICAL
+          - How this neonate is being breastfed.  Possible values are: [none, non_exclusive, exclusive, ]
+        * - nb_kangaroo_mother_care
+          - BOOL
+          - whether this neonate received kangaroo mother care following birth
+        * - nb_clean_birth
+          - BOOL
+          - whether this neonate received clean birth practices at delivery
+        * - nb_received_cord_care
+          - BOOL
+          - whether this neonate received chlorhexidine cord care
+        * - nb_death_after_birth
+          - BOOL
+          - whether this child has died following complications after birth
+        * - nb_death_after_birth_date
+          - DATE
+          - date on which the child died after birth
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     **Functions (defined or overridden in class NewbornOutcomes):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: eval
+
+     .. automethod:: set_birth_weight
+
+     .. automethod:: apply_risk_of_neonatal_infection_and_sepsis
+
+     .. automethod:: apply_risk_of_encephalopathy
+
+     .. automethod:: apply_risk_of_preterm_respiratory_distress_syndrome
+
+     .. automethod:: apply_risk_of_not_breathing_at_birth
+
+     .. automethod:: apply_risk_of_death_from_complication
+
+     .. automethod:: set_death_and_disability_status
+
+     .. automethod:: essential_newborn_care
+
+     .. automethod:: breast_feeding
+
+     .. automethod:: kangaroo_mother_care
+
+     .. automethod:: immunisations
+
+     .. automethod:: hiv_screening_for_at_risk_newborns
+
+     .. automethod:: assessment_and_initiation_of_neonatal_resus
+
+     .. automethod:: assessment_and_treatment_newborn_sepsis
+
+     .. automethod:: hsi_cannot_run
+
+     .. automethod:: link_twins
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: BreastfeedingStatusUpdateEventSixMonths
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class BreastfeedingStatusUpdateEventSixMonths):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: BreastfeedingStatusUpdateEventTwoYears
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class BreastfeedingStatusUpdateEventTwoYears):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: NewbornOutcomesLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class NewbornOutcomesLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

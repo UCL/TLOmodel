@@ -1,0 +1,310 @@
+tlo.methods.prostate_cancer module
+==================================
+
+.. automodule:: tlo.methods.prostate_cancer
+
+
+.. autoclass:: ProstateCancer
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - init_prop_prostate_ca_stage
+          - LIST
+          - initial proportions in prostate cancer stages for men aged 35-49
+        * - init_prop_urinary_symptoms_by_stage
+          - LIST
+          - initial proportions of those in prostate ca stages that have urinary symptoms
+        * - init_prop_pelvic_pain_symptoms_by_stage
+          - LIST
+          - initial proportions of those in prostate ca stages that have pelvic pain symptoms
+        * - init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage
+          - LIST
+          - initial proportions of people with prostate ca and urinary symptoms that have been diagnosed
+        * - init_prop_with_pelvic_pain_symptoms_diagnosed_prostate_ca_by_stage
+          - LIST
+          - initial proportions of people with prostate ca and pelvic pain symptoms that have been diagnosed
+        * - init_prop_treatment_status_prostate_ca
+          - LIST
+          - initial proportions of people with prostate ca that had received treatment
+        * - init_prob_palliative_care
+          - REAL
+          - initial probability of being under palliative care if at metastatic stage
+        * - r_prostate_confined_prostate_ca_none
+          - REAL
+          - probabilty per 3 months of incident (prostate confined) prostate cancer amongst people with no prostate ca (men, age35-49)
+        * - rr_prostate_confined_prostate_ca_age5069
+          - REAL
+          - rate ratio for incident (prostate confined) prostate cancer amongst men aged 50-69
+        * - rr_prostate_confined_prostate_ca_agege70
+          - REAL
+          - rate ratio for incident (prostate confined) prostate cancer amongst men aged ge 70
+        * - r_local_ln_prostate_ca_prostate_confined
+          - REAL
+          - probabilty per 3 months of local lymph node involved prostate ca amongst people with prostate confined prostate ca
+        * - rr_local_ln_prostate_ca_undergone_curative_treatment
+          - REAL
+          - rate ratio for local lymph node involved prostate ca for people with prostate confined prostate cadue to undergoing curative treatment
+        * - r_metastatic_prostate_ca_local_ln
+          - REAL
+          - probabilty per 3 months of metastatic prostate cancer amongst people with local lymph nodeinvolved prostate ca
+        * - rr_metastatic_prostate_ca_undergone_curative_treatment
+          - REAL
+          - rate ratio for metastatic prostate cancer stage 1 for people with lymph node involved prostate ca due toundergoing curative treatment
+        * - rate_palliative_care_metastatic_prostate_ca
+          - REAL
+          - prob palliative care this 3 month period if metastatic prostate ca
+        * - r_death_metastatic_prostate_cancer
+          - REAL
+          - probabilty per 3 months of death from prostate cancer mongst people with metastatic prostate cancer
+        * - r_urinary_symptoms_prostate_ca
+          - REAL
+          - rate of urinary symptoms if have prostate confined prostate ca
+        * - rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer
+          - REAL
+          - rate ratio of urinary symptoms in a person with local lymph node or metastatuc prostate cancer compared with prostate confined prostate ca
+        * - r_pelvic_pain_symptoms_local_ln_prostate_ca
+          - REAL
+          - rate of pelvic pain or numbness symptoms if have local lymph node involved prostate cancer
+        * - rr_pelvic_pain_metastatic_prostate_cancer
+          - REAL
+          - rate ratio of pelvic pain or numbness in a person with metastatic prostate cancer compared with lymph node involved prostate cancer
+        * - rp_prostate_cancer_age5069
+          - REAL
+          - stage-specific relative prevalence at baseline of prostate cancer for age 50-69
+        * - rp_prostate_cancer_agege70
+          - REAL
+          - stage-specific relative prevalence at baseline of prostate cancer for age 70+
+        * - sensitivity_of_psa_test_for_prostate_ca
+          - REAL
+          - sensitivity of psa test for prostate cancer
+        * - sensitivity_of_biopsy_for_prostate_ca
+          - REAL
+          - sensitivity of biopsy for prostate cancer
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - pc_status
+          - CATEGORICAL
+          - Current status of the health condition, prostate cancer.  Possible values are: [none, prostate_confined, local_ln, metastatic, ]
+        * - pc_date_psa_test
+          - DATE
+          - the date of psa test in response to symptoms
+        * - pc_date_biopsy
+          - DATE
+          - the date of biopsy in response to symptoms and positive psa test
+        * - pc_date_diagnosis
+          - DATE
+          - the date of diagnosis of the prostate cancer (pd.NaT if never diagnosed)
+        * - pc_date_treatment
+          - DATE
+          - date of first receiving attempted curative treatment (pd.NaT if never started treatment)
+        * - pc_stage_at_which_treatment_given
+          - CATEGORICAL
+          - the cancer stage at which treatment is given (because the treatment only has an effect during the stageat which it is given..  Possible values are: [none, prostate_confined, local_ln, metastatic, ]
+        * - pc_date_palliative_care
+          - DATE
+          - date of first receiving palliative care (pd.NaT is never had palliative care)
+        * - pc_date_death
+          - DATE
+          - date pc death
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     **Functions (defined or overridden in class ProstateCancer):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+
+
+
+
+
+
+
+.. autoclass:: ProstateCancerMainPollingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class ProstateCancerMainPollingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_ProstateCancer_Investigation_Following_Pelvic_Pain
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_ProstateCancer_Investigation_Following_psa_positive
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_ProstateCancer_Investigation_Following_psa_positive):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_ProstateCancer_StartTreatment
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_ProstateCancer_StartTreatment):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_ProstateCancer_PostTreatmentCheck
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_ProstateCancer_PostTreatmentCheck):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_ProstateCancer_PalliativeCare
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_ProstateCancer_PalliativeCare):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: ProstateCancerLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class ProstateCancerLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

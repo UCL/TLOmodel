@@ -1,0 +1,413 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.util module &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Contributing" href="../contributing.html" />
+    <link rel="prev" title="tlo.simulation module" href="tlo.simulation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Reference</a> &raquo;</li>
+        
+          <li><a href="tlo.html">tlo package</a> &raquo;</li>
+        
+      <li>tlo.util module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/tlo.util.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tlo.util">
+<span id="tlo-util-module"></span><h1>tlo.util module<a class="headerlink" href="#module-tlo.util" title="Permalink to this headline">¶</a></h1>
+<p>This file contains helpful utility functions.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.util.create_age_range_lookup">
+<span class="sig-name descname"><span class="pre">create_age_range_lookup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">min_age:</span> <span class="pre">int,</span> <span class="pre">max_age:</span> <span class="pre">int,</span> <span class="pre">range_size:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">5)</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'list'&gt;,</span> <span class="pre">typing.Dict[int,</span> <span class="pre">str]</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/util.html#create_age_range_lookup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.create_age_range_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create age-range categories and a dictionary that will map all whole years to age-range categories</p>
+<p>If the minimum age is not zero then a below minimum age category will be made,
+then age ranges until maximum age will be made by the range size,
+all other ages will map to the greater than maximum age category.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min_age</strong> – Minimum age for categories,</p></li>
+<li><p><strong>max_age</strong> – Maximum age for categories, a greater than maximum age category will be made</p></li>
+<li><p><strong>range_size</strong> – Size of each category between minimum and maximum ages</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>age_categories: ordered list of age categories available
+lookup: Default dict of integers to maximum age mapping to the age categories</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.util.transition_states">
+<span class="sig-name descname"><span class="pre">transition_states</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_series</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.series.Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prob_matrix</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.random.mtrand.RandomState</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.series.Series</span><a class="reference internal" href="../_modules/tlo/util.html#transition_states"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.transition_states" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transition a series of states based on probability matrix</p>
+<p>This should carry out all state transitions for a Series (i.e. column in DataFrame)
+based on the probability of state-transition matrix.</p>
+<p>Timing values for 1M rows per state, 4 states, 100 times:
+- Looping through groups: [59.5, 58.7, 59.5]
+- Using apply: [84.2, 83.3, 84.4]
+Because of this, looping through the groups was chosen</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>initial_series</strong> (<em>Series</em>) – the initial state series</p></li>
+<li><p><strong>prob_matrix</strong> (<em>DataFrame</em>) – DataFrame of state-transition probabilities
+columns are the original state, rows are the new state. values are the probabilities</p></li>
+<li><p><strong>rng</strong> (<em>RandomState</em>) – RandomState from the disease module</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Series with states changed according to probabilities</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">BitsetHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.Population" title="tlo.population.Population"><span class="pre">tlo.population.Population</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.df">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">df</span></span><em class="property"><span class="pre">:</span> <span class="pre">pandas.core.frame.DataFrame</span></em><a class="headerlink" href="#tlo.util.BitsetHandler.df" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.element_repr">
+<span class="sig-name descname"><span class="pre">element_repr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">str</span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler.element_repr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler.element_repr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns integer representation of the specified element</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.set">
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">where</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">elements</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler.set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>For individuals matching <cite>where</cite> argument, set the bit (i.e. set to True) the given elements</p>
+<p>The where argument is used verbatim as the first item in a <cite>df.loc[x, y]</cite> call. It can be index
+items, a boolean logical condition, or list of row indices e.g. “[0]”</p>
+<p>The elements are one of more valid items from the list of elements for this bitset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>where</strong> – condition to filter rows that will be set</p></li>
+<li><p><strong>elements</strong> – one or more elements to set to True</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.unset">
+<span class="sig-name descname"><span class="pre">unset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">where</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">elements</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler.unset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler.unset" title="Permalink to this definition">¶</a></dt>
+<dd><p>For individuals matching <cite>where</cite> argument, unset the bit (i.e. set to False) the given elements</p>
+<p>The where argument is used verbatim as the first item in a <cite>df.loc[x, y]</cite> call. It can be index
+items, a boolean logical condition, or list of row indices e.g. “[0]”</p>
+<p>The elements are one of more valid items from the list of elements for this bitset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>where</strong> – condition to filter rows that will be unset</p></li>
+<li><p><strong>elements</strong> – one or more elements to set to False</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.has_all">
+<span class="sig-name descname"><span class="pre">has_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">where</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">elements</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.core.series.Series</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler.has_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler.has_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check whether individual(s) have all the elements given set to True</p>
+<p>The where argument is used verbatim as the first item in a <cite>df.loc[x, y]</cite> call. It can be index
+items, a boolean logical condition, or list of row indices e.g. “[0]”</p>
+<p>The elements are one of more valid items from the list of elements for this bitset</p>
+<p>If a single individual is supplied as the where clause, returns a bool, otherwise a Series of bool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>where</strong> – condition to filter rows that will checked</p></li>
+<li><p><strong>elements</strong> – one or more elements to set to True</p></li>
+<li><p><strong>first</strong> – a keyword argument to return first item in Series instead of Series</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.has_any">
+<span class="sig-name descname"><span class="pre">has_any</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">where</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">elements</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler.has_any"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler.has_any" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sister method to <cite>has_all</cite> but instead checks whether matching rows have any of the elements
+set to True</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">where</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a Series with set of string of elements where bit is True</p>
+<p>The where argument is used verbatim as the first item in a <cite>df.loc[x, y]</cite> call. It can be index
+items, a boolean logical condition, or list of row indices e.g. “[0]”</p>
+<p>The elements are one of more valid items from the list of elements for this bitset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>where</strong> – condition to filter rows that will returned</p></li>
+<li><p><strong>first</strong> – return the first entry of the resulting series</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.to_strings">
+<span class="sig-name descname"><span class="pre">to_strings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">integer</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler.to_strings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler.to_strings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an integer value, returns the corresponding string. For fast lookup</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>integer</strong> – the integer value for the bitset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.compress">
+<span class="sig-name descname"><span class="pre">compress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uncompressed</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler.compress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler.compress" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.uncompress">
+<span class="sig-name descname"><span class="pre">uncompress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">where</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.frame.DataFrame</span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler.uncompress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler.uncompress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an exploded representation of the bitset</p>
+<p>Each element bit becomes a column and each column is a bool indicating whether the bit is
+set for the element</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.not_empty">
+<span class="sig-name descname"><span class="pre">not_empty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">where</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.core.series.Series</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler.not_empty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler.not_empty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns Series of bool indicating whether the BitSet entry is not empty. True is set is not empty, False
+otherwise</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.is_empty">
+<span class="sig-name descname"><span class="pre">is_empty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">where</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.core.series.Series</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler.is_empty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler.is_empty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns Series of bool indicating whether the BitSet entry is empty. True if the set is empty,
+False otherwise</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.util.BitsetHandler.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">where</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="../_modules/tlo/util.html#BitsetHandler.clear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.BitsetHandler.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears all the bits for the specified rows</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../contributing.html" class="btn btn-neutral float-right" title="Contributing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.simulation.html" class="btn btn-neutral float-left" title="tlo.simulation module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

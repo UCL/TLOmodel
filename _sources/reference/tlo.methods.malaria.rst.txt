@@ -1,0 +1,492 @@
+tlo.methods.malaria module
+==========================
+
+.. automodule:: tlo.methods.malaria
+
+
+.. autoclass:: Malaria
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - mal_inc
+          - REAL
+          - monthly incidence of malaria in all ages
+        * - interv
+          - REAL
+          - data frame of intervention coverage by year
+        * - clin_inc
+          - REAL
+          - data frame of clinical incidence by age, district, intervention coverage
+        * - inf_inc
+          - REAL
+          - data frame of infection incidence by age, district, intervention coverage
+        * - sev_inc
+          - REAL
+          - data frame of severe case incidence by age, district, intervention coverage
+        * - itn_district
+          - REAL
+          - data frame of ITN usage rates by district
+        * - irs_district
+          - REAL
+          - data frame of IRS usage rates by district
+        * - sev_symp_prob
+          - REAL
+          - probabilities of each symptom for severe malaria cases
+        * - sensitivity_rdt
+          - REAL
+          - Sensitivity of rdt
+        * - cfr
+          - REAL
+          - case-fatality rate for severe malaria
+        * - dur_asym
+          - REAL
+          - duration (days) of asymptomatic malaria
+        * - dur_clin
+          - REAL
+          - duration (days) of clinical symptoms of malaria
+        * - dur_clin_para
+          - REAL
+          - duration (days) of parasitaemia for clinical malaria cases
+        * - rr_hiv
+          - REAL
+          - relative risk of clinical malaria if hiv-positive
+        * - treatment_adjustment
+          - REAL
+          - probability of death from severe malaria if on treatment
+        * - p_sev_anaemia_preg
+          - REAL
+          - probability of severe anaemia in pregnant women with clinical malaria
+        * - itn_proj
+          - REAL
+          - coverage of ITN for projections 2020 onwards
+        * - mortality_adjust
+          - REAL
+          - adjustment of case-fatality rate to match WHO/MAP
+        * - data_end
+          - REAL
+          - final year of ICL malaria model outputs, after 2018 = projections
+        * - irs_rates_boundary
+          - REAL
+          - threshold for indoor residual spraying coverage
+        * - irs_rates_upper
+          - REAL
+          - indoor residual spraying high coverage
+        * - irs_rates_lower
+          - REAL
+          - indoor residual spraying low coverage
+        * - testing_adj
+          - REAL
+          - adjusted testing rates to match rdt/tx levels
+        * - itn
+          - REAL
+          - projected future itn coverage
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - ma_is_infected
+          - BOOL
+          - Current status of malaria
+        * - ma_date_infected
+          - DATE
+          - Date of latest infection
+        * - ma_date_symptoms
+          - DATE
+          - Date of symptom start for clinical infection
+        * - ma_date_death
+          - DATE
+          - Date of scheduled death due to malaria
+        * - ma_tx
+          - BOOL
+          - Currently on anti-malarial treatment
+        * - ma_date_tx
+          - DATE
+          - Date treatment started for most recent malaria episode
+        * - ma_inf_type
+          - CATEGORICAL
+          - specific symptoms with malaria infection.  Possible values are: [none, asym, clinical, severe, ]
+        * - ma_age_edited
+          - REAL
+          - age values redefined to match with malaria data
+        * - ma_clinical_counter
+          - INT
+          - annual counter for malaria clinical episodes
+        * - ma_tx_counter
+          - INT
+          - annual counter for malaria treatment episodes
+        * - ma_clinical_preg_counter
+          - INT
+          - annual counter for malaria clinical episodes in pregnant women
+        * - ma_iptp
+          - BOOL
+          - if woman has IPTp in current pregnancy
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     **Functions (defined or overridden in class Malaria):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: malaria_poll2
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: clinical_symptoms
+
+     .. automethod:: severe_symptoms
+
+
+
+
+
+
+
+
+.. autoclass:: MalariaPollingEventDistrict
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MalariaPollingEventDistrict):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MalariaScheduleTesting
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MalariaScheduleTesting):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MalariaIPTp
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MalariaIPTp):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MalariaDeathEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MalariaDeathEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Malaria_rdt
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Malaria_rdt):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Malaria_non_complicated_treatment_age0_5
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Malaria_non_complicated_treatment_age0_5):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Malaria_non_complicated_treatment_age5_15
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Malaria_non_complicated_treatment_age5_15):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Malaria_non_complicated_treatment_adult
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Malaria_non_complicated_treatment_adult):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Malaria_complicated_treatment_child
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Malaria_complicated_treatment_child):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Malaria_complicated_treatment_adult
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Malaria_complicated_treatment_adult):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_MalariaIPTp
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_MalariaIPTp):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: MalariaCureEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MalariaCureEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MalariaParasiteClearanceEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MalariaParasiteClearanceEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MalariaLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MalariaLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MalariaTxLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MalariaTxLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MalariaPrevDistrictLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MalariaPrevDistrictLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MalariaResetCounterEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MalariaResetCounterEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

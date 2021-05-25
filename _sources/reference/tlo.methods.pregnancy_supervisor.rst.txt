@@ -1,0 +1,518 @@
+tlo.methods.pregnancy_supervisor module
+=======================================
+
+.. automodule:: tlo.methods.pregnancy_supervisor
+
+
+.. autoclass:: PregnancySupervisor
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - prob_ectopic_pregnancy
+          - REAL
+          - probability of ectopic pregnancy
+        * - rr_ectopic_smoker
+          - REAL
+          - relative risk of ectopic pregnancy in a smoker
+        * - prob_multiples
+          - REAL
+          - probability that a woman is currently carrying more than one pregnancy
+        * - prob_placenta_praevia
+          - REAL
+          - probability that this womans pregnancy will be complicated by placenta praevia
+        * - prob_spontaneous_abortion_per_month
+          - REAL
+          - underlying risk of spontaneous abortion per month
+        * - rr_spont_abortion_age_35
+          - REAL
+          - relative risk of spontaneous abortion in women aged 35 years or older
+        * - rr_spont_abortion_age_31_34
+          - REAL
+          - relative risk of spontaneous abortion in women aged 31-34 years old
+        * - rr_spont_abortion_prev_sa
+          - REAL
+          - relative risk of spontaneous abortion in women who have previously experiences spontaneous abortion
+        * - prob_induced_abortion_per_month
+          - REAL
+          - underlying risk of induced abortion per month
+        * - prob_haemorrhage_post_abortion
+          - REAL
+          - probability of haemorrhage following an abortion
+        * - prob_sepsis_post_abortion
+          - REAL
+          - probability of sepsis following an abortion
+        * - prob_injury_post_abortion
+          - REAL
+          - probability of injury following an abortion
+        * - baseline_prob_early_labour_onset
+          - REAL
+          - monthly baseline risk of labour onsetting before term
+        * - treatment_effect_calcium_ptl
+          - REAL
+          - relative risk of early labour onset for women receiving calcium supplementation
+        * - rr_preterm_labour_post_prom
+          - REAL
+          - relative risk of early labour onset following PROM
+        * - prob_iron_def_per_month
+          - REAL
+          - monthly risk of a pregnant woman becoming iron deficient
+        * - prob_folate_def_per_month
+          - REAL
+          - monthly risk of a pregnant woman becoming folate deficient
+        * - treatment_effect_iron_def_ifa
+          - REAL
+          - treatment effect of iron supplementation on iron deficiency 
+        * - treatment_effect_folate_def_ifa
+          - REAL
+          - treatment effect of folate supplementation on folate deficiency
+        * - prob_b12_def_per_month
+          - REAL
+          - monthly risk of a pregnant woman becoming b12 deficient
+        * - baseline_prob_anaemia_per_month
+          - REAL
+          - baseline risk of a woman developing anaemia secondary only to pregnant
+        * - rr_anaemia_if_iron_deficient
+          - REAL
+          - relative risk of a woman developing anaemia in pregnancy if she is iron deficient
+        * - rr_anaemia_if_folate_deficient
+          - REAL
+          - relative risk of a woman developing anaemia in pregnancy if she is folate deficient
+        * - rr_anaemia_if_b12_deficient
+          - REAL
+          - relative risk of a woman developing anaemia in pregnancy if she is b12 deficient
+        * - rr_anaemia_iron_folic_acid
+          - REAL
+          - risk reduction of maternal anaemia for women taking daily iron/folic acid
+        * - rr_anaemia_maternal_malaria
+          - REAL
+          - relative risk of anaemia secondary to malaria infection
+        * - prob_mild_mod_sev_anaemia
+          - LIST
+          - probabilities that a womans anaemia will be mild, moderate or severe
+        * - prob_pre_eclampsia_per_month
+          - REAL
+          - underlying risk of pre-eclampsia per month without the impact of risk factors
+        * - treatment_effect_calcium_pre_eclamp
+          - REAL
+          - risk reduction of pre-eclampsia for women taking daily calcium supplementation
+        * - prob_gest_htn_per_month
+          - REAL
+          - underlying risk of gestational hypertension per month without the impact of risk factors
+        * - treatment_effect_gest_htn_calcium
+          - REAL
+          - Effect of calcium supplementation on risk of developing gestational hypertension
+        * - treatment_effect_anti_htns_progression
+          - REAL
+          - Effect of anti hypertensive medication in reducing the risk of progression from mild to severe hypertension
+        * - probs_for_mgh_matrix
+          - LIST
+          - probability of mild gestational hypertension moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia
+        * - probs_for_sgh_matrix
+          - LIST
+          - probability of severe gestational hypertension moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia
+        * - probs_for_mpe_matrix
+          - LIST
+          - probability of mild pre-eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia
+        * - probs_for_spe_matrix
+          - LIST
+          - probability of severe pre-eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia
+        * - probs_for_ec_matrix
+          - LIST
+          - probability of eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia
+        * - prob_gest_diab_per_month
+          - REAL
+          - underlying risk of gestational diabetes per month without the impact of risk factors
+        * - rr_gest_diab_obesity
+          - REAL
+          - Relative risk of gestational diabetes for women who are obese
+        * - prob_glycaemic_control_diet_exercise
+          - REAL
+          - probability a womans GDM is controlled by diet and exercise during the first month of treatment
+        * - prob_glycaemic_control_orals
+          - REAL
+          - probability a womans GDM is controlled by oral anti-diabetics during the first month of treatment
+        * - prob_glycaemic_control_insulin
+          - REAL
+          - probability a womans GDM is controlled by insulin during the first month of treatment
+        * - prob_placental_abruption_per_month
+          - REAL
+          - monthly probability that a woman will develop placental abruption
+        * - prob_antepartum_haem_per_month
+          - REAL
+          - monthly probability that a woman will develop antepartum bleeding during pregnancy
+        * - prob_aph_placenta_praevia
+          - REAL
+          - risk of antepartum haemorrhage due to ongoing placenta praevia
+        * - prob_aph_placental_abruption
+          - REAL
+          - risk of antepartum haemorrhage due to placental abruption
+        * - prob_mod_sev_aph
+          - LIST
+          - probabilities that APH is mild/moderate or severe
+        * - prob_prom_per_month
+          - REAL
+          - monthly probability that a woman will experience premature rupture of membranes
+        * - prob_chorioamnionitis
+          - REAL
+          - monthly probability of a women developing chorioamnionitis
+        * - rr_chorio_post_prom
+          - REAL
+          - relative risk of chorioamnionitis after PROM
+        * - prob_clinical_chorio
+          - REAL
+          - probability that a woman with chorioamnionitis will have clinical presentation
+        * - prob_progression_to_clinical_chorio
+          - REAL
+          - Risk that histological chorioamnionitis will progress to clinical disease
+        * - prob_still_birth_per_month
+          - REAL
+          - underlying risk of stillbirth per month without the impact of risk factors
+        * - rr_still_birth_gest_diab
+          - REAL
+          - relative risk of still birth in women with gestational diabetes
+        * - rr_still_birth_mild_pre_eclamp
+          - REAL
+          - relative risk of still birth in women with mild pre-eclampsia
+        * - rr_still_birth_gest_htn
+          - REAL
+          - relative risk of still birth in women with mild gestational hypertension
+        * - rr_still_birth_severe_gest_htn
+          - REAL
+          - relative risk of still birth in women with severe gestational hypertension
+        * - rr_still_birth_severe_pre_eclamp
+          - REAL
+          - relative risk of still birth in women with severe pre-eclampsia
+        * - rr_still_birth_maternal_malaria
+          - REAL
+          - relative risk of still birth in women with malaria
+        * - treatment_effect_still_birth_food_sups
+          - REAL
+          - risk reduction of still birth for women receiving nutritional supplements
+        * - treatment_effect_gdm_case_management
+          - REAL
+          - Treatment effect of GDM case management on mothers risk of stillbirth 
+        * - prob_ectopic_pregnancy_death
+          - REAL
+          - probability of a woman dying from a ruptured ectopic pregnancy
+        * - treatment_effect_ectopic_pregnancy_treatment
+          - REAL
+          - Treatment effect of ectopic pregnancy case management
+        * - prob_induced_abortion_death
+          - REAL
+          - underlying risk of death following an induced abortion
+        * - prob_spontaneous_abortion_death
+          - REAL
+          - underlying risk of death following an spontaneous abortion
+        * - treatment_effect_post_abortion_care
+          - REAL
+          - Treatment effect of post abortion care
+        * - prob_antepartum_haem_stillbirth
+          - REAL
+          - probability of stillbirth for a woman suffering acute antepartum haemorrhage
+        * - prob_antepartum_haem_death
+          - REAL
+          - probability of death for a woman suffering acute antepartum haemorrhage
+        * - prob_antenatal_spe_death
+          - REAL
+          - probability of death for a woman experiencing acute severe pre-eclampsia
+        * - prob_antenatal_ec_death
+          - REAL
+          - probability of death for a woman experiencing eclampsia
+        * - prob_monthly_death_severe_htn
+          - REAL
+          - monthly risk of death for a woman with severe hypertension
+        * - prob_antenatal_ec_still_birth
+          - REAL
+          - probability of a stillbirth following an episode of eclampsia
+        * - cfr_chorioamnionitis
+          - REAL
+          - case fatality rate for chorioamnionitis
+        * - prob_still_birth_chorioamnionitis
+          - REAL
+          - probability of still birth for chorioamnionitis
+        * - prob_first_anc_visit_gestational_age
+          - LIST
+          - probability of initiation of ANC by month
+        * - prob_four_or_more_anc_visits
+          - REAL
+          - probability of a woman undergoing 4 or more basic ANC visits
+        * - prob_eight_or_more_anc_visits
+          - REAL
+          - probability of a woman undergoing 8 or more basic ANC visits
+        * - prob_anc_at_facility_level_1_2
+          - LIST
+          - probabilities a woman will attend ANC 1 at facility levels 1 or 2
+        * - probability_htn_persists
+          - REAL
+          - probability of a womans hypertension persisting post birth
+        * - prob_seek_care_pregnancy_complication
+          - REAL
+          - Probability that a woman who is pregnant will seek care in the event of a complication
+        * - prob_seek_care_pregnancy_loss
+          - REAL
+          - Probability that a woman who has developed complications post pregnancy loss will seek care
+        * - prob_seek_care_induction
+          - REAL
+          - Probability that a woman who is post term will seek care for induction of labour
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - ps_gestational_age_in_weeks
+          - REAL
+          - current gestational age, in weeks, of a womans pregnancy
+        * - ps_date_of_anc1
+          - DATE
+          - Date first ANC visit is scheduled for
+        * - ps_ectopic_pregnancy
+          - CATEGORICAL
+          - Whether a womans is experiencing ectopic pregnancy and its current state.  Possible values are: [none, not_ruptured, ruptured, ]
+        * - ps_multiple_pregnancy
+          - BOOL
+          - Whether a womans is pregnant with multiple fetuses
+        * - ps_placenta_praevia
+          - BOOL
+          - Whether a womans pregnancy will be complicated by placentapraevia
+        * - ps_deficiencies_in_pregnancy
+          - INT
+          - bitset column, stores types of anaemia causing deficiencies in pregnancy
+        * - ps_anaemia_in_pregnancy
+          - CATEGORICAL
+          - Whether a woman has anaemia in pregnancy and its severity.  Possible values are: [none, mild, moderate, severe, ]
+        * - ps_will_attend_four_or_more_anc
+          - BOOL
+          - Whether this womans is predicted to attend 4 or more antenatal care visits during her pregnancy
+        * - ps_abortion_complications
+          - INT
+          - Bitset column holding types of abortion complication
+        * - ps_prev_spont_abortion
+          - BOOL
+          - Whether this woman has had any previous pregnancies end in spontaneous abortion
+        * - ps_prev_stillbirth
+          - BOOL
+          - Whether this woman has had any previous pregnancies end in still birth
+        * - ps_htn_disorders
+          - CATEGORICAL
+          - if this woman suffers from a hypertensive disorder of pregnancy.  Possible values are: [none, gest_htn, severe_gest_htn, mild_pre_eclamp, severe_pre_eclamp, eclampsia, ]
+        * - ps_prev_pre_eclamp
+          - BOOL
+          - whether this woman has experienced pre-eclampsia in a previous pregnancy
+        * - ps_gest_diab
+          - CATEGORICAL
+          - whether this woman is experiencing gestational diabetes.  Possible values are: [none, uncontrolled, controlled, ]
+        * - ps_prev_gest_diab
+          - BOOL
+          - whether this woman has ever suffered from gestational diabetes during a previous pregnancy
+        * - ps_placental_abruption
+          - BOOL
+          - Whether this woman is experiencing placental abruption
+        * - ps_antepartum_haemorrhage
+          - CATEGORICAL
+          - severity of this womans antepartum haemorrhage.  Possible values are: [none, mild_moderate, severe, ]
+        * - ps_premature_rupture_of_membranes
+          - BOOL
+          - whether this woman has experience rupture of membranes before the onset of labour. If this is <37 weeks from gestation the woman has preterm premature rupture of membranes
+        * - ps_chorioamnionitis
+          - CATEGORICAL
+          - Whether a womans is experiencing chorioamnionitis andits current state.  Possible values are: [none, histological, clinical, ]
+        * - ps_emergency_event
+          - BOOL
+          - signifies a woman in undergoing an acute emergency event in her pregnancy- used to consolidated care seeking in the instance of multiple complications
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+
+     **Functions (defined or overridden in class PregnancySupervisor):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: further_on_birth_pregnancy_supervisor
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: store_dalys_in_mni
+
+     .. automethod:: pregnancy_supervisor_property_reset
+
+     .. automethod:: apply_linear_model
+
+     .. automethod:: apply_risk_of_spontaneous_abortion
+
+     .. automethod:: apply_risk_of_induced_abortion
+
+     .. automethod:: apply_risk_of_abortion_complications
+
+     .. automethod:: apply_risk_of_deficiencies_and_anaemia
+
+     .. automethod:: apply_risk_of_gestational_diabetes
+
+     .. automethod:: apply_risk_of_hypertensive_disorders
+
+     .. automethod:: apply_risk_of_progression_of_hypertension
+
+     .. automethod:: apply_risk_of_death_from_hypertension
+
+     .. automethod:: apply_risk_of_placental_abruption
+
+     .. automethod:: apply_risk_of_antepartum_haemorrhage
+
+     .. automethod:: apply_risk_of_onset_and_progression_antenatal_infections
+
+     .. automethod:: apply_risk_of_premature_rupture_of_membranes
+
+     .. automethod:: apply_risk_of_preterm_labour
+
+     .. automethod:: update_variables_post_still_birth_for_data_frame
+
+     .. automethod:: update_variables_post_still_birth_for_individual
+
+     .. automethod:: apply_risk_of_still_birth
+
+     .. automethod:: induction_care_seeking_and_still_birth_risk
+
+     .. automethod:: care_seeking_pregnancy_loss_complications
+
+     .. automethod:: generate_mother_and_newborn_dictionary_for_individual
+
+
+
+
+
+
+
+
+.. autoclass:: PregnancySupervisorEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class PregnancySupervisorEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: EctopicPregnancyEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class EctopicPregnancyEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: EctopicPregnancyRuptureEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class EctopicPregnancyRuptureEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: EarlyPregnancyLossDeathEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class EarlyPregnancyLossDeathEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: GestationalDiabetesGlycaemicControlEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class GestationalDiabetesGlycaemicControlEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: PregnancyLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class PregnancyLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

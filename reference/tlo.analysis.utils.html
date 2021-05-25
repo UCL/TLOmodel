@@ -1,0 +1,358 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.analysis.utils module &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.logging package" href="tlo.logging.html" />
+    <link rel="prev" title="tlo.analysis package" href="tlo.analysis.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Reference</a> &raquo;</li>
+        
+          <li><a href="tlo.html">tlo package</a> &raquo;</li>
+        
+          <li><a href="tlo.analysis.html">tlo.analysis package</a> &raquo;</li>
+        
+      <li>tlo.analysis.utils module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/tlo.analysis.utils.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tlo.analysis.utils">
+<span id="tlo-analysis-utils-module"></span><h1>tlo.analysis.utils module<a class="headerlink" href="#module-tlo.analysis.utils" title="Permalink to this headline">¶</a></h1>
+<p>General utility functions for TLO analysis</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.parse_log_file">
+<span class="sig-name descname"><span class="pre">parse_log_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#parse_log_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.parse_log_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses logged output from a TLO run and returns Pandas dataframes.</p>
+<p>The format can be one of two style, old-style TLO logging like</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INFO</span><span class="o">|&lt;</span><span class="n">logger</span> <span class="n">name</span><span class="o">&gt;|&lt;</span><span class="n">simulation</span> <span class="n">datestamp</span><span class="o">&gt;|&lt;</span><span class="n">log</span> <span class="n">key</span><span class="o">&gt;|&lt;</span><span class="n">python</span> <span class="nb">list</span> <span class="ow">or</span> <span class="n">dictionary</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>or a JSON representation with the first instance from a log key being a header line, and all following
+rows being data only rows (without column names or metadata).</p>
+<p>The dictionary returned has the format:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="o">&lt;</span><span class="n">logger</span> <span class="mi">1</span> <span class="n">name</span><span class="o">&gt;</span><span class="p">:</span> <span class="p">{</span>
+                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">1</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span><span class="p">,</span>
+                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">2</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span><span class="p">,</span>
+                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">3</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span>
+                     <span class="p">},</span>
+
+    <span class="o">&lt;</span><span class="n">logger</span> <span class="mi">2</span> <span class="n">name</span><span class="o">&gt;</span><span class="p">:</span> <span class="p">{</span>
+                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">4</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span><span class="p">,</span>
+                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">5</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span><span class="p">,</span>
+                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">6</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span>
+                     <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filepath</strong> – file path to log file</p></li>
+<li><p><strong>level</strong> – logging level to be parsed for structured logging</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary of parsed log data</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.write_log_to_excel">
+<span class="sig-name descname"><span class="pre">write_log_to_excel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dataframes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#write_log_to_excel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.write_log_to_excel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the output of parse_log_file() and creates an Excel file from dataframes</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.make_calendar_period_lookup">
+<span class="sig-name descname"><span class="pre">make_calendar_period_lookup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#make_calendar_period_lookup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.make_calendar_period_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dictionary mapping calendar year (in years) to five year period
+i.e. { 0: ‘0-4’, 1: ‘0-4’, …, 119: ‘100+’, 120: ‘100+’ }</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.make_age_grp_types">
+<span class="sig-name descname"><span class="pre">make_age_grp_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#make_age_grp_types"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.make_age_grp_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make an ordered categorical type for age-groups
+Returns CategoricalDType</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.make_calendar_period_type">
+<span class="sig-name descname"><span class="pre">make_calendar_period_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#make_calendar_period_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.make_calendar_period_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make an ordered categorical type for calendar periods
+Returns CategoricalDType</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_scenario_outputs">
+<span class="sig-name descname"><span class="pre">get_scenario_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputs_dir</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">list</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_scenario_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_scenario_outputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns paths of folders associated with a batch_file, in chronological order.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_scenario_info">
+<span class="sig-name descname"><span class="pre">get_scenario_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_output_dir</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">dict</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_scenario_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_scenario_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function to get the the number draws and the number of runs in a batch set.</p>
+<p>TODO: read the JSON file to get further information</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.load_pickled_dataframes">
+<span class="sig-name descname"><span class="pre">load_pickled_dataframes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">draw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">dict</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#load_pickled_dataframes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.load_pickled_dataframes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function to create a dict contaning all the logs from the specified run within a batch set</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.extract_params">
+<span class="sig-name descname"><span class="pre">extract_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.frame.DataFrame</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#extract_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.extract_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function to get overridden parameters from scenario runs</p>
+<p>Returns dateframe summarizing parameters that change across the draws. It produces a dataframe with index of draw
+and columns of each parameters that is specified to be varied in the batch. NB. This does the extraction from run 0
+in each draw, under the assumption that the over-written parameters are the same in each run.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.extract_results">
+<span class="sig-name descname"><span class="pre">extract_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.frame.DataFrame</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#extract_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.extract_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function to unpack results</p>
+<p>Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an ‘index’
+component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
+index is the same in each run).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.summarize">
+<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_mean</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.frame.DataFrame</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#summarize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.summarize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function to compute summary statistics</p>
+<p>Finds mean value and 95% interval across the runs for each draw.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_grid">
+<span class="sig-name descname"><span class="pre">get_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.series.Series</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function to create the arrays needed to plot a heatmap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<em>pd.DataFrame</em>) – the dataframe of parameters with index=draw (made using <cite>extract_params()</cite>).</p></li>
+<li><p><strong>res</strong> (<em>pd.Series</em>) – results of interest with index=draw (can be made using <cite>extract_params()</cite>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>grid as dictionary</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tlo.logging.html" class="btn btn-neutral float-right" title="tlo.logging package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.analysis.html" class="btn btn-neutral float-left" title="tlo.analysis package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,240 @@
+tlo.methods.ncds module
+=======================
+
+.. automodule:: tlo.methods.ncds
+
+
+.. autoclass:: Ncds
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - diabetes_onset
+          - DICT
+          - all the parameters that specify the linear models for onset of diabetes
+        * - hypertension_onset
+          - DICT
+          - all the parameters that specify the linear models for onset of hypertension
+        * - chronic_kidney_disease_onset
+          - DICT
+          - all the parameters that specify the linear models for onset of chronic_kidney_disease
+        * - chronic_lower_back_pain_onset
+          - DICT
+          - all the parameters that specify the linear models for onset of chronic_lower_back_pain
+        * - chronic_ischemic_hd_onset
+          - DICT
+          - all the parameters that specify the linear models for onset of chronic_ischemic_hd
+        * - diabetes_removal
+          - DICT
+          - all the parameters that specify the linear models for removal of diabetes
+        * - hypertension_removal
+          - DICT
+          - all the parameters that specify the linear models for removal of hypertension
+        * - chronic_kidney_disease_removal
+          - DICT
+          - all the parameters that specify the linear models for removal of chronic_kidney_disease
+        * - chronic_lower_back_pain_removal
+          - DICT
+          - all the parameters that specify the linear models for removal of chronic_lower_back_pain
+        * - chronic_ischemic_hd_removal
+          - DICT
+          - all the parameters that specify the linear models for removal of chronic_ischemic_hd
+        * - ever_stroke_onset
+          - DICT
+          - all the parameters that specify the linear models for onset of ever_stroke
+        * - ever_heart_attack_onset
+          - DICT
+          - all the parameters that specify the linear models for onset of ever_heart_attack
+        * - diabetes_death
+          - DICT
+          - all the parameters that specify the linear models for death from diabetes
+        * - hypertension_death
+          - DICT
+          - all the parameters that specify the linear models for death from hypertension
+        * - chronic_kidney_disease_death
+          - DICT
+          - all the parameters that specify the linear models for death from chronic_kidney_disease
+        * - chronic_lower_back_pain_death
+          - DICT
+          - all the parameters that specify the linear models for death from chronic_lower_back_pain
+        * - chronic_ischemic_hd_death
+          - DICT
+          - all the parameters that specify the linear models for death from chronic_ischemic_hd
+        * - ever_stroke_death
+          - DICT
+          - all the parameters that specify the linear models for death from ever_stroke
+        * - ever_heart_attack_death
+          - DICT
+          - all the parameters that specify the linear models for death from ever_heart_attack
+        * - diabetes_initial_prev
+          - DICT
+          - initial prevalence of condition
+        * - hypertension_initial_prev
+          - DICT
+          - initial prevalence of condition
+        * - chronic_kidney_disease_initial_prev
+          - DICT
+          - initial prevalence of condition
+        * - chronic_lower_back_pain_initial_prev
+          - DICT
+          - initial prevalence of condition
+        * - chronic_ischemic_hd_initial_prev
+          - DICT
+          - initial prevalence of condition
+        * - interval_between_polls
+          - INT
+          - months between the main polling event
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - nc_diabetes
+          - BOOL
+          - Whether or not someone has diabetes
+        * - nc_hypertension
+          - BOOL
+          - Whether or not someone has hypertension
+        * - nc_chronic_kidney_disease
+          - BOOL
+          - Whether or not someone has chronic_kidney_disease
+        * - nc_chronic_lower_back_pain
+          - BOOL
+          - Whether or not someone has chronic_lower_back_pain
+        * - nc_chronic_ischemic_hd
+          - BOOL
+          - Whether or not someone has chronic_ischemic_hd
+        * - nc_ever_stroke
+          - BOOL
+          - Whether or not someone has had a ever_stroke
+        * - nc_ever_heart_attack
+          - BOOL
+          - Whether or not someone has had a ever_heart_attack
+        * - nc_n_conditions
+          - INT
+          - how many NCD conditions the person currently has
+        * - nc_condition_combos
+          - BOOL
+          - whether or not the person currently has a combination of conds
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     SYMPTOMS : {}
+
+     condition_list : {'nc_diabetes': BOOL === Whether or not someone has diabetes, 'nc_hypertension': BOOL === Whether or not someone has hypertension, 'nc_chronic_kidney_disease': BOOL === Whether or not someone has chronic_kidney_disease, 'nc_chronic_lower_back_pain': BOOL === Whether or not someone has chronic_lower_back_pain, 'nc_chronic_ischemic_hd': BOOL === Whether or not someone has chronic_ischemic_hd}
+
+     conditions : ['diabetes', 'hypertension', 'chronic_kidney_disease', 'chronic_lower_back_pain', 'chronic_ischemic_hd']
+
+     death_conditions_param_dicts : {'diabetes_death': DICT === all the parameters that specify the linear models for death from diabetes, 'hypertension_death': DICT === all the parameters that specify the linear models for death from hypertension, 'chronic_kidney_disease_death': DICT === all the parameters that specify the linear models for death from chronic_kidney_disease, 'chronic_lower_back_pain_death': DICT === all the parameters that specify the linear models for death from chronic_lower_back_pain, 'chronic_ischemic_hd_death': DICT === all the parameters that specify the linear models for death from chronic_ischemic_hd}
+
+     death_events_param_dicts : {'ever_stroke_death': DICT === all the parameters that specify the linear models for death from ever_stroke, 'ever_heart_attack_death': DICT === all the parameters that specify the linear models for death from ever_heart_attack}
+
+     event_list : {'nc_ever_stroke': BOOL === Whether or not someone has had a ever_stroke, 'nc_ever_heart_attack': BOOL === Whether or not someone has had a ever_heart_attack}
+
+     events : ['ever_stroke', 'ever_heart_attack']
+
+     initial_prev_param_dicts : {'diabetes_initial_prev': DICT === initial prevalence of condition, 'hypertension_initial_prev': DICT === initial prevalence of condition, 'chronic_kidney_disease_initial_prev': DICT === initial prevalence of condition, 'chronic_lower_back_pain_initial_prev': DICT === initial prevalence of condition, 'chronic_ischemic_hd_initial_prev': DICT === initial prevalence of condition}
+
+     onset_conditions_param_dicts : {'diabetes_onset': DICT === all the parameters that specify the linear models for onset of diabetes, 'hypertension_onset': DICT === all the parameters that specify the linear models for onset of hypertension, 'chronic_kidney_disease_onset': DICT === all the parameters that specify the linear models for onset of chronic_kidney_disease, 'chronic_lower_back_pain_onset': DICT === all the parameters that specify the linear models for onset of chronic_lower_back_pain, 'chronic_ischemic_hd_onset': DICT === all the parameters that specify the linear models for onset of chronic_ischemic_hd}
+
+     onset_events_param_dicts : {'ever_stroke_onset': DICT === all the parameters that specify the linear models for onset of ever_stroke, 'ever_heart_attack_onset': DICT === all the parameters that specify the linear models for onset of ever_heart_attack}
+
+     other_params_dict : {'interval_between_polls': INT === months between the main polling event}
+
+     removal_conditions_param_dicts : {'diabetes_removal': DICT === all the parameters that specify the linear models for removal of diabetes, 'hypertension_removal': DICT === all the parameters that specify the linear models for removal of hypertension, 'chronic_kidney_disease_removal': DICT === all the parameters that specify the linear models for removal of chronic_kidney_disease, 'chronic_lower_back_pain_removal': DICT === all the parameters that specify the linear models for removal of chronic_lower_back_pain, 'chronic_ischemic_hd_removal': DICT === all the parameters that specify the linear models for removal of chronic_ischemic_hd}
+
+     **Functions (defined or overridden in class Ncds):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: build_linear_model
+
+     .. automethod:: on_birth
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: on_hsi_alert
+
+
+
+
+
+
+
+
+.. autoclass:: Ncds_MainPollingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class Ncds_MainPollingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: NcdEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class NcdEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: Ncds_LoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class Ncds_LoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

@@ -1,0 +1,658 @@
+tlo.methods.care_of_women_during_pregnancy module
+=================================================
+
+.. automodule:: tlo.methods.care_of_women_during_pregnancy
+
+
+.. autoclass:: CareOfWomenDuringPregnancy
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - prob_anc_continues
+          - REAL
+          - probability a woman will return for a subsequent ANC appointment
+        * - prob_an_ip_at_facility_level_1_2_3
+          - LIST
+          - probabilities that antenatal inpatient care will be scheduled at facility level 1, 2 or 3
+        * - squeeze_factor_threshold_anc
+          - REAL
+          - squeeze factor threshold over which an ANC appointment cannot run
+        * - prob_intervention_delivered_urine_ds
+          - REAL
+          - probability a woman will receive the intervention "urine dipstick" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_bp
+          - REAL
+          - probability a woman will receive the intervention "blood pressure measurement" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_ifa
+          - REAL
+          - probability a woman will receive the intervention "iron and folic acid" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_bep
+          - REAL
+          - probability a woman will receive the intervention "Balance energy and protein supplements" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_depression_screen
+          - REAL
+          - probability a woman will receive the intervention "depression screen" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_llitn
+          - REAL
+          - probability a woman will receive the intervention "Long lasting insecticide treated net" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_tb_screen
+          - REAL
+          - probability a woman will receive the intervention "TB screen" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_tt
+          - REAL
+          - probability a woman will receive the intervention "tetanus toxoid" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_calcium
+          - REAL
+          - probability a woman will receive the intervention "urine dipstick" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_poct
+          - REAL
+          - probability a woman will receive the intervention "point of care Hb testing" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_albendazole
+          - REAL
+          - probability a woman will receive the intervention "albendazole" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_hepb_test
+          - REAL
+          - probability a woman will receive the intervention "Hepatitis B test" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_syph_test
+          - REAL
+          - probability a woman will receive the intervention "Syphilis test" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_hiv_test
+          - REAL
+          - probability a woman will receive the intervention "HIV test" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_iptp
+          - REAL
+          - probability a woman will receive the intervention "IPTp" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - prob_intervention_delivered_gdm_test
+          - REAL
+          - probability a woman will receive the intervention "GDM screening" given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - sensitivity_bp_monitoring
+          - REAL
+          - sensitivity of blood pressure monitoring to detect hypertension
+        * - specificity_bp_monitoring
+          - REAL
+          - specificity of blood pressure monitoring to detect hypertension
+        * - sensitivity_urine_protein_1_plus
+          - REAL
+          - sensitivity of a urine dipstick test to detect proteinuria at 1+
+        * - specificity_urine_protein_1_plus
+          - REAL
+          - specificity of a urine dipstick test to detect proteinuria at 1+
+        * - sensitivity_poc_hb_test
+          - REAL
+          - sensitivity of a point of care Hb test to detect anaemia
+        * - specificity_poc_hb_test
+          - REAL
+          - specificity of a point of care Hb test to detect anaemia
+        * - sensitivity_fbc_hb_test
+          - REAL
+          - sensitivity of a Full Blood Count test to detect anaemia
+        * - specificity_fbc_hb_test
+          - REAL
+          - specificity of a Full Blood Count test to detect anaemia
+        * - sensitivity_blood_test_glucose
+          - REAL
+          - sensitivity of a blood test to detect raised blood glucose
+        * - specificity_blood_test_glucose
+          - REAL
+          - specificity of a blood test to detect raised blood glucose
+        * - effect_of_ifa_for_resolving_anaemia
+          - REAL
+          - treatment effectiveness of starting iron and folic acid on resolving anaemia
+        * - treatment_effect_blood_transfusion_anaemia
+          - REAL
+          - treatment effectiveness of blood transfusion for anaemia in pregnancy
+        * - effect_of_iron_replacement_for_resolving_anaemia
+          - REAL
+          - treatment effectiveness of iron replacement in resolving anaemia
+        * - effect_of_iron_replacement_for_resolving_iron_def
+          - REAL
+          - treatment effectiveness of iron replacement in resolving iron deficiency
+        * - effect_of_folate_replacement_for_resolving_anaemia
+          - REAL
+          - treatment effectiveness of folate replacement in resolving anaemia
+        * - effect_of_folate_replacement_for_resolving_folate_def
+          - REAL
+          - treatment effectiveness of folate replacement in resolving folate deficiency
+        * - effect_of_b12_replacement_for_resolving_anaemia
+          - REAL
+          - treatment effectiveness of b12 replacement in resolving anaemia
+        * - effect_of_b12_replacement_for_resolving_b12_def
+          - REAL
+          - treatment effectiveness of b12 replacement in resolving b12 deficiency
+        * - cfr_severe_pre_eclampsia
+          - REAL
+          - case fatality rate severe pre-eclampsia
+        * - multiplier_spe_cfr_eclampsia
+          - REAL
+          - cfr multiplier to generate cfr for eclampsia 
+        * - treatment_effect_mag_sulph
+          - REAL
+          - treatment effectiveness magnesium sulphate on mortality due to severe pre-eclampsia/eclampsia
+        * - treatment_effect_iv_anti_htn
+          - REAL
+          - treatment effectiveness IV antihypertensives on mortality due to severe pre-eclampsia/eclampsia
+        * - prob_still_birth_aph
+          - REAL
+          - probability of a still birth following APH prior to treatment
+        * - prob_still_birth_spe_ec
+          - REAL
+          - probability of a still birth following severe pre-eclampsia/eclampsia prior to treatment
+        * - cfr_aph
+          - REAL
+          - case fatality rate antepartum haemorrhage
+        * - treatment_effect_bt_aph
+          - REAL
+          - treatment effect of blood transfusion on antepartum haemorrhage mortality 
+        * - prob_evac_procedure_pac
+          - LIST
+          - Probabilities that a woman will receive D&C, MVA or misoprostal as treatment for abortion 
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - ac_total_anc_visits_current_pregnancy
+          - INT
+          - rolling total of antenatal visits this woman has attended during her pregnancy
+        * - ac_facility_type
+          - CATEGORICAL
+          - Type of facility that a woman will receive ANC in for her pregnancy.  Possible values are: [none, health_centre, hospital, ]
+        * - ac_date_next_contact
+          - DATE
+          - Date on which this woman is scheduled to return for her next ANC contact
+        * - ac_to_be_admitted
+          - BOOL
+          - Whether this woman requires admission following an ANC visit
+        * - ac_receiving_iron_folic_acid
+          - BOOL
+          - whether this woman is receiving daily iron & folic acid supplementation
+        * - ac_receiving_bep_supplements
+          - BOOL
+          - whether this woman is receiving daily balanced energy and protein supplementation
+        * - ac_receiving_calcium_supplements
+          - BOOL
+          - whether this woman is receiving daily calcium supplementation
+        * - ac_doses_of_iptp_received
+          - INT
+          - Number of doses of intermittent preventative treatment in pregnancy received during this pregnancy
+        * - ac_itn_provided
+          - BOOL
+          - Whether this woman is provided with an insecticide treated bed net during the appropriate ANC visit
+        * - ac_ttd_received
+          - INT
+          - Number of doses of tetanus toxoid administered during this pregnancy
+        * - ac_gest_htn_on_treatment
+          - BOOL
+          - Whether this woman has been initiated on treatment for gestational hypertension
+        * - ac_gest_diab_on_treatment
+          - CATEGORICAL
+          - Treatment this woman is receiving for gestational diabetes.  Possible values are: [none, diet_exercise, orals, insulin, ]
+        * - ac_ectopic_pregnancy_treated
+          - BOOL
+          - Whether this woman has received treatment for an ectopic pregnancy
+        * - ac_post_abortion_care_interventions
+          - INT
+          - bitset list of interventions delivered to a woman undergoing post abortion care
+        * - ac_received_abx_for_prom
+          - BOOL
+          - Whether this woman has received antibiotics as treatment for premature rupture of membranes
+        * - ac_received_abx_for_chorioamnionitis
+          - BOOL
+          - Whether this woman has received antibiotics as treatment for chorioamnionitis rupture of membranes
+        * - ac_mag_sulph_treatment
+          - BOOL
+          - Whether this woman has received magnesium sulphate for treatment of severe pre-eclampsia/eclampsia
+        * - ac_iv_anti_htn_treatment
+          - BOOL
+          - Whether this woman has received intravenous antihypertensive drugs for treatment of severe hypertension
+        * - ac_received_blood_transfusion
+          - BOOL
+          - Whether this woman has received a blood transfusion antenatally
+        * - ac_admitted_for_immediate_delivery
+          - CATEGORICAL
+          - Admission type for women needing urgent delivery in the antenatal period.  Possible values are: [none, induction_now, induction_future, caesarean_now, caesarean_future, ]
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
+
+     **Functions (defined or overridden in class CareOfWomenDuringPregnancy):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: care_of_women_in_pregnancy_property_reset
+
+     .. automethod:: on_birth
+
+     .. automethod:: further_on_birth_care_of_women_in_pregnancy
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: determine_gestational_age_for_next_contact
+
+     .. automethod:: antenatal_care_scheduler
+
+     .. automethod:: schedule_admission
+
+     .. automethod:: screening_interventions_delivered_at_every_contact
+
+     .. automethod:: interventions_initiated_at_first_contact
+
+     .. automethod:: tetanus_vaccination
+
+     .. automethod:: calcium_supplementation
+
+     .. automethod:: point_of_care_hb_testing
+
+     .. automethod:: albendazole_administration
+
+     .. automethod:: hep_b_testing
+
+     .. automethod:: syphilis_testing
+
+     .. automethod:: hiv_testing
+
+     .. automethod:: iptp_administration
+
+     .. automethod:: gdm_screening
+
+     .. automethod:: anc_catch_up_interventions
+
+     .. automethod:: check_anc1_can_run
+
+     .. automethod:: check_subsequent_anc_can_run
+
+     .. automethod:: full_blood_count_testing
+
+     .. automethod:: treatment_of_anaemia_causing_deficiencies
+
+     .. automethod:: start_iron_and_folic_acid
+
+     .. automethod:: antenatal_blood_transfusion
+
+     .. automethod:: initiate_maintenance_anti_hypertensive_treatment
+
+     .. automethod:: initiate_treatment_for_severe_hypertension
+
+     .. automethod:: treatment_for_severe_pre_eclampsia_or_eclampsia
+
+     .. automethod:: antibiotics_for_prom
+
+     .. automethod:: antibiotics_for_chorioamnionitis
+
+     .. automethod:: ectopic_pregnancy_treatment_doesnt_run
+
+     .. automethod:: calculate_beddays
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: AntenatalCareLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class AntenatalCareLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

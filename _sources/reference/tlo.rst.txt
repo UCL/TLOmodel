@@ -1,0 +1,38 @@
+tlo package
+===========
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   tlo.analysis
+   tlo.logging
+   tlo.methods
+   tlo.test
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   tlo.cli
+   tlo.core
+   tlo.docs
+   tlo.events
+   tlo.lm
+   tlo.population
+   tlo.progressbar
+   tlo.scenario
+   tlo.simulation
+   tlo.util
+
+Module contents
+---------------
+
+.. automodule:: tlo
+   :members:
+   :undoc-members:
+   :show-inheritance:

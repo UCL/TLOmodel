@@ -1,0 +1,4 @@
+tlo.methods.labour_lm module
+============================
+
+.. automodule:: tlo.methods.labour_lm

@@ -1,0 +1,559 @@
+tlo.methods.enhanced_lifestyle module
+=====================================
+
+.. automodule:: tlo.methods.enhanced_lifestyle
+
+
+.. autoclass:: Lifestyle
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - init_p_urban
+          - REAL
+          - initial proportion urban
+        * - init_p_wealth_urban
+          - LIST
+          - List of probabilities of category given urban
+        * - init_p_wealth_rural
+          - LIST
+          - List of probabilities of category given rural
+        * - init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1
+          - LIST
+          - List of probabilities of  bmi categories for urban men age 15-29 with not high sugar, not tobacco, wealth level 1
+        * - init_or_higher_bmi_f
+          - REAL
+          - odds ratio higher BMI if female
+        * - init_or_higher_bmi_rural
+          - REAL
+          - odds ratio higher BMI if rural
+        * - init_or_higher_bmi_high_sugar
+          - REAL
+          - odds ratio higher BMI if high sugar intake
+        * - init_or_higher_bmi_age3049
+          - REAL
+          - odds ratio higher BMI if age 30-49
+        * - init_or_higher_bmi_agege50
+          - REAL
+          - odds ratio higher BMI if age ge 50
+        * - init_or_higher_bmi_tob
+          - REAL
+          - odds ratio higher BMI if use tobacco
+        * - init_or_higher_bmi_per_higher_wealth
+          - REAL
+          - odds ratio higher BMI per higer wealth level
+        * - init_or_higher_bmi_per_higher_wealth_level
+          - REAL
+          - odds ratio for higher initial bmi category per higher wealth level
+        * - init_p_high_sugar
+          - REAL
+          - initital proportion with high sugar intake
+        * - init_p_high_salt_urban
+          - REAL
+          - initital proportion with high salt intake
+        * - init_or_high_salt_rural
+          - REAL
+          - odds ratio high salt if rural
+        * - init_p_ex_alc_m
+          - REAL
+          - initital proportion of men with excess alcohol use
+        * - init_p_ex_alc_f
+          - REAL
+          - initital proportion of women with excess alcohol use
+        * - init_p_low_ex_urban_m
+          - REAL
+          - initital proportion of men with low exercise urban
+        * - init_or_low_ex_rural
+          - REAL
+          - odds ratio low exercise rural
+        * - init_or_low_ex_f
+          - REAL
+          - odds ratio low exercise female
+        * - init_p_tob_age1519_m_wealth1
+          - REAL
+          - initital proportion of 15-19 year old men using tobacco, wealth level 1 
+        * - init_or_tob_f
+          - REAL
+          - odds ratio tobacco use females
+        * - init_or_tob_age2039_m
+          - REAL
+          - odds ratio tobacco use age2039 in men
+        * - init_or_tob_agege40_m
+          - REAL
+          - odds ratio tobacco use age40+ in men
+        * - init_or_tob_wealth2
+          - REAL
+          - odds ratio tobacco use wealth level 2
+        * - init_or_tob_wealth3
+          - REAL
+          - odds ratio tobacco use wealth level 3
+        * - init_or_tob_wealth4
+          - REAL
+          - odds ratio tobacco use wealth level 4
+        * - init_or_tob_wealth5
+          - REAL
+          - odds ratio tobacco use wealth level 5
+        * - init_dist_mar_stat_age1520
+          - LIST
+          - proportions never, current, div_wid age 15-20 baseline
+        * - init_dist_mar_stat_age2030
+          - LIST
+          - proportions never, current, div_wid age 20-30 baseline
+        * - init_dist_mar_stat_age3040
+          - LIST
+          - proportions never, current, div_wid age 30-40 baseline
+        * - init_dist_mar_stat_age4050
+          - LIST
+          - proportions never, current, div_wid age 40-50 baseline
+        * - init_dist_mar_stat_age5060
+          - LIST
+          - proportions never, current, div_wid age 50-60 baseline
+        * - init_dist_mar_stat_agege60
+          - LIST
+          - proportions never, current, div_wid age 60+ baseline
+        * - init_age2030_w5_some_ed
+          - REAL
+          - proportions of low wealth 20-30 year olds with some education at baseline
+        * - init_or_some_ed_age0513
+          - REAL
+          - odds ratio of some education at baseline age 5-13
+        * - init_or_some_ed_age1320
+          - REAL
+          - odds ratio of some education at baseline age 13-20
+        * - init_or_some_ed_age2030
+          - REAL
+          - odds ratio of some education at baseline age 20-30
+        * - init_or_some_ed_age3040
+          - REAL
+          - odds ratio of some education at baseline age 30-40
+        * - init_or_some_ed_age4050
+          - REAL
+          - odds ratio of some education at baseline age 40-50
+        * - init_or_some_ed_age5060
+          - REAL
+          - odds ratio of some education at baseline age 50-60
+        * - init_or_some_ed_per_higher_wealth
+          - REAL
+          - odds ratio of some education at baseline per higher wealth level
+        * - init_prop_age2030_w5_some_ed_sec
+          - REAL
+          - proportion of low wealth aged 20-30 with some education who have secondary education at baseline
+        * - init_or_some_ed_sec_age1320
+          - REAL
+          - odds ratio of secondary education age 13-20
+        * - init_or_some_ed_sec_age3040
+          - REAL
+          - odds ratio of secondary education age 30-40
+        * - init_or_some_ed_sec_age4050
+          - REAL
+          - odds ratio of secondary education age 40-50
+        * - init_or_some_ed_sec_age5060
+          - REAL
+          - odds ratio of secondary education age 50-60
+        * - init_or_some_ed_sec_agege60
+          - REAL
+          - odds ratio of secondary education age 60+
+        * - init_or_some_ed_sec_per_higher_wealth
+          - REAL
+          - odds ratio of secondary education per higher wealth level
+        * - init_p_unimproved_sanitation_urban
+          - REAL
+          - initial probability of unimproved_sanitation given urban
+        * - init_or_unimproved_sanitation_rural
+          - REAL
+          - initial odds ratio of unimproved_sanitation if rural
+        * - init_p_no_clean_drinking_water_urban
+          - REAL
+          - initial probability of no_clean_drinking_water given urban
+        * - init_or_no_clean_drinking_water_rural
+          - REAL
+          - initial odds ratio of no clean drinking_water if rural
+        * - init_p_wood_burn_stove_urban
+          - REAL
+          - initial probability of wood_burn_stove given urban
+        * - init_or_wood_burn_stove_rural
+          - REAL
+          - initial odds ratio of wood_burn_stove if rural
+        * - init_p_no_access_handwashing_wealth1
+          - REAL
+          - initial probability of no_access_handwashing given wealth 1
+        * - init_or_no_access_handwashing_per_lower_wealth
+          - REAL
+          - initial odds ratio of no_access_handwashing per lower wealth level
+        * - init_rp_some_ed_age0513
+          - REAL
+          - relative prevalence of some education at baseline age 5-13
+        * - init_rp_some_ed_age1320
+          - REAL
+          - relative prevalence of some education at baseline age 13-20
+        * - init_rp_some_ed_age2030
+          - REAL
+          - relative prevalence of some education at baseline age 20-30
+        * - init_rp_some_ed_age3040
+          - REAL
+          - relative prevalence of some education at baseline age 30-40
+        * - init_rp_some_ed_age4050
+          - REAL
+          - relative prevalence of some education at baseline age 40-50
+        * - init_rp_some_ed_age5060
+          - REAL
+          - relative prevalence of some education at baseline age 50-60
+        * - init_rp_some_ed_per_higher_wealth
+          - REAL
+          - relative prevalence of some education at baseline per higher wealth level
+        * - init_rp_some_ed_sec_age1320
+          - REAL
+          - relative prevalence of secondary education age 15-20
+        * - init_rp_some_ed_sec_age3040
+          - REAL
+          - relative prevalence of secondary education age 30-40
+        * - init_rp_some_ed_sec_age4050
+          - REAL
+          - relative prevalence of secondary education age 40-50
+        * - init_rp_some_ed_sec_age5060
+          - REAL
+          - relative prevalence of secondary education age 50-60
+        * - init_rp_some_ed_sec_agege60
+          - REAL
+          - relative prevalence of secondary education age 60+
+        * - init_rp_some_ed_agege60
+          - REAL
+          - relative prevalence of some education at baseline age age 60+
+        * - init_rp_some_ed_sec_per_higher_wealth
+          - REAL
+          - relative prevalence of secondary education per higher wealth level
+        * - r_urban
+          - REAL
+          - probability per 3 months of change from rural to urban
+        * - r_rural
+          - REAL
+          - probability per 3 months of change from urban to rural
+        * - r_higher_bmi
+          - REAL
+          - probability per 3 months of increase in bmi category if rural male age15-29 not using tobacoo with wealth level 1 with not high sugar intake
+        * - rr_higher_bmi_urban
+          - REAL
+          - probability per 3 months of increase in bmi category if 
+        * - rr_higher_bmi_f
+          - REAL
+          - rate ratio for increase in bmi category for females
+        * - rr_higher_bmi_age3049
+          - REAL
+          - rate ratio for increase in bmi category for age 30-49
+        * - rr_higher_bmi_agege50
+          - REAL
+          - rate ratio for increase in bmi category for age ge 50
+        * - rr_higher_bmi_tob
+          - REAL
+          - rate ratio for increase in bmi category for tobacco users
+        * - rr_higher_bmi_per_higher_wealth
+          - REAL
+          - rate ratio for increase in bmi category per higher wealth level
+        * - rr_higher_bmi_high_sugar
+          - REAL
+          - rate ratio for increase in bmi category for high sugar intake
+        * - r_lower_bmi
+          - REAL
+          - probability per 3 months of decrease in bmi category in non tobacco users
+        * - rr_lower_bmi_tob
+          - REAL
+          - rate ratio for lower bmi category for tobacco users
+        * - rr_lower_bmi_pop_advice_weight
+          - REAL
+          - probability per 3 months of decrease in bmi category given population advice/campaign on weight
+        * - r_high_salt_urban
+          - REAL
+          - probability per 3 months of high salt intake if urban
+        * - rr_high_salt_rural
+          - REAL
+          - rate ratio for high salt if rural
+        * - r_not_high_salt
+          - REAL
+          - probability per 3 months of not high salt intake
+        * - rr_not_high_salt_pop_advice_salt
+          - REAL
+          - probability per 3 months of not high salt givenpopulation advice/campaign on salt
+        * - r_high_sugar
+          - REAL
+          - probability per 3 months of high sugar intake
+        * - r_not_high_sugar
+          - REAL
+          - probability per 3 months of not high sugar intake
+        * - rr_not_high_sugar_pop_advice_sugar
+          - REAL
+          - probability per 3 months of not high sugar givenpopulation advice/campaign on sugar
+        * - r_low_ex
+          - REAL
+          - probability per 3 months of change from not low exercise to low exercise
+        * - r_not_low_ex
+          - REAL
+          - probability per 3 months of change from low exercise to not low exercie
+        * - rr_not_low_ex_pop_advice_exercise
+          - REAL
+          - probability per 3 months of not low exercisepopulation advice/campaign on exercise
+        * - rr_low_ex_f
+          - REAL
+          - risk ratio for becoming low exercise if female rather than male
+        * - rr_low_ex_urban
+          - REAL
+          - risk ratio for becoming low exercise if urban rather than rural
+        * - r_tob
+          - REAL
+          - probability per 3 months of change from not using tobacco to using tobacco if male age 15-19 wealth level 1
+        * - r_not_tob
+          - REAL
+          - probability per 3 months of change from tobacco using to not tobacco using
+        * - rr_tob_f
+          - REAL
+          - rate ratio tobacco if female
+        * - rr_tob_age2039
+          - REAL
+          - risk ratio for tobacco using if age 20-39 compared with 15-19
+        * - rr_tob_agege40
+          - REAL
+          - risk ratio for tobacco using if age >= 40 compared with 15-19
+        * - rr_tob_wealth
+          - REAL
+          - risk ratio for tobacco using per 1 higher wealth level (higher wealth level = lower wealth)
+        * - rr_not_tob_pop_advice_tobacco
+          - REAL
+          - probability per 3 months of quitting tobacco givenpopulation advice/campaign on tobacco
+        * - r_ex_alc
+          - REAL
+          - probability per 3 months of change from not excess alcohol to excess alcohol
+        * - r_not_ex_alc
+          - REAL
+          - probability per 3 months of change from excess alcohol to not excess alcohol
+        * - rr_ex_alc_f
+          - REAL
+          - risk ratio for becoming excess alcohol if female rather than male
+        * - rr_not_ex_alc_pop_advice_alcohol
+          - REAL
+          - probability per 3 months of not excess alcohol givenpopulation advice/campaign on alcohol
+        * - r_mar
+          - REAL
+          - probability per 3 months of marriage when age 15-30
+        * - r_div_wid
+          - REAL
+          - probability per 3 months of becoming divorced or widowed, amongst those married
+        * - r_stop_ed
+          - REAL
+          - probabilities per 3 months of stopping education if wealth level 5
+        * - rr_stop_ed_lower_wealth
+          - REAL
+          - relative rate of stopping education per 1 lower wealth quintile
+        * - p_ed_primary
+          - REAL
+          - probability at age 5 that start primary education if wealth level 5
+        * - rp_ed_primary_higher_wealth
+          - REAL
+          - relative probability of starting school per 1 higher wealth level
+        * - p_ed_secondary
+          - REAL
+          - probability at age 13 that start secondary education at 13 if in primary education and wealth level 5
+        * - rp_ed_secondary_higher_wealth
+          - REAL
+          - relative probability of starting secondary school per 1 higher wealth level
+        * - r_improved_sanitation
+          - REAL
+          - probability per 3 months of change from unimproved_sanitation true to false
+        * - r_clean_drinking_water
+          - REAL
+          - probability per 3 months of change from drinking_water true to false
+        * - r_non_wood_burn_stove
+          - REAL
+          - probability per 3 months of change from wood_burn_stove true to false
+        * - r_access_handwashing
+          - REAL
+          - probability per 3 months of change from no_access_handwashing true to false
+        * - start_date_campaign_exercise_increase
+          - DATE
+          - Date of campaign start for increased exercise
+        * - start_date_campaign_quit_smoking
+          - DATE
+          - Date of campaign start to quit smoking
+        * - start_date_campaign_alcohol_reduction
+          - DATE
+          - Date of campaign start for alcohol reduction
+        * - proportion_of_men_that_are_assumed_to_be_circumcised_at_birth
+          - REAL
+          - Proportion of men that are assumed to be circumcised at birth.The men are assumed to be circumcised at birth.
+        * - proportion_of_men_circumcised_at_initiation
+          - REAL
+          - Proportion of men (of all ages) that are assumed to be circumcised at the initiation of thesimulation.
+        * - proportion_female_sex_workers
+          - REAL
+          - proportion of women aged 15-49 years who are sex workers
+        * - fsw_transition
+          - REAL
+          - proportion of sex workers that stop being a sex worker each year
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - li_urban
+          - BOOL
+          - Currently urban
+        * - li_wealth
+          - CATEGORICAL
+          - wealth level: 1 (high) to 5 (low).  Possible values are: [1, 2, 3, 4, 5, ]
+        * - li_bmi
+          - INT
+          - bmi: 1 (<18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)bmi is 0 until age 15
+        * - li_exposed_to_campaign_weight_reduction
+          - BOOL
+          - currently exposed to population campaign for weight reduction if BMI >= 25
+        * - li_low_ex
+          - BOOL
+          - currently low exercise
+        * - li_exposed_to_campaign_exercise_increase
+          - BOOL
+          - currently exposed to population campaign for increase exercise if low ex
+        * - li_high_salt
+          - BOOL
+          - currently high salt intake
+        * - li_exposed_to_campaign_salt_reduction
+          - BOOL
+          - currently exposed to population campaign for salt reduction if high salt
+        * - li_high_sugar
+          - BOOL
+          - currently high sugar intake
+        * - li_exposed_to_campaign_sugar_reduction
+          - BOOL
+          - currently exposed to population campaign for sugar reduction if high sugar
+        * - li_tob
+          - BOOL
+          - current using tobacco
+        * - li_date_not_tob
+          - DATE
+          - date last transitioned from tob to not tob
+        * - li_exposed_to_campaign_quit_smoking
+          - BOOL
+          - currently exposed to population campaign toquit smoking if tob
+        * - li_ex_alc
+          - BOOL
+          - current excess alcohol
+        * - li_exposed_to_campaign_alcohol_reduction
+          - BOOL
+          - currently exposed to population campaign for alcohol reduction if ex alc
+        * - li_mar_stat
+          - CATEGORICAL
+          - marital status {1:never, 2:current, 3:past (widowed or divorced)}.  Possible values are: [1, 2, 3, ]
+        * - li_in_ed
+          - BOOL
+          - currently in education
+        * - li_ed_lev
+          - CATEGORICAL
+          - education level achieved as of now.  Possible values are: [1, 2, 3, ]
+        * - li_unimproved_sanitation
+          - BOOL
+          - uninproved sanitation - anything other than own or shared latrine
+        * - li_no_access_handwashing
+          - BOOL
+          - no_access_handwashing - no water, no soap, no other cleaning agent - as in DHS
+        * - li_no_clean_drinking_water
+          - BOOL
+          - no drinking water from an improved source
+        * - li_wood_burn_stove
+          - BOOL
+          - wood (straw / crop)-burning stove
+        * - li_date_trans_to_urban
+          - DATE
+          - date transition to urban
+        * - li_date_acquire_improved_sanitation
+          - DATE
+          - date transition to urban
+        * - li_date_acquire_access_handwashing
+          - DATE
+          - date acquire access to handwashing
+        * - li_date_acquire_clean_drinking_water
+          - DATE
+          - date acquire clean drinking water
+        * - li_date_acquire_non_wood_burn_stove
+          - DATE
+          - date acquire non-wood burning stove
+        * - li_is_sexworker
+          - BOOL
+          - Is the person a sex worker
+        * - li_is_circ
+          - BOOL
+          - Is the person circumcised if they are male (False for all females)
+
+
+
+     **Class attributes:**
+
+     METADATA : {}
+
+     **Functions (defined or overridden in class Lifestyle):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: determine_who_will_be_sexworker
+
+     .. automethod:: compute_bmi_proportions_of_interest
+
+
+
+
+
+
+
+
+.. autoclass:: LifestyleEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class LifestyleEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: LifestylesLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class LifestylesLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

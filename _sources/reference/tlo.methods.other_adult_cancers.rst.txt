@@ -1,0 +1,261 @@
+tlo.methods.other_adult_cancers module
+======================================
+
+.. automodule:: tlo.methods.other_adult_cancers
+
+
+.. autoclass:: OtherAdultCancer
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage
+          - LIST
+          - initial proportions of those with other adult cancer categories that have other_adult_ca_symptom
+        * - in_prop_other_adult_cancer_stage
+          - LIST
+          - initial proportions in other adult cancer stages for person aged 15-29
+        * - init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage
+          - LIST
+          - initial proportions of people that have symptom of other_adult_ca_symptom that have been diagnosed
+        * - init_prop_treatment_status_other_adult_cancer
+          - LIST
+          - initial proportions of people with other_adult cancer previously given treatment
+        * - init_prob_palliative_care
+          - REAL
+          - initial probability of being under palliative care if in metastatic
+        * - r_site_confined_none
+          - REAL
+          - probabilty per 3 months of incident site_confined other_adult cancer amongst people age 15-29 with no other adult cancer
+        * - rr_site_confined_age3049
+          - REAL
+          - rate ratio for site-confined other_adult cancer for age 30-49
+        * - rr_site_confined_age5069
+          - REAL
+          - rate ratio for site-confined other_adult cancer for age 50-69
+        * - rr_site_confined_agege70
+          - REAL
+          - rate ratio for site-confined other_adult cancer for age ge 70
+        * - r_local_ln_site_confined_other_adult_ca
+          - REAL
+          - probabilty per 3 months of local ln other_adult cancer amongst people with site confined
+        * - rr_local_ln_other_adult_ca_undergone_curative_treatment
+          - REAL
+          - rate ratio for local_ln for people with site_confined if had curative treatment at site_confined stage
+        * - r_metastatic_local_ln
+          - REAL
+          - probabilty per 3 months of metastatic other_adult cancer amongst people with local_ln
+        * - rr_metastatic_undergone_curative_treatment
+          - REAL
+          - rate ratio for metastatic Other_adult cancer for people with local_lnOther_adult cancer if had curative treatment at local_ln
+        * - r_death_other_adult_cancer
+          - REAL
+          - probabilty per 3 months of death from other adult cancer mongst people with metastatic other_adult cancer
+        * - r_early_other_adult_ca_symptom_site_confined_other_adult_ca
+          - REAL
+          - probability per 3 months of other_adult_ca_symptom in a person with site confined other_adult cancer
+        * - rr_early_other_adult_ca_symptom_local_ln_other_adult_ca
+          - REAL
+          - rate ratio for other_adult_ca_symptom if have high grade other_adult cancer
+        * - rr_early_other_adult_ca_symptom_metastatic_other_adult_ca
+          - REAL
+          - rate ratio for other_adult_ca_symptom if have metastatic other_adult cancer
+        * - rp_other_adult_cancer_age3049
+          - REAL
+          - relative prevalence at baseline of bladder cancer/cancer age 30-49
+        * - rp_other_adult_cancer_age5069
+          - REAL
+          - relative prevalence at baseline of bladder cancer/cancer age 50-69
+        * - rp_other_adult_cancer_agege70
+          - REAL
+          - relative prevalence at baseline of bladder cancer/cancer age 70+
+        * - sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_site_confined
+          - REAL
+          - sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with other_adult_ca_site-confined
+        * - sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_local_ln
+          - REAL
+          - sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with other_adult_local_ln
+        * - sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_metastatic
+          - REAL
+          - sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with other_adult_ca metastatic
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - oac_status
+          - CATEGORICAL
+          - Current status of the health condition, other_adult cancer.  Possible values are: [none, site_confined, local_ln, metastatic, ]
+        * - oac_date_diagnosis
+          - DATE
+          - the date of diagnosis of the other_adult_cancer (pd.NaT if never diagnosed)
+        * - oac_date_treatment
+          - DATE
+          - date of first receiving attempted curative treatment (pd.NaT if never started treatment)
+        * - oac_stage_at_which_treatment_given
+          - CATEGORICAL
+          - the cancer stage at which treatment is given (because the treatment only has an effect during the stageat which it is given..  Possible values are: [none, site_confined, local_ln, metastatic, ]
+        * - oac_date_palliative_care
+          - DATE
+          - date of first receiving palliative care (pd.NaT is never had palliative care)
+        * - oac_date_death
+          - DATE
+          - date of oac death
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     **Functions (defined or overridden in class OtherAdultCancer):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+
+
+
+
+
+
+
+.. autoclass:: OtherAdultCancerMainPollingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class OtherAdultCancerMainPollingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_OtherAdultCancer_StartTreatment
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_OtherAdultCancer_StartTreatment):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_OtherAdultCancer_PostTreatmentCheck
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_OtherAdultCancer_PostTreatmentCheck):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_OtherAdultCancer_PalliativeCare
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_OtherAdultCancer_PalliativeCare):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: OtherAdultCancerLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class OtherAdultCancerLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

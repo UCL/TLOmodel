@@ -1,0 +1,52 @@
+tlo.methods package
+===================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   tlo.methods.bladder_cancer
+   tlo.methods.care_of_women_during_pregnancy
+   tlo.methods.chronicsyndrome
+   tlo.methods.contraception
+   tlo.methods.demography
+   tlo.methods.depression
+   tlo.methods.diarrhoea
+   tlo.methods.dx_algorithm_adult
+   tlo.methods.dx_algorithm_child
+   tlo.methods.dxmanager
+   tlo.methods.enhanced_lifestyle
+   tlo.methods.epi
+   tlo.methods.epilepsy
+   tlo.methods.healthburden
+   tlo.methods.healthseekingbehaviour
+   tlo.methods.healthsystem
+   tlo.methods.hiv
+   tlo.methods.hsi_generic_first_appts
+   tlo.methods.labour
+   tlo.methods.labour_lm
+   tlo.methods.malaria
+   tlo.methods.mockitis
+   tlo.methods.ncds
+   tlo.methods.newborn_outcomes
+   tlo.methods.newborn_outcomes_lm
+   tlo.methods.oesophagealcancer
+   tlo.methods.other_adult_cancers
+   tlo.methods.postnatal_supervisor
+   tlo.methods.postnatal_supervisor_lm
+   tlo.methods.pregnancy_supervisor
+   tlo.methods.prostate_cancer
+   tlo.methods.simplified_births
+   tlo.methods.skeleton
+   tlo.methods.symptommanager
+   tlo.methods.tb
+
+Module contents
+---------------
+
+.. automodule:: tlo.methods
+   :members:
+   :undoc-members:
+   :show-inheritance:

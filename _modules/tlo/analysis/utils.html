@@ -1,0 +1,610 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.analysis.utils &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>tlo.analysis.utils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tlo.analysis.utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">General utility functions for TLO analysis</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">ast</span> <span class="kn">import</span> <span class="n">literal_eval</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">util</span>
+<span class="kn">from</span> <span class="nn">tlo.logging.reader</span> <span class="kn">import</span> <span class="n">LogData</span>
+<span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">create_age_range_lookup</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_line</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parses a single line of logged output. It has the format:</span>
+<span class="sd">    INFO|&lt;logger name&gt;|&lt;simulation date&gt;|&lt;log key&gt;|&lt;python object&gt;</span>
+
+<span class="sd">    It returns the dictionary:</span>
+<span class="sd">        { &#39;logger&#39;: &lt;logger name&gt;,</span>
+<span class="sd">          &#39;sim_date&#39;: &lt;simulation date&gt;,</span>
+<span class="sd">          &#39;key&#39;: &lt;the key of this log entry&gt;,</span>
+<span class="sd">          &#39;object&#39;: &lt;the logged python object&gt;</span>
+<span class="sd">        }</span>
+
+<span class="sd">    :param line: the full line from log file</span>
+<span class="sd">    :return: a dictionary with parsed line</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">line</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">literal_eval</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">parsed</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="p">{</span><span class="s1">&#39;Timestamp&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">,</span> <span class="s1">&#39;nan&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="s1">&#39;NaT&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span><span class="p">})</span>
+
+    <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;logger&#39;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="s1">&#39;sim_date&#39;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+        <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+        <span class="s1">&#39;object&#39;</span><span class="p">:</span> <span class="n">parsed</span>
+    <span class="p">}</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">info</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">info</span>
+
+
+<div class="viewcode-block" id="parse_log_file"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.parse_log_file">[docs]</a><span class="k">def</span> <span class="nf">parse_log_file</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parses logged output from a TLO run and returns Pandas dataframes.</span>
+
+<span class="sd">    The format can be one of two style, old-style TLO logging like ::</span>
+
+<span class="sd">        INFO|&lt;logger name&gt;|&lt;simulation datestamp&gt;|&lt;log key&gt;|&lt;python list or dictionary&gt;</span>
+
+<span class="sd">    or a JSON representation with the first instance from a log key being a header line, and all following</span>
+<span class="sd">    rows being data only rows (without column names or metadata).</span>
+
+<span class="sd">    The dictionary returned has the format::</span>
+
+<span class="sd">        {</span>
+<span class="sd">            &lt;logger 1 name&gt;: {</span>
+<span class="sd">                               &lt;log key 1&gt;: &lt;pandas dataframe&gt;,</span>
+<span class="sd">                               &lt;log key 2&gt;: &lt;pandas dataframe&gt;,</span>
+<span class="sd">                               &lt;log key 3&gt;: &lt;pandas dataframe&gt;</span>
+<span class="sd">                             },</span>
+
+<span class="sd">            &lt;logger 2 name&gt;: {</span>
+<span class="sd">                               &lt;log key 4&gt;: &lt;pandas dataframe&gt;,</span>
+<span class="sd">                               &lt;log key 5&gt;: &lt;pandas dataframe&gt;,</span>
+<span class="sd">                               &lt;log key 6&gt;: &lt;pandas dataframe&gt;</span>
+<span class="sd">                             },</span>
+<span class="sd">            ...</span>
+<span class="sd">        }</span>
+
+<span class="sd">    :param filepath: file path to log file</span>
+<span class="sd">    :param level: logging level to be parsed for structured logging</span>
+<span class="sd">    :return: dictionary of parsed log data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">oldstyle_loglines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">log_data</span> <span class="o">=</span> <span class="n">LogData</span><span class="p">()</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="k">as</span> <span class="n">log_file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">log_file</span><span class="p">:</span>
+            <span class="c1"># only parse json entities</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;{&#39;</span><span class="p">):</span>
+                <span class="n">log_data</span><span class="o">.</span><span class="n">parse_log_line</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">oldstyle_loglines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+    <span class="c1"># convert dictionaries to dataframes</span>
+    <span class="n">output_logs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">log_data</span><span class="o">.</span><span class="n">get_log_dataframes</span><span class="p">(),</span> <span class="o">**</span><span class="n">_oldstyle_parse_output</span><span class="p">(</span><span class="n">oldstyle_loglines</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="n">output_logs</span></div>
+
+
+<span class="k">def</span> <span class="nf">_oldstyle_parse_output</span><span class="p">(</span><span class="n">list_of_log_lines</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parses logged output from a TLO run and create Pandas dataframes for analysis.</span>
+
+<span class="sd">    Used by parse_log_file() to handle old-style TLO logging</span>
+
+<span class="sd">    Each input line follows the format:</span>
+<span class="sd">    INFO|&lt;logger name&gt;|&lt;simulation datestamp&gt;|&lt;log key&gt;|&lt;python list or dictionary&gt;</span>
+
+<span class="sd">    e.g.</span>
+
+<span class="sd">    [</span>
+<span class="sd">    &#39;INFO|tlo.methods.demography|2010-11-02 23:00:59.111968|on_birth|{&#39;mother&#39;: 17, &#39;child&#39;: 50}&#39;,</span>
+<span class="sd">    &#39;INFO|tlo.methods.demography|2011-01-01 00:00:00|population|{&#39;total&#39;: 51, &#39;male&#39;: 21, &#39;female&#39;: 30}&#39;,</span>
+<span class="sd">    &#39;INFO|tlo.methods.demography|2011-01-01 00:00:00|age_range_m|[5, 4, 1, 1, 1, 2, 1, 2, 2, 1, 1, 0]&#39;,</span>
+<span class="sd">    &#39;INFO|tlo.methods.demography|2011-01-01 00:00:00|age_range_f|[4, 7, 5, 1, 5, 1, 2, 0, 1, 2, 0, 1]&#39;,</span>
+<span class="sd">    ]</span>
+
+<span class="sd">    The dictionary returned has the format:</span>
+<span class="sd">    {</span>
+<span class="sd">        &lt;logger 1 name&gt;: {</span>
+<span class="sd">                           &lt;log key 1&gt;: &lt;pandas dataframe&gt;,</span>
+<span class="sd">                           &lt;log key 2&gt;: &lt;pandas dataframe&gt;,</span>
+<span class="sd">                           &lt;log key 3&gt;: &lt;pandas dataframe&gt;</span>
+<span class="sd">                         },</span>
+
+<span class="sd">        &lt;logger 2 name&gt;: {</span>
+<span class="sd">                           &lt;log key 4&gt;: &lt;pandas dataframe&gt;,</span>
+<span class="sd">                           &lt;log key 5&gt;: &lt;pandas dataframe&gt;,</span>
+<span class="sd">                           &lt;log key 6&gt;: &lt;pandas dataframe&gt;</span>
+<span class="sd">                         },</span>
+<span class="sd">        ...</span>
+<span class="sd">    }</span>
+
+<span class="sd">    :param list_of_log_lines: a list of log lines in the required format</span>
+<span class="sd">    :return: a dictionary holding logged data as Python objects</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">o</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="c1"># for each logged line</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">list_of_log_lines</span><span class="p">:</span>
+        <span class="c1"># we only parse &#39;INFO&#39; lines that have 5 parts</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;INFO&#39;</span><span class="p">):</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">_parse_line</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="c1"># if this line isn&#39;t in the right format</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">i</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># add a dictionary for the logger name, if required</span>
+            <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">o</span><span class="p">:</span>
+                <span class="n">o</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="c1"># add a dataframe for the name/key of this log entry, if required</span>
+            <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">o</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]]:</span>
+                <span class="c1"># if the logged data is a list, it doesn&#39;t have column names</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="c1"># create column names for each entry in the list</span>
+                    <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;col_</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]))]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># create column names from the keys of the dictionary</span>
+                    <span class="n">columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="n">columns</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;date&#39;</span><span class="p">)</span>
+                <span class="n">o</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]][</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+
+            <span class="n">df</span> <span class="o">=</span> <span class="n">o</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]][</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]]</span>
+
+            <span class="c1"># create a new row to append to the dataframe, add the simulation date</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">row</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span>
+                <span class="n">row</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;sim_date&#39;</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;warning&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;List to dataframe </span><span class="si">{</span><span class="n">i</span><span class="p">[</span><span class="s2">&quot;key&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1"> number of columns do not match&#39;</span><span class="p">)</span>
+                <span class="c1"># add list to columns (skip first column, which is date)</span>
+                <span class="n">row</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]))</span>
+                <span class="n">row</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;sim_date&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Could not parse line: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">line</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="c1"># append the new row to the dataframe for this logger &amp; log name</span>
+            <span class="n">o</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]][</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">o</span>
+
+
+<div class="viewcode-block" id="write_log_to_excel"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.write_log_to_excel">[docs]</a><span class="k">def</span> <span class="nf">write_log_to_excel</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">log_dataframes</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Takes the output of parse_log_file() and creates an Excel file from dataframes&quot;&quot;&quot;</span>
+    <span class="n">sheets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="n">sheet_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">log_dataframes</span><span class="p">[</span><span class="s1">&#39;_metadata&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">module</span><span class="p">,</span> <span class="n">key_df</span> <span class="ow">in</span> <span class="n">log_dataframes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">module</span> <span class="o">!=</span> <span class="s1">&#39;_metadata&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">key_df</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">sheet_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">sheets</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">module</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">sheet_count</span><span class="p">,</span> <span class="n">metadata</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;description&#39;</span><span class="p">]])</span>
+
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelWriter</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">sheets</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;sheet&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">])</span>
+    <span class="n">index</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s1">&#39;Index&#39;</span><span class="p">)</span>
+
+    <span class="n">sheet_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">module</span><span class="p">,</span> <span class="n">key_df</span> <span class="ow">in</span> <span class="n">log_dataframes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">module</span> <span class="o">!=</span> <span class="s1">&#39;_metadata&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">key_df</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">sheet_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Sheet </span><span class="si">{</span><span class="n">sheet_count</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="make_calendar_period_lookup"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.make_calendar_period_lookup">[docs]</a><span class="k">def</span> <span class="nf">make_calendar_period_lookup</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Returns a dictionary mapping calendar year (in years) to five year period</span>
+<span class="sd">    i.e. { 0: &#39;0-4&#39;, 1: &#39;0-4&#39;, ..., 119: &#39;100+&#39;, 120: &#39;100+&#39; }</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Recycles the code used to make age-range lookups:</span>
+    <span class="n">ranges</span><span class="p">,</span> <span class="n">lookup</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">create_age_range_lookup</span><span class="p">(</span><span class="mi">1950</span><span class="p">,</span> <span class="mi">2100</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="c1"># Removes the &#39;1950-&#39; category</span>
+    <span class="n">ranges</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;0-1950&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1950</span><span class="p">):</span>
+        <span class="n">lookup</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">year</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ranges</span><span class="p">,</span> <span class="n">lookup</span></div>
+
+
+<div class="viewcode-block" id="make_age_grp_types"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.make_age_grp_types">[docs]</a><span class="k">def</span> <span class="nf">make_age_grp_types</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Make an ordered categorical type for age-groups</span>
+<span class="sd">    Returns CategoricalDType</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">keys</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">create_age_range_lookup</span><span class="p">(</span><span class="n">min_age</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_age</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">range_size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">(</span><span class="n">categories</span><span class="o">=</span><span class="n">keys</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="make_calendar_period_type"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.make_calendar_period_type">[docs]</a><span class="k">def</span> <span class="nf">make_calendar_period_type</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Make an ordered categorical type for calendar periods</span>
+<span class="sd">    Returns CategoricalDType</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">keys</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">make_calendar_period_lookup</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">(</span><span class="n">categories</span><span class="o">=</span><span class="n">keys</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_scenario_outputs"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_scenario_outputs">[docs]</a><span class="k">def</span> <span class="nf">get_scenario_outputs</span><span class="p">(</span><span class="n">scenario_filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">outputs_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Returns paths of folders associated with a batch_file, in chronological order.&quot;&quot;&quot;</span>
+    <span class="n">stub</span> <span class="o">=</span> <span class="n">scenario_filename</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;.py&#39;</span><span class="p">)</span>
+    <span class="n">folders</span> <span class="o">=</span> <span class="p">[</span><span class="n">Path</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">outputs_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">stub</span><span class="p">)]</span>
+    <span class="n">folders</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">folders</span></div>
+
+
+<div class="viewcode-block" id="get_scenario_info"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_scenario_info">[docs]</a><span class="k">def</span> <span class="nf">get_scenario_info</span><span class="p">(</span><span class="n">scenario_output_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Utility function to get the the number draws and the number of runs in a batch set.</span>
+
+<span class="sd">    TODO: read the JSON file to get further information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">draw_folders</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">scenario_output_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()]</span>
+
+    <span class="n">info</span><span class="p">[</span><span class="s1">&#39;number_of_draws&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">draw_folders</span><span class="p">)</span>
+
+    <span class="n">run_folders</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">draw_folders</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()]</span>
+    <span class="n">info</span><span class="p">[</span><span class="s1">&#39;runs_per_draw&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">run_folders</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">info</span></div>
+
+
+<div class="viewcode-block" id="load_pickled_dataframes"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.load_pickled_dataframes">[docs]</a><span class="k">def</span> <span class="nf">load_pickled_dataframes</span><span class="p">(</span><span class="n">results_folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">draw</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Utility function to create a dict contaning all the logs from the specified run within a batch set&quot;&quot;&quot;</span>
+    <span class="n">folder</span> <span class="o">=</span> <span class="n">results_folder</span> <span class="o">/</span> <span class="nb">str</span><span class="p">(</span><span class="n">draw</span><span class="p">)</span> <span class="o">/</span> <span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)</span>
+    <span class="n">pickles</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">folder</span><span class="p">)</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.pickle&#39;</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pickles</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pickles</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.pickle&quot;</span><span class="p">]</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pickles</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">output</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output</span></div>
+
+
+<div class="viewcode-block" id="extract_params"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.extract_params">[docs]</a><span class="k">def</span> <span class="nf">extract_params</span><span class="p">(</span><span class="n">results_folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Utility function to get overridden parameters from scenario runs</span>
+
+<span class="sd">    Returns dateframe summarizing parameters that change across the draws. It produces a dataframe with index of draw</span>
+<span class="sd">    and columns of each parameters that is specified to be varied in the batch. NB. This does the extraction from run 0</span>
+<span class="sd">    in each draw, under the assumption that the over-written parameters are the same in each run.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Get the paths for the draws</span>
+    <span class="n">draws</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">results_folder</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()]</span>
+
+    <span class="n">list_of_param_changes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">draws</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">load_pickled_dataframes</span><span class="p">(</span><span class="n">results_folder</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;tlo.scenario&quot;</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;tlo.scenario&quot;</span><span class="p">][</span><span class="s2">&quot;override_parameter&quot;</span><span class="p">]</span>
+
+        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;module_param&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">name</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+        <span class="n">list_of_param_changes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">[[</span><span class="s1">&#39;module_param&#39;</span><span class="p">,</span> <span class="s1">&#39;new_value&#39;</span><span class="p">]])</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">list_of_param_changes</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;draw&#39;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;new_value&#39;</span><span class="p">:</span> <span class="s1">&#39;value&#39;</span><span class="p">})</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">params</span></div>
+
+
+<div class="viewcode-block" id="extract_results"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.extract_results">[docs]</a><span class="k">def</span> <span class="nf">extract_results</span><span class="p">(</span><span class="n">results_folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Utility function to unpack results</span>
+
+<span class="sd">    Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an &#39;index&#39;</span>
+<span class="sd">    component of the log_element is provided, the dataframe uses that index (but note that this will only work if the</span>
+<span class="sd">    index is the same in each run).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">results_index</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># extract the index from the first log, and use this ensure that all other are exactly the same.</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">.pickle&quot;</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">load_pickled_dataframes</span><span class="p">(</span><span class="n">results_folder</span><span class="p">,</span> <span class="n">draw</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">filename</span><span class="p">)[</span><span class="n">module</span><span class="p">][</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">results_index</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="c1"># get number of draws and numbers of runs</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">get_scenario_info</span><span class="p">(</span><span class="n">results_folder</span><span class="p">)</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_product</span><span class="p">(</span>
+        <span class="p">[</span><span class="nb">range</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;number_of_draws&#39;</span><span class="p">]),</span> <span class="nb">range</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;runs_per_draw&#39;</span><span class="p">])],</span>
+        <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;draw&quot;</span><span class="p">,</span> <span class="s2">&quot;run&quot;</span><span class="p">]</span>
+    <span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">draw</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;number_of_draws&#39;</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;runs_per_draw&#39;</span><span class="p">]):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">load_pickled_dataframes</span><span class="p">(</span><span class="n">results_folder</span><span class="p">,</span> <span class="n">draw</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">module</span><span class="p">)[</span><span class="n">module</span><span class="p">][</span><span class="n">key</span><span class="p">]</span>
+                <span class="n">results</span><span class="p">[</span><span class="n">draw</span><span class="p">,</span> <span class="n">run</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">idx</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+                    <span class="k">assert</span> <span class="n">idx</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">results_index</span><span class="p">),</span> <span class="s2">&quot;Indexes are not the same between runs&quot;</span>
+
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">results</span><span class="p">[</span><span class="n">draw</span><span class="p">,</span> <span class="n">run</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="c1"># if &#39;index&#39; is provided, set this to be the index of the results</span>
+    <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">results_index</span>
+
+    <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="summarize"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.summarize">[docs]</a><span class="k">def</span> <span class="nf">summarize</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">only_mean</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Utility function to compute summary statistics</span>
+
+<span class="sd">    Finds mean value and 95% interval across the runs for each draw.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="n">columns</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_product</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="s1">&#39;draw&#39;</span><span class="p">),</span>
+                <span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="s2">&quot;upper&quot;</span><span class="p">]</span>
+            <span class="p">],</span>
+            <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;draw&#39;</span><span class="p">,</span> <span class="s1">&#39;stat&#39;</span><span class="p">]),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">results</span><span class="o">.</span><span class="n">index</span>
+    <span class="p">)</span>
+
+    <span class="n">summary</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;mean&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">by</span><span class="o">=</span><span class="s1">&#39;draw&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">summary</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;lower&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">by</span><span class="o">=</span><span class="s1">&#39;draw&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="mf">0.025</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">summary</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;upper&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">by</span><span class="o">=</span><span class="s1">&#39;draw&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="mf">0.975</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="k">if</span> <span class="n">only_mean</span><span class="p">:</span>
+        <span class="c1"># Remove other metrics and simplify if &#39;only_mean&#39; is required:</span>
+        <span class="n">om</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;mean&quot;</span><span class="p">)]</span>
+        <span class="n">om</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">om</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_flat_index</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="n">om</span>
+
+    <span class="k">return</span> <span class="n">summary</span></div>
+
+
+<div class="viewcode-block" id="get_grid"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_grid">[docs]</a><span class="k">def</span> <span class="nf">get_grid</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">res</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Utility function to create the arrays needed to plot a heatmap.</span>
+
+<span class="sd">    :param pd.DataFrame params: the dataframe of parameters with index=draw (made using `extract_params()`).</span>
+<span class="sd">    :param pd.Series res: results of interest with index=draw (can be made using `extract_params()`)</span>
+<span class="sd">    :returns: grid as dictionary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">params</span><span class="o">.</span><span class="n">pivot</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;module_param&#39;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="s1">&#39;value&#39;</span><span class="p">),</span> <span class="n">res</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">piv</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">values</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+    <span class="n">grid</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">grid</span><span class="p">[</span><span class="n">res</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">grid</span><span class="p">[</span><span class="n">res</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">piv</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">piv</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="n">grid</span><span class="p">[</span><span class="n">res</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span> <span class="o">=</span> <span class="n">piv</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="k">return</span> <span class="n">grid</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

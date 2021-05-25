@@ -1,0 +1,447 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.methods.simplified_births &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
+        
+      <li>tlo.methods.simplified_births</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tlo.methods.simplified_births</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This is the SimplifiedBirths Module. It aims causes pregnancy, deliveries and births to occur to match WPP estimates</span>
+<span class="sd"> of total births. It subsumes the functions of several other modules (contraception, labour, pregnant supervisor,</span>
+<span class="sd"> postnatal supervisor, newborn outcomes) , allowing for faster runnning when these are not required. The main assumption</span>
+<span class="sd"> is that every pregnancy results in a birth.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SimplifiedBirths"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirths">[docs]</a><span class="k">class</span> <span class="nc">SimplifiedBirths</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A simplified births module responsible for generating births in a simplified way and assign mother ids to newborns.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;age_specific_fertility_rates&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;Data table from official source (WPP) for age-specific fertility rates and calendar &#39;</span>
+                              <span class="s1">&#39;period&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;months_between_pregnancy_and_delivery&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;number of whole months that elapase betweeen pregnancy and delivery&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;prob_breastfeeding_type&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probabilities that a woman is: 1) not breastfeeding (none); 2) non-exclusively breastfeeding &#39;</span>
+                        <span class="s1">&#39;(non_exclusive); 3)exclusively breastfeeding at birth (until 6 months) (exclusive)&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c1"># (Core property, usually handled by Contraception module)</span>
+        <span class="s1">&#39;is_pregnant&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span>
+                                <span class="s1">&#39;Whether this individual is currently pregnant&#39;</span><span class="p">),</span>
+
+        <span class="c1"># (Core property, usually handled by Contraception module)</span>
+        <span class="s1">&#39;date_of_last_pregnancy&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATE</span><span class="p">,</span>
+                                           <span class="s1">&#39;Date of the onset of the last pregnancy of this individual (if has ever &#39;</span>
+                                           <span class="s1">&#39;been pregnant).&#39;</span><span class="p">),</span>
+
+        <span class="c1"># (Internal property)</span>
+        <span class="s1">&#39;si_date_of_last_delivery&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATE</span><span class="p">,</span>
+                                             <span class="s1">&#39;Date of delivery for the most recent pregnancy for this individual (if &#39;</span>
+                                             <span class="s1">&#39;has ever been pregnant). Maybe in the future if is currently pregnant.&#39;</span><span class="p">),</span>
+
+        <span class="c1"># (Property usually managed by Newborn_outcomes module)</span>
+        <span class="s1">&#39;nb_breastfeeding_status&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span>
+                                            <span class="s1">&#39;How this neonate is being breastfed currently&#39;</span><span class="p">,</span>
+                                            <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;non_exclusive&#39;</span><span class="p">,</span> <span class="s1">&#39;exclusive&#39;</span><span class="p">]),</span>
+        <span class="c1"># (Internal property)</span>
+        <span class="s1">&#39;si_breastfeeding_status_6mo_to_23mo&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span>
+                                                        <span class="s1">&#39;How this neonate is breastfeed during ages 6mo to 23 months&#39;</span><span class="p">,</span>
+                                                        <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;non_exclusive&#39;</span><span class="p">,</span> <span class="s1">&#39;exclusive&#39;</span><span class="p">]),</span>
+
+        <span class="c1"># (Property usually managed by Newborn_outcomes module)</span>
+        <span class="s1">&#39;nb_early_init_breastfeeding&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span>
+                                                <span class="s1">&#39;whether this neonate initiated breastfeeding within 1 hour of birth&#39;</span>
+                                                <span class="s1">&#39;This is always FALSE in this module.&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+
+<div class="viewcode-block" id="SimplifiedBirths.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirths.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">asfr</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SimplifiedBirths.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirths.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load parameters for probability of pregnancy/birth and breastfeeding status for newborns&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;age_specific_fertility_rates&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_ASFR_WPP.csv&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;months_between_pregnancy_and_delivery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9</span>
+
+        <span class="c1"># Breastfeeding status for newborns (importing from the Newborn resourcefile)</span>
+        <span class="n">rf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_NewbornOutcomes.xlsx&#39;</span><span class="p">)</span>
+        <span class="n">param_as_string</span> <span class="o">=</span> <span class="n">rf</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">rf</span><span class="o">.</span><span class="n">parameter_name</span> <span class="o">==</span> <span class="s1">&#39;prob_breastfeeding_type&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_breastfeeding_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">param_as_string</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;][&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="SimplifiedBirths.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirths.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set our property values for the initial population.&quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
+
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;is_pregnant&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;date_of_last_pregnancy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;si_date_of_last_delivery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;nb_breastfeeding_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;si_breastfeeding_status_6mo_to_23mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;nb_early_init_breastfeeding&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="SimplifiedBirths.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirths.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Schedule the SimplifiedBirthsPoll and the SimplifiedBirthEvent to occur every month.&quot;&quot;&quot;</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">SimplifiedBirthsPoll</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+
+        <span class="c1"># Check that the parameters loaded are ok</span>
+        <span class="k">assert</span> <span class="mf">1.0</span> <span class="o">==</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_breastfeeding_type&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="SimplifiedBirths.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirths.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.&quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+
+        <span class="c1"># Determine breastfeeding characteristics</span>
+        <span class="n">initial_breastfeeding_status</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+
+        <span class="c1"># Assign breastfeeding status to newborns:</span>
+
+        <span class="c1"># 1) Newborn modules assigned initial status probablistically from [&#39;prob_breastfeeding_type&#39;]</span>
+        <span class="n">initial_breastfeeding_status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+            <span class="p">(</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;non_exclusive&#39;</span><span class="p">,</span> <span class="s1">&#39;exclusive&#39;</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_breastfeeding_type&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 2) Breastfeeding for those aged 6-23months: those who were initially breastfed at all, switch down to</span>
+        <span class="c1">#  either non_exclusive or none (equal probability of each)</span>
+        <span class="k">if</span> <span class="n">initial_breastfeeding_status</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+            <span class="n">breastfeeding_status_6mo_to_23mo</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">breastfeeding_status_6mo_to_23mo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+                <span class="p">(</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;non_exclusive&#39;</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Assign properties for the newborns</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;is_pregnant&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;date_of_last_pregnancy&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;si_date_of_last_delivery&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;nb_breastfeeding_status&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;si_breastfeeding_status_6mo_to_23mo&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;nb_early_init_breastfeeding&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span><span class="p">,</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span><span class="p">,</span>
+            <span class="n">initial_breastfeeding_status</span><span class="p">,</span>
+            <span class="n">breastfeeding_status_6mo_to_23mo</span><span class="p">,</span>
+            <span class="kc">False</span>
+        <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="SimplifiedBirthsPoll"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirthsPoll">[docs]</a><span class="k">class</span> <span class="nc">SimplifiedBirthsPoll</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SimplifiedBirthsPoll.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirthsPoll.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">months_between_polls</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">months_between_polls</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">asfr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_asfr_data</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SimplifiedBirthsPoll.process_asfr_data"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirthsPoll.process_asfr_data">[docs]</a>    <span class="k">def</span> <span class="nf">process_asfr_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process the imported data on age-specific fertility rates into a form that can be used to quickly map</span>
+<span class="sd">        age-ranges to an asfr.&quot;&quot;&quot;</span>
+        <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;age_specific_fertility_rates&#39;</span><span class="p">]</span>
+        <span class="n">dat</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="o">~</span><span class="n">dat</span><span class="o">.</span><span class="n">Variant</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;WPP_Estimates&#39;</span><span class="p">,</span> <span class="s1">&#39;WPP_Medium variant&#39;</span><span class="p">])]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period-Start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period-End&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">years</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period-Start&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period-End&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+
+        <span class="c1"># Convert the rates for asfr (rate of live-birth per year) to a rate per the frequency of this event repeating</span>
+        <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;asfr_per_period&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">dat</span><span class="p">[</span><span class="s1">&#39;asfr&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">months_between_polls</span> <span class="o">/</span> <span class="mi">12</span><span class="p">))</span>
+
+        <span class="n">asfr</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># format is {year: {age-range: asfr}}</span>
+        <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">years</span><span class="p">:</span>
+            <span class="n">asfr</span><span class="p">[</span><span class="n">year</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="p">(</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period-Start&#39;</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">year</span> <span class="o">&lt;=</span> <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period-End&#39;</span><span class="p">])</span>
+                <span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;Age_Grp&#39;</span><span class="p">)[</span><span class="s1">&#39;asfr_per_period&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">asfr</span></div>
+
+<div class="viewcode-block" id="SimplifiedBirthsPoll.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirthsPoll.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="c1"># Set new pregnancies:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_new_pregnancies</span><span class="p">()</span>
+
+        <span class="c1"># Do the delivery</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">do_deliveries</span><span class="p">()</span>
+
+        <span class="c1"># Update breastfeeding status at six months</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_breastfed_status</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SimplifiedBirthsPoll.set_new_pregnancies"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirthsPoll.set_new_pregnancies">[docs]</a>    <span class="k">def</span> <span class="nf">set_new_pregnancies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Making women pregnant. Rate of doing so is based on age-specific fertility rates under assumption that every</span>
+<span class="sd">        pregnancy results in a birth.&quot;&quot;&quot;</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>  <span class="c1"># get the population dataframe</span>
+
+        <span class="c1"># find probability of becoming pregnant (using asfr for the year, limiting to alive, non-pregnant females)</span>
+        <span class="n">prob_preg</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+            <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">is_pregnant</span>
+            <span class="p">][</span><span class="s1">&#39;age_range&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">asfr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">])</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># determine which woman will get pregnant</span>
+        <span class="n">pregnant_women_ids</span> <span class="o">=</span> <span class="n">prob_preg</span><span class="o">.</span><span class="n">index</span><span class="p">[</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">prob_preg</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">prob_preg</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="c1"># updating properties for women who will get pregnant</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pregnant_women_ids</span><span class="p">,</span> <span class="s1">&#39;is_pregnant&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pregnant_women_ids</span><span class="p">,</span> <span class="s1">&#39;date_of_last_pregnancy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pregnant_women_ids</span><span class="p">,</span> <span class="s1">&#39;si_date_of_last_delivery&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;months_between_pregnancy_and_delivery&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="SimplifiedBirthsPoll.do_deliveries"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirthsPoll.do_deliveries">[docs]</a>    <span class="k">def</span> <span class="nf">do_deliveries</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks to see if the date-of-delivery for pregnant women has been reached and implement births where</span>
+<span class="sd">        appropriate.&quot;&quot;&quot;</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>  <span class="c1"># get the population dataframe</span>
+
+        <span class="c1"># find the women who are due to have delivered their babies before now</span>
+        <span class="n">females_to_give_birth</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+            <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">is_pregnant</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">si_date_of_last_delivery</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">index</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">females_to_give_birth</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># update properties in df:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">females_to_give_birth</span><span class="p">,</span> <span class="s1">&#39;is_pregnant&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="c1"># do the births:</span>
+            <span class="k">for</span> <span class="n">mother_id</span> <span class="ow">in</span> <span class="n">females_to_give_birth</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">do_birth</span><span class="p">(</span><span class="n">mother_id</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SimplifiedBirthsPoll.update_breastfed_status"><a class="viewcode-back" href="../../../reference/tlo.methods.simplified_births.html#tlo.methods.simplified_births.SimplifiedBirthsPoll.update_breastfed_status">[docs]</a>    <span class="k">def</span> <span class="nf">update_breastfed_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the bread_fed status of newborns, mirroing the functionality provided by the Newborn module&quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+
+        <span class="c1"># 1) Update for those aged 6-23 months (set probabilistically at on_birth)</span>
+        <span class="n">aged_6mo_to_23mo</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_exact_years</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_exact_years</span> <span class="o">&lt;</span> <span class="mf">2.0</span><span class="p">)</span>
+
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">aged_6mo_to_23mo</span><span class="p">,</span> <span class="s1">&#39;nb_breastfeeding_status&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">aged_6mo_to_23mo</span><span class="p">,</span> <span class="s1">&#39;si_breastfeeding_status_6mo_to_23mo&#39;</span><span class="p">]</span>
+
+        <span class="c1"># 2) Update for those aged 24+ months (&#39;none&#39; for all, per the Newborn module)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_exact_years</span> <span class="o">&gt;=</span> <span class="mf">2.0</span><span class="p">),</span> <span class="s1">&#39;nb_breastfeeding_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

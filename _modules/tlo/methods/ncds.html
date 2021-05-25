@@ -1,0 +1,865 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.methods.ncds &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
+        
+      <li>tlo.methods.ncds</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tlo.methods.ncds</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The joint NCDs model by Tim Hallett and Britta Jewell, October 2020</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">combinations</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
+<span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
+<span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
+<span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">demography</span> <span class="k">as</span> <span class="n">de</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.demography</span> <span class="kn">import</span> <span class="n">InstantaneousDeath</span>
+
+<span class="c1"># from tlo.methods.healthsystem import HSI_Event</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
+<span class="c1">#   MODULE DEFINITIONS</span>
+<span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Ncds"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds">[docs]</a><span class="k">class</span> <span class="nc">Ncds</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    NCDs module covers a subset of NCD conditions and events. Conditions are binary, and individuals experience a risk</span>
+<span class="sd">    of acquiring or losing a condition based on annual probability and demographic/lifestyle risk factors.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># save a master list of the events that are covered in this module</span>
+    <span class="n">conditions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;diabetes&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;hypertension&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;chronic_kidney_disease&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;chronic_lower_back_pain&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;chronic_ischemic_hd&#39;</span><span class="p">]</span>
+
+    <span class="c1"># save a master list of the events that are covered in this module</span>
+    <span class="n">events</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ever_stroke&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ever_heart_attack&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Declare Metadata (this is for a typical &#39;Disease Module&#39;)</span>
+    <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">Metadata</span><span class="o">.</span><span class="n">DISEASE_MODULE</span><span class="p">,</span>
+        <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_SYMPTOMMANAGER</span><span class="p">,</span>
+        <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHSYSTEM</span><span class="p">,</span>
+        <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHBURDEN</span>
+    <span class="p">}</span>
+
+    <span class="c1"># create separate dicts for params for conditions and events</span>
+    <span class="n">onset_conditions_param_dicts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_onset&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;all the parameters that specify the linear models for onset of </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">conditions</span>
+    <span class="p">}</span>
+    <span class="n">removal_conditions_param_dicts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_removal&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;all the parameters that specify the linear models for removal of </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">conditions</span>
+    <span class="p">}</span>
+    <span class="n">onset_events_param_dicts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_onset&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;all the parameters that specify the linear models for onset of </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">events</span>
+    <span class="p">}</span>
+    <span class="n">death_conditions_param_dicts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_death&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;all the parameters that specify the linear models for death from </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">conditions</span>
+    <span class="p">}</span>
+    <span class="n">death_events_param_dicts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_death&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;all the parameters that specify the linear models for death from </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">events</span>
+    <span class="p">}</span>
+    <span class="n">initial_prev_param_dicts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_initial_prev&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span> <span class="s1">&#39;initial prevalence of condition&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">conditions</span>
+    <span class="p">}</span>
+    <span class="n">other_params_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;interval_between_polls&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;months between the main polling event&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">onset_conditions_param_dicts</span><span class="p">,</span> <span class="o">**</span><span class="n">removal_conditions_param_dicts</span><span class="p">,</span> <span class="o">**</span><span class="n">onset_events_param_dicts</span><span class="p">,</span>
+                  <span class="o">**</span><span class="n">death_conditions_param_dicts</span><span class="p">,</span> <span class="o">**</span><span class="n">death_events_param_dicts</span><span class="p">,</span> <span class="o">**</span><span class="n">initial_prev_param_dicts</span><span class="p">,</span>
+                  <span class="o">**</span><span class="n">other_params_dict</span>
+                  <span class="p">}</span>
+
+    <span class="c1"># convert conditions and events to dicts and merge together into PROPERTIES</span>
+    <span class="n">condition_list</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="sa">f</span><span class="s2">&quot;nc_</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Whether or not someone has </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">conditions</span>
+    <span class="p">}</span>
+    <span class="n">event_list</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="sa">f</span><span class="s2">&quot;nc_</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Whether or not someone has had a </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">events</span><span class="p">}</span>
+
+    <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="o">**</span><span class="n">condition_list</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">event_list</span><span class="p">,</span>
+        <span class="c1"># &#39;nc_cancers&#39;: Property(Types.BOOL, &#39;whether or not the person currently has any form of cancer&#39;),</span>
+        <span class="s1">&#39;nc_n_conditions&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;how many NCD conditions the person currently has&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;nc_condition_combos&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;whether or not the person currently has a combination of conds&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="c1"># TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank</span>
+    <span class="n">SYMPTOMS</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="Ncds.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># NB. Parameters passed to the module can be inserted in the __init__ definition.</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">conditions</span> <span class="o">=</span> <span class="n">Ncds</span><span class="o">.</span><span class="n">conditions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events</span> <span class="o">=</span> <span class="n">Ncds</span><span class="o">.</span><span class="n">events</span>
+
+        <span class="c1"># create list that includes conditions modelled by other modules</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">condition_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nc_&#39;</span> <span class="o">+</span> <span class="n">cond</span> <span class="k">for</span> <span class="n">cond</span> <span class="ow">in</span> <span class="n">Ncds</span><span class="o">.</span><span class="n">conditions</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;de_depr&#39;</span><span class="p">]</span>
+
+        <span class="c1"># retrieve age range categories from Demography module</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">age_index</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Ncds.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read parameter values from files for condition onset, removal, deaths, and initial prevalence.</span>
+
+<span class="sd">        ResourceFile_NCDs_condition_onset.xlsx = parameters for onset of conditions</span>
+<span class="sd">        ResourceFile_NCDs_condition_removal.xlsx  = parameters for removal of conditions</span>
+<span class="sd">        ResourceFile_NCDs_condition_death.xlsx  = parameters for death rate from conditions</span>
+<span class="sd">        ResourceFile_NCDs_condition_prevalence.xlsx  = initial and target prevalence for conditions</span>
+<span class="sd">        ResourceFile_NCDs_events.xlsx  = parameters for occurrence of events</span>
+<span class="sd">        ResourceFile_NCDs_events_death.xlsx  = parameters for death rate from events</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ncds_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;ncds&quot;</span>
+        <span class="n">cond_onset</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">ncds_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_NCDs_condition_onset.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">cond_removal</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">ncds_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_NCDs_condition_removal.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">cond_death</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">ncds_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_NCDs_condition_death.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">cond_prevalence</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">ncds_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_NCDs_condition_prevalence.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">events_onset</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">ncds_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_NCDs_events.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">events_death</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">ncds_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_NCDs_events_death.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">get_values</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;replaces nans in the &#39;value&#39; key with specified value&quot;&quot;&quot;</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">params</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;parameter_name&#39;</span><span class="p">)[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+
+        <span class="k">for</span> <span class="n">condition</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditions</span><span class="p">:</span>
+            <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_onset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_values</span><span class="p">(</span><span class="n">cond_onset</span><span class="p">[</span><span class="n">condition</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_removal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_values</span><span class="p">(</span><span class="n">cond_removal</span><span class="p">[</span><span class="n">condition</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_death&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_values</span><span class="p">(</span><span class="n">cond_death</span><span class="p">[</span><span class="n">condition</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_initial_prev&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_values</span><span class="p">(</span><span class="n">cond_prevalence</span><span class="p">[</span><span class="n">condition</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">:</span>
+            <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s1">_onset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_values</span><span class="p">(</span><span class="n">events_onset</span><span class="p">[</span><span class="n">event</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s1">_death&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_values</span><span class="p">(</span><span class="n">events_death</span><span class="p">[</span><span class="n">event</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Set the interval (in months) between the polls</span>
+        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+
+        <span class="c1"># Check that every value has been read-in successfully</span>
+        <span class="k">for</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETERS</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Parameter &quot;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s1">&quot; has not been set.&#39;</span></div>
+
+<div class="viewcode-block" id="Ncds.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set our property values for the initial population.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">age_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_CATEGORIES</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
+
+        <span class="n">men</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;M&#39;</span><span class="p">)</span>
+        <span class="n">women</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">sample_eligible</span><span class="p">(</span><span class="n">_filter</span><span class="p">,</span> <span class="n">_p</span><span class="p">,</span> <span class="n">_condition</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;uses filter to get eligible population and samples individuals for condition using p&quot;&quot;&quot;</span>
+            <span class="n">eligible</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">_filter</span><span class="p">]</span>
+            <span class="n">init_prev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">eligible</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="n">_p</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">_p</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">init_prev</span><span class="p">):</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible</span><span class="p">[</span><span class="n">init_prev</span><span class="p">],</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">_condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">for</span> <span class="n">condition</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditions</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_initial_prev&#39;</span><span class="p">]</span>
+            <span class="c1"># Set age min and max to get correct age group later</span>
+            <span class="n">age_min</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">age_max</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="c1"># men &amp; women without condition</span>
+            <span class="n">men_wo_cond</span> <span class="o">=</span> <span class="n">men</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+            <span class="n">women_wo_cond</span> <span class="o">=</span> <span class="n">women</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">age_grp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">age_index</span><span class="p">:</span>
+                <span class="c1"># Select all eligible individuals (men &amp; women w/o condition and in age range)</span>
+                <span class="n">sample_eligible</span><span class="p">(</span><span class="n">men_wo_cond</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">age_min</span><span class="p">,</span> <span class="n">age_max</span><span class="p">),</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;m_</span><span class="si">{</span><span class="n">age_grp</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">],</span> <span class="n">condition</span><span class="p">)</span>
+                <span class="n">sample_eligible</span><span class="p">(</span><span class="n">women_wo_cond</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">age_min</span><span class="p">,</span> <span class="n">age_max</span><span class="p">),</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;f_</span><span class="si">{</span><span class="n">age_grp</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">],</span> <span class="n">condition</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">age_grp</span> <span class="o">!=</span> <span class="s1">&#39;100+&#39;</span><span class="p">:</span>
+                    <span class="n">age_min</span> <span class="o">=</span> <span class="n">age_min</span> <span class="o">+</span> <span class="mi">5</span>
+                    <span class="n">age_max</span> <span class="o">=</span> <span class="n">age_max</span> <span class="o">+</span> <span class="mi">5</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">age_min</span> <span class="o">=</span> <span class="n">age_min</span> <span class="o">+</span> <span class="mi">5</span>
+                    <span class="n">age_max</span> <span class="o">=</span> <span class="n">age_max</span> <span class="o">+</span> <span class="mi">20</span></div>
+
+<div class="viewcode-block" id="Ncds.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Schedule:</span>
+<span class="sd">        * Main Polling Event</span>
+<span class="sd">        * Main Logging Event</span>
+<span class="sd">        * Build the LinearModels for the onset/removal of each condition:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">Ncds_MainPollingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">]),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">Ncds_LoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+
+        <span class="c1"># dict to hold counters for the number of episodes by condition-type and age-group</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df_incidence_tracker_zeros</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">age_index</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conditions</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df_incidence_tracker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df_incidence_tracker_zeros</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Create Tracker for the number of different types of events</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events_tracker</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">events_tracker</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s1">_events&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Build the LinearModel for onset/removal/deaths for each condition</span>
+        <span class="c1"># Baseline probability of condition onset, removal, and death are annual; in LinearModel, rates are adjusted to</span>
+        <span class="c1"># be consistent with the polling interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lms_onset</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lms_removal</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lms_death</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="c1"># Build the LinearModel for occurrence of events</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lms_event_onset</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lms_event_death</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">condition</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditions</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lms_onset</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_linear_model</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">],</span>
+                                                                <span class="n">lm_type</span><span class="o">=</span><span class="s1">&#39;onset&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lms_removal</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_linear_model</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">],</span>
+                                                                  <span class="n">lm_type</span><span class="o">=</span><span class="s1">&#39;removal&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lms_death</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_linear_model</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">],</span>
+                                                                <span class="n">lm_type</span><span class="o">=</span><span class="s1">&#39;death&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lms_event_onset</span><span class="p">[</span><span class="n">event</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_linear_model</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">],</span>
+                                                                  <span class="n">lm_type</span><span class="o">=</span><span class="s1">&#39;onset&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lms_event_death</span><span class="p">[</span><span class="n">event</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_linear_model</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">],</span>
+                                                                  <span class="n">lm_type</span><span class="o">=</span><span class="s1">&#39;death&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Ncds.build_linear_model"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.build_linear_model">[docs]</a>    <span class="k">def</span> <span class="nf">build_linear_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">interval_between_polls</span><span class="p">,</span> <span class="n">lm_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build a linear model for the risk of onset, removal, or death from a condition, or occurrence or death from</span>
+<span class="sd">        an event.</span>
+
+<span class="sd">        :param condition: the condition or event to build the linear model for</span>
+<span class="sd">        :param interval_between_polls: the duration (in months) between the polls</span>
+<span class="sd">        :param lm_type: whether or not the lm is for onset, removal, death, or event in order to select the correct</span>
+<span class="sd">        parameter set below</span>
+<span class="sd">        :return: a linear model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># use temporary empty dict to save results</span>
+        <span class="n">lms_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="c1"># load parameters for correct condition/event</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">lm_type</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+
+        <span class="n">baseline_annual_probability</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">interval_between_polls</span> <span class="o">/</span> <span class="mi">12</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;baseline_annual_probability&#39;</span><span class="p">])</span>
+        <span class="c1"># LinearModel expects native python types - if it&#39;s numpy type, convert it</span>
+        <span class="n">baseline_annual_probability</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">baseline_annual_probability</span><span class="p">)</span>
+
+        <span class="n">lms_dict</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
+            <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
+            <span class="n">baseline_annual_probability</span><span class="p">,</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_male&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0, 4)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_0_4&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(5, 9)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_5_9&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(10, 14)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_10_14&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(15, 19)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_15_19&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(20, 24)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_20_24&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(25, 29)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_25_29&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(30, 34)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_30_34&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(35, 39)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_35_39&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(40, 44)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_40_44&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(45, 49)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_45_49&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(50, 54)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_50_54&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(55, 59)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_55_59&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(60, 64)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_60_64&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(65, 69)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_65_69&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(70, 74)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_70_74&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(75, 79)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_75_79&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(80, 84)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_80_84&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(85, 89)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_85_89&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(90, 94)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_90_94&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(95, 99)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_95_99&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_100&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_urban&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_urban&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_wealth&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_wealth_1&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_wealth_2&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_wealth_3&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_wealth_4&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;5&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_wealth_5&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_bmi&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bmi_1&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bmi_2&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bmi_3&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bmi_4&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;5&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bmi_5&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_low_ex&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_low_exercise&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_high_salt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_high_salt&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_high_sugar&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_high_sugar&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_tob&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_tobacco&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_ex_alc&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_alcohol&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_mar_stat&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_marital_status_1&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_marital_status_2&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_marital_status_3&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_in_ed&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_in_education&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_ed_lev&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_current_education_level_1&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_current_education_level_2&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_current_education_level_3&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_unimproved_sanitation&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_unimproved_sanitation&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_no_access_handwashing&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_no_access_handwashing&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_no_clean_drinking_water&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_no_clean_drinking_water&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_wood_burn_stove&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_wood_burning_stove&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;nc_diabetes&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_diabetes&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;nc_hypertension&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_hypertension&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_depr&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depression&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;nc_chronic_kidney_disease&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_chronic_kidney_disease&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;nc_chronic_lower_back_pain&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_chronic_lower_back_pain&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;nc_chronic_ischemic_hd&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_chronic_ischemic_heart_disease&#39;</span><span class="p">])</span>
+            <span class="c1"># Predictor(&#39;nc_cancers&#39;).when(True, p[&#39;rr_cancers&#39;])</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">lms_dict</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Ncds.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
+
+<span class="sd">        :param mother_id: the mother for this child</span>
+<span class="sd">        :param child_id: the new child</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: @britta - assuming that the all children have nothing when they are born</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="k">for</span> <span class="n">condition</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditions</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># df.at[child_id, &#39;nc_cancers&#39;] = False</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;nc_n_conditions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;nc_condition_combos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="Ncds.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Report DALY values to the HealthBurden module&quot;&quot;&quot;</span>
+        <span class="c1"># This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been</span>
+        <span class="c1"># experienced by persons in the previous month. Only rows for alive-persons must be returned.</span>
+        <span class="c1"># The names of the series of columns is taken to be the label of the cause of this disability.</span>
+        <span class="c1"># It will be recorded by the healthburden module as &lt;ModuleName&gt;_&lt;Cause&gt;.</span>
+
+        <span class="c1"># To return a value of 0.0 (fully health) for everyone, use:</span>
+        <span class="c1"># df = self.sim.popultion.props</span>
+        <span class="c1"># return pd.Series(index=df.index[df.is_alive],data=0.0)</span>
+
+        <span class="c1"># TODO: @britta add in functionality to fetch daly weight from resourcefile</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">any_condition</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition_list</span><span class="p">]</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">any_condition</span> <span class="o">*</span> <span class="mf">0.0</span></div>
+
+<div class="viewcode-block" id="Ncds.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is called whenever there is an HSI event commissioned by one of the other disease modules.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+
+
+<span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
+<span class="c1">#   DISEASE MODULE EVENTS</span>
+<span class="c1">#</span>
+<span class="c1">#   The regular event that actually changes individuals&#39; condition or event status, occurring every 3 months</span>
+<span class="c1">#   and synchronously for all persons.</span>
+<span class="c1">#   Individual level events (HSI, death or NCD events) may occur at other times.</span>
+<span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="Ncds_MainPollingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds_MainPollingEvent">[docs]</a><span class="k">class</span> <span class="nc">Ncds_MainPollingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The Main Polling Event.</span>
+<span class="sd">    * Establishes onset of each condition</span>
+<span class="sd">    * Establishes removal of each condition</span>
+<span class="sd">    * Schedules events that arise, according the condition.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Ncds_MainPollingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds_MainPollingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">interval_between_polls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The Main Polling Event of the NCDs Module</span>
+
+<span class="sd">        :param module: the module that created this event</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="n">interval_between_polls</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Ncds</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Ncds_MainPollingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds_MainPollingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Apply this event to the population.</span>
+
+<span class="sd">        :param population: the current population</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">rng</span>
+
+        <span class="c1"># Function to schedule deaths on random day throughout polling period</span>
+        <span class="k">def</span> <span class="nf">schedule_death_to_occur_before_next_poll</span><span class="p">(</span><span class="n">p_id</span><span class="p">,</span> <span class="n">cond</span><span class="p">,</span> <span class="n">interval_between_polls</span><span class="p">):</span>
+            <span class="n">ndays</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="n">interval_between_polls</span><span class="p">,</span> <span class="n">days</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span><span class="o">.</span><span class="n">days</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span>
+                <span class="n">InstantaneousDeath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">p_id</span><span class="p">,</span> <span class="n">cond</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">ndays</span><span class="p">))</span>
+            <span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">lmpredict_rtn_a_series</span><span class="p">(</span><span class="n">lm</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;wrapper to call predict on a linear model, guranteeing that a pd.Series is returned even if the length</span>
+<span class="sd">            of the df is 1.&quot;&quot;&quot;</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">lm</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">==</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">res</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="n">res</span><span class="p">])</span>
+
+        <span class="n">current_incidence_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">age_index</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">conditions</span><span class="p">)</span>
+
+        <span class="c1"># Determine onset/removal of conditions</span>
+        <span class="k">for</span> <span class="n">condition</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">conditions</span><span class="p">:</span>
+
+            <span class="c1"># onset:</span>
+            <span class="n">eligible_population</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+            <span class="n">acquires_condition</span> <span class="o">=</span> <span class="n">lmpredict_rtn_a_series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_onset</span><span class="p">[</span><span class="n">condition</span><span class="p">],</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">])</span>
+            <span class="n">idx_acquires_condition</span> <span class="o">=</span> <span class="n">acquires_condition</span><span class="p">[</span><span class="n">acquires_condition</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx_acquires_condition</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="c1"># Add incident cases to the tracker</span>
+            <span class="n">current_incidence_df</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx_acquires_condition</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;age_range&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+
+            <span class="c1"># -------------------------------------------------------------------------------------------</span>
+
+            <span class="c1"># removal:</span>
+            <span class="n">eligible_population</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+            <span class="n">loses_condition</span> <span class="o">=</span> <span class="n">lmpredict_rtn_a_series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_removal</span><span class="p">[</span><span class="n">condition</span><span class="p">],</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">])</span>
+            <span class="n">idx_loses_condition</span> <span class="o">=</span> <span class="n">loses_condition</span><span class="p">[</span><span class="n">loses_condition</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx_loses_condition</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="c1"># -------------------- DEATH FROM NCD CONDITION ---------------------------------------</span>
+            <span class="c1"># There is a risk of death for those who have an NCD condition. Death is assumed to happen instantly.</span>
+
+            <span class="n">eligible_population</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+            <span class="n">selected_to_die</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_death</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">],</span> <span class="n">rng</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">selected_to_die</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>  <span class="c1"># catch in case no one dies</span>
+                <span class="n">idx_selected_to_die</span> <span class="o">=</span> <span class="n">selected_to_die</span><span class="p">[</span><span class="n">selected_to_die</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+
+                <span class="k">for</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">idx_selected_to_die</span><span class="p">:</span>
+                    <span class="n">schedule_death_to_occur_before_next_poll</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span>
+                                                             <span class="n">m</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">])</span>
+
+        <span class="c1"># add the new incidence numbers to tracker</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">df_incidence_tracker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">df_incidence_tracker</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">current_incidence_df</span><span class="p">)</span>
+
+        <span class="c1"># Determine occurrence of events</span>
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">events</span><span class="p">:</span>
+
+            <span class="n">eligible_population_for_event</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span>
+            <span class="n">has_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_event_onset</span><span class="p">[</span><span class="n">event</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population_for_event</span><span class="p">],</span> <span class="n">rng</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">has_event</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>  <span class="c1"># catch in case no one has event</span>
+                <span class="n">idx_has_event</span> <span class="o">=</span> <span class="n">has_event</span><span class="p">[</span><span class="n">has_event</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+
+                <span class="k">for</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">idx_has_event</span><span class="p">:</span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+                    <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="n">m</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">],</span> <span class="n">days</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">ndays</span> <span class="o">=</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">days</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">NcdEvent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">event</span><span class="p">),</span>
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">ndays</span><span class="p">)))</span>
+
+            <span class="c1"># -------------------- DEATH FROM NCD EVENT ---------------------------------------</span>
+            <span class="c1"># There is a risk of death for those who have had an NCD event. Death is assumed to happen instantly.</span>
+
+            <span class="n">eligible_population</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+            <span class="n">selected_to_die</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_event_death</span><span class="p">[</span><span class="n">event</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">],</span> <span class="n">rng</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">selected_to_die</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>  <span class="c1"># catch in case no one dies</span>
+                <span class="n">idx_selected_to_die</span> <span class="o">=</span> <span class="n">selected_to_die</span><span class="p">[</span><span class="n">selected_to_die</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+
+                <span class="k">for</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">idx_selected_to_die</span><span class="p">:</span>
+                    <span class="n">schedule_death_to_occur_before_next_poll</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;ever_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                                                             <span class="n">m</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">])</span></div></div>
+
+
+<div class="viewcode-block" id="NcdEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.NcdEvent">[docs]</a><span class="k">class</span> <span class="nc">NcdEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is an NCD event. It has been scheduled to occur by the Ncds_MainPollingEvent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="NcdEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.NcdEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event</span> <span class="o">=</span> <span class="n">event</span></div>
+
+<div class="viewcode-block" id="NcdEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.NcdEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">events_tracker</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="si">}</span><span class="s1">_events&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div></div>
+
+        <span class="c1"># TODO: @britta add functionality to add symptoms</span>
+
+        <span class="c1"># Add the outward symptom to the SymptomManager. This will result in emergency care being sought</span>
+        <span class="c1"># self.sim.modules[&#39;SymptomManager&#39;].change_symptom(</span>
+        <span class="c1">#    person_id=person_id,</span>
+        <span class="c1">#    disease_module=self.module,</span>
+        <span class="c1">#    add_or_remove=&#39;+&#39;,</span>
+        <span class="c1">#    symptom_string=&#39;Damage_From_Stroke&#39;</span>
+        <span class="c1"># )</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
+<span class="c1">#   LOGGING EVENTS</span>
+<span class="c1">#</span>
+<span class="c1">#   Put the logging events here. There should be a regular logger outputting current states of the</span>
+<span class="c1">#   population. There may also be a loggig event that is driven by particular events.</span>
+<span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="Ncds_LoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds_LoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">Ncds_LoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="Ncds_LoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds_LoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Produce a summary of the numbers of people with respect to the action of this module.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">12</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">date_last_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Ncds</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Ncds_LoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds_LoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+        <span class="c1"># Convert incidence tracker to dict to pass through logger</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;incidence_count_by_condition&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">df_incidence_tracker</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                    <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;count of events occurring between each successive poll of logging event every &quot;</span>
+                                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="si">}</span><span class="s2"> months&quot;</span><span class="p">)</span>
+        <span class="c1"># Reset the counter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">df_incidence_tracker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">df_incidence_tracker_zeros</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">age_cats</span><span class="p">(</span><span class="n">ages_in_years</span><span class="p">):</span>
+            <span class="n">AGE_RANGE_CATEGORIES</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_CATEGORIES</span>
+            <span class="n">AGE_RANGE_LOOKUP</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span>
+
+            <span class="n">age_cats</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">ages_in_years</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">AGE_RANGE_LOOKUP</span><span class="p">),</span>
+                               <span class="n">categories</span><span class="o">=</span><span class="n">AGE_RANGE_CATEGORIES</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">age_cats</span>
+
+        <span class="c1"># Function to prepare a groupby for logging</span>
+        <span class="k">def</span> <span class="nf">proportion_of_something_in_a_groupby_ready_for_logging</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">something</span><span class="p">,</span> <span class="n">groupbylist</span><span class="p">):</span>
+            <span class="n">dfx</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">groupbylist</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">dft</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+                <span class="p">{</span><span class="s1">&#39;something&#39;</span><span class="p">:</span> <span class="n">dft</span><span class="p">[</span><span class="n">something</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="s1">&#39;not_something&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">~</span><span class="n">dft</span><span class="p">[</span><span class="n">something</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()}))</span>
+            <span class="n">pr</span> <span class="o">=</span> <span class="n">dfx</span><span class="p">[</span><span class="s1">&#39;something&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dfx</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># create into a dict with keys as strings</span>
+            <span class="n">pr</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+            <span class="n">pr</span><span class="p">[</span><span class="s1">&#39;flat_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pr</span><span class="p">)):</span>
+                <span class="n">pr</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;flat_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;__&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">pr</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">groupbylist</span><span class="p">])</span>
+            <span class="n">pr</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;flat_index&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">pr</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">groupbylist</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+        <span class="c1"># Output the person-years lived by single year of age in the past year</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">cond</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">conditions</span><span class="p">:</span>
+            <span class="c1"># mask is a Series restricting dataframe to individuals who do not have the condition, which is passed to</span>
+            <span class="c1"># demography module to calculate person-years lived without the condition</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">cond</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">])</span>
+            <span class="n">py</span> <span class="o">=</span> <span class="n">de</span><span class="o">.</span><span class="n">Demography</span><span class="o">.</span><span class="n">calc_py_lived_in_last_year</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>
+            <span class="n">py</span><span class="p">[</span><span class="s1">&#39;age_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">age_cats</span><span class="p">(</span><span class="n">py</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="n">py</span> <span class="o">=</span> <span class="n">py</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;age_range&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;person_years_</span><span class="si">{</span><span class="n">cond</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">py</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+
+        <span class="c1"># Make some summary statistics for prevalence by age/sex for each condition</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
+
+        <span class="c1"># Prevalence of conditions broken down by sex and age</span>
+
+        <span class="k">for</span> <span class="n">condition</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">conditions</span><span class="p">:</span>
+            <span class="n">prev_age_sex</span> <span class="o">=</span> <span class="n">proportion_of_something_in_a_groupby_ready_for_logging</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                                                                                  <span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">])</span>
+
+            <span class="c1"># Prevalence of conditions broken down by sex and age</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="n">key</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_prevalence_by_age_and_sex&#39;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s1">&#39;current fraction of the population classified as having condition, by sex and age&#39;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">prev_age_sex</span><span class="p">}</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Prevalence of conditions by adults aged 20 or older</span>
+            <span class="n">adult_prevalence</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;prevalence&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">20</span><span class="p">)])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span>
+                    <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">20</span><span class="p">)])}</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="n">key</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_prevalence&#39;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s1">&#39;current fraction of the adult population classified as having condition&#39;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">adult_prevalence</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Counter for number of co-morbidities</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="s1">&#39;nc_n_conditions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">condition_list</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">n_comorbidities_all</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">age_index</span><span class="p">,</span>
+                                           <span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">condition_list</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s1">&#39;age_range&#39;</span><span class="p">,</span> <span class="s1">&#39;nc_n_conditions&#39;</span><span class="p">]]</span>
+
+        <span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">condition_list</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;nc_n_conditions&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">num</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;age_range&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+                <span class="p">{</span><span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;nc_n_conditions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">()}))</span>
+            <span class="n">n_comorbidities_all</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span>
+
+        <span class="n">prop_comorbidities_all</span> <span class="o">=</span> <span class="n">n_comorbidities_all</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">n_comorbidities_all</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;mm_prevalence_by_age_all&#39;</span><span class="p">,</span>
+                    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;annual summary of multi-morbidities by age for all&#39;</span><span class="p">,</span>
+                    <span class="n">data</span><span class="o">=</span><span class="n">prop_comorbidities_all</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="p">)</span>
+
+        <span class="c1"># output combinations of different conditions</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
+
+        <span class="n">combos</span> <span class="o">=</span> <span class="n">combinations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">condition_list</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">condition_combos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">combos</span><span class="p">)</span>
+
+        <span class="n">n_combos</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;age_range&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">condition_combos</span><span class="p">)):</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;nc_condition_combos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition_combos</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">&amp;</span>
+                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition_combos</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">],</span>
+                 <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;age_range&#39;</span><span class="p">])[</span><span class="s1">&#39;nc_condition_combos&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+            <span class="n">n_combos</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+            <span class="n">n_combos</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition_combos</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition_combos</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">col</span><span class="o">.</span><span class="n">values</span>
+
+        <span class="c1"># output proportions of different combinations of conditions</span>
+
+        <span class="n">prop_combos</span> <span class="o">=</span> <span class="n">n_combos</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;age_range&#39;</span><span class="p">])[</span><span class="s1">&#39;age_range&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">prop_combos</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">prop_combos</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;prop_combos&#39;</span><span class="p">,</span>
+                    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;proportion of combinations of morbidities&#39;</span><span class="p">,</span>
+                    <span class="n">data</span><span class="o">=</span><span class="n">prop_combos</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="p">)</span></div></div>
+
+        <span class="c1"># output entire dataframe for logistic regression</span>
+        <span class="c1"># df = population.props</span>
+        <span class="c1"># df.to_csv(&#39;df_for_regression.csv&#39;)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,107 @@
+tlo.methods.simplified_births module
+====================================
+
+.. automodule:: tlo.methods.simplified_births
+
+
+.. autoclass:: SimplifiedBirths
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - age_specific_fertility_rates
+          - DATA_FRAME
+          - Data table from official source (WPP) for age-specific fertility rates and calendar period
+        * - months_between_pregnancy_and_delivery
+          - INT
+          - number of whole months that elapase betweeen pregnancy and delivery
+        * - prob_breastfeeding_type
+          - LIST
+          - probabilities that a woman is: 1) not breastfeeding (none); 2) non-exclusively breastfeeding (non_exclusive); 3)exclusively breastfeeding at birth (until 6 months) (exclusive)
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - is_pregnant
+          - BOOL
+          - Whether this individual is currently pregnant
+        * - date_of_last_pregnancy
+          - DATE
+          - Date of the onset of the last pregnancy of this individual (if has ever been pregnant).
+        * - si_date_of_last_delivery
+          - DATE
+          - Date of delivery for the most recent pregnancy for this individual (if has ever been pregnant). Maybe in the future if is currently pregnant.
+        * - nb_breastfeeding_status
+          - CATEGORICAL
+          - How this neonate is being breastfed currently.  Possible values are: [none, non_exclusive, exclusive, ]
+        * - si_breastfeeding_status_6mo_to_23mo
+          - CATEGORICAL
+          - How this neonate is breastfeed during ages 6mo to 23 months.  Possible values are: [none, non_exclusive, exclusive, ]
+        * - nb_early_init_breastfeeding
+          - BOOL
+          - whether this neonate initiated breastfeeding within 1 hour of birthThis is always FALSE in this module.
+
+
+
+     **Class attributes:**
+
+     METADATA : {}
+
+     **Functions (defined or overridden in class SimplifiedBirths):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+
+
+
+
+
+
+
+.. autoclass:: SimplifiedBirthsPoll
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class SimplifiedBirthsPoll):**
+
+     .. automethod:: __init__
+
+     .. automethod:: process_asfr_data
+
+     .. automethod:: apply
+
+     .. automethod:: set_new_pregnancies
+
+     .. automethod:: do_deliveries
+
+     .. automethod:: update_breastfed_status
+
+
+
+
+

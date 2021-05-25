@@ -1,0 +1,1209 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.methods.postnatal_supervisor module &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.methods.postnatal_supervisor_lm module" href="tlo.methods.postnatal_supervisor_lm.html" />
+    <link rel="prev" title="tlo.methods.other_adult_cancers module" href="tlo.methods.other_adult_cancers.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Reference</a> &raquo;</li>
+        
+          <li><a href="tlo.html">tlo package</a> &raquo;</li>
+        
+          <li><a href="tlo.methods.html">tlo.methods package</a> &raquo;</li>
+        
+      <li>tlo.methods.postnatal_supervisor module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/tlo.methods.postnatal_supervisor.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tlo.methods.postnatal_supervisor">
+<span id="tlo-methods-postnatal-supervisor-module"></span><h1>tlo.methods.postnatal_supervisor module<a class="headerlink" href="#module-tlo.methods.postnatal_supervisor" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">PostnatalSupervisor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor" title="Permalink to this definition">¶</a></dt>
+<dd><p>This module is responsible for the key conditions/complications experienced by a mother and by a neonate
+following labour and the immediate postpartum period (this period, from birth to day +1, is covered by the labour
+module).</p>
+<p>For mothers: This module applies risk of complications across the postnatal period, which is  defined as birth
+until day 42 post-delivery. PostnatalWeekOne Event represents the first week post birth where risk of complications
+remains high. The primary mortality causing complications here are infection/sepsis, secondary postpartum
+haemorrhage and hypertension. Women with or without complications may/may not seek Postnatal Care at day 7 post
+birth (we assume women who seek care will also bring their newborns with them to the HSI where they will also be
+assessed). This HSI assesses mothers and newborns and schedules admissions if complications are found. The
+PostnatalSupervisor Event applies risk of complications weekly from week 2-6 (ending on day 42). This event also
+determines additional care seeking for mothers who are unwell during this time period. All maternal variables are
+reset on day 42.</p>
+<p>For neonates: This module applies risk of complications during the neonatal period, from birth until day 28. The
+PostnatalWeekOne Event applies risk of early onset neonatal sepsis (sepsis onsetting prior to day 7 of life). Care
+may be sought (as described above) and neonates can be admitted for treatment. The PostnatalSupervisor Event applies</p>
+<blockquote>
+<div><p>risk of late onset neonatal sepsis from week 2-4 (ending on day 28). This event also determines additional</p>
+</div></blockquote>
+<p>care seeking for neonates who are unwell during this time period. All neonatal variables are reset on day 28.</p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p><strong>PARAMETERS:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>prob_htn_resolves</p></td>
+<td><p>REAL</p></td>
+<td><p>weekly probability hypertension resolves during postpartum</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_secondary_pph</p></td>
+<td><p>REAL</p></td>
+<td><p>baseline probability of secondary PPH</p></td>
+</tr>
+<tr class="row-even"><td><p>cfr_secondary_pph</p></td>
+<td><p>REAL</p></td>
+<td><p>case fatality rate for secondary pph</p></td>
+</tr>
+<tr class="row-odd"><td><p>cfr_postnatal_sepsis</p></td>
+<td><p>REAL</p></td>
+<td><p>case fatality rate for postnatal sepsis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_secondary_pph_severity</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of mild, moderate or severe secondary PPH</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_obstetric_fistula</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of a woman developing an obstetric fistula after birth</p></td>
+</tr>
+<tr class="row-even"><td><p>prevalence_type_of_fistula</p></td>
+<td><p>LIST</p></td>
+<td><p>prevalence of 1.) vesicovaginal 2.)rectovaginal fistula</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_iron_def_per_week_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>weekly probability of a women developing iron deficiency following pregnancy</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_folate_def_per_week_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>weekly probability of a women developing folate deficiency following pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_b12_def_per_week_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>weekly probability of a women developing b12 deficiency following pregnancy</p></td>
+</tr>
+<tr class="row-even"><td><p>baseline_prob_anaemia_per_week</p></td>
+<td><p>REAL</p></td>
+<td><p>Weekly probability of anaemia in pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_type_of_anaemia_pn</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of a woman with anaemia having mild, moderate or severe anaemia</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_anaemia_if_iron_deficient_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>risk of developing anaemia when iron deficient</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_anaemia_if_folate_deficient_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>risk of developing anaemia when folate deficient</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_anaemia_if_b12_deficient_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>risk of developing anaemia when b12 deficient</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_early_onset_neonatal_sepsis_week_1</p></td>
+<td><p>REAL</p></td>
+<td><p>Baseline probability of a newborn developing sepsis in week one of life</p></td>
+</tr>
+<tr class="row-even"><td><p>cfr_early_onset_neonatal_sepsis</p></td>
+<td><p>REAL</p></td>
+<td><p>case fatality for early onset neonatal sepsis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_sepsis_disabilities</p></td>
+<td><p>LIST</p></td>
+<td><p>Probabilities of varying disability levels after neonatal sepsis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_endometritis_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of endometritis in week one</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_urinary_tract_inf_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of urinary tract infection in week one</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_skin_soft_tissue_inf_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of skin and soft tissue infection in week one</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_other_inf_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of other maternal infections in week one</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_late_sepsis_endometritis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of developing sepsis following postpartum endometritis infection</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_late_sepsis_urinary_tract_inf</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of developing sepsis following postpartum UTI</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_late_sepsis_skin_soft_tissue_inf</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of developing sepsis following postpartum skin/soft tissue infection</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_late_sepsis_other_maternal_infection_pp</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of developing sepsis following postpartum other infection</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_late_onset_neonatal_sepsis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of late onset neonatal sepsis (all cause)</p></td>
+</tr>
+<tr class="row-odd"><td><p>cfr_late_neonatal_sepsis</p></td>
+<td><p>REAL</p></td>
+<td><p>Risk of death from late neonatal sepsis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_htn_persists</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that women who are hypertensive during pregnancy remain hypertensive in the postnatal period</p></td>
+</tr>
+<tr class="row-odd"><td><p>weekly_prob_gest_htn_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>weekly probability of a woman developing gestational hypertension during the postnatal period</p></td>
+</tr>
+<tr class="row-even"><td><p>weekly_prob_pre_eclampsia_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>weekly probability of a woman developing mild pre-eclampsia during the postnatal period</p></td>
+</tr>
+<tr class="row-odd"><td><p>probs_for_mgh_matrix_pn</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of mild gestational hypertension moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>probs_for_sgh_matrix_pn</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of severe gestational hypertension moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
+</tr>
+<tr class="row-odd"><td><p>probs_for_mpe_matrix_pn</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of mild pre-eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>probs_for_spe_matrix_pn</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of severe pre-eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
+</tr>
+<tr class="row-odd"><td><p>probs_for_ec_matrix_pn</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>cfr_eclampsia_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>case fatality rate of eclampsia in the postnatal period</p></td>
+</tr>
+<tr class="row-odd"><td><p>cfr_severe_htn_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>case fatality rate of severe hypertension in the postnatal period</p></td>
+</tr>
+<tr class="row-even"><td><p>weekly_prob_postnatal_death</p></td>
+<td><p>REAL</p></td>
+<td><p>Weekly risk of postnatal death</p></td>
+</tr>
+<tr class="row-odd"><td><p>severity_late_infection_pn</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of mild infection, sepsis or severe sepsis in the later postnatal period</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_iron_def_ifa_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>effect of iron and folic acid treatment on risk of iron deficiency</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_folate_def_ifa_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>effect of iron and folic acid treatment on risk of folate deficiency</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_early_init_bf</p></td>
+<td><p>REAL</p></td>
+<td><p>effect of early initiation of breastfeeding on neonatal sepsis rates</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_abx_prom</p></td>
+<td><p>REAL</p></td>
+<td><p>effect of early antibiotics given to a mother with PROM on neonatal sepsis rates</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_inj_abx_sep</p></td>
+<td><p>REAL</p></td>
+<td><p>effect of injectable antibiotics on neonatal sepsis mortality</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_supp_care_sep</p></td>
+<td><p>REAL</p></td>
+<td><p>effect of full supportive care on neonatal sepsis mortality</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_parenteral_antibiotics</p></td>
+<td><p>REAL</p></td>
+<td><p>Treatment effect of parenteral antibiotics on maternal sepsis mortality</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_bemonc_care_pph</p></td>
+<td><p>REAL</p></td>
+<td><p>Treatment effect of BEmONC care on postpartum haemorrhage mortality</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_anti_htns</p></td>
+<td><p>REAL</p></td>
+<td><p>Treatment effect of hypertensive therapy on death from eclampsia</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_mag_sulph</p></td>
+<td><p>REAL</p></td>
+<td><p>Treatment effect of magnesium sulphate therapy on death from eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>neonatal_sepsis_treatment_effect</p></td>
+<td><p>REAL</p></td>
+<td><p>Treatment effect for neonatal sepsis</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_clean_birth</p></td>
+<td><p>REAL</p></td>
+<td><p>Treatment effect of clean birth practices on early onset neonatal sepsis risk</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_cord_care</p></td>
+<td><p>REAL</p></td>
+<td><p>Treatment effect of chlorhexidine cord care on early onset neonatal sepsis risk</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_anti_htns_progression_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>Treatment effect of oral anti hypertensives on progression from mild/mod to severe gestationalhypertension</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_attend_pnc2</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a woman receiving PNC1 care will return for PNC2 care</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_attend_pnc3</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a woman receiving PNC2 care will return for PNC3 care</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_care_seeking_postnatal_emergency</p></td>
+<td><p>REAL</p></td>
+<td><p>baseline probability of emergency care seeking for women in the postnatal period</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_care_seeking_postnatal_emergency_neonate</p></td>
+<td><p>REAL</p></td>
+<td><p>baseline probability care will be sought for a neonate with a complication</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_care_seeking_fistula_repair</p></td>
+<td><p>REAL</p></td>
+<td><p>odds of a woman seeking care for treatment of obstetric fistula</p></td>
+</tr>
+<tr class="row-odd"><td><p>aor_cs_fistula_age_15_19</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for care seeking for treatment of obstetric fistula in 15-19 year olds</p></td>
+</tr>
+<tr class="row-even"><td><p>aor_cs_fistula_age_lowest_education</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for care seeking for treatment of obstetric fistula in women in the lowest education quintile</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_pnc1_at_day_7</p></td>
+<td><p>REAL</p></td>
+<td><p>baseline probability a woman will seek PNC for her and her newborn at day + 7</p></td>
+</tr>
+<tr class="row-even"><td><p>multiplier_for_care_seeking_with_comps</p></td>
+<td><p>REAL</p></td>
+<td><p>number by which prob_pnc1_at_day_7 is multiplied by to increase care seeking for PNC1 in women with complications</p></td>
+</tr>
+<tr class="row-odd"><td><p>sensitivity_bp_monitoring_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of BP monitoring during PNC</p></td>
+</tr>
+<tr class="row-even"><td><p>specificity_bp_monitoring_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>specificity of BP monitoring during PNC</p></td>
+</tr>
+<tr class="row-odd"><td><p>sensitivity_urine_protein_1_plus_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of urine dipstick during PNC</p></td>
+</tr>
+<tr class="row-even"><td><p>specificity_urine_protein_1_plus_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>specificity of urine dipstick monitoring during PNC</p></td>
+</tr>
+<tr class="row-odd"><td><p>sensitivity_poc_hb_test_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of point of care testing during PNC</p></td>
+</tr>
+<tr class="row-even"><td><p>specificity_poc_hb_test_pn</p></td>
+<td><p>REAL</p></td>
+<td><p>specificity of urine dipstick monitoring during PNC</p></td>
+</tr>
+<tr class="row-odd"><td><p>sensitivity_maternal_sepsis_assessment</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of assessment for maternal sepsis</p></td>
+</tr>
+<tr class="row-even"><td><p>sensitivity_pph_assessment</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of assessment for secondary pph</p></td>
+</tr>
+<tr class="row-odd"><td><p>sensitivity_lons_assessment</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of assessment for late onset neonatal sepsis</p></td>
+</tr>
+<tr class="row-even"><td><p>sensitivity_eons_assessment</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of assessment for earl onset neonatal sepsis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_intervention_delivered_sep_assessment_pnc</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will be assessed for sepsis during PNC</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_intervention_delivered_pph_assessment_pnc</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will be assessed for PPH during PNC</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_intervention_delivered_urine_ds_pnc</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive a urine disptick during PNC</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_intervention_delivered_bp_pnc</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive blood pressure testing during PNC</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_intervention_poct_pnc</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a woman will receive point of care Hb testing during PNC</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_intervention_neonatal_sepsis_pnc</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a newborn will be assessed for sepsis during PNC</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_intervention_delivered_hiv_test_pnc</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a newborn will receive a HIV test at 6 weeks postnatal</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_intervention_delivered_depression_screen_pnc</p></td>
+<td><p>REAL</p></td>
+<td><p>probability a mother will receive a depression screen during PNC</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>PROPERTIES:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>pn_id_most_recent_child</p></td>
+<td><p>INT</p></td>
+<td><p>person_id of a mothers most recent child (if twins id of the first born)</p></td>
+</tr>
+<tr class="row-odd"><td><p>pn_postnatal_period_in_weeks</p></td>
+<td><p>REAL</p></td>
+<td><p>The number of weeks a woman is in the postnatal period (1-6)</p></td>
+</tr>
+<tr class="row-even"><td><p>pn_pnc_visits_maternal</p></td>
+<td><p>INT</p></td>
+<td><p>The number of postnatal care visits a woman has undergone following her most recent delivery</p></td>
+</tr>
+<tr class="row-odd"><td><p>pn_pnc_visits_neonatal</p></td>
+<td><p>INT</p></td>
+<td><p>The number of postnatal care visits a neonate has undergone following delivery</p></td>
+</tr>
+<tr class="row-even"><td><p>pn_htn_disorders</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Hypertensive disorders of the postnatal period.  Possible values are: [none, resolved, gest_htn, severe_gest_htn, mild_pre_eclamp, severe_pre_eclamp, eclampsia, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>pn_mag_sulph_treatment</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has received magnesium sulphate as treatment for eclampsia/ severe pre-eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>pn_gest_htn_on_treatment</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman is receiving regular oral medication for hypertension in the postnatal period</p></td>
+</tr>
+<tr class="row-odd"><td><p>pn_iv_anti_htn_treatment</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has received IV anti hypertensive therapy during a hypertensive emergency</p></td>
+</tr>
+<tr class="row-even"><td><p>pn_postpartum_haem_secondary</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman is experiencing a secondary postpartum haemorrhage</p></td>
+</tr>
+<tr class="row-odd"><td><p>pn_postpartum_haem_secondary_treatment</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has received treatment for secondary PPH</p></td>
+</tr>
+<tr class="row-even"><td><p>pn_sepsis_late_postpartum</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman is experiencing postnatal (day7+) sepsis</p></td>
+</tr>
+<tr class="row-odd"><td><p>pn_sepsis_late_postpartum_treatment</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this woman has received treatment for postpartum sepsis</p></td>
+</tr>
+<tr class="row-even"><td><p>pn_maternal_pp_infection</p></td>
+<td><p>INT</p></td>
+<td><p>bitset column for infection</p></td>
+</tr>
+<tr class="row-odd"><td><p>pn_obstetric_fistula</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Type of fistula developed after birth.  Possible values are: [none, vesicovaginal, rectovaginal, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>pn_sepsis_early_neonatal</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this neonate has developed early onset neonatal sepsis during week one of life</p></td>
+</tr>
+<tr class="row-odd"><td><p>pn_sepsis_late_neonatal</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this neonate has developed late neonatal sepsis following discharge</p></td>
+</tr>
+<tr class="row-even"><td><p>pn_neonatal_sepsis_disab</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Level of disability experience from a neonate post sepsis.  Possible values are: [none, mild_motor_and_cog, mild_motor, moderate_motor, severe_motor, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>pn_sepsis_neonatal_inj_abx</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this neonate has received injectable antibiotics as treatment for late onset sepsis</p></td>
+</tr>
+<tr class="row-even"><td><p>pn_sepsis_neonatal_full_supp_care</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether this neonate has received full supportive care as treatment for late onset sepsis</p></td>
+</tr>
+<tr class="row-odd"><td><p>pn_deficiencies_following_pregnancy</p></td>
+<td><p>INT</p></td>
+<td><p>bitset column, stores types of anaemia causing deficiencies following pregnancy</p></td>
+</tr>
+<tr class="row-even"><td><p>pn_anaemia_following_pregnancy</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>severity of anaemia following pregnancy.  Possible values are: [none, mild, moderate, severe, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>pn_emergency_event_mother</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether a mother is experiencing an emergency complication postnatally</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Class attributes:</strong></p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p><strong>Functions (defined or overridden in class PostnatalSupervisor):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.read_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read parameter values from file, if required.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
+Typically modules would read a particular file within here.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set our property values for the initial population.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called by the simulation when creating the initial population, and is
+responsible for assigning initial values, for every individual, of those properties
+‘owned’ by this module, i.e. those declared in its PROPERTIES dictionary.</p>
+<p>TODO: We probably need to declare somehow which properties we ‘read’ here, so the
+simulation knows what order to initialise modules in!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the population of individuals</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get ready for simulation start.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called just before the main simulation loop begins, and after all
+modules have read their parameters and the initial population has been created.
+It is a good place to add initial events to the event queue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.on_birth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise our properties for a newborn individual.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This is called by the simulation whenever a new person is born.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mother</strong> – the mother for this child</p></li>
+<li><p><strong>child</strong> – the new child</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.further_on_birth_postnatal_supervisor">
+<span class="sig-name descname"><span class="pre">further_on_birth_postnatal_supervisor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.further_on_birth_postnatal_supervisor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.further_on_birth_postnatal_supervisor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.on_hsi_alert">
+<span class="sig-name descname"><span class="pre">on_hsi_alert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.on_hsi_alert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.on_hsi_alert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.report_daly_values">
+<span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.report_daly_values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.set_infections">
+<span class="sig-name descname"><span class="pre">set_infections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">infection</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.set_infections"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.set_infections" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by the PostnatalWeekOne event to calculate a womans risk of developing an infection
+in the first week after birth and store that infection.
+:param individual_id: individual_id
+:param infection: the infection for which risk of infection is being determined</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.set_postnatal_complications_mothers">
+<span class="sig-name descname"><span class="pre">set_postnatal_complications_mothers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">week</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.set_postnatal_complications_mothers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.set_postnatal_complications_mothers" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by the PostnatalSupervisor event. It applies risk of key complications to a subset of
+women during each week of the postnatal period starting from week 2. Currently this includes infection, sepsis,
+anaemia and hypertension
+:param week: week in the postnatal period used to select women in the data frame.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.apply_risk_of_neonatal_complications_in_week_one">
+<span class="sig-name descname"><span class="pre">apply_risk_of_neonatal_complications_in_week_one</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.apply_risk_of_neonatal_complications_in_week_one"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.apply_risk_of_neonatal_complications_in_week_one" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by PostnatalWeekOneEvent for newborns to determine risk of complications. Currently
+this is limited to early onset neonatal sepsis
+:param child_id: childs individual id
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.set_postnatal_complications_neonates">
+<span class="sig-name descname"><span class="pre">set_postnatal_complications_neonates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">upper_and_lower_day_limits</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.set_postnatal_complications_neonates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.set_postnatal_complications_neonates" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by the PostnatalSupervisor event. It applies risk of key complication to neonates
+during each week of the neonatal period after week one (weeks 2, 3 &amp; 4). This is currently limited to sepsis but</p>
+<blockquote>
+<div><p>may be expanded at a later date</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>upper_and_lower_day_limits</strong> – 2 value list of the first and last day of each week of the neonatal period</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.assessment_for_maternal_complication_during_pnc">
+<span class="sig-name descname"><span class="pre">assessment_for_maternal_complication_during_pnc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.assessment_for_maternal_complication_during_pnc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.assessment_for_maternal_complication_during_pnc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by each of the postnatal care visit HSIs and represents assessment of mothers for
+sepsis, postnatal bleeding, hypertension and anaemia. If these conditions are detected during PNC then women
+are admitted for treatment
+:param individual_id: individual_id (mother)
+:param hsi_event: HSI event in which this function is called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.assessment_for_neonatal_complications_during_pnc">
+<span class="sig-name descname"><span class="pre">assessment_for_neonatal_complications_during_pnc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pnc_visit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.assessment_for_neonatal_complications_during_pnc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.assessment_for_neonatal_complications_during_pnc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by each of the postnatal care visit HSI and represents assessment of neonates for
+sepsis. If sepsis is detected during PNC then the neonate is  admitted for treatment.
+:param individual_id: individual_id (child)
+:param hsi_event: HSI event in which this function is called</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.apply_risk_of_maternal_or_neonatal_death_postnatal">
+<span class="sig-name descname"><span class="pre">apply_risk_of_maternal_or_neonatal_death_postnatal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_or_child</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.apply_risk_of_maternal_or_neonatal_death_postnatal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.apply_risk_of_maternal_or_neonatal_death_postnatal" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called to calculate an individuals risk of death following the onset of a complication. For
+individuals who dont seek care this is immediately after the onset of complications. For those who seek care it
+is called at the end of the HSI to allow for treatment effects. Either a mother or a child can be passed to the
+function.
+:param mother_or_child: Person of interest for the effect of this function - pass ‘mother’ or ‘child’ to</p>
+<blockquote>
+<div><p>apply risk of death correctly</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>individual_id</strong> – individual_id</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor.maternal_postnatal_care_care_seeking">
+<span class="sig-name descname"><span class="pre">maternal_postnatal_care_care_seeking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recommended_day_next_pnc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_pnc_visit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maternal_pnc</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor.maternal_postnatal_care_care_seeking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor.maternal_postnatal_care_care_seeking" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by HSI_PostnatalSupervisor_PostnatalCareContact. It determines if a mother
+will return to attend her next PNC visit in the schedule
+:param individual_id: individual_id
+:param recommended_day_next_pnc: int signifying number of days post birth the next visit should occur
+:param next_pnc_visit: string signifying next visit in schedule i.e. ‘pnc2’
+:param maternal_pnc: HSI to be scheduled</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">PostnatalSupervisorEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisorEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the PostnatalSupervisorEvent. It runs every week and applies risk of disease onset/resolution to women
+in the postnatal period of their pregnancy (48hrs - +42days post birth)</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class PostnatalSupervisorEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisorEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisorEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalWeekOneEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">PostnatalWeekOneEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalWeekOneEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalWeekOneEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is PostnatalWeekOneEvent. It is scheduled for all mothers who survive labour and the first 48 hours after
+birth. This event applies risk of key complications that can occur in the first week after birth to both these
+mothers and their recently delivered newborn. This event also determines if a woman will seek care, with her
+newborn, for their first postnatal care visit on day 7 after birth. For women who dont seek care for themselves,
+or their newborns, risk of death is applied.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class PostnatalWeekOneEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalWeekOneEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalWeekOneEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalWeekOneEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalWeekOneEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalWeekOneEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalWeekOneEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_PostnatalSupervisor_PostnatalCareContactOne</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalCareContactOne"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal. It is scheduled by
+PostnatalWeekOneEvent for women who decide to seek care for a postnatal checkup. This event is the first PNC visit</p>
+<blockquote>
+<div><p>women are recommended to attend after discharge, occurring on day 7 post birth.</p>
+</div></blockquote>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_PostnatalSupervisor_PostnatalCareContactOne):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalCareContactOne.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalCareContactOne.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalCareContactOne.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalCareContactOne.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_PostnatalSupervisor_PostnatalCareContactTwo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalCareContactTwo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is HSI_PostnatalSupervisor_PostnatalCareContactTwoMaternal. It is scheduled by
+HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal This event is the second PNC visit women
+are recommended to undertake at 6 weeks postnatal.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_PostnatalSupervisor_PostnatalCareContactTwo):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalCareContactTwo.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalCareContactTwo.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalCareContactTwo.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalCareContactTwo.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalWardInpatientCare">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_PostnatalSupervisor_PostnatalWardInpatientCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalWardInpatientCare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalWardInpatientCare" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is HSI_PostnatalSupervisor_PostnatalWardInpatientCare. It is scheduled by the PostnatalSupervisorEvent for
+women who develop complications during the postnatal period and decide to seek care or by either of the PNC HSIs for</p>
+<blockquote>
+<div><p>women assessed as requiring further care due to complications detected. Treatment delivered in this event includes
+management of hypertensive disorders, maternal sepsis, anaemia and secondary postpartum haemorrhage</p>
+</div></blockquote>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_PostnatalSupervisor_PostnatalWardInpatientCare):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalWardInpatientCare.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalWardInpatientCare.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalWardInpatientCare.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalWardInpatientCare.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalWardInpatientCare.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalWardInpatientCare.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalWardInpatientCare.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalWardInpatientCare.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalWardInpatientCare.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalWardInpatientCare.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_PostnatalWardInpatientCare.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalWardInpatientCare.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_TreatmentForObstetricFistula">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_PostnatalSupervisor_TreatmentForObstetricFistula</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_TreatmentForObstetricFistula"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_TreatmentForObstetricFistula" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>This is HSI_PostnatalSupervisor_TreatmentForObstetricFistula. It is scheduled by the on_birth function of this</dt><dd><p>module for women have developed obstetric fistula and choose to seek care. Treatment delivered in this event</p>
+</dd>
+</dl>
+<p>includes surgical correction of obstetric fistula</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_PostnatalSupervisor_TreatmentForObstetricFistula):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_TreatmentForObstetricFistula.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_TreatmentForObstetricFistula.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_TreatmentForObstetricFistula.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_TreatmentForObstetricFistula.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_TreatmentForObstetricFistula.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_TreatmentForObstetricFistula.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_NeonatalWardInpatientCare">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_PostnatalSupervisor_NeonatalWardInpatientCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_NeonatalWardInpatientCare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_NeonatalWardInpatientCare" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is HSI_PostnatalSupervisor_NeonatalWardInpatientCare. It is scheduled by any of the PNC HSIs for neonates
+who are require inpatient care due to a complication of the postnatal period. Treatment is delivered in this
+event</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_PostnatalSupervisor_NeonatalWardInpatientCare):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_NeonatalWardInpatientCare.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_NeonatalWardInpatientCare.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_NeonatalWardInpatientCare.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_NeonatalWardInpatientCare.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_NeonatalWardInpatientCare.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_NeonatalWardInpatientCare.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_NeonatalWardInpatientCare.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_NeonatalWardInpatientCare.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_NeonatalWardInpatientCare.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_NeonatalWardInpatientCare.not_available">
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#HSI_PostnatalSupervisor_NeonatalWardInpatientCare.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_NeonatalWardInpatientCare.not_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
+parameter service_availability.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalLoggingEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">PostnatalLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalLoggingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the PostnatalLoggingEvent. It runs every year and uses the dataframe and postnatal_tracker to generate
+summary statistics used in analysis files. This is not a finalised event and is liable to change</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class PostnatalLoggingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalLoggingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalLoggingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalLoggingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tlo.methods.postnatal_supervisor_lm.html" class="btn btn-neutral float-right" title="tlo.methods.postnatal_supervisor_lm module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.other_adult_cancers.html" class="btn btn-neutral float-left" title="tlo.methods.other_adult_cancers module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

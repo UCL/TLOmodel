@@ -1,0 +1,4 @@
+tlo.methods.newborn_outcomes_lm module
+======================================
+
+.. automodule:: tlo.methods.newborn_outcomes_lm

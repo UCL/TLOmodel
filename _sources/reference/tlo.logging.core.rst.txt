@@ -1,0 +1,7 @@
+tlo.logging.core module
+=======================
+
+.. automodule:: tlo.logging.core
+   :members:
+   :undoc-members:
+   :show-inheritance:

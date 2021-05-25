@@ -1,0 +1,7 @@
+tlo.progressbar module
+======================
+
+.. automodule:: tlo.progressbar
+   :members:
+   :undoc-members:
+   :show-inheritance:

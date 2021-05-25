@@ -1,0 +1,347 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Using Azure Batch &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reference" href="reference/index.html" />
+    <link rel="prev" title="Usage" href="usage.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using Azure Batch</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-a-scenario">Creating a Scenario</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#interacting-with-azure-batch">Interacting with Azure Batch</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Using Azure Batch</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/azure_batch.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="using-azure-batch">
+<h1>Using Azure Batch<a class="headerlink" href="#using-azure-batch" title="Permalink to this headline">¶</a></h1>
+<p>Scenarios configure TLOmodel simulations. Simulations are configured as subclasses of
+<code class="docutils literal notranslate"><span class="pre">tlo.scenario.BaseScenario</span></code>. The <code class="docutils literal notranslate"><span class="pre">tlo</span></code> command-line tool is used to submit simulation scenarios to run on
+Azure Batch.</p>
+<div class="section" id="setup">
+<h2>Setup<a class="headerlink" href="#setup" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p>Install Azure CLI <a class="reference external" href="https://docs.microsoft.com/en-us/cli/azure/install-azure-cli">https://docs.microsoft.com/en-us/cli/azure/install-azure-cli</a></p></li>
+<li><p>Checkout &amp; pull TLOmodel master branch</p></li>
+<li><p>Open Terminal (MacOS) or Anaconda Prompt (Windows)</p></li>
+<li><p>Change directory to the TLOmodel repository</p></li>
+<li><p>Activate the Conda environment: <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">tlo38</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">requirements\base.txt</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code></p></li>
+<li><dl>
+<dt>Extra steps on Windows</dt><dd><ul>
+<li><p>Run the following command, changing the path to where the Conda environment is installed:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Users</span>\<span class="n">Public</span>\<span class="n">miniconda3</span>\<span class="n">envs</span>\<span class="n">tlo</span>\<span class="n">Scripts</span>\<span class="n">pywin32_postinstall</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">install</span>
+</pre></div>
+</div>
+</li>
+<li><p>There will be some output, ending with <em>“The pywin32 extensions were successfully installed.”</em></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Copy the file <code class="docutils literal notranslate"><span class="pre">tlo.example.com</span></code> to <code class="docutils literal notranslate"><span class="pre">tlo.conf</span></code>, and fill in the fields as required.</p></li>
+<li><p>In Terminal/Anaconda Prompt check the following command runs: <code class="docutils literal notranslate"><span class="pre">tlo</span></code></p></li>
+<li><p>Login to Azure with <code class="docutils literal notranslate"><span class="pre">az</span> <span class="pre">login</span> <span class="pre">--tenant</span> <span class="pre">1faf88fe-a998-4c5b-93c9-210a11d9a5c2</span></code></p></li>
+<li><p>In Terminal/Anaconda Prompt run: <code class="docutils literal notranslate"><span class="pre">tlo</span> <span class="pre">batch-list</span></code></p></li>
+</ol>
+<p>[NB. step 9: not clear what to fill in and how]</p>
+</div>
+<div class="section" id="creating-a-scenario">
+<h2>Creating a Scenario<a class="headerlink" href="#creating-a-scenario" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p>Checkout a new branch for your scenario</p></li>
+<li><p>Create a file <code class="docutils literal notranslate"><span class="pre">src/scripts/&lt;your</span> <span class="pre">directory&gt;/&lt;a</span> <span class="pre">unique</span> <span class="pre">filename&gt;.py</span></code>. The filename will serve as the job identifier.</p></li>
+<li><p>In the file, create a subclass of BaseScenario. e.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Date</span>
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">tlo.scenario</span> <span class="kn">import</span> <span class="n">BaseScenario</span>
+<span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">demography</span><span class="p">,</span> <span class="n">enhanced_lifestyle</span>
+
+<span class="k">class</span> <span class="nc">MyTestScenario</span><span class="p">(</span><span class="n">BaseScenario</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="mi">12</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="n">Date</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="n">Date</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pop_size</span> <span class="o">=</span> <span class="mi">1000</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">number_of_draws</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runs_per_draw</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="nf">log_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="s1">&#39;my_test_scenario&#39;</span><span class="p">,</span> <span class="s1">&#39;directory&#39;</span><span class="p">:</span> <span class="s1">&#39;./outputs&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;custom_levels&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;*&#39;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">}</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">modules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">demography</span><span class="o">.</span><span class="n">Demography</span><span class="p">(</span><span class="n">resourcefilepath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="p">),</span>
+            <span class="n">enhanced_lifestyle</span><span class="o">.</span><span class="n">Lifestyle</span><span class="p">(</span><span class="n">resourcefilepath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="p">),</span>
+        <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">draw_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draw_number</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;Lifestyle&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;init_p_urban&#39;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p>Check the batch configuration gets generated without error:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tlo</span> <span class="n">scenario</span><span class="o">-</span><span class="n">run</span> <span class="o">--</span><span class="n">draw</span><span class="o">-</span><span class="n">only</span> <span class="n">src</span><span class="o">/</span><span class="n">scripts</span><span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">tlo_q1_demo</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+</li>
+<li><p>Test the scenario starts running without problems:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tlo</span> <span class="n">scenario</span><span class="o">-</span><span class="n">run</span> <span class="n">src</span><span class="o">/</span><span class="n">scripts</span><span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">tlo_q1_demo</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>or execute a single run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tlo</span> <span class="n">scenario</span><span class="o">-</span><span class="n">run</span> <span class="n">src</span><span class="o">/</span><span class="n">scripts</span><span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">tlo_q1_demo</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">draw</span> <span class="mi">1</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</li>
+<li><p>Commit the scenario file and push to Github</p></li>
+</ol>
+<div class="section" id="interacting-with-azure-batch">
+<h3>Interacting with Azure Batch<a class="headerlink" href="#interacting-with-azure-batch" title="Permalink to this headline">¶</a></h3>
+<p>Each of the subcommands of <code class="docutils literal notranslate"><span class="pre">tlo</span></code> has a <code class="docutils literal notranslate"><span class="pre">--help</span></code> flag for further information e.g. <code class="docutils literal notranslate"><span class="pre">tlo</span> <span class="pre">batch-submit</span> <span class="pre">--help</span></code></p>
+<p><em>Submit scenario to Azure Batch</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tlo</span> <span class="n">batch</span><span class="o">-</span><span class="n">submit</span> <span class="n">src</span><span class="o">/</span><span class="n">scripts</span><span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">tlo_q1_demo</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p><em>List jobs currently on Azure Batch where id contains “tamuri”</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tlo</span> <span class="n">batch</span><span class="o">-</span><span class="nb">list</span> <span class="o">-</span><span class="n">f</span> <span class="n">tlo_q1</span>
+</pre></div>
+</div>
+<p><em>List active jobs (default 5 jobs listed)</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tlo</span> <span class="n">batch</span><span class="o">-</span><span class="nb">list</span> <span class="o">--</span><span class="n">active</span>
+</pre></div>
+</div>
+<p><em>Display information about a job</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tlo</span> <span class="n">batch</span><span class="o">-</span><span class="n">job</span> <span class="n">tlo_q1_demo</span><span class="o">-</span><span class="mi">123</span> <span class="o">--</span><span class="n">tasks</span>
+</pre></div>
+</div>
+<p><em>Download result files for a completed job</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tlo</span> <span class="n">batch</span><span class="o">-</span><span class="n">download</span> <span class="n">tlo_q1_demo</span><span class="o">-</span><span class="mi">123</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="_downloads/b9707619202478e750a5876e2bd516c0/Demography.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p>
+<p>testing…</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="reference/index.html" class="btn btn-neutral float-right" title="Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="usage.html" class="btn btn-neutral float-left" title="Usage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,19 @@
+tlo.test package
+================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   tlo.test.random_birth
+   tlo.test.random_death
+
+Module contents
+---------------
+
+.. automodule:: tlo.test
+   :members:
+   :undoc-members:
+   :show-inheritance:

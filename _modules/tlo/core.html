@@ -1,0 +1,564 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.core &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors.html">Authors</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>tlo.core</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for tlo.core</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Core framework classes.</span>
+
+<span class="sd">This contains things that didn&#39;t obviously go in their own file, such as</span>
+<span class="sd">specification for parameters and properties, and the base Module class for</span>
+<span class="sd">disease modules.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">typing</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+<div class="viewcode-block" id="Types"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Types">[docs]</a><span class="k">class</span> <span class="nc">Types</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Possible types for parameters and properties.</span>
+
+<span class="sd">    This lets us hide the details of numpy &amp; pandas dtype strings and give</span>
+<span class="sd">    users an easy list to reference instead.</span>
+
+<span class="sd">    Most of these should be intuitive. The DATE type can actually represent</span>
+<span class="sd">    date+time values, but we are only concerned with day precision at present.</span>
+<span class="sd">    The CATEGORICAL type is useful for things like sex where there are a fixed</span>
+<span class="sd">    number of options to choose from. The LIST type is used for properties</span>
+<span class="sd">    where the value is a collection, e.g. the set of children of a person.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">DATE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">BOOL</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">INT</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">REAL</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">CATEGORICAL</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">LIST</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">SERIES</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">DATA_FRAME</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">STRING</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">DICT</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+    <span class="c1"># TODO: Add &#39;set&#39; too?</span>
+
+
+<div class="viewcode-block" id="Specifiable"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Specifiable">[docs]</a><span class="k">class</span> <span class="nc">Specifiable</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Base class for Parameter and Property.&quot;&quot;&quot;</span>
+
+    <span class="sd">&quot;&quot;&quot;Map our Types to pandas dtype specifications.&quot;&quot;&quot;</span>
+    <span class="n">PANDAS_TYPE_MAP</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">DATE</span><span class="p">:</span> <span class="s1">&#39;datetime64[ns]&#39;</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">:</span> <span class="s1">&#39;int64&#39;</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">:</span> <span class="s1">&#39;category&#39;</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">SERIES</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">:</span> <span class="nb">object</span>
+    <span class="p">}</span>
+
+    <span class="sd">&quot;&quot;&quot;Map our Types to Python types.&quot;&quot;&quot;</span>
+    <span class="n">PYTHON_TYPE_MAP</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">DATE</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">SERIES</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+        <span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">:</span> <span class="nb">dict</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new Specifiable.</span>
+
+<span class="sd">        :param type_: an instance of Types giving the type of allowed values</span>
+<span class="sd">        :param description: textual description of what this Specifiable represents</span>
+<span class="sd">        :param categories: list of strings which will be the available categories</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">type_</span> <span class="ow">in</span> <span class="n">Types</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type_</span> <span class="o">=</span> <span class="n">type_</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+
+        <span class="c1"># Save the categories for a categorical property</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_</span> <span class="ow">is</span> <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">categories</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;CATEGORICAL types require the &#39;categories&#39; argument&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">categories</span> <span class="o">=</span> <span class="n">categories</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">python_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">PYTHON_TYPE_MAP</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">type_</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">pandas_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">PANDAS_TYPE_MAP</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">type_</span><span class="p">]</span>
+
+    <span class="n">delimiter</span> <span class="o">=</span> <span class="s2">&quot; === &quot;</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Add docstring here.</span>
+<span class="sd">        self.type will be something like &quot;Types.REAL&quot;.</span>
+<span class="sd">        For printing, we remove the redundant substring &quot;Types.&quot; &#39;&#39;&#39;</span>
+        <span class="n">sub</span> <span class="o">=</span> <span class="s2">&quot;Types.&quot;</span>
+        <span class="n">mytype</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type_</span><span class="p">)</span>  <span class="c1"># e.g. &quot;Types.REAL&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">mytype</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sub</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># e.g. &quot;REAL&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_</span> <span class="o">==</span> <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">item</span><span class="si">}{</span><span class="n">Specifiable</span><span class="o">.</span><span class="n">delimiter</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s1"> (Possible values are: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">categories</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">Specifiable</span><span class="o">.</span><span class="n">delimiter</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s1">&#39;</span></div>
+        <span class="c1"># Types.CATEGORICAL might need special treatment</span>
+
+
+<div class="viewcode-block" id="Parameter"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Parameter">[docs]</a><span class="k">class</span> <span class="nc">Parameter</span><span class="p">(</span><span class="n">Specifiable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Used to specify parameters for disease modules etc.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Property"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Property">[docs]</a><span class="k">class</span> <span class="nc">Property</span><span class="p">(</span><span class="n">Specifiable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Used to specify properties of individuals.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new property specification.</span>
+
+<span class="sd">        :param type_: an instance of Types giving the type of allowed values of this property</span>
+<span class="sd">        :param description: textual description of what this property represents</span>
+<span class="sd">        :param optional: whether a value needs to be given for this property</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">type_</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">categories</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optional</span> <span class="o">=</span> <span class="n">optional</span>
+
+<div class="viewcode-block" id="Property.create_series"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Property.create_series">[docs]</a>    <span class="k">def</span> <span class="nf">create_series</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a Pandas Series for this property.</span>
+
+<span class="sd">        The values will be left uninitialised.</span>
+
+<span class="sd">        :param name: the name for the series</span>
+<span class="sd">        :param size: the length of the series</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_</span> <span class="ow">in</span> <span class="p">[</span><span class="n">Types</span><span class="o">.</span><span class="n">SERIES</span><span class="p">,</span> <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Property cannot be of type SERIES or DATA_FRAME.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Series of Categorical are setup differently</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_</span> <span class="ow">is</span> <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span>
+                    <span class="n">values</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">repeats</span><span class="o">=</span><span class="n">size</span><span class="p">),</span>
+                    <span class="n">categories</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">categories</span>
+                <span class="p">),</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">),</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pandas_type</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">),</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pandas_type</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">s</span></div></div>
+
+
+<div class="viewcode-block" id="Module"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module">[docs]</a><span class="k">class</span> <span class="nc">Module</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;The base class for disease modules.</span>
+
+<span class="sd">    This declares the methods which individual modules must implement, and contains the</span>
+<span class="sd">    core functionality linking modules into a simulation. Useful properties available</span>
+<span class="sd">    on instances are:</span>
+
+<span class="sd">    `name`</span>
+<span class="sd">        The unique name of this module within the simulation.</span>
+
+<span class="sd">    `parameters`</span>
+<span class="sd">        A dictionary of module parameters, derived from specifications in the PARAMETERS</span>
+<span class="sd">        class attribute on a subclass. These parameters are also available as object</span>
+<span class="sd">        attributes in their own right(where their names do not clash) so you can do both</span>
+<span class="sd">        `m.parameters[&#39;name&#39;]` and `m.name`.</span>
+
+<span class="sd">    `rng`</span>
+<span class="sd">        A random number generator specific to this module, with its own internal state.</span>
+<span class="sd">        It&#39;s an instance of `numpy.random.RandomState`</span>
+
+<span class="sd">    `sim`</span>
+<span class="sd">        The simulation this module is part of, once registered.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Subclasses can override this set to add metadata tags to their class</span>
+    <span class="c1"># See tlo.methods.Metadata class</span>
+    <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Subclasses may declare this dictionary to specify module-level parameters.</span>
+    <span class="c1"># We give an empty definition here as default.</span>
+    <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Subclasses may declare this dictionary to specify properties of individuals.</span>
+    <span class="c1"># We give an empty definition here as default.</span>
+    <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># The explicit attributes of the module. We list these so we can distinguish dynamic</span>
+    <span class="c1"># parameters created from the PARAMETERS specification.</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;parameters&#39;</span><span class="p">,</span> <span class="s1">&#39;rng&#39;</span><span class="p">,</span> <span class="s1">&#39;sim&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct a new disease module ready to be included in a simulation.</span>
+
+<span class="sd">        Initialises an empty parameters dictionary and module-specific random number</span>
+<span class="sd">        generator.</span>
+
+<span class="sd">        :param name: the name to use for this module. Defaults to the concrete subclass&#39; name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Module.load_parameters_from_dataframe"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.load_parameters_from_dataframe">[docs]</a>    <span class="k">def</span> <span class="nf">load_parameters_from_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Automatically load parameters from resource dataframe, updating the class parameter dictionary</span>
+
+<span class="sd">        Goes through parameters dict self.PARAMETERS and updates the self.parameters with values</span>
+<span class="sd">        Automatically updates the values of data types:</span>
+<span class="sd">        - Integers</span>
+<span class="sd">        - Real numbers</span>
+<span class="sd">        - Lists</span>
+<span class="sd">        - Categorical</span>
+<span class="sd">        - Strings</span>
+<span class="sd">        - Dates (Any numbers will be converted into dated without warnings)</span>
+<span class="sd">        - Booleans (Any input will be converted into a boolean without warnings)</span>
+
+<span class="sd">        Will also make the parameter_name the index of the resource DataFrame.</span>
+
+<span class="sd">        :param DataFrame resource: DataFrame with a column of the parameter_name and a column of `value`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">resource</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;parameter_name&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">skipped_data_types</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;DATA_FRAME&#39;</span><span class="p">,</span> <span class="s1">&#39;SERIES&#39;</span><span class="p">)</span>
+        <span class="c1"># for each supported parameter, convert to the correct type</span>
+        <span class="k">for</span> <span class="n">parameter_name</span> <span class="ow">in</span> <span class="n">resource</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">resource</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">notnull</span><span class="p">()]:</span>
+            <span class="n">parameter_definition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETERS</span><span class="p">[</span><span class="n">parameter_name</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">parameter_definition</span><span class="o">.</span><span class="n">type_</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">skipped_data_types</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># For each parameter, raise error if the value can&#39;t be coerced</span>
+            <span class="n">parameter_value</span> <span class="o">=</span> <span class="n">resource</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">parameter_name</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">]</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The value of &#39;</span><span class="si">{</span><span class="n">parameter_value</span><span class="si">}</span><span class="s2">&#39; for parameter &#39;</span><span class="si">{</span><span class="n">parameter_name</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;could not be parsed as a </span><span class="si">{</span><span class="n">parameter_definition</span><span class="o">.</span><span class="n">type_</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> data type&quot;</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">parameter_definition</span><span class="o">.</span><span class="n">python_type</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># chose json.loads instead of save_eval</span>
+                    <span class="c1"># because it raises error instead of joining two strings without a comma</span>
+                    <span class="n">parameter_value</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">parameter_value</span><span class="p">)</span>
+                    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parameter_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AssertionError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+            <span class="k">elif</span> <span class="n">parameter_definition</span><span class="o">.</span><span class="n">python_type</span> <span class="o">==</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">:</span>
+                <span class="n">categories</span> <span class="o">=</span> <span class="n">parameter_definition</span><span class="o">.</span><span class="n">categories</span>
+                <span class="k">assert</span> <span class="n">parameter_value</span> <span class="ow">in</span> <span class="n">categories</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_message</span><span class="si">}</span><span class="se">\n</span><span class="s2">valid values: </span><span class="si">{</span><span class="n">categories</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">parameter_value</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">parameter_value</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">categories</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">parameter_definition</span><span class="o">.</span><span class="n">type_</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;STRING&#39;</span><span class="p">:</span>
+                <span class="n">parameter_value</span> <span class="o">=</span> <span class="n">parameter_value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># All other data types, assign to the python_type defined in Parameter class</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">parameter_value</span> <span class="o">=</span> <span class="n">parameter_definition</span><span class="o">.</span><span class="n">python_type</span><span class="p">(</span><span class="n">parameter_value</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+            <span class="c1"># Save the values to the parameters</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">parameter_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">parameter_value</span></div>
+
+<div class="viewcode-block" id="Module.read_parameters"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read parameter values from file, if required.</span>
+
+<span class="sd">        Must be implemented by subclasses.</span>
+
+<span class="sd">        :param data_folder: path of a folder supplied to the Simulation containing data files.</span>
+<span class="sd">          Typically modules would read a particular file within here.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Module.initialise_population"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set our property values for the initial population.</span>
+
+<span class="sd">        Must be implemented by subclasses.</span>
+
+<span class="sd">        This method is called by the simulation when creating the initial population, and is</span>
+<span class="sd">        responsible for assigning initial values, for every individual, of those properties</span>
+<span class="sd">        &#39;owned&#39; by this module, i.e. those declared in its PROPERTIES dictionary.</span>
+
+<span class="sd">        TODO: We probably need to declare somehow which properties we &#39;read&#39; here, so the</span>
+<span class="sd">        simulation knows what order to initialise modules in!</span>
+
+<span class="sd">        :param population: the population of individuals</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Module.initialise_simulation"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get ready for simulation start.</span>
+
+<span class="sd">        Must be implemented by subclasses.</span>
+
+<span class="sd">        This method is called just before the main simulation loop begins, and after all</span>
+<span class="sd">        modules have read their parameters and the initial population has been created.</span>
+<span class="sd">        It is a good place to add initial events to the event queue.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Module.pre_initialise_population"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Carry out any work before any populations have been initalised</span>
+
+<span class="sd">        This optional method allows access to all other registered modules, before any of</span>
+<span class="sd">        the modules have initialised a population. This is expected to be useful for</span>
+<span class="sd">        when a module&#39;s properties rely upon information from other modules.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Module.on_birth"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
+
+<span class="sd">        Must be implemented by subclasses.</span>
+
+<span class="sd">        This is called by the simulation whenever a new person is born.</span>
+
+<span class="sd">        :param mother: the mother for this child</span>
+<span class="sd">        :param child: the new child</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Look up a module parameter as though it is an object property.</span>
+
+<span class="sd">        :param name: the parameter name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;Attribute </span><span class="si">%s</span><span class="s1"> not found&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set a module parameter as though it is an object property.</span>
+
+<span class="sd">        :param name: the parameter name</span>
+<span class="sd">        :param value: the new value for the parameter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETERS</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETERS</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">python_type</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, The TLOmodel Team.
+      <span class="lastupdated">
+        Last updated on May 25, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
