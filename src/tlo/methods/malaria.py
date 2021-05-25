@@ -51,7 +51,7 @@ class Malaria(Module):
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'Malaria_Symptoms': Cause(gbd_causes=['Malaria'], label='Malaria')
+        'Malaria_Symptoms': Cause(gbd_causes='Malaria', label='Malaria')
     }
     # todo - @Tara: would it make sense to simplify these different causes into one?
 
