@@ -1,7 +1,7 @@
 {
   "scenario_script_path": "src/scripts/rti/rti_grid_search_parameterisation.py",
   "scenario_seed": 12,
-  "runs_per_draw": 3,
+  "runs_per_draw": 2,
   "draws": [
     {
       "draw_number": 0,
@@ -30,7 +30,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0033960384,
+          "base_rate_injrti": 0.0040628511349775995,
           "imm_death_proportion_rti": 0.0
         }
       }
@@ -62,7 +62,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0043960384,
+          "base_rate_injrti": 0.005562851134977599,
           "imm_death_proportion_rti": 0.0
         }
       }
@@ -94,7 +94,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.005396038400000001,
+          "base_rate_injrti": 0.0070628511349776,
           "imm_death_proportion_rti": 0.0
         }
       }
@@ -126,7 +126,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.006396038400000001,
+          "base_rate_injrti": 0.0085628511349776,
           "imm_death_proportion_rti": 0.0
         }
       }
@@ -158,7 +158,7 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007396038400000001,
+          "base_rate_injrti": 0.0100628511349776,
           "imm_death_proportion_rti": 0.0
         }
       }
@@ -190,8 +190,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0083960384,
-          "imm_death_proportion_rti": 0.0
+          "base_rate_injrti": 0.0040628511349775995,
+          "imm_death_proportion_rti": 0.015
         }
       }
     },
@@ -222,8 +222,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0093960384,
-          "imm_death_proportion_rti": 0.0
+          "base_rate_injrti": 0.005562851134977599,
+          "imm_death_proportion_rti": 0.015
         }
       }
     },
@@ -254,8 +254,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0033960384,
-          "imm_death_proportion_rti": 0.016666666666666666
+          "base_rate_injrti": 0.0070628511349776,
+          "imm_death_proportion_rti": 0.015
         }
       }
     },
@@ -286,8 +286,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0043960384,
-          "imm_death_proportion_rti": 0.016666666666666666
+          "base_rate_injrti": 0.0085628511349776,
+          "imm_death_proportion_rti": 0.015
         }
       }
     },
@@ -318,8 +318,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.005396038400000001,
-          "imm_death_proportion_rti": 0.016666666666666666
+          "base_rate_injrti": 0.0100628511349776,
+          "imm_death_proportion_rti": 0.015
         }
       }
     },
@@ -350,8 +350,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.006396038400000001,
-          "imm_death_proportion_rti": 0.016666666666666666
+          "base_rate_injrti": 0.0040628511349775995,
+          "imm_death_proportion_rti": 0.03
         }
       }
     },
@@ -382,8 +382,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007396038400000001,
-          "imm_death_proportion_rti": 0.016666666666666666
+          "base_rate_injrti": 0.005562851134977599,
+          "imm_death_proportion_rti": 0.03
         }
       }
     },
@@ -414,8 +414,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0083960384,
-          "imm_death_proportion_rti": 0.016666666666666666
+          "base_rate_injrti": 0.0070628511349776,
+          "imm_death_proportion_rti": 0.03
         }
       }
     },
@@ -446,8 +446,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0093960384,
-          "imm_death_proportion_rti": 0.016666666666666666
+          "base_rate_injrti": 0.0085628511349776,
+          "imm_death_proportion_rti": 0.03
         }
       }
     },
@@ -478,8 +478,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0033960384,
-          "imm_death_proportion_rti": 0.03333333333333333
+          "base_rate_injrti": 0.0100628511349776,
+          "imm_death_proportion_rti": 0.03
         }
       }
     },
@@ -510,8 +510,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0043960384,
-          "imm_death_proportion_rti": 0.03333333333333333
+          "base_rate_injrti": 0.0040628511349775995,
+          "imm_death_proportion_rti": 0.045
         }
       }
     },
@@ -542,8 +542,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.005396038400000001,
-          "imm_death_proportion_rti": 0.03333333333333333
+          "base_rate_injrti": 0.005562851134977599,
+          "imm_death_proportion_rti": 0.045
         }
       }
     },
@@ -574,8 +574,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.006396038400000001,
-          "imm_death_proportion_rti": 0.03333333333333333
+          "base_rate_injrti": 0.0070628511349776,
+          "imm_death_proportion_rti": 0.045
         }
       }
     },
@@ -606,8 +606,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.007396038400000001,
-          "imm_death_proportion_rti": 0.03333333333333333
+          "base_rate_injrti": 0.0085628511349776,
+          "imm_death_proportion_rti": 0.045
         }
       }
     },
@@ -638,8 +638,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0083960384,
-          "imm_death_proportion_rti": 0.03333333333333333
+          "base_rate_injrti": 0.0100628511349776,
+          "imm_death_proportion_rti": 0.045
         }
       }
     },
@@ -670,8 +670,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0093960384,
-          "imm_death_proportion_rti": 0.03333333333333333
+          "base_rate_injrti": 0.0040628511349775995,
+          "imm_death_proportion_rti": 0.06
         }
       }
     },
@@ -702,8 +702,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0033960384,
-          "imm_death_proportion_rti": 0.05
+          "base_rate_injrti": 0.005562851134977599,
+          "imm_death_proportion_rti": 0.06
         }
       }
     },
@@ -734,8 +734,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.0043960384,
-          "imm_death_proportion_rti": 0.05
+          "base_rate_injrti": 0.0070628511349776,
+          "imm_death_proportion_rti": 0.06
         }
       }
     },
@@ -766,8 +766,8 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.005396038400000001,
-          "imm_death_proportion_rti": 0.05
+          "base_rate_injrti": 0.0085628511349776,
+          "imm_death_proportion_rti": 0.06
         }
       }
     },
@@ -798,780 +798,10 @@
               0
             ]
           ],
-          "base_rate_injrti": 0.006396038400000001,
-          "imm_death_proportion_rti": 0.05
-        }
-      }
-    },
-    {
-      "draw_number": 25,
-      "draw_seed": 2068156498,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.007396038400000001,
-          "imm_death_proportion_rti": 0.05
-        }
-      }
-    },
-    {
-      "draw_number": 26,
-      "draw_seed": 1514987609,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0083960384,
-          "imm_death_proportion_rti": 0.05
-        }
-      }
-    },
-    {
-      "draw_number": 27,
-      "draw_seed": 1771840803,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0093960384,
-          "imm_death_proportion_rti": 0.05
-        }
-      }
-    },
-    {
-      "draw_number": 28,
-      "draw_seed": 9703358,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0033960384,
-          "imm_death_proportion_rti": 0.06666666666666667
-        }
-      }
-    },
-    {
-      "draw_number": 29,
-      "draw_seed": 815512676,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0043960384,
-          "imm_death_proportion_rti": 0.06666666666666667
-        }
-      }
-    },
-    {
-      "draw_number": 30,
-      "draw_seed": 91165091,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.005396038400000001,
-          "imm_death_proportion_rti": 0.06666666666666667
-        }
-      }
-    },
-    {
-      "draw_number": 31,
-      "draw_seed": 635542945,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.006396038400000001,
-          "imm_death_proportion_rti": 0.06666666666666667
-        }
-      }
-    },
-    {
-      "draw_number": 32,
-      "draw_seed": 223499934,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.007396038400000001,
-          "imm_death_proportion_rti": 0.06666666666666667
-        }
-      }
-    },
-    {
-      "draw_number": 33,
-      "draw_seed": 1749199991,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0083960384,
-          "imm_death_proportion_rti": 0.06666666666666667
-        }
-      }
-    },
-    {
-      "draw_number": 34,
-      "draw_seed": 2084680127,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0093960384,
-          "imm_death_proportion_rti": 0.06666666666666667
-        }
-      }
-    },
-    {
-      "draw_number": 35,
-      "draw_seed": 791670112,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0033960384,
-          "imm_death_proportion_rti": 0.08333333333333333
-        }
-      }
-    },
-    {
-      "draw_number": 36,
-      "draw_seed": 1151627410,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0043960384,
-          "imm_death_proportion_rti": 0.08333333333333333
-        }
-      }
-    },
-    {
-      "draw_number": 37,
-      "draw_seed": 1965929942,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.005396038400000001,
-          "imm_death_proportion_rti": 0.08333333333333333
-        }
-      }
-    },
-    {
-      "draw_number": 38,
-      "draw_seed": 690273202,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.006396038400000001,
-          "imm_death_proportion_rti": 0.08333333333333333
-        }
-      }
-    },
-    {
-      "draw_number": 39,
-      "draw_seed": 1958723792,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.007396038400000001,
-          "imm_death_proportion_rti": 0.08333333333333333
-        }
-      }
-    },
-    {
-      "draw_number": 40,
-      "draw_seed": 1136278484,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0083960384,
-          "imm_death_proportion_rti": 0.08333333333333333
-        }
-      }
-    },
-    {
-      "draw_number": 41,
-      "draw_seed": 271189126,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0093960384,
-          "imm_death_proportion_rti": 0.08333333333333333
-        }
-      }
-    },
-    {
-      "draw_number": 42,
-      "draw_seed": 89377403,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0033960384,
-          "imm_death_proportion_rti": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 43,
-      "draw_seed": 1293924973,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0043960384,
-          "imm_death_proportion_rti": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 44,
-      "draw_seed": 580723273,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.005396038400000001,
-          "imm_death_proportion_rti": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 45,
-      "draw_seed": 1903433389,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.006396038400000001,
-          "imm_death_proportion_rti": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 46,
-      "draw_seed": 499388830,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.007396038400000001,
-          "imm_death_proportion_rti": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 47,
-      "draw_seed": 959320816,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0083960384,
-          "imm_death_proportion_rti": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 48,
-      "draw_seed": 1330999968,
-      "parameters": {
-        "RTI": {
-          "number_of_injured_body_regions_distribution": [
-            [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8
-            ],
-            [
-              1,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0,
-              0
-            ]
-          ],
-          "base_rate_injrti": 0.0093960384,
-          "imm_death_proportion_rti": 0.1
+          "base_rate_injrti": 0.0100628511349776,
+          "imm_death_proportion_rti": 0.06
         }
       }
     }
-  ],
-  "commit": "89b2a4e59854c5e441684139b8826301a12bc641",
-  "github": "https://github.com/UCL/TLOmodel/blob/89b2a4e59854c5e441684139b8826301a12bc641/src/scripts/rti/rti_grid_search_parameterisation.py"
+  ]
 }

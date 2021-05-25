@@ -43,7 +43,7 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 5000
+pop_size = 200000
 nsim = 2
 # Create a variable whether to save figures or not (used in debugging)
 save_figures = True
@@ -182,12 +182,15 @@ for i in range(0, nsim):
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
     # make parameter adjustments
-    number_inj_data = [0.38, 0.25, 0.153, 0.094, 0.055, 0.031, 0.018, 0.019]
+    # number_inj_data = [0.38, 0.25, 0.153, 0.094, 0.055, 0.031, 0.018, 0.019]
+    # sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
+    #     [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
+    # ]
     sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
-        [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
+        [1, 2, 3, 4, 5, 6, 7, 8], [1, 0, 0, 0, 0, 0, 0, 0]
     ]
-    sim.modules['RTI'].parameters['imm_death_proportion_rti'] = \
-        sim.modules['RTI'].parameters['imm_death_proportion_rti'] * 0
+
+    sim.modules['RTI'].parameters['imm_death_proportion_rti'] = 0
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
@@ -584,7 +587,8 @@ plt.title(f"Per injury fatality ratio, model compared to GBD"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Per_injury_fatality.png", bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Per_injury_fatality.png",
+                bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -599,8 +603,8 @@ plt.title(f"Average percentage of lower extremity fractures that are open"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Percent_lx_fracture_open.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Percent_lx_fracture_open"
+                ".png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -618,8 +622,8 @@ plt.title(f"Average percentage of those with road traffic injuries who sought he
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Percent_Sought_Healthcare.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Percent_Sought_Healthcare"
+                ".png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -641,8 +645,8 @@ plt.title(f"Average percentage admitted to ICU/HDU"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Percent_admitted_icu_hdu_bar.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Percent_admitted_icu_hdu_"
+                "bar.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -658,8 +662,8 @@ plt.title(f"Average percent survival outcome of those with road traffic injuries
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Percent_Survival_Healthcare.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Percent_Survival_"
+                "Healthcare.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -680,8 +684,8 @@ plt.title(f"In-hospital fatality due to injury percentage \n "
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Percent_Survival_Healthcare_compare_Kamuzu.png",
-        bbox_inches='tight')
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Percent_Survival_Healthcare_"
+        "compare_Kamuzu.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -711,7 +715,8 @@ plt.title(f"Outcomes for road traffic injuries in the model"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Outcome_Of_Crashes.png", bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Outcome_Of_Crashes.png",
+                bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -734,8 +739,8 @@ plt.title(f"Average age with RTIs compared to police and hospital data"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Age_average_comp_to_pol_hos.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Age_average_comp_to_pol_"
+                "hos.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -756,8 +761,8 @@ plt.title(f"Age demographics of those with RTIs"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Age_demographics_percentage.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Age_demographics_"
+                "percentage.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -776,8 +781,8 @@ plt.title(f"Age demographics of those with RTIs"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Age_demographics_number.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Age_demographics_number"
+                ".png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -808,7 +813,8 @@ plt.yticks(fontsize=7)
 plt.legend()
 plt.tight_layout()
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Age_Gender_Demographics_number.png")
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Age_Gender_Demographics_"
+                "number.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -841,7 +847,8 @@ plt.yticks(fontsize=7)
 plt.legend()
 plt.tight_layout()
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Age_Gender_Demographics_percentage.png")
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Age_Gender_Demographics_"
+                "percentage.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -866,7 +873,8 @@ plt.title(f"Gender demographics of those with RTIs"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Gender_demographics.png", bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Gender_demographics.png",
+                bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -878,8 +886,8 @@ plt.title(f"Gender demographics of those with RTIs"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Gender_demographics_pie.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Gender_demographics_pie"
+                ".png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -901,7 +909,7 @@ plt.title(f"Average percentage of RTIs attributable to Alcohol"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Alcohol_demographics.png",
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Alcohol_demographics.png",
                 bbox_inches='tight')
     plt.clf()
 else:
@@ -913,8 +921,8 @@ plt.title(f"Average percentage of RTIs attributable to Alcohol"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Alcohol_demographics_bar.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Alcohol_demographics_bar"
+                ".png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -973,7 +981,7 @@ plt.title(f"Average incidence of RTIs and deaths due to RTI"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Incidence_and_deaths.png",
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Incidence_and_deaths.png",
                 bbox_inches='tight')
     plt.clf()
 else:
@@ -1007,8 +1015,8 @@ plt.title(f"Incidence of death over time, model compared to GBD estimate"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Incidence_model_over_time.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Incidence_model_over_time"
+                ".png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1064,8 +1072,8 @@ plt.title(f"Average incidence of deaths due to RTI"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Incidence_of_rti_deaths.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Incidence_of_rti_deaths"
+                ".png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1086,8 +1094,8 @@ plt.title(f"Average incidence of deaths due to RTI"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Incidence_of_on_scene_mortality_comp_to_police.png",
-        bbox_inches='tight')
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Incidence_of_on_scene_mortality_"
+        "comp_to_police.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1123,8 +1131,8 @@ plt.title(f"The model's predicted incidence of RTI related death "
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Incidence_of_rti_deaths_compare_Samuel.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Incidence_of_rti_deaths_"
+                "compare_Samuel.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1215,7 +1223,7 @@ plt.title(f"The model's predicted incidence of RTI related death "
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/"
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/"
         "Incidence_of_rti_deaths_compare_hospital_police_samuel_who.png",
         bbox_inches='tight')
     plt.clf()
@@ -1251,8 +1259,8 @@ plt.title(f"The model's predicted number of RTI related death "
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Number_of_deaths_comp_to_GBD_2010.png",
-        bbox_inches='tight')
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Number_of_deaths_comp_to_GBD_"
+        "2010.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1282,8 +1290,8 @@ plt.title(f"The model's predicted number of road traffic injuries"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Number_of_RTI_comp_to_GBD_2010.png",
-        bbox_inches='tight')
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Number_of_RTI_comp_to_GBD_2010"
+        ".png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1312,36 +1320,48 @@ plt.title(f"The model's predicted Number of RTI related death divided by populat
 # Plot the overall percent fatality of those involved in road traffic injuries
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Number_of_deaths_over_pop_comp_to_GBD_2010.png",
-        bbox_inches='tight')
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Number_of_deaths_over_pop_comp_"
+        "to_GBD_2010.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
 # ============ compare incidence of death in the model and the GBD 2010 estimate ===========================
-# get the gbd data
 data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
 data = data.loc[data['metric'] == 'Rate']
-data = data.loc[data['measure'] == 'Deaths']
 data = data.loc[data['year'] > 2009]
-# Calculate mean incidence from years 2010 to 2019
-gbd_mean_inc_death_2010_to_2019 = data.val.mean()
-# plot data in bar chart
-plt.bar(np.arange(2), [np.mean(average_deaths), gbd_mean_inc_death_2010_to_2019], color='wheat')
-plt.ylabel('Incidence of deaths')
-plt.xticks(np.arange(2), ['Model incidence of death', 'Average incidence of death'
-                                                      '\n'
-                                                      'of GBD estimates'
-                                                      '\n'
-                                                      '2010 to 2019'])
-plt.title(f"The model's predicted incidence of RTI related death "
+death_data = data.loc[data['measure'] == 'Deaths']
+in_rti_data = data.loc[data['measure'] == 'Incidence']
+gbd_ten_year_average_inc = in_rti_data['val'].mean()
+gbd_ten_year_average_inc_death = death_data['val'].mean()
+plt.bar(np.arange(2), [np.mean(average_deaths), gbd_ten_year_average_inc_death], color='lightsalmon')
+plt.xticks(np.arange(2), ['Model incidence \nof death', 'GBD incidence \nof death'])
+plt.ylabel('Incidence of death')
+plt.title(f"The model's 10 year average predicted incidence of RTI related death "
           f"\n"
           f"compared to the average incidence of death from GBD study 2010-2019"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Incidence_of_deaths_comp_to_GBD_2010.png",
-        bbox_inches='tight')
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Incidence_of_deaths_comp_to_GBD_"
+        "2010.png", bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+
+# plot ten year average of incidence compared to rti
+plt.bar(np.arange(2), [np.mean(average_incidence), gbd_ten_year_average_inc], color='lightsteelblue')
+plt.xticks(np.arange(2), ['Model incidence \nof RTI', 'GBD incidence \nof RTI'])
+plt.ylabel('Incidence of RTI')
+plt.title(f"The model's 10 year average predicted incidence of RTI"
+          f"\n"
+          f"compared to the average incidence of death from GBD study 2010-2019"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig(
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Incidence_of_RTI_comp_to_GBD_"
+        "2010.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1368,7 +1388,7 @@ plt.title(f"Average percentage of those with RTI who perished"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Percentage_of_deaths.png",
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Percentage_of_deaths.png",
                 bbox_inches='tight')
     plt.clf()
 else:
@@ -1387,8 +1407,8 @@ plt.title(f"Average cause of death breakdown in RTI"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.axis('equal')
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Percentage_cause_of_deaths.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Percentage_cause_of_"
+                "deaths.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1406,8 +1426,8 @@ plt.title(f"Average road traffic injury severity distribution"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Percentage_mild_severe_injuries.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Percentage_mild_severe_"
+                "injuries.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1425,8 +1445,8 @@ plt.title(f"Average road traffic injury severity distribution compared to police
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Percentage_mild_severe_injuries_comparison.png",
-        bbox_inches='tight')
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Percentage_mild_severe_injuries_"
+        "comparison.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1447,7 +1467,8 @@ plt.title(f"Average road traffic injury ISS score distribution"
 plt.xlim([0, 75])
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Average_ISS_scores.png", bbox_inches='tight')
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Average_ISS_scores.png",
+        bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1488,7 +1509,7 @@ plt.xlim([0, 75])
 plt.ylim([0, 1])
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/ISS_scores_ICU_HDU_admission.png",
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/ISS_scores_ICU_HDU_admission.png",
         bbox_inches='tight')
     plt.clf()
 else:
@@ -1506,8 +1527,8 @@ plt.title(f"Average injured body region distribution"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Average_injured_body_region_distribution.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Average_injured_body_"
+                "region_distribution.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1524,8 +1545,8 @@ plt.title(f"Average injury location distribution"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Average_injury_location_distribution.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Average_injury_location_"
+                "distribution.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1543,8 +1564,8 @@ plt.title(f"Average injury category distribution"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Average_injury_category_distribution.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Average_injury_category_"
+                "distribution.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1636,8 +1657,8 @@ labels = ['Amputations', 'Burns', 'Fractures', 'TBI', 'SCI', 'Minor', 'Other', '
 plt.xticks(np.arange(len(model_category_incidences)) + width / 2, labels, rotation=45)
 plt.legend()
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Average_injury_incidence_per_100000_bar.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Average_injury_incidence_"
+                "per_100000_bar.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1655,7 +1676,7 @@ for i in range(len(model_data)):
     plt.annotate(str(np.round(model_data[i], 2)), xy=(n[i] + 0.4, model_data[i]), ha='center', va='bottom')
 plt.legend()
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/GBD_comparison.png",
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/GBD_comparison.png",
                 bbox_inches='tight')
     plt.clf()
 else:
@@ -1687,8 +1708,8 @@ plt.title(f"Model injury type predictions compared to GBD average over all years
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.legend()
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Average_injury_type_distribution.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Average_injury_type_"
+                "distribution.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1729,8 +1750,8 @@ plt.title(f"Model injury inpatient days compared to Kamuzu central hospital data
 
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Inpatient_day_distribution_comp_to_kamuzu.png",
-        bbox_inches='tight')
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Inpatient_day_distribution_comp_"
+        "to_kamuzu.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1750,8 +1771,8 @@ plt.title(f"Model percentage inpatient admission compared to Kamuzu central hosp
 
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Inpatient_admission_comp_to_kamuzu.png",
-        bbox_inches='tight')
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Inpatient_admission_comp_to_"
+        "kamuzu.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1766,8 +1787,8 @@ plt.title(f"Distribution of inpatient days produced by the model for RTIs"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Inpatient_day_distribution.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Inpatient_day_"
+                "distribution.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1805,8 +1826,8 @@ plt.title(f"Average number of consumables used per sim"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Average_consumables_used.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Average_consumables_used"
+                ".png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1825,8 +1846,8 @@ plt.title(f"Average number of inpatient days used per sim in the model compared 
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Average_inpatient_days_used.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Average_inpatient_days_"
+                "used.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1861,8 +1882,8 @@ plt.title(f"Model's performance of inhospital data compared to KCH"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Inhospital_Model_Summary.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Inhospital_Model_Summary"
+                ".png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1874,8 +1895,8 @@ plt.title(f"Average fraction of total health system time usage per sim"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Average_health_sys_time_used.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Average_health_sys_time_"
+                "used.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1898,8 +1919,8 @@ plt.title(f"Average number of HSI events performed per sim"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Average_HSI_appointments_per_sim.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Average_HSI_appointments_"
+                "per_sim.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1914,8 +1935,8 @@ plt.xticks(np.arange(len(data)), data['Source'], rotation=90)
 plt.ylabel('Incidence per 100,000')
 plt.title('Reported incidences of RTIs in children aged 0-18 in SSA')
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/RTI_incidence_in_children.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/RTI_incidence_in_children"
+                ".png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1936,8 +1957,8 @@ plt.title(f"Weighted average of RTI incidence in children from Hyder et al\n"
 
 if save_figures is True:
     plt.savefig(
-        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Incidence_of_RTI_in_children_model_comparison.png",
-        bbox_inches='tight')
+        "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Incidence_of_RTI_in_children_"
+        "model_comparison.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1960,8 +1981,8 @@ plt.title(f"Injuries per person, Model compared to Sundet et al. 2018"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Injuries_per_person_model_Sundet_comp.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/Injuries_per_person_"
+                "model_Sundet_comp.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -1992,8 +2013,8 @@ plt.title(f"Injuries in ICU patients by type"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/ICU_injury_categories.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/ICU_injury_categories"
+                ".png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
@@ -2022,8 +2043,8 @@ plt.title(f"Injuries in ICU patients by type compared to Chalya et al. 2011"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 if save_figures is True:
-    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/ICU_injury_categories_comp_chalya.png",
-                bbox_inches='tight')
+    plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Demographics_of_RTI/ICU_injury_categories_"
+                "comp_chalya.png", bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()

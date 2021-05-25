@@ -1562,7 +1562,7 @@ class RTI(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         # Begin logging the RTI events
         event = RTI_Logging_Event(self)
-        sim.schedule_event(event, sim.date + DateOffset(days=30))
+        sim.schedule_event(event, sim.date + DateOffset(months=1))
 
     def rti_do_when_diagnosed(self, person_id):
         """

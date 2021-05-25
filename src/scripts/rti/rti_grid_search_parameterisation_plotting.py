@@ -5,6 +5,7 @@ The results of the bachrun were put into the 'outputs' results_folder
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import os
 import json
@@ -112,7 +113,7 @@ def rti_extract_results(results_folder: Path, module: str, key: str, column: str
 
     return results
 
-outputspath = Path('./outputs/rmjlra2@ucl.ac.uk')
+outputspath = Path('./outputs/')
 
 # %% Analyse results of runs when doing a sweep of a single parameter:
 
@@ -148,6 +149,32 @@ death_incidence.name = 'z'
 filtered_params = params.loc[params['module_param'] != 'RTI:number_of_injured_body_regions_distribution']
 inc_grid = get_grid(filtered_params, incidence_results)
 
+ax = plt.figure().add_subplot(projection='3d')
+surf = ax.plot_surface(inc_grid['RTI:base_rate_injrti'], inc_grid['RTI:imm_death_proportion_rti'], inc_grid['z'],
+                       linewidth=0)
+ax.set_xlabel('RTI:base_rate_injrti')
+ax.set_ylabel('RTI:imm_death_proportion_rti')
+ax.set_zlabel('Incidence of RTI')
+plt.savefig(
+    "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Scenarios/incidence_and_death_calibration/"
+    "Incidence_unfiltered_surf",
+    bbox_inches='tight')
+plt.clf()
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(inc_grid['RTI:base_rate_injrti'], inc_grid['RTI:imm_death_proportion_rti'], inc_grid['z'], c='r',
+           marker='o')
+
+ax.set_xlabel('RTI:base_rate_injrti')
+ax.set_ylabel('RTI:imm_death_proportion_rti')
+ax.set_zlabel('Incidence of RTI')
+plt.savefig(
+    "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Scenarios/incidence_and_death_calibration/"
+    "Incidence_unfiltered_scatter",
+    bbox_inches='tight')
+plt.clf()
+
 fig, ax = plt.subplots()
 c = ax.pcolormesh(
     inc_grid['RTI:base_rate_injrti'],
@@ -165,6 +192,7 @@ plt.savefig(
     "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Scenarios/incidence_and_death_calibration/"
     "Incidence_unfiltered",
     bbox_inches='tight')
+plt.clf()
 # get values in the range of the GBD estimates, first filter out values below lower boundary
 inc_grid['z'][inc_grid['z'] < 809.234] = 0
 # filter out results above upper boundary
@@ -186,8 +214,36 @@ plt.savefig(
     "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Scenarios/incidence_and_death_calibration/"
     "Incidence_filtered",
     bbox_inches='tight')
-
+plt.clf()
+# Incidence of death
 death_inc_grid = get_grid(filtered_params, death_incidence)
+
+ax = plt.figure().add_subplot(projection='3d')
+surf = ax.plot_surface(death_inc_grid['RTI:base_rate_injrti'], death_inc_grid['RTI:imm_death_proportion_rti'],
+                       death_inc_grid['z'], linewidth=0)
+ax.set_xlabel('RTI:base_rate_injrti')
+ax.set_ylabel('RTI:imm_death_proportion_rti')
+ax.set_zlabel('Incidence of RTI death')
+plt.savefig(
+    "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Scenarios/incidence_and_death_calibration/"
+    "Death_incidence_unfiltered_surf",
+    bbox_inches='tight')
+plt.clf()
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(death_inc_grid['RTI:base_rate_injrti'], death_inc_grid['RTI:imm_death_proportion_rti'], death_inc_grid['z'],
+           c='r', marker='o')
+
+ax.set_xlabel('RTI:base_rate_injrti')
+ax.set_ylabel('RTI:imm_death_proportion_rti')
+ax.set_zlabel('Incidence of RTI death')
+plt.savefig(
+    "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Scenarios/incidence_and_death_calibration/"
+    "Death_incidence_unfiltered_scatter",
+    bbox_inches='tight')
+plt.clf()
+
 fig, ax = plt.subplots()
 c = ax.pcolormesh(
     death_inc_grid['RTI:base_rate_injrti'],
@@ -205,6 +261,7 @@ plt.savefig(
     "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Scenarios/incidence_and_death_calibration/"
     "IncidenceDeath_unfiltered",
     bbox_inches='tight')
+plt.clf()
 # get values in the range of the GBD estimates, first filter out values below lower boundary
 death_inc_grid['z'][death_inc_grid['z'] < 9.606] = 0
 # filter out results above upper boundary
@@ -232,10 +289,13 @@ inc_results = np.where(inc_grid['z'] > 0)
 inc_death_results = np.where(death_inc_grid['z'] > 0)
 parameter_combinations = [np.intersect1d(inc_results[0], inc_death_results[0]),
                           np.intersect1d(inc_results[1], inc_death_results[1])]
-accepted_params = {'base_rate_injrti': inc_grid['RTI:base_rate_injrti'][tuple(parameter_combinations)][0],
-                   'imm_death_proportion_rti': inc_grid['RTI:imm_death_proportion_rti']
-                   [tuple(parameter_combinations)][0]}
-resulting_incidences = {'incidence of rti': inc_grid['z'][tuple(parameter_combinations)][0],
-                        'incidence of rti death': death_inc_grid['z'][tuple(parameter_combinations)][0]}
-print(accepted_params)
-print(resulting_incidences)
+if len(parameter_combinations[0]) > 0:
+    accepted_params = {'base_rate_injrti': inc_grid['RTI:base_rate_injrti'][tuple(parameter_combinations)][0],
+                       'imm_death_proportion_rti': inc_grid['RTI:imm_death_proportion_rti']
+                       [tuple(parameter_combinations)][0]}
+    resulting_incidences = {'incidence of rti': inc_grid['z'][tuple(parameter_combinations)][0],
+                            'incidence of rti death': death_inc_grid['z'][tuple(parameter_combinations)][0]}
+    print(accepted_params)
+    print(resulting_incidences)
+else:
+    print('No parameter combinations found.')

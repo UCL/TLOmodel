@@ -21,11 +21,12 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 1, 1)
-        self.pop_size = 500000
-        self.number_of_samples_in_parameter_range = 7
+        self.end_date = Date(2020, 1, 1)
+        self.pop_size = 200000
+        self.smaller_pop_size = 10000
+        self.number_of_samples_in_parameter_range = 5
         self.number_of_draws = self.number_of_samples_in_parameter_range ** 2
-        self.runs_per_draw = 3
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
@@ -54,10 +55,10 @@ class TestScenario(BaseScenario):
 # are given out and once where we allow multiple injuries
 
     def draw_parameters(self, draw_number, rng):
-        base_rate_max = 0.0063960384 + 0.003
-        base_rate_min = 0.0063960384 - 0.003
+        base_rate_max = 0.0070628511349776 + 0.003
+        base_rate_min = 0.0070628511349776 - 0.003
         imm_death_prop_min = 0
-        imm_death_prop_max = 0.1
+        imm_death_prop_max = 0.06
         grid = self.make_grid(
             {'base_rate_injrti': np.linspace(base_rate_min, base_rate_max, self.number_of_samples_in_parameter_range),
              'imm_death_proportion_rti': np.linspace(imm_death_prop_min, imm_death_prop_max,
