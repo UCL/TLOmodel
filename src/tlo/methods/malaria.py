@@ -1196,7 +1196,7 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
                               (df.ma_date_tx < (self.sim.date - DateOffset(days=7)))]
 
         # clear symptoms
-        all_cured = (clinical_inf + severe_inf) if len(severe_inf) else clinical_inf
+        all_cured = clinical_inf.union(severe_inf) if len(severe_inf) else clinical_inf
 
         for idx in all_cured:
             self.sim.modules["SymptomManager"].clear_symptoms(
