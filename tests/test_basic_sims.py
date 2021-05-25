@@ -1,7 +1,7 @@
 
 import pandas as pd
 
-from tlo import Date, DateOffset, Module, Property, Simulation, Types
+from tlo import Date, DateOffset, Module, Property, Simulation, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.test import random_birth, random_death
 
@@ -211,3 +211,18 @@ def test_regular_event_with_end():
     assert sim.population.props.loc[0, 'last_run'] == pd.Timestamp(Date(2010, 3, 1))
     # The last event the simulation ran was my_other_event that doesn't have end date
     assert sim.date == pd.Timestamp(Date(2011, 1, 1))
+
+
+def test_show_progress_bar(capfd):
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2010, 2, 1)
+    sim = Simulation(start_date=start_date, seed=1, show_progress_bar=True)
+    logger = logging.getLogger('tlo')
+    assert len(logger.handlers) == 0
+    rd = random_death.RandomDeath(name='rd')
+    sim.register(rd)
+    sim.modules['rd'].parameters['death_probability'] = 0.1
+    sim.make_initial_population(n=1)
+    sim.simulate(end_date=end_date)
+    captured = capfd.readouterr()
+    assert "Simulation progress" in captured.out

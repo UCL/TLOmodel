@@ -210,3 +210,10 @@ def test_mixed_logging():
     with pytest.raises(ValueError):
         logger.info("stdlib method")
         logger.info(key="structured", data={"key": 10})
+
+
+@pytest.mark.parametrize("add_stdout_handler", ((True, False)))
+def test_init_logging(add_stdout_handler):
+    logging.init_logging(add_stdout_handler)
+    logger = logging.getLogger('tlo')
+    assert len(logger.handlers) == (1 if add_stdout_handler else 0)

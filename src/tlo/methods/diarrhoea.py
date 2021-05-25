@@ -546,7 +546,7 @@ class Diarrhoea(Module):
                                                        f'resourcefile.'
 
         # Declare symptoms that this module will cause and which are not included in the generic symptoms:
-        generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
+        generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
         for symptom_name in self.symptoms:
             if symptom_name not in generic_symptoms:
                 self.sim.modules['SymptomManager'].register_symptom(
@@ -630,7 +630,7 @@ class Diarrhoea(Module):
             unscaled_lm = make_linear_model(patho)
             target_mean = p[f'base_inc_rate_diarrhoea_by_{patho}'][0]
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean)
+            scaled_intercept = 1.0 * (target_mean / actual_mean) if (target_mean != 0 and actual_mean != 0) else 1.0
             scaled_lm = make_linear_model(patho, intercept=scaled_intercept)
             # check by applying the model to mean incidence of 0-year-olds
             assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10

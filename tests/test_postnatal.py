@@ -4,7 +4,6 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
     bed_days,
     care_of_women_during_pregnancy,
@@ -23,7 +22,7 @@ from tlo.methods import (
     symptommanager,
 )
 
-seed = 567
+seed = 6987
 
 # The resource files
 try:
@@ -163,9 +162,7 @@ def test_application_of_complications_and_care_seeking_postnatal_week_one_event(
     params['prob_iron_def_per_week_pn'] = 1
     params['prob_folate_def_per_week_pn'] = 1
     params['prob_b12_def_per_week_pn'] = 1
-    params['pn_linear_equations']['anaemia_after_pregnancy'] = LinearModel(
-        LinearModelType.MULTIPLICATIVE,
-        1)
+    params['baseline_prob_anaemia_per_week'] = 1
     params['prob_type_of_anaemia_pn'] = [1, 0, 0]
     params['weekly_prob_gest_htn_pn'] = 1
     params['prob_early_onset_neonatal_sepsis_week_1'] = 1
@@ -244,9 +241,7 @@ def test_application_of_risk_of_death_postnatal_week_one_event():
     params['prob_iron_def_per_week_pn'] = 1
     params['prob_folate_def_per_week_pn'] = 1
     params['prob_b12_def_per_week_pn'] = 1
-    params['pn_linear_equations']['anaemia_after_pregnancy'] = LinearModel(
-        LinearModelType.MULTIPLICATIVE,
-        1)
+    params['baseline_prob_anaemia_per_week'] = 1
     params['prob_type_of_anaemia_pn'] = [1, 0, 0]
     params['weekly_prob_gest_htn_pn'] = 1
     params['prob_early_onset_neonatal_sepsis_week_1'] = 1
@@ -403,9 +398,7 @@ def test_application_of_risk_of_anaemia_postnatal_supervisor_event():
     params['prob_iron_def_per_week_pn'] = 1
     params['prob_folate_def_per_week_pn'] = 1
     params['prob_b12_def_per_week_pn'] = 1
-    params['pn_linear_equations']['anaemia_after_pregnancy'] = LinearModel(
-        LinearModelType.MULTIPLICATIVE,
-        1)
+    params['baseline_prob_anaemia_per_week'] = 1
     params['prob_type_of_anaemia_pn'] = [1, 0, 0]
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 

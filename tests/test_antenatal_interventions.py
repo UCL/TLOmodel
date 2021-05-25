@@ -26,7 +26,7 @@ from tlo.methods import (
     symptommanager,
 )
 
-seed = 0
+seed = 8774
 
 # The resource files
 try:
@@ -160,10 +160,9 @@ def test_perfect_run_of_anc_contacts_no_constraints():
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'hypertension_onset': pd.NaT,
                                                                              'gest_diab_onset': pd.NaT}
 
-    # Set some complications that should be be detected in ANC leading to further action (including depresssion)
+    # Set some complications that should be be detected in ANC leading to further action
     df.at[mother_id, 'ps_htn_disorders'] = 'mild_pre_eclamp'
-    df.at[mother_id, 'w'] = True
-    df.loc[mother_id, ['de_depr', 'de_ever_depr', 'de_date_init_most_rec_depr']] = (True, True, sim.date)
+    df.at[mother_id, 'de_depr'] = True
 
     # ensure care seeking will continue for all ANC visits
     params = sim.modules['CareOfWomenDuringPregnancy'].parameters
