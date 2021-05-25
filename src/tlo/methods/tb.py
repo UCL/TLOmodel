@@ -1959,112 +1959,71 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 'tbIncActiveMdr100k': inc_mdr100k,
             },
         )
-#
-#         # ------------------------------------ PREVALENCE ------------------------------------
-#         # prevalence should be the number of clinically active cases that occurred in the past year
-#         # ACTIVE
-#         new_tb_cases = len(
-#             df[(df.tb_date_active > (now - DateOffset(months=self.repeat)))]
-#         )
-#
-#         # num_active = len(df[(df.tb_inf.str.contains('active')) & df.is_alive])
-#         prop_active = new_tb_cases / len(df[df.is_alive])
-#
-#         assert prop_active <= 1
-#
-#         # todo: change to adjusted prevalence counting # episodes / pop
-#         # proportion of adults with active tb
-#         num_active_adult = len(
-#             df[(df.tb_inf.str.contains('active')) & (df.age_years >= 15) & df.is_alive]
-#         )
-#         prop_active_adult = num_active_adult / len(
-#             df[(df.age_years >= 15) & df.is_alive]
-#         )
-#         assert prop_active_adult <= 1
-#
-#         # proportion of children with active tb
-#         num_active_child = len(
-#             df[(df.tb_inf.str.contains('active')) & (df.age_years < 15) & df.is_alive]
-#         )
-#         prop_active_child = num_active_child / len(
-#             df[(df.age_years < 15) & df.is_alive]
-#         )
-#         assert prop_active_child <= 1
-#
-#         # proportion of hiv cases with active tb
-#         num_active_hiv = len(
-#             df[(df.tb_inf.str.contains('active')) & df.hv_inf & df.is_alive]
-#         )
-#
-#         if (num_active_hiv > 0) & (len(df[df.hv_inf & df.is_alive]) > 0):
-#             prop_hiv_tb = num_active_hiv / len(df[df.hv_inf & df.is_alive])
-#         else:
-#             prop_hiv_tb = 0
-#
-#         # proportion of population with active TB by age/sex - compare to WHO 2018
-#         m_num_cases = (
-#             df[df.is_alive & (df.sex == 'M') & (df.tb_inf.str.contains('active'))]
-#             .groupby('age_range')
-#             .size()
-#         )
-#         f_num_cases = (
-#             df[df.is_alive & (df.sex == 'F') & (df.tb_inf.str.contains('active'))]
-#             .groupby('age_range')
-#             .size()
-#         )
-#
-#         m_pop = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
-#         f_pop = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
-#
-#         m_prop_active = m_num_cases / m_pop
-#         m_prop_active = m_prop_active.fillna(0)
-#         f_prop_active = f_num_cases / f_pop
-#         f_prop_active = f_prop_active.fillna(0)
-#
-#         logger.info('%s|tb_propActiveTbMale|%s', self.sim.date, m_prop_active.to_dict())
-#
-#         logger.info(
-#             '%s|tb_propActiveTbFemale|%s', self.sim.date, f_prop_active.to_dict()
-#         )
-#
-#         # LATENT
-#
-#         # proportion of population with latent TB - all pop
-#         num_latent = len(df[(df.tb_inf.str.contains('latent')) & df.is_alive])
-#         prop_latent = num_latent / len(df[df.is_alive])
-#         assert prop_latent <= 1
-#
-#         # proportion of population with latent TB - adults
-#         num_latent_adult = len(
-#             df[(df.tb_inf.str.contains('latent')) & (df.age_years >= 15) & df.is_alive]
-#         )
-#         prop_latent_adult = num_latent_adult / len(
-#             df[(df.age_years >= 15) & df.is_alive]
-#         )
-#         assert prop_latent_adult <= 1
-#
-#         # proportion of population with latent TB - children
-#         num_latent_child = len(
-#             df[(df.tb_inf.str.contains('latent')) & (df.age_years < 15) & df.is_alive]
-#         )
-#         prop_latent_child = num_latent_child / len(
-#             df[(df.age_years < 15) & df.is_alive]
-#         )
-#         assert prop_latent_child <= 1
-#
-#         logger.info(
-#             '%s|tb_prevalence|%s',
-#             now,
-#             {
-#                 'tbPropActive': prop_active,
-#                 'tbPropActiveAdult': prop_active_adult,
-#                 'tbPropActiveChild': prop_active_child,
-#                 'tbPropActiveHiv': prop_hiv_tb,
-#                 'tbPropLatent': prop_latent,
-#                 'tbPropLatentAdult': prop_latent_adult,
-#                 'tbPropLatentChild': prop_latent_child,
-#             },
-#         )
+
+        # ------------------------------------ PREVALENCE ------------------------------------
+        # number of current active cases divided by population alive
+
+        # ACTIVE
+        num_active_tb_cases = len(df[(df.tb_inf == 'active') & df.is_alive])
+        prev_active = num_active_tb_cases / len(df[df.is_alive])
+
+        assert prev_active <= 1
+
+        # prevalence of active TB in adults
+        num_active_adult = len(
+            df[(df.tb_inf == 'active') & (df.age_years >= 15) & df.is_alive]
+        )
+        prev_active_adult = num_active_adult / len(
+            df[(df.age_years >= 15) & df.is_alive]
+        )
+        assert prev_active_adult <= 1
+
+        # prevalence of active TB in children
+        num_active_child = len(
+            df[(df.tb_inf == 'active') & (df.age_years < 15) & df.is_alive]
+        )
+        prev_active_child = num_active_child / len(
+            df[(df.age_years < 15) & df.is_alive]
+        )
+        assert prev_active_child <= 1
+
+
+        # LATENT
+        # proportion of population with latent TB - all pop
+        num_latent = len(df[(df.tb_inf == 'latent') & df.is_alive])
+        prev_latent = num_latent / len(df[df.is_alive])
+        assert prev_latent <= 1
+
+        # proportion of population with latent TB - adults
+        num_latent_adult = len(
+            df[(df.tb_inf == 'latent') & (df.age_years >= 15) & df.is_alive]
+        )
+        prev_latent_adult = num_latent_adult / len(
+            df[(df.age_years >= 15) & df.is_alive]
+        )
+        assert prev_latent_adult <= 1
+
+        # proportion of population with latent TB - children
+        num_latent_child = len(
+            df[(df.tb_inf == 'latent') & (df.age_years < 15) & df.is_alive]
+        )
+        prev_latent_child = num_latent_child / len(
+            df[(df.age_years < 15) & df.is_alive]
+        )
+        assert prev_latent_child <= 1
+
+        logger.info(
+            '%s|tb_prevalence|%s',
+            now,
+            {
+                'tbPrevActive': prev_active,
+                'tbPrevActiveAdult': prev_active_adult,
+                'tbPrevActiveChild': prev_active_child,
+                'tbPrevLatent': prev_latent,
+                'tbPrevLatentAdult': prev_latent_adult,
+                'tbPrevLatentChild': prev_latent_child,
+            },
+        )
 #
 #         # ------------------------------------ TREATMENT ------------------------------------
 #         # number of new cases in the last time period / number new treatment starts in last time period
