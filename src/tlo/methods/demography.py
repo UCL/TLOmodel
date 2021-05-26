@@ -101,14 +101,14 @@ class Demography(Module):
             Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
         )
 
-        # GBD causes of death
+        # GBD causes of death:
         self.parameters['gbd_causes_of_death'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv'
+            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'
         )['cause_name'].unique().tolist()
 
-        # GBD causes of death
+        # GBD Dataset
         self.parameters['gbd_data'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv'
+            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'
         )
 
         # Lookup dicts to map from district_num_of_residence (in the df) and District name and Region name
@@ -448,10 +448,10 @@ class Demography(Module):
         """
 
         # Get Census data
-        # todo - move this to parameters, and update filename later (when other changes in different branch merged in)
         year_of_census = 2018
-        census_popsize = \
-            pd.read_csv(Path(self.resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
+        census_popsize = pd.read_csv(
+            Path(self.resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv"
+        )['Count'].sum()
 
         # Get model total population size in that same year
         if year_of_census not in self.popsize_by_year:
