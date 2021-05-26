@@ -48,7 +48,7 @@ Contraception, Pregnancy and Labour
 
 Conditions of Early Childhood
 ==============================
-* **Acute Lower Respiratory Infection**: Childhood viral pneumonia, bacterial pneumonia and viral bronchiolitis and the treatments associated with each. (Forthcoming)
+* **Acute Lower Respiratory Infection**: Childhood viral pneumonia, bacterial pneumonia and viral bronchiolitis and the treatments associated with each. :download:`.docx <./write-ups/Alri.docx>`
 
 * **Diarrhoea**: Childhood diarrhoea caused by virus or bacteria resulting in dehydration, and the treatments associated. :download:`.docx <./write-ups/Diarrhoea.docx>`
 
