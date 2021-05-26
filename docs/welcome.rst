@@ -21,7 +21,7 @@ It is developed in a collaboration between:
 It benefits from a close partnership between this team and the Ministry of Health, Malawi.
 
 
-Under Development
+Last Update
 =================
 This project is under active development. The last update was: |today|
 
