@@ -174,6 +174,9 @@
     <span class="n">HSI_BladderCancer_Investigation_Following_Blood_Urine</span><span class="p">,</span>
     <span class="n">HSI_BladderCancer_Investigation_Following_pelvic_pain</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.breast_cancer</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">HSI_BreastCancer_Investigation_Following_breast_lump_discernible</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.care_of_women_during_pregnancy</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement</span><span class="p">,</span>
     <span class="n">HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy</span><span class="p">,</span>
@@ -441,6 +444,21 @@
                                                                             <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                                                                             <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
                                                                             <span class="p">)</span>
+
+                <span class="k">if</span> <span class="s1">&#39;BreastCancer&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+                    <span class="c1"># If the symptoms include breast lump discernible:</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;breast_lump_discernible&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">):</span>
+                        <span class="n">hsi_event</span> <span class="o">=</span> <span class="n">HSI_BreastCancer_Investigation_Following_breast_lump_discernible</span><span class="p">(</span>
+                            <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;BreastCancer&#39;</span><span class="p">],</span>
+                            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                            <span class="n">hsi_event</span><span class="p">,</span>
+                            <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                            <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                            <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
+                        <span class="p">)</span>
+
                 <span class="c1"># ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----</span>
                 <span class="k">if</span> <span class="s1">&#39;Depression&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
                     <span class="n">depr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Depression&#39;</span><span class="p">]</span>
@@ -704,7 +722,7 @@
     <p>
         &#169; Copyright 2021, The TLOmodel Team.
       <span class="lastupdated">
-        Last updated on May 25, 2021.
+        Last updated on May 26, 2021.
       </span>
 
     </p>

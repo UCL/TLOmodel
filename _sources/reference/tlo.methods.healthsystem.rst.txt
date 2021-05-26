@@ -217,7 +217,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x7f87dd61c810>
+     bed_days_allocated_to_this_event : <property object at 0x7fcd0685ab30>
 
      **Functions (defined or overridden in class HSI_Event):**
 

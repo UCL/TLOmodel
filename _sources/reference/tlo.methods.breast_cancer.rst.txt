@@ -1,0 +1,273 @@
+tlo.methods.breast_cancer module
+================================
+
+.. automodule:: tlo.methods.breast_cancer
+
+
+.. autoclass:: BreastCancer
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - init_prop_breast_cancer_stage
+          - LIST
+          - initial proportions in cancer categories for woman aged 15-29
+        * - init_prop_breast_lump_discernible_breast_cancer_by_stage
+          - LIST
+          - initial proportions of those with cancer categories that have the symptom breast_lump_discernible
+        * - init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage
+          - LIST
+          - initial proportions of people that have breast_lump_discernible that have been diagnosed
+        * - init_prop_treatment_status_breast_cancer
+          - LIST
+          - initial proportions of people with breast cancer previously treated
+        * - init_prob_palliative_care
+          - REAL
+          - initial probability of being under palliative care if in stage 4
+        * - r_stage1_none
+          - REAL
+          - probabilty per 3 months of incident stage 1 breast, amongst people with no breast cancer
+        * - rr_stage1_none_age3049
+          - REAL
+          - rate ratio for stage1 breast cancer for age 30-49
+        * - rr_stage1_none_agege50
+          - REAL
+          - rate ratio for stage1 breast cancer for age 50+
+        * - r_stage2_stage1
+          - REAL
+          - probabilty per 3 months of stage 2 breast cancer amongst people with stage 1
+        * - rr_stage2_undergone_curative_treatment
+          - REAL
+          - rate ratio for stage 2 breast cancer for people with stage 1 breast cancer if had curative treatment at stage 1
+        * - r_stage3_stage2
+          - REAL
+          - probabilty per 3 months of stage 3 breast cancer amongst people with stage 2
+        * - rr_stage3_undergone_curative_treatment
+          - REAL
+          - rate ratio for stage 3 breast cancer for people with stage 2 breast cancer if had curative treatment at stage 2
+        * - r_stage4_stage3
+          - REAL
+          - probabilty per 3 months of stage 4 breast cancer amongst people with stage 3
+        * - rr_stage4_undergone_curative_treatment
+          - REAL
+          - rate ratio for stage 4 breast cancer for people with stage 3 breast cancer if had curative treatment at stage 3
+        * - r_death_breast_cancer
+          - REAL
+          - probabilty per 3 months of death from breast cancer amongst people with stage 4 breast cancer
+        * - r_breast_lump_discernible_stage1
+          - REAL
+          - rate ratio for breast_lump_discernible if have stage 1 breast cancer
+        * - rr_breast_lump_discernible_stage2
+          - REAL
+          - rate ratio for breast_lump_discernible if have stage 2 breast cancer
+        * - rr_breast_lump_discernible_stage3
+          - REAL
+          - rate ratio for breast_lump_discernible if have stage 3 breast cancer
+        * - rr_breast_lump_discernible_stage4
+          - REAL
+          - rate ratio for breast_lump_discernible if have stage 4 breast cancer
+        * - rp_breast_cancer_age3049
+          - REAL
+          - relative prevalence at baseline of breast cancer if age3049
+        * - rp_breast_cancer_agege50
+          - REAL
+          - relative prevalence at baseline of breast cancer if agege50
+        * - sensitivity_of_biopsy_for_stage1_breast_cancer
+          - REAL
+          - sensitivity of biopsy_for diagnosis of stage 1 breast cancer
+        * - sensitivity_of_biopsy_for_stage2_breast_cancer
+          - REAL
+          - sensitivity of biopsy_for diagnosis of stage 2 breast cancer
+        * - sensitivity_of_biopsy_for_stage3_breast_cancer
+          - REAL
+          - sensitivity of biopsy_for diagnosis of stage 3 breast cancer
+        * - sensitivity_of_biopsy_for_stage4_breast_cancer
+          - REAL
+          - sensitivity of biopsy_for diagnosis of stage 4 breast cancer
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - brc_status
+          - CATEGORICAL
+          - Current status of the health condition, breast cancer.  Possible values are: [none, stage1, stage2, stage3, stage4, ]
+        * - brc_date_diagnosis
+          - DATE
+          - the date of diagnosis of the breast_cancer (pd.NaT if never diagnosed)
+        * - brc_date_treatment
+          - DATE
+          - date of first receiving attempted curative treatment (pd.NaT if never started treatment)
+        * - brc_breast_lump_discernible_investigated
+          - BOOL
+          - whether a breast_lump_discernible has been investigated, and cancer missed
+        * - brc_stage_at_which_treatment_given
+          - CATEGORICAL
+          - the cancer stage at which treatment is given (because the treatment only has an effect during the stageat which it is given)..  Possible values are: [none, stage1, stage2, stage3, stage4, ]
+        * - brc_date_palliative_care
+          - DATE
+          - date of first receiving palliative care (pd.NaT is never had palliative care)
+        * - brc_date_death
+          - DATE
+          - date of brc death
+        * - brc_new_stage_this_month
+          - BOOL
+          - new_stage_this month
+
+
+
+     **Class attributes:**
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>}
+
+     **Functions (defined or overridden in class BreastCancer):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+
+
+
+
+
+
+
+.. autoclass:: BreastCancerMainPollingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class BreastCancerMainPollingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_BreastCancer_Investigation_Following_breast_lump_discernible
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_BreastCancer_Investigation_Following_breast_lump_discernible):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_BreastCancer_StartTreatment
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_BreastCancer_StartTreatment):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_BreastCancer_PostTreatmentCheck
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_BreastCancer_PostTreatmentCheck):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_BreastCancer_PalliativeCare
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_BreastCancer_PalliativeCare):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: BreastCancerLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class BreastCancerLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
