@@ -12,6 +12,9 @@ import sys
 
 sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
 
+sys.path.append(os.path.abspath("./_ext"))
+
+
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -22,7 +25,9 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
+    'rawfiles'
 ]
+
 if os.getenv('SPELLCHECK'):
     extensions += 'sphinxcontrib.spelling',
     spelling_show_suggestions = True
@@ -57,6 +62,9 @@ html_sidebars = {
 html_short_title = '%s-%s' % (project, version)
 
 html_static_path = ['_static']
+html_extra_path = ['./.nojekyll', './.gitattributes']
+
+rawfiles = ['.github']
 
 html_context = {
     'css_files': [
