@@ -6,12 +6,26 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    bladder_cancer,
+    breast_cancer,
+    care_of_women_during_pregnancy,
     chronicsyndrome,
+    contraception,
     demography,
+    depression,
+    diarrhoea,
     enhanced_lifestyle,
     healthburden,
     healthsystem,
+    hiv,
+    labour,
+    malaria,
     mockitis,
+    ncds,
+    newborn_outcomes,
+    oesophagealcancer,
+    postnatal_supervisor,
+    pregnancy_supervisor,
     symptommanager,
 )
 
@@ -76,3 +90,46 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir):
     # check that there is a column for each 'label' that is registered
     assert set(dalys.set_index(['sex', 'age_range', 'year']).columns) == \
            {'Other', 'Mockitis_Disability_And_Death', 'ChronicSyndrome_Disability_And_Death'}
+
+
+def test_cause_of_disability_being_registered():
+    """Test that the modules can declare causes of disability, and that the mappers between tlo causes of disability
+    and gbd causes of disability can be created correctly and that these make sense with respect to the corresponding
+    mappers for deaths."""
+
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+        symptommanager.SymptomManager(resourcefilepath=rfp),
+        breast_cancer.BreastCancer(resourcefilepath=rfp),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
+        healthsystem.HealthSystem(resourcefilepath=rfp, disable_and_reject_all=True),
+        bladder_cancer.BladderCancer(resourcefilepath=rfp),
+        depression.Depression(resourcefilepath=rfp),
+        diarrhoea.Diarrhoea(resourcefilepath=rfp),
+        hiv.Hiv(resourcefilepath=rfp),
+        malaria.Malaria(resourcefilepath=rfp),
+        ncds.Ncds(resourcefilepath=rfp),
+        oesophagealcancer.OesophagealCancer(resourcefilepath=rfp),
+        contraception.Contraception(resourcefilepath=rfp),
+        labour.Labour(resourcefilepath=rfp),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=rfp),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
+        healthburden.HealthBurden(resourcefilepath=rfp)
+    )
+    sim.make_initial_population(n=20)
+    sim.simulate(end_date=Date(2010, 1, 2))
+    check_dtypes(sim)
+
+    mapper_from_tlo_causes, mapper_from_gbd_causes = \
+        sim.modules['HealthBurden'].create_mappers_from_causes_of_death_to_label()
+
+    assert set(mapper_from_tlo_causes.keys()) == set(sim.modules['HealthBurden'].causes_of_disability.keys())
+    assert set(mapper_from_gbd_causes.keys()) == set(sim.modules['HealthBurden'].parameters['gbd_causes_of_disability'])
+    assert set(mapper_from_gbd_causes.values()) == set(mapper_from_tlo_causes.values())
+
+    # todo check correspondence between causes of death and causes of disability

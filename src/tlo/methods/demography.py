@@ -6,14 +6,13 @@ The core demography module and its associated events.
 """
 
 import math
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import Cause, collect_causes_from_disease_modules
+from tlo.core import Cause, collect_causes_from_disease_modules, create_mappers_from_causes_to_label
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.util import create_age_range_lookup
 
@@ -125,15 +124,38 @@ class Demography(Module):
 
     def pre_initialise_population(self):
         """
-        1) Register all causes of deaths defined by Module
-        2) Define the "Other" causes of death (that is managed in this module by the OtherDeathPoll)
-        3) Add the 'cause_of_death' property (this could not be defined until this point as it is a categorical variable
-         and all categories are not known until after all modules have been registered).
-        4) Output to the log mappers for causes of death (tlo_cause --> label; gbd_cause --> label).
-        5) Define categorical properties for 'region_of_residence' and 'district_of_residence'
-
+        1) Process the declarations of causes of death made by the disease modules
+        3) Define categorical properties for 'cause_of_death', 'region_of_residence' and 'district_of_residence'
         """
 
+        # 1) Process the declarations of causes of death made by the disease modules
+        self.process_causes_of_death()
+
+        # 2) Define categorical properties for 'cause_of_death', 'region_of_residence' and 'district_of_residence'
+        # Nb. This couldn't be done before categories for each of these has been determined following read-in of data
+        # and initialising of other modules.
+        self.PROPERTIES['cause_of_death'] = Property(
+            Types.CATEGORICAL,
+            'The cause of death of this individual (the tlo_cause defined by the module)',
+            categories=list(self.causes_of_death.keys())
+        )
+        self.PROPERTIES['district_of_residence'] = Property(
+            Types.CATEGORICAL,
+            'The district (name) of residence (mapped from district_num_of_residence).',
+            categories=self.parameters['pop_2010']['District'].unique().tolist()
+        )
+        self.PROPERTIES['region_of_residence'] = Property(
+            Types.CATEGORICAL,
+            'The region of residence (mapped from district_num_of_residence).',
+            categories=self.parameters['pop_2010']['Region'].unique().tolist()
+        )
+
+    def process_causes_of_death(self):
+        """
+        1) Register all causes of deaths defined by Module
+        2) Define the "Other" causes of death (that is managed in this module by the OtherDeathPoll)
+        3) Output to the log mappers for causes of death (tlo_cause --> label; gbd_cause --> label).
+        """
         # 1) Register all the causes of death from the disease modules: gives dict(<tlo_cause>: <Cause instance>)
         self.causes_of_death = collect_causes_from_disease_modules(
             all_modules=self.sim.modules.values(),
@@ -143,22 +165,14 @@ class Demography(Module):
 
         # 2) Define the "Other" tlo_cause of death (that is managed in this module by the OtherDeathPoll)
         self.gbd_causes_of_death_not_represented_in_disease_modules = \
-            self.get_gbd_causes_of_death_not_represented_in_disease_modules()
+            self.get_gbd_causes_of_death_not_represented_in_disease_modules(self.causes_of_death)
         self.causes_of_death['Other'] = Cause(
             label='Other',
             gbd_causes=self.gbd_causes_of_death_not_represented_in_disease_modules
         )
 
-        # 3) Create a categorical property for the 'cause_of_death' (this is the "tlo_cause" defined by modules).
-        self.PROPERTIES['cause_of_death'] = Property(
-            Types.CATEGORICAL,
-            'The cause of death of this individual (the tlo_cause defined by the module)',
-            categories=list(self.causes_of_death.keys())
-        )
-
-        # 4) Output to the log mappers for causes of death
-        mapper_from_tlo_causes, mapper_from_gbd_causes = \
-            self.create_mappers_from_causes_of_death_to_label()
+        # 3) Output to the log mappers for causes of death
+        mapper_from_tlo_causes, mapper_from_gbd_causes = self.create_mappers_from_causes_of_death_to_label()
         logger.info(
             key='mapper_from_tlo_cause_to_common_label',
             data=mapper_from_tlo_causes
@@ -166,19 +180,6 @@ class Demography(Module):
         logger.info(
             key='mapper_from_gbd_cause_to_common_label',
             data=mapper_from_gbd_causes
-        )
-
-        # 5) Define categorical properties for 'region_of_residence' and 'district_of_residence'
-        self.PROPERTIES['district_of_residence'] = Property(
-            Types.CATEGORICAL,
-            'The district (name) of residence (mapped from district_num_of_residence).',
-            categories=self.parameters['pop_2010']['District'].unique().tolist()
-        )
-
-        self.PROPERTIES['region_of_residence'] = Property(
-            Types.CATEGORICAL,
-            'The region of residence (mapped from district_num_of_residence).',
-            categories=self.parameters['pop_2010']['Region'].unique().tolist()
         )
 
     def initialise_population(self, population):
@@ -352,58 +353,24 @@ class Demography(Module):
         if 'HealthSystem' in self.sim.modules:
             self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
 
-    def get_gbd_causes_of_death_not_represented_in_disease_modules(self):
+    def get_gbd_causes_of_death_not_represented_in_disease_modules(self, causes_of_death):
         """
         Find the causes of death in the GBD datasets that are not represented within the causes of death defined in the
         modules registered in this simulation.
-        :return: set of gbd_causes that are not represented in disease modules
+        :return: set of gbd_causes of death that are not represented in disease modules
         """
         all_gbd_causes_in_sim = set()
-        for c in self.causes_of_death.values():
+        for c in causes_of_death.values():
             all_gbd_causes_in_sim.update(c.gbd_causes)
 
         return set(self.parameters['gbd_causes_of_death']) - all_gbd_causes_in_sim
 
     def create_mappers_from_causes_of_death_to_label(self):
-        """Helper function to create mapping dicts to map to from either the tlo_cause or the gbd_cause to the common
-        'label'. Note that this is specific to a run of the simulation as the configuration of modules determine
-        which causes of death are counted under the tlo_cause named "Other".
-
-        'label' is the commmon category in which any type of death is classified (for ouput in statistics etc);
-        'tlo_cause' is the name of cause of death used by the module;
-        'gbd_cause' is the name of cause of death in the GBD dataset.
-        """
-
-        # 1) Reorganise the causes of death so that we have:
-        # lookup: dict(<label> : dict(<tlo_causes>:<list of tlo_strings>, <gbd_causes>: <list_of_gbd_causes))
-        lookup = defaultdict(lambda: {'tlo_causes': set(), 'gbd_causes': set()})
-
-        for tlo_cause_name, cause in self.causes_of_death.items():
-            label = cause.label
-            list_of_gbd_causes = cause.gbd_causes
-            lookup[label]['tlo_causes'].add(tlo_cause_name)
-            for gbd_cause in list_of_gbd_causes:
-                lookup[label]['gbd_causes'].add(gbd_cause)
-
-        # 2) Create dicts for mapping (gbd_cause --> label) and (tlo_cause --> label)
-        lookup_df = pd.DataFrame.from_dict(lookup, orient='index').applymap(lambda x: list(x))
-
-        #  - from tlo_cause --> label (key=tlo_cause, value=label)
-        mapper_from_tlo_causes = dict((v, k) for k, v in (
-            lookup_df.tlo_causes.apply(pd.Series).stack().reset_index(level=1, drop=True)
-        ).iteritems())
-
-        #  - from gbd_cause --> label (key=gbd_cause, value=label)
-        mapper_from_gbd_causes = dict((v, k) for k, v in (
-            lookup_df.gbd_causes.apply(pd.Series).stack().reset_index(level=1, drop=True)
-        ).iteritems())
-
-        # -- checks
-        assert set(mapper_from_tlo_causes.keys()) == set(self.causes_of_death)
-        assert set(mapper_from_gbd_causes.keys()) == set(self.parameters['gbd_causes_of_death'])
-        assert set(mapper_from_gbd_causes.values()).issubset(mapper_from_tlo_causes.values())
-
-        return mapper_from_tlo_causes, mapper_from_gbd_causes
+        """Use a helper function to create mappers for causes of death to label."""
+        return create_mappers_from_causes_to_label(
+            causes=self.causes_of_death,
+            all_gbd_causes=set(self.parameters['gbd_causes_of_death'])
+        )
 
     def calc_py_lived_in_last_year(self, delta=pd.DateOffset(years=1), mask=None):
         """

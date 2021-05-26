@@ -1,6 +1,5 @@
 """
 This Module runs the counting of DALYS
-#todo -- let this module output a mapper similar to what is done in demography:
 """
 from pathlib import Path
 
@@ -8,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Types, logging
-from tlo.core import collect_causes_from_disease_modules
+from tlo.core import Cause, collect_causes_from_disease_modules, create_mappers_from_causes_to_label
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 
@@ -41,7 +40,7 @@ class HealthBurden(Module):
         'Age_Limit_For_YLL': Parameter(
             Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
         'gbd_causes_of_disability': Parameter(
-            Types.LIST, 'List of the strings of causes of death defined in the GBD data'),
+            Types.LIST, 'List of the strings of causes of disability defined in the GBD data')
     }
 
     PROPERTIES = {}
@@ -50,9 +49,7 @@ class HealthBurden(Module):
         p = self.parameters
         p['DALY_Weight_Database'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_DALY_Weights.csv')
         p['Age_Limit_For_YLL'] = 70.0  # Assumption that only deaths younger than 70y incur years of lost life
-
-        # GBD causes of disability todo - this might not be needed / might be duplicated in demography TBC
-        self.parameters['gbd_causes_of_disability'] = pd.read_csv(
+        p['gbd_causes_of_disability'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv'
         )['cause_name'].unique().tolist()
 
@@ -63,7 +60,7 @@ class HealthBurden(Module):
         """Do before simulation starts:
         1) Prepare data storage structures
         2) Collect the module that will use this HealthBuren module
-        3) Collect causes of disability that are declared by the Disease Modules
+        3) Process the declarations of causes of disability made by the disease modules
         4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
         """
 
@@ -89,15 +86,42 @@ class HealthBurden(Module):
             assert getattr(self.sim.modules[module_name], 'report_daly_values', None) and \
                    callable(self.sim.modules[module_name].report_daly_values)
 
-        # 3) Collect causes of disability that are reported by each module
+        # 3) Process the declarations of causes of disability made by the disease modules
+        self.process_causes_of_disability()
+
+        # 4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
+        sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
+
+    def process_causes_of_disability(self):
+        """
+        1) Collect causes of disability that are reported by each disease module
+        2) Define the "Other" tlo_cause of disabilty (corresponding to those gbd_causes that are not represented by
+        the disease modules in this sim.)
+        3) Output to the log mappers for causes of disability to the label
+        """
+        # 1) Collect causes of disability that are reported by each disease module
         self.causes_of_disability = collect_causes_from_disease_modules(
             all_modules=self.sim.modules.values(),
             collect='CAUSES_OF_DISABILITY',
             acceptable_causes=set(self.parameters['gbd_causes_of_disability'])
         )
 
-        # 4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
-        sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
+        # 2) Define the "Other" tlo_cause of disabilty
+        self.causes_of_disability['Other'] = Cause(
+            label='Other',
+            gbd_causes=self.get_gbd_causes_of_disability_not_represented_in_disease_modules(self.causes_of_disability)
+        )
+
+        # 3) Output to the log mappers for causes of disability
+        mapper_from_tlo_causes, mapper_from_gbd_causes = self.create_mappers_from_causes_of_death_to_label()
+        logger.info(
+            key='mapper_from_tlo_cause_to_common_label',
+            data=mapper_from_tlo_causes
+        )
+        logger.info(
+            key='mapper_from_gbd_cause_to_common_label',
+            data=mapper_from_gbd_causes
+        )
 
     def on_birth(self, mother_id, child_id):
         pass
@@ -236,6 +260,25 @@ class HealthBurden(Module):
         period = period.drop(columns=['days'], axis=1)
 
         return period
+
+    def get_gbd_causes_of_disability_not_represented_in_disease_modules(self, causes_of_disability):
+        """
+        Find the causes of disability in the GBD datasets that are not represented within the causes of death defined
+        in the modules registered in this simulation.
+        :return: set of gbd_causes of disability that are not represented in disease modules
+        """
+        all_gbd_causes_in_sim = set()
+        for c in causes_of_disability.values():
+            all_gbd_causes_in_sim.update(c.gbd_causes)
+
+        return set(self.parameters['gbd_causes_of_disability']) - all_gbd_causes_in_sim
+
+    def create_mappers_from_causes_of_death_to_label(self):
+        """Use a helper function to create mappers for causes of disability to label."""
+        return create_mappers_from_causes_to_label(
+            causes=self.causes_of_disability,
+            all_gbd_causes=set(self.parameters['gbd_causes_of_disability'])
+        )
 
 
 class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):

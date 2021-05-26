@@ -11,6 +11,7 @@ from tlo.core import Cause
 from tlo.methods import (
     Metadata,
     bladder_cancer,
+    breast_cancer,
     care_of_women_during_pregnancy,
     contraception,
     demography,
@@ -50,7 +51,7 @@ def test_run(simulation):
     assert set(['Other']) == set(simulation.population.props['cause_of_death'].cat.categories)
 
 
-def test_dypes(simulation):
+def test_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
@@ -104,7 +105,7 @@ def test_storage_of_cause_of_death():
     assert not person.is_alive
     assert person.cause_of_death == 'a_cause'
     assert (df.dtypes == orig).all()
-    test_dypes(sim)
+    test_dtypes(sim)
 
 
 def test_cause_of_death_being_registered():
@@ -115,8 +116,9 @@ def test_cause_of_death_being_registered():
     sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
         symptommanager.SymptomManager(resourcefilepath=rfp),
+        breast_cancer.BreastCancer(resourcefilepath=rfp),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
         healthsystem.HealthSystem(resourcefilepath=rfp, disable_and_reject_all=True),
         bladder_cancer.BladderCancer(resourcefilepath=rfp),
         depression.Depression(resourcefilepath=rfp),
@@ -134,7 +136,14 @@ def test_cause_of_death_being_registered():
     )
     sim.make_initial_population(n=20)
     sim.simulate(end_date=Date(2010, 1, 2))
-    test_dypes(sim)
+    test_dtypes(sim)
+
+    mapper_from_tlo_causes, mapper_from_gbd_causes = \
+        sim.modules['Demography'].create_mappers_from_causes_of_death_to_label()
+
+    assert set(mapper_from_tlo_causes.keys()) == set(sim.modules['Demography'].causes_of_death)
+    assert set(mapper_from_gbd_causes.keys()) == set(sim.modules['Demography'].parameters['gbd_causes_of_death'])
+    assert set(mapper_from_gbd_causes.values()) == set(mapper_from_tlo_causes.values())
 
 
 def test_py_calc(simulation):
