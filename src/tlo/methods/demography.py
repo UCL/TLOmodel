@@ -318,7 +318,8 @@ class Demography(Module):
         # Register the death:
         df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = (False, self.sim.date, cause)
 
-        # Log the death:
+        # Log the death
+        # - log the line-list of summary information about each death
         data_to_log_for_each_death = {
             'age': person['age_years'],
             'sex': person['sex'],
@@ -334,6 +335,11 @@ class Demography(Module):
             })
 
         logger.info(key='death', data=data_to_log_for_each_death)
+
+        # - log all the properties for the deceased person
+        logger.info(key='properties_of_deceased_persons',
+                    data=person.to_dict(),
+                    description='values of all properties at the time of death for deceased persons')
 
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
         if 'HealthBurden' in self.sim.modules.keys():

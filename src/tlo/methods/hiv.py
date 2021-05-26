@@ -73,6 +73,7 @@ class Hiv(Module):
         'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
     }
 
+    # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
         'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
     }
