@@ -1,13 +1,12 @@
 """This file uses the results of the batch file to make some summary statistics.
 The results of the bachrun were put into the 'outputs' results_folder
 """
-
-from pathlib import Path
-import pandas as pd
+import json
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import json
+import pandas as pd
+from pathlib import Path
 from tlo.analysis.utils import (
     get_grid,
     get_scenario_info,

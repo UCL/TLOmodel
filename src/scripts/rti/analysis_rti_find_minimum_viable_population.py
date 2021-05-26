@@ -1,9 +1,9 @@
+import math
 from matplotlib import pyplot as plt
 import numpy as np
 import os
 import pandas as pd
 import sys
-import math
 # create helper function to get the summary statistics
 
 

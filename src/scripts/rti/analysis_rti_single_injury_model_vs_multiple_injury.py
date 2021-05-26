@@ -1,8 +1,7 @@
-from pathlib import Path
-
-import numpy as np
 from matplotlib import pyplot as plt
+import numpy as np
 import pandas as pd
+from pathlib import Path
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -53,7 +52,7 @@ sing_inj_incidences_of_death = []
 sing_inj_incidences_of_injuries = []
 sing_inj_cause_of_death_in_sim = []
 # Run the model as a single injury model
-imm_death = 0
+imm_death = 0.03
 # Iterate over the number of simulations nsim
 for i in range(0, nsim):
     # Create the simulation object

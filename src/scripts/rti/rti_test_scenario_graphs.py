@@ -2,10 +2,9 @@
 The results of the bachrun were put into the 'outputs' results_folder
 """
 
-from pathlib import Path
-
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 from tlo.analysis.utils import (
     extract_params,
     extract_results,

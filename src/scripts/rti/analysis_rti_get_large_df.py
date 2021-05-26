@@ -1,5 +1,5 @@
-from pathlib import Path
 import numpy as np
+from pathlib import Path
 from tlo import Date, Simulation, logging
 from tlo.methods import (
     demography,
