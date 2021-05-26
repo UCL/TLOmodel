@@ -27,6 +27,7 @@ from tlo.methods import (
     oesophagealcancer,
     postnatal_supervisor,
     pregnancy_supervisor,
+    prostate_cancer,
     symptommanager,
 )
 from tlo.methods.demography import AgeUpdateEvent
@@ -71,7 +72,7 @@ def test_storage_of_cause_of_death():
 
     class DummyModule(Module):
         METADATA = {Metadata.DISEASE_MODULE}
-        CAUSES_OF_DEATH = {'a_cause': Cause(gbd_causes='HIV/AIDS', label='a_cause')}
+        CAUSES_OF_DEATH = {'a_cause': Cause(label='a_cause')}
 
         def read_parameters(self, data_folder):
             pass
@@ -121,6 +122,7 @@ def test_cause_of_death_being_registered():
         enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
         healthsystem.HealthSystem(resourcefilepath=rfp, disable_and_reject_all=True),
         bladder_cancer.BladderCancer(resourcefilepath=rfp),
+        prostate_cancer.ProstateCancer(resourcefilepath=rfp),
         depression.Depression(resourcefilepath=rfp),
         diarrhoea.Diarrhoea(resourcefilepath=rfp),
         hiv.Hiv(resourcefilepath=rfp),

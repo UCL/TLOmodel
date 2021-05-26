@@ -84,7 +84,9 @@ class HealthBurden(Module):
         # Check that all registered disease modules have the report_daly_values() function
         for module_name in self.recognised_modules_names:
             assert getattr(self.sim.modules[module_name], 'report_daly_values', None) and \
-                   callable(self.sim.modules[module_name].report_daly_values)
+                   callable(self.sim.modules[module_name].report_daly_values), 'A modules that decalre use of ' \
+                                                                               'HealthBurden module must have a ' \
+                                                                               'callable function "report_daly_valyes"'
 
         # 3) Process the declarations of causes of disability made by the disease modules
         self.process_causes_of_disability()
@@ -157,18 +159,7 @@ class HealthBurden(Module):
             )
 
         # 3) Log total DALYS recorded (YLD + LYL) (by the labels declared)
-
-        # - Sum YLD and LYL with respect to the label of the corresponding cause of each:
-        yld = self.YearsLivedWithDisability.rename(
-            columns={c: self.causes_of_disability[c].label for c in self.YearsLivedWithDisability.columns}
-        )
-
-        yll = self.YearsLifeLost.rename(
-            columns={c: self.sim.modules['Demography'].causes_of_death[c].label for c in self.YearsLifeLost.columns}
-        )
-
-        dalys = yld.add(yll, fill_value=0)
-
+        dalys = self.compute_dalys()
         # - dump to log, line-by-line
         for index, row in dalys.reset_index().iterrows():
             logger.info(
@@ -177,6 +168,20 @@ class HealthBurden(Module):
                 description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                             ', broken down by year, sex, age-group'
             )
+
+    def compute_dalys(self):
+        """Compute total DALYS (by label), by age, sex and year. Do this by summing the YLD and LYL with respect to the
+         label of the corresponding cause of each, and give output by label."""
+
+        yld = self.YearsLivedWithDisability.rename(
+            columns={c: self.causes_of_disability[c].label for c in self.YearsLivedWithDisability.columns}
+        )
+
+        yll = self.YearsLifeLost.rename(
+            columns={c: self.sim.modules['Demography'].causes_of_death[c].label for c in self.YearsLifeLost.columns}
+        )
+
+        return yld.add(yll, fill_value=0)
 
     def get_daly_weight(self, sequlae_code):
         """
@@ -295,8 +300,8 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # Running the DALY Logger
 
-        # Do nothing if no disease modules are regsisterd
-        if not self.module.recognised_modules_names:
+        # Do nothing if no disease modules are regsisterd or no causes of disability are registerd
+        if (not self.module.recognised_modules_names) or (not self.module.causes_of_disability):
             return
 
         # Get the population dataframe
@@ -310,29 +315,32 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
             disease_module = self.sim.modules[disease_module_name]
             declared_causes_of_disability_module = disease_module.CAUSES_OF_DISABILITY.keys()
 
-            dalys_from_disease_module = disease_module.report_daly_values()
+            if declared_causes_of_disability_module:
+                # if some causes of disability are declared, collect the disability reported by this disease module:
+                dalys_from_disease_module = disease_module.report_daly_values()
 
-            # Check type is in acceptable form and make into dataframe if not already
-            assert type(dalys_from_disease_module) in (pd.Series, pd.DataFrame)
-            if type(dalys_from_disease_module) is pd.Series:
-                # if a pd.Series is returned, it implies there is only one cause of disability registered by the module:
-                assert 1 == len(declared_causes_of_disability_module)
+                # Check type is in acceptable form and make into dataframe if not already
+                assert type(dalys_from_disease_module) in (pd.Series, pd.DataFrame)
+                if type(dalys_from_disease_module) is pd.Series:
+                    # if a pd.Series is returned, it implies there is only one cause of disability registered by module:
+                    assert 1 == len(declared_causes_of_disability_module), \
+                        "pd.Series returned but number of causes of disability declared is not equal to one."
 
-                # name the returned pd.Series as the only cause of disability that is defined by the module
-                dalys_from_disease_module.name = list(declared_causes_of_disability_module)[0]
+                    # name the returned pd.Series as the only cause of disability that is defined by the module
+                    dalys_from_disease_module.name = list(declared_causes_of_disability_module)[0]
 
-                # convert to pd.DataFrame
-                dalys_from_disease_module = pd.DataFrame(dalys_from_disease_module)
+                    # convert to pd.DataFrame
+                    dalys_from_disease_module = pd.DataFrame(dalys_from_disease_module)
 
-            # Perform checks on what has been returned
-            assert set(dalys_from_disease_module.columns) == set(declared_causes_of_disability_module)
-            assert set(dalys_from_disease_module.index) == idx_alive
-            assert (~pd.isnull(dalys_from_disease_module)).all().all()
-            assert ((dalys_from_disease_module >= 0) & (dalys_from_disease_module <= 1)).all().all()
-            assert (dalys_from_disease_module.sum(axis=1) <= 1).all()
+                # Perform checks on what has been returned
+                assert set(dalys_from_disease_module.columns) == set(declared_causes_of_disability_module)
+                assert set(dalys_from_disease_module.index) == idx_alive
+                assert (~pd.isnull(dalys_from_disease_module)).all().all()
+                assert ((dalys_from_disease_module >= 0) & (dalys_from_disease_module <= 1)).all().all()
+                assert (dalys_from_disease_module.sum(axis=1) <= 1).all()
 
-            # Append to list of dalys reported by each module
-            dalys_from_each_disease_module.append(dalys_from_disease_module)
+                # Append to list of dalys reported by each module
+                dalys_from_each_disease_module.append(dalys_from_disease_module)
 
         # 2) Combine into a single dataframe (each column of this dataframe gives the reports from each module), and
         # add together dalys reported by different modules that have the same cause (i.e., add together columns with
