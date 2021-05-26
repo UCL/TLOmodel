@@ -71,15 +71,15 @@ Communicable Diseases
 Non-Communicable Conditions
 ==============================
 * Cancers:
-    * **BladderCancer**: Cancer of the bladder and its treatment. :download:`.docx <./write-ups/BladderCancer.docx>`
+    * **Bladder Cancer**: Cancer of the bladder and its treatment. :download:`.docx <./write-ups/BladderCancer.docx>`
 
-    * **BreastCancer**: Cancer of the breast and its treatment. :download:`.docx <./write-ups/BreastCancer.docx>`
+    * **Breast Cancer**: Cancer of the breast and its treatment. :download:`.docx <./write-ups/BreastCancer.docx>`
 
-    * **OesophagealCancer**: Cancer of the oesophagus and its treatment. :download:`.docx <./write-ups/OesophagealCancer.docx>`
+    * **Oesophageal Cancer**: Cancer of the oesophagus and its treatment. :download:`.docx <./write-ups/OesophagealCancer.docx>`
 
-    * **OtherAdultCancers**: Summary representation of any type of cancer other those listed and their treatment. :download:`.docx <./write-ups/OtherAdultCancers.docx>`
+    * **Other Adult Cancer**: Summary representation of any type of cancer other those listed and their treatment. :download:`.docx <./write-ups/OtherAdultCancer.docx>`
 
-    * **ProstateCancer**: Cancer of the prostate and its treatment. :download:`.docx <./write-ups/ProstateCancer.docx>`
+    * **Prostate Cancer**: Cancer of the prostate and its treatment. :download:`.docx <./write-ups/ProstateCancer.docx>`
 
 * Caridometabolic Diorders:
     * **Diabetes Type 2, Hypertension, Stroke, Ischemic Heart Disease, Myocardial Infarction** :download:`.docx <./write-ups/Ncds.docx>`
