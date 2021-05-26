@@ -1,6 +1,8 @@
+
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import Cause
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
@@ -29,6 +31,16 @@ class Mockitis(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'Mockitis': Cause(label='Mockitis_Disability_And_Death'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'Mockitis': Cause(label='Mockitis_Disability_And_Death')
     }
 
     PARAMETERS = {
@@ -254,7 +266,7 @@ class Mockitis(Module):
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # The names of the series of columns is taken to be the cause_of_death of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
         logger.debug(key='debug', data='This is mockitis reporting my daly values')

@@ -3,12 +3,14 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import Cause
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
 
-# todo: code specific clinic visits
+# todo: note this code is becoming very depracated and does not include health interactions
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -25,6 +27,16 @@ class Epilepsy(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'Epilepsy': Cause(gbd_causes='Other neurological disorders', label='Epilepsy'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'Epilepsy': Cause(gbd_causes='Other neurological disorders', label='Epilepsy'),
     }
 
     # Module parameters
@@ -232,7 +244,7 @@ class Epilepsy(Module):
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # The names of the series of columns is taken to be the cause_of_death of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
         logger.debug('This is Epilepsy reporting my health values')
 

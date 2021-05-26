@@ -27,6 +27,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import Cause
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
@@ -62,6 +63,18 @@ class Diarrhoea(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        f'Diarrhoea_{path}': Cause(gbd_causes='Diarrheal diseases', label='Childhood Diarrhoea')
+        for path in pathogens
+    }
+
+    # Declare Causes of Death and Disability
+    CAUSES_OF_DISABILITY = {
+        f'Diarrhoea_{path}': Cause(gbd_causes='Diarrheal diseases', label='Childhood Diarrhoea')
+        for path in pathogens
     }
 
     PARAMETERS = {
@@ -593,8 +606,8 @@ class Diarrhoea(Module):
         sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Get DALY weights
-        get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
         if 'HealthBurden' in self.sim.modules.keys():
+            get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
             self.daly_wts['mild_diarrhoea'] = get_daly_weight(sequlae_code=32)
             self.daly_wts['moderate_diarrhoea'] = get_daly_weight(sequlae_code=35)
             self.daly_wts['severe_diarrhoea'] = get_daly_weight(sequlae_code=34)
@@ -630,10 +643,12 @@ class Diarrhoea(Module):
             unscaled_lm = make_linear_model(patho)
             target_mean = p[f'base_inc_rate_diarrhoea_by_{patho}'][0]
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean) if (target_mean != 0 and actual_mean != 0) else 1.0
+            scaled_intercept = 1.0 * (target_mean / actual_mean) \
+                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
             scaled_lm = make_linear_model(patho, intercept=scaled_intercept)
             # check by applying the model to mean incidence of 0-year-olds
-            assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
+            if (df.is_alive & (df.age_years == 0)).sum() > 0:
+                assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
             return scaled_lm
 
         for pathogen in Diarrhoea.pathogens:
@@ -786,7 +801,8 @@ class Diarrhoea(Module):
                                               dtype='float').drop(columns='not_applicable')
         daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
 
-        return daly_values_by_pathogen
+        # return with columns labelled to match the declare CAUSES_OF_DISABILITY
+        return daly_values_by_pathogen.add_prefix('Diarrhoea_')
 
     def look_up_consumables(self):
         """Look up and store the consumables used in each of the HSI."""

@@ -779,7 +779,7 @@ class Tb(Module):
         """
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # The names of the series of columns is taken to be the cause_of_death of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
         logger.debug("This is tb reporting my health values")
 
@@ -802,7 +802,7 @@ class Tb(Module):
             df["tb_inf"].str.contains("active_mdr") & df.hv_inf & df.is_alive
         ] = params["daly_wt_resistant_tb_hiv"]
 
-        health_values.name = "tb Symptoms"  # label the cause of this disability
+        health_values.name = "tb Symptoms"  # cause_of_death the cause of this disability
 
         return health_values.loc[df.is_alive]
     """
@@ -2430,7 +2430,8 @@ class Tb(Module):
 #         df = self.sim.population.props
 #
 #         # check across all disease modules if patient has: cough, fever, night sweat, weight loss
-#         # if any of the above conditions are present, label as presumptive tb case and request appropriate test
+#         # if any of the above conditions are present, cause_of_death as presumptive tb case and request appropriate
+#         # test
 #
 #         # hiv-negative adults or undiagnosed hiv-positive
 #         if (

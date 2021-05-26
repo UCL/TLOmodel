@@ -261,8 +261,11 @@ class HealthSystem(Module):
         self.Facility_Levels = pd.unique(mfl['Facility_Level'])
 
         for person_id in pop.index[pop.is_alive]:
-            my_district = pop.at[person_id, 'district_of_residence']
-            my_health_facilities = fac_per_district.loc[fac_per_district['District'] == my_district]
+            my_district_num = pop.at[person_id, 'district_num_of_residence']
+            my_district_name = self.sim.modules['Demography'].parameters['district_num_to_district_name'][
+                my_district_num]
+            my_health_facilities = fac_per_district.loc[fac_per_district['District'] == my_district_name]
+            # todo use lookup instead
             my_health_facility_level = pd.unique(my_health_facilities.Facility_Level)
             assert len(my_health_facilities) == len(self.Facility_Levels)
             assert set(my_health_facility_level) == set(self.Facility_Levels)
@@ -669,7 +672,8 @@ class HealthSystem(Module):
 
         # Gather information about the HSI event
         the_person_id = hsi_event.target
-        the_district = df.at[the_person_id, 'district_of_residence']
+        the_district = self.sim.modules['Demography'].parameters['district_num_to_district_name'][
+            df.at[the_person_id, 'district_num_of_residence']]
 
         # Get the (one) health_facility available to this person (based on their district), which is accepted by the
         # hsi_event.ACCEPTED_FACILITY_LEVEL:
@@ -1124,7 +1128,7 @@ class HealthSystem(Module):
         if not df.at[person_id, 'hs_is_inpatient']:
             # apply the new footprint if the person is not already an in-patient
             apply_footprint(new_footprint)
-            # label person as an in-patient
+            # cause_of_death person as an in-patient
             df.at[person_id, 'hs_is_inpatient'] = True
 
         else:

@@ -10,6 +10,7 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import Cause
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -38,6 +39,16 @@ class ProstateCancer(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'ProstateCancer': Cause(gbd_causes='Prostate cancer', label='Cancer'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'ProstateCancer': Cause(gbd_causes='Prostate cancer', label='Cancer'),
     }
 
     PARAMETERS = {

@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import Cause
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -50,6 +51,33 @@ class Ncds(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'diabetes': Cause(
+            gbd_causes='Diabetes mellitus', label='Diabetes'),
+        'chronic_ischemic_hd': Cause(
+            gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
+        'heart_attack': Cause(
+            gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
+        'stroke': Cause(
+            gbd_causes='Stroke', label='Stroke'),
+        'chronic_kidney_disease': Cause(
+            gbd_causes='Chronic kidney disease', label='Kidney Disease')
+    }
+
+    # Declare Causes of Disability #todo - to be updated when DALYS calc are completed
+    CAUSES_OF_DISABILITY = {
+        'any_ncd':
+            Cause(gbd_causes=[
+                'Diabetes mellitus',
+                'Ischemic heart disease',
+                'Hypertensive heart disease',
+                'Stroke',
+                'Chronic kidney disease'
+            ],
+                  label='NCD')
     }
 
     # create separate dicts for params for conditions and events
@@ -346,7 +374,7 @@ class Ncds(Module):
         """Report DALY values to the HealthBurden module"""
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # The names of the series of columns is taken to be the cause_of_death of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
         # To return a value of 0.0 (fully health) for everyone, use:

@@ -6,8 +6,30 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tlo import Date, Simulation
-from tlo.methods import demography
+from tlo import Date, Module, Simulation
+from tlo.core import Cause
+from tlo.methods import (
+    Metadata,
+    bladder_cancer,
+    breast_cancer,
+    care_of_women_during_pregnancy,
+    contraception,
+    demography,
+    depression,
+    diarrhoea,
+    enhanced_lifestyle,
+    healthsystem,
+    hiv,
+    labour,
+    malaria,
+    ncds,
+    newborn_outcomes,
+    oesophagealcancer,
+    postnatal_supervisor,
+    pregnancy_supervisor,
+    prostate_cancer,
+    symptommanager,
+)
 from tlo.methods.demography import AgeUpdateEvent
 
 start_date = Date(2010, 1, 1)
@@ -27,9 +49,10 @@ def simulation():
 def test_run(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
+    assert set(['Other']) == set(simulation.population.props['cause_of_death'].cat.categories)
 
 
-def test_dypes(simulation):
+def test_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
@@ -42,6 +65,87 @@ def test_mothers_female(simulation):
     mothers = df.loc[df.mother_id >= 0, 'mother_id']
     is_female = mothers.apply(lambda mother_id: df.at[mother_id, 'sex'] == 'F')
     assert is_female.all()
+
+
+def test_storage_of_cause_of_death():
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+        CAUSES_OF_DEATH = {'a_cause': Cause(label='a_cause')}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+        DummyModule()
+    )
+    sim.make_initial_population(n=20)
+    df = sim.population.props
+    orig = df.dtypes
+    assert type(orig['cause_of_death']) == pd.CategoricalDtype
+    assert set(['Other', 'a_cause']) == set(df['cause_of_death'].cat.categories)
+
+    # Cause a person to die by the DummyModule
+    person_id = 0
+    sim.modules['Demography'].do_death(
+        individual_id=person_id,
+        originating_module=sim.modules['DummyModule'],
+        cause='a_cause'
+    )
+
+    person = df.loc[person_id]
+    assert not person.is_alive
+    assert person.cause_of_death == 'a_cause'
+    assert (df.dtypes == orig).all()
+    test_dtypes(sim)
+
+
+def test_cause_of_death_being_registered():
+    """Test that the modules can declare causes of death, and that the mappers between tlo causes of death and gbd
+    causes of death can be created correctly."""
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+        symptommanager.SymptomManager(resourcefilepath=rfp),
+        breast_cancer.BreastCancer(resourcefilepath=rfp),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
+        healthsystem.HealthSystem(resourcefilepath=rfp, disable_and_reject_all=True),
+        bladder_cancer.BladderCancer(resourcefilepath=rfp),
+        prostate_cancer.ProstateCancer(resourcefilepath=rfp),
+        depression.Depression(resourcefilepath=rfp),
+        diarrhoea.Diarrhoea(resourcefilepath=rfp),
+        hiv.Hiv(resourcefilepath=rfp),
+        malaria.Malaria(resourcefilepath=rfp),
+        ncds.Ncds(resourcefilepath=rfp),
+        oesophagealcancer.OesophagealCancer(resourcefilepath=rfp),
+        contraception.Contraception(resourcefilepath=rfp),
+        labour.Labour(resourcefilepath=rfp),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=rfp),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
+    )
+    sim.make_initial_population(n=20)
+    sim.simulate(end_date=Date(2010, 1, 2))
+    test_dtypes(sim)
+
+    mapper_from_tlo_causes, mapper_from_gbd_causes = \
+        sim.modules['Demography'].create_mappers_from_causes_of_death_to_label()
+
+    assert set(mapper_from_tlo_causes.keys()) == set(sim.modules['Demography'].causes_of_death)
+    assert set(mapper_from_gbd_causes.keys()) == set(sim.modules['Demography'].parameters['gbd_causes_of_death'])
+    assert set(mapper_from_gbd_causes.values()) == set(mapper_from_tlo_causes.values())
 
 
 def test_py_calc(simulation):

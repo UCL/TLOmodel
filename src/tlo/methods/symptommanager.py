@@ -119,6 +119,26 @@ class Symptom:
         self.odds_ratio_health_seeking_in_adults = odds_ratio_health_seeking_in_adults
         self.odds_ratio_health_seeking_in_children = odds_ratio_health_seeking_in_children
 
+    def __eq__(self, other):
+        """Define the basis upon which tests of equivalence are made for Symptom objects.
+        NB. This seems neccessary to enable to checking of equivalency between symptoms registered in different
+        places. Without this two instance of the object with the same properties are not recognised as being the 'same'.
+        This is done in conjunction with over-riding the hash property."""
+        return isinstance(other, Symptom) and all(
+            [getattr(self, p) == getattr(other, p) for p in [
+                'name',
+                'no_healthcareseeking_in_children',
+                'no_healthcareseeking_in_adults',
+                'emergency_in_adults',
+                'emergency_in_children',
+                'odds_ratio_health_seeking_in_adults',
+                'odds_ratio_health_seeking_in_children']
+             ])
+
+    def __hash__(self):
+        """Override the hash function to force set to rely on __eq__."""
+        return 0
+
 
 class DuplicateSymptomWithNonIdenticalPropertiesError(Exception):
     def __init__(self):

@@ -68,7 +68,7 @@ sim = run()
 
 # %% Make the plots
 
-# date-stamp to label outputs
+# date-stamp to cause_of_death outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # destination for outputs

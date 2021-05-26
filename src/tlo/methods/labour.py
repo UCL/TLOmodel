@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import Cause
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour_lm
@@ -47,6 +48,17 @@ class Labour(Module):
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal disorders'),
+        'intrapartum stillbirth': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'Labour': Cause(gbd_causes='Maternal disorders', label='Maternal disorders')
     }
 
     PARAMETERS = {
