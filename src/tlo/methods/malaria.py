@@ -45,15 +45,13 @@ class Malaria(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'severe_malaria': Cause(gbd_causes='Malaria', label='Malaria'),
         'Malaria': Cause(gbd_causes='Malaria', label='Malaria'),
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'Malaria_Symptoms': Cause(gbd_causes='Malaria', label='Malaria')
+        'Malaria': Cause(gbd_causes='Malaria', label='Malaria')
     }
-    # todo - @Tara: would it make sense to simplify these different causes into one?
 
     PARAMETERS = {
         "mal_inc": Parameter(Types.REAL, "monthly incidence of malaria in all ages"),
@@ -374,7 +372,7 @@ class Malaria(Module):
             random_days = pd.to_timedelta(random_date, unit="d")
 
             death_event = MalariaDeathEvent(
-                self, individual_id=person, cause="severe_malaria"
+                self, individual_id=person, cause="Malaria"
             )  # make that death event
             self.sim.schedule_event(
                 death_event, self.sim.date + random_days
@@ -459,7 +457,7 @@ class Malaria(Module):
                 "severe": p["daly_wt_severe"],
             }
         )
-        health_values.name = "Malaria_Symptoms"  # cause_of_death the cause of this disability
+        health_values.name = "Malaria"  # cause_of_death the cause of this disability
 
         return health_values.loc[df.is_alive]  # returns the series
 
