@@ -12,6 +12,7 @@ import numpy as np
 
 from tlo import Date, Population, logging
 from tlo.events import IndividualScopeEventMixin
+from tlo.progressbar import ProgressBar
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -41,13 +42,16 @@ class Simulation:
         with independent state.
     """
 
-    def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None):
+    def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None,
+                 show_progress_bar=False):
         """Create a new simulation.
 
         :param start_date: the date the simulation begins; must be given as
             a keyword parameter for clarity
         :param seed: the seed for random number generator. class will create one if not supplied
         :param log_config: sets up the logging configuration for this simulation
+        :param show_progress_bar: whether to show a progress bar instead of the logger
+            output during the simulation
         """
         # simulation
         self.date = self.start_date = start_date
@@ -55,6 +59,8 @@ class Simulation:
         self.event_queue = EventQueue()
         self.end_date = None
         self.output_file = None
+
+        self.show_progress_bar = show_progress_bar
 
         # logging
         if log_config is None:
@@ -88,7 +94,9 @@ class Simulation:
         :return: Path of the log file if a filename has been given.
         """
         # clear logging environment
-        logging.init_logging()
+        # if using progress bar we do not print log messages to stdout to avoid
+        # clashes between progress bar and log output
+        logging.init_logging(add_stdout_handler=not self.show_progress_bar)
         logging.set_simulation(self)
 
         if custom_levels:
@@ -195,14 +203,34 @@ class Simulation:
 
         for module in self.modules.values():
             module.initialise_simulation(self)
+
+        if self.show_progress_bar:
+            start_date = self.date
+            num_simulated_days = (end_date - start_date).days
+            progress_bar = ProgressBar(
+                num_simulated_days, "Simulation progress", unit="day")
+            progress_bar.start()
+
         while self.event_queue:
             event, date = self.event_queue.next_event()
+
+            if self.show_progress_bar:
+                simulation_day = (date - start_date).days
+                progress_bar.update(
+                    simulation_day,
+                    stats_dict={"date": str(date.date())}
+                )
+
             if date >= end_date:
                 self.date = end_date
                 break
             self.fire_single_event(event, date)
 
         # The simulation has ended. Call 'on_simulation_end' method at the end of simulation
+        if self.show_progress_bar:
+            progress_bar.stop()
+
+        # The simulation has ended. Call 'on_simulation_end' method at the end of simulation (if a module has it)
         for module in self.modules.values():
             module.on_simulation_end()
 
