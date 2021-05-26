@@ -42,4 +42,4 @@ Acknowledgements
 * `Amelia Crampin <http://www.meiru.info/management-team/>`_
 * Jonathan Roberts
 * `Mikaela Smit <https://www.imperial.ac.uk/people/mikaela.smit>`_
-* `Juan Vesga <https://uk.linkedin.com/in/juan-vesga-96182834>_`
+* `Juan Vesga <https://www.researchgate.net/profile/Juan-Vesga-3>`_
