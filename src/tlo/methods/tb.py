@@ -17,6 +17,7 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup
 from tlo.methods import hiv
+# from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -41,6 +42,15 @@ class Tb(Module):
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
     }
+
+    # Declare Causes of Death
+    # CAUSES_OF_DEATH = {
+    #     'TB': Cause(gbd_causes='Tuberculosis', label='TB'),
+    # }
+    #
+    # CAUSES_OF_DISABILITY = {
+    #     'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
+    # }
 
     PROPERTIES = {
         # ------------------ natural history ------------------ #
