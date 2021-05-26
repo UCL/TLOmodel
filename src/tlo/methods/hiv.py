@@ -70,11 +70,11 @@ class Hiv(Module):
 
     # Declare Causes of Death
     # CAUSES_OF_DEATH = {
-    #     'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS_non_tb'),
+    #     'AIDS_non_TB': Cause(gbd_causes='HIV/AIDS', label='AIDS_non_TB'),
     # }
     #
     # CAUSES_OF_DISABILITY = {
-    #     'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
+    #     'HIV': Cause(gbd_causes='HIV/AIDS', label='HIV/AIDS'),
     # }
 
     PROPERTIES = {
@@ -825,7 +825,7 @@ class Hiv(Module):
         # Overwrite the value for those that currently have symptoms of AIDS with the 'AIDS' daly_wt:
         dalys.loc[self.sim.modules['SymptomManager'].who_has('aids_symptoms')] = self.daly_wts['aids']
 
-        dalys.name = 'hiv'
+        dalys.name = 'HIV'  # this includes both non-AIDS and AIDS disability weights
         return dalys
 
     def mtct_during_breastfeeding(self, mother_id, child_id):
@@ -1221,7 +1221,7 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
             return
 
         # Cause the death to happen immediately
-        demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS").apply(person_id)
+        demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS_non_TB").apply(person_id)
 
 
 class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):

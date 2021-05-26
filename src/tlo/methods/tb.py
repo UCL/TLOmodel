@@ -49,7 +49,7 @@ class Tb(Module):
     # }
     #
     # CAUSES_OF_DISABILITY = {
-    #     'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
+    #     'TB': Cause(gbd_causes='Tuberculosis', label='TB'),
     # }
 
     PROPERTIES = {
@@ -1025,7 +1025,7 @@ class Tb(Module):
             df.is_alive & (df.tb_inf == 'active') & (df.tb_strain == 'mdr') & df.hv_inf
             ] = self.daly_wts['daly_mdr_tb_hiv_anaemia']
 
-        health_values.name = 'tb'  # label the cause of this disability
+        health_values.name = 'TB'  # label the cause of this disability
 
         return health_values.loc[df.is_alive]
 
@@ -1840,7 +1840,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
                 self.sim.schedule_event(
                     demography.InstantaneousDeath(
-                        self.module, individual_id=person, cause='tb'
+                        self.module, individual_id=person, cause='TB'
                     ),
                     now,
                 )
@@ -1894,7 +1894,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
                 self.sim.schedule_event(
                     demography.InstantaneousDeath(
-                        self.module, individual_id=person, cause='AIDS'
+                        self.module, individual_id=person, cause='AIDS_TB'
                     ),
                     now,
                 )
