@@ -2,7 +2,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import scipy.stats
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -36,6 +35,11 @@ class NewbornOutcomes(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+        # First we define dictionaries which will store the current parameters of interest (to allow parameters to
+        # change between 2010 and 2020) and the linear models
+        self.current_parameters = dict()
+        self.nb_linear_models = dict()
+
         # This dictionary will store information related to the neonates delivery that does not need to be stored in
         # the main data frame
         self.newborn_care_info = dict()
@@ -53,166 +57,164 @@ class NewbornOutcomes(Module):
     PARAMETERS = {
         # CARE SEEKING
         'prob_care_seeking_for_complication': Parameter(
-            Types.REAL, 'baseline probability that a mother will seek care for an unwell neonate following delivery'),
+            Types.LIST, 'baseline probability that a mother will seek care for an unwell neonate following delivery'),
 
         # EARLY ONSET SEPSIS...
         'prob_early_onset_neonatal_sepsis_day_0': Parameter(
-            Types.REAL, 'baseline probability of a neonate developing early onset sepsis between birth and 24hrs'),
+            Types.LIST, 'baseline probability of a neonate developing early onset sepsis between birth and 24hrs'),
         'rr_eons_maternal_chorio': Parameter(
-            Types.REAL, 'relative risk of EONS in newborns whose mothers have chorioamnionitis'),
+            Types.LIST, 'relative risk of EONS in newborns whose mothers have chorioamnionitis'),
         'rr_eons_maternal_prom': Parameter(
-            Types.REAL, 'relative risk of EONS in newborns whose mothers have PROM'),
+            Types.LIST, 'relative risk of EONS in newborns whose mothers have PROM'),
         'rr_eons_preterm_neonate': Parameter(
-            Types.REAL, 'relative risk of EONS in preterm newborns'),
-        'prob_sepsis_disabilities': Parameter(
-            Types.LIST, 'list of prevalence of levels of disability for neonates who experience early onset sepsis '),
+            Types.LIST, 'relative risk of EONS in preterm newborns'),
         'cfr_neonatal_sepsis': Parameter(
-            Types.REAL, 'case fatality rate for a neonate due to neonatal sepsis'),
+            Types.LIST, 'case fatality rate for a neonate due to neonatal sepsis'),
 
         # NOT BREATHING AT BIRTH....
         'prob_failure_to_transition': Parameter(
-            Types.REAL, 'baseline probability of a neonate developing intrapartum related complications '
+            Types.LIST, 'baseline probability of a neonate developing intrapartum related complications '
                         '(previously birth asphyxia) following delivery '),
         'prob_enceph_no_resus': Parameter(
-            Types.REAL, 'Probability of a newborn who was not breathing at birth, and didnt receive resuscitation, '
+            Types.LIST, 'Probability of a newborn who was not breathing at birth, and didnt receive resuscitation, '
                         'developing encephalopathy '),
         'cfr_failed_to_transition': Parameter(
-            Types.REAL, 'case fatality rate for a neonate following failure to transition'),
+            Types.LIST, 'case fatality rate for a neonate following failure to transition'),
 
         # ENCEPHALOPATHY AND RESPIRATORY DEPRESSION...
         'prob_encephalopathy': Parameter(
-            Types.REAL, 'baseline odds of a neonate developing encephalopathy of any severity following birth'),
+            Types.LIST, 'baseline odds of a neonate developing encephalopathy of any severity following birth'),
         'rr_enceph_neonatal_sepsis': Parameter(
-            Types.REAL, 'relative risk of neonatal encephalopathy if the neonate is also septic'),
+            Types.LIST, 'relative risk of neonatal encephalopathy if the neonate is also septic'),
         'rr_enceph_obstructed_labour': Parameter(
-            Types.REAL, 'relative risk  for encephalopathy if the mothers labour was obstructed'),
+            Types.LIST, 'relative risk  for encephalopathy if the mothers labour was obstructed'),
         'rr_enceph_acute_hypoxic_event': Parameter(
-            Types.REAL, 'relative risk for encephalopathy if the mothers experience an acute event in labour'),
+            Types.LIST, 'relative risk for encephalopathy if the mothers experience an acute event in labour'),
         'prob_enceph_severity': Parameter(
             Types.LIST, 'probability of the severity of encephalopathy in a newborn who is encephalopathic'),
         'prob_mild_impairment_post_enceph': Parameter(
-            Types.REAL, 'probability of the mild neurodevelopmental impairment in survivors of encephalopathy'),
+            Types.LIST, 'probability of the mild neurodevelopmental impairment in survivors of encephalopathy'),
         'prob_mod_severe_impairment_post_enceph': Parameter(
-            Types.REAL, 'probability of the moderate or severe neurodevelopmental impairment in survivors of '
+            Types.LIST, 'probability of the moderate or severe neurodevelopmental impairment in survivors of '
                         'encephalopathy'),
         'cfr_mild_enceph': Parameter(
-            Types.REAL, 'case fatality rate for a neonate due to mild encephalopathy'),
+            Types.LIST, 'case fatality rate for a neonate due to mild encephalopathy'),
         'cfr_moderate_enceph': Parameter(
-            Types.REAL, 'case fatality rate for a neonate due to moderate encephalopathy'),
+            Types.LIST, 'case fatality rate for a neonate due to moderate encephalopathy'),
         'cfr_severe_enceph': Parameter(
-            Types.REAL, 'case fatality rate for a neonate due to severe encephalopathy'),
+            Types.LIST, 'case fatality rate for a neonate due to severe encephalopathy'),
 
         # COMPLICATIONS OF PREMATURITY...
         'prob_respiratory_distress_preterm': Parameter(
-            Types.REAL, 'probability that a preterm infant will experience respiratory distress at birth'),
+            Types.LIST, 'probability that a preterm infant will experience respiratory distress at birth'),
         'rr_rds_maternal_diabetes_mellitus': Parameter(
-            Types.REAL, 'relative risk of RDS in a preterm newborn whose mother has DM'),
+            Types.LIST, 'relative risk of RDS in a preterm newborn whose mother has DM'),
         'rr_rds_maternal_gestational_diab': Parameter(
-            Types.REAL, 'relative risk of RDS in a preterm newborn whose mother has gestational diabetes'),
+            Types.LIST, 'relative risk of RDS in a preterm newborn whose mother has gestational diabetes'),
         'cfr_rds_preterm': Parameter(
-            Types.REAL, 'case fatality rate for respiratory distress syndrome of prematurity'),
+            Types.LIST, 'case fatality rate for respiratory distress syndrome of prematurity'),
         'prob_mild_disability_preterm_<32weeks': Parameter(
-            Types.REAL, 'probability of mild long term neurodevelopmental disability in preterm infants born at less '
+            Types.LIST, 'probability of mild long term neurodevelopmental disability in preterm infants born at less '
                         'than 32 weeks gestation'),
         'prob_mod_severe_disability_preterm_<32weeks': Parameter(
-            Types.REAL, 'probability of moderate/severe longterm neurodevelopmental disability in preterm infants born '
+            Types.LIST, 'probability of moderate/severe longterm neurodevelopmental disability in preterm infants born '
                         'at less than 32 weeks gestation'),
         'prob_mild_disability_preterm_32_36weeks': Parameter(
-            Types.REAL, 'probability of mild long term neurodevelopmental disability in preterm infants born between 32'
+            Types.LIST, 'probability of mild long term neurodevelopmental disability in preterm infants born between 32'
                         ' and 36 weeks gestation'),
         'prob_mod_severe_disability_preterm_32_36weeks': Parameter(
-            Types.REAL, 'probability of moderate/severe long term neurodevelopmental disability in preterm infants born'
+            Types.LIST, 'probability of moderate/severe long term neurodevelopmental disability in preterm infants born'
                         ' between 32 and 36 weeks gestation'),
         'prob_retinopathy_preterm': Parameter(
-            Types.REAL, 'baseline probability of a preterm neonate developing retinopathy of prematurity '),
+            Types.LIST, 'baseline probability of a preterm neonate developing retinopathy of prematurity '),
         'prob_retinopathy_severity': Parameter(
             Types.LIST, 'probabilities of severity of retinopathy'),
         'cfr_preterm_birth': Parameter(
-            Types.REAL, 'case fatality rate for a neonate born prematurely'),
+            Types.LIST, 'case fatality rate for a neonate born prematurely'),
         'rr_preterm_death_early_preterm': Parameter(
-            Types.REAL, 'relative risk of preterm death in early preterm neonates '),
+            Types.LIST, 'relative risk of preterm death in early preterm neonates '),
         'prob_preterm_death_by_day': Parameter(
             Types.LIST, 'probability of death due to preterm complications occurring on days 0-14'),
 
         # CONGENITAL ANOMALIES...
         'prob_congenital_heart_anomaly': Parameter(
-            Types.REAL, 'Probability of a congenital heart anomaly in the newborn'),
+            Types.LIST, 'Probability of a congenital heart anomaly in the newborn'),
         'prob_limb_musc_skeletal_anomaly': Parameter(
-            Types.REAL, 'Probability of a congenital limb or musculoskeletal anomaly in the newborn'),
+            Types.LIST, 'Probability of a congenital limb or musculoskeletal anomaly in the newborn'),
         'prob_urogenital_anomaly': Parameter(
-            Types.REAL, 'Probability of a congenital urogenital anomaly in the newborn'),
+            Types.LIST, 'Probability of a congenital urogenital anomaly in the newborn'),
         'prob_digestive_anomaly': Parameter(
-            Types.REAL, 'Probability of a congenital digestive anomaly in the newborn'),
+            Types.LIST, 'Probability of a congenital digestive anomaly in the newborn'),
         'prob_other_anomaly': Parameter(
-            Types.REAL, 'Probability of a other congenital anomalies in the newborn'),
+            Types.LIST, 'Probability of a other congenital anomalies in the newborn'),
         'cfr_congenital_heart_anomaly': Parameter(
-            Types.REAL, 'case fatality rate for newborns with congenital heart anomalies'),
+            Types.LIST, 'case fatality rate for newborns with congenital heart anomalies'),
         'cfr_limb_musc_skeletal_anomaly': Parameter(
-            Types.REAL, 'case fatality rate for newborns with congenital limb/musculoskeletal anomalies'),
+            Types.LIST, 'case fatality rate for newborns with congenital limb/musculoskeletal anomalies'),
         'cfr_urogenital_anomaly': Parameter(
-            Types.REAL, 'case fatality rate for newborns with congenital urogenital anomalies'),
+            Types.LIST, 'case fatality rate for newborns with congenital urogenital anomalies'),
         'cfr_digestive_anomaly': Parameter(
-            Types.REAL, 'case fatality rate for newborns with congenital digestive anomalies'),
+            Types.LIST, 'case fatality rate for newborns with congenital digestive anomalies'),
         'cfr_other_anomaly': Parameter(
-            Types.REAL, 'case fatality rate for newborns with other congenital anomalies'),
+            Types.LIST, 'case fatality rate for newborns with other congenital anomalies'),
 
         # BREASTFEEDING...
         'prob_early_breastfeeding_hb': Parameter(
-            Types.REAL, 'probability that a neonate will be breastfed within the first hour following birth when '
+            Types.LIST, 'probability that a neonate will be breastfed within the first hour following birth when '
                         'delivered at home'),
         'prob_breastfeeding_type': Parameter(
             Types.LIST, 'probabilities that a woman is 1.) not breastfeeding 2.) non-exclusively breastfeeding '
                         '3.)exclusively breastfeeding at birth (until 6 months)'),
         'prob_early_breastfeeding_hf': Parameter(
-            Types.REAL, 'probability that a neonate will be breastfed within the first hour following birth when '
+            Types.LIST, 'probability that a neonate will be breastfed within the first hour following birth when '
                         'delivered at a health facility'),
 
         # TREATMENT...
         'treatment_effect_inj_abx_sep': Parameter(
-            Types.REAL, 'effect of injectable antibiotics treatment on reducing mortality from sepsis'),
+            Types.LIST, 'effect of injectable antibiotics treatment on reducing mortality from sepsis'),
         'treatment_effect_supp_care_sep': Parameter(
-            Types.REAL, 'effect of full supportive care treatment on reducing mortality from sepsis'),
+            Types.LIST, 'effect of full supportive care treatment on reducing mortality from sepsis'),
         'treatment_effect_cord_care': Parameter(
-            Types.REAL, 'effect of full supportive care treatment on reducing incidence of sepsis'),
+            Types.LIST, 'effect of full supportive care treatment on reducing incidence of sepsis'),
         'treatment_effect_clean_birth': Parameter(
-            Types.REAL, 'effect of clean birth practices on reducing incidence of sepsis'),
+            Types.LIST, 'effect of clean birth practices on reducing incidence of sepsis'),
         'treatment_effect_early_init_bf': Parameter(
-            Types.REAL, 'effect of early initiation of breastfeeding on reducing incidence of sepsis'),
+            Types.LIST, 'effect of early initiation of breastfeeding on reducing incidence of sepsis'),
         'treatment_effect_resuscitation': Parameter(
-            Types.REAL, 'effect of resuscitation on newborn mortality associated with encephalopathy'),
+            Types.LIST, 'effect of resuscitation on newborn mortality associated with encephalopathy'),
         'treatment_effect_resuscitation_preterm': Parameter(
-            Types.REAL, 'effect of delayed resuscitation on newborn mortality associated with prematurity'),
+            Types.LIST, 'effect of delayed resuscitation on newborn mortality associated with prematurity'),
         'treatment_effect_abx_prom': Parameter(
-            Types.REAL, 'effect of antibiotics given to mothers experience PROM on risk of newborn sepsis '),
+            Types.LIST, 'effect of antibiotics given to mothers experience PROM on risk of newborn sepsis '),
         'treatment_effect_steroid_preterm': Parameter(
-            Types.REAL, 'relative risk of death for preterm neonates following administration of antenatal '
+            Types.LIST, 'relative risk of death for preterm neonates following administration of antenatal '
                         'corticosteroids'),
         'treatment_effect_kmc': Parameter(
-            Types.REAL, 'treatment effect of kangaroo mother care on preterm mortality'),
+            Types.LIST, 'treatment effect of kangaroo mother care on preterm mortality'),
 
         # ASSESSMENT SENSITIVITY AND SQUEEZE THRESHOLDS...
         'sensitivity_of_assessment_of_neonatal_sepsis_hc': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment of neonatal sepsis in level 1 health centre'),
+            Types.LIST, 'sensitivity of dx_test assessment of neonatal sepsis in level 1 health centre'),
         'sensitivity_of_assessment_of_neonatal_sepsis_hp': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment of neonatal sepsis in level 1 hospital'),
+            Types.LIST, 'sensitivity of dx_test assessment of neonatal sepsis in level 1 hospital'),
         'sensitivity_of_assessment_of_ftt_hc': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment of failure to transition in level 1 health centre'),
+            Types.LIST, 'sensitivity of dx_test assessment of failure to transition in level 1 health centre'),
         'sensitivity_of_assessment_of_ftt_hp': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment of failure to transition in level 1 hospital'),
+            Types.LIST, 'sensitivity of dx_test assessment of failure to transition in level 1 hospital'),
         'sensitivity_of_assessment_of_lbw_hc': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment of low birth weight in level 1 health centre'),
+            Types.LIST, 'sensitivity of dx_test assessment of low birth weight in level 1 health centre'),
         'sensitivity_of_assessment_of_lbw_hp': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment of low birth weight in level 1 hospital'),
+            Types.LIST, 'sensitivity of dx_test assessment of low birth weight in level 1 hospital'),
         'squeeze_threshold_essential_newborn_care': Parameter(
-            Types.REAL, 'squeeze factor threshold below which essential newborn care can be given'),
+            Types.LIST, 'squeeze factor threshold below which essential newborn care can be given'),
         'squeeze_threshold_kmc': Parameter(
-            Types.REAL, 'squeeze factor threshold below which essential kangaroo mother care can be given'),
+            Types.LIST, 'squeeze factor threshold below which essential kangaroo mother care can be given'),
         'squeeze_threshold_assist_with_breast_feeding': Parameter(
-            Types.REAL, 'squeeze factor threshold below which assistance with breastfeeding can be given'),
+            Types.LIST, 'squeeze factor threshold below which assistance with breastfeeding can be given'),
         'squeeze_threshold_neonatal_resus': Parameter(
-            Types.REAL, 'squeeze factor threshold below which neonatal resuscitation can be given'),
+            Types.LIST, 'squeeze factor threshold below which neonatal resuscitation can be given'),
         'squeeze_threshold_sepsis_treatment': Parameter(
-            Types.REAL, 'squeeze factor threshold below which sepsis treatment can be given'),
+            Types.LIST, 'squeeze factor threshold below which sepsis treatment can be given'),
     }
 
     PROPERTIES = {
@@ -272,14 +274,17 @@ class NewbornOutcomes(Module):
 
     def read_parameters(self, data_folder):
 
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes.xlsx',
-                            sheet_name='parameter_values')
-        self.load_parameters_from_dataframe(dfd)
-        params = self.parameters
+        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes.xlsx',
+                                            sheet_name='parameter_values')
+        self.load_parameters_from_dataframe(parameter_dataframe)
+
+        # For the first period (2010-2015) we use the first value in each list as a parameter
+        for key, value in self.parameters.items():
+            self.current_parameters[key] = self.parameters[key][0]
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module
         if 'HealthBurden' in self.sim.modules:
-            params['nb_daly_weights'] = {
+            self.parameters['nb_daly_weights'] = {
                 'mild_motor_cognitive_preterm': self.sim.modules['HealthBurden'].get_daly_weight(357),
                 'mild_motor_preterm': self.sim.modules['HealthBurden'].get_daly_weight(371),
                 'moderate_motor_preterm': self.sim.modules['HealthBurden'].get_daly_weight(378),
@@ -358,37 +363,37 @@ class NewbornOutcomes(Module):
         # Neonatal sepsis...
         dx_manager.register_dx_test(assess_neonatal_sepsis_hc=DxTest(
             property='nb_early_onset_neonatal_sepsis',
-            sensitivity=self.parameters['sensitivity_of_assessment_of_neonatal_sepsis_hc']))
+            sensitivity=self.current_parameters['sensitivity_of_assessment_of_neonatal_sepsis_hc']))
         dx_manager.register_dx_test(assess_neonatal_sepsis_hp=DxTest(
             property='nb_early_onset_neonatal_sepsis',
-            sensitivity=self.parameters['sensitivity_of_assessment_of_neonatal_sepsis_hp']))
+            sensitivity=self.current_parameters['sensitivity_of_assessment_of_neonatal_sepsis_hp']))
 
         # Not breathing at birth ...
         dx_manager.register_dx_test(assess_not_breathing_at_birth_hc=DxTest(
             property='nb_not_breathing_at_birth',
-            sensitivity=self.parameters['sensitivity_of_assessment_of_ftt_hc']))
+            sensitivity=self.current_parameters['sensitivity_of_assessment_of_ftt_hc']))
         dx_manager.register_dx_test(assess_not_breathing_at_birth_hp=DxTest(
             property='nb_not_breathing_at_birth',
-            sensitivity=self.parameters['sensitivity_of_assessment_of_ftt_hp']))
+            sensitivity=self.current_parameters['sensitivity_of_assessment_of_ftt_hp']))
 
         # Low birth weight...
         dx_manager.register_dx_test(assess_low_birth_weight_hc=DxTest(
             property='nb_low_birth_weight_status', target_categories=['extremely_low_birth_weight',
                                                                       'very_low_birth_weight',
                                                                       'low_birth_weight'],
-            sensitivity=self.parameters['sensitivity_of_assessment_of_lbw_hc'])),
+            sensitivity=self.current_parameters['sensitivity_of_assessment_of_lbw_hc'])),
         dx_manager.register_dx_test(assess_low_birth_weight_hp=DxTest(
             property='nb_low_birth_weight_status', target_categories=['extremely_low_birth_weight',
                                                                       'very_low_birth_weight',
                                                                       'low_birth_weight'],
-            sensitivity=self.parameters['sensitivity_of_assessment_of_lbw_hp']))
+            sensitivity=self.current_parameters['sensitivity_of_assessment_of_lbw_hp']))
 
         # ======================================= LINEAR MODEL EQUATIONS ==============================================
         # All linear equations used in this module are stored within the nb_newborn_equations
         # parameter below
 
-        params = self.parameters
-        params['nb_newborn_equations'] = {
+        params = self.current_parameters
+        self.nb_linear_models = {
 
             # This equation is used to determine a newborns risk of early onset neonatal sepsis. Risk of early onset
             # sepsis is mitigated by a number of interventions
@@ -512,7 +517,7 @@ class NewbornOutcomes(Module):
         It is called during the on_birth function.
         :param child_id: child_id
         """
-        params = self.parameters
+        params = self.current_parameters
 
         if self.rng.random_sample() < params['prob_congenital_heart_anomaly']:
             self.congeintal_anomalies.set(child_id, 'heart')
@@ -536,11 +541,11 @@ class NewbornOutcomes(Module):
         dependent on delivery setting.
         :param child_id: child_id
         """
-        params = self.parameters
+        params = self.current_parameters
         df = self.sim.population.props
 
         # The linear model calculates the individuals probability of early_onset_neonatal_sepsis
-        if self.eval(params['nb_newborn_equations']['early_onset_neonatal_sepsis'], child_id):
+        if self.eval(self.nb_linear_models['early_onset_neonatal_sepsis'], child_id):
             self.newborn_complication_tracker['early_onset_sepsis'] += 1
 
             df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
@@ -555,12 +560,12 @@ class NewbornOutcomes(Module):
         :param child_id: child_id
         :param timing: on_birth or after_birth
         """
-        params = self.parameters
+        params = self.current_parameters
         df = self.sim.population.props
 
         # We use a linear model equation to determine risk of encephalopathy on birth
         if timing == 'on_birth':
-            result = self.eval(params['nb_newborn_equations']['encephalopathy'], child_id)
+            result = self.eval(self.nb_linear_models['encephalopathy'], child_id)
         else:
             # Or, if we are applying risk to a non-encephalopathic newborn who was not breathing at birth
             result = self.rng.random_sample() < params['prob_enceph_no_resus']
@@ -591,14 +596,14 @@ class NewbornOutcomes(Module):
         :param child_id: child_id
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         child = df.loc[child_id]
 
         # Ensure only preterm infants have risk of RDS applied
         assert child.nb_early_preterm or child.nb_late_preterm
 
         # Use the linear model to calculate individual risk and make changes
-        if self.eval(params['nb_newborn_equations']['rds_preterm'], child_id):
+        if self.eval(self.nb_linear_models['rds_preterm'], child_id):
             df.at[child_id, 'nb_preterm_respiratory_distress'] = True
             self.newborn_complication_tracker['preterm_rds'] += 1
             logger.debug(key='message', data=f'Neonate {child_id} who was delivered preterm is experiencing '
@@ -611,7 +616,7 @@ class NewbornOutcomes(Module):
         during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant dependent on delivery setting.
         :param child_id: child_id
         """
-        params = self.parameters
+        params = self.current_parameters
         df = self.sim.population.props
 
         # We assume all newborns with encephalopathy and respiratory distress syndrome will require some form of
@@ -623,7 +628,7 @@ class NewbornOutcomes(Module):
 
         # Otherwise we use the linear model to calculate risk of inadequate breathing due to other causes not
         # explicitly modelled
-        elif self.eval(params['nb_newborn_equations']['not_breathing_at_birth'], child_id):
+        elif self.eval(self.nb_linear_models['not_breathing_at_birth'], child_id):
             df.at[child_id, 'nb_not_breathing_at_birth'] = True
             self.newborn_complication_tracker['not_breathing_at_birth'] += 1
             logger.debug(key='message', data=f'Neonate {child_id} is not breathing following delivery')
@@ -639,7 +644,7 @@ class NewbornOutcomes(Module):
         associated linear model equation determining risk of death
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         nci = self.newborn_care_info
 
         if (complication == 'congenital_heart_anomaly') or (complication == 'limb_musc_skeletal_anomaly') or\
@@ -647,7 +652,7 @@ class NewbornOutcomes(Module):
            (complication == 'other_anomaly'):
             result = self.rng.random_sample() < params[f'cfr_{complication}']
         else:
-            result = self.eval(params['nb_newborn_equations'][f'{complication}_death'], individual_id)
+            result = self.eval(self.nb_linear_models[f'{complication}_death'], individual_id)
 
         if result:
 
@@ -679,7 +684,7 @@ class NewbornOutcomes(Module):
         child = df.loc[individual_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         nci = self.newborn_care_info
-        params = self.parameters
+        params = self.current_parameters
 
         # Using the set_neonatal_death_status function, defined above, it is determined if newborns who have experienced
         # complications will die because of them.
@@ -752,7 +757,7 @@ class NewbornOutcomes(Module):
         :param individual_id: individual_id
         """
         nci = self.newborn_care_info
-        params = self.parameters
+        params = self.current_parameters
         df = self.sim.population.props
         child = df.loc[individual_id]
 
@@ -867,7 +872,7 @@ class NewbornOutcomes(Module):
         :param birth_setting: hf (health facility) or hb (home birth)
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         mother_id = df.at[person_id, 'mother_id']
 
@@ -1124,7 +1129,7 @@ class NewbornOutcomes(Module):
         :param child_id: child_id
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         nci = self.newborn_care_info
 
         self.sim.modules['Labour'].further_on_birth_labour(mother_id, child_id)
@@ -1243,7 +1248,7 @@ class NewbornOutcomes(Module):
 
             # For all preterm newborns we apply a risk of retinopathy of prematurity
             if (df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']) and self.eval(
-              params['nb_newborn_equations']['retinopathy'], child_id):
+              self.nb_linear_models['retinopathy'], child_id):
 
                 # For newborns with retinopathy we then use a weighted random draw to determine the severity of the
                 # retinopathy to map to DALY weights
@@ -1322,7 +1327,7 @@ class NewbornOutcomes(Module):
                     will_seek_care = False
 
                 else:
-                    will_seek_care = self.eval(params['nb_newborn_equations']['care_seeking_for_complication'],
+                    will_seek_care = self.eval(self.nb_linear_models['care_seeking_for_complication'],
                                                child_id)
 
                 if will_seek_care:
@@ -1437,7 +1442,7 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(HSI_Event, Individu
     def apply(self, person_id, squeeze_factor):
         nci = self.module.newborn_care_info
         df = self.sim.population.props
-        params = self.module.parameters
+        params = self.module.current_parameters
 
         if not df.at[person_id, 'is_alive']:
             return

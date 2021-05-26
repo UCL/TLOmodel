@@ -4,8 +4,8 @@ from matplotlib import pyplot as plt
 from tlo.analysis.utils import parse_log_file
 
 # ================================= Maternal Mortality Ratio =========================================================
-log_df = parse_log_file(filepath="./outputs/sejjj49@ucl.ac.uk/long_run_2010_calib-2021-05-23T134938Z/0/0/long_run_2010_"
-                                 "_2021-05-23T135229.log")
+log_df = parse_log_file(filepath="./outputs/sejjj49@ucl.ac.uk/long_run_2010_calib-2021-05-24T133049Z/0/0/"
+                                 "long_run_2010__2021-05-24T133357.log")
 
 # define the log DFs required
 # 1.) Calculate indirect deaths
@@ -24,11 +24,11 @@ indirect_deaths_postnatal_2010 = len(total_deaths.loc[total_deaths['postnatal'] 
 def get_direct_deaths(module):
     if f'tlo.methods.{module}' in log_df:
         if 'direct_maternal_death' in log_df[f'tlo.methods.{module}']:
-            direct_deaths = log_df[f'tlo.methods.{module}']['direct_maternal_death']
-            direct_deaths['date'] = pd.to_datetime(direct_deaths['date'])
-            direct_deaths['year'] = direct_deaths['date'].dt.year
+            direct_deaths = len(log_df[f'tlo.methods.{module}']['direct_maternal_death'])
+            # direct_deaths['date'] = pd.to_datetime(direct_deaths['date'])
+            # direct_deaths['year'] = direct_deaths['date'].dt.year
 
-            return len(direct_deaths.loc[direct_deaths['year'] == 2010])
+            return direct_deaths
         else:
             return 0
     else:
@@ -72,6 +72,23 @@ plt.xticks(y_pos, objects)
 plt.ylabel('Maternal deaths/100,000 live births')
 plt.title('Maternal mortality rate in 2010')
 plt.show()
+
+# Alternative plot with enumeration (but sideways, annoyingly)
+x = [u'MMR (model)', u'MMR Calib.']
+y = [mmr_2010, 675]
+fig, ax = plt.subplots()
+width = 0.75 # the width of the bars
+ind = np.arange(len(y))  # the x locations for the groups
+ax.barh(ind, y, width, color="green")
+ax.set_yticks(ind+width/2)
+ax.set_yticklabels(x, minor=False)
+plt.title('Maternal Mortality Ratio 2010')
+plt.xlabel('Maternal Deaths per 100,000 live births')
+plt.ylabel('y')
+for i, v in enumerate(y):
+    ax.text(v + 3, i + .25, str(v), color='black', fontweight='bold')
+plt.show()
+
 # ========================================= Still Birth Rate =========================================================
 
 # 1.) Calculate the number of stillbirths
@@ -121,9 +138,11 @@ enmr_2010 = (early_neonatal_deaths / live_births_2010) * 1000
 nmr_2010 = (neonatal_deaths_2010 / live_births_2010) * 1000
 
 # 3.) PLOT
-objects = ('Total NMR', 'Early NMR', 'Calibration Early NMR', 'Calibration Total NMR')
+# TODO: plot early NMR
+
+objects = ('Total NMR', 'Calibration Total NMR')
 y_pos = np.arange(len(objects))
-plt.bar(y_pos, [nmr_2010, early_neonatal_deaths, 25, 31], align='center', alpha=0.5)
+plt.bar(y_pos, [nmr_2010, 31], align='center', alpha=0.5)
 plt.xticks(y_pos, objects)
 plt.ylabel('Neonatal Deaths / 1000 live births')
 plt.title('Neonatal Mortality Ratio in 2010')

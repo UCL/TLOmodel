@@ -128,7 +128,7 @@ def predict_death_from_hypertensive_disorder_pn(self, df, rng=None, **externals)
 def predict_anaemia_after_pregnancy(self, df, rng=None, **externals):
     """population level"""
     m = self.module
-    p = m.parameters
+    p = m.current_parameters
     deficiencies_following_pregnancy = m.deficiencies_following_pregnancy
     result = pd.Series(data=p['baseline_prob_anaemia_per_week'], index=df.index)
     result[deficiencies_following_pregnancy.has_any(df.index, 'iron')] *= p['rr_anaemia_if_iron_deficient_pn']
@@ -196,9 +196,22 @@ def predict_late_neonatal_sepsis_death(self, df, rng=None, **externals):
 def predict_care_seeking_for_first_pnc_visit(self, df, rng=None, **externals):
     """population level"""
     params = self.parameters
-    result = pd.Series(data=params['prob_will_receive_pnc'], index=df.index)
-    # todo: predictors from paper
+    result = pd.Series(data=params['odds_will_attend_pnc'], index=df.index)
 
+    result[(df.age_years > 29) & (df.age_years < 36)] *= params['or_pnc_age_30_35']
+    result[df.age_years >= 36] *= params['or_pnc_age_>35']
+    result[~df.li_urban] *= params['or_pnc_rural']
+    result[df.li_wealth == 1] *= params['or_pnc_wealth_level_1']
+    result[df.la_parity > 4] *= params['or_pnc_parity_>4']
+
+    # result[df.pn_sepsis_neonatal_inj_abx] *= params['or_pnc_caesarean_delivery']
+    # result[df.pn_sepsis_neonatal_inj_abx] *= params['or_pnc_facility_delivery']
+    if externals['caesarean_delivery']:
+        result *= params['or_pnc_caesarean_delivery']
+    if externals['facility_delivery']:
+        result *= params['or_pnc_facility_delivery']
+
+    result = result / (1 + result)
     return result
 
 
