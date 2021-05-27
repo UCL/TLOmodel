@@ -340,7 +340,7 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      **Functions (defined or overridden in class PregnancySupervisor):**
 

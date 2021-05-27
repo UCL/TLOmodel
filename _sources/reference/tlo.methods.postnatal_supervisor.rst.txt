@@ -343,7 +343,7 @@ tlo.methods.postnatal_supervisor module
 
      **Class attributes:**
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      **Functions (defined or overridden in class PostnatalSupervisor):**
 
