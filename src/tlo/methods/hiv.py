@@ -1377,7 +1377,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # If person is a man, and not circumcised, then consider referring to VMMC
                     if (person['sex'] == 'M') & (~person['li_is_circ']):
                         x = self.module.lm['lm_circ'].predict(df.loc[[person_id]], self.module.rng)
-                        print('here x=', x, type(x))  # x= False <class 'numpy.bool_'> in new thing
                         if x:
                             self.sim.modules['HealthSystem'].schedule_hsi_event(
                                 HSI_Hiv_Circ(person_id=person_id, module=self.module),
