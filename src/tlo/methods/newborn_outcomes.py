@@ -468,8 +468,8 @@ class NewbornOutcomes(Module):
         standard_deviation = params['standard_deviation_birth_weights'][mean_birth_weight_list_location]
 
         # We randomly draw this newborns weight from a normal distribution around the mean for their gestation
-        birth_weight = np.random.normal(loc=params['mean_birth_weights'][mean_birth_weight_list_location],
-                                        scale=standard_deviation)
+        birth_weight = self.rng.normal(loc=params['mean_birth_weights'][mean_birth_weight_list_location],
+                                       scale=standard_deviation)
 
         # Then we calculate the 10th and 90th percentile, these are the case definition for 'small for gestational age'
         # and 'large for gestational age'
