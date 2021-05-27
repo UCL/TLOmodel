@@ -1,0 +1,25 @@
+{
+  "scenario_script_path": "src/scripts/azure-simplifiedbirths_analyses/analyses_azure-simplifiedbirths.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 2,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 1603685629,
+      "parameters": {
+        "Lifestyle": {
+          "init_p_urban": 0.11
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 371232386,
+      "parameters": {
+        "Lifestyle": {
+          "init_p_urban": 0.13
+        }
+      }
+    }
+  ]
+}
