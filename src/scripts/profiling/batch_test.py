@@ -15,7 +15,6 @@ import shared
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    contraception,
     demography,
     depression,
     diarrhoea,
@@ -27,10 +26,12 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
+    hiv,
     malaria,
+    ncds,
     oesophagealcancer,
-    pregnancy_supervisor,
+    other_adult_cancers,
+    simplified_births,
     symptommanager,
 )
 
@@ -60,23 +61,28 @@ sim.register(
     # Standard modules:
     demography.Demography(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    contraception.Contraception(resourcefilepath=resourcefilepath),
-    labour.Labour(resourcefilepath=resourcefilepath),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+
+    # HealthSystem
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
     dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
-    #
+
+    # Modules for birth/labour/newborns --> Simplified Births
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+
     # Disease modules considered complete:
-    diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-    malaria.Malaria(resourcefilepath=resourcefilepath),
-    epi.Epi(resourcefilepath=resourcefilepath),
     depression.Depression(resourcefilepath=resourcefilepath),
+    diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+    epi.Epi(resourcefilepath=resourcefilepath),
+    epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+    hiv.Hiv(resourcefilepath=resourcefilepath),
+    malaria.Malaria(resourcefilepath=resourcefilepath),
+    ncds.Ncds(resourcefilepath=resourcefilepath),
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-    epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
+    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
 )
 
 # Run the simulation

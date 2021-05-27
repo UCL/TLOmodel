@@ -71,7 +71,7 @@ class Demography(Module):
         'age_days': Property(Types.INT, 'The age of the individual in whole days'),
         'region_of_residence': Property(Types.STRING, 'The region in which the person in resident'),
         'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
-        'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident'),
+        'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident')
     }
 
     def read_parameters(self, data_folder):
@@ -215,13 +215,23 @@ class Demography(Module):
         df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = (False, self.sim.date, cause)
 
         # Log the death:
-        logger.info(
-            key='death',
-            data={'age': person['age_years'],
-                  'sex': person['sex'],
-                  'cause': cause,
-                  'person_id': individual_id
-                  })
+        if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
+            logger.info(
+                key='death',
+                data={'age': person['age_years'],
+                      'sex': person['sex'],
+                      'cause': cause,
+                      'pregnancy': person['is_pregnant'],
+                      'person_id': individual_id
+                      })
+        else:
+            logger.info(
+                key='death',
+                data={'age': person['age_years'],
+                      'sex': person['sex'],
+                      'cause': cause,
+                      'person_id': individual_id
+                      })
 
         # Release any beds-days that would be used by this person:
         if 'BedDays' in self.sim.modules:
@@ -235,12 +245,17 @@ class Demography(Module):
                                                                     date_of_birth=person['date_of_birth'],
                                                                     label=label)
 
-    def calc_py_lived_in_last_year(self, delta=pd.DateOffset(years=1)):
+    def calc_py_lived_in_last_year(self, delta=pd.DateOffset(years=1), mask=None):
         """
         This is a helper method to compute the person-years that were lived in the previous year by age.
         It outputs a pd.DataFrame with the index being single year of age, 0 to 99.
         """
         df = self.sim.population.props
+
+        # if a mask is passed to the function, restricts the PY calculation to individuals who don't have the condition
+        # specified by the mask
+        if mask is not None:
+            df = df[mask]
 
         # get everyone who was alive during the previous year
         one_year_ago = self.sim.date - delta
