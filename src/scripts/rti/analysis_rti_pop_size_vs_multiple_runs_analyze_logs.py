@@ -1,7 +1,7 @@
-from pathlib import Path
-
-import numpy as np
 from matplotlib import pyplot as plt
+import numpy as np
+import os
+from pathlib import Path
 import re
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -21,34 +21,10 @@ from tlo.methods import (
 # =============================== Analysis description ========================================================
 # Here I am trying to find out if it is better to do single runs with a larger population size vs
 # multiple runs with smaller population sizes
-
-# Set up the logging
-log_config = {
-    "filename": "rti_health_system_comparison",  # The name of the output file (a timestamp will be appended).
-    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
-    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
-        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.rti": logging.INFO,
-        "tlo.methods.healthsystem": logging.DEBUG
-    }
-}
-# The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
-resourcefilepath = Path('./resources')
-# Establish the simulation object
-# Create the conditions for the simulations, i.e. how long it runs for, how many people are involved and the
-# number of simulations this analysis will be run for, to try and account for some of the variation between simulations
-yearsrun = 10
-start_date = Date(year=2010, month=1, day=1)
-end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-smaller_pop_size = 10000
-nsim = 3
-larger_pop_size = smaller_pop_size * nsim
 # Create function to get the simulation run time
 
-
 def get_simulation_time(df):
-    sim_time_string = df['tlo.simulation']['info'].loc[df['tlo.simulation']['info']['date'] == sim.end_date,
-                                                       'message'].to_list()[0]
+    sim_time_string = df['tlo.simulation']['info']['message'].to_list()[-1]
     seconds = [float(s) for s in re.findall(r'-?\d+\.?\d*', sim_time_string)][0]
     return seconds
 
@@ -65,32 +41,16 @@ per_run_incidence_of_rti = []
 per_run_incidence_of_rti_death = []
 per_run_prop_circumcised = []
 per_run_prop_female_sex_worker = []
-for i in range(0, nsim):
-    sim = Simulation(start_date=start_date)
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
-        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        rti.RTI(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
-    )
-    # Get the logfile and store it
-    logfile = sim.configure_logging(filename="LogFile")
-    # make initial population
-    sim.make_initial_population(n=smaller_pop_size)
-    # alter the rti parameters
-    params = sim.modules['RTI'].parameters
-    params['base_rate_injrti'] = 0.0043960384
-    params['imm_death_proportion_rti'] = 0.05
-    # run the sim
-    sim.simulate(end_date=end_date)
+
+multiple_run_logs = [logfile for logfile in os.listdir("outputs/multiple_runs_vs_population_size") if 'large_pop_size'
+                     not in logfile]
+smaller_pop_size = []
+nsim = len(multiple_run_logs)
+for logfile in multiple_run_logs:
     # parse the log file
-    log_df = parse_log_file(logfile)
+    log_df = parse_log_file("outputs/multiple_runs_vs_population_size/" + logfile)
+    # get the simulation population size
+    smaller_pop_size.append(log_df['tlo.methods.demography']['population']['total'].to_list()[0])
     # get the simulation time
     this_sim_time = get_simulation_time(log_df)
     # store in the multiple run sim time total
@@ -129,7 +89,8 @@ for i in range(0, nsim):
         prop_female_sex_worker.append(estimate)
     # store the simulation monthly estiamtes in the list per_run_prop_female_sex_worker
     per_run_prop_female_sex_worker.append(proportion_females_aged_1549_sexworkers)
-
+# get smaller pop size
+smaller_pop_size = smaller_pop_size[0]
 # create 'cumulative' lists of the models outputs for each simulation run to see the the effect running
 # multiple model runs on the mean and standard deviations of different model outputs, specifically we are creating a
 # list of lists for n simulations of the form:
@@ -137,8 +98,10 @@ for i in range(0, nsim):
 # sample RTI outputs
 cumulative_list_of_rti_incidence = [sum(per_run_incidence_of_rti[0:i+1], []) for i in
                                     range(len(per_run_incidence_of_rti))]
+
 cumulative_list_of_rti_death_incidence = [sum(per_run_incidence_of_rti_death[0:i+1], []) for i in
                                           range(len(per_run_incidence_of_rti_death))]
+
 # sample enhanced lifestyle outputs
 cumulative_list_of_prop_circumcised = [sum(per_run_prop_circumcised[0:i+1], []) for i in
                                        range(len(per_run_prop_circumcised))]
@@ -234,6 +197,7 @@ plt.title(f"The effect of number of repeated simulations \n on the proportion of
           f"\n and the variation seen in model outputs, {nsim} simulations, {smaller_pop_size} population")
 plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsReps/Reps_prop_adult_male_circ.png",
             bbox_inches='tight')
+plt.clf()
 # plot the effect of additional simulations of the estimated incidence of enhanced lifestyle proportion of females aged
 # 15-49 who are sex workers
 plt.bar(np.arange(len(sim_time_intervals)), mean_prop_female_sex_worker_per_extra_sim,
@@ -268,34 +232,14 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsR
             bbox_inches='tight')
 plt.clf()
 
-# create a single larger run of the model
-sim = Simulation(start_date=start_date)
-sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
-        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        rti.RTI(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
-    )
-# Get the logfile and store it
-logfile = sim.configure_logging(filename="LogFile")
-# make initial population
-sim.make_initial_population(n=larger_pop_size)
-# alter the RTI parameters
-params = sim.modules['RTI'].parameters
-params['base_rate_injrti'] = 0.0043960384
-params['imm_death_proportion_rti'] = 0.05
-# run the sim
-sim.simulate(end_date=end_date)
-# parse the log file
-log_df = parse_log_file(logfile)
+# Get the log file of the larger population size model run
+large_run_log = [logfile for logfile in os.listdir("outputs/multiple_runs_vs_population_size") if logfile
+                 not in multiple_run_logs]
+log_df = parse_log_file("outputs/multiple_runs_vs_population_size/" + large_run_log[0])
 # get the simulation time
 large_pop_sim_time = get_simulation_time(log_df)
+# get the larger population size
+larger_pop_size = log_df['tlo.methods.demography']['population']['total'].to_list()[0]
 # get the rti outputs
 rti_outputs = log_df['tlo.methods.rti']
 # get the incidence of rti from this simulation
@@ -326,9 +270,26 @@ large_pop_mean_proportion_female_sex_workers = np.mean(large_pop_proportion_fema
 # calculate the standard deviation proportion of females aged 15-49 who are circumcised
 large_pop_std_proportion_female_sex_workers = np.std(large_pop_proportion_females_aged_1549_sexworkers)
 
+# get the average variation per run for the multiple simulation runs
+# incidence of rti
+mean_incidence_per_run = [np.mean(run) for run in per_run_incidence_of_rti]
+std_incidence_per_run = [np.std(run) for run in per_run_incidence_of_rti]
+mean_std_incidence_per_run = np.mean(std_incidence_per_run)
+# incidence of rti death
+mean_incidence_death_per_run = [np.mean(run) for run in per_run_incidence_of_rti_death]
+std_incidence_deaths_per_run = [np.std(run) for run in per_run_incidence_of_rti_death]
+mean_std_incidence_deaths_per_run = np.mean(std_incidence_deaths_per_run)
+# proportion of people circumcised
+mean_prop_circumcised_per_run = [np.mean(run) for run in per_run_prop_circumcised]
+std_prop_circumcised_per_run = [np.std(run) for run in per_run_prop_circumcised]
+mean_std_prop_circumcised_per_run = np.mean(std_prop_circumcised_per_run)
+# proportion of female sex workers
+mean_prop_female_sex_worker_per_run = [np.mean(run) for run in per_run_prop_female_sex_worker]
+std_prop_female_sex_worker_per_run = [np.std(run) for run in per_run_prop_female_sex_worker]
+mean_std_prop_female_sex_worker_per_run = np.mean(per_run_prop_female_sex_worker)
 # plot the mean estimate of RTI incidence for the multiple simulations with a small population size and the large
 # population size, showing the variation in the estimates
-plt.bar(np.arange(2), [mean_rti_inc_per_extra_sim[-1], large_pop_mean_inc_rti],
+plt.bar(np.arange(2), [np.mean(mean_incidence_per_run), large_pop_mean_inc_rti],
         yerr=[std_rti_inc_per_extra_sim[-1], large_pop_std_dev_inc_rti])
 plt.xticks(np.arange(2), [f"{nsim} simulations, n = {smaller_pop_size}\n" + str(int(sim_time_intervals[-1])) +
                           " seconds",
@@ -342,7 +303,7 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsR
 plt.clf()
 # plot the values for the standard deviation of RTI incidence for the multiple simulations with a small population size
 # and the large population size,
-plt.bar(np.arange(2), [std_rti_inc_per_extra_sim[-1], large_pop_std_dev_inc_rti], color='lightsalmon')
+plt.bar(np.arange(2), [mean_std_incidence_per_run, large_pop_std_dev_inc_rti], color='lightsalmon')
 plt.xticks(np.arange(2), [f"{nsim} simulations, n = {smaller_pop_size}\n" + str(int(sim_time_intervals[-1])) +
                           " seconds",
                           f"{1} simulation, n = {larger_pop_size}\n" + str(int(large_pop_sim_time)) + " seconds"])
@@ -355,7 +316,7 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsR
 plt.clf()
 # plot the mean estimate of RTI death incidence for the multiple simulations with a small population size and the large
 # population size, showing the variation in the estimates
-plt.bar(np.arange(2), [mean_rti_death_inc_per_extra_sim[-1], large_pop_mean_inc_rti_death],
+plt.bar(np.arange(2), [np.mean(mean_incidence_death_per_run), large_pop_mean_inc_rti_death],
         yerr=[std_rti_death_inc_per_extra_sim[-1], large_pop_std_dev_inc_rti_death])
 plt.xticks(np.arange(2), [f"{nsim} simulations, n = {smaller_pop_size}\n" + str(int(sim_time_intervals[-1])) +
                           " seconds",
@@ -369,7 +330,7 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsR
 plt.clf()
 # plot the values for the standard deviation of RTI death incidence for the multiple simulations with a small population
 # size and the large population size,
-plt.bar(np.arange(2), [std_rti_death_inc_per_extra_sim[-1], large_pop_std_dev_inc_rti_death], color='lightsalmon')
+plt.bar(np.arange(2), [mean_std_incidence_deaths_per_run, large_pop_std_dev_inc_rti_death], color='lightsalmon')
 plt.xticks(np.arange(2), [f"{nsim} simulations, n = {smaller_pop_size}\n" + str(int(sim_time_intervals[-1])) +
                           " seconds",
                           f"{1} simulation, n = {larger_pop_size}\n" + str(int(large_pop_sim_time)) + " seconds"])
@@ -382,7 +343,7 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsR
 plt.clf()
 # plot the mean estimate of the proportion of circumcised adult males for the multiple simulations with a
 # small population size and the large population size, showing the variation in the estimates
-plt.bar(np.arange(2), [mean_prop_circ_per_extra_sim[-1], large_pop_mean_proportion_circumcised],
+plt.bar(np.arange(2), [np.mean(mean_prop_circumcised_per_run), large_pop_mean_proportion_circumcised],
         yerr=[std_prop_circ_per_extra_sim[-1], large_pop_std_proportion_circumcised])
 plt.xticks(np.arange(2), [f"{nsim} simulations, n = {smaller_pop_size}\n" + str(int(sim_time_intervals[-1])) +
                           " seconds",
@@ -396,7 +357,7 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsR
 plt.clf()
 # plot the values for the standard deviation of proprtion of adult males who are circumcised for the multiple
 # simulations with a small population size and the large population size,
-plt.bar(np.arange(2), [std_prop_circ_per_extra_sim[-1], large_pop_std_proportion_circumcised], color='lightsalmon')
+plt.bar(np.arange(2), [mean_std_prop_circumcised_per_run, large_pop_std_proportion_circumcised], color='lightsalmon')
 plt.xticks(np.arange(2), [f"{nsim} simulations, n = {smaller_pop_size}\n" + str(int(sim_time_intervals[-1])) +
                           " seconds",
                           f"{1} simulation, n = {larger_pop_size}\n" + str(int(large_pop_sim_time)) + " seconds"])
@@ -409,7 +370,8 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsR
 plt.clf()
 # plot the mean estimate of the proportion of females ages 15-49 who are sex workers for the multiple simulations with a
 # small population size and the large population size, showing the variation in the estimates
-plt.bar(np.arange(2), [mean_prop_female_sex_worker_per_extra_sim[-1], large_pop_mean_proportion_female_sex_workers],
+plt.bar(np.arange(2),
+        [np.mean(mean_prop_female_sex_worker_per_extra_sim), large_pop_mean_proportion_female_sex_workers],
         yerr=[std_prop_female_sex_worker_per_extra_sim[-1], large_pop_std_proportion_female_sex_workers])
 plt.xticks(np.arange(2), [f"{nsim} simulations, n = {smaller_pop_size}\n" + str(int(sim_time_intervals[-1])) +
                           " seconds",
@@ -423,7 +385,7 @@ plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/PopSizeVsR
 plt.clf()
 # plot the values for the standard deviation of proprtion of females ages 15-49 who are circumcised for the multiple
 # simulations with a small population size and the large population size,
-plt.bar(np.arange(2), [std_prop_female_sex_worker_per_extra_sim[-1], large_pop_std_proportion_female_sex_workers],
+plt.bar(np.arange(2), [mean_std_prop_female_sex_worker_per_run, large_pop_std_proportion_female_sex_workers],
         color='lightsalmon')
 plt.xticks(np.arange(2), [f"{nsim} simulations, n = {smaller_pop_size}\n" + str(int(sim_time_intervals[-1])) +
                           " seconds",

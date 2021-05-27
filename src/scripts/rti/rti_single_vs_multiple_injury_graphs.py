@@ -1,9 +1,11 @@
 """This file uses the results of the batch file to make some summary statistics.
 The results of the bachrun were put into the 'outputs' results_folder
 """
-import matplotlib.pyplot as plt
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+from matplotlib import pyplot as plt
+
 from tlo.analysis.utils import (
     extract_params,
     extract_results,

@@ -17,7 +17,7 @@ from tlo.methods import (
     healthsystem,
     rti,
     simplified_births,
-    symptommanager
+    symptommanager,
 )
 
 # =============================== Analysis description ========================================================
