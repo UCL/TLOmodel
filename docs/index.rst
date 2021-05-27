@@ -5,13 +5,15 @@ Contents
 .. toctree::
    :maxdepth: 2
 
+   welcome
+   aims
+   writeups
    readme
-   installation
-   usage
    azure_batch
    reference/index
-   contributing
+   publications
    authors
+   contributing
 
 Indices and tables
 ==================
