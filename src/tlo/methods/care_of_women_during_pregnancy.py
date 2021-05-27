@@ -1048,6 +1048,9 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
+        # todo: it might actually be more realistic to test urine before doing fasting OGGT, cant see if they use finger
+        #  prick
+
         # We check if this women has any of the key risk factors, if so they are sent for additional blood tests
         if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
                                                                                              'ps_prev_stillbirth']:

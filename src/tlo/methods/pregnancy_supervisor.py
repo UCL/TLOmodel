@@ -45,6 +45,41 @@ class PregnancySupervisor(Module):
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHBURDEN}
 
+    # Declare Causes of Death
+    # CAUSES_OF_DEATH = {
+    #    'ectopic_pregnancy':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal abortion and miscarriage'),
+    #    'spontaneous_abortion':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal abortion and miscarriage'),
+    #    'induced_abortion':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal abortion and miscarriage'),
+    #    'antepartum_haemorrhage':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal hemorrhage'),
+    #    'severe_gestational_hypertension':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal hypertensive disorders'),
+    #    'severe_pre_eclampsia':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal hypertensive disorders'),
+    #    'eclampsia':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal hypertensive disorders'),
+    #    'antenatal_sepsis':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal sepsis and other maternal infections'),
+    # }
+
+    # Declare Causes of Disability
+    # CAUSES_OF_DISABILITY = {
+    #    'tlo_name_of_a_cause_of_disability_in_this_module':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='the_category_of_which_this_cause_is_a_part')
+    # }
+
     PARAMETERS = {
         # ECTOPIC PREGNANCY...
         'prob_ectopic_pregnancy': Parameter(
@@ -109,8 +144,6 @@ class PregnancySupervisor(Module):
             Types.LIST, 'relative risk of a woman developing anaemia in pregnancy if she is b12 deficient'),
         'rr_anaemia_maternal_malaria': Parameter(
             Types.LIST, 'relative risk of anaemia secondary to malaria infection'),
-        'rr_anaemia_recent_haemorrhage': Parameter(
-            Types.LIST, 'relative risk of anaemia secondary to recent haemorrhage'),
         'rr_anaemia_hiv_no_art': Parameter(
             Types.LIST, 'relative risk of anaemia for a woman with HIV not on ART'),
         'prob_mild_mod_sev_anaemia': Parameter(
@@ -865,6 +898,7 @@ class PregnancySupervisor(Module):
 
         set[id_or_index, 'ps_gestational_age_in_weeks'] = 0
         set[id_or_index, 'ps_date_of_anc1'] = pd.NaT
+        set[id_or_index, 'ps_multiple_pregnancy'] = False
         set[id_or_index, 'ps_placenta_praevia'] = False
         set[id_or_index, 'ps_syphilis'] = False
         set[id_or_index, 'ps_anaemia_in_pregnancy'] = 'none'
@@ -889,15 +923,12 @@ class PregnancySupervisor(Module):
         :param df: The dataframe
         :return: Series with same index containing outcomes (bool)
         """
-        df = self.sim.population.props
 
         # Define any external variables called in any of the LM equations
         simulation_year = self.sim.date.year
-        recent_bleed = pd.Series(False, index=df_slice.index)  # TODO: ? REMOVE
 
         return self.rng.random_sample(len(df_slice)) < lm.predict(df_slice,
-                                                                  year=simulation_year,
-                                                                  recent_bleed=recent_bleed)
+                                                                  year=simulation_year)
 
     def schedule_anc_one(self, individual_id, anc_month):
         """
@@ -2134,7 +2165,7 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
             logger.info(key='direct_maternal_death', data={'person': individual_id, 'preg_state': 'antenatal',
                                                            'year': self.sim.date.year})
 
-            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{self.cause}',
                                                     originating_module=self.sim.modules['PregnancySupervisor'])
 
             if individual_id in mni:

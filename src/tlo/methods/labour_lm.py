@@ -47,7 +47,7 @@ def predict_obstruction_cpd_ip(self, df, rng=None, **externals):
 
     # TODO: update with stunting and macrosomia properties
 
-    # if person['SOME_STUNTING_PROPERTY']:
+    # if person['stunting_property']:
     #    result *= params['rr_obstruction_cpd_stunted_mother']
     if externals['macrosomia']:
         result *= params['rr_obstruction_foetal_macrosomia']
@@ -65,7 +65,7 @@ def predict_sepsis_chorioamnionitis_ip(self, df, rng=None, **externals):
         result *= params['rr_sepsis_chorio_prom']
     if externals['received_clean_delivery']:
         result *= params['treatment_effect_maternal_infection_clean_delivery']
-    # caller expects a series to be returned
+
     return pd.Series(data=[result], index=df.index)
 
 
@@ -78,7 +78,7 @@ def predict_sepsis_endometritis_pp(self, df, rng=None, **externals):
         result *= params['rr_sepsis_endometritis_post_cs']
     if externals['received_clean_delivery']:
         result *= params['treatment_effect_maternal_infection_clean_delivery']
-    # caller expects a series to be returned
+
     return pd.Series(data=[result], index=df.index)
 
 
@@ -91,7 +91,7 @@ def predict_sepsis_skin_soft_tissue_pp(self, df, rng=None, **externals):
         result *= params['rr_sepsis_sst_post_cs']
     if externals['received_clean_delivery']:
         result *= params['treatment_effect_maternal_infection_clean_delivery']
-    # caller expects a series to be returned
+
     return pd.Series(data=[result], index=df.index)
 
 
@@ -99,9 +99,10 @@ def predict_sepsis_urinary_tract_pp(self, df, rng=None, **externals):
     """individual level"""
     params = self.parameters
     result = params['prob_sepsis_urinary_tract']
+
     if externals['received_clean_delivery']:
         result *= params['treatment_effect_maternal_infection_clean_delivery']
-    # caller expects a series to be returned
+
     return pd.Series(data=[result], index=df.index)
 
 
@@ -114,7 +115,6 @@ def predict_sepsis_death(self, df, rng=None, **externals):
     if person['la_sepsis_treatment'] or person['ac_received_abx_for_chorioamnionitis']:
         result *= params['sepsis_treatment_effect_md']
 
-    # caller expects a series to be returned
     return pd.Series(data=[result], index=df.index)
 
 
@@ -127,7 +127,6 @@ def predict_sepsis_pp_death(self, df, rng=None, **externals):
     if person['la_sepsis_treatment']:
         result *= params['sepsis_treatment_effect_md']
 
-    # caller expects a series to be returned
     return pd.Series(data=[result], index=df.index)
 
 
@@ -152,7 +151,7 @@ def predict_eclampsia_pp_death(self, df, rng=None, **externals):
     """individual level"""
     person = df.iloc[0]
     params = self.parameters
-    result = params['cfr_pp_eclampsia']  # todo: collapse as one eclampsia death equation
+    result = params['cfr_pp_eclampsia']
 
     if person['la_eclampsia_treatment']:
         result *= params['eclampsia_treatment_effect_md']
@@ -262,13 +261,11 @@ def predict_pph_uterine_atony_pp(self, df, rng=None, **externals):
         result *= params['rr_pph_ua_hypertension']
     if person['pn_htn_disorders'] == 'mild_pre_eclamp':
         result *= params['rr_pph_ua_hypertension']
-    if person['ps_multiple_pregnancy']:
-        # TODO: replace with MNI property as this will be reset by the time this eq is called
-        result *= params['rr_pph_ua_multiple_pregnancy']
     if person['la_placental_abruption']:
         result *= params['rr_pph_ua_placental_abruption']
-    if person['ps_placental_abruption']:
-        # TODO: replace with MNI property as this will be reset by the time this eq is called
+    if person['ps_multiple_pregnancy']:
+        result *= params['rr_pph_ua_multiple_pregnancy']
+    if person['la_placental_abruption'] or person['ps_placental_abruption']:
         result *= params['rr_pph_ua_placental_abruption']
 
     if externals['macrosomia']:
@@ -380,7 +377,7 @@ def predict_intrapartum_still_birth(self, df, rng=None, **externals):
         result *= params['rr_still_birth_sepsis']
     if person['ps_multiple_pregnancy']:
         result *= params['rr_still_birth_multiple_pregnancy']
-    if externals['preterm_labour']:
+    if person['ps_gestational_age_in_weeks'] < 37:
         result *= params['rr_still_birth_preterm_labour']
 
     if externals['mode_of_delivery'] == 'caesarean_section':
@@ -409,10 +406,6 @@ def predict_probability_delivery_health_centre(self, df, rng=None, **externals):
         result *= params['rrr_hc_delivery_age_40_44']
     if 44 < person['age_years'] < 50:
         result *= params['rrr_hc_delivery_age_45_49']
-
-    # TODO: level 3 is secondary and tertiarty combined...
-    # if person['li_ed_lev'] == 3:
-    #    result *= params['rrr_hc_delivery_tertiary_education']
 
     if person['li_wealth'] == 1:
         result *= params['rrr_hc_delivery_wealth_1']
@@ -466,11 +459,9 @@ def predict_probability_delivery_at_home(self, df, rng=None, **externals):
         result *= params['rrr_hb_delivery_parity_>4']
 
     if person['li_ed_lev'] == 2:
-       result *= params['rrr_hb_delivery_primary_education']
-    # if person['li_ed_lev'] == 3:
-    #   result *= params['rrr_hb_delivery_secondary_education']
-    # if person['li_ed_lev'] == 3:
-    #    result *= params['rrr_hb_delivery_tertiary_education']
+        result *= params['rrr_hb_delivery_primary_education']
+    if person['li_ed_lev'] == 3:
+        result *= params['rrr_hb_delivery_secondary_education']
 
     if person['li_wealth'] == 1:
         result *= params['rrr_hb_delivery_wealth_1']

@@ -101,8 +101,8 @@ def predict_pre_eclampsia_pn(self, df, rng=None, **externals):
     result = pd.Series(data=params['weekly_prob_pre_eclampsia_pn'], index=df.index)
     result[df.li_bmi == 4] *= params['rr_gest_htn_obesity']
     result[df.li_bmi == 5] *= params['rr_gest_htn_obesity']
-    # result[df.nc_hypertension] *= params['rr_gest_htn_obesity']  # TODO: UNCOMMENT WITH NCDS REGISTERED
-    # result[df.nc_diabetes] *= params['rr_gest_htn_obesity']  # TODO: UNCOMMENT WITH NCDS REGISTERED
+    result[df.nc_hypertension] *= params['rr_gest_htn_obesity']
+    result[df.nc_diabetes] *= params['rr_gest_htn_obesity']
 
     return result
 
@@ -204,8 +204,6 @@ def predict_care_seeking_for_first_pnc_visit(self, df, rng=None, **externals):
     result[df.li_wealth == 1] *= params['or_pnc_wealth_level_1']
     result[df.la_parity > 4] *= params['or_pnc_parity_>4']
 
-    # result[df.pn_sepsis_neonatal_inj_abx] *= params['or_pnc_caesarean_delivery']
-    # result[df.pn_sepsis_neonatal_inj_abx] *= params['or_pnc_facility_delivery']
     if externals['caesarean_delivery']:
         result *= params['or_pnc_caesarean_delivery']
     if externals['facility_delivery']:

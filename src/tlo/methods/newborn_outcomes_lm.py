@@ -27,11 +27,12 @@ def predict_early_onset_neonatal_sepsis(self, df, rng=None, **externals):
     """individual level"""
     person = df.iloc[0]
     params = self.parameters
+
     result = params['prob_early_onset_neonatal_sepsis_day_0']
 
     if externals['maternal_chorioamnionitis']:
         result *= params['rr_eons_maternal_chorio']
-    if externals['maternal_prom']:
+    if person['ps_premature_rupture_of_membranes']:
         result *= params['rr_eons_maternal_prom']
     if person['nb_early_preterm'] or person['nb_late_preterm']:
         result *= params['rr_eons_preterm_neonate']
@@ -51,14 +52,18 @@ def predict_early_onset_neonatal_sepsis(self, df, rng=None, **externals):
 def predict_encephalopathy(self, df, rng=None, **externals):
     """individual level"""
     person = df.iloc[0]
+    mother_id = person['mother_id']
     params = self.parameters
+    main_df = self.module.sim.population.props
+
     result = params['prob_encephalopathy']
 
     if person['nb_early_onset_neonatal_sepsis']:
         result *= params['rr_enceph_neonatal_sepsis']
-    if externals['obstructed_labour']:
+    if df.at[mother_id, 'obstructed_labour']:
         result *= params['rr_enceph_obstructed_labour']
-    if externals['hypoxic_event']:
+    if main_df.at[mother_id, 'la_uterine_rupture'] or (main_df.at[mother_id, 'la_antepartum_haem'] != 'none') or\
+        (main_df.at[mother_id, 'ps_antepartum_haem'] != 'none'):
         result *= params['rr_enceph_acute_hypoxic_event']
 
     return pd.Series(data=[result], index=df.index)
@@ -66,12 +71,16 @@ def predict_encephalopathy(self, df, rng=None, **externals):
 
 def predict_rds_preterm(self, df, rng=None, **externals):
     """individual level"""
+    person = df.iloc[0]
+    mother_id = person['mother_id']
     params = self.parameters
+    main_df = self.module.sim.population.props
+
     result = params['prob_respiratory_distress_preterm']
 
-    # if externals['diabetes_mellitus']:
-    #    result *= params['rr_rds_maternal_diabetes_mellitus']
-    if externals['gestational_diabetes']:
+    if main_df.at[mother_id, 'nc_diabetes']:
+        result *= params['rr_rds_maternal_diabetes_mellitus']
+    if main_df.at[mother_id, 'ps_gest_diab'] != 'none':
         result *= params['rr_rds_maternal_gestational_diab']
     if externals['received_corticosteroids']:
         result *= params['treatment_effect_steroid_preterm']

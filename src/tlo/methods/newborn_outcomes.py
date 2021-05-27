@@ -44,10 +44,6 @@ class NewbornOutcomes(Module):
         # the main data frame
         self.newborn_care_info = dict()
 
-        # This dictionary is used to count each occurrence of an 'event' of interest. These stored counts are used
-        # in the LoggingEvent to calculate key outcomes (i.e. incidence rates, neonatal mortality rate etc)
-        self.newborn_complication_tracker = dict()
-
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
@@ -344,13 +340,6 @@ class NewbornOutcomes(Module):
         # Register logging event
         sim.schedule_event(NewbornOutcomesLoggingEvent(self), sim.date + DateOffset(years=1))
 
-        # Set the values of the complication tracker used by the logging event (and described above)
-        self.newborn_complication_tracker = {
-            'early_init_bf': 0, 'early_onset_sepsis': 0, 'neonatal_sepsis_death': 0, 'mild_enceph': 0,
-            'mild_enceph_death': 0, 'moderate_enceph': 0, 'moderate_enceph_death': 0, 'severe_enceph': 0,
-            'severe_enceph_death': 0, 'preterm_rds': 0, 'respiratory_distress_death': 0, 'congenital_anomaly_death': 0,
-            'not_breathing_at_birth': 0, 'not_breathing_at_birth_death': 0, 'preterm_birth_other_death': 0,
-            't_e_d': 0, 'resus': 0, 'sep_treatment': 0, 'vit_k': 0, 'death': 0}
 
         # =======================Register dx_tests for complications during labour/postpartum=======================
         # As with the labour module these dx_tests represent a probability that one of the following clinical outcomes
@@ -401,11 +390,13 @@ class NewbornOutcomes(Module):
                                                               parameters=params),
 
             # This equation is used to determine a newborns risk of encephalopathy
-            'encephalopathy': LinearModel.custom(newborn_outcomes_lm.predict_encephalopathy, parameters=params),
+            'encephalopathy': LinearModel.custom(newborn_outcomes_lm.predict_encephalopathy, module=self,
+                                                 parameters=params),
 
             # This equation is used to determine a preterm newborns risk of respiratory distress syndrome
             # (secondary to incomplete lung development)
-            'rds_preterm': LinearModel.custom(newborn_outcomes_lm.predict_rds_preterm, parameters=params),
+            'rds_preterm': LinearModel.custom(newborn_outcomes_lm.predict_rds_preterm, module=self,
+                                              parameters=params),
 
             # This equation is used to determine a newborns risk of not breathing after delivery,
             # triggering resuscitation
@@ -473,36 +464,17 @@ class NewbornOutcomes(Module):
         # Here we define all the possible external variables used in the linear model
         steroid_status = nci[person_id]['corticosteroids_given']
         abx_for_prom = nci[person_id]['abx_for_prom_given']
-        prom = df.at[mother, 'ps_premature_rupture_of_membranes']
-        diabetes_mellitus = df.at[mother, 'nc_diabetes']
-
-        if nci[person_id]['maternal_gest_diab'] != 'none':
-            gest_diab = True
-        else:
-            gest_diab = False
 
         if df.at[mother, 'ps_chorioamnionitis'] or nci[person_id]['maternal_chorio_lab']:
             chorio = True
         else:
             chorio = False
 
-        if df.at[mother, 'la_obstructed_labour']:
-            obstructed_labour = True
-        else:
-            obstructed_labour = False
-
-        # TODO: define 'hypoxic event'
-
         # We return a BOOLEAN
         return self.rng.random_sample(size=1) < eq.predict(person,
                                                            received_corticosteroids=steroid_status,
                                                            received_abx_for_prom=abx_for_prom,
                                                            maternal_chorioamnionitis=chorio,
-                                                           maternal_prom=prom,
-                                                           obstructed_labour=obstructed_labour,
-                                                           hypoxic_event=False,
-                                                           gestational_diabetes=gest_diab,
-                                                           diabetes_mellitus=diabetes_mellitus
                                                            )[person_id]
 
     # ========================================= OUTCOME FUNCTIONS  ===================================================
@@ -546,10 +518,10 @@ class NewbornOutcomes(Module):
 
         # The linear model calculates the individuals probability of early_onset_neonatal_sepsis
         if self.eval(self.nb_linear_models['early_onset_neonatal_sepsis'], child_id):
-            self.newborn_complication_tracker['early_onset_sepsis'] += 1
-
             df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
-            logger.debug(key='message', data=f'Neonate {child_id} has developed early onset sepsis following delivery')
+
+            logger.info(key='newborn_complication', data={'newborn': child_id,
+                                                          'type': 'early_onset_sepsis'})
 
     def apply_risk_of_encephalopathy(self, child_id, timing):
         """
@@ -574,15 +546,16 @@ class NewbornOutcomes(Module):
             # For a newborn who is encephalopathic we then set the severity using a weighted probability derived from
             # the prevalence of severity of encephalopathy in the encephalopathic population
             severity_enceph = self.rng.choice(('mild', 'moderate', 'severe'), p=params['prob_enceph_severity'])
+
             if severity_enceph == 'mild':
                 df.at[child_id, 'nb_encephalopathy'] = 'mild_enceph'
-                self.newborn_complication_tracker['mild_enceph'] += 1
             elif severity_enceph == 'moderate':
                 df.at[child_id, 'nb_encephalopathy'] = 'moderate_enceph'
-                self.newborn_complication_tracker['moderate_enceph'] += 1
             else:
                 df.at[child_id, 'nb_encephalopathy'] = 'severe_enceph'
-                self.newborn_complication_tracker['severe_enceph'] += 1
+
+            logger.info(key='newborn_complication', data={'newborn': child_id,
+                                                          'type': f'{df.at[child_id, "nb_encephalopathy"]}'})
 
             # Check all encephalopathy cases receive a grade
             assert df.at[child_id, 'nb_encephalopathy'] != 'none'
@@ -605,9 +578,9 @@ class NewbornOutcomes(Module):
         # Use the linear model to calculate individual risk and make changes
         if self.eval(self.nb_linear_models['rds_preterm'], child_id):
             df.at[child_id, 'nb_preterm_respiratory_distress'] = True
-            self.newborn_complication_tracker['preterm_rds'] += 1
-            logger.debug(key='message', data=f'Neonate {child_id} who was delivered preterm is experiencing '
-                                             f'respiratory distress syndrome ')
+
+        logger.info(key='newborn_complication', data={'newborn': child_id,
+                                                      'type': 'respiratory_distress_syndrome'})
 
     def apply_risk_of_not_breathing_at_birth(self, child_id):
         """
@@ -623,15 +596,17 @@ class NewbornOutcomes(Module):
         # resuscitation and will not be effectively breathing at birth
         if df.at[child_id, 'nb_encephalopathy'] != 'none' or df.at[child_id, 'nb_preterm_respiratory_distress']:
             df.at[child_id, 'nb_not_breathing_at_birth'] = True
-            self.newborn_complication_tracker['not_breathing_at_birth'] += 1
-            logger.debug(key='message', data=f'Neonate {child_id} is not breathing following delivery')
+
+            logger.info(key='newborn_complication', data={'newborn': child_id,
+                                                          'type': 'not_breathing_at_birth'})
 
         # Otherwise we use the linear model to calculate risk of inadequate breathing due to other causes not
         # explicitly modelled
         elif self.eval(self.nb_linear_models['not_breathing_at_birth'], child_id):
             df.at[child_id, 'nb_not_breathing_at_birth'] = True
-            self.newborn_complication_tracker['not_breathing_at_birth'] += 1
-            logger.debug(key='message', data=f'Neonate {child_id} is not breathing following delivery')
+
+            logger.info(key='newborn_complication', data={'newborn': child_id,
+                                                          'type': 'not_breathing_at_birth'})
 
     def apply_risk_of_death_from_complication(self, individual_id, complication):
         """
@@ -661,9 +636,6 @@ class NewbornOutcomes(Module):
             # one complication (hence using this property)
             df.at[individual_id, 'nb_death_after_birth'] = True
             df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
-
-            # The death is counted by the tracker # todo: replace
-            # self.newborn_complication_tracker[f'{complication}_death'] += 1
 
             # And we store this 'cause' of death in the nci dictionary
             nci[individual_id]['cause_of_death_after_birth'].append(complication)
@@ -727,7 +699,7 @@ class NewbornOutcomes(Module):
 
         # If a newborn has died, the death is scheduled and tracked
         if df.at[individual_id, 'nb_death_after_birth']:
-            self.newborn_complication_tracker['death'] += 1
+
             if nci[individual_id]['cause_of_death_after_birth'] == 'preterm_birth_other':
                 # If the death is associated with prematurity we scatter those deaths across the first 2 weeks
                 random_draw = self.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
@@ -845,7 +817,6 @@ class NewbornOutcomes(Module):
                                              f'facility delivery')
 
             nci[person_id]['tetra_eye_d'] = True
-            self.newborn_complication_tracker['t_e_d'] += 1
 
         else:
             logger.debug(key='message', data='This facility has no tetracycline and therefore was not given')
@@ -857,7 +828,6 @@ class NewbornOutcomes(Module):
                                              f' a facility delivery')
 
             nci[person_id]['vit_k'] = True
-            self.newborn_complication_tracker['vit_k'] += 1
 
         else:
             logger.debug(key='message', data='This facility has no vitamin K and therefore was not given')
@@ -897,7 +867,6 @@ class NewbornOutcomes(Module):
 
                 if self.rng.random_sample() < params[f'prob_early_breastfeeding_{birth_setting}']:
                     df.at[person_id, 'nb_early_init_breastfeeding'] = True
-                    self.newborn_complication_tracker['early_init_bf'] += 1
 
                     logger.debug(key='message', data=f'Neonate {person_id} has started breastfeeding within 1 hour of '
                                                      f'birth')
@@ -1000,7 +969,6 @@ class NewbornOutcomes(Module):
             # deliveries that are not attended
             if all_available:
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
-                self.newborn_complication_tracker['resus'] += 1
 
             else:
                 self.apply_risk_of_encephalopathy(person_id, timing='after_birth')
@@ -1038,7 +1006,6 @@ class NewbornOutcomes(Module):
                 # Then, if the consumables are available, treatment for sepsis is delivered
                 if all_available:
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
-                    self.newborn_complication_tracker['sep_treatment'] += 1
 
         # The same pattern is then followed for health centre care
         elif facility_type == 'hc':
@@ -1065,7 +1032,6 @@ class NewbornOutcomes(Module):
                    (outcome_of_request_for_consumables['Item_Code'][item_code_iv_gentamicin]):
 
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
-                    self.newborn_complication_tracker['sep_treatment'] += 1
 
     def hsi_cannot_run(self, individual_id):
         """
@@ -1636,57 +1602,3 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             newborn_deaths = 1
         if total_births_last_year == 0:
             total_births_last_year = 1
-
-        # yearly number of complications
-        sepsis = self.module.newborn_complication_tracker['early_onset_sepsis']
-        mild_enceph = self.module.newborn_complication_tracker['mild_enceph']
-        mod_enceph = self.module.newborn_complication_tracker['moderate_enceph']
-        severe_enceph = self.module.newborn_complication_tracker['severe_enceph']
-        all_enceph = mild_enceph + mod_enceph + severe_enceph
-        ftt = self.module.newborn_complication_tracker['not_breathing_at_birth']
-        death = self.module.newborn_complication_tracker['death']
-        sepsis_death = self.module.newborn_complication_tracker['neonatal_sepsis_death']
-        ftt_death = self.module.newborn_complication_tracker['not_breathing_at_birth_death']
-        mild_enceph_death = self.module.newborn_complication_tracker['mild_enceph_death']
-        moderate_enceph_death = self.module.newborn_complication_tracker['moderate_enceph_death']
-        severe_enceph_death = self.module.newborn_complication_tracker['severe_enceph_death']
-        preterm_birth_death = self.module.newborn_complication_tracker['preterm_birth_other_death']
-
-        sepsis_treatment = self.module.newborn_complication_tracker['sep_treatment']
-        resus = self.module.newborn_complication_tracker['resus']
-    #    tetra_cycline = self.module.newborn_complication_tracker['t_e_d']
-
-        dict_for_output = {'births': total_births_last_year,
-                           'neonatal_deaths': newborn_deaths,
-                           'checker_deaths': death,
-                           'nmr_early': newborn_deaths/total_births_last_year * 1000,
-                           'early_preterm_births': early_preterm_births,
-                           'late_preterm_births': late_preterm_births,
-                           'total_preterm_births': total_preterm_births,
-                           'tptb_incidence': total_preterm_births/total_births_last_year * 100,
-                           'preterm_birth_death': preterm_birth_death,
-                           'low_birth_weight': low_birth_weight / total_births_last_year * 100,
-                           'small_for_gestational_age': small_for_gestational_age / total_births_last_year * 100,
-                           'sepsis_crude': sepsis,
-                           'sepsis_incidence': sepsis / total_births_last_year * 100,
-                           'sepsis_treatment_crude': sepsis_treatment,
-                           'sepsis_deaths': sepsis_death,
-                           'mild_enceph_incidence': mild_enceph / total_births_last_year * 100,
-                           'mild_enceph_death': mild_enceph_death,
-                           'mod_enceph_incidence': mod_enceph / total_births_last_year * 100,
-                           'mod_enceph_death': moderate_enceph_death,
-                           'severe_enceph_incidence': severe_enceph / total_births_last_year * 100,
-                           'severe_enceph_death': severe_enceph_death,
-                           'total_enceph_incidence': all_enceph / total_births_last_year * 100,
-                           'total_enceph_death': mild_enceph_death + moderate_enceph_death + severe_enceph_death,
-                           'ftt_crude': ftt,
-                           'ftt_incidence': ftt / total_births_last_year * 100,
-                           'ftt_death': ftt_death,
-                           'resus_crude': resus,
-                           # 'resus_rate': resus / ftt * 100,
-                           }
-
-        logger.info(key='neonatal_summary_stats', data=dict_for_output, description='Yearly summary statistics output '
-                                                                                    'from the neonatal outcome module')
-        for k in self.module.newborn_complication_tracker:
-            self.module.newborn_complication_tracker[k] = 0

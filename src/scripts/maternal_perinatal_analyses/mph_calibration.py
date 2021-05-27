@@ -156,7 +156,7 @@ health_centre_deliveries = 0
 if f'tlo.methods.labour' in log_df:
     if 'facility_delivery' in log_df['tlo.methods.labour']:
 
-        facility_deliveries = log_df[f'tlo.methods.labour']['facility_delivery']
+        facility_deliveries = log_df[f'tlo.methods.labour']['delivery_setting']
         facility_deliveries['date'] = pd.to_datetime(facility_deliveries['date'])
         facility_deliveries['year'] = facility_deliveries['date'].dt.year
 
