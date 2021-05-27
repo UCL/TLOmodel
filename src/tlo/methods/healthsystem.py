@@ -10,7 +10,7 @@ Todo:   - speed up
 
 import heapq as hp
 import inspect
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import NamedTuple
 
@@ -184,19 +184,28 @@ class HealthSystem(Module):
         # check against levels in facilities per district resource file
         self._facility_levels = facility_levels
         # Store data as tuple of dicts, with tuple indexed by integer facility level and
-        # dict indexed by string type code with values corresponding to (named) tuples
-        # of appointment office type code and time taken
-        appt_time_per_level_and_type = tuple({} for _ in facility_levels)
+        # dict indexed by string type code with values corresponding to list of (named)
+        # tuples of appointment officer type codes and time takens
+        appt_times_per_level_and_type = tuple(defaultdict(list) for _ in facility_levels)
         for appt_time_tuple in appt_time_data.itertuples():
-            appt_time_per_level_and_type[
+            appt_times_per_level_and_type[
                 appt_time_tuple.Facility_Level
             ][
                 appt_time_tuple.Appt_Type_Code
-            ] = AppointmentInfo(
-                officer_type=appt_time_tuple.Officer_Type_Code,
-                time_taken=appt_time_tuple.Time_Taken
+            ].append(
+                AppointmentInfo(
+                    officer_type=appt_time_tuple.Officer_Type_Code,
+                    time_taken=appt_time_tuple.Time_Taken
+                )
             )
-        self.parameters['Appt_Time_Table'] = appt_time_per_level_and_type
+        assert (
+            sum(
+                len(appt_info_list)
+                for level in facility_levels
+                for appt_info_list in appt_times_per_level_and_type[level].values()
+            ) == len(appt_time_data)
+        )
+        self.parameters['Appt_Time_Table'] = appt_times_per_level_and_type
 
         self.parameters['ApptType_By_FacLevel'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_ApptType_By_FacLevel.csv'
@@ -763,20 +772,20 @@ class HealthSystem(Module):
         appts_with_duration = [
             appt_type for appt_type in appt_types if the_appt_footprint[appt_type] > 0
         ]
-        # [appt_times[the_facility_level][appt_type] for appt_type in appts_with_duration]
         appt_footprint_times = Counter()
         for appt_type in appts_with_duration:
             try:
-                appt_info = appt_times[the_facility_level][appt_type]
+                appt_info_list = appt_times[the_facility_level][appt_type]
             except KeyError as e:
                 raise KeyError(
                     f"The time needed for this appointment is not defined for this "
                     f"specified facility level in the Appt_Time_Table. "
                     f"Event treatment ID: {hsi_event.TREATMENT_ID}"
                 ) from e
-            appt_footprint_times[
-                f"FacilityID_{the_facility.id}_Officer_{appt_info.officer_type}"
-            ] += appt_info.time_taken
+            for appt_info in appt_info_list:
+                appt_footprint_times[
+                    f"FacilityID_{the_facility.id}_Officer_{appt_info.officer_type}"
+                ] += appt_info.time_taken
 
         return pd.Series(appt_footprint_times)
 
