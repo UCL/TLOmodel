@@ -1,0 +1,324 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Model Documentation &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Getting Started" href="readme.html" />
+    <link rel="prev" title="Aims &amp; Objectives" href="aims.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="welcome.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Model Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#core-functions">Core Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#representation-of-the-healthcare-system">Representation of the Healthcare System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contraception-pregnancy-and-labour">Contraception, Pregnancy and Labour</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#conditions-of-early-childhood">Conditions of Early Childhood</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#communicable-diseases">Communicable Diseases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#non-communicable-conditions">Non-Communicable Conditions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Model Documentation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/writeups.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="model-documentation">
+<h1>Model Documentation<a class="headerlink" href="#model-documentation" title="Permalink to this headline">¶</a></h1>
+<p>This page provides links to “user-friendly” write-ups of all the major modules that comprise the TLO Model.
+In addition,</p>
+<ul class="simple">
+<li><p>A high-level overview of the design of the model is provided here: <a class="reference download internal" download="" href="_downloads/a6a7215bc2a466326bf34f330c052236/Framework.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a>;</p></li>
+<li><p>The entire code is fully documented under <a class="reference internal" href="reference/index.html"><span class="doc">References</span></a>.</p></li>
+</ul>
+<div class="section" id="core-functions">
+<h2>Core Functions<a class="headerlink" href="#core-functions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Demography</strong>: Determines population structure and deaths from causes not represented in the model. <a class="reference download internal" download="" href="_downloads/b9707619202478e750a5876e2bd516c0/Demography.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Lifestyle</strong>: Determines key characteristics and risk factors that may change during the life-course (including, education, diet, smoking, alcohol consumption, access to hand-washing and sanitation). <a class="reference download internal" download="" href="_downloads/79f217fd442dcd90d30fb09cbeb5c92e/LifeStyle.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>SymptomManager</strong>: Manages the onset and resolution of symptoms, including symptoms caused by conditions not included in the model. <a class="reference download internal" download="" href="_downloads/241e3cbb6c6e2de2ff283fec7920c06d/SymptomManager.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>HealthSeekingBehaviour</strong>: Determines if and how persons seek care following the development of a symptom of ill-health. <a class="reference download internal" download="" href="_downloads/6c4df8afade64d6f75de8480de700f7d/HealthSeekingBehaviour.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>HealthBurden</strong>: Tracks the occurrence of Disability-Adjusted Life-Years in the population. <a class="reference download internal" download="" href="_downloads/cefc95d3fd37d26e186366fba312bd76/HealthBurden.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+</ul>
+</div>
+<div class="section" id="representation-of-the-healthcare-system">
+<h2>Representation of the Healthcare System<a class="headerlink" href="#representation-of-the-healthcare-system" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><strong>HealthSystem</strong>: Tracks the availability and usage of the resources of the healthcare system with respect to healthcare worker time, consumables and equipment for in-patient care. <a class="reference download internal" download="" href="_downloads/1c66550f38ef65aa2f4512cc644b44e5/HealthSystem.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Routine Immunization</strong>: The services that deliver a set of immunizations to children. (Forthcoming)</p></li>
+</ul>
+</div>
+<div class="section" id="contraception-pregnancy-and-labour">
+<h2>Contraception, Pregnancy and Labour<a class="headerlink" href="#contraception-pregnancy-and-labour" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Contraception</strong>: Determines fecundity, the usage of contraception (including switching between contraceptives) and the onset of pregnancy. <a class="reference download internal" download="" href="_downloads/2913638fac224f47751e3e09413e0e63/Contraception.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Pregnancy</strong> Represents the antenatal period of pregnancy (the period from conception to the termination of pregnancy), including complication experienced and emergency care that may be provided. <a class="reference download internal" download="" href="_downloads/c434c86e394739c2c6cee146e3d4356d/PregnancySupervisor.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Care of Women During Pregnancy</strong>: Determines the routine care provided during pregnancy. <a class="reference download internal" download="" href="_downloads/d82791bed460016d2333df303e847bc5/CareOfWomenDuringPregnancy.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Labour</strong>: Represents the labour, birth and the immediate postnatal period, including complications experienced, and the care provided (including ‘skilled birth attendance’ at basic or comprehensive level emergency obstetric care facilities). <a class="reference download internal" download="" href="_downloads/301500ba45190c666d8c19a28dffc897/Labour.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Newborns</strong> Represents the key conditions/complications experienced by a neonate and the treatments associated. <a class="reference download internal" download="" href="_downloads/4a5320a11982fb23ac089b13f8a649b1/NewbornOutcomes.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Postnatal Women</strong> Represents the key conditions/complications experienced by a mother (and by association, a neonate) in the period immediately postpartum and the treatments associated. <a class="reference download internal" download="" href="_downloads/0c4bdf8cd773bfb4f52e4c2bbe9e7bf3/PostnatalSupervisor.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+</ul>
+</div>
+<div class="section" id="conditions-of-early-childhood">
+<h2>Conditions of Early Childhood<a class="headerlink" href="#conditions-of-early-childhood" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Acute Lower Respiratory Infection</strong>: Childhood viral pneumonia, bacterial pneumonia and viral bronchiolitis and the treatments associated with each. <a class="reference download internal" download="" href="_downloads/1981b54d17deb683dd23da657ae826a8/Alri.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Diarrhoea</strong>: Childhood diarrhoea caused by virus or bacteria resulting in dehydration, and the treatments associated. <a class="reference download internal" download="" href="_downloads/457e7a6445782c17df2242a4477bcf8d/Diarrhoea.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Malnutrition</strong>: Childhood malnutrition, short and long-term outcomes and treatments. (Forthcoming)</p></li>
+</ul>
+</div>
+<div class="section" id="communicable-diseases">
+<h2>Communicable Diseases<a class="headerlink" href="#communicable-diseases" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><strong>HIV</strong>: HIV/AIDS and associated prevention and treatment programmes. <a class="reference download internal" download="" href="_downloads/0e3b567afc7159ab3dd3f2c1958accc2/Hiv.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Measles</strong>: Measles-related disease and associated prevention and treatment programmes. (Forthcoming)</p></li>
+<li><p><strong>Malaria</strong>: Malaria disease and associated prevention and treatment programmes. (Forthcoming)</p></li>
+<li><p><strong>Schistosomiasis</strong>: Schistosomiasis disease and associated prevention and treatment programmes. <a class="reference download internal" download="" href="_downloads/d0280b9233833d5a61e1ec72e154f10c/Schistosomiasis.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Tuberculosis</strong>: Tuberculosis disease and associated prevention and treatment programmes. (Forthcoming)</p></li>
+</ul>
+</div>
+<div class="section" id="non-communicable-conditions">
+<h2>Non-Communicable Conditions<a class="headerlink" href="#non-communicable-conditions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Cancers:</dt><dd><ul>
+<li><p><strong>Bladder Cancer</strong>: Cancer of the bladder and its treatment. <a class="reference download internal" download="" href="_downloads/146331bbbdb365a86ca0c6e7bc1919e8/BladderCancer.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Breast Cancer</strong>: Cancer of the breast and its treatment. <a class="reference download internal" download="" href="_downloads/f38ff5f0deb9225743e222b85cd19baa/BreastCancer.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Oesophageal Cancer</strong>: Cancer of the oesophagus and its treatment. <a class="reference download internal" download="" href="_downloads/e1334d1d3d69b6dcac84ffa3b0e8dbc4/OesophagealCancer.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Other Adult Cancer</strong>: Summary representation of any type of cancer other those listed and their treatment. <a class="reference download internal" download="" href="_downloads/622f8cdcaaa4c8dab6a449096076bd33/OtherAdultCancer.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Prostate Cancer</strong>: Cancer of the prostate and its treatment. <a class="reference download internal" download="" href="_downloads/eba32a4c32172a4bc3596e4fda67203a/ProstateCancer.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Caridometabolic Diorders:</dt><dd><ul>
+<li><p><strong>Diabetes Type 2, Hypertension, Stroke, Ischemic Heart Disease, Myocardial Infarction</strong> <a class="reference download internal" download="" href="_downloads/61bb2b09f46c8b5fed2831bc9b621b31/Ncds.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Injuries:</dt><dd><ul>
+<li><p><strong>Road Traffic Injuries</strong>: Injuries arising from road traffic incidents and their treatment. (Forthcoming)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Other Non-Communicable Conditions</dt><dd><ul>
+<li><p><strong>Chronic Lower Back Pain</strong>: Summary representation of chronic lower back pain as part of a set of common non-communicable conditions. <a class="reference download internal" download="" href="_downloads/61bb2b09f46c8b5fed2831bc9b621b31/Ncds.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Chronic Kidney Disease</strong>: Summary representation of chronic kidney disease as part of a set of common non-communicable conditions. <a class="reference download internal" download="" href="_downloads/61bb2b09f46c8b5fed2831bc9b621b31/Ncds.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Depression</strong>: Depression, self-harm and suicide, and the treatment of depression. <a class="reference download internal" download="" href="_downloads/b2ad9988c3c2b6d8a5a3e9e73ec7e326/Depression.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+<li><p><strong>Epilepsy</strong> Epilepsy and its treatment. <a class="reference download internal" download="" href="_downloads/23adaf6cf93219b8c57f084eec0ccd41/Epilepsy.docx"><code class="xref download docutils literal notranslate"><span class="pre">.docx</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="readme.html" class="btn btn-neutral float-right" title="Getting Started" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="aims.html" class="btn btn-neutral float-left" title="Aims &amp; Objectives" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      <span class="lastupdated">
+        Last updated on May 27, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
