@@ -181,11 +181,11 @@ class BedDays(Module):
          NB. If multiple bed types are required, then it is assumed that these run in the sequence given in
          ```bed_types```.
          """
+        # exiting the impose bed days if the footprint is empty
+        if footprint == self.get_blank_beddays_footprint():
+            return
 
         df = self.sim.population.props
-
-        # # check the footprint against capacity and issue bed days according to capacity
-        # available_bed_days_footprint = self.get_footprint_according_to_capacity(footprint)
 
         if not df.at[person_id, 'bd_is_inpatient']:
             # apply the new footprint if the person is not already an in-patient
@@ -332,5 +332,3 @@ class RefreshInPatientStatus(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.is_alive, "bd_is_inpatient"] = \
             ((~df.loc[df.is_alive, exit_cols].isnull()) & ~(
                 df.loc[df.is_alive, exit_cols] < self.sim.date)).any(axis=1)
-
-
