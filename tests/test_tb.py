@@ -10,3 +10,6 @@
 # assign treatment to all
 # check proportion treatment failure
 
+# infect one person
+# check all properties
+# check smear status
