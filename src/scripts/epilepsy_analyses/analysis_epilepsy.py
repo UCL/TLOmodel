@@ -13,7 +13,7 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager
+    symptommanager,
 )
 
 # Where will outputs go
