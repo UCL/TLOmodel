@@ -2,15 +2,15 @@
 A run of the model that has a lot of HSI's being run:
 
 * Parameters for modules are artificially increased so that there is are lots of HSI
-
 * Use the elastic mode of constraints (all HSI run but some with squeeze factors)
-
 * Spurious symptoms set to True in the SymptomManager
-
 * Any symptom leads to an HSI (force_any_symptom_to_lead_to_healthcareseeking in HealthCareSeeking module)
+
+NB. Use the SimplifiedBirths module instead of the set of modules of pregnancy/labour/newborn outcomes.
 
 For use in profiling.
 """
+
 from pathlib import Path
 
 import pandas as pd
@@ -20,7 +20,6 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
-    contraception,
     demography,
     depression,
     diarrhoea,
@@ -32,10 +31,12 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
+    hiv,
     malaria,
+    ncds,
     oesophagealcancer,
-    pregnancy_supervisor,
+    other_adult_cancers,
+    simplified_births,
     symptommanager,
 )
 
@@ -70,27 +71,31 @@ sim.register(
     # Standard modules:
     demography.Demography(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                              mode_appt_constraints=0
-                              ),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
                                   spurious_symptoms=True),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
                                                   force_any_symptom_to_lead_to_healthcareseeking=True),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    contraception.Contraception(resourcefilepath=resourcefilepath),
-    labour.Labour(resourcefilepath=resourcefilepath),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+
+    # HealthSystem
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                              mode_appt_constraints=0),
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
     dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
-    #
+
+    # Modules for birth/labour/newborns --> Simplified Births
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+
     # Disease modules considered complete:
-    diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-    malaria.Malaria(resourcefilepath=resourcefilepath, testing=1),
-    epi.Epi(resourcefilepath=resourcefilepath),
     depression.Depression(resourcefilepath=resourcefilepath),
+    diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+    epi.Epi(resourcefilepath=resourcefilepath),
+    epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+    hiv.Hiv(resourcefilepath=resourcefilepath),
+    malaria.Malaria(resourcefilepath=resourcefilepath),
+    ncds.Ncds(resourcefilepath=resourcefilepath),
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-    epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
+    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
 )
 
 # Adjust parameters so that there are lots of HSI events:

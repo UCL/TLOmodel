@@ -1,7 +1,6 @@
 """
 Childhood Diarrhoea Module
-Documentation: '04 - Methods Repository/Childhood Disease Methods.docx'
-gi_last_diarrhoea_treatment_date
+
 Overview
 =======
 Individuals are exposed to the risk of onset of diarrhoea. They can have diarrhoea caused by one pathogen at a time.
@@ -546,7 +545,7 @@ class Diarrhoea(Module):
                                                        f'resourcefile.'
 
         # Declare symptoms that this module will cause and which are not included in the generic symptoms:
-        generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
+        generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
         for symptom_name in self.symptoms:
             if symptom_name not in generic_symptoms:
                 self.sim.modules['SymptomManager'].register_symptom(
