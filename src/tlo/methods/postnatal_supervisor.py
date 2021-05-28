@@ -68,7 +68,7 @@ class PostnatalSupervisor(Module):
                         'endometritis'),
         'prob_secondary_pph_severity': Parameter(
             Types.LIST, 'probability of mild, moderate or severe secondary PPH'),
-        'cfr_secondary_pph': Parameter(
+        'cfr_secondary_postpartum_haemorrhage_pn': Parameter(
             Types.LIST, 'case fatality rate for secondary pph'),
 
         # HYPERTENSIVE DISORDERS
@@ -146,7 +146,7 @@ class PostnatalSupervisor(Module):
             Types.LIST, 'probability of developing sepsis following postpartum skin/soft tissue infection'),
         'rr_sepsis_sst_post_cs': Parameter(
             Types.LIST, 'relative risk of skin/soft tissue sepsis following caesarean delivery'),
-        'cfr_postnatal_sepsis': Parameter(
+        'cfr_postpartum_sepsis_pn': Parameter(
             Types.LIST, 'case fatality rate for postnatal sepsis'),
 
         # NEWBORN SEPSIS
@@ -446,7 +446,7 @@ class PostnatalSupervisor(Module):
 
             # This equation is used to determine a mothers risk of dying following a secondary postpartum haemorrhage.
             # Risk of death is modified by the effect of treatment, if delivered
-            'secondary_postpartum_haem_death': LinearModel.custom(
+            'secondary_postpartum_haemorrhage_death': LinearModel.custom(
                 postnatal_supervisor_lm.predict_secondary_postpartum_haem_death, parameters=params),
 
             # This equation is used to determine a mothers risk of developing a sepsis secondary to endometritis
@@ -460,7 +460,7 @@ class PostnatalSupervisor(Module):
 
             # This equation is used to determine a mothers risk of dying due to sepsis in the postnatal period. Risk of
             # death is modified by the effect of treatment, if delivered
-            'postnatal_sepsis_death': LinearModel.custom(postnatal_supervisor_lm.predict_postnatal_sepsis_death,
+            'postpartum_sepsis_death': LinearModel.custom(postnatal_supervisor_lm.predict_postnatal_sepsis_death,
                                                          parameters=params),
 
             # This equation is used to determine a mothers risk of developing gestational hypertension in the postnatal
@@ -473,8 +473,8 @@ class PostnatalSupervisor(Module):
 
             # This equation is used to determine a mothers risk of dying from eclampsia that has developed in the
             # postnatal period. Risk of death is mitigated by treatment effects, if treatment is delivered
-            'eclampsia_death_pn': LinearModel.custom(postnatal_supervisor_lm.predict_eclampsia_death_pn,
-                                                     parameters=params),
+            'eclampsia_death': LinearModel.custom(postnatal_supervisor_lm.predict_eclampsia_death_pn,
+                                                  parameters=params),
 
             # This equation is used to determine a mothers risk of dying due to severe hypertension
             'death_from_hypertensive_disorder_pn': LinearModel.custom(
@@ -649,24 +649,33 @@ class PostnatalSupervisor(Module):
         :return: Series with same index containing outcomes (bool)
         """
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        mni_dict = pd.DataFrame.from_dict(mni, orient='index')
 
-        # todo: i dont know how to make this work on the population level ask asif
-        mode_of_delivery = False  # stored in mni[]['mode_of_delivery']
-        hiv_no_art = False  # stored in hv_inf and hv_art == 'not'
-        maternal_malaria = False  # stored in ma_is_infected
-        endometritis = False # not yet stored
-        # received_abx_for_prom = False # stored in
-        # maternal_chorioamnionitis = False
-        # maternal_prom = False
+        mode_of_delivery = pd.Series(False, index=df.index)
+        received_abx_for_prom = pd.Series(False, index=df.index)
+        endometritis = pd.Series(False, index=df.index)
+        chorio = pd.Series(False, index=df.index)
+
+        if 'mode_of_delivery' in mni_dict.keys():
+            mode_of_delivery = pd.Series(mni_dict['mode_of_delivery'], index=df.index)
+
+        if 'abx_for_prom_given' in mni_dict.keys():
+            received_abx_for_prom = pd.Series(mni_dict['abx_for_prom_given'], index=df.index)
+
+        if 'chorio_lab' in mni_dict.keys():
+            chorio = (df['ps_chorioamnionitis'] != 'none') | (df['la_sepsis'] & mni_dict['chorio_lab'])
+
+        if 'endo_pp' in mni_dict.keys():
+            endometritis = pd.Series(mni_dict['endo_pp'], index=df.index)
+
+        maternal_prom = pd.Series(df['ps_premature_rupture_of_membranes'], index=df.index)
 
         return self.rng.random_sample(len(df)) < lm.predict(df,
                                                             mode_of_delivery=mode_of_delivery,
-                                                            hiv_no_art=hiv_no_art,
-                                                            maternal_malaria=maternal_malaria,
-                                                            endometritis=endometritis
-                                                            # received_abx_for_prom=received_abx_for_prom,
-                                                            # maternal_chorioamnionitis=maternal_chorioamnionitis,
-                                                            # maternal_prom=maternal_prom
+                                                            received_abx_for_prom=received_abx_for_prom,
+                                                            maternal_prom=maternal_prom,
+                                                            endometritis=endometritis,
+                                                            maternal_chorioamnionitis=chorio,
                                                             )
 
     def set_postnatal_complications_mothers(self, week):
@@ -709,6 +718,8 @@ class PostnatalSupervisor(Module):
         df.loc[onset_sepsis_endo.loc[onset_sepsis_endo].index, 'pn_emergency_event_mother'] = True
         onset_sepsis_endo.loc[onset_sepsis_endo].index.to_series().apply(store_dalys_in_mni,
                                                                          mni_variable='sepsis_onset')
+        for person in onset_sepsis_endo.loc[onset_sepsis_endo].index:
+            mni[person]['endo_pp'] = True
 
         df.loc[onset_sepsis_sst.loc[onset_sepsis_sst].index, 'pn_sepsis_late_postpartum'] = True
         df.loc[onset_sepsis_sst.loc[onset_sepsis_sst].index, 'pn_emergency_event_mother'] = True
@@ -994,23 +1005,27 @@ class PostnatalSupervisor(Module):
         :return:
         """
         df = self.sim.population.props
-        params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        # Set external variables used in the linear model equation
-        # TODO: ARE PS_ VARIABLES RESET BEFORE THIS IS CALLED?
-        abx_status = mni[mother_id]['abx_for_prom_given']
-        maternal_prom = df.at[mother_id, 'ps_premature_rupture_of_membranes']
-        if df.at[mother_id, 'ps_chorioamnionitis'] or mni[mother_id]['chorio_lab']:
-            chorio = True
-        else:
-            chorio = False
+        mni_df = pd.DataFrame.from_dict(mni, orient='index')
 
         logger.debug(key='message', data=f'Newborn {child_id} has arrived at PostnatalWeekOneEvent')
 
+        # Set external variables used in the linear model equation
+        maternal_prom = pd.Series(df.at[mother_id, 'ps_premature_rupture_of_membranes'], index=df.loc[[child_id]].index)
+
+        if 'abx_for_prom_given' in mni_df.keys():
+            received_abx_for_prom = pd.Series(mni_df.at[mother_id, 'abx_for_prom_given'],
+                                              index=df.loc[[child_id]].index)
+
+        # todo: fix
+        #if 'chorio_lab' in mni_df.keys():
+        #    chorio = (df['ps_chorioamnionitis'] != 'none') | (df['la_sepsis'] & mni_dict['chorio_lab'])
+        chorio = pd.Series(False, index=df.loc[[child_id]].index)
+
         # We then apply a risk that this womans newborn will develop sepsis during week one
         risk_eons = self.pn_linear_models['early_onset_neonatal_sepsis_week_1'].predict(
-            df.loc[[child_id]], received_abx_for_prom=abx_status, maternal_chorioamnionitis=chorio,
+            df.loc[[child_id]], received_abx_for_prom=received_abx_for_prom,
+            maternal_chorioamnionitis=chorio,
             maternal_prom=maternal_prom)[child_id]
 
         if self.rng.random_sample() < risk_eons:
@@ -1259,55 +1274,53 @@ class PostnatalSupervisor(Module):
             child = df.loc[individual_id]
 
         # ================================== MATERNAL DEATH EQUATIONS ==============================================
-        # We cycle through the possible causes of death to allow for increased risk of death in women with multiple
-        # complications
+
         if mother_or_child == 'mother':
-            postnatal_death = False
-
-            # If the mother has had a hemorrhage and hasn't sought care, we calculate her risk of death
+            causes = list()
             if mother.pn_postpartum_haem_secondary:
-                risk_of_death = self.pn_linear_models['secondary_postpartum_haem_death'].predict(df.loc[[
-                    individual_id]])[individual_id]
-
-                if self.rng.random_sample() < risk_of_death:
-                    postnatal_death = True
-
-                # If she will survive we reset the relevant variable in the data frame
-                else:
-                    df.at[individual_id, 'pn_postpartum_haem_secondary'] = False
-
-            # If the mother is septic and hasn't sought care, we calculate her risk of death
+                causes.append('secondary_postpartum_haemorrhage')
             if mother.pn_sepsis_late_postpartum:
-
-                risk_of_death = self.pn_linear_models['postnatal_sepsis_death'].predict(df.loc[[
-                    individual_id]])[individual_id]
-
-                if self.rng.random_sample() < risk_of_death:
-                    postnatal_death = True
-
-                # If she will survive we reset the relevant variable in the data frame
-                else:
-                    df.at[individual_id, 'pn_sepsis_late_postpartum'] = False
-
-            # Finally if the mother has eclampsia we calculate risk of death
+                causes.append('postpartum_sepsis')
             if mother.pn_htn_disorders == 'eclampsia':
-                risk_of_death = self.pn_linear_models['eclampsia_death_pn'].predict(
-                            df.loc[[individual_id]])[individual_id]
+                causes.append('eclampsia')
 
-                if self.rng.random_sample() < risk_of_death:
-                    postnatal_death = True
-                else:
-                    df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
+            risks = dict()
+            for cause in causes:
+                risk = {f'{cause}': self.pn_linear_models[f'{cause}_death'].predict(
+                    df.loc[[individual_id]])[individual_id]}
+                risks.update(risk)
 
-            # If she has died due to either (or both) of these causes, we schedule the DeathEvent
-            if postnatal_death:
+            result = 1
+            for cause in risks:
+                result *= (1 - risks[cause])
+
+            # If random draw is less that the total risk of death, she will die and the primary cause is then
+            # determined
+            if self.rng.random_sample() < (1 - result):
+                probs = list()
+
+                # Cycle over each cause in the dictionary and divide by the sum of the probabilities
+                for cause in risks:
+                    risks[cause] = risks[cause] / sum(risks.values())
+                    probs.append(risks[cause])
+
+                cause_of_death = self.rng.choice(causes, p=probs)
+
                 logger.info(key='direct_maternal_death', data={'person': individual_id, 'preg_state': 'postnatal',
                                                                'year': self.sim.date.year})
 
-                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{cause_of_death}',
                                                         originating_module=self.sim.modules['PostnatalSupervisor'])
 
                 del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[individual_id]
+
+            else:
+                if mother.pn_postpartum_haem_secondary:
+                    df.at[individual_id, 'pn_postpartum_haem_secondary'] = False
+                if mother.pn_sepsis_late_postpartum:
+                    df.at[individual_id, 'pn_sepsis_late_postpartum'] = False
+                if mother.pn_htn_disorders == 'eclampsia':
+                    df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
 
         # ================================== NEONATAL DEATH EQUATIONS ==============================================
         if mother_or_child == 'child':
@@ -1513,7 +1526,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
             logger.debug(key='message', data=f'Mother {individual_id} has arrived at PostnatalWeekOneEvent')
 
             # define external variable for linear model
-            mode_of_delivery = mni[individual_id]['mode_of_delivery']
+            mode_of_delivery = pd.Series(mni[individual_id]['mode_of_delivery'], index=df.loc[[individual_id]].index)
 
             risk_sepsis_endometritis = self.module.pn_linear_models['sepsis_endometritis_late_postpartum'].predict(
                 df.loc[[individual_id]], mode_of_delivery=mode_of_delivery)[individual_id]
@@ -1521,8 +1534,11 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                 df.loc[[individual_id]], mode_of_delivery=mode_of_delivery)[individual_id]
             risk_sepsis_urinary_tract = params['prob_late_sepsis_urinary_tract']
 
-            if (risk_sepsis_endometritis > self.module.rng.random_sample()) or \
-                (risk_sepsis_urinary_tract > self.module.rng.random_sample()) or \
+            endo_result = risk_sepsis_endometritis > self.module.rng.random_sample()
+            if endo_result:
+                mni[individual_id]['endo_pp'] = True
+
+            if endo_result or (risk_sepsis_urinary_tract > self.module.rng.random_sample()) or \
                (risk_sepsis_skin_soft_tissue > self.module.rng.random_sample()):
 
                 df.at[individual_id, 'pn_sepsis_late_postpartum'] = True
@@ -1534,7 +1550,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
 
         #  ---------------------------------------- SECONDARY PPH ------------------------------------------------
             # Next we apply risk of secondary postpartum bleeding
-            endometritis = False  #  TODO: STORE VARIABLE!
+            endometritis = pd.Series(mni[individual_id]['endo_pp'], index=df.loc[[individual_id]].index)
 
             risk_secondary_pph = self.module.pn_linear_models['secondary_postpartum_haem'].predict(df.loc[[
                     individual_id]], endometritis=endometritis)[individual_id]
@@ -1730,10 +1746,14 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         # If neither the mother or the child are experiencing any complications in the first week after birth,
         # we determine if they will present for the scheduled PNC check up at day 7
 
-        # TODO: add externals!!!!
+        mode_of_delivery = pd.Series(mni[individual_id]['mode_of_delivery'], index=df.loc[[individual_id]].index)
+        delivery_setting = pd.Series(mni[individual_id]['delivery_setting'], index=df.loc[[individual_id]].index)
+
         if not child_has_complications and not mother_has_complications and not child_two_has_complications:
             prob_will_seek_care = self.module.pn_linear_models['care_seeking_for_first_pnc_visit'].predict(
-                df.loc[[individual_id]], caesarean_delivery=False, facility_delivery=False)[individual_id]
+                df.loc[[individual_id]],
+                mode_of_delivery=mode_of_delivery,
+                delivery_setting=delivery_setting)[individual_id]
 
             if self.module.rng.random_sample() < prob_will_seek_care:
                 days_until_day_7 = self.sim.date - mother.la_date_most_recent_delivery

@@ -44,6 +44,41 @@ class NewbornOutcomes(Module):
         # the main data frame
         self.newborn_care_info = dict()
 
+    # Declare Causes of Death
+    # CAUSES_OF_DEATH = {
+    #    'early_onset_neonatal_sepsis':
+    #        Cause(gbd_causes={'Neonatal disorders'},
+    #              label=''),
+    #    'mild_en':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal abortion and miscarriage'),
+    #    'induced_abortion':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal abortion and miscarriage'),
+    #    'antepartum_haemorrhage':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal hemorrhage'),
+    #    'severe_gestational_hypertension':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal hypertensive disorders'),
+    #    'severe_pre_eclampsia':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal hypertensive disorders'),
+    #    'eclampsia':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal hypertensive disorders'),
+    #    'antenatal_sepsis':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='Maternal sepsis and other maternal infections'),
+    # }
+
+    # Declare Causes of Disability
+    # CAUSES_OF_DISABILITY = {
+    #    'tlo_name_of_a_cause_of_disability_in_this_module':
+    #        Cause(gbd_causes={'Maternal disorders'},
+    #              label='the_category_of_which_this_cause_is_a_part')
+    # }
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
@@ -93,12 +128,10 @@ class NewbornOutcomes(Module):
         'prob_mod_severe_impairment_post_enceph': Parameter(
             Types.LIST, 'probability of the moderate or severe neurodevelopmental impairment in survivors of '
                         'encephalopathy'),
-        'cfr_mild_enceph': Parameter(
+        'cfr_enceph': Parameter(
             Types.LIST, 'case fatality rate for a neonate due to mild encephalopathy'),
-        'cfr_moderate_enceph': Parameter(
-            Types.LIST, 'case fatality rate for a neonate due to moderate encephalopathy'),
-        'cfr_severe_enceph': Parameter(
-            Types.LIST, 'case fatality rate for a neonate due to severe encephalopathy'),
+        'cfr_multiplier_severe_enceph': Parameter(
+            Types.LIST, 'multiplier for risk of death in a neonate with severe encephalopathy'),
 
         # COMPLICATIONS OF PREMATURITY...
         'prob_respiratory_distress_preterm': Parameter(
@@ -107,7 +140,7 @@ class NewbornOutcomes(Module):
             Types.LIST, 'relative risk of RDS in a preterm newborn whose mother has DM'),
         'rr_rds_maternal_gestational_diab': Parameter(
             Types.LIST, 'relative risk of RDS in a preterm newborn whose mother has gestational diabetes'),
-        'cfr_rds_preterm': Parameter(
+        'cfr_respiratory_distress_syndrome': Parameter(
             Types.LIST, 'case fatality rate for respiratory distress syndrome of prematurity'),
         'prob_mild_disability_preterm_<32weeks': Parameter(
             Types.LIST, 'probability of mild long term neurodevelopmental disability in preterm infants born at less '
@@ -145,7 +178,7 @@ class NewbornOutcomes(Module):
             Types.LIST, 'Probability of a other congenital anomalies in the newborn'),
         'cfr_congenital_heart_anomaly': Parameter(
             Types.LIST, 'case fatality rate for newborns with congenital heart anomalies'),
-        'cfr_limb_musc_skeletal_anomaly': Parameter(
+        'cfr_limb_or_musculoskeletal_anomaly': Parameter(
             Types.LIST, 'case fatality rate for newborns with congenital limb/musculoskeletal anomalies'),
         'cfr_urogenital_anomaly': Parameter(
             Types.LIST, 'case fatality rate for newborns with congenital urogenital anomalies'),
@@ -265,7 +298,6 @@ class NewbornOutcomes(Module):
         'nb_clean_birth': Property(Types.BOOL, 'whether this neonate received clean birth practices at delivery'),
         'nb_received_cord_care': Property(Types.BOOL, 'whether this neonate received chlorhexidine cord care'),
         'nb_death_after_birth': Property(Types.BOOL, 'whether this child has died following complications after birth'),
-        'nb_death_after_birth_date': Property(Types.DATE, 'date on which the child died after birth'),
     }
 
     def read_parameters(self, data_folder):
@@ -330,7 +362,6 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_clean_birth'] = False
         df.loc[df.is_alive, 'nb_received_cord_care'] = False
         df.loc[df.is_alive, 'nb_death_after_birth'] = False
-        df.loc[df.is_alive, 'nb_death_after_birth_date'] = pd.NaT
 
         # We store congenital anomalies as bitset
         self.congeintal_anomalies = BitsetHandler(self.sim.population, 'nb_congenital_anomaly',
@@ -413,23 +444,19 @@ class NewbornOutcomes(Module):
 
             # This equation is used to determine a preterm newborns risk of death due to 'complications of prematurity'
             #  not explicitly modelled here (therefore excluding sepsis, encephalopathy and RDS)
-            'preterm_birth_other_death': LinearModel.custom(
+            'preterm_other_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_preterm_birth_other_death, parameters=params),
 
             # This equation is used to determine a the risk of death for a newborn who doesnt breathe at birth.
-            'not_breathing_at_birth_death': LinearModel.custom(
+            'neonatal_respiratory_depression_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_not_breathing_at_birth_death, parameters=params),
 
-            # Theses equations are used to determine the risk of death for encephalopathic newborns.
-            'mild_enceph_death': LinearModel.custom(
-                newborn_outcomes_lm.predict_mild_enceph_death, parameters=params),
-            'moderate_enceph_death': LinearModel.custom(
-                newborn_outcomes_lm.predict_moderate_enceph_death, parameters=params),
-            'severe_enceph_death': LinearModel.custom(
-                newborn_outcomes_lm.predict_severe_enceph_death, parameters=params),
+            # This equations is used to determine the risk of death for encephalopathic newborns.
+            'encephalopathy_death': LinearModel.custom(
+                newborn_outcomes_lm.predict_enceph_death, parameters=params),
 
             # This equation is used to determine a newborns risk of death from sepsis
-            'neonatal_sepsis_death': LinearModel.custom(
+            'early_onset_neonatal_sepsis_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
 
             # This equation is used to determine a newborns risk of death due to congenital anomaly. It will need to be
@@ -608,118 +635,105 @@ class NewbornOutcomes(Module):
             logger.info(key='newborn_complication', data={'newborn': child_id,
                                                           'type': 'not_breathing_at_birth'})
 
-    def apply_risk_of_death_from_complication(self, individual_id, complication):
-        """
-        This function  is called for neonates that have experienced a complication after birth and
-        determines if this complication will cause their death. Properties in the data frame are set
-        accordingly, and the result of the equation is tracked. It is called during the on_birth function or during
-        HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant dependent on delivery setting.
-        :param individual_id: individual_id
-        :param complication: complication that has put this newborn at risk of death. This complication has an
-        associated linear model equation determining risk of death
-        """
-        df = self.sim.population.props
-        params = self.current_parameters
-        nci = self.newborn_care_info
-
-        if (complication == 'congenital_heart_anomaly') or (complication == 'limb_musc_skeletal_anomaly') or\
-            (complication == 'urogenital_anomaly') or (complication == 'digestive_anomaly') or\
-           (complication == 'other_anomaly'):
-            result = self.rng.random_sample() < params[f'cfr_{complication}']
-        else:
-            result = self.eval(self.nb_linear_models[f'{complication}_death'], individual_id)
-
-        if result:
-
-            # If this newborn will die due to this complication we do not immediately schedule the
-            # InstantaneousDeathEvent in this function as newborns with multiple complications may 'die' from more than
-            # one complication (hence using this property)
-            df.at[individual_id, 'nb_death_after_birth'] = True
-            df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
-
-            # And we store this 'cause' of death in the nci dictionary
-            nci[individual_id]['cause_of_death_after_birth'].append(complication)
-            logger.debug(key='message', data=f'This is NewbornOutcomes scheduling a death for person {individual_id} '
-                                             f'on who died due to {complication} complications following birth')
-
     def set_death_status(self, individual_id):
         """
-        This function cycles through each complication of which a newborn may die, if the newborn has experienced this
-        complication it calls the apply_risk_of_death_from_complication function which uses the linear model to
-        determine individual risk of death from the relevant complication. If the newborn 'dies' due to one or more
-        complication then the InstantaneousDeathEvent is scheduled. It is called during the
-        on_birth function or during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant dependent on delivery
-        setting.
+        This function cycles through each complication of which a newborn may die, if the newborn has experienced one or
+         more of these complication it calculates overall risk of death and then the probability that each complication
+         was the primary cause of death. This information is logged and the death event is scheduled.
         :param individual_id: individual_id
         """
+
         df = self.sim.population.props
-        child = df.loc[individual_id]
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         nci = self.newborn_care_info
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.current_parameters
+        child = df.loc[individual_id]
 
-        # Using the set_neonatal_death_status function, defined above, it is determined if newborns who have experienced
-        # complications will die because of them.
+        causes = list()
+
         if child.nb_early_onset_neonatal_sepsis:
-            self.apply_risk_of_death_from_complication(individual_id, complication='neonatal_sepsis')
+            causes.append('early_onset_neonatal_sepsis')
 
-        if child.nb_encephalopathy == 'mild_enceph':
-            self.apply_risk_of_death_from_complication(individual_id, complication='mild_enceph')
-        if child.nb_encephalopathy == 'moderate_enceph':
-            self.apply_risk_of_death_from_complication(individual_id, complication='moderate_enceph')
-        if child.nb_encephalopathy == 'severe_enceph':
-            self.apply_risk_of_death_from_complication(individual_id, complication='severe_enceph')
+        if child.nb_encephalopathy == 'mild_enceph' or child.nb_encephalopathy == 'moderate_enceph' or \
+            child.nb_encephalopathy == 'severe_enceph':
+            causes.append('encephalopathy')
 
-        # As well as being at risk of death from sepsis or encephalopathy, preterm neonates are at risk of death from
-        # respiratory distress syndrome and 'other' non-modelled causes
         if child.nb_early_preterm or child.nb_late_preterm:
-            if child.nb_preterm_respiratory_distress:
-                self.apply_risk_of_death_from_complication(individual_id, complication='respiratory_distress')
-            self.apply_risk_of_death_from_complication(individual_id, complication='preterm_birth_other')
+            causes.append('preterm_other')
+        if child.nb_preterm_respiratory_distress:
+            causes.append('respiratory_distress_syndrome')
 
-        # Death due to breathing difficulties is implicitly captured in the CFR for encephalopathy and prematurity/RDS,
-        # therefore only neonates without those complications face a separate CFR for 'not breathing at birth'
-        if child.nb_not_breathing_at_birth and \
-            child.nb_encephalopathy == 'none' and \
-           (~child.nb_preterm_respiratory_distress):
-            self.apply_risk_of_death_from_complication(individual_id, complication='not_breathing_at_birth')
+        if child.nb_not_breathing_at_birth and (child.nb_encephalopathy == 'none') and \
+            (~child.nb_preterm_respiratory_distress):
+            causes.append('neonatal_respiratory_depression')
 
-        # We apply separate CFRs for each congenital anomaly
         if self.congeintal_anomalies.has_all(individual_id, 'heart'):
-            self.apply_risk_of_death_from_complication(individual_id, complication='congenital_heart_anomaly')
+            causes.append('congenital_heart_anomaly')
         if self.congeintal_anomalies.has_all(individual_id, 'limb_musc_skeletal'):
-            self.apply_risk_of_death_from_complication(individual_id, complication='limb_musc_skeletal_anomaly')
+            causes.append('limb_or_musculoskeletal_anomaly')
         if self.congeintal_anomalies.has_all(individual_id, 'urogenital'):
-            self.apply_risk_of_death_from_complication(individual_id, complication='urogenital_anomaly')
+            causes.append('urogenital_anomaly')
         if self.congeintal_anomalies.has_all(individual_id, 'digestive'):
-            self.apply_risk_of_death_from_complication(individual_id, complication='digestive_anomaly')
+            causes.append('digestive_anomaly')
         if self.congeintal_anomalies.has_all(individual_id, 'other'):
-            self.apply_risk_of_death_from_complication(individual_id, complication='other_anomaly')
-        # todo:scatter over month 1?
+            causes.append('other_anomaly')
 
-        # If a newborn has died, the death is scheduled and tracked
-        if df.at[individual_id, 'nb_death_after_birth']:
+        if causes:
+            risks = dict()
 
-            if nci[individual_id]['cause_of_death_after_birth'] == 'preterm_birth_other':
-                # If the death is associated with prematurity we scatter those deaths across the first 2 weeks
-                random_draw = self.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
-                                              p=params['prob_preterm_death_by_day'])
-                death_date = self.sim.date + DateOffset(days=random_draw)
-            else:
-                death_date = self.sim.date
+            for cause in causes:
+                if f'{cause}_death' in self.nb_linear_models.keys():
+                    risk = {f'{cause}': self.nb_linear_models[f'{cause}_death'].predict(
+                        df.loc[[individual_id]])[individual_id]}
+                else:
+                    risk = {f'{cause}': params[f'cfr_{cause}']}
 
-            del nci[individual_id]
-            self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
-                                                                  cause='neonatal'), death_date)
+                risks.update(risk)
 
-        # We now delete the MNI dictionary for mothers who have died in labour but their children have survived, this
-        # is done here as we use variables from the mni as predictors in some of the above equations
-        mother_id = df.loc[individual_id, 'mother_id']
-        if df.at[mother_id, 'la_maternal_death_in_labour']:
-            if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
-                                                              (mni[mother_id]['twin_count'] == 2)):
-                if mother_id in mni:
-                    del mni[mother_id]
+            # Next calculate the overall risk of death from one or more complications
+            result = 1
+
+            for cause in risks:
+                result *= (1 - risks[cause])
+
+            # If random draw is less that the total risk of death, she will die and the primary cause is then determined
+            if self.rng.random_sample() < (1 - result):
+                df.at[individual_id, 'nb_death_after_birth'] = True
+
+                denominator = sum(risks.values())
+
+                probs = list()
+
+                # Cycle over each cause in the dictionary and divide by the sum of the probabilities
+                for cause in risks:
+                    risks[cause] = risks[cause] / denominator
+                    probs.append(risks[cause])
+
+                # Log the death (eventually this can be removed)
+                cause_of_death = self.rng.choice(causes, p=probs)
+
+                if cause_of_death == 'preterm_other':
+                    # todo: should death from congential anomalies be scattered over the first few years of life?
+                    # If the death is associated with prematurity we scatter those deaths across the first 2 weeks
+                    random_draw = self.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+                                                  p=params['prob_preterm_death_by_day'])
+                    death_date = self.sim.date + DateOffset(days=random_draw)
+                else:
+                    death_date = self.sim.date
+
+                del nci[individual_id]
+                self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
+                                                                      cause=f'{cause_of_death}'), death_date)
+
+            # We now delete the MNI dictionary for mothers who have died in labour but their children have survived,
+            # this is done here as we use variables from the mni as predictors in some of the above equations
+            mother_id = df.loc[individual_id, 'mother_id']
+            if not df.at[mother_id, 'is_alive']:
+                if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
+                                                                  (mni[mother_id]['twin_count'] == 2)):
+                    if mother_id in mni:
+                        del mni[mother_id]
+
 
     def set_disability_status(self, individual_id):
         """
@@ -815,7 +829,8 @@ class NewbornOutcomes(Module):
         if outcome_of_request_for_consumables['Item_Code'][item_code_tetracycline]:
             logger.debug(key='message', data=f'Neonate {person_id} has received tetracycline eye drops following a '
                                              f'facility delivery')
-
+            if person_id == 1138:
+                print('hi')
             nci[person_id]['tetra_eye_d'] = True
 
         else:
@@ -1102,8 +1117,7 @@ class NewbornOutcomes(Module):
 
         # We check that the baby has survived labour and has been delivered (even if the mother did not survive)
         if (df.at[mother_id, 'is_alive'] and ~df.at[mother_id, 'la_intrapartum_still_birth']) or \
-           (~df.at[mother_id, 'is_alive'] and df.at[mother_id, 'la_maternal_death_in_labour'] and
-           ~df.at[mother_id, 'la_intrapartum_still_birth']):
+           (~df.at[mother_id, 'is_alive'] and ~df.at[mother_id, 'la_intrapartum_still_birth']):
             mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
             m = mni[mother_id]
 
@@ -1148,7 +1162,6 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_clean_birth'] = False
         df.at[child_id, 'nb_received_cord_care'] = False
         df.at[child_id, 'nb_death_after_birth'] = False
-        df.at[child_id, 'nb_death_after_birth_date'] = pd.NaT
 
         child = df.loc[child_id]
 
@@ -1315,8 +1328,8 @@ class NewbornOutcomes(Module):
                                                      f'after a complication has developed following a home_birth')
 
                 else:
-                    if df.at[child_id, 'nb_not_breathing_at_birth'] and\
-                        (df.at[child_id, 'nb_encephalopathy'] == 'none'):
+                    if df.at[child_id, 'nb_not_breathing_at_birth'] and (df.at[child_id, 'nb_encephalopathy'] ==
+                                                                         'none'):
                         self.apply_risk_of_encephalopathy(child_id, timing='after_birth')
 
                     if (m['delivery_setting'] == 'home_birth') and (df.at[child_id, 'nb_not_breathing_at_birth'] or
@@ -1328,7 +1341,6 @@ class NewbornOutcomes(Module):
                         # If care will not be sought for this newborn we immediately apply risk of death and make
                         # changes to the data frame accordingly
                         self.set_death_status(child_id)
-
         # Finally we call the further_on_birth... functions from the other maternal health modules. They are only called
         # once per pregnancy (hence why conditioned on single pregnancies or first birth of a twin set)
         if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
@@ -1577,28 +1589,5 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props
 
-        # Previous Year...
-        one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
-        total_births_last_year = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
+        pass
 
-        newborn_deaths = len(df.index[df.nb_death_after_birth & (df.nb_death_after_birth_date > one_year_prior) &
-                                      (df.nb_death_after_birth_date < self.sim.date)])
-
-        early_preterm_births = len(df.index[df.nb_early_preterm & (df.date_of_birth > one_year_prior) &
-                                            (df.date_of_birth < self.sim.date)])
-
-        late_preterm_births = len(df.index[df.nb_late_preterm & (df.date_of_birth > one_year_prior) &
-                                           (df.date_of_birth < self.sim.date)])
-        total_preterm_births = early_preterm_births + late_preterm_births
-
-        low_birth_weight = len(df.index[(df.nb_low_birth_weight_status != 'normal_birth_weight') & (df.date_of_birth >
-                                                                                                    one_year_prior) &
-                                        (df.date_of_birth < self.sim.date)])
-
-        small_for_gestational_age = len(df.index[(df.nb_size_for_gestational_age == 'small_for_gestational_age') &
-                                                 (df.date_of_birth > one_year_prior) & (df.date_of_birth <
-                                                                                        self.sim.date)])
-        if newborn_deaths == 0:
-            newborn_deaths = 1
-        if total_births_last_year == 0:
-            total_births_last_year = 1

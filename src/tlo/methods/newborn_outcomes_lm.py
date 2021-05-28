@@ -60,10 +60,10 @@ def predict_encephalopathy(self, df, rng=None, **externals):
 
     if person['nb_early_onset_neonatal_sepsis']:
         result *= params['rr_enceph_neonatal_sepsis']
-    if df.at[mother_id, 'obstructed_labour']:
+    if main_df.at[mother_id, 'la_obstructed_labour']:
         result *= params['rr_enceph_obstructed_labour']
     if main_df.at[mother_id, 'la_uterine_rupture'] or (main_df.at[mother_id, 'la_antepartum_haem'] != 'none') or\
-        (main_df.at[mother_id, 'ps_antepartum_haem'] != 'none'):
+        (main_df.at[mother_id, 'ps_antepartum_haemorrhage'] != 'none'):
         result *= params['rr_enceph_acute_hypoxic_event']
 
     return pd.Series(data=[result], index=df.index)
@@ -141,36 +141,14 @@ def predict_not_breathing_at_birth_death(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
-def predict_mild_enceph_death(self, df, rng=None, **externals):
+def predict_enceph_death(self, df, rng=None, **externals):
     """individual level"""
     person = df.iloc[0]
     params = self.parameters
-    result = params['cfr_mild_enceph']
+    result = params['cfr_enceph']
 
-    if person['nb_received_neonatal_resus']:
-        result *= params['treatment_effect_resuscitation']
-
-    return pd.Series(data=[result], index=df.index)
-
-
-def predict_moderate_enceph_death(self, df, rng=None, **externals):
-    """individual level"""
-    person = df.iloc[0]
-    params = self.parameters
-    result = params['cfr_moderate_enceph']
-
-    if person['nb_received_neonatal_resus']:
-        result *= params['treatment_effect_resuscitation']
-
-    return pd.Series(data=[result], index=df.index)
-
-
-def predict_severe_enceph_death(self, df, rng=None, **externals):
-    """individual level"""
-    person = df.iloc[0]
-    params = self.parameters
-    result = params['cfr_severe_enceph']
-
+    if person['nb_encephalopathy'] == 'severe':
+        result *= params['cfr_multiplier_severe_enceph']
     if person['nb_received_neonatal_resus']:
         result *= params['treatment_effect_resuscitation']
 

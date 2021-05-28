@@ -188,7 +188,7 @@ class PregnancySupervisor(Module):
                         ' severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia'),
         'prob_antenatal_spe_death': Parameter(
             Types.LIST, 'probability of death for a woman experiencing acute severe pre-eclampsia'),
-        'prob_antenatal_ec_death': Parameter(
+        'prob_eclampsia_death': Parameter(
             Types.LIST, 'probability of death for a woman experiencing eclampsia'),
         'prob_monthly_death_severe_htn': Parameter(
             Types.LIST, 'monthly risk of death for a woman with severe hypertension'),
@@ -208,7 +208,7 @@ class PregnancySupervisor(Module):
             Types.LIST, 'risk of antepartum haemorrhage due to placental abruption'),
         'prob_mod_sev_aph': Parameter(
             Types.LIST, 'probabilities that APH is mild/moderate or severe'),
-        'prob_antepartum_haem_death': Parameter(
+        'prob_antepartum_haemorrhage_death': Parameter(
             Types.LIST, 'probability of death for a woman suffering acute antepartum haemorrhage'),
 
         # PROM...
@@ -224,7 +224,7 @@ class PregnancySupervisor(Module):
             Types.LIST, 'probability that a woman with chorioamnionitis will have clinical presentation'),
         'prob_progression_to_clinical_chorio': Parameter(
             Types.LIST, 'Risk that histological chorioamnionitis will progress to clinical disease'),
-        'prob_chorioamnionitis_death': Parameter(
+        'prob_antenatal_sepsis_death': Parameter(
             Types.LIST, 'case fatality rate for chorioamnionitis'),
 
         # PRETERM LABOUR...
@@ -260,11 +260,11 @@ class PregnancySupervisor(Module):
             Types.LIST, 'relative risk of still birth in women with mild gestational hypertension'),
         'rr_still_birth_chronic_htn': Parameter(
             Types.LIST, 'relative risk of still birth in women with chronic hypertension'),
-        'prob_antepartum_haem_stillbirth': Parameter(
+        'prob_still_birth_antepartum_haemorrhage': Parameter(
             Types.LIST, 'probability of stillbirth for a woman suffering acute antepartum haemorrhage'),
-        'prob_antenatal_ec_still_birth': Parameter(
+        'prob_still_birth_eclampsia': Parameter(
             Types.LIST, 'probability of a stillbirth following an episode of eclampsia'),
-        'prob_still_birth_chorioamnionitis': Parameter(
+        'prob_still_birth_antenatal_sepsis': Parameter(
             Types.LIST, 'probability of still birth for chorioamnionitis'),
 
         # CARE SEEKING (NOT ANC)...
@@ -1963,7 +1963,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # (antepartum haemorrhage, severe pre-eclampsia, eclampsia or premature rupture of membranes) - this is distinct
         # from care seeking following abortion/ectopic
 
-        potential_care_seekers = df.is_alive & df.is_pregnant & (df.ps_ectopic_pregnancy == 'none')\
+        potential_care_seekers = df.is_alive & df.is_pregnant & (df.ps_ectopic_pregnancy == 'none') \
                                  & df.ps_emergency_event & ~df.hs_is_inpatient & ~df.la_currently_in_labour & \
                                  (df.la_due_date_current_pregnancy != self.sim.date)
 
@@ -2001,58 +2001,52 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
             for person in care_seeking.loc[~care_seeking].index:
                 mother = df.loc[person]
+                causes = list()
 
-                outcome_aph = 'none'
-                outcome_ec = 'none'
-                outcome_ch = 'none'
-
-                # As women could have more than one severe complication at once we apply risk of death from each
-                # complication in turn
                 if mother.ps_antepartum_haemorrhage == 'severe':
-                    if self.module.rng.random_sample() < params['prob_antepartum_haem_death']:
-                        outcome_aph = 'death'
-                    elif self.module.rng.random_sample() < params['prob_antepartum_haem_stillbirth']:
-                        outcome_aph = 'still_birth'
-                        df.at[person, 'ps_antepartum_haemorrhage'] = 'none'
-                    else:
-                        outcome_aph = 'none'
-
-                # This process if repeated for eclampsia
+                    causes.append('antepartum_haemorrhage')
                 if mother.ps_htn_disorders == 'eclampsia':
-                    if self.module.rng.random_sample() < params['prob_antenatal_ec_death']:
-                        outcome_ec = 'death'
-                    elif self.module.rng.random_sample() < params['prob_antenatal_ec_still_birth']:
-                        outcome_ec = 'still_birth'
-                        df.at[person, 'ps_htn_disorders'] = 'severe_pre_eclamp'
-                    else:
-                        outcome_ec = 'none'
-
+                    causes.append('eclampsia')
                 if mother.ps_chorioamnionitis == 'clinical':
-                    if self.module.rng.random_sample() < params['prob_chorioamnionitis_death']:
-                        outcome_ec = 'death'
-                    elif self.module.rng.random_sample() < params['prob_still_birth_chorioamnionitis']:
-                        outcome_ec = 'still_birth'
-                    else:
-                        outcome_ec = 'none'
-                        # todo: reset disease status?
+                    causes.append('antenatal_sepsis')
 
-                # For women who will die we schedule the InstantaneousDeath Event
-                if outcome_aph == 'death' or outcome_ec == 'death' or outcome_ch == 'death':
-                    logger.debug(key='message',
-                                 data=f'mother {person} has died following a pregnancy emergency on '
-                                      f'date {self.sim.date}')
+                risks = dict()
+                for cause in causes:
+                    risk = {f'{cause}': params[f'prob_{cause}_death']}
+                    risks.update(risk)
 
-                    self.sim.modules['Demography'].do_death(individual_id=person, cause='maternal',
+                result = 1
+                for cause in risks:
+                    result *= (1 - risks[cause])
+
+                # If random draw is less that the total risk of death, she will die and the primary cause is then
+                # determined
+                if self.module.rng.random_sample() < (1 - result):
+                    denominator = sum(risks.values())
+                    probs = list()
+
+                    # Cycle over each cause in the dictionary and divide by the sum of the probabilities
+                    for cause in risks:
+                        risks[cause] = risks[cause] / denominator
+                        probs.append(risks[cause])
+
+                    cause_of_death = self.module.rng.choice(causes, p=probs)
+
+                    self.sim.modules['Demography'].do_death(individual_id=person, cause=f'{cause_of_death}',
                                                             originating_module=self.sim.modules['PregnancySupervisor'])
 
                     logger.info(key='direct_maternal_death', data={'person': person, 'preg_state': 'antenatal',
                                                                    'year': self.sim.date.year})
 
                     del mni[person]
-
-                # And for women who lose their pregnancy we reset the relevant variables
-                elif outcome_aph == 'still_birth' or outcome_ec == 'still_birth' or outcome_ch == 'still_birth':
-                    self.module.update_variables_post_still_birth_for_individual(person)
+                    # assume all deaths in the antenatal period lead to stillbirth
+                else:
+                    stillbirth = False
+                    for cause in causes:
+                        if self.module.rng() < params[f'prob_still_birth_{cause}']:
+                            stillbirth = True
+                    if stillbirth:
+                        self.module.update_variables_post_still_birth_for_individual(person)
 
         # ============================ POST TERM RISK OF STILLBIRTH ==================================================
         # Finally we determine if women who are post term will seek care for induction/experience stillbirth
