@@ -33,8 +33,8 @@ class FacilityInfo(NamedTuple):
     name: str
 
 
-class AppointmentInfo(NamedTuple):
-    """Information about a specific appointment type."""
+class AppointmentSubunit(NamedTuple):
+    """Component of an appointment relating to a specific officer type."""
     officer_type: str
     time_taken: float
 
@@ -193,7 +193,7 @@ class HealthSystem(Module):
             ][
                 appt_time_tuple.Appt_Type_Code
             ].append(
-                AppointmentInfo(
+                AppointmentSubunit(
                     officer_type=appt_time_tuple.Officer_Type_Code,
                     time_taken=appt_time_tuple.Time_Taken
                 )
