@@ -42,9 +42,10 @@ class PostnatalSupervisor(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # This dictionary is used to count each occurrence of an 'event' of interest. These stored counts are used
-        # in the LoggingEvent to calculate key outcomes (i.e. incidence rates, neonatal mortality rate etc)
-        self.postnatal_tracker = dict()
+        # First we define dictionaries which will store the current parameters of interest (to allow parameters to
+        # change between 2010 and 2020) and the linear models
+        self.current_parameters = dict()
+        self.pn_linear_models = dict()
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHSYSTEM,
@@ -53,41 +54,41 @@ class PostnatalSupervisor(Module):
     PARAMETERS = {
         # OBSTETRIC FISTULA
         'prob_obstetric_fistula': Parameter(
-            Types.REAL, 'probability of a woman developing an obstetric fistula after birth'),
+            Types.LIST, 'probability of a woman developing an obstetric fistula after birth'),
         'rr_obstetric_fistula_obstructed_labour': Parameter(
-            Types.REAL, 'relative risk of obstetric fistula in women who experienced obstructed labour'),
+            Types.LIST, 'relative risk of obstetric fistula in women who experienced obstructed labour'),
         'prevalence_type_of_fistula': Parameter(
             Types.LIST, 'prevalence of 1.) vesicovaginal 2.)rectovaginal fistula '),
 
         # SECONDARY POSTPARTUM HAEMORRHAGE
         'prob_secondary_pph': Parameter(
-            Types.REAL, 'baseline probability of secondary PPH'),
+            Types.LIST, 'baseline probability of secondary PPH'),
         'rr_secondary_pph_endometritis': Parameter(
-            Types.REAL, 'relative risk of secondary postpartum haemorrhage in women with sepsis secondary to '
+            Types.LIST, 'relative risk of secondary postpartum haemorrhage in women with sepsis secondary to '
                         'endometritis'),
         'prob_secondary_pph_severity': Parameter(
             Types.LIST, 'probability of mild, moderate or severe secondary PPH'),
-        'cfr_secondary_pph': Parameter(
-            Types.REAL, 'case fatality rate for secondary pph'),
+        'cfr_secondary_postpartum_haemorrhage_pn': Parameter(
+            Types.LIST, 'case fatality rate for secondary pph'),
 
         # HYPERTENSIVE DISORDERS
         'prob_htn_resolves': Parameter(
-            Types.REAL, 'Weekly probability of resolution of hypertension'),
+            Types.LIST, 'Weekly probability of resolution of hypertension'),
         'weekly_prob_gest_htn_pn': Parameter(
-            Types.REAL, 'weekly probability of a woman developing gestational hypertension during the postnatal '
+            Types.LIST, 'weekly probability of a woman developing gestational hypertension during the postnatal '
                         'period'),
         'rr_gest_htn_obesity': Parameter(
-            Types.REAL, 'Relative risk of gestational hypertension for women who are obese'),
+            Types.LIST, 'Relative risk of gestational hypertension for women who are obese'),
         'prob_pre_eclampsia_per_month': Parameter(
-            Types.REAL, 'underlying risk of pre-eclampsia per month without the impact of risk factors'),
+            Types.LIST, 'underlying risk of pre-eclampsia per month without the impact of risk factors'),
         'weekly_prob_pre_eclampsia_pn': Parameter(
-            Types.REAL, 'weekly probability of a woman developing mild pre-eclampsia during the postnatal period'),
+            Types.LIST, 'weekly probability of a woman developing mild pre-eclampsia during the postnatal period'),
         'rr_pre_eclampsia_obesity': Parameter(
-            Types.REAL, 'Relative risk of pre-eclampsia for women who are obese'),
+            Types.LIST, 'Relative risk of pre-eclampsia for women who are obese'),
         'rr_pre_eclampsia_chronic_htn': Parameter(
-            Types.REAL, 'Relative risk of pre-eclampsia in women who are chronically hypertensive'),
+            Types.LIST, 'Relative risk of pre-eclampsia in women who are chronically hypertensive'),
         'rr_pre_eclampsia_diabetes_mellitus': Parameter(
-            Types.REAL, 'Relative risk of pre-eclampsia in women who have diabetes mellitus'),
+            Types.LIST, 'Relative risk of pre-eclampsia in women who have diabetes mellitus'),
         'probs_for_mgh_matrix_pn': Parameter(
             Types.LIST, 'probability of mild gestational hypertension moving between states: gestational '
                         'hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, '
@@ -105,167 +106,180 @@ class PostnatalSupervisor(Module):
                         'hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, '
                         'eclampsia'),
         'cfr_eclampsia_pn': Parameter(
-            Types.REAL, 'case fatality rate of eclampsia in the postnatal period'),
+            Types.LIST, 'case fatality rate of eclampsia in the postnatal period'),
         'cfr_severe_htn_pn': Parameter(
-            Types.REAL, 'case fatality rate of severe hypertension in the postnatal period'),
+            Types.LIST, 'case fatality rate of severe hypertension in the postnatal period'),
         # todo: death from severe pe?
 
         # ANAEMIA
         'baseline_prob_anaemia_per_week': Parameter(
-            Types.REAL, 'Weekly probability of anaemia in pregnancy'),
+            Types.LIST, 'Weekly probability of anaemia in pregnancy'),
         'rr_anaemia_if_iron_deficient_pn': Parameter(
-            Types.REAL, 'risk of developing anaemia when iron deficient'),
+            Types.LIST, 'risk of developing anaemia when iron deficient'),
         'rr_anaemia_if_folate_deficient_pn': Parameter(
-            Types.REAL, 'risk of developing anaemia when folate deficient'),
+            Types.LIST, 'risk of developing anaemia when folate deficient'),
         'rr_anaemia_if_b12_deficient_pn': Parameter(
-            Types.REAL, 'risk of developing anaemia when b12 deficient'),
+            Types.LIST, 'risk of developing anaemia when b12 deficient'),
         'rr_anaemia_maternal_malaria': Parameter(
-            Types.REAL, 'relative risk of anaemia secondary to malaria infection'),
+            Types.LIST, 'relative risk of anaemia secondary to malaria infection'),
         'rr_anaemia_recent_haemorrhage': Parameter(
-            Types.REAL, 'relative risk of anaemia secondary to recent haemorrhage'),
+            Types.LIST, 'relative risk of anaemia secondary to recent haemorrhage'),
         'rr_anaemia_hiv_no_art': Parameter(
-            Types.REAL, 'relative risk of anaemia for a woman with HIV not on ART'),
+            Types.LIST, 'relative risk of anaemia for a woman with HIV not on ART'),
         'prob_iron_def_per_week_pn': Parameter(
-            Types.REAL, 'weekly probability of a women developing iron deficiency following pregnancy'),
+            Types.LIST, 'weekly probability of a women developing iron deficiency following pregnancy'),
         'prob_folate_def_per_week_pn': Parameter(
-            Types.REAL, 'weekly probability of a women developing folate deficiency following pregnancy '),
+            Types.LIST, 'weekly probability of a women developing folate deficiency following pregnancy '),
         'prob_b12_def_per_week_pn': Parameter(
-            Types.REAL, 'weekly probability of a women developing b12 deficiency following pregnancy '),
+            Types.LIST, 'weekly probability of a women developing b12 deficiency following pregnancy '),
         'prob_type_of_anaemia_pn': Parameter(
             Types.LIST, 'probability of a woman with anaemia having mild, moderate or severe anaemia'),
 
         # MATERNAL SEPSIS
         'prob_late_sepsis_endometritis': Parameter(
-            Types.REAL, 'probability of developing sepsis following postpartum endometritis infection'),
+            Types.LIST, 'probability of developing sepsis following postpartum endometritis infection'),
         'rr_sepsis_endometritis_post_cs': Parameter(
-            Types.REAL, 'relative risk of endometritis following caesarean delivery'),
+            Types.LIST, 'relative risk of endometritis following caesarean delivery'),
         'prob_late_sepsis_urinary_tract': Parameter(
-            Types.REAL, 'probability of developing sepsis following postpartum UTI'),
+            Types.LIST, 'probability of developing sepsis following postpartum UTI'),
         'prob_late_sepsis_skin_soft_tissue': Parameter(
-            Types.REAL, 'probability of developing sepsis following postpartum skin/soft tissue infection'),
+            Types.LIST, 'probability of developing sepsis following postpartum skin/soft tissue infection'),
         'rr_sepsis_sst_post_cs': Parameter(
-            Types.REAL, 'relative risk of skin/soft tissue sepsis following caesarean delivery'),
-        'cfr_postnatal_sepsis': Parameter(
-            Types.REAL, 'case fatality rate for postnatal sepsis'),
+            Types.LIST, 'relative risk of skin/soft tissue sepsis following caesarean delivery'),
+        'cfr_postpartum_sepsis_pn': Parameter(
+            Types.LIST, 'case fatality rate for postnatal sepsis'),
 
         # NEWBORN SEPSIS
         'prob_early_onset_neonatal_sepsis_week_1': Parameter(
-            Types.REAL, 'Baseline probability of a newborn developing sepsis in week one of life'),
+            Types.LIST, 'Baseline probability of a newborn developing sepsis in week one of life'),
         'rr_eons_maternal_chorio': Parameter(
-            Types.REAL, 'relative risk of EONS in newborns whose mothers have chorioamnionitis'),
+            Types.LIST, 'relative risk of EONS in newborns whose mothers have chorioamnionitis'),
         'rr_eons_maternal_prom': Parameter(
-            Types.REAL, 'relative risk of EONS in newborns whose mothers have PROM'),
+            Types.LIST, 'relative risk of EONS in newborns whose mothers have PROM'),
         'rr_eons_preterm_neonate': Parameter(
-            Types.REAL, 'relative risk of EONS in preterm newborns'),
+            Types.LIST, 'relative risk of EONS in preterm newborns'),
         'cfr_early_onset_neonatal_sepsis': Parameter(
-            Types.REAL, 'case fatality for early onset neonatal sepsis'),
+            Types.LIST, 'case fatality for early onset neonatal sepsis'),
         'prob_late_onset_neonatal_sepsis': Parameter(
-            Types.REAL, 'probability of late onset neonatal sepsis (all cause)'),
+            Types.LIST, 'probability of late onset neonatal sepsis (all cause)'),
         'cfr_late_neonatal_sepsis': Parameter(
-            Types.REAL, 'Risk of death from late neonatal sepsis'),
+            Types.LIST, 'Risk of death from late neonatal sepsis'),
         'prob_sepsis_disabilities': Parameter(
             Types.LIST, 'Probabilities of varying disability levels after neonatal sepsis'),
 
         # CARE SEEKING
-        'prob_will_receive_pnc': Parameter(
-            Types.REAL, 'baseline probability a woman will seek PNC for her and her newborn following delivery'),
-        'rr_pnc_week_one_complicated_delivery': Parameter(
-            Types.REAL, 'number by which prob_pnc1_at_day_7 is multiplied by to increase care seeking for PNC1 in women'
-                        ' with complications '),
+        'odds_will_attend_pnc': Parameter(
+            Types.LIST, 'baseline odss a woman will seek PNC for her and her newborn following delivery'),
+        'or_pnc_age_30_35': Parameter(
+            Types.LIST, 'odds ratio for women aged 30-35 attending PNC'),
+        'or_pnc_age_>35': Parameter(
+            Types.LIST, 'odds ratio for women aged > 35 attending PNC'),
+        'or_pnc_rural': Parameter(
+            Types.LIST, 'odds ratio for women who live rurally attending PNC'),
+        'or_pnc_wealth_level_1': Parameter(
+            Types.LIST, 'odds ratio for women from the highest wealth level attending PNC'),
+        'or_pnc_anc4+': Parameter(
+            Types.LIST, 'odds ratio for women who attended ANC4+ attending PNC'),
+        'or_pnc_caesarean_delivery': Parameter(
+            Types.LIST, 'odds ratio for women who delivered by caesarean attending PNC'),
+        'or_pnc_facility_delivery': Parameter(
+            Types.LIST, 'odds ratio for women who delivered in a health facility attending PNC'),
+        'or_pnc_parity_>4': Parameter(
+            Types.LIST, 'odds ratio for women with a parity of >4 attending PNC'),
         'prob_attend_pnc2': Parameter(
-            Types.REAL, 'Probability that a woman receiving PNC1 care will return for PNC2 care'),
+            Types.LIST, 'Probability that a woman receiving PNC1 care will return for PNC2 care'),
         'prob_attend_pnc3': Parameter(
-            Types.REAL, 'Probability that a woman receiving PNC2 care will return for PNC3 care'),
+            Types.LIST, 'Probability that a woman receiving PNC2 care will return for PNC3 care'),
         'prob_care_seeking_postnatal_emergency': Parameter(
-            Types.REAL, 'baseline probability of emergency care seeking for women in the postnatal period'),
+            Types.LIST, 'baseline probability of emergency care seeking for women in the postnatal period'),
         'prob_care_seeking_postnatal_emergency_neonate': Parameter(
-            Types.REAL, 'baseline probability care will be sought for a neonate with a complication'),
+            Types.LIST, 'baseline probability care will be sought for a neonate with a complication'),
         'odds_care_seeking_fistula_repair': Parameter(
-            Types.REAL, 'odds of a woman seeking care for treatment of obstetric fistula'),
+            Types.LIST, 'odds of a woman seeking care for treatment of obstetric fistula'),
         'aor_cs_fistula_age_15_19': Parameter(
-            Types.REAL, 'odds ratio for care seeking for treatment of obstetric fistula in 15-19 year olds'),
+            Types.LIST, 'odds ratio for care seeking for treatment of obstetric fistula in 15-19 year olds'),
         'aor_cs_fistula_age_lowest_education': Parameter(
-            Types.REAL, 'odds ratio for care seeking for treatment of obstetric fistula in women in the lowest '
+            Types.LIST, 'odds ratio for care seeking for treatment of obstetric fistula in women in the lowest '
                         'education quintile'),
 
         # TREATMENT EFFECTS
         'treatment_effect_iron_folic_acid_anaemia': Parameter(
-            Types.REAL, 'relative effect of daily iron and folic acid treatment on risk of maternal anaemia '),
+            Types.LIST, 'relative effect of daily iron and folic acid treatment on risk of maternal anaemia '),
         'rr_iron_def_ifa_pn': Parameter(
-            Types.REAL, 'effect of iron and folic acid treatment on risk of iron deficiency'),
+            Types.LIST, 'effect of iron and folic acid treatment on risk of iron deficiency'),
         'rr_folate_def_ifa_pn': Parameter(
-            Types.REAL, 'effect of iron and folic acid treatment on risk of folate deficiency '),
+            Types.LIST, 'effect of iron and folic acid treatment on risk of folate deficiency '),
         'effect_of_ifa_for_resolving_anaemia': Parameter(
-            Types.REAL, 'treatment effectiveness of starting iron and folic acid on resolving anaemia'),
+            Types.LIST, 'treatment effectiveness of starting iron and folic acid on resolving anaemia'),
         'treatment_effect_blood_transfusion_anaemia': Parameter(
-            Types.REAL, 'treatment effectiveness of blood transfusion for anaemia following pregnancy'),
+            Types.LIST, 'treatment effectiveness of blood transfusion for anaemia following pregnancy'),
         'treatment_effect_early_init_bf': Parameter(
-            Types.REAL, 'effect of early initiation of breastfeeding on neonatal sepsis rates '),
+            Types.LIST, 'effect of early initiation of breastfeeding on neonatal sepsis rates '),
         'treatment_effect_abx_prom': Parameter(
-            Types.REAL, 'effect of early antibiotics given to a mother with PROM on neonatal sepsis rates '),
+            Types.LIST, 'effect of early antibiotics given to a mother with PROM on neonatal sepsis rates '),
         'treatment_effect_inj_abx_sep': Parameter(
-            Types.REAL, 'effect of injectable antibiotics on neonatal sepsis mortality'),
+            Types.LIST, 'effect of injectable antibiotics on neonatal sepsis mortality'),
         'treatment_effect_supp_care_sep': Parameter(
-            Types.REAL, 'effect of full supportive care on neonatal sepsis mortality'),
+            Types.LIST, 'effect of full supportive care on neonatal sepsis mortality'),
         'treatment_effect_parenteral_antibiotics': Parameter(
-            Types.REAL, 'Treatment effect of parenteral antibiotics on maternal sepsis mortality '),
+            Types.LIST, 'Treatment effect of parenteral antibiotics on maternal sepsis mortality '),
         'treatment_effect_bemonc_care_pph': Parameter(
-            Types.REAL, 'Treatment effect of BEmONC care on postpartum haemorrhage mortality'),
+            Types.LIST, 'Treatment effect of BEmONC care on postpartum haemorrhage mortality'),
         'treatment_effect_anti_htns': Parameter(
-            Types.REAL, 'Treatment effect of hypertensive therapy on death from eclampsia'),
+            Types.LIST, 'Treatment effect of hypertensive therapy on death from eclampsia'),
         'treatment_effect_mag_sulph': Parameter(
-            Types.REAL, 'Treatment effect of magnesium sulphate therapy on death from eclampsia'),
+            Types.LIST, 'Treatment effect of magnesium sulphate therapy on death from eclampsia'),
         'neonatal_sepsis_treatment_effect': Parameter(
-            Types.REAL, 'Treatment effect for neonatal sepsis'),
+            Types.LIST, 'Treatment effect for neonatal sepsis'),
         'treatment_effect_clean_birth': Parameter(
-            Types.REAL, 'Treatment effect of clean birth practices on early onset neonatal sepsis risk'),
+            Types.LIST, 'Treatment effect of clean birth practices on early onset neonatal sepsis risk'),
         'treatment_effect_cord_care': Parameter(
-            Types.REAL, 'Treatment effect of chlorhexidine cord care on early onset neonatal sepsis risk'),
+            Types.LIST, 'Treatment effect of chlorhexidine cord care on early onset neonatal sepsis risk'),
         'treatment_effect_anti_htns_progression_pn': Parameter(
-            Types.REAL, 'Treatment effect of oral anti hypertensives on progression from mild/mod to severe gestational'
+            Types.LIST, 'Treatment effect of oral anti hypertensives on progression from mild/mod to severe gestational'
                         'hypertension'),
 
         # ASSESSMENT SENSITIVITIES
         'sensitivity_bp_monitoring_pn': Parameter(
-            Types.REAL, 'sensitivity of BP monitoring during PNC'),
+            Types.LIST, 'sensitivity of BP monitoring during PNC'),
         'specificity_bp_monitoring_pn': Parameter(
-            Types.REAL, 'specificity of BP monitoring during PNC'),
+            Types.LIST, 'specificity of BP monitoring during PNC'),
         'sensitivity_urine_protein_1_plus_pn': Parameter(
-            Types.REAL, 'sensitivity of urine dipstick during PNC'),
+            Types.LIST, 'sensitivity of urine dipstick during PNC'),
         'specificity_urine_protein_1_plus_pn': Parameter(
-            Types.REAL, 'specificity of urine dipstick monitoring during PNC'),
+            Types.LIST, 'specificity of urine dipstick monitoring during PNC'),
         'sensitivity_poc_hb_test_pn': Parameter(
-            Types.REAL, 'sensitivity of point of care testing during PNC'),
+            Types.LIST, 'sensitivity of point of care testing during PNC'),
         'specificity_poc_hb_test_pn': Parameter(
-            Types.REAL, 'specificity of urine dipstick monitoring during PNC'),
+            Types.LIST, 'specificity of urine dipstick monitoring during PNC'),
         'sensitivity_fbc_hb_test_pn': Parameter(
-            Types.REAL, 'sensitivity of full blood count'),
+            Types.LIST, 'sensitivity of full blood count'),
         'specificity_fbc_hb_test_pn': Parameter(
-            Types.REAL, 'specificity of full blood count'),
+            Types.LIST, 'specificity of full blood count'),
         'sensitivity_maternal_sepsis_assessment': Parameter(
-            Types.REAL, 'sensitivity of assessment for maternal sepsis'),
+            Types.LIST, 'sensitivity of assessment for maternal sepsis'),
         'sensitivity_pph_assessment': Parameter(
-            Types.REAL, 'sensitivity of assessment for secondary pph'),
+            Types.LIST, 'sensitivity of assessment for secondary pph'),
         'sensitivity_lons_assessment': Parameter(
-            Types.REAL, 'sensitivity of assessment for late onset neonatal sepsis'),
+            Types.LIST, 'sensitivity of assessment for late onset neonatal sepsis'),
         'sensitivity_eons_assessment': Parameter(
-            Types.REAL, 'sensitivity of assessment for earl onset neonatal sepsis'),
+            Types.LIST, 'sensitivity of assessment for earl onset neonatal sepsis'),
         'prob_intervention_delivered_sep_assessment_pnc': Parameter(
-            Types.REAL, 'probability a woman will be assessed for sepsis during PNC'),
+            Types.LIST, 'probability a woman will be assessed for sepsis during PNC'),
         'prob_intervention_delivered_pph_assessment_pnc': Parameter(
-            Types.REAL, 'probability a woman will be assessed for PPH during PNC'),
+            Types.LIST, 'probability a woman will be assessed for PPH during PNC'),
         'prob_intervention_delivered_urine_ds_pnc': Parameter(
-            Types.REAL, 'probability a woman will receive a urine disptick during PNC'),
+            Types.LIST, 'probability a woman will receive a urine disptick during PNC'),
         'prob_intervention_delivered_bp_pnc': Parameter(
-            Types.REAL, 'probability a woman will receive blood pressure testing during PNC'),
+            Types.LIST, 'probability a woman will receive blood pressure testing during PNC'),
         'prob_intervention_poct_pnc': Parameter(
-            Types.REAL, 'probability a woman will receive point of care Hb testing during PNC'),
+            Types.LIST, 'probability a woman will receive point of care Hb testing during PNC'),
         'prob_intervention_neonatal_sepsis_pnc': Parameter(
-            Types.REAL, 'probability a newborn will be assessed for sepsis during PNC'),
+            Types.LIST, 'probability a newborn will be assessed for sepsis during PNC'),
         'prob_intervention_delivered_hiv_test_pnc': Parameter(
-            Types.REAL, 'probability a newborn will receive a HIV test at 6 weeks postnatal '),
+            Types.LIST, 'probability a newborn will receive a HIV test at 6 weeks postnatal '),
         'prob_intervention_delivered_depression_screen_pnc': Parameter(
-            Types.REAL, 'probability a mother will receive a depression screen during PNC'),
+            Types.LIST, 'probability a mother will receive a depression screen during PNC'),
     }
 
     PROPERTIES = {
@@ -317,9 +331,13 @@ class PostnatalSupervisor(Module):
     }
 
     def read_parameters(self, data_folder):
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PostnatalSupervisor.xlsx',
-                            sheet_name='parameter_values')
-        self.load_parameters_from_dataframe(dfd)
+        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PostnatalSupervisor.xlsx',
+                                            sheet_name='parameter_values')
+        self.load_parameters_from_dataframe(parameter_dataframe)
+
+        # For the first period (2010-2015) we use the first value in each list as a parameter
+        for key, value in self.parameters.items():
+            self.current_parameters[key] = self.parameters[key][0]
 
     def initialise_population(self, population):
 
@@ -361,16 +379,8 @@ class PostnatalSupervisor(Module):
         sim.schedule_event(PostnatalLoggingEvent(self),
                            sim.date + DateOffset(years=1))
 
-        # Define the events we want to track in the postnatal_tracker...
-        self.postnatal_tracker = {'endometritis': 0, 'urinary_tract_inf': 0, 'skin_soft_tissue_inf': 0,
-                                  'other_maternal_infection': 0, 'secondary_pph': 0, 'postnatal_death': 0,
-                                  'postnatal_sepsis': 0, 'fistula': 0, 'postnatal_anaemia': 0,
-                                  'early_neonatal_sepsis': 0, 'late_neonatal_sepsis': 0, 'neonatal_death': 0,
-                                  'neonatal_sepsis_death': 0}
-
         # Register dx_tests used as assessment for postnatal conditions during PNC visits
-
-        params = self.parameters
+        params = self.current_parameters
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
 
@@ -424,7 +434,7 @@ class PostnatalSupervisor(Module):
         # All linear equations used in this module are stored within the pn_linear_equations
         # parameter below
 
-        params['pn_linear_equations'] = {
+        self.pn_linear_models = {
 
             # This equation is used to determine a mothers risk of developing obstetric fistula after birth
             'obstetric_fistula': LinearModel.custom(postnatal_supervisor_lm.predict_obstetric_fistula,
@@ -436,7 +446,7 @@ class PostnatalSupervisor(Module):
 
             # This equation is used to determine a mothers risk of dying following a secondary postpartum haemorrhage.
             # Risk of death is modified by the effect of treatment, if delivered
-            'secondary_postpartum_haem_death': LinearModel.custom(
+            'secondary_postpartum_haemorrhage_death': LinearModel.custom(
                 postnatal_supervisor_lm.predict_secondary_postpartum_haem_death, parameters=params),
 
             # This equation is used to determine a mothers risk of developing a sepsis secondary to endometritis
@@ -450,7 +460,7 @@ class PostnatalSupervisor(Module):
 
             # This equation is used to determine a mothers risk of dying due to sepsis in the postnatal period. Risk of
             # death is modified by the effect of treatment, if delivered
-            'postnatal_sepsis_death': LinearModel.custom(postnatal_supervisor_lm.predict_postnatal_sepsis_death,
+            'postpartum_sepsis_death': LinearModel.custom(postnatal_supervisor_lm.predict_postnatal_sepsis_death,
                                                          parameters=params),
 
             # This equation is used to determine a mothers risk of developing gestational hypertension in the postnatal
@@ -463,8 +473,8 @@ class PostnatalSupervisor(Module):
 
             # This equation is used to determine a mothers risk of dying from eclampsia that has developed in the
             # postnatal period. Risk of death is mitigated by treatment effects, if treatment is delivered
-            'eclampsia_death_pn': LinearModel.custom(postnatal_supervisor_lm.predict_eclampsia_death_pn,
-                                                     parameters=params),
+            'eclampsia_death': LinearModel.custom(postnatal_supervisor_lm.predict_eclampsia_death_pn,
+                                                  parameters=params),
 
             # This equation is used to determine a mothers risk of dying due to severe hypertension
             'death_from_hypertensive_disorder_pn': LinearModel.custom(
@@ -544,7 +554,7 @@ class PostnatalSupervisor(Module):
 
     def further_on_birth_postnatal_supervisor(self, mother_id, child_id):
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
@@ -555,7 +565,7 @@ class PostnatalSupervisor(Module):
 
         if df.at[mother_id, 'is_alive']:
             # Here we determine if, following childbirth, this woman will develop a fistula
-            risk_of_fistula = params['pn_linear_equations'][
+            risk_of_fistula = self.pn_linear_models[
                 'obstetric_fistula'].predict(df.loc[[mother_id]])[mother_id]
 
             # todo: link with PNC (assessment), allow treatment post day 42 (dalys?)
@@ -566,14 +576,15 @@ class PostnatalSupervisor(Module):
                                                p=params['prevalence_type_of_fistula'])
                 df.at[mother_id, 'pn_obstetric_fistula'] = fistula_type
 
-                logger.debug(key='msg', data=f'Mother {mother_id} has developed a {fistula_type} post delivery')
-
                 # Store the onset weight for daly calculations
                 store_dalys_in_mni(mother_id, f'{fistula_type}_fistula_onset')
-                self.postnatal_tracker['fistula'] += 1
+
+                logger.info(key='maternal_complication', data={'mother': mother_id,
+                                                               'type': f'{fistula_type}_fistula',
+                                                               'timing': 'postnatal'})
 
                 # Determine if she will seek care for repair
-                care_seeking_for_repair = params['pn_linear_equations'][
+                care_seeking_for_repair = self.pn_linear_models[
                     'care_seeking_for_fistula_repair'].predict(df.loc[[mother_id]])[mother_id]
 
                 # Schedule repair to occur for 1 week postnatal
@@ -616,10 +627,6 @@ class PostnatalSupervisor(Module):
             if df.at[mother_id, 'ps_anaemia_in_pregnancy'] != 'none':
                 df.at[mother_id, 'pn_anaemia_following_pregnancy'] = df.at[mother_id, 'ps_anaemia_in_pregnancy']
 
-            # Finally we call a function in the PregnancySupervisor module to reset the variables from pregnancy
-            self.sim.modules['PregnancySupervisor'].pregnancy_supervisor_property_reset(
-                ind_or_df='individual', id_or_index=mother_id)
-
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug(key='message', data=f'This is PostnatalSupervisor, being alerted about a health system '
                                          f'interaction person {person_id} for: {treatment_id}')
@@ -642,26 +649,33 @@ class PostnatalSupervisor(Module):
         :return: Series with same index containing outcomes (bool)
         """
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        mni_dict = pd.DataFrame.from_dict(mni, orient='index')
 
-        # todo: i dont know how to make this work on the population level ask asif
-        mode_of_delivery = False  # stored in mni[]['mode_of_delivery']
-        hiv_no_art = False  # stored in hv_inf and hv_art == 'not'
-        recent_bleeding = False  # not yet stored
-        maternal_malaria = False  # stored in ma_is_infected
-        endometritis = False # not yet stored
-        # received_abx_for_prom = False # stored in
-        # maternal_chorioamnionitis = False
-        # maternal_prom = False
+        mode_of_delivery = pd.Series(False, index=df.index)
+        received_abx_for_prom = pd.Series(False, index=df.index)
+        endometritis = pd.Series(False, index=df.index)
+        chorio = pd.Series(False, index=df.index)
+
+        if 'mode_of_delivery' in mni_dict.keys():
+            mode_of_delivery = pd.Series(mni_dict['mode_of_delivery'], index=df.index)
+
+        if 'abx_for_prom_given' in mni_dict.keys():
+            received_abx_for_prom = pd.Series(mni_dict['abx_for_prom_given'], index=df.index)
+
+        if 'chorio_lab' in mni_dict.keys():
+            chorio = (df['ps_chorioamnionitis'] != 'none') | (df['la_sepsis'] & mni_dict['chorio_lab'])
+
+        if 'endo_pp' in mni_dict.keys():
+            endometritis = pd.Series(mni_dict['endo_pp'], index=df.index)
+
+        maternal_prom = pd.Series(df['ps_premature_rupture_of_membranes'], index=df.index)
 
         return self.rng.random_sample(len(df)) < lm.predict(df,
                                                             mode_of_delivery=mode_of_delivery,
-                                                            hiv_no_art=hiv_no_art,
-                                                            recent_bleeding=recent_bleeding,
-                                                            maternal_malaria=maternal_malaria,
-                                                            endometritis=endometritis
-                                                            # received_abx_for_prom=received_abx_for_prom,
-                                                            # maternal_chorioamnionitis=maternal_chorioamnionitis,
-                                                            # maternal_prom=maternal_prom
+                                                            received_abx_for_prom=received_abx_for_prom,
+                                                            maternal_prom=maternal_prom,
+                                                            endometritis=endometritis,
+                                                            maternal_chorioamnionitis=chorio,
                                                             )
 
     def set_postnatal_complications_mothers(self, week):
@@ -672,9 +686,10 @@ class PostnatalSupervisor(Module):
         :param week: week in the postnatal period used to select women in the data frame.
          """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
 
         def onset(eq):
             """
@@ -684,7 +699,7 @@ class PostnatalSupervisor(Module):
             :return: BOOL series
             """
             onset_condition = self.apply_linear_model(
-                params['pn_linear_equations'][f'{eq}'],
+                self.pn_linear_models[f'{eq}'],
                 df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
                        ~df['hs_is_inpatient']])
             return onset_condition
@@ -701,21 +716,28 @@ class PostnatalSupervisor(Module):
 
         df.loc[onset_sepsis_endo.loc[onset_sepsis_endo].index, 'pn_sepsis_late_postpartum'] = True
         df.loc[onset_sepsis_endo.loc[onset_sepsis_endo].index, 'pn_emergency_event_mother'] = True
+        onset_sepsis_endo.loc[onset_sepsis_endo].index.to_series().apply(store_dalys_in_mni,
+                                                                         mni_variable='sepsis_onset')
         for person in onset_sepsis_endo.loc[onset_sepsis_endo].index:
-            store_dalys_in_mni(person, 'sepsis_onset')
+            mni[person]['endo_pp'] = True
 
         df.loc[onset_sepsis_sst.loc[onset_sepsis_sst].index, 'pn_sepsis_late_postpartum'] = True
-        df.loc[onset_sepsis_endo.loc[onset_sepsis_endo].index, 'pn_emergency_event_mother'] = True
-        for person in onset_sepsis_endo.loc[onset_sepsis_endo].index:
-            store_dalys_in_mni(person, 'sepsis_onset')
+        df.loc[onset_sepsis_sst.loc[onset_sepsis_sst].index, 'pn_emergency_event_mother'] = True
+        onset_sepsis_sst.loc[onset_sepsis_sst].index.to_series().apply(store_dalys_in_mni, mni_variable='sepsis_onset')
 
         df.loc[onset_sepsis_urinary.loc[onset_sepsis_urinary].index, 'pn_sepsis_late_postpartum'] = True
         df.loc[onset_sepsis_urinary.loc[onset_sepsis_urinary].index, 'pn_emergency_event_mother'] = True
-        for person in onset_sepsis_urinary.loc[onset_sepsis_urinary].index:
-            store_dalys_in_mni(person, 'sepsis_onset')
+        onset_sepsis_urinary.loc[onset_sepsis_urinary].index.to_series().apply(store_dalys_in_mni,
+                                                                               mni_variable='sepsis_onset')
 
-        # TODO: not sure the best way to count this
-        # self.postnatal_tracker['postnatal_sepsis'] += len(onset_sepsis.loc[onset_sepsis])
+        # todo: this doesent tell us the primary source of infection?
+        new_sepsis = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == week) &\
+                             ~df.hs_is_inpatient & df.pn_sepsis_late_postpartum
+
+        for person in new_sepsis.loc[new_sepsis].index:
+            logger.info(key='maternal_complication', data={'mother': person,
+                                                           'type': 'sepsis',
+                                                           'timing': 'postnatal'})
 
         # ------------------------------------ SECONDARY PPH ----------------------------------------------------------
         # Next we determine if any women will experience postnatal bleeding
@@ -726,11 +748,9 @@ class PostnatalSupervisor(Module):
         df.loc[onset_pph.loc[onset_pph].index, 'pn_emergency_event_mother'] = True
         for person in onset_pph.loc[onset_pph].index:
             store_dalys_in_mni(person, 'secondary_pph_onset')
-
-        if not onset_pph.loc[onset_pph].empty:
-            logger.debug(key='message', data=f'The following women have developed secondary pph during week {week}'
-                                             f' of the postnatal period, {onset_pph.loc[onset_pph].index}')
-            self.postnatal_tracker['secondary_pph'] += len(onset_pph.loc[onset_pph])
+            logger.info(key='maternal_complication', data={'mother': person,
+                                                           'type': 'secondary_postpartum_haemorrhage',
+                                                           'timing': 'postnatal'})
 
         # ---------------------------------- DEFICIENCIES AND ANAEMIA --------------------------------------------------
         def apply_risk(deficiency):
@@ -755,7 +775,10 @@ class PostnatalSupervisor(Module):
 
             # And change their property accordingly
             self.deficiencies_following_pregnancy.set(new_def.loc[new_def].index, deficiency)
-
+            for person in new_def.loc[new_def].index:
+                logger.info(key='maternal_complication', data={'mother': person,
+                                                               'type': f'{deficiency}_deficiency',
+                                                               'timing': 'postnatal'})
             if deficiency == 'b12':
                 return
             else:
@@ -769,6 +792,11 @@ class PostnatalSupervisor(Module):
                 new_def = pd.Series(self.rng.random_sample(len(def_treatment)) < risk_of_def, index=def_treatment.index)
 
                 self.deficiencies_following_pregnancy.set(new_def.loc[new_def].index, deficiency)
+
+                for person in new_def.loc[new_def].index:
+                    logger.info(key='maternal_complication', data={'mother': person,
+                                                                   'type': f'{deficiency}_deficiency',
+                                                                   'timing': 'postnatal'})
 
         # Now we run the function for each
         for deficiency in ['iron', 'folate', 'b12']:
@@ -786,11 +814,10 @@ class PostnatalSupervisor(Module):
 
         for person in onset_anaemia.loc[onset_anaemia].index:
             store_dalys_in_mni(person, f'{df.at[person, "pn_anaemia_following_pregnancy"]}_anaemia_pp_onset')
-
-        if not onset_anaemia.loc[onset_anaemia].empty:
-            logger.debug(key='message', data=f'The following women have developed anaemia during week {week}'
-                                             f' of the postnatal period, {onset_anaemia.loc[onset_anaemia].index}')
-            self.postnatal_tracker['postnatal_anaemia'] += len(onset_anaemia.loc[onset_anaemia])
+            logger.info(key='maternal_complication', data={'mother': person,
+                                                           'type': f'{df.at[person, "pn_anaemia_following_pregnancy"]}'
+                                                                   f'_anaemia',
+                                                           'timing': 'postnatal'})
 
         # --------------------------------------- HYPERTENSION ------------------------------------------
         # For women who are still experiencing a hypertensive disorder of pregnancy we determine if that will now
@@ -844,23 +871,31 @@ class PostnatalSupervisor(Module):
             # We log the women who have transitioned to severe pre-eclampsia and set pn_emergency_event_mother to True
             # so they may seek care
             if not new_onset_severe_pre_eclampsia.empty:
-                logger.debug(key='message',
-                             data='The following women have developed severe pre-eclampsia following their '
-                             f'pregnancy {new_onset_severe_pre_eclampsia.index}')
-
                 for person in new_onset_severe_pre_eclampsia.index:
                     df.at[person, 'pn_emergency_event_mother'] = True
+                    logger.info(key='maternal_complication', data={'mother': person,
+                                                                   'type': 'severe_pre_eclamp',
+                                                                   'timing': 'postnatal'})
 
             # This process is repeated for women who have now developed eclampsia
             assess_status_change_for_eclampsia = (current_status != "eclampsia") & (new_status == "eclampsia")
             new_onset_eclampsia = assess_status_change_for_eclampsia[assess_status_change_for_eclampsia]
 
             if not new_onset_eclampsia.empty:
-                logger.debug(key='message', data=f'The following women have developed eclampsia during week {week} of '
-                                                 f'the postnatal period: {new_onset_eclampsia.index}')
-
                 for person in new_onset_eclampsia.index:
                     df.at[person, 'pn_emergency_event_mother'] = True
+                    logger.info(key='maternal_complication', data={'mother': person,
+                                                                   'type': 'eclampsia',
+                                                                   'timing': 'postnatal'})
+
+            # And severe gestational hypertension - which doesnt trigger care seeking
+            assess_status_change_for_sgh = (current_status != "severe_gest_htn") & (new_status == "severe_gest_htn")
+            new_onset_sgh = assess_status_change_for_sgh[assess_status_change_for_sgh]
+
+            for person in new_onset_sgh.index:
+                logger.info(key='maternal_complication', data={'person': person,
+                                                               'type': 'severe_gest_htn',
+                                                               'timing': 'postnatal'})
 
         women_with_htn_not_on_anti_htns =\
             df.is_alive & \
@@ -887,7 +922,7 @@ class PostnatalSupervisor(Module):
         #  -------------------------------- RISK OF PRE-ECLAMPSIA HYPERTENSION --------------------------------------
         # Here we apply a risk to women developing de-novo hypertensive in the later postnatal period
         pre_eclampsia = self.apply_linear_model(
-            params['pn_linear_equations']['pre_eclampsia_pn'],
+            self.pn_linear_models['pre_eclampsia_pn'],
             df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
                    (df['pn_htn_disorders'] == 'none')])
 
@@ -900,7 +935,7 @@ class PostnatalSupervisor(Module):
 
         #  -------------------------------- RISK OF GESTATIONAL HYPERTENSION --------------------------------------
         gest_hypertension = self.apply_linear_model(
-            params['pn_linear_equations']['gest_htn_pn'],
+            self.pn_linear_models['gest_htn_pn'],
             df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
                    (df['pn_htn_disorders'] == 'none')])
 
@@ -913,36 +948,28 @@ class PostnatalSupervisor(Module):
 
         # -------------------------------- RISK OF DEATH SEVERE HYPERTENSION ------------------------------------------
         # Risk of death is applied to women with severe hypertensive disease
-        at_risk_of_death_htn = self.apply_linear_model(params['pn_linear_equations']['death_from_'
+        at_risk_of_death_htn = self.apply_linear_model(self.pn_linear_models['death_from_'
                                                                                      'hypertensive_disorder_pn'],
                                                   df.loc[df['is_alive'] & df['la_is_postpartum'] &
                                                          (df['pn_postnatal_period_in_weeks'] == week) &
                                                          (df['pn_htn_disorders'].str.contains('severe_gest_htn|'
                                                                                               'severe_pre_eclamp'))])
 
-        if not at_risk_of_death_htn.loc[at_risk_of_death_htn].empty:
-            self.postnatal_tracker['postnatal_death'] += \
-                    len(at_risk_of_death_htn.loc[at_risk_of_death_htn].index)
+        # Those women who die have InstantaneousDeath scheduled
+        for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
+            logger.info(key='direct_maternal_death', data={'person': person, 'preg_state': 'postnatal',
+                                                            'year': self.sim.date.year})
 
-            logger.debug(key='message',
-                         data=f'The following women have died due to severe hypertensive disorder,'
-                              f'{at_risk_of_death_htn.loc[at_risk_of_death_htn].index} in the postnatal period')
+            self.sim.modules['Demography'].do_death(individual_id=person, cause='maternal',
+                                                    originating_module=self.sim.modules['PostnatalSupervisor'])
 
-            # Those women who die have InstantaneousDeath scheduled
-            for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
-                logger.info(key='direct_maternal_death', data={'person': person, 'preg_state': 'postnatal',
-                                                               'year': self.sim.date.year})
-
-                self.sim.modules['Demography'].do_death(individual_id=person, cause='maternal',
-                                                        originating_module=self.sim.modules['PostnatalSupervisor'])
-
-                del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]
+            del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]
 
         # ----------------------------------------- CARE SEEKING ------------------------------------------------------
         # We now use the the pn_emergency_event_mother property that has just been set for women who are experiencing
         # severe complications to select a subset of women who may choose to seek care
         care_seeking = self.apply_linear_model(
-            params['pn_linear_equations']['care_seeking_postnatal_complication_mother'],
+            self.pn_linear_models['care_seeking_postnatal_complication_mother'],
             df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
                    df['pn_emergency_event_mother'] & ~df['hs_is_inpatient']])
 
@@ -962,6 +989,14 @@ class PostnatalSupervisor(Module):
         for person in care_seeking.loc[~care_seeking].index:
             self.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother', individual_id=person)
 
+        if week == 6:
+            # We call a function in the PregnancySupervisor module to reset the variables from pregnancy which are not
+            # longer needed
+            week_6_women = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 6)
+
+            self.sim.modules['PregnancySupervisor'].pregnancy_supervisor_property_reset(
+                ind_or_df='individual', id_or_index=week_6_women.loc[week_6_women].index)
+
     def apply_risk_of_neonatal_complications_in_week_one(self, child_id, mother_id):
         """
         This function is called by PostnatalWeekOneEvent for newborns to determine risk of complications. Currently
@@ -970,32 +1005,35 @@ class PostnatalSupervisor(Module):
         :return:
         """
         df = self.sim.population.props
-        params = self.parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        # Set external variables used in the linear model equation
-        # TODO: ARE PS_ VARIABLES RESET BEFORE THIS IS CALLED?
-        abx_status = mni[mother_id]['abx_for_prom_given']
-        maternal_prom = df.at[mother_id, 'ps_premature_rupture_of_membranes']
-        if df.at[mother_id, 'ps_chorioamnionitis'] or mni[mother_id]['chorio_lab']:
-            chorio = True
-        else:
-            chorio = False
+        mni_df = pd.DataFrame.from_dict(mni, orient='index')
 
         logger.debug(key='message', data=f'Newborn {child_id} has arrived at PostnatalWeekOneEvent')
 
+        # Set external variables used in the linear model equation
+        maternal_prom = pd.Series(df.at[mother_id, 'ps_premature_rupture_of_membranes'], index=df.loc[[child_id]].index)
+
+        if 'abx_for_prom_given' in mni_df.keys():
+            received_abx_for_prom = pd.Series(mni_df.at[mother_id, 'abx_for_prom_given'],
+                                              index=df.loc[[child_id]].index)
+
+        # todo: fix
+        #if 'chorio_lab' in mni_df.keys():
+        #    chorio = (df['ps_chorioamnionitis'] != 'none') | (df['la_sepsis'] & mni_dict['chorio_lab'])
+        chorio = pd.Series(False, index=df.loc[[child_id]].index)
+
         # We then apply a risk that this womans newborn will develop sepsis during week one
-        risk_eons = params['pn_linear_equations']['early_onset_neonatal_sepsis_week_1'].predict(
-            df.loc[[child_id]], received_abx_for_prom=abx_status, maternal_chorioamnionitis=chorio,
+        risk_eons = self.pn_linear_models['early_onset_neonatal_sepsis_week_1'].predict(
+            df.loc[[child_id]], received_abx_for_prom=received_abx_for_prom,
+            maternal_chorioamnionitis=chorio,
             maternal_prom=maternal_prom)[child_id]
 
         if self.rng.random_sample() < risk_eons:
             df.at[child_id, 'pn_sepsis_early_neonatal'] = True
             self.sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['sepsis_postnatal'] = True
 
-            logger.debug(key='message', data=f'Newborn {child_id} has developed early onset sepsis in week one of '
-                                             f'the neonatal period')
-            self.postnatal_tracker['early_neonatal_sepsis'] += 1
+            logger.info(key='newborn_complication', data={'newborn': child_id,
+                                                          'type': 'early_onset_sepsis'})
 
     def set_postnatal_complications_neonates(self, upper_and_lower_day_limits):
         """
@@ -1004,13 +1042,13 @@ class PostnatalSupervisor(Module):
          may be expanded at a later date
         :param upper_and_lower_day_limits: 2 value list of the first and last day of each week of the neonatal period
         """
-        params = self.parameters
+        params = self.current_parameters
         df = self.sim.population.props
 
         # Here we apply risk of late onset neonatal sepsis (sepsis onsetting after day 7) to newborns
         # TODO: only neonates born in this sim?
         onset_sepsis = self.apply_linear_model(
-            params['pn_linear_equations']['late_onset_neonatal_sepsis'],
+            self.pn_linear_models['late_onset_neonatal_sepsis'],
             df.loc[df['is_alive'] & (df['age_days'] > upper_and_lower_day_limits[0]) &
                    (df['age_days'] < upper_and_lower_day_limits[1]) & (df['date_of_birth'] > self.sim.start_date) &
                    ~df['hs_is_inpatient']])
@@ -1019,11 +1057,12 @@ class PostnatalSupervisor(Module):
         for person in onset_sepsis.loc[onset_sepsis].index:
             self.sim.modules['NewbornOutcomes'].newborn_care_info[person]['sepsis_postnatal'] = True
 
-        self.postnatal_tracker['late_neonatal_sepsis'] += len(onset_sepsis.loc[onset_sepsis])
+            logger.info(key='newborn_complication', data={'newborn': person,
+                                                          'type': 'late_onset_sepsis'})
 
         # Then we determine if care will be sought for newly septic newborns
         care_seeking = self.apply_linear_model(
-            params['pn_linear_equations']['care_seeking_postnatal_complication_neonate'],
+            self.pn_linear_models['care_seeking_postnatal_complication_neonate'],
             df.loc[onset_sepsis.loc[onset_sepsis].index])
 
         # We schedule the HSI according
@@ -1047,7 +1086,7 @@ class PostnatalSupervisor(Module):
         :param individual_id: individual_id (mother)
         :param hsi_event: HSI event in which this function is called
         """
-        params = self.parameters
+        params = self.current_parameters
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
 
@@ -1160,7 +1199,7 @@ class PostnatalSupervisor(Module):
         :param individual_id: individual_id (child)
         :param hsi_event: HSI event in which this function is called
         """
-        params = self.parameters
+        params = self.current_parameters
         df = self.sim.population.props
         mother_id = df.at[individual_id, 'mother_id']
 
@@ -1226,7 +1265,7 @@ class PostnatalSupervisor(Module):
         :param individual_id: individual_id
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
 
         # Select the individuals row in the data frame to prevent repeated at based indexing
         if mother_or_child == 'mother':
@@ -1235,59 +1274,53 @@ class PostnatalSupervisor(Module):
             child = df.loc[individual_id]
 
         # ================================== MATERNAL DEATH EQUATIONS ==============================================
-        # We cycle through the possible causes of death to allow for increased risk of death in women with multiple
-        # complications
+
         if mother_or_child == 'mother':
-            postnatal_death = False
-
-            # If the mother has had a hemorrhage and hasn't sought care, we calculate her risk of death
+            causes = list()
             if mother.pn_postpartum_haem_secondary:
-                risk_of_death = params['pn_linear_equations']['secondary_postpartum_haem_death'].predict(df.loc[[
-                    individual_id]])[individual_id]
-
-                if self.rng.random_sample() < risk_of_death:
-                    postnatal_death = True
-
-                # If she will survive we reset the relevant variable in the data frame
-                else:
-                    df.at[individual_id, 'pn_postpartum_haem_secondary'] = False
-
-            # If the mother is septic and hasn't sought care, we calculate her risk of death
+                causes.append('secondary_postpartum_haemorrhage')
             if mother.pn_sepsis_late_postpartum:
-
-                risk_of_death = params['pn_linear_equations']['postnatal_sepsis_death'].predict(df.loc[[
-                    individual_id]])[individual_id]
-
-                if self.rng.random_sample() < risk_of_death:
-                    postnatal_death = True
-
-                # If she will survive we reset the relevant variable in the data frame
-                else:
-                    df.at[individual_id, 'pn_sepsis_late_postpartum'] = False
-
-            # Finally if the mother has eclampsia we calculate risk of death
+                causes.append('postpartum_sepsis')
             if mother.pn_htn_disorders == 'eclampsia':
-                risk_of_death = params['pn_linear_equations']['eclampsia_death_pn'].predict(
-                            df.loc[[individual_id]])[individual_id]
+                causes.append('eclampsia')
 
-                if self.rng.random_sample() < risk_of_death:
-                    postnatal_death = True
-                else:
-                    df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
+            risks = dict()
+            for cause in causes:
+                risk = {f'{cause}': self.pn_linear_models[f'{cause}_death'].predict(
+                    df.loc[[individual_id]])[individual_id]}
+                risks.update(risk)
 
-            # If she has died due to either (or both) of these causes, we schedule the DeathEvent
-            if postnatal_death:
-                logger.debug(key='message', data=f'mother {individual_id} has died due to complications of the '
-                                                 f'postnatal period')
+            result = 1
+            for cause in risks:
+                result *= (1 - risks[cause])
+
+            # If random draw is less that the total risk of death, she will die and the primary cause is then
+            # determined
+            if self.rng.random_sample() < (1 - result):
+                probs = list()
+
+                # Cycle over each cause in the dictionary and divide by the sum of the probabilities
+                for cause in risks:
+                    risks[cause] = risks[cause] / sum(risks.values())
+                    probs.append(risks[cause])
+
+                cause_of_death = self.rng.choice(causes, p=probs)
 
                 logger.info(key='direct_maternal_death', data={'person': individual_id, 'preg_state': 'postnatal',
                                                                'year': self.sim.date.year})
 
-                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{cause_of_death}',
                                                         originating_module=self.sim.modules['PostnatalSupervisor'])
 
-                self.postnatal_tracker['postnatal_death'] += 1
                 del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[individual_id]
+
+            else:
+                if mother.pn_postpartum_haem_secondary:
+                    df.at[individual_id, 'pn_postpartum_haem_secondary'] = False
+                if mother.pn_sepsis_late_postpartum:
+                    df.at[individual_id, 'pn_sepsis_late_postpartum'] = False
+                if mother.pn_htn_disorders == 'eclampsia':
+                    df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
 
         # ================================== NEONATAL DEATH EQUATIONS ==============================================
         if mother_or_child == 'child':
@@ -1295,10 +1328,10 @@ class PostnatalSupervisor(Module):
             # Neonates can have either early or late onset sepsis, not both at once- so we use either equation
             # depending on this neonates current condition
             if child.pn_sepsis_early_neonatal:
-                risk_of_death = params['pn_linear_equations']['early_onset_neonatal_sepsis_week_1_death'].predict(
+                risk_of_death = self.pn_linear_models['early_onset_neonatal_sepsis_week_1_death'].predict(
                     df.loc[[individual_id]])[individual_id]
             elif child.pn_sepsis_late_neonatal:
-                risk_of_death = params['pn_linear_equations']['late_neonatal_sepsis_death'].predict(df.loc[[
+                risk_of_death = self.pn_linear_models['late_neonatal_sepsis_death'].predict(df.loc[[
                     individual_id]])[individual_id]
 
             if child.pn_sepsis_late_neonatal or child.pn_sepsis_early_neonatal:
@@ -1310,9 +1343,6 @@ class PostnatalSupervisor(Module):
 
                     self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='neonatal',
                                                             originating_module=self.sim.modules['PostnatalSupervisor'])
-
-                    self.postnatal_tracker['neonatal_death'] += 1
-                    self.postnatal_tracker['neonatal_sepsis_death'] += 1
 
                 # Otherwise we reset the variables in the data frame
                 else:
@@ -1330,7 +1360,7 @@ class PostnatalSupervisor(Module):
         :param maternal_pnc: HSI to be scheduled
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
 
         # Calculate how many days since this woman has given birth
         ppp_in_days = self.sim.date - df.at[individual_id, 'la_date_most_recent_delivery']
@@ -1459,7 +1489,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
-        params = self.module.parameters
+        params = self.module.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
         mother = df.loc[individual_id]
@@ -1496,31 +1526,33 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
             logger.debug(key='message', data=f'Mother {individual_id} has arrived at PostnatalWeekOneEvent')
 
             # define external variable for linear model
-            mode_of_delivery = mni[individual_id]['mode_of_delivery']
+            mode_of_delivery = pd.Series(mni[individual_id]['mode_of_delivery'], index=df.loc[[individual_id]].index)
 
-            risk_sepsis_endometritis = params['pn_linear_equations']['sepsis_endometritis_late_postpartum'].predict(
+            risk_sepsis_endometritis = self.module.pn_linear_models['sepsis_endometritis_late_postpartum'].predict(
                 df.loc[[individual_id]], mode_of_delivery=mode_of_delivery)[individual_id]
-            risk_sepsis_skin_soft_tissue = params['pn_linear_equations']['sepsis_sst_late_postpartum'].predict(
+            risk_sepsis_skin_soft_tissue = self.module.pn_linear_models['sepsis_sst_late_postpartum'].predict(
                 df.loc[[individual_id]], mode_of_delivery=mode_of_delivery)[individual_id]
             risk_sepsis_urinary_tract = params['prob_late_sepsis_urinary_tract']
 
-            if (risk_sepsis_endometritis > self.module.rng.random_sample()) or \
-                (risk_sepsis_urinary_tract > self.module.rng.random_sample()) or \
+            endo_result = risk_sepsis_endometritis > self.module.rng.random_sample()
+            if endo_result:
+                mni[individual_id]['endo_pp'] = True
+
+            if endo_result or (risk_sepsis_urinary_tract > self.module.rng.random_sample()) or \
                (risk_sepsis_skin_soft_tissue > self.module.rng.random_sample()):
 
-                logger.debug(key='message',
-                             data=f'mother {individual_id} has developed postnatal sepsis during week one of the'
-                                  f' postnatal period')
-
                 df.at[individual_id, 'pn_sepsis_late_postpartum'] = True
-                self.module.postnatal_tracker['postnatal_sepsis'] += 1
                 store_dalys_in_mni(individual_id, 'sepsis_onset')
+
+                logger.info(key='maternal_complication', data={'mother': individual_id,
+                                                               'type': 'sepsis',
+                                                               'timing': 'postnatal'})
 
         #  ---------------------------------------- SECONDARY PPH ------------------------------------------------
             # Next we apply risk of secondary postpartum bleeding
-            endometritis = False  #  TODO: STORE VARIABLE!
+            endometritis = pd.Series(mni[individual_id]['endo_pp'], index=df.loc[[individual_id]].index)
 
-            risk_secondary_pph = params['pn_linear_equations']['secondary_postpartum_haem'].predict(df.loc[[
+            risk_secondary_pph = self.module.pn_linear_models['secondary_postpartum_haem'].predict(df.loc[[
                     individual_id]], endometritis=endometritis)[individual_id]
 
             if risk_secondary_pph > self.module.rng.random_sample():
@@ -1529,8 +1561,11 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                                   f' week one of the postnatal period')
 
                 df.at[individual_id, 'pn_postpartum_haem_secondary'] = True
-                self.module.postnatal_tracker['secondary_pph'] += 1
                 store_dalys_in_mni(individual_id, 'secondary_pph_onset')
+
+                logger.info(key='maternal_complication', data={'mother': individual_id,
+                                                               'type': 'secondary_postpartum_haemorrhage',
+                                                               'timing': 'postnatal'})
 
         # ----------------------------------- NEW ONSET DEFICIENCIES AND ANAEMIA -------------------------------------
             # And then risk of developing deficiencies or anaemia
@@ -1565,7 +1600,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                 maternal_malaria = False
                 hiv_no_art = False
 
-                risk_anaemia_after_pregnancy = params['pn_linear_equations']['anaemia_after_pregnancy'].predict(
+                risk_anaemia_after_pregnancy = self.module.pn_linear_models['anaemia_after_pregnancy'].predict(
                     df.loc[[individual_id]], hiv_no_art=hiv_no_art, recent_bleeding=recent_bleeding,
                     maternal_malaria=maternal_malaria)[individual_id]
 
@@ -1637,7 +1672,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
             # Women who are normatensive after delivery may develop new hypertension for the first time after birth
 
             if df.at[individual_id, 'pn_htn_disorders'] == 'none':
-                risk_pe_after_pregnancy = params['pn_linear_equations']['pre_eclampsia_pn'].predict(df.loc[[
+                risk_pe_after_pregnancy = self.module.pn_linear_models['pre_eclampsia_pn'].predict(df.loc[[
                     individual_id]])[individual_id]
 
                 if risk_pe_after_pregnancy > self.module.rng.random_sample():
@@ -1648,7 +1683,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                                  f'postnatal period ')
                     df.at[individual_id, 'ps_prev_pre_eclamp'] = True
                 else:
-                    risk_gh_after_pregnancy = params['pn_linear_equations']['gest_htn_pn'].predict(df.loc[[
+                    risk_gh_after_pregnancy = self.module.pn_linear_models['gest_htn_pn'].predict(df.loc[[
                         individual_id]])[individual_id]
                     if risk_gh_after_pregnancy > self.module.rng.random_sample():
                         logger.debug(key='message',
@@ -1711,10 +1746,15 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         # If neither the mother or the child are experiencing any complications in the first week after birth,
         # we determine if they will present for the scheduled PNC check up at day 7
 
-        prob_will_seek_care = params['pn_linear_equations']['care_seeking_for_first_pnc_visit'].predict(
-            df.loc[[individual_id]])[individual_id]
+        mode_of_delivery = pd.Series(mni[individual_id]['mode_of_delivery'], index=df.loc[[individual_id]].index)
+        delivery_setting = pd.Series(mni[individual_id]['delivery_setting'], index=df.loc[[individual_id]].index)
 
         if not child_has_complications and not mother_has_complications and not child_two_has_complications:
+            prob_will_seek_care = self.module.pn_linear_models['care_seeking_for_first_pnc_visit'].predict(
+                df.loc[[individual_id]],
+                mode_of_delivery=mode_of_delivery,
+                delivery_setting=delivery_setting)[individual_id]
+
             if self.module.rng.random_sample() < prob_will_seek_care:
                 days_until_day_7 = self.sim.date - mother.la_date_most_recent_delivery
                 days_until_day_7_int = int(days_until_day_7 / np.timedelta64(1, 'D'))
@@ -1731,7 +1771,10 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         # of care seeking for postnatal check up is higher
 
         elif mother_has_complications or child_has_complications or child_two_has_complications:
-            prob_care_seeking = prob_will_seek_care * params['rr_pnc_week_one_complicated_delivery']
+
+            prob_care_seeking = params['prob_care_seeking_postnatal_emergency']
+
+            # todo: or should they just go to hospital?
 
             if prob_care_seeking > self.module.rng.random_sample():
                 # And we assume they will present earlier than day 7
@@ -1913,7 +1956,7 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
         df = self.sim.population.props
         mother = df.loc[person_id]
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        params = self.module.parameters
+        params = self.module.current_parameters
 
         assert df.at[person_id, 'la_is_postpartum']
 
@@ -2259,53 +2302,3 @@ class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # women_reproductive_age = df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > ra_lower_limit) &
         #                                   (df.age_years < ra_upper_limit))]
         # total_women_reproductive_age = len(women_reproductive_age)
-
-        total_pph = self.module.postnatal_tracker['secondary_pph']
-        total_pn_death = self.module.postnatal_tracker['postnatal_death']
-        total_sepsis = self.module.postnatal_tracker['postnatal_sepsis']
-        total_fistula = self.module.postnatal_tracker['fistula']
-        total_endo = self.module.postnatal_tracker['endometritis']
-        total_uti = self.module.postnatal_tracker['urinary_tract_inf']
-        total_ssti = self.module.postnatal_tracker['skin_soft_tissue_inf']
-        total_other_inf = self.module.postnatal_tracker['other_maternal_infection']
-        total_anaemia = self.module.postnatal_tracker['postnatal_anaemia']
-
-        maternal_dict_for_output = {'total_fistula': total_fistula,
-                                    'total_endo': total_endo,
-                                    'total_uti': total_uti,
-                                    'total_ssti': total_ssti,
-                                    'total_other_inf': total_other_inf,
-                                    'total_anaemia': total_anaemia,
-                                    'total_pph': total_pph,
-                                    'total_sepsis': total_sepsis,
-                                    'total_deaths': total_pn_death,
-                                    'pn_mmr': (total_pn_death/total_births_last_year) * 100000}
-
-        logger.info(key='postnatal_maternal_summary_stats', data=maternal_dict_for_output,
-                    description='Yearly maternal summary statistics output from the postnatal supervisor module')
-
-        total_early_sepsis = self.module.postnatal_tracker['early_neonatal_sepsis']
-        total_late_sepsis = self.module.postnatal_tracker['late_neonatal_sepsis']
-        total_pn_neonatal_deaths = self.module.postnatal_tracker['neonatal_death']
-
-        neonatal_dict_for_output = {'eons': total_early_sepsis,
-                                    'lons': total_late_sepsis,
-                                    'total_deaths': total_pn_neonatal_deaths,
-                                    'pn_nmr': (total_pn_neonatal_deaths/total_births_last_year) * 1000}
-
-        logger.info(key='postnatal_neonatal_summary_stats', data=neonatal_dict_for_output,
-                    description='Yearly neonatal summary statistics output from the postnatal supervisor module')
-
-        self.module.postnatal_tracker = {'endometritis': 0,
-                                         'urinary_tract_inf': 0,
-                                         'skin_soft_tissue_inf': 0,
-                                         'other_maternal_infection': 0,
-                                         'secondary_pph': 0,
-                                         'postnatal_death': 0,
-                                         'postnatal_sepsis': 0,
-                                         'fistula': 0,
-                                         'postnatal_anaemia': 0,
-                                         'early_neonatal_sepsis': 0,
-                                         'late_neonatal_sepsis': 0,
-                                         'neonatal_death': 0,
-                                         'neonatal_sepsis_death': 0}

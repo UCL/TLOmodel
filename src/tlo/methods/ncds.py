@@ -407,6 +407,15 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.date + DateOffset(days=self.module.rng.randint(ndays))
             )
 
+        def lmpredict_rtn_a_series(lm, df):
+            """wrapper to call predict on a linear model, guranteeing that a pd.Series is returned even if the length
+            of the df is 1."""
+            res = lm.predict(df, rng)
+            if type(res) == pd.Series:
+                return res
+            else:
+                return pd.Series(index=df.index, data=[res])
+
         current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
 
         # Determine onset/removal of conditions
@@ -414,7 +423,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # onset:
             eligible_population = df.is_alive & ~df[f'nc_{condition}']
-            acquires_condition = self.module.lms_onset[condition].predict(df.loc[eligible_population], rng)
+            acquires_condition = lmpredict_rtn_a_series(self.module.lms_onset[condition], df.loc[eligible_population])
             idx_acquires_condition = acquires_condition[acquires_condition].index
             df.loc[idx_acquires_condition, f'nc_{condition}'] = True
 
@@ -425,7 +434,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # removal:
             eligible_population = df.is_alive & df[f'nc_{condition}']
-            loses_condition = self.module.lms_removal[condition].predict(df.loc[eligible_population], rng)
+            loses_condition = lmpredict_rtn_a_series(self.module.lms_removal[condition], df.loc[eligible_population])
             idx_loses_condition = loses_condition[loses_condition].index
             df.loc[idx_loses_condition, f'nc_{condition}'] = False
 
@@ -611,7 +620,6 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # output combinations of different conditions
         df = population.props
-        df = df[df.is_alive]
 
         combos = combinations(self.module.condition_list, 2)
         condition_combos = list(combos)
@@ -619,9 +627,11 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_combos = pd.DataFrame(index=df['age_range'].value_counts().sort_index().index)
 
         for i in range(0, len(condition_combos)):
-            df['nc_condition_combos'] = np.where(
-                df.loc[:, f'{condition_combos[i][0]}'] & df.loc[:, f'{condition_combos[i][1]}'], True, False)
-            col = df.loc[df['nc_condition_combos']].groupby(['age_range'])['nc_condition_combos'].count()
+            df.loc[df.is_alive, 'nc_condition_combos'] = np.where(
+                 df.loc[df.is_alive, f'{condition_combos[i][0]}'] &
+                 df.loc[df.is_alive, f'{condition_combos[i][1]}'],
+                 True, False)
+            col = df.loc[df.is_alive].groupby(['age_range'])['nc_condition_combos'].count()
             n_combos.reset_index()
             n_combos.loc[:, (f'{condition_combos[i][0]}' + '_' + f'{condition_combos[i][1]}')] = col.values
 

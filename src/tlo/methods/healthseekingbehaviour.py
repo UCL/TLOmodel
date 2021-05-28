@@ -201,11 +201,12 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         health_system = self.sim.modules["HealthSystem"]
 
         # get rows of alive persons with new symptoms
-        alive_with_symptoms = df.loc[sorted(symptom_manager.persons_with_newly_onset_symptoms), 'is_alive']
+        has_newly_onset_symtoms = symptom_manager.get_persons_with_newly_onset_symptoms()
+        alive_with_symptoms = df.loc[sorted(has_newly_onset_symtoms), 'is_alive']
         selected_persons = df.loc[alive_with_symptoms[alive_with_symptoms].index]
 
         # clear the list of persons with newly onset symptoms
-        symptom_manager.persons_with_newly_onset_symptoms.clear()
+        symptom_manager.reset_persons_with_newly_onset_symptoms()
 
         # calculate the baseline probability for adults and children to seek care & put them in single series
         # (index remains the person_id)
@@ -213,12 +214,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         baseline_prob_adult = m.hsb['adults'].predict(selected_persons[selected_persons.age_years >= 15])
         baseline_prob = baseline_prob_child.append(baseline_prob_adult, verify_integrity=True).rename('baseline_prob')
 
-        # this replaces calls to `symptom_manager.has_what(person_id)` inside the loop. get all the symptoms for
-        # all persons and skip the checks/options in the `has_what()` method
-        # todo: move this to symptom manager i.e. have_what(person_ids) (but better name)
-        persons_symptoms = selected_persons.apply(
-            lambda p: [s for s in symptom_manager.symptom_names if p[f'sy_{s}'] > 0], axis=1, result_type='reduce'
-        ).rename('symptoms')
+        # Get the symptoms that each person (who has newly onset symptoms) has currently.
+        persons_symptoms = symptom_manager.have_what(selected_persons.index)
 
         # make dataframe for processing below:
         # person_id (index), baseline_prob, age_years < 15 (i.e. is child), symptoms (list object)

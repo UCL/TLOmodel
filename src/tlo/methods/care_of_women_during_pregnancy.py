@@ -49,10 +49,6 @@ class CareOfWomenDuringPregnancy(Module):
         # change between 2010 and 2020)
         self.current_parameters = dict()
 
-        # This dictionary is used to track the frequency of certain events in the module which are processed by the
-        # logging event
-        self.anc_tracker = dict()
-
     METADATA = {
         Metadata.USES_HEALTHSYSTEM,
     }
@@ -158,6 +154,10 @@ class CareOfWomenDuringPregnancy(Module):
             Types.LIST, 'sensitivity of a blood test to detect raised blood glucose'),
         'specificity_blood_test_glucose': Parameter(
             Types.LIST, 'specificity of a blood test to detect raised blood glucose'),
+        'sensitivity_blood_test_syphilis': Parameter(
+            Types.LIST, 'sensitivity of a blood test to detect syphilis'),
+        'specificity_blood_test_syphilis': Parameter(
+            Types.LIST, 'specificity of a blood test to detect syphilis'),
     }
 
     PROPERTIES = {
@@ -249,9 +249,6 @@ class CareOfWomenDuringPregnancy(Module):
         sim.schedule_event(AntenatalCareLoggingEvent(self),
                            sim.date + DateOffset(years=1))
 
-        # Then populate the tracker dictionary
-        self.anc_tracker = {'total_first_anc_visits': 0, 'cumm_ga_at_anc1': 0, 'total_anc1_first_trimester': 0,
-                            'anc8+': 0, 'timely_ANC3': 0, 'diet_supp_6_months': 0}
 
         # ==================================== REGISTERING DX_TESTS =================================================
         params = self.current_parameters
@@ -291,7 +288,14 @@ class CareOfWomenDuringPregnancy(Module):
             blood_test_glucose=DxTest(
                 property='ps_gest_diab', target_categories=['uncontrolled'],
                 sensitivity=params['sensitivity_blood_test_glucose'],
-                specificity=params['specificity_blood_test_glucose']))
+                specificity=params['specificity_blood_test_glucose']),
+
+            # This test represents point of care glucose testing used in ANC to detect hyperglycemia, associated with
+            # gestational diabetes
+            blood_test_syphilis=DxTest(
+                property='ps_syphilis',
+                sensitivity=params['sensitivity_blood_test_syphilis'],
+                specificity=params['specificity_blood_test_syphilis']))
 
         if 'Hiv' not in self.sim.modules:
             logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
@@ -923,7 +927,7 @@ class CareOfWomenDuringPregnancy(Module):
                                                                                              'delivered_hepb_test']):
             logger.debug(key='msg', data=f'Mother {person_id} has received Hep B testing during ANC')
 
-    def syphilis_testing(self, hsi_event):
+    def syphilis_screening_and_treatment(self, hsi_event):
         """
         This function contains the intervention Syphilis testing and is provided to women during ANC. As Syphilis is
         not modelled currently this intervention just maps consumables used during ANC
@@ -932,8 +936,9 @@ class CareOfWomenDuringPregnancy(Module):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.current_parameters
         person_id = hsi_event.target
+        df = self.sim.population.props
 
-        # Define the consumables
+        # Define the consumables for testing and for treatment
         item_code_syphilis_test = pd.unique(
             consumables.loc[consumables['Items'] == 'Test, Rapid plasma reagin (RPR)', 'Item_Code'])[0]
         item_code_blood_tube = pd.unique(
@@ -943,22 +948,43 @@ class CareOfWomenDuringPregnancy(Module):
         item_code_gloves = pd.unique(
             consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
 
-        consumables_syphilis = {
+        item_code_benpen = pd.unique(
+            consumables.loc[
+                consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
+                'Item_Code'])[0]
+
+        consumables_syphilis_testing = {
             'Intervention_Package_Code': {},
             'Item_Code': {item_code_syphilis_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
                           item_code_gloves: 1}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        consumables_syphilis_treatment = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_benpen: 3}}
+
+        outcome_of_request_for_consumables_testing = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_syphilis)
+            cons_req_as_footprint=consumables_syphilis_testing)
 
         # We log all the consumables required above but we only condition the event test happening on the availability
         # of the test itself
-        if (outcome_of_request_for_consumables['Item_Code'][item_code_syphilis_test]) and (self.rng.random_sample() <
-                                                                                           params['prob_intervention_'
-                                                                                                  'delivered_syph_'
-                                                                                                  'test']):
-            logger.debug(key='msg', data=f'Mother {person_id} has received syphilis testing during ANC')
+        if (outcome_of_request_for_consumables_testing['Item_Code'][item_code_syphilis_test]) and (
+          self.rng.random_sample() < params['prob_intervention_delivered_syph_test']):
+
+            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_syphilis',
+                                                                       hsi_event=hsi_event):
+
+                # If the test detects that the mother has syphilis treatment is admistered and we assume her infection
+                # is treated
+                outcome_of_request_for_consumables_treatment = self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=hsi_event,
+                    cons_req_as_footprint=consumables_syphilis_treatment)
+
+                if outcome_of_request_for_consumables_treatment['Item_Code'][item_code_benpen]:
+                    df.at[person_id, 'ps_syphilis'] = False
+
+                    logger.debug(key='msg', data=f'Mother {person_id} has received syphilis testing during ANC and has '
+                                                 f'been treated for her syphilis infection')
 
     def hiv_testing(self, hsi_event):
         """
@@ -1022,6 +1048,9 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
+        # todo: it might actually be more realistic to test urine before doing fasting OGGT, cant see if they use finger
+        #  prick
+
         # We check if this women has any of the key risk factors, if so they are sent for additional blood tests
         if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
                                                                                              'ps_prev_stillbirth']:
@@ -1080,7 +1109,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         self.hiv_testing(hsi_event=hsi_event)
         self.hep_b_testing(hsi_event=hsi_event)
-        self.syphilis_testing(hsi_event=hsi_event)
+        self.syphilis_screening_and_treatment(hsi_event=hsi_event)
         self.point_of_care_hb_testing(hsi_event=hsi_event)
         self.tetanus_vaccination(hsi_event=hsi_event)
 
@@ -1780,7 +1809,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
                 self.module.interventions_initiated_at_first_contact(hsi_event=self)
                 self.module.hiv_testing(hsi_event=self)
                 self.module.hep_b_testing(hsi_event=self)
-                self.module.syphilis_testing(hsi_event=self)
+                self.module.syphilis_screening_and_treatment(hsi_event=self)
                 self.module.point_of_care_hb_testing(hsi_event=self)
                 self.module.tetanus_vaccination(hsi_event=self)
 
@@ -1891,7 +1920,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             elif mother.ps_gestational_age_in_weeks < 36:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.hep_b_testing(hsi_event=self)
-                self.module.syphilis_testing(hsi_event=self)
+                self.module.syphilis_screening_and_treatment(hsi_event=self)
 
             elif mother.ps_gestational_age_in_weeks < 38:
                 self.module.point_of_care_hb_testing(hsi_event=self)
@@ -1981,7 +2010,7 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
             elif mother.ps_gestational_age_in_weeks < 36:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.hep_b_testing(hsi_event=self)
-                self.module.syphilis_testing(hsi_event=self)
+                self.module.syphilis_screening_and_treatment(hsi_event=self)
 
             elif mother.ps_gestational_age_in_weeks < 38:
                 self.module.point_of_care_hb_testing(hsi_event=self)
@@ -2073,7 +2102,7 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 36:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.hep_b_testing(hsi_event=self)
-                self.module.syphilis_testing(hsi_event=self)
+                self.module.syphilis_screening_and_treatment(hsi_event=self)
 
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 38:
                 self.module.point_of_care_hb_testing(hsi_event=self)
@@ -2157,7 +2186,7 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
             if mother.ps_gestational_age_in_weeks < 36:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.hep_b_testing(hsi_event=self)
-                self.module.syphilis_testing(hsi_event=self)
+                self.module.syphilis_screening_and_treatment(hsi_event=self)
 
             elif mother.ps_gestational_age_in_weeks < 38:
                 self.module.point_of_care_hb_testing(hsi_event=self)
@@ -2393,7 +2422,6 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
                 logger.info(key='anc4+', data={'mother': person_id})
 
             logger.info(key='anc8+', data={'mother': person_id})
-            self.module.anc_tracker['anc8+'] += 1
 
             self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
             self.module.calcium_supplementation(hsi_event=self)
@@ -3153,27 +3181,3 @@ class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         total_anc1_visits = self.module.anc_tracker['total_first_anc_visits']
         if total_anc1_visits == 0:
             total_anc1_visits = 1
-
-        anc1_in_first_trimester = self.module.anc_tracker['total_anc1_first_trimester']
-        cumm_gestation = self.module.anc_tracker['cumm_ga_at_anc1']
-        early_anc3 = self.module.anc_tracker['timely_ANC3']
-        diet_sup_6_months = self.module.anc_tracker['diet_supp_6_months']
-
-        # ra_lower_limit = 14
-        # ra_upper_limit = 50
-        # women_reproductive_age = df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > ra_lower_limit) &
-        #                                   (df.age_years < ra_upper_limit))]
-        # total_women_reproductive_age = len(women_reproductive_age)
-
-        dict_for_output = {'mean_ga_first_anc': cumm_gestation / total_anc1_visits,
-                           'proportion_anc1_first_trimester': (anc1_in_first_trimester / total_anc1_visits) * 100,
-                           'early_anc3_proportion_of_births': (early_anc3 / total_births_last_year) * 100,
-                           'early_anc3': early_anc3,
-                           'diet_supps_6_months': diet_sup_6_months}
-
-        logger.info(key='anc_summary_statistics',
-                    data=dict_for_output,
-                    description='Yearly summary statistics output from the antenatal care module')
-
-        for k in self.module.anc_tracker:
-            self.module.anc_tracker[k] = 0
