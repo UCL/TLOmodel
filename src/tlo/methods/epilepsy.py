@@ -523,5 +523,3 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
                     logger.debug('@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
         if anti_epileptics_available:
             df.at[person_id, 'ep_antiep'] = True
-
-
