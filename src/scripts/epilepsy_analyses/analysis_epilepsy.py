@@ -11,7 +11,9 @@ from tlo.methods import (
     enhanced_lifestyle,
     epilepsy,
     healthburden,
+    healthseekingbehaviour,
     healthsystem,
+    symptommanager
 )
 
 # Where will outputs go
@@ -45,8 +47,10 @@ sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
+             epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+             symptommanager.SymptomManager(resourcefilepath=resourcefilepath)
              )
 
 # Run the simulation and flush the logger
