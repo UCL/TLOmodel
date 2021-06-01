@@ -412,11 +412,11 @@ class Diarrhoea(Module):
     }
 
     PROPERTIES = {
-        # ---- The pathogen which is caused the diarrhoea  ----
         'gi_ever_had_diarrhoea': Property(Types.BOOL,
                                           'Whether or not the person has ever had an episode of diarrhoea.'
                                           ),
 
+        # ---- The pathogen which is caused the diarrhoea  ----
         'gi_last_diarrhoea_pathogen': Property(Types.CATEGORICAL,
                                                'Attributable pathogen for the last episode of diarrhoea.'
                                                'not_applicable is used if the person has never had an episode of '
@@ -473,9 +473,6 @@ class Diarrhoea(Module):
 
         # ---- Temporary Variables: To be replaced with the properties of other modules ----
         'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
-        'tmp_exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
-        'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
-        'tmp_hv_inf': Property(Types.BOOL, 'Temporary property - current HIV infection')
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -574,8 +571,6 @@ class Diarrhoea(Module):
 
         # ---- Temporary values ----
         df.loc[df.is_alive, 'tmp_malnutrition'] = False
-        df.loc[df.is_alive, 'tmp_exclusive_breastfeeding'] = False
-        df.loc[df.is_alive, 'tmp_continued_breastfeeding'] = False
 
     def initialise_simulation(self, sim):
         """Prepares for simulation:
@@ -620,9 +615,10 @@ class Diarrhoea(Module):
                     Predictor('li_no_access_handwashing').when(False, p['rr_diarrhoea_HHhandwashing']),
                     Predictor('li_no_clean_drinking_water').when(False, p['rr_diarrhoea_clean_water']),
                     Predictor('li_unimproved_sanitation').when(False, p['rr_diarrhoea_improved_sanitation']),
-                    Predictor('tmp_hv_inf').when(True, p['rr_diarrhoea_HIV']),
+                    Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarrhoea_HIV']),
                     Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM']),
-                    Predictor('tmp_exclusive_breastfeeding').when(False, p['rr_diarrhoea_excl_breast'])
+                    Predictor('nb_breastfeeding_status').when('non_exclusive | none',
+                                                              p['rr_diarrhoea_excl_breast'])
                 )
 
             df = self.sim.population.props
@@ -676,7 +672,7 @@ class Diarrhoea(Module):
             Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_diarr_death_age12to23mo'])
                                         .when('.between(2,3.9999)', p['rr_diarr_death_age24to59mo'])
                                         .otherwise(0.0),
-            Predictor('tmp_hv_inf').when(True, p['rr_diarrhoea_HIV']),
+            Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarrhoea_HIV']),
             Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM'])
         )
 
@@ -753,8 +749,6 @@ class Diarrhoea(Module):
 
         # ---- Temporary values ----
         df.at[child_id, 'tmp_malnutrition'] = False
-        df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
-        df.at[child_id, 'tmp_continued_breastfeeding'] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -1046,7 +1040,8 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                 prob_death *= p['rr_diarr_death_age12to23mo']
             elif 2 <= person['age_exact_years'] < 4:
                 prob_death *= p['rr_diarr_death_age24to59mo']
-            if person['tmp_hv_inf']:
+
+            if person['hv_inf'] & person[('hv_art' == 'not')]:
                 prob_death *= p['rr_diarrhoea_HIV']
             if person['tmp_malnutrition']:
                 prob_death *= p['rr_diarrhoea_SAM']
