@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import parse_log_file
 
-
 # =============================== Analysis description ========================================================
 # Here I am trying to find out if it is better to do single runs with a larger population size vs
 # multiple runs with smaller population sizes
