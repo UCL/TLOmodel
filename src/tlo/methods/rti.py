@@ -6432,7 +6432,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
         Thoroscopy treated injuries:
         https://www.ncbi.nlm.nih.gov/nlmcatalog/101549743
-        https://www.unthsc.edu/texas-college-of-osteopathic-medicine/wp-content/uploads/sites/9/Pediatric_Handbook_for_Malawi.pdf
+        Ref from pediatric handbook for Malawi
         '441' - Closed pneumothorax
         '443' - Open pneumothorax
         '463' - Haemothorax
