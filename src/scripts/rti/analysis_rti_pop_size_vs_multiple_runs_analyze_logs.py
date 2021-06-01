@@ -1,8 +1,10 @@
-from matplotlib import pyplot as plt
-import numpy as np
 import os
-from pathlib import Path
 import re
+from pathlib import Path
+
+import numpy as np
+from matplotlib import pyplot as plt
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (

@@ -1,3 +1,5 @@
+import numpy as np
+
 from tlo import Date, logging
 from tlo.methods import (
     demography,
@@ -12,7 +14,6 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.scenario import BaseScenario
-import numpy as np
 
 
 class TestScenario(BaseScenario):
