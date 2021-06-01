@@ -759,7 +759,7 @@ class Hiv(Module):
                 "Item_Code"
             ]
         )[0]
-        self.footprints_for_consumables_required['art_child'] = {
+        self.footprints_for_consumables_required['art_pregnant'] = {
             "Intervention_Package_Code": {},
             "Item_Code": {item_code_for_art_preg1: 1, item_code_for_art_preg2: 2, item_code_for_art_preg3: 1}
         }
@@ -1608,7 +1608,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         # Check if drugs are available, and provide drugs:
-        drugs_available = self.get_drugs(age_of_person=person['age_years'])
+        drugs_available = self.get_drugs(age_of_person=person['age_years'], person_id=person_id)
 
         if drugs_available:
             # Assign person to be have suppressed or un-suppressed viral load
@@ -1640,7 +1640,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         _ = self.get_all_consumables(footprint=self.module.footprints_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
-        drugs_available = self.get_drugs(age_of_person=person['age_years'])
+        drugs_available = self.get_drugs(age_of_person=person['age_years'], person_id=person_id)
 
         return drugs_available
 
@@ -1660,9 +1660,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         return "on_VL_suppressed" if (self.module.rng.random_sample() < prob_vs) else "on_not_VL_suppressed"
 
-    def get_drugs(self, age_of_person):
+    def get_drugs(self, age_of_person, person_id):
         """Helper function to get the ART according to the age of the person being treated. Returns bool to indicate
         whether drugs were available"""
+
+        df = self.sim.population.props
+
         if age_of_person < 5.0:
             # Formulation for children
             drugs_available = self.get_all_consumables(
@@ -1671,6 +1674,11 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # Formulation for adults
             drugs_available = self.get_all_consumables(
                 footprint=self.module.footprints_for_consumables_required['art_adult'])
+
+        if df.at[person_id, 'is_pregnant']:
+            # Formulation for pregnant women
+            drugs_available = self.get_all_consumables(
+                footprint=self.module.footprints_for_consumables_required['art_pregnant'])
 
         return drugs_available
 
