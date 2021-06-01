@@ -1,29 +1,17 @@
 import os
 import re
-from pathlib import Path
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import (
-    demography,
-    dx_algorithm_adult,
-    dx_algorithm_child,
-    enhanced_lifestyle,
-    healthburden,
-    healthseekingbehaviour,
-    healthsystem,
-    rti,
-    simplified_births,
-    symptommanager,
-)
+
 
 # =============================== Analysis description ========================================================
 # Here I am trying to find out if it is better to do single runs with a larger population size vs
 # multiple runs with smaller population sizes
 # Create function to get the simulation run time
+
 
 def get_simulation_time(df):
     sim_time_string = df['tlo.simulation']['info']['message'].to_list()[-1]
