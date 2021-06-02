@@ -26,16 +26,16 @@ from tlo.methods import (
 class MyTestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 896
+        self.seed = 257
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 1, 1)
-        self.pop_size = 50000
+        self.pop_size = 100000
         self.number_of_draws = 10
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'long_run_2010', 'directory': './outputs',
+            'filename': 'multi_run', 'directory': './outputs',
             'custom_levels': {'*': logging.INFO}
         }
 
