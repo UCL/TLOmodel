@@ -114,6 +114,8 @@ def predict_sepsis_death(self, df, rng=None, **externals):
     params = self.parameters
     result = params['cfr_sepsis']
 
+    # todo: wont this give a treatment effect to postpartum women who develop a different kind of sepsis
+
     if person['la_sepsis_treatment'] or person['ac_received_abx_for_chorioamnionitis']:
         result *= params['sepsis_treatment_effect_md']
 

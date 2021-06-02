@@ -749,7 +749,10 @@ class Labour(Module):
 
             # This equation is used to calculate a womans risk of death following sepsis during labour and is mitigated
             # by treatment
+            # todo: this is messy
             'intrapartum_sepsis_death': LinearModel.custom(labour_lm.predict_sepsis_death, parameters=params),
+            'postpartum_sepsis_death': LinearModel.custom(labour_lm.predict_sepsis_death, parameters=params),
+
 
             # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
             # by treatment delivered either immediately prior to admission for delivery or during labour
