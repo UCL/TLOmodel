@@ -31,6 +31,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from scipy.stats import truncnorm
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -123,170 +124,170 @@ class Diarrhoea(Module):
         'rr_diarrhoea_clean_water':
             Parameter(Types.REAL, 'relative rate of diarrhoea for access to clean drinking water'
                       ),
-        'rr_diarrhoea_HIV':
+        'rr_diarrhoea_untreated_HIV':
             Parameter(Types.REAL, 'relative rate of diarrhoea for HIV positive status'
                       ),
         'rr_diarrhoea_SAM':
             Parameter(Types.REAL, 'relative rate of diarrhoea for severe malnutrition'
                       ),
-        'rr_diarrhoea_excl_breast':
-            Parameter(Types.REAL, 'relative rate of diarrhoea for exclusive breastfeeding upto 6 months'
+        'rr_diarrhoea_excl_breastfeeding':
+            Parameter(Types.REAL, 'relative rate of diarrhoea for exclusive breastfeeding in <6 months old'
                       ),
-        'rr_diarrhoea_cont_breast':
-            Parameter(Types.REAL, 'relative rate of diarrhoea for continued breastfeeding 6 months to 2 years'
+        'rr_diarrhoea_cont_breastfeeding':
+            Parameter(Types.REAL, 'relative rate of diarrhoea for continued breastfeeding in 6 months old to 2 years'
                       ),
         'rr_diarrhoea_rotavirus_vaccination':
             Parameter(Types.REAL, 'relative rate of diarrhoea for rotavirus vaccine'
                       ),
-        'proportion_AWD_by_rotavirus':
-            Parameter(Types.REAL, 'acute diarrhoea type caused by rotavirus'
+        'proportion_AWD_in_rotavirus':
+            Parameter(Types.REAL, 'acute diarrhoea type caused in rotavirus-attributed diarrhoea'
                       ),
-        'proportion_AWD_by_shigella':
-            Parameter(Types.REAL, 'acute diarrhoea type caused by shigella'
+        'proportion_AWD_in_shigella':
+            Parameter(Types.REAL, 'acute diarrhoea type caused in shigella-attributed diarrhoea'
                       ),
-        'proportion_AWD_by_adenovirus':
-            Parameter(Types.REAL, 'acute diarrhoea type caused by adenovirus'
+        'proportion_AWD_in_adenovirus':
+            Parameter(Types.REAL, 'acute diarrhoea type caused in adenovirus-attributed diarrhoea'
                       ),
-        'proportion_AWD_by_cryptosporidium':
-            Parameter(Types.REAL, 'acute diarrhoea type caused by cryptosporidium'
+        'proportion_AWD_in_cryptosporidium':
+            Parameter(Types.REAL, 'acute diarrhoea type caused in cryptosporidium-attributed diarrhoea'
                       ),
-        'proportion_AWD_by_campylobacter':
-            Parameter(Types.REAL, 'acute diarrhoea type caused by campylobacter'
+        'proportion_AWD_in_campylobacter':
+            Parameter(Types.REAL, 'acute diarrhoea type caused in campylobacter-attributed diarrhoea'
                       ),
-        'proportion_AWD_by_ST-ETEC':
-            Parameter(Types.REAL, 'acute diarrhoea type caused by ST-ETEC'
+        'proportion_AWD_in_ST-ETEC':
+            Parameter(Types.REAL, 'acute diarrhoea type caused in ST-ETEC-attributed diarrhoea'
                       ),
-        'proportion_AWD_by_sapovirus':
-            Parameter(Types.REAL, 'acute diarrhoea type caused by sapovirus'
+        'proportion_AWD_in_sapovirus':
+            Parameter(Types.REAL, 'acute diarrhoea type caused in sapovirus-attributed diarrhoea'
                       ),
-        'proportion_AWD_by_norovirus':
-            Parameter(Types.REAL, 'acute diarrhoea type caused by norovirus'
+        'proportion_AWD_in_norovirus':
+            Parameter(Types.REAL, 'acute diarrhoea type caused in norovirus-attributed diarrhoea'
                       ),
-        'proportion_AWD_by_astrovirus':
-            Parameter(Types.REAL, 'acute diarrhoea type caused by astrovirus'
+        'proportion_AWD_in_astrovirus':
+            Parameter(Types.REAL, 'acute diarrhoea type caused in astrovirus-attributed diarrhoea'
                       ),
-        'proportion_AWD_by_tEPEC':
-            Parameter(Types.REAL, 'acute diarrhoea type caused by tEPEC'
+        'proportion_AWD_in_tEPEC':
+            Parameter(Types.REAL, 'acute diarrhoea type in tEPEC-attributed diarrhoea'
                       ),
-        'fever_by_rotavirus':
-            Parameter(Types.REAL, 'fever caused by rotavirus'
+        'prob_fever_by_rotavirus':
+            Parameter(Types.REAL, 'probability of fever caused by rotavirus'
                       ),
-        'fever_by_shigella':
-            Parameter(Types.REAL, 'fever caused by shigella'
+        'prob_fever_by_shigella':
+            Parameter(Types.REAL, 'probability of fever caused by shigella'
                       ),
-        'fever_by_adenovirus':
-            Parameter(Types.REAL, 'fever caused by adenovirus'
+        'prob_fever_by_adenovirus':
+            Parameter(Types.REAL, 'probability of fever caused by adenovirus'
                       ),
-        'fever_by_cryptosporidium':
-            Parameter(Types.REAL, 'fever caused by cryptosporidium'
+        'prob_fever_by_cryptosporidium':
+            Parameter(Types.REAL, 'probability of fever caused by cryptosporidium'
                       ),
-        'fever_by_campylobacter':
-            Parameter(Types.REAL, 'fever caused by campylobacter'
+        'prob_fever_by_campylobacter':
+            Parameter(Types.REAL, 'probability of fever caused by campylobacter'
                       ),
-        'fever_by_ST-ETEC':
-            Parameter(Types.REAL, 'fever caused by ST-ETEC'
+        'prob_fever_by_ST-ETEC':
+            Parameter(Types.REAL, 'probability of fever caused by ST-ETEC'
                       ),
-        'fever_by_sapovirus':
-            Parameter(Types.REAL, 'fever caused by sapovirus'
+        'prob_fever_by_sapovirus':
+            Parameter(Types.REAL, 'probability of fever caused by sapovirus'
                       ),
-        'fever_by_norovirus':
-            Parameter(Types.REAL, 'fever caused by norovirus'
+        'prob_fever_by_norovirus':
+            Parameter(Types.REAL, 'probability of fever caused by norovirus'
                       ),
-        'fever_by_astrovirus':
-            Parameter(Types.REAL, 'fever caused by astrovirus'
+        'prob_fever_by_astrovirus':
+            Parameter(Types.REAL, 'probability of fever caused by astrovirus'
                       ),
-        'fever_by_tEPEC':
-            Parameter(Types.REAL, 'fever caused by tEPEC'
+        'prob_fever_by_tEPEC':
+            Parameter(Types.REAL, 'probability of fever caused by tEPEC'
                       ),
-        'vomiting_by_rotavirus':
-            Parameter(Types.REAL, 'vomiting caused by rotavirus'
+        'prob_vomiting_by_rotavirus':
+            Parameter(Types.REAL, 'probability of vomiting caused by rotavirus'
                       ),
-        'vomiting_by_shigella':
-            Parameter(Types.REAL, 'vomiting caused by shigella'
+        'prob_vomiting_by_shigella':
+            Parameter(Types.REAL, 'probability of vomiting caused by shigella'
                       ),
-        'vomiting_by_adenovirus':
-            Parameter(Types.REAL, 'vomiting caused by adenovirus'
+        'prob_vomiting_by_adenovirus':
+            Parameter(Types.REAL, 'probability of vomiting caused by adenovirus'
                       ),
-        'vomiting_by_cryptosporidium':
-            Parameter(Types.REAL, 'vomiting caused by cryptosporidium'
+        'prob_vomiting_by_cryptosporidium':
+            Parameter(Types.REAL, 'probability of vomiting caused by cryptosporidium'
                       ),
-        'vomiting_by_campylobacter':
-            Parameter(Types.REAL, 'vomiting caused by campylobacter'
+        'prob_vomiting_by_campylobacter':
+            Parameter(Types.REAL, 'probability of vomiting caused by campylobacter'
                       ),
-        'vomiting_by_ST-ETEC':
-            Parameter(Types.REAL, 'vomiting caused by ST-ETEC'
+        'prob_vomiting_by_ST-ETEC':
+            Parameter(Types.REAL, 'probability of vomiting caused by ST-ETEC'
                       ),
-        'vomiting_by_sapovirus':
-            Parameter(Types.REAL, 'vomiting caused by sapovirus'
+        'prob_vomiting_by_sapovirus':
+            Parameter(Types.REAL, 'probability of vomiting caused by sapovirus'
                       ),
-        'vomiting_by_norovirus':
-            Parameter(Types.REAL, 'vomiting caused by norovirus'
+        'prob_vomiting_by_norovirus':
+            Parameter(Types.REAL, 'probability of vomiting caused by norovirus'
                       ),
-        'vomiting_by_astrovirus':
-            Parameter(Types.REAL, 'vomiting caused by astrovirus'
+        'prob_vomiting_by_astrovirus':
+            Parameter(Types.REAL, 'probability of vomiting caused by astrovirus'
                       ),
-        'vomiting_by_tEPEC':
-            Parameter(Types.REAL, 'vomiting caused by tEPEC'
+        'prob_vomiting_by_tEPEC':
+            Parameter(Types.REAL, 'probability of vomiting caused by tEPEC'
                       ),
-        'dehydration_by_rotavirus':
-            Parameter(Types.REAL, 'any dehydration caused by rotavirus'
+        'prob_dehydration_by_rotavirus':
+            Parameter(Types.REAL, 'probability of any dehydration caused by rotavirus'
                       ),
-        'dehydration_by_shigella':
-            Parameter(Types.REAL, 'any dehydration caused by shigella'
+        'prob_dehydration_by_shigella':
+            Parameter(Types.REAL, 'probability of any dehydration caused by shigella'
                       ),
-        'dehydration_by_adenovirus':
-            Parameter(Types.REAL, 'any dehydration caused by adenovirus'
+        'prob_dehydration_by_adenovirus':
+            Parameter(Types.REAL, 'probability of any dehydration caused by adenovirus'
                       ),
-        'dehydration_by_cryptosporidium':
-            Parameter(Types.REAL, 'any dehydration caused by cryptosporidium'
+        'prob_dehydration_by_cryptosporidium':
+            Parameter(Types.REAL, 'probability of any dehydration caused by cryptosporidium'
                       ),
-        'dehydration_by_campylobacter':
-            Parameter(Types.REAL, 'any dehydration caused by campylobacter'
+        'prob_dehydration_by_campylobacter':
+            Parameter(Types.REAL, 'probability of any dehydration caused by campylobacter'
                       ),
-        'dehydration_by_ST-ETEC':
-            Parameter(Types.REAL, 'any dehydration caused by ST-ETEC'
+        'prob_dehydration_by_ST-ETEC':
+            Parameter(Types.REAL, 'probability of any dehydration caused by ST-ETEC'
                       ),
-        'dehydration_by_sapovirus':
-            Parameter(Types.REAL, 'any dehydration caused by sapovirus'
+        'prob_dehydration_by_sapovirus':
+            Parameter(Types.REAL, 'probability of any dehydration caused by sapovirus'
                       ),
-        'dehydration_by_norovirus':
-            Parameter(Types.REAL, 'any dehydration caused by norovirus'
+        'prob_dehydration_by_norovirus':
+            Parameter(Types.REAL, 'probability of any dehydration caused by norovirus'
                       ),
-        'dehydration_by_astrovirus':
-            Parameter(Types.REAL, 'any dehydration caused by astrovirus'
+        'prob_dehydration_by_astrovirus':
+            Parameter(Types.REAL, 'probability of any dehydration caused by astrovirus'
                       ),
-        'dehydration_by_tEPEC':
-            Parameter(Types.REAL, 'any dehydration caused by tEPEC'
+        'prob_dehydration_by_tEPEC':
+            Parameter(Types.REAL, 'probability of any dehydration caused by tEPEC'
                       ),
-        'prolonged_diarr_rotavirus':
-            Parameter(Types.REAL, 'prolonged episode by rotavirus'
+        'prob_prolonged_diarr_rotavirus':
+            Parameter(Types.REAL, 'probability of prolonged episode in rotavirus-attributed diarrhoea'
                       ),
-        'prolonged_diarr_shigella':
-            Parameter(Types.REAL, 'prolonged episode by shigella'
+        'prob_prolonged_diarr_shigella':
+            Parameter(Types.REAL, 'probability of prolonged episode by shigella-attributed diarrhoea'
                       ),
-        'prolonged_diarr_adenovirus':
-            Parameter(Types.REAL, 'prolonged episode by adenovirus'
+        'prob_prolonged_diarr_adenovirus':
+            Parameter(Types.REAL, 'probability of prolonged episode by adenovirus-attributed diarrhoea'
                       ),
-        'prolonged_diarr_cryptosporidium':
-            Parameter(Types.REAL, 'prolonged episode by cryptosporidium'
+        'prob_prolonged_diarr_cryptosporidium':
+            Parameter(Types.REAL, 'probability of prolonged episode by cryptosporidium-attributed diarrhoea'
                       ),
-        'prolonged_diarr_campylobacter':
-            Parameter(Types.REAL, 'prolonged episode by campylobacter'
+        'prob_prolonged_diarr_campylobacter':
+            Parameter(Types.REAL, 'probability of prolonged episode by campylobacter-attributed diarrhoea'
                       ),
-        'prolonged_diarr_ST-ETEC':
-            Parameter(Types.REAL, 'prolonged episode by ST-ETEC'
+        'prob_prolonged_diarr_ST-ETEC':
+            Parameter(Types.REAL, 'probability of prolonged episode by ST-ETEC-attributed diarrhoea'
                       ),
-        'prolonged_diarr_sapovirus':
-            Parameter(Types.REAL, 'prolonged episode by sapovirus'
+        'prob_prolonged_diarr_sapovirus':
+            Parameter(Types.REAL, 'probability of prolonged episode by sapovirus-attributed diarrhoea'
                       ),
-        'prolonged_diarr_norovirus':
-            Parameter(Types.REAL, 'prolonged episode by norovirus'
+        'prob_prolonged_diarr_norovirus':
+            Parameter(Types.REAL, 'probability of prolonged episode by norovirus-attributed diarrhoea'
                       ),
-        'prolonged_diarr_astrovirus':
-            Parameter(Types.REAL, 'prolonged episode by norovirus'
+        'prob_prolonged_diarr_astrovirus':
+            Parameter(Types.REAL, 'probability of prolonged episode by norovirus-attributed diarrhoea'
                       ),
-        'prolonged_diarr_tEPEC':
-            Parameter(Types.REAL, 'prolonged episode by tEPEC'
+        'prob_prolonged_diarr_tEPEC':
+            Parameter(Types.REAL, 'probability of prolonged episode by tEPEC-attributed diarrhoea'
                       ),
         'prob_prolonged_to_persistent_diarr':
             Parameter(Types.REAL, 'probability of prolonged diarrhoea becoming persistent diarrhoea'
@@ -346,8 +347,8 @@ class Diarrhoea(Module):
         'rr_diarr_death_dehydration':
             Parameter(Types.REAL, 'relative risk of diarrhoea death for cases with (some) dehyadration'
                       ),
-        'rr_diarr_death_HIV':
-            Parameter(Types.REAL, 'relative risk of diarrhoea death for HIV'
+        'rr_diarr_death_untreated_HIV':
+            Parameter(Types.REAL, 'relative risk of diarrhoea death for untreated HIV'
                       ),
         'rr_diarr_death_SAM':
             Parameter(Types.REAL, 'relative risk of diarrhoea death for severe acute malnutrition'
@@ -357,25 +358,26 @@ class Diarrhoea(Module):
                                  'classified as severe and child ought to be classified as positive for the danger'
                                  'signs'),
         'mean_days_duration_with_rotavirus':
-            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by rotavirus'),
+            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by rotavirus'),
         'mean_days_duration_with_shigella':
-            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by shigella'),
+            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by shigella'),
         'mean_days_duration_with_adenovirus':
-            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by adenovirus'),
+            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by adenovirus'),
         'mean_days_duration_with_cryptosporidium':
-            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by cryptosporidium'),
+            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by cryptosporidium'
+                      ),
         'mean_days_duration_with_campylobacter':
-            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by campylobacter'),
+            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by campylobacter'),
         'mean_days_duration_with_ST-ETEC':
-            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by ST-ETEC'),
+            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by ST-ETEC'),
         'mean_days_duration_with_sapovirus':
-            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by sapovirus'),
+            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by sapovirus'),
         'mean_days_duration_with_norovirus':
-            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by norovirus'),
+            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by norovirus'),
         'mean_days_duration_with_astrovirus':
-            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by astrovirus'),
+            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by astrovirus'),
         'mean_days_duration_with_tEPEC':
-            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by tEPEC'),
+            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by tEPEC'),
         'prob_of_cure_given_Treatment_PlanA':
             Parameter(Types.REAL, 'probability of the person being cured if is provided with Treatment Plan A'),
         'prob_of_cure_given_Treatment_PlanB':
@@ -510,7 +512,6 @@ class Diarrhoea(Module):
         }
 
         self.risk_of_death_diarrhoea = None
-        self.mean_duration_in_days_of_diarrhoea = None
         self.mean_duration_in_days_of_diarrhoea_lookup = None
         self.prob_diarrhoea_is_watery = None
 
@@ -615,10 +616,10 @@ class Diarrhoea(Module):
                     Predictor('li_no_access_handwashing').when(False, p['rr_diarrhoea_HHhandwashing']),
                     Predictor('li_no_clean_drinking_water').when(False, p['rr_diarrhoea_clean_water']),
                     Predictor('li_unimproved_sanitation').when(False, p['rr_diarrhoea_improved_sanitation']),
-                    Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarrhoea_HIV']),
+                    # Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarrhoea_untreated_HIV']),
                     Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM']),
-                    Predictor('nb_breastfeeding_status').when('non_exclusive | none',
-                                                              p['rr_diarrhoea_excl_breast'])
+                    # Predictor('nb_breastfeeding_status').when('non_exclusive | none',
+                    #                                           p['rr_diarrhoea_excl_breastfeeding'])
                 )
 
             df = self.sim.population.props
@@ -641,10 +642,10 @@ class Diarrhoea(Module):
         def make_symptom_probs(patho):
             return {
                 'diarrhoea': 1.0,
-                'bloody_stool': 1 - p[f'proportion_AWD_by_{patho}'],
-                'fever': p[f'fever_by_{patho}'],
-                'vomiting': p[f'vomiting_by_{patho}'],
-                'dehydration': p[f'dehydration_by_{patho}'],
+                'bloody_stool': 1 - p[f'proportion_AWD_in_{patho}'],
+                'fever': p[f'prob_fever_by_{patho}'],
+                'vomiting': p[f'prob_vomiting_by_{patho}'],
+                'dehydration': p[f'prob_dehydration_by_{patho}'],
             }
 
         for pathogen in Diarrhoea.pathogens:
@@ -670,30 +671,14 @@ class Diarrhoea(Module):
             Predictor('gi_last_diarrhoea_duration').when('>13', p['rr_diarr_death_if_duration_longer_than_13_days']),
             Predictor('gi_last_diarrhoea_dehydration').when('some', p['rr_diarr_death_dehydration']),
             Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_diarr_death_age12to23mo'])
-                                        .when('.between(2,3.9999)', p['rr_diarr_death_age24to59mo'])
+                                        .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo'])
                                         .otherwise(0.0),
-            Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarrhoea_HIV']),
+            # Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarr_death_untreated_HIV']),
             Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM'])
         )
 
         # --------------------------------------------------------------------------------------------
-        # Create the linear model for the duration of the episode of diarrhoea
-        self.mean_duration_in_days_of_diarrhoea = LinearModel(
-            LinearModelType.ADDITIVE,
-            0.0,
-            Predictor('gi_last_diarrhoea_pathogen').when('rotavirus', p['mean_days_duration_with_rotavirus'])
-                                                   .when('shigella', p['mean_days_duration_with_shigella'])
-                                                   .when('adenovirus', p['mean_days_duration_with_adenovirus'])
-                                                   .when('cryptosporidium',
-                                                         p['mean_days_duration_with_cryptosporidium'])
-                                                   .when('campylobacter', p['mean_days_duration_with_campylobacter'])
-                                                   .when('ST-ETEC', p['mean_days_duration_with_ST-ETEC'])
-                                                   .when('sapovirus', p['mean_days_duration_with_sapovirus'])
-                                                   .when('norovirus', p['mean_days_duration_with_norovirus'])
-                                                   .when('astrovirus', p['mean_days_duration_with_astrovirus'])
-                                                   .when('tEPEC', p['mean_days_duration_with_tEPEC'])
-        )
-
+        # Dict storing the duration of the episode of diarrhoea (mean, sd, min, max)
         self.mean_duration_in_days_of_diarrhoea_lookup = {
             'rotavirus': p['mean_days_duration_with_rotavirus'],
             'shigella': p['mean_days_duration_with_shigella'],
@@ -712,16 +697,16 @@ class Diarrhoea(Module):
         self.prob_diarrhoea_is_watery = LinearModel(
             LinearModelType.ADDITIVE,
             0.0,
-            Predictor('gi_last_diarrhoea_pathogen').when('rotavirus', p['proportion_AWD_by_rotavirus'])
-                                                   .when('shigella', p['proportion_AWD_by_shigella'])
-                                                   .when('adenovirus', p['proportion_AWD_by_adenovirus'])
-                                                   .when('cryptosporidium', p['proportion_AWD_by_cryptosporidium'])
-                                                   .when('campylobacter', p['proportion_AWD_by_campylobacter'])
-                                                   .when('ST-ETEC', p['proportion_AWD_by_ST-ETEC'])
-                                                   .when('sapovirus', p['proportion_AWD_by_sapovirus'])
-                                                   .when('norovirus', p['proportion_AWD_by_norovirus'])
-                                                   .when('astrovirus', p['proportion_AWD_by_astrovirus'])
-                                                   .when('tEPEC', p['proportion_AWD_by_tEPEC'])
+            Predictor('gi_last_diarrhoea_pathogen').when('rotavirus', p['proportion_AWD_in_rotavirus'])
+                                                   .when('shigella', p['proportion_AWD_in_shigella'])
+                                                   .when('adenovirus', p['proportion_AWD_in_adenovirus'])
+                                                   .when('cryptosporidium', p['proportion_AWD_in_cryptosporidium'])
+                                                   .when('campylobacter', p['proportion_AWD_in_campylobacter'])
+                                                   .when('ST-ETEC', p['proportion_AWD_in_ST-ETEC'])
+                                                   .when('sapovirus', p['proportion_AWD_in_sapovirus'])
+                                                   .when('norovirus', p['proportion_AWD_in_norovirus'])
+                                                   .when('astrovirus', p['proportion_AWD_in_astrovirus'])
+                                                   .when('tEPEC', p['proportion_AWD_in_tEPEC'])
         )
 
         # --------------------------------------------------------------------------------------------
@@ -780,6 +765,19 @@ class Diarrhoea(Module):
         daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
 
         return daly_values_by_pathogen
+
+    def truncated_normal(self, left_bound, right_bound, normal_mean, normal_std):
+        """
+        Helper function for the skewed normal distribution of duration in days of the episode, by pathogen
+        :param left_bound:
+        :param right_bound:
+        :param normal_mean:
+        :param normal_std:
+        :return:
+        """
+        a = (left_bound - normal_mean) / normal_std
+        b = (right_bound - normal_mean) / normal_std
+        return truncnorm(a=a, b=b, loc=normal_mean, scale=normal_std)
 
     def look_up_consumables(self):
         """Look up and store the consumables used in each of the HSI."""
@@ -972,10 +970,14 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             return
 
         # ----------------------- Determine duration for this episode ----------------------
-        mean_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen]
-        half_range = p['range_in_days_duration_of_episode'] / 2
-        actual_duration = mean_duration + rng.randint(-half_range, half_range)
-        duration_in_days_of_episode = int(max(p['min_days_duration_of_episode'], actual_duration))
+        mean_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][0]
+        std_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][1]
+        min_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][2]
+        max_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][3]
+
+        duration_in_days_of_episode = \
+            m.truncated_normal(left_bound=min_duration, right_bound=max_duration,
+                               normal_mean=mean_duration, normal_std=std_duration).rvs(random_state=rng)
 
         date_of_outcome = self.sim.date + DateOffset(days=duration_in_days_of_episode)
 
@@ -1040,9 +1042,8 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                 prob_death *= p['rr_diarr_death_age12to23mo']
             elif 2 <= person['age_exact_years'] < 4:
                 prob_death *= p['rr_diarr_death_age24to59mo']
-
-            if person['hv_inf'] & person[('hv_art' == 'not')]:
-                prob_death *= p['rr_diarrhoea_HIV']
+            # if person['hv_inf'] & person[('hv_art' == 'not')]:
+            #     prob_death *= p['rr_diarr_death_untreated_HIV']
             if person['tmp_malnutrition']:
                 prob_death *= p['rr_diarrhoea_SAM']
 
