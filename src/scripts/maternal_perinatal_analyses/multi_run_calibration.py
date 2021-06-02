@@ -35,7 +35,7 @@ class MyTestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'multi_run', 'directory': './outputs',
+            'filename': 'multi_run_retry', 'directory': './outputs',
             'custom_levels': {'*': logging.INFO}
         }
 
