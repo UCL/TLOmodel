@@ -446,17 +446,17 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             labour_list = self.sim.modules['Labour'].women_in_labour
 
             # -----  COMPLICATION DURING BIRTH  -----
-            if person_id in labour_list:
-                if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                        & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
+            if (person_id in labour_list) and (person_id in mni):
+                if df.at[person_id, 'la_currently_in_labour'] and (mni[person_id]['sought_care_for_complication']) \
+                        and (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
                     event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
                     health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
             # -----  COMPLICATION AFTER BIRTH  -----
-                if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                        & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
+                if df.at[person_id, 'la_currently_in_labour'] and (mni[person_id]['sought_care_for_complication']) \
+                        and (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
                     event = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
