@@ -170,8 +170,6 @@ class PregnancySupervisor(Module):
             Types.LIST, 'Relative risk of pre-eclampsia in women who are chronically hypertensive'),
         'rr_pre_eclampsia_diabetes_mellitus': Parameter(
             Types.LIST, 'Relative risk of pre-eclampsia in women who have diabetes mellitus'),
-        'rr_pre_eclampsia_gest_diab': Parameter(
-            Types.LIST, 'Relative risk of pre-eclampsia in women who have gestational diabetes'),
         'probs_for_mgh_matrix': Parameter(
             Types.LIST, 'probability of mild gestational hypertension moving between states: gestational '
                         'hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, '
@@ -399,9 +397,7 @@ class PregnancySupervisor(Module):
                                                                   'membranes before the onset of labour. If this is '
                                                                   '<37 weeks from gestation the woman has preterm '
                                                                   'premature rupture of membranes'),
-        'ps_chorioamnionitis': Property(Types.CATEGORICAL, 'Whether a womans is experiencing chorioamnionitis and'
-                                                           'its current state',
-                                                           categories=['none', 'histological', 'clinical']),
+        'ps_chorioamnionitis': Property(Types.BOOL, 'Whether a womans is experiencing chorioamnionitis'),
         'ps_emergency_event': Property(Types.BOOL, 'signifies a woman in undergoing an acute emergency event in her '
                                                    'pregnancy- used to consolidated care seeking in the instance of '
                                                    'multiple complications')
@@ -473,7 +469,7 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_placental_abruption'] = False
         df.loc[df.is_alive, 'ps_antepartum_haemorrhage'] = 'none'
         df.loc[df.is_alive, 'ps_premature_rupture_of_membranes'] = False
-        df.loc[df.is_alive, 'ps_chorioamnionitis'] = 'none'
+        df.loc[df.is_alive, 'ps_chorioamnionitis'] = False
         df.loc[df.is_alive, 'ps_emergency_event'] = False
 
         # This bitset property stores nutritional deficiencies that can occur in the antenatal period
@@ -495,8 +491,8 @@ class PregnancySupervisor(Module):
                            sim.date + DateOffset(years=1))
 
         # Register and schedule the parameter update event
-        # sim.schedule_event(ParameterUpdateEvent(self),
-        #                   sim.date + DateOffset(years=5))
+        #sim.schedule_event(ParameterUpdateEvent(self),
+        #                   sim.date + DateOffset(weeks=1))
 
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # All linear equations used in this module are stored within the ps_linear_equations parameter below
@@ -572,7 +568,6 @@ class PregnancySupervisor(Module):
                 Predictor('ps_multiple_pregnancy').when(True, params['rr_pre_eclampsia_multiple_pregnancy']),
                 Predictor('nc_hypertension').when(True, params['rr_pre_eclampsia_chronic_htn']),
                 Predictor('nc_diabetes').when(True, params['rr_pre_eclampsia_diabetes_mellitus']),
-                Predictor().when('ps_gest_diab != "none "', params['rr_pre_eclampsia_gest_diab']),
                 Predictor('ac_receiving_calcium_supplements').when(True, params['treatment_effect_calcium_pre_'
                                                                                 'eclamp'])),
 
@@ -596,11 +591,6 @@ class PregnancySupervisor(Module):
                 Predictor('ps_placenta_praevia').when(True, params['prob_aph_placenta_praevia']),
                 Predictor('ps_placental_abruption').when(True, params['prob_aph_placental_abruption'])),
 
-            # This equation calculates a womans risk of developing chorioamnionitis following PROM .
-            'chorioamnionitis': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_chorioamnionitis'],
-                Predictor('ps_premature_rupture_of_membranes').when(True, params['rr_chorio_post_prom'])),
 
             # This equation calculates a womans monthly risk of labour onsetting prior to her 'assigned' due date.
             # This drives preterm birth rates
@@ -619,7 +609,7 @@ class PregnancySupervisor(Module):
 
             # This equation calculates a womans monthly risk of antenatal still birth
             'antenatal_stillbirth': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
+                LinearModelType.MULTIPLICATIVE, # todo: twins?
                 params['prob_still_birth_per_month'],
                 Predictor('ps_gestational_age_in_weeks').when('>41', params['rr_still_birth_post_term']),
                 Predictor('ps_htn_disorders').when('mild_pre_eclamp', params['rr_still_birth_pre_eclampsia'])
@@ -704,7 +694,7 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_placental_abruption'] = False
         df.at[child_id, 'ps_antepartum_haemorrhage'] = 'none'
         df.at[child_id, 'ps_premature_rupture_of_membranes'] = False
-        df.at[child_id, 'ps_chorioamnionitis'] = 'none'
+        df.at[child_id, 'ps_chorioamnionitis'] = False
         df.at[child_id, 'ps_emergency_event'] = False
 
     def further_on_birth_pregnancy_supervisor(self, mother_id):
@@ -908,7 +898,7 @@ class PregnancySupervisor(Module):
         set[id_or_index, 'ps_placental_abruption'] = False
         set[id_or_index, 'ps_antepartum_haemorrhage'] = 'none'
         set[id_or_index, 'ps_premature_rupture_of_membranes'] = False
-        set[id_or_index, 'ps_chorioamnionitis'] = 'none'
+        set[id_or_index, 'ps_chorioamnionitis'] = False
         set[id_or_index, 'ps_emergency_event'] = False
         self.deficiencies_in_pregnancy.unset(id_or_index, 'iron')
         self.deficiencies_in_pregnancy.unset(id_or_index, 'folate')
@@ -1437,68 +1427,32 @@ class PregnancySupervisor(Module):
                                                            'type': 'mild_mod_antepartum_haemorrhage',
                                                            'timing': 'antenatal'})
 
-    def apply_risk_of_onset_and_progression_antenatal_infections(self, gestation_of_interest):
+    def apply_risk_of_sepsis_post_prom(self, gestation_of_interest):
         """
         This function applies risk of new onset chorioamnionitis and risk of progression of chorioamnionitis state
         to a slice of the dataframe. It is called by PregnancySupervisorEvent.
         :param gestation_of_interest: gestation in weeks
         """
 
-        # TODO: remove monthly risk of chorio and add in syphilis & UTI?
-
         df = self.sim.population.props
         params = self.current_parameters
-        # First assess if women with asymptomatic histological chorioamnionitis will develop clinical disease this
-        # month
-        histo_chorio = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
-                       (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient & ~df.la_currently_in_labour & \
-                       (df.ps_chorioamnionitis == 'histological')
 
-        progression = pd.Series(self.rng.random_sample(len(histo_chorio.loc[histo_chorio])) <
-                                params['prob_progression_to_clinical_chorio'],
-                                index=histo_chorio.loc[histo_chorio].index)
+        risk_of_chorio = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
+                        (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient & ~df.la_currently_in_labour & \
+                          df.ps_premature_rupture_of_membranes
 
-        # We store the updated property and updated the mni dictionary (those who dont progress are assumed to have
-        # resolved, applied at the end of function to stop newlry resolved women become infected again)
-        df.loc[progression.loc[progression].index, 'ps_chorioamnionitis'] = 'clinical'
-        df.loc[progression.loc[progression].index, 'ps_emergency_event'] = True
+        infection = pd.Series(self.rng.random_sample(len(risk_of_chorio.loc[risk_of_chorio])) <
+                              params['prob_chorioamnionitis'], index=risk_of_chorio.loc[risk_of_chorio].index)
 
-        progression.loc[progression].index.to_series().apply(self.store_dalys_in_mni, mni_variable='chorio_onset')
+        df.loc[infection.loc[infection].index, 'ps_chorioamnionitis'] = True
+        df.loc[infection.loc[infection].index, 'ps_emergency_event'] = True
 
-        # Here we use a linear equation to determine if women without infection will develop infection
-        chorio = self.apply_linear_model(
-            self.ps_linear_models['chorioamnionitis'],
-            df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   (df['ps_ectopic_pregnancy'] == 'none') & ~df['hs_is_inpatient'] & ~df['la_currently_in_labour'] &
-                   (df['ps_chorioamnionitis'] == 'none')])
+        infection.loc[infection].index.to_series().apply(self.store_dalys_in_mni, mni_variable='chorio_onset')
 
-        # Determine if clinical or histological chorioamnionitis (i.e. the woman displays symptoms)
-        type_of_chorio = pd.Series(self.rng.random_sample(len(chorio.loc[chorio])) < params['prob_clinical_chorio'],
-                                   index=chorio.loc[chorio].index)
-
-        # Assume women with clinical chorioamnionitis may seek care
-        df.loc[type_of_chorio.loc[type_of_chorio].index, 'ps_chorioamnionitis'] = 'clinical'
-        df.loc[type_of_chorio.loc[type_of_chorio].index, 'ps_emergency_event'] = True
-
-        for person in type_of_chorio.loc[type_of_chorio].index:
+        for person in infection.loc[infection].index:
             logger.info(key='maternal_complication', data={'person': person,
                                                            'type': 'clinical_chorioamnionitis',
                                                            'timing': 'antenatal'})
-
-        # Similarly assume only symptomatic infection leads to DALYs
-        type_of_chorio.loc[type_of_chorio].index.to_series().apply(self.store_dalys_in_mni,
-                                                                   mni_variable='chorio_onset')
-
-        # Non clinical cases are assumed to be histological
-        df.loc[type_of_chorio.loc[~type_of_chorio].index, 'ps_chorioamnionitis'] = 'histological'
-
-        for person in type_of_chorio.loc[~type_of_chorio].index:
-            logger.info(key='maternal_complication', data={'person': person,
-                                                           'type': 'histological_chorioamnionitis',
-                                                           'timing': 'antenatal'})
-
-        # Women who didnt progress from histological to clinical are resolved now (see above)
-        df.loc[progression.loc[~progression].index, 'ps_chorioamnionitis'] = 'none'
 
     def apply_risk_of_premature_rupture_of_membranes(self, gestation_of_interest):
         """
@@ -1824,7 +1778,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Make the appropriate changes to the data frame and log the number of ectopic pregnancies
         df.loc[ectopic_risk.loc[ectopic_risk].index, 'ps_ectopic_pregnancy'] = 'not_ruptured'
 
-
         # For women whose pregnancy is ectopic we scheduled them to the EctopicPregnancyEvent in between 3-5 weeks
         # of pregnancy (this simulates time period prior to which symptoms onset- and may trigger care seeking)
         for person in ectopic_risk.loc[ectopic_risk].index:
@@ -1941,9 +1894,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             self.module.apply_risk_of_gestational_diabetes(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_placental_abruption(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_antepartum_haemorrhage(gestation_of_interest=gestation_of_interest)
+            self.module.apply_risk_of_sepsis_post_prom(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_premature_rupture_of_membranes(gestation_of_interest=gestation_of_interest)
-            self.module.apply_risk_of_onset_and_progression_antenatal_infections(
-                gestation_of_interest=gestation_of_interest)
 
         for gestation_of_interest in [27, 31, 35, 40]:
             # Women with hypertension are at risk of there condition progression, this risk is applied months 6-9
@@ -1999,6 +1951,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             logger.debug(key='message', data=f'The following women will not seek care after experiencing a '
                                              f'pregnancy emergency: {care_seeking.loc[~care_seeking].index}')
 
+            # TODO: ARE WE APPLYING DEATH TO WOMEN WHO SEEK CARE BUT HSI DOESNT FIRE
+
             for person in care_seeking.loc[~care_seeking].index:
                 mother = df.loc[person]
                 causes = list()
@@ -2007,7 +1961,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                     causes.append('antepartum_haemorrhage')
                 if mother.ps_htn_disorders == 'eclampsia':
                     causes.append('eclampsia')
-                if mother.ps_chorioamnionitis == 'clinical':
+                if mother.ps_chorioamnionitis:
                     causes.append('antenatal_sepsis')
 
                 risks = dict()
@@ -2043,7 +1997,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                 else:
                     stillbirth = False
                     for cause in causes:
-                        if self.module.rng() < params[f'prob_still_birth_{cause}']:
+                        if self.module.rng.random_sample() < params[f'prob_still_birth_{cause}']:
                             stillbirth = True
                     if stillbirth:
                         self.module.update_variables_post_still_birth_for_individual(person)
@@ -2239,14 +2193,35 @@ class ParameterUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """This is ParameterUpdateEvent. It is scheduled to occur once on 2015 to update parameters being used by the
     maternal and newborn health model"""
 
-    def __init__(self, module):
-        self.repeat = 0
-        super().__init__(module, frequency=DateOffset(years=self.repeat))
+    def __init__(self, module, ):
+        super().__init__(module, frequency=DateOffset(weeks=0))
 
     def apply(self, population):
 
-        for key, value in self.module.parameters.items(): # TODO: THIS DOESNT SEEM TO BE WORKING
-            self.module.current_parameters[key] = self.module.parameters[key][1]
+        # todo: is it ok to switch all 5 files here?
+        # todo: have i correctly stopped this from repeating how do i stop this repeating
+
+        logger.info(key='msg', data='Now updating parameters in the maternal and perinatal health modules...')
+
+        def switch_parameters(master_params, current_params):
+            for key, value in current_params.items():
+                current_params[key] = master_params[key][1]
+
+        switch_parameters(self.module.parameters, self.module.current_parameters)
+
+        switch_parameters(self.sim.modules['CareOfWomenDuringPregnancy'].parameters,
+                          self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters)
+
+        switch_parameters(self.sim.modules['Labour'].parameters, self.sim.modules['Labour'].current_parameters)
+
+        switch_parameters(self.sim.modules['NewbornOutcomes'].parameters,
+                          self.sim.modules['NewbornOutcomes'].current_parameters)
+
+        switch_parameters(self.sim.modules['PostnatalSupervisor'].parameters,
+                          self.sim.modules['PostnatalSupervisor'].current_parameters)
+
+        #for key, value in self.module.parameters.items(): # TODO: THIS DOESNT SEEM TO BE WORKING
+        #    self.module.current_parameters[key] = self.module.parameters[key][1]
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):

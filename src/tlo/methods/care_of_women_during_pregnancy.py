@@ -1712,15 +1712,15 @@ class CareOfWomenDuringPregnancy(Module):
             (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'severe')) or \
             (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'mild_moderate') and
              (mother.ps_gestational_age_in_weeks >= 37)) or\
-            (mother.ps_premature_rupture_of_membranes and (mother.ps_chorioamnionitis != 'none')) or \
-            (mother.ps_premature_rupture_of_membranes and (mother.ps_chorioamnionitis == 'none') and
+            (mother.ps_premature_rupture_of_membranes and mother.ps_chorioamnionitis) or \
+            (mother.ps_premature_rupture_of_membranes and not mother.ps_chorioamnionitis and
              (mother.ps_gestational_age_in_weeks >= 34)):
             beddays = 1
 
         # Otherwise women will remain as an inpatient until their gestation is greater, to improve newborn outcomes
         elif (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'mild_moderate') and
               (mother.ps_gestational_age_in_weeks < 37)) or (mother.ps_premature_rupture_of_membranes and
-                                                             (mother.ps_chorioamnionitis == 'none') and
+                                                             not mother.ps_chorioamnionitis and
                                                              (mother.ps_gestational_age_in_weeks < 34)):
 
             beddays = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
@@ -2735,10 +2735,9 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             # Treatment for women with premature rupture of membranes is dependent upon a womans gestational age and if
             # she also has an infection of membrane surrounding the foetus (the chorion)
 
-            if mother.ps_premature_rupture_of_membranes and ((mother.ps_chorioamnionitis == 'none') or
-                                                             (mother.ps_chorioamnionitis == 'histological')):
+            if mother.ps_premature_rupture_of_membranes and not mother.ps_chorioamnionitis:
                 # If the woman has PROM but no infection, she is given prophylactic antibiotics which will reduce
-                # the risk of neonatal infection
+                # the risk of maternal and neonatal infection
                 self.module.antibiotics_for_prom(person_id, self)
 
                 # Guidelines suggest women over 34 weeks of gestation should be admitted for induction to to
@@ -2754,7 +2753,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                                                  f' has increase due prom/chorio')
 
             # ============================== INITIATE TREATMENT FOR CHORIOAMNIONITIS ==================================
-            if mother.ps_chorioamnionitis == 'clinical':
+            if mother.ps_chorioamnionitis:
                 self.module.antibiotics_for_chorioamnionitis(person_id, self)
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
                 logger.debug(key='msg', data=f'{person_id} will be admitted for induction due to prom/chorio')
@@ -3178,6 +3177,3 @@ class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if total_births_last_year == 0:
             total_births_last_year = 1
 
-        total_anc1_visits = self.module.anc_tracker['total_first_anc_visits']
-        if total_anc1_visits == 0:
-            total_anc1_visits = 1

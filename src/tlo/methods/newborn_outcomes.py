@@ -717,7 +717,7 @@ class NewbornOutcomes(Module):
                     # If the death is associated with prematurity we scatter those deaths across the first 2 weeks
                     random_draw = self.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
                                                   p=params['prob_preterm_death_by_day'])
-                    death_date = self.sim.date + DateOffset(days=random_draw)
+                    death_date = self.sim.date + DateOffset(days=int(random_draw))
                 else:
                     death_date = self.sim.date
 

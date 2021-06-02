@@ -663,7 +663,7 @@ class PostnatalSupervisor(Module):
             received_abx_for_prom = pd.Series(mni_dict['abx_for_prom_given'], index=df.index)
 
         if 'chorio_lab' in mni_dict.keys():
-            chorio = (df['ps_chorioamnionitis'] != 'none') | (df['la_sepsis'] & mni_dict['chorio_lab'])
+            chorio = (df['ps_chorioamnionitis']) | (df['la_sepsis'] & mni_dict['chorio_lab'])
 
         if 'endo_pp' in mni_dict.keys():
             endometritis = pd.Series(mni_dict['endo_pp'], index=df.index)
@@ -849,7 +849,7 @@ class PostnatalSupervisor(Module):
             risk_ghtn_remains_mild = 1 - (risk_of_gest_htn_progression + params['probs_for_mgh_matrix_pn'][2])
 
             # update the probability matrix according to treatment
-            params['probs_for_mgh_matrix'] = [risk_ghtn_remains_mild, risk_of_gest_htn_progression,
+            params['probs_for_mgh_matrix_pn'] = [risk_ghtn_remains_mild, risk_of_gest_htn_progression,
                                               params['probs_for_mgh_matrix_pn'][2], 0.0, 0.0]
 
             prob_matrix['gest_htn'] = params['probs_for_mgh_matrix_pn']
@@ -1019,7 +1019,7 @@ class PostnatalSupervisor(Module):
 
         # todo: fix
         #if 'chorio_lab' in mni_df.keys():
-        #    chorio = (df['ps_chorioamnionitis'] != 'none') | (df['la_sepsis'] & mni_dict['chorio_lab'])
+        #    chorio = (df['ps_chorioamnionitis']) | (df['la_sepsis'] & mni_dict['chorio_lab'])
         chorio = pd.Series(False, index=df.loc[[child_id]].index)
 
         # We then apply a risk that this womans newborn will develop sepsis during week one
@@ -1420,6 +1420,12 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Maternal variables
         week_8_postnatal_women = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8)
+
+        # Set mni[person]['delete_mni'] to True meaning after the next DALY event each womans MNI dict is delted
+        for person in week_8_postnatal_women.loc[week_8_postnatal_women].index:
+            mni[person]['delete_mni'] = True
+            logger.info(key='pnc_mother', data={'total_visits': df.at[person, 'pn_pnc_visits_maternal']})
+
         df.loc[week_8_postnatal_women, 'pn_postnatal_period_in_weeks'] = 0
         df.loc[week_8_postnatal_women, 'pn_pnc_visits_maternal'] = 0
         df.loc[week_8_postnatal_women, 'la_is_postpartum'] = False
@@ -1456,16 +1462,13 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[week_8_postnatal_women, 'pn_iv_anti_htn_treatment'] = False
         df.loc[week_8_postnatal_women, 'pn_emergency_event_mother'] = False
 
-        # Set mni[person]['delete_mni'] to True meaning after the next DALY event each womans MNI dict is delted
-        for person in week_8_postnatal_women.loc[week_8_postnatal_women].index:
-            mni[person]['delete_mni'] = True
-
         # For the neonates we now determine if they will develop any long term neurodevelopmental impairment following
         # survival of the neonatal period
         week_6_postnatal_neonates = df.is_alive & (df['age_days'] > 42) & (df['age_days'] < 49) & \
                                     (df.date_of_birth > self.sim.start_date)
         for person in week_6_postnatal_neonates.loc[week_6_postnatal_neonates].index:
             self.sim.modules['NewbornOutcomes'].set_disability_status(person)
+            logger.info(key='pnc_child', data={'total_visits': df.at[person, 'pn_pnc_visits_neonatal']})
 
         # And then reset any key variables
         df.loc[week_6_postnatal_neonates, 'pn_pnc_visits_neonatal'] = 0
@@ -1845,11 +1848,13 @@ class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScope
         # If the mother is alive she is assessed for complications
         if df.at[person_id, 'is_alive']:
             df.at[person_id, 'pn_pnc_visits_maternal'] += 1
+
             self.module.assessment_for_maternal_complication_during_pnc(person_id, self)
 
         # If the child/children is/are alive they are assessed for complications
         if df.at[child_id, 'is_alive']:
             df.at[child_id, 'pn_pnc_visits_neonatal'] += 1
+
             self.module.assessment_for_neonatal_complications_during_pnc(child_id, self, pnc_visit='pnc1')
 
         # If twins, the second child is also assessed
@@ -2132,9 +2137,10 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
                                 if self.module.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
                                     # Store date of resolution for daly calculations
                                     self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(
-                                        person_id, f'{df.at[person_id, "pn_anaemia_in_pregnancy"]}_anaemia_resolution')
+                                        person_id, f'{df.at[person_id, "pn_anaemia_following_pregnancy"]}_anaemia_'
+                                                   f'resolution')
 
-                                    df.at[person_id, 'pn_anaemia_in_pregnancy'] = 'none'
+                                    df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'
 
                         if mother.pn_anaemia_following_pregnancy == 'severe':
 
@@ -2155,7 +2161,7 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
                                 if params['treatment_effect_blood_transfusion_anaemia'] > self.module.rng.random_sample():
                                     self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(
                                         person_id, 'severe_anaemia_resolution')
-                                    df.at[person_id, 'pn_anaemia_in_pregnancy'] = 'none'
+                                    df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'
 
                 # todo: follow up??
 

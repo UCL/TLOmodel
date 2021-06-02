@@ -363,6 +363,9 @@ class Labour(Module):
         # TREATMENT PARAMETERS...
         'treatment_effect_maternal_infection_clean_delivery': Parameter(
             Types.LIST, 'Effect of clean delivery practices on risk of maternal infection'),
+        'treatment_effect_maternal_chorio_abx_prom': Parameter(
+            Types.LIST, 'Relative effect of antibiotics for premature rupture of membranes on maternal risk of '
+                        'chorioamnionitis prior to birth'),
         'treatment_effect_amtsl': Parameter(
             Types.LIST, 'relative risk of severe postpartum haemorrhage following active management of the third '
                         'stage of labour'),
@@ -1057,8 +1060,7 @@ class Labour(Module):
                 return
 
             # Women admitted with clinical chorioamnionitis from the community are assumed to be septic in labour
-            if (complication == 'sepsis_chorioamnionitis') and (df.at[individual_id, 'ps_chorioamnionitis'] ==
-                                                                'clinical'):
+            if (complication == 'sepsis_chorioamnionitis') and df.at[individual_id, 'ps_chorioamnionitis']:
                 return
 
         # For the preceding complications that can cause obstructed labour, we apply risk using a set probability
@@ -2549,7 +2551,6 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                 else:
                     logger.debug(key='message', data=f'mother {individual_id} will not seek care following a '
                                                      f'complication that has developed during labour')
-
 
 
 class BirthEvent(Event, IndividualScopeEventMixin):

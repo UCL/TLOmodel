@@ -63,6 +63,8 @@ def predict_sepsis_chorioamnionitis_ip(self, df, rng=None, **externals):
 
     if person['ps_premature_rupture_of_membranes']:
         result *= params['rr_sepsis_chorio_prom']
+    if person['ac_received_abx_for_prom']:
+        result *= params['treatment_effect_maternal_chorio_abx_prom']
     if externals['received_clean_delivery']:
         result *= params['treatment_effect_maternal_infection_clean_delivery']
 
@@ -118,7 +120,6 @@ def predict_sepsis_death(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
-
 def predict_eclampsia_death(self, df, rng=None, **externals):
     """individual level"""
     person = df.iloc[0]
@@ -134,7 +135,6 @@ def predict_eclampsia_death(self, df, rng=None, **externals):
 
     # caller expects a series to be returned
     return pd.Series(data=[result], index=df.index)
-
 
 
 def predict_severe_pre_eclamp_death(self, df, rng=None, **externals):
@@ -331,7 +331,7 @@ def predict_intrapartum_still_birth(self, df, rng=None, **externals):
     if person['ps_htn_disorders'] == 'severe_pre_eclamp':
         result *= params['rr_still_birth_hypertension']
 
-    if person['la_sepsis'] or (person['ps_chorioamnionitis'] != 'none'):
+    if person['la_sepsis'] or person['ps_chorioamnionitis']:
         result *= params['rr_still_birth_sepsis']
     if person['ps_multiple_pregnancy']:
         result *= params['rr_still_birth_multiple_pregnancy']
