@@ -491,8 +491,8 @@ class PregnancySupervisor(Module):
                            sim.date + DateOffset(years=1))
 
         # Register and schedule the parameter update event
-        #sim.schedule_event(ParameterUpdateEvent(self),
-        #                   sim.date + DateOffset(weeks=1))
+        sim.schedule_event(ParameterUpdateEvent(self),
+                           sim.date + DateOffset(years=5))
 
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # All linear equations used in this module are stored within the ps_linear_equations parameter below
@@ -1782,8 +1782,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # of pregnancy (this simulates time period prior to which symptoms onset- and may trigger care seeking)
         for person in ectopic_risk.loc[ectopic_risk].index:
             logger.info(key='maternal_complication', data={'person': person,
-                                                               'type': 'ectopic_unruptured',
-                                                               'timing': 'antenatal'})
+                                                            'type': 'ectopic_unruptured',
+                                                            'timing': 'antenatal'})
 
             self.sim.schedule_event(EctopicPregnancyEvent(self.module, person),
                                     (self.sim.date + pd.Timedelta(days=7 * 3 + self.module.rng.randint(0, 7 * 2))))
@@ -2188,18 +2188,15 @@ class SyphilisInPregnancyEvent(Event, IndividualScopeEventMixin):
                                                        'type': 'syphilis',
                                                        'timing': 'antenatal'})
 
-
-class ParameterUpdateEvent(RegularEvent, PopulationScopeEventMixin):
+class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
     """This is ParameterUpdateEvent. It is scheduled to occur once on 2015 to update parameters being used by the
     maternal and newborn health model"""
-
-    def __init__(self, module, ):
-        super().__init__(module, frequency=DateOffset(weeks=0))
+    def __init__(self, module):
+        super().__init__(module)
 
     def apply(self, population):
 
         # todo: is it ok to switch all 5 files here?
-        # todo: have i correctly stopped this from repeating how do i stop this repeating
 
         logger.info(key='msg', data='Now updating parameters in the maternal and perinatal health modules...')
 
