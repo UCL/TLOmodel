@@ -1250,7 +1250,7 @@ class Labour(Module):
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_gest_htn'
 
                 logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': 'eclampsia',
+                                                               'type': 'severe_gest_htn',
                                                                'timing': 'intrapartum'})
 
         # Or from severe gestational hypertension to severe pre-eclampsia...
@@ -1292,7 +1292,7 @@ class Labour(Module):
                 causes.append('intrapartum_sepsis')
             if df.at[individual_id, 'la_uterine_rupture']:
                 causes.append('uterine_rupture')
-            if (df.at[individual_id, 'la_antepartum_haem'] == 'none') or \
+            if (df.at[individual_id, 'la_antepartum_haem'] != 'none') or \
                 ((df.at[individual_id, 'ps_antepartum_haemorrhage'] != 'none') and
                  (df.at[individual_id, 'ac_admitted_for_immediate_delivery'] != 'none')):
                 causes.append('antepartum_haemorrhage')
