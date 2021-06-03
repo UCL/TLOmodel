@@ -26,7 +26,7 @@ from tlo.methods import (
 class MyTestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 257
+        self.seed = 611
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 1, 1)
         self.pop_size = 100000
@@ -35,7 +35,7 @@ class MyTestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'multi_run_retry', 'directory': './outputs',
+            'filename': 'multi_run_aph_fix', 'directory': './outputs',
             'custom_levels': {'*': logging.INFO}
         }
 
