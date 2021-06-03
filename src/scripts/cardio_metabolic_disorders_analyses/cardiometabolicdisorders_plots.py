@@ -16,6 +16,7 @@ from tlo.methods import (
     bladder_cancer,
     contraception,
     cardio_metabolic_disorders,
+    care_of_women_during_pregnancy,
     demography,
     depression,
     dx_algorithm_child,
@@ -24,7 +25,9 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
     oesophagealcancer,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -49,6 +52,7 @@ def runsim(seed=0):
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
@@ -56,6 +60,8 @@ def runsim(seed=0):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
