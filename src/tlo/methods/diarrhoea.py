@@ -353,6 +353,15 @@ class Diarrhoea(Module):
         'rr_diarr_death_SAM':
             Parameter(Types.REAL, 'relative risk of diarrhoea death for severe acute malnutrition'
                       ),
+        'rr_diarr_death_alri':
+            Parameter(Types.REAL, 'relative risk of diarrhoea death if concurrent lower respiratory infection'
+                      ),
+        'rr_diarr_death_cryptosporidium':
+            Parameter(Types.REAL, 'relative risk of diarrhoea death if caused by cryptosporidium'
+                      ),
+        'rr_diarr_death_shigella':
+            Parameter(Types.REAL, 'relative risk of diarrhoea death if caused by shigella'
+                      ),
         'days_onset_severe_dehydration_before_death':
             Parameter(Types.INT, 'number of days before a death (in the untreated case) that dehydration would be '
                                  'classified as severe and child ought to be classified as positive for the danger'
@@ -673,6 +682,9 @@ class Diarrhoea(Module):
             Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_diarr_death_age12to23mo'])
                                         .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo'])
                                         .otherwise(0.0),
+            Predictor('gi_last_diarrhoea_pathogen').when('cryptosporidium', p['rr_diarr_death_cryptosporidium'])
+                                                   .when('shigella', p['rr_diarr_death_shigella']),
+            # Predictor('ri_current_ALRI_status').when(True, p['rr_diarr_death_alri']),
             # Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarr_death_untreated_HIV']),
             Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM'])
         )
@@ -1026,28 +1038,9 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
 
         # ----------------------- Determine outcome (recovery or death) of this episode ----------------------
         # Determine if episode will result in death
-        prob_death = 1.0
-        if person['age_exact_years'] >= 4:
-            prob_death = 0
-        else:
-            if person['gi_last_diarrhoea_type'] == 'watery':
-                prob_death *= p['case_fatality_rate_AWD']
-            if person['gi_last_diarrhoea_type'] == 'bloody':
-                prob_death *= p['case_fatality_rate_dysentery']
-            if person['gi_last_diarrhoea_duration'] > 13:
-                prob_death *= p['rr_diarr_death_if_duration_longer_than_13_days']
-            if person['gi_last_diarrhoea_dehydration'] == 'some':
-                prob_death *= p['rr_diarr_death_dehydration']
-            if 1 <= person['age_exact_years'] < 2:
-                prob_death *= p['rr_diarr_death_age12to23mo']
-            elif 2 <= person['age_exact_years'] < 4:
-                prob_death *= p['rr_diarr_death_age24to59mo']
-            # if person['hv_inf'] & person[('hv_art' == 'not')]:
-            #     prob_death *= p['rr_diarr_death_untreated_HIV']
-            if person['tmp_malnutrition']:
-                prob_death *= p['rr_diarrhoea_SAM']
+        will_die = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
 
-        if rng.random_sample() < prob_death:
+        if rng.random_sample() < will_die:
             props_new['gi_last_diarrhoea_death_date'] = date_of_outcome
             self.sim.schedule_event(DiarrhoeaDeathEvent(m, person_id), date_of_outcome)
         else:
