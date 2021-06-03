@@ -21,6 +21,8 @@ def get_deaths(module):
         direct_deaths['date'] = pd.to_datetime(direct_deaths['date'])
         direct_deaths['year'] = direct_deaths['date'].dt.year
         return len(direct_deaths.loc[direct_deaths['year'] == 2011])
+    else:
+        return 0
 
 
 def get_live_births(module):
