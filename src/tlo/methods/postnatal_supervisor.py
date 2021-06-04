@@ -1341,6 +1341,7 @@ class PostnatalSupervisor(Module):
                     logger.debug(key='message', data=f'person {individual_id} has died due to late neonatal sepsis on '
                                                      f'date {self.sim.date}')
 
+                    # todo: add cause of death here!
                     self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='neonatal',
                                                             originating_module=self.sim.modules['PostnatalSupervisor'])
 

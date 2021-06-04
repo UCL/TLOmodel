@@ -3090,7 +3090,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(HSI_Event, Indivi
 
         # -------------------------- Active Management of the third stage of labour ----------------------------------
         # Prophylactic treatment to prevent postpartum bleeding is applied
-        if not mni[person_id]['sought_care_for_complication'] and squeeze_factor < params['squeeze_threshold_amtsl']:
+        if not mni[person_id]['sought_care_for_complication'] and (squeeze_factor < params['squeeze_threshold_amtsl']):
             self.module.active_management_of_the_third_stage_of_labour(self)
         if not mni[person_id]['sought_care_for_complication'] and squeeze_factor < params['squeeze_threshold_'\
                                                                                           'treatment_spe']:
