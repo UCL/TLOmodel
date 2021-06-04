@@ -45,8 +45,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2011, 12, 31)
-    popsize = 1000
+    end_date = Date(2020, 12, 31)
+    popsize = 20000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
