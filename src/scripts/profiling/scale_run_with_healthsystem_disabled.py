@@ -33,7 +33,6 @@ from tlo.methods import (
     hiv,
     labour,
     malaria,
-    ncds,
     newborn_outcomes,
     oesophagealcancer,
     other_adult_cancers,
