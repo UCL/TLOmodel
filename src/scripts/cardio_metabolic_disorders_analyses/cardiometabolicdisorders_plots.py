@@ -14,9 +14,9 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     bladder_cancer,
-    contraception,
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
+    contraception,
     demography,
     depression,
     dx_algorithm_child,

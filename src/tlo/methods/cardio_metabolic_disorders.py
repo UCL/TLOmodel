@@ -205,7 +205,8 @@ class CardioMetabolicDisorders(Module):
         * Main Logging Event
         * Build the LinearModels for the onset/removal of each condition:
         """
-        sim.schedule_event(CardioMetabolicDisorders_MainPollingEvent(self, self.parameters['interval_between_polls']), sim.date)
+        sim.schedule_event(CardioMetabolicDisorders_MainPollingEvent(self, self.parameters['interval_between_polls']),
+                           sim.date)
         sim.schedule_event(CardioMetabolicDisorders_LoggingEvent(self), sim.date)
 
         # dict to hold counters for the number of episodes by condition-type and age-group
