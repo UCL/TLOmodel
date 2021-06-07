@@ -33,7 +33,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 1500
 
 # Establish the simulation object
@@ -75,11 +75,57 @@ with open(outputpath / 'default_run.pickle', 'wb') as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
 
+# ----------------------------------- PLOTS ----------------------------------- #
+# %% Function to make standard plot to compare model and data
+def make_plot(
+    model=None,
+    data_mid=None,
+    data_low=None,
+    data_high=None,
+    title_str=None
+):
+    assert model is not None
+    assert title_str is not None
 
-#
+    # Make plot
+    fig, ax = plt.subplots()
+    ax.plot(model.index, model.values, '-', color='r')
+
+    if data_mid is not None:
+        ax.plot(data_mid.index, data_mid.values, '-')
+    if (data_low is not None) and (data_high is not None):
+        ax.fill_between(data_low.index,
+                        data_low,
+                        data_high,
+                        alpha=0.2)
+    plt.title(title_str)
+    plt.legend(['Model', 'Data'])
+    plt.gca().set_ylim(bottom=0)
+    plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
+    plt.show()
+
+
+# OUTPUTS
+# Active TB incidence
+activeTB_inc = output['tlo.methods.tb']['tb_incidence']
+activeTB_inc = activeTB_inc.set_index('date')
+
+# latent TB prevalence
+latentTB_prev = output['tlo.methods.tb']['tb_prevalence']
+latentTB_prev = latentTB_prev.set_index('date')
+
+# PLOTS
 # plot active tb incidence per 1000 population
-
+make_plot(
+    title_str="Active TB Incidence (per 1000 person-years)",
+    model=activeTB_inc['tbIncActive100k'],
+)
 # plot latent prevalence
+make_plot(
+    title_str="Latent TB prevalence",
+    model=latentTB_prev['tbPrevLatent'],
+)
+
 
 # plot proportion of active tb cases on treatment
 
