@@ -139,8 +139,8 @@ class Tb(Module):
         ),
 
         # ------------------ natural history ------------------ #
-        # 'prob_latent_tb_0_14': Parameter(Types.REAL, 'probability of latent infection in ages 0-14 years'),
-        # 'prob_latent_tb_15plus': Parameter(Types.REAL, 'probability of latent infection in ages 15+'),
+        'prob_latent_tb_0_14': Parameter(Types.REAL, 'probability of latent infection in ages 0-14 years'),
+        'prob_latent_tb_15plus': Parameter(Types.REAL, 'probability of latent infection in ages 15+'),
         'transmission_rate': Parameter(Types.REAL, 'TB transmission rate, calibrated'),
         'rel_inf_smear_ng': Parameter(
             Types.REAL, 'relative infectiousness of tb in hiv+ compared with hiv-'
@@ -364,12 +364,6 @@ class Tb(Module):
         'presump_testing': Parameter(
             Types.REAL, 'probability of an individual without tb requesting tb test'
         ),
-        # 'prob_latent_tb_0_14': Parameter(
-        #     Types.REAL, 'probability of latent tb in child aged 0-14 years'
-        # ),
-        # 'prob_latent_tb_15plus': Parameter(
-        #     Types.REAL, 'probability of latent tb in adult aged 15 plus'
-        # ),
         'ds_treatment_length': Parameter(
             Types.REAL, 'length of treatment for drug-susceptible tb (first case) in days'
         ),
@@ -528,26 +522,52 @@ class Tb(Module):
         )
 
         # individual risk of relapse
-        self.lm['risk_relapse'] = LinearModel(
-            LinearModelType.ADDITIVE,
-            0,
+        # self.lm['risk_relapse'] = LinearModel(
+        #     LinearModelType.ADDITIVE,
+        #     0,
+        #     Predictor().when(
+        #         '(tb_inf == "latent") & '
+        #         'tb_ever_treated & '
+        #         '~tb_treatment_failure & '
+        #         '(self.sim.date < (tb_date_treated + pd.DateOffset(days=2*365.25)))',
+        #         p['monthly_prob_relapse_tx_complete']),  # ever treated, no tx failure and <2 years post active disease
+        #     Predictor().when(
+        #         '(tb_inf == "latent") & '
+        #         'tb_ever_treated & '
+        #         'tb_treatment_failure & '
+        #         '(self.sim.date < (tb_date_treated + pd.DateOffset(days=2*365.25)))',
+        #         p['monthly_prob_relapse_tx_incomplete']),  # ever treated, tx failure and <2 years post active disease
+        #     Predictor().when(
+        #         '(tb_inf == "latent") & '
+        #         'tb_ever_treated & '
+        #         '(self.sim.date >= (tb_date_treated + pd.DateOffset(days=2*365.25)))',
+        #         p['monthly_prob_relapse_2yrs']),  # <2 years post active disease
+        # )
+        self.lm['risk_relapse_2yrs'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1,
             Predictor().when(
                 '(tb_inf == "latent") & '
                 'tb_ever_treated & '
-                '~tb_treatment_failure & '
-                '(self.sim.date < (tb_date_treated + pd.DateOffset(days=2*365.25)))',
+                '~tb_treatment_failure',
                 p['monthly_prob_relapse_tx_complete']),  # ever treated, no tx failure and <2 years post active disease
             Predictor().when(
                 '(tb_inf == "latent") & '
                 'tb_ever_treated & '
-                'tb_treatment_failure & '
-                '(self.sim.date < (tb_date_treated + pd.DateOffset(days=2*365.25)))',
+                'tb_treatment_failure',
                 p['monthly_prob_relapse_tx_incomplete']),  # ever treated, tx failure and <2 years post active disease
+            Predictor('hv_inf').when(True, p["rr_relapse_hiv"]),
+        )
+
+        # risk of relapse if >=2 years post treatment
+        self.lm['risk_relapse_late'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1,
             Predictor().when(
                 '(tb_inf == "latent") & '
-                'tb_ever_treated & '
-                '(self.sim.date >= (tb_date_treated + pd.DateOffset(days=2*365.25)))',
-                p['monthly_prob_relapse_2yrs']),  # <2 years post active disease
+                'tb_ever_treated',
+                p['monthly_prob_relapse_2yrs']),  # ever treated,
+            Predictor('hv_inf').when(True, p["rr_relapse_hiv"]),
         )
 
     def baseline_latent(self, population):
@@ -1122,6 +1142,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # look up value for each row in df
         foi_for_individual = df['district_of_residence'].map(foi_dict)
+        foi_for_individual.loc[~df.is_alive] = 0
 
         assert (
             foi_for_individual.isna().sum() == 0
@@ -1129,7 +1150,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # adjust individual risk by bcg status
         risk_tb = pd.Series(foi_for_individual, index=df.index)
-        risk_tb.loc[~df.is_alive] *= 0
+        risk_tb.loc[~df.is_alive] *= 0  # to ensure no risk if dead
         risk_tb.loc[df.va_bcg & df.age_years < 10] *= p['rr_bcg_inf']
         del foi_for_individual
 
@@ -1166,15 +1187,29 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
 
         # need a monthly relapse for every person in df
         # should return risk=0 for everyone not eligible for relapse
-        risk_of_relapse = self.module.lm['risk_relapse'].predict(df.loc[df.is_alive])
 
-        # adjust risk of relapse to account for HIV status
-        hiv_risk = pd.Series(data=0, index=df.loc[df.is_alive].index)
-        hiv_risk.loc[df.hv_inf] = p['rr_relapse_hiv']
-        risk_of_relapse = risk_of_relapse * hiv_risk
+        # risk of relapse if <2 years post treatment start, includes risk if HIV+
+        # get df of those eligible
+        relapse_risk_early = df.loc[df.tb_ever_treated &
+                              (self.sim.date < (df.tb_date_treated + pd.DateOffset(days=732.5)))].index
 
-        will_relapse = rng.random_sample(len(risk_of_relapse)) < risk_of_relapse
-        idx_will_relapse = will_relapse[will_relapse].index
+        risk_of_relapse_early = self.module.lm['risk_relapse_2yrs'].predict(df.loc[relapse_risk_early])
+
+        will_relapse = rng.random_sample(len(risk_of_relapse_early)) < risk_of_relapse_early
+        idx_will_relapse_early = will_relapse[will_relapse].index
+
+        # risk of relapse if >=2 years post treatment start, includes risk if HIV+
+        # get df of those eligible
+        relapse_risk_later = df.loc[df.tb_ever_treated &
+                              (self.sim.date >= (df.tb_date_treated + pd.DateOffset(days=732.5)))].index
+
+        risk_of_relapse_later = self.module.lm['risk_relapse_late'].predict(df.loc[relapse_risk_later])
+
+        will_relapse_later = rng.random_sample(len(risk_of_relapse_later)) < risk_of_relapse_later
+        idx_will_relapse_late2 = will_relapse_later[will_relapse_later].index
+
+        # join both indices
+        idx_will_relapse = idx_will_relapse_early.union(idx_will_relapse_late2)
 
         # schedule progression to active
         for person in idx_will_relapse:
@@ -1256,7 +1291,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
         p = self.module.parameters
-        rng = self.sim.module.rng
+        rng = self.module.rng
 
         # check across population on tb treatment
 
@@ -1264,11 +1299,14 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         end_ds_idx = df.loc[df.is_alive & df.tb_on_treatment & ~df.tb_treated_mdr &
                             (df.tb_date_treated < (now - DateOffset(days=p['ds_treatment_length']))) &
                             ~df.tb_ever_treated].index
+
         # sample some to have treatment failure
         # todo check whether this returns series of tx failure selected from end_ds_idx
         ds_tx_failure = rng.random_sample(size=len(end_ds_idx)) < (1 - p['prob_tx_success_new'])
-        # idx_ds_tx_failure = ds_tx_failure[ds_tx_failure]
-        idx_ds_tx_failure = ds_tx_failure[ds_tx_failure].index
+
+        if ds_tx_failure:
+            idx_ds_tx_failure = ds_tx_failure[ds_tx_failure]
+            df.loc[idx_ds_tx_failure, 'tb_treatment_failure'] = True
 
         # ----------------------retreatment ds-tb (7 months) ---------------------- #
         # defined as a current ds-tb cases with property tb_ever_treated as true
@@ -1283,10 +1321,12 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
                                     now - DateOffset(days=p['mdr_treatment_length'])))].index
 
         # todo check index appends
-        end_tx_indx = end_ds_idx.union(end_ds_retx_idx, end_mdr_tx_idx)
+        # end_tx_indx = end_ds_idx.union(end_ds_retx_idx, end_mdr_tx_idx, sort=None)
+        end_tx_indx = end_ds_idx.union(end_ds_retx_idx)
+        end_tx_indx = end_tx_indx.union(end_mdr_tx_idx)
+
+        # end_tx_indx = np.concatenate(end_ds_idx, end_ds_retx_idx, end_mdr_tx_idx)
         # end_tx_indx = end_ds_idx + end_ds_retx_idx + end_mdr_tx_idx
-        # idx_tx_failure = idx_ds_tx_failure.union(idx_ds_retx_failure, idx_mdr_tx_failure)
-        # idx_tx_failure = idx_ds_tx_failure + idx_ds_retx_failure + idx_mdr_tx_failure
 
         # change individual properties to off treatment
         df.loc[end_tx_indx, 'tb_on_treatment'] = False
@@ -2038,7 +2078,10 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------------------------ TREATMENT ------------------------------------
         # number of tb cases currently on treatment
         num_tb_tx = len(df[(df.tb_inf == 'active') & df.tb_on_treatment & df.is_alive])
-        tx_coverage = num_tb_tx / num_active_tb_cases
+        if num_active_tb_cases:
+            tx_coverage = num_tb_tx / num_active_tb_cases
+        else:
+            tx_coverage = 0
 
         assert tx_coverage <= 1
 
