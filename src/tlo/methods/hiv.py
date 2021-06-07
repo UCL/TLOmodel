@@ -1454,11 +1454,10 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                                 priority=0
                             )
 
-                    # If person is a woman and pregnant, and not currently on PrEP then consider referring to PrEP
+                    # If person is pregnant, and not currently on PrEP then consider referring to PrEP
                     # available 2021 onwards
                     if(
-                        (person['sex'] == 'F') &
-                        person['is_pregnant'] &
+                        (person['is_pregnant']) &
                         ~person['hv_is_on_prep_preg'] &
                         (self.sim.date.year >= self.module.parameters['prep_start_year_preg'])
                     ):
