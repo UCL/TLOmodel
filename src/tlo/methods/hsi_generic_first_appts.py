@@ -30,6 +30,10 @@ from tlo.methods.malaria import (
     HSI_Malaria_non_complicated_treatment_age5_15,
 )
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
+from tlo.methods.cardio_metabolic_disorders import (
+    HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
+    HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment
+)
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
 from tlo.methods.other_adult_cancers import (
     HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom,
@@ -332,6 +336,35 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                             treatment_hsi, priority=1, topen=self.sim.date, tclose=None
                         )
 
+            # ---- ASSESSEMENT FOR NCDs ----
+            if 'CardioMetabolicDisorders' in self.sim.modules:
+                # take a blood pressure measurement for everyone
+                hsi_event = HSI_NCDs_InvestigationFollowingSymptoms(
+                    module=self.sim.modules['CardioMetabolicDisorders'],
+                    person_id=person_id,
+                    condition='hypertension'
+                )
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
+                # If the symptoms include those for an NCD condition, then begin investigation for other conditions:
+                for condition in self.sim.modules['CardioMetabolicDisorders'].conditions:
+                    if f'{condition}_symptoms' in symptoms:
+                        hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
+                            module=self.sim.modules['Ncds'],
+                            person_id=person_id,
+                            condition=f'{condition}'
+                        )
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            hsi_event,
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None
+                        )
+
     def did_not_run(self):
         logger.debug(key='message',
                      data='HSI_GenericFirstApptAtFacilityLevel1: did not run')
@@ -518,6 +551,18 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                     )
         # else:
             # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
+
+        # ------ CARDIO-METABOLIC DISORDERS ------
+        if 'CardioMetabolicDisorders' in self.sim.modules:
+            ncds = self.sim.modules['CardioMetabolicDisorders']
+            for ev in self.sim.modules['CardioMetabolicDisorders'].events:
+                if f'{ev}_damage' in symptoms:
+                    event = HSI_NCDs_SeeksEmergencyCareAndGetsTreatment(
+                        module=ncds,
+                        person_id=person_id,
+                        ev=ev,
+                    )
+                    health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:
