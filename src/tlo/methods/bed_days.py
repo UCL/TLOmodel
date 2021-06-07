@@ -128,6 +128,21 @@ class BedDays(Module):
             assert not df.isna().any().any()
             self.bed_tracker[bed_type] = df
 
+    def move_tracker_by_one_day(self, tracker):
+        bed_capacity = self.parameters['BedCapacity']
+        for bed_type in self.bed_types:
+            start_date = min(tracker[bed_type].index)
+            # reset all the columns for the earliest entry - it's going to become the new day
+            tracker[bed_type].loc[start_date] = bed_capacity.loc[bed_capacity.index[0], bed_type]
+            end_date = max(tracker[bed_type].index)  # get the latest day in the dataframe
+            new_day = end_date + pd.DateOffset(days=1)  # the new day is the next day
+            new_index = list(tracker[bed_type].index)
+            new_index[0] = new_day  # the earliest day is replaced with the next day
+            new_index = pd.DatetimeIndex(new_index)
+            tracker[bed_type] = tracker[bed_type].set_index(
+                pd.DatetimeIndex(new_index)).sort_index()  # update the index
+        return tracker
+
     def log_bed_tracker(self):
         """Dump entire current status of bed-day tracker to the log"""
         for bed_type in self.bed_tracker:
@@ -332,3 +347,4 @@ class RefreshInPatientStatus(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.is_alive, "bd_is_inpatient"] = \
             ((~df.loc[df.is_alive, exit_cols].isnull()) & ~(
                 df.loc[df.is_alive, exit_cols] < self.sim.date)).any(axis=1)
+
