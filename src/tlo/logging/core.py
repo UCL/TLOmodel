@@ -35,7 +35,7 @@ class Logger:
 
     def __init__(self, name: str, level=_logging.NOTSET):
 
-        assert name.startswith('tlo'), f'Only logging of tlo modules is allowed; name is {name}'
+#        assert name.startswith('tlo'), f'Only logging of tlo modules is allowed; name is {name}'
 
         # we build our logger on top of the standard python logging
         self._std_logger = _logging.getLogger(name=name)

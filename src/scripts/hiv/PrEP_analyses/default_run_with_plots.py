@@ -31,7 +31,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2016, 1, 1)
 popsize = 1000
 
 # set up the logging file
@@ -158,6 +158,12 @@ make_plot(
     model=prev_and_inc_over_time['hiv_prev_fsw'] * 100,
 )
 
+# HIV prevalence among pregnant women:
+make_plot(
+    title_str="HIV Prevalence among Pregnant Women (%)",
+    model=prev_and_inc_over_time['hiv_prev_preg'] * 100,
+)
+
 # %% : AIDS DEATHS
 deaths = output['tlo.methods.demography']['death'].copy()
 deaths = deaths.set_index('date')
@@ -236,8 +242,13 @@ make_plot(
     model=cov_over_time["prop_fsw_on_prep"]
 )
 
+# PrEP among Pregnant Women
+make_plot(
+    title_str="Proportion of Pregnant Women that are on PrEP",
+    model=cov_over_time["prop_preg_on_prep"]
+)
+
 # Behaviour Change
 make_plot(
     title_str="Proportion of Adults (15+) Exposed to Behaviour Change Intervention",
-    model=cov_over_time["prop_adults_exposed_to_behav_intv"]
-)
+    model=cov_over_time["prop_adults_exposed_to_behav_intv"])
