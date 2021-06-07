@@ -10,7 +10,6 @@ import pytest
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
-    contraception,
     demography,
     diarrhoea,
     dx_algorithm_child,
@@ -18,8 +17,7 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 from tlo.methods.diarrhoea import (
@@ -139,14 +137,12 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
@@ -170,14 +166,12 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
@@ -236,14 +230,12 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
@@ -314,7 +306,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
 
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     contraception.Contraception(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
@@ -328,8 +320,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                          # every symptom leads to healthcare seeking
                      ),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     labour.Labour(resourcefilepath=resourcefilepath),
-                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                      )
@@ -396,16 +386,20 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         assert not pd.isnull(df['gi_last_diarrhoea_recovered_date']).all()
 
         # Check that all of those who got diarrhoea got treatment or recovered naturally before treatment was provided
-        # and no one died of the Diarrhoea. (Limited to those whose last onset diarrhoea was one month ago to give time
-        # for outcomes to have occurred).
-        had_diarrhoea_a_month_ago = df.gi_ever_had_diarrhoea & (
-            df.gi_last_diarrhoea_date_of_onset < (sim.date - pd.DateOffset(months=1))
-        )
+        # (limited to those who did not did not die before that episode ended) and that no one died of the Diarrhoea.
+        had_diarrhoea = \
+            ~pd.isnull(df.date_of_birth) & \
+            df.gi_ever_had_diarrhoea & \
+            (df.gi_end_of_last_episode < sim.date) & \
+            (
+                pd.isnull(df.date_of_death) | (df.date_of_death > df.gi_end_of_last_episode)
+            )
+
         got_treatment = ~pd.isnull(
-            df.loc[had_diarrhoea_a_month_ago, 'gi_last_diarrhoea_treatment_date']
+            df.loc[had_diarrhoea, 'gi_last_diarrhoea_treatment_date']
         )
         recovered_naturally = ~pd.isnull(
-            df.loc[had_diarrhoea_a_month_ago & pd.isnull(df['gi_last_diarrhoea_treatment_date']),
+            df.loc[had_diarrhoea & pd.isnull(df['gi_last_diarrhoea_treatment_date']),
                    'gi_last_diarrhoea_recovered_date']
         )
         assert (got_treatment | recovered_naturally).all()
@@ -416,7 +410,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     # run without spurious symptoms
     run(spurious_symptoms=False)
 
-    # run with spurious symptoms
+    # # run with spurious symptoms
     run(spurious_symptoms=True)
 
 
@@ -431,7 +425,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
 
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     contraception.Contraception(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
@@ -444,8 +438,6 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
                          # every symptom leads to health-care seeking
                      ),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     labour.Labour(resourcefilepath=resourcefilepath),
-                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                      )
@@ -684,7 +676,7 @@ def test_run_each_of_the_HSI():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
@@ -696,8 +688,6 @@ def test_run_each_of_the_HSI():
                      force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
                  ),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )

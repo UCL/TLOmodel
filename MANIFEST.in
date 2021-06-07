@@ -7,9 +7,11 @@ include README.rst
 include .bumpversion.cfg
 include .coveragerc
 include tox.ini .travis.yml
+include tlo.example.conf
 
 exclude .editorconfig
 recursive-exclude .ci *
+recursive-exclude deploy *
 recursive-exclude outputs *
 recursive-exclude resources *
 

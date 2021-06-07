@@ -6,15 +6,13 @@ from pandas import DateOffset
 from tlo import Date, Simulation
 from tlo.methods import (
     chronicsyndrome,
-    contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     mockitis,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 from tlo.methods.symptommanager import (
@@ -22,6 +20,7 @@ from tlo.methods.symptommanager import (
     Symptom,
     SymptomManager_AutoOnsetEvent,
     SymptomManager_AutoResolveEvent,
+    SymptomManager_SpuriousSymptomOnset,
 )
 
 try:
@@ -100,18 +99,14 @@ def test_no_symptoms_if_no_diseases():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath)
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    generic_symptoms = list(sim.modules['SymptomManager'].parameters['generic_symptoms'])
-
-    for symp in generic_symptoms:
+    for symp in sim.modules['SymptomManager'].generic_symptoms:
         # No one should have any symptom currently (as no disease modules registered)
         assert list() == sim.modules['SymptomManager'].who_has(symp)
 
@@ -127,9 +122,7 @@ def test_adding_quering_and_removing_symptoms():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -176,36 +169,6 @@ def test_adding_quering_and_removing_symptoms():
     assert list() == sim.modules['SymptomManager'].who_has(symp)
 
 
-def test_spurious_symptoms():
-    sim = Simulation(start_date=start_date, seed=0)
-
-    # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath)
-                 )
-
-    # Run the simulation
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + DateOffset(days=2))
-
-    generic_symptoms = list(sim.modules['SymptomManager'].parameters['generic_symptoms'])
-
-    # Someone should have any symptom currently (because spurious_symptoms are being generated)
-    has_any_generic_symptom = []
-    for symp in generic_symptoms:
-        has_this_symptom = sim.modules['SymptomManager'].who_has(symp)
-        if has_this_symptom:
-            has_any_generic_symptom = has_any_generic_symptom + has_this_symptom
-
-    assert len(has_any_generic_symptom) > 0
-
-
 def test_baby_born_has_no_symptoms():
     sim = Simulation(start_date=start_date, seed=0)
 
@@ -215,9 +178,7 @@ def test_baby_born_has_no_symptoms():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath)
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -226,7 +187,9 @@ def test_baby_born_has_no_symptoms():
 
     # do a birth
     df = sim.population.props
+
     mother_id = df.loc[df.sex == 'F'].index[0]
+
     person_id = sim.do_birth(mother_id)
 
     # check that the new person does not have symptoms:
@@ -296,3 +259,49 @@ def test_auto_onset_symptom():
 
     resolve[2].apply(sim.population)
     assert 0 == len(sm.has_what(person_id))
+
+
+def test_spurious_symptoms_during_simulation():
+    """Test on the functionality of the spurious symptoms"""
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the core modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable_and_reject_all=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 )
+
+    # Make the probability of onset of one of the generic symptoms be 1.0 and duration of one day
+    generic_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
+    the_generic_symptom = generic_symptoms.iloc[0].generic_symptom_name
+    generic_symptoms.loc[
+        (the_generic_symptom == generic_symptoms['generic_symptom_name']),
+        ['prob_spurious_occurrence_in_children_per_day',
+         'prob_spurious_occurrence_in_adults_per_day']
+    ] = (1.0, 1.0)
+
+    generic_symptoms.loc[
+        (the_generic_symptom == generic_symptoms['generic_symptom_name']),
+        ['duration_in_days_of_spurious_occurrence_in_children',
+         'duration_in_days_of_spurious_occurrence_in_adults']
+    ] = (1, 1)
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + DateOffset(days=0))
+
+    # Check that no one has symptoms
+    assert [] == sim.modules['SymptomManager'].who_has(the_generic_symptom)
+
+    # Run the onset event & check that all persons now have the generic symptom
+    onset = SymptomManager_SpuriousSymptomOnset(module=sim.modules['SymptomManager'])
+    onset.apply(sim.population)
+    df = sim.population.props
+    assert set(df.is_alive.index) == set(sim.modules['SymptomManager'].who_has(the_generic_symptom))
+
+    # Update time, run resolve event and check that no one has symptom
+    sim.date += DateOffset(days=1)
+    sim.modules['SymptomManager'].spurious_symptom_resolve_event.apply(sim.population)
+    assert [] == sim.modules['SymptomManager'].who_has(the_generic_symptom)

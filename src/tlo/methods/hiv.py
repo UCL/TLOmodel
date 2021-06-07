@@ -1,6 +1,5 @@
 """
 The HIV Module
-
 Overview:
 HIV infection ---> AIDS onset Event (defined by the presence of AIDS symptoms) --> AIDS Death Event
 Testing is spontaneously taken-up and can lead to accessing intervention services (ART, VMMC, PrEP).
@@ -10,23 +9,19 @@ Persons can be on ART -
     - with viral suppression: when the person with not develop AIDS, or if they have already, it is relieved and they
         will not die of AIDS; and the person is not infectious
     - without viral suppression: when there is no benefit in avoiding AIDS and infectiousness is unchanged.
-
 Maintenance on ART and PrEP is re-assessed at periodic 'Decision Events', at which is it is determined if the person
   will attend the "next" HSI for continuation of the service; and if not, they are removed from that service and "stop
   treatment". If a stock-out or non-availability of health system resources prevent treatment continuation, the person
   "stops treatment". Stopping treatment leads to a new AIDS Event being scheduled. Persons can restart treatment. If a
   person has developed AIDS, starts treatment and then defaults from treatment, their 'original' AIDS Death Event will
   still occur.
-
 If PrEP is not available due to limitations in the HealthSystem, the person defaults to not being on PrEP.
-
 # Things to note:
     * Need to incorporate testing for HIV at first ANC appointment (as it does in generic HSI)
     * Need to incorporate testing for infants born to HIV-positive mothers (currently done in on_birth here).
     * Need to incorporate cotrim for infants born to HIV-positive mothers (not done here)
     * Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).
     * Calibration has not been done: most things look OK - except HIV-AIDS deaths
-
 """
 
 import os
@@ -94,8 +89,6 @@ class Hiv(Module):
         # --- Dates on which things have happened:
         "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
 
-        # -- Temporary variable for breastfeeding:
-        "tmp_hv_breastfed": Property(Types.BOOL, "Is the person currently receiving breast milk from mother")
     }
 
     PARAMETERS = {
@@ -148,6 +141,8 @@ class Hiv(Module):
         # Natural history - survival (adults)
         "mean_months_between_aids_and_death": Parameter(
             Types.REAL, "Mean number of months (distributed exponentially) for the time between AIDS and AIDS Death"),
+        "mean_months_between_aids_and_death_infant": Parameter(
+            Types.REAL, "Mean number of months for the time between AIDS and AIDS Death for infants"),
         "infection_to_death_weibull_shape_1519": Parameter(
             Types.REAL,
             "Shape parameter for Weibull describing time between infection and death for 15-19 yo (units: years)"),
@@ -396,9 +391,6 @@ class Hiv(Module):
         df.loc[df.is_alive, "hv_date_inf"] = pd.NaT
         df.loc[df.is_alive, "hv_last_test_date"] = pd.NaT
 
-        # -- Temporary --
-        df.loc[df.is_alive, "tmp_hv_breastfed"] = False
-
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
         self.initialise_baseline_art(population)  # allocate baseline art coverage
@@ -518,6 +510,14 @@ class Hiv(Module):
         df.loc[art_idx, "hv_number_tests"] = 1
         df.loc[art_idx, "hv_last_test_date"] = self.sim.date
         df.loc[art_idx, "hv_diagnosed"] = True
+
+        # all those on ART need to have event scheduled for continuation/cessation of treatment
+        for person in art_idx:
+            days = self.rng.randint(low=100, high=200, size=1, dtype=np.int64)[0]
+            self.sim.schedule_event(
+                Hiv_DecisionToContinueTreatment(person_id=person, module=self),
+                self.sim.date + pd.to_timedelta(days)
+            )
 
     def initialise_baseline_tested(self, population):
         """ assign initial hiv testing levels, only for adults
@@ -766,19 +766,6 @@ class Hiv(Module):
         df.at[child_id, "hv_date_inf"] = pd.NaT
         df.at[child_id, "hv_last_test_date"] = pd.NaT
 
-        # -- Temporary
-        df.at[child_id, "tmp_hv_breastfed"] = True
-
-        # ----- Schedule routine HIV test for those born to mothers that are HIV-positive (a time of giving birth)
-        # TODO: this to be subsumed into post-natal care
-        if df.at[mother_id, 'hv_inf']:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self),
-                topen=self.sim.date + pd.DateOffset(months=1),
-                tclose=self.sim.date + pd.DateOffset(months=2),
-                priority=1
-            )
-
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
         mother = df.loc[mother_id]
@@ -807,7 +794,10 @@ class Hiv(Module):
 
         # ----------------------------------- MTCT - DURING BREASTFEEDING --------------------------
         # If child is not infected and is being breastfed, then expose them to risk of MTCT through breastfeeding
-        if not child_infected and df.at[child_id, "tmp_hv_breastfed"] and mother.hv_inf:
+        # TODO: note for AT/TH - neonatal breastfeeding property replaced HIV temp property as discussed 19/02/21.
+        #  We need to make sure newborn outcomes on_birth is always called before HIV so breastfeeding status is set
+        #  prior to this function being called
+        if (not child_infected) and (df.at[child_id, "nb_breastfeeding_status"] != 'none') and mother.hv_inf:
             self.mtct_during_breastfeeding(mother_id, child_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -831,7 +821,6 @@ class Hiv(Module):
     def mtct_during_breastfeeding(self, mother_id, child_id):
         """
         Compute risk of mother-to-child transmission and schedule HivInfectionDuringBreastFeedingEvent.
-
         If the child is breastfeeding currently, consider the time-until-infection assuming a constantly monthly risk of
          transmission. If the breastfeeding has ceased by the time of the scheduled infection, then it will not run.
         (This means that this event can be run at birth or at the time of the mother's infection without the need for
@@ -875,7 +864,6 @@ class Hiv(Module):
         For those infected prior to, or at, birth: (this is a draw from an exponential distribution)
         For those infected after birth but before reaching age 5.0 (this is drawn from a weibull distribution)
         For adults: (this is a drawn from a weibull distribution (with scale depending on age);
-
         * NB. It is further assumed that the time from aids to death is 18 months.
         """
 
@@ -885,15 +873,19 @@ class Hiv(Module):
 
         if age == 0.0:
             # The person is infected prior to, or at, birth:
-            months_to_aids = int(
+            months_to_death = int(
                 max(0.0, self.rng.exponential(scale=p["mean_survival_for_infants_infected_prior_to_birth"]) * 12))
+            months_to_aids = int(
+                max(0.0, np.round(months_to_death - self.parameters['mean_months_between_aids_and_death_infant'])))
         elif age < 5.0:
             # The person is infected after birth but before age 5.0:
-            months_to_aids = int(max(0.0,
-                                     self.rng.weibull(
-                                         p["infection_to_death_infant_infection_after_birth_weibull_shape"])
-                                     * p["infection_to_death_infant_infection_after_birth_weibull_scale"] * 12
-                                     ))
+            months_to_death = int(
+                max(0.0, self.rng.weibull(
+                    p["infection_to_death_infant_infection_after_birth_weibull_shape"]) *
+                    p["infection_to_death_infant_infection_after_birth_weibull_scale"] * 12)
+            )
+            months_to_aids = int(
+                max(0.0, np.round(months_to_death - self.parameters['mean_months_between_aids_and_death_infant'])))
         else:
             # The person is infected after age 5.0
             # - get the shape parameters (unit: years)
@@ -917,6 +909,33 @@ class Hiv(Module):
         mean = self.parameters['mean_months_between_aids_and_death']
         draw_number_of_months = int(np.round(self.rng.exponential(mean)))
         return pd.DateOffset(months=draw_number_of_months)
+
+    def do_when_hiv_diagnosed(self, person_id):
+        """Things to do when a person has been tested and found (newly) be be HIV-positive:.
+        * Consier if ART should be initiated, and schedule HSI if so.
+        The person should not yet be on ART.
+        """
+        df = self.sim.population.props
+
+        if not (df.loc[person_id, 'hv_art'] == 'not'):
+            logger.warning("This event should not be running. do_when_diagnosed is for persons being newly dianogsed.")
+
+        # Consider if the person will be referred to start ART
+        has_aids_symptoms = 'aids_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
+
+        starts_art = self.lm['lm_art'].predict(
+            df=df.loc[[person_id]],
+            rng=self.rng,
+            has_aids_symptoms=has_aids_symptoms
+        )
+
+        if starts_art:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
 
     def stops_treatment(self, person_id):
         """Helper function that is called when someone stops being on ART.
@@ -1106,7 +1125,8 @@ class HivInfectionEvent(Event, IndividualScopeEventMixin):
         self.module.do_new_infection(person_id)
 
         # Consider mother-to-child-transmission (MTCT) from this person to their children:
-        children_of_this_person_being_breastfed = df.loc[(df.mother_id == person_id) & df.tmp_hv_breastfed].index
+        children_of_this_person_being_breastfed = df.loc[(df.mother_id == person_id) &
+                                                         (df.nb_breastfeeding_status != 'none')].index
         # - Do the MTCT routine for each child:
         for child_id in children_of_this_person_being_breastfed:
             self.module.mtct_during_breastfeeding(person_id, child_id)
@@ -1128,7 +1148,7 @@ class HivInfectionDuringBreastFeedingEvent(Event, IndividualScopeEventMixin):
             return
 
         # Check person is breastfed currently
-        if not df.at[person_id, "tmp_hv_breastfed"]:
+        if df.at[person_id, "nb_breastfeeding_status"] == 'none':
             return
 
         # Onset the infection for this person (which will schedule progression etc)
@@ -1207,11 +1227,8 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
         m = self.module
 
-        if not person["is_alive"]:
-            return
-
-        # If the person is no longer a sex worker they will not continue on PrEP
-        if not person["li_is_sexworker"]:
+        # If the person is no longer alive, and sex worker and not diagnosed, they will not continue on PrEP
+        if (not person["is_alive"]) or (not person["li_is_sexworker"]) or (person["hv_diagnosed"]):
             return
 
         # Check that there are on PrEP currently:
@@ -1276,20 +1293,16 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
     The is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to
     other services.
-
     This event is scheduled by:
         * the main event poll,
         * when someone presents for any care through a Generic HSI.
         * when an infant is born to an HIV-positive mother
-
     Following the test, they may or may not go on to present for uptake an HIV service: ART (if HIV-positive), VMMC (if
     HIV-negative and male) or PrEP (if HIV-negative and a female sex worker).
-
     If this event is called within another HSI, it may be desirable to limit the functionality of the HSI: do this
     using the arguments:
         * do_not_refer_if_neg=False : if the person is HIV-neg they will not be referred to VMMC or PrEP
         * suppress_footprint=True : the HSI will not have any footprint
-
     """
 
     def __init__(self, module, person_id, do_not_refer_if_neg=False, suppress_footprint=False):
@@ -1345,21 +1358,10 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                 # The test_result is HIV positive
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'VCTPositive': 1})
 
-                # Update diagnosis if the person is indeed HIV positive
+                # Update diagnosis if the person is indeed HIV positive;
                 if person['hv_inf']:
                     df.at[person_id, 'hv_diagnosed'] = True
-
-                    # Consider if the person will be referred to start ART
-                    has_aids_symptoms = 'aids_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
-                    if self.module.lm['lm_art'].predict(df=df.loc[[person_id]],
-                                                        rng=self.module.rng,
-                                                        has_aids_symptoms=has_aids_symptoms):
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self.module),
-                            topen=self.sim.date,
-                            tclose=None,
-                            priority=0
-                        )
+                    self.module.do_when_hiv_diagnosed(person_id=person_id)
 
             else:
                 # The test_result is HIV negative
@@ -1375,7 +1377,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # If person is a man, and not circumcised, then consider referring to VMMC
                     if (person['sex'] == 'M') & (~person['li_is_circ']):
                         x = self.module.lm['lm_circ'].predict(df.loc[[person_id]], self.module.rng)
-                        print('here x=', x, type(x))  # x= False <class 'numpy.bool_'> in new thing
                         if x:
                             self.sim.modules['HealthSystem'].schedule_hsi_event(
                                 HSI_Hiv_Circ(person_id=person_id, module=self.module),
@@ -1454,8 +1455,8 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        # Do not run if the person is not alive or is not currently a sex worker
-        if not person["is_alive"]:
+        # Do not run if the person is not alive, or is not currently a sex worker, or is diagnosed
+        if (not person["is_alive"]) or (not person["li_is_sexworker"]) or (person["hv_diagnosed"]):
             return
 
         # Run an HIV test
@@ -1463,21 +1464,17 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             dx_tests_to_run='hiv_rapid_test',
             hsi_event=self
         )
-        person['hv_number_tests'] += 1
-        person['hv_last_test_date'] = self.sim.date
+        df.at[person_id, 'hv_number_tests'] += 1
+        df.at[person_id, 'hv_last_test_date'] = self.sim.date
 
         # If test is positive, flag as diagnosed and refer to ART
         if test_result is True:
             # label as diagnosed
             df.at[person_id, 'hv_diagnosed'] = True
-            # Consider if the person will be referred to start ART
-            if self.module.lm['lm_art'].predict(df.loc[[person_id]], self.module.rng):
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self.module),
-                    topen=self.sim.date,
-                    tclose=None,
-                    priority=0
-                )
+
+            # Do actions for when a person has been diagnosed with HIV
+            self.module.do_when_hiv_diagnosed(person_id=person_id)
+
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
         # Check that PrEP is available and if it is, initiate or continue  PrEP:
@@ -1651,18 +1648,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         pass
         """
         Consider whether IPT is needed at this time. This is run only when treatment is initiated.
-
         # if 'Tb' in self.sim.modules:
             district = df.at[person_id, "district_of_residence"]
             eligible = df.at[person_id, "tb_inf"].startswith("active")
-
             if (
                 (district in params["tb_high_risk_distr"].values)
                 & (self.sim.date.year > 2012)
                 & eligible
                 & (self.module.rng.rand() < params["???"])
             ):
-
                 # Schedule the TB treatment event:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     tb.HSI_Tb_IptHiv(self.module['Tb'], person_id=person_id),
@@ -1824,30 +1818,22 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         current_testing_rate = self.module.per_capita_testing_rate()
 
         # ------------------------------------ TREATMENT ------------------------------------
-        plhiv_adult = len(df.loc[df.is_alive & df.hv_inf & (df.age_years >= 15)])
-        plhiv_children = len(df.loc[df.is_alive & df.hv_inf & (df.age_years < 15)])
+        def treatment_counts(subset):
+            # total number of subset (subset is a true/false series)
+            count = sum(subset)
+            # proportion of subset living with HIV that are diagnosed:
+            proportion_diagnosed = sum(subset & df.hv_diagnosed) / count if count > 0 else 0
+            # proportions of subset living with HIV on treatment:
+            art = sum(subset & (df.hv_art != "not"))
+            art_cov = art / count if count > 0 else 0
+            # proportion of subset on treatment that have good VL suppression
+            art_vs = sum(subset & (df.hv_art == "on_VL_suppressed"))
+            art_cov_vs = art_vs / art if art > 0 else 0
+            return proportion_diagnosed, art_cov, art_cov_vs
 
-        # proportion of adults (15+) living with HIV that are diagnosed:
-        dx_adult = len(df.loc[df.is_alive & df.hv_inf & df.hv_diagnosed & (df.age_years >= 15)]) / plhiv_adult
-
-        # proportion of children (15+) living with HIV that are diagnosed:
-        dx_children = len(df.loc[df.is_alive & df.hv_inf & df.hv_diagnosed & (df.age_years >= 15)]) / plhiv_children
-
-        # proportions of adults (15+) living with HIV on treatment:
-        art_adult = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art != "not") & (df.age_years >= 15)])
-        art_cov_adult = art_adult / plhiv_adult if plhiv_adult > 0 else 0
-
-        # proportion of adults (15+) on treatment that have good VL suppression
-        art_adult_vs = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art == "on_VL_suppressed") & (df.age_years >= 15)])
-        art_cov_vs_adult = art_adult_vs / art_adult if art_adult > 0 else 0
-
-        # proportions of children (0-14) living with HIV on treatment:
-        art_children = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art != "not") & (df.age_years < 15)])
-        art_cov_children = art_children / plhiv_children if plhiv_adult > 0 else 0
-
-        # proportion of children (0-14) living with HIV on treatment and with VL suppression
-        art_children_vs = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art == "on_VL_suppressed") & (df.age_years < 15)])
-        art_cov_vs_children = art_children_vs / art_children if art_children > 0 else 0
+        alive_infected = df.is_alive & df.hv_inf
+        dx_adult, art_cov_adult, art_cov_vs_adult = treatment_counts(alive_infected & (df.age_years >= 15))
+        dx_children, art_cov_children, art_cov_vs_children = treatment_counts(alive_infected & (df.age_years < 15))
 
         # ------------------------------------ BEHAVIOUR CHANGE ------------------------------------
 

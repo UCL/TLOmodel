@@ -4,6 +4,10 @@ import inspect
 from inspect import isclass, iscode, isframe, isfunction, ismethod, ismodule, istraceback
 from os import walk
 
+from tlo import Module
+from tlo.events import Event
+from tlo.methods.healthsystem import HSI_Event
+
 
 def get_package_name(dirpath):
     """
@@ -53,7 +57,8 @@ def generate_module_dict(topdir):
             # We can do this as compound-if statements are evaluated
             # left-to-right in Python:
             if (f == "__init__.py") or (f[-4:] == ".pyc") or (f[-3:] != ".py"):
-                print(f"skipping {f}")
+                # print(f"skipping {f}")
+                pass
             else:
                 (data[dirpath]).append(f)
     return data
@@ -82,13 +87,17 @@ def get_classes_in_module(fqn, module_obj):
 
         # Pick out only the classes defined in this module:
         if inspect.isclass(obj) and fqn in str(obj):
-            # print(name)  # e.g. MockitisEvent
-            # print(obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
-            source, start_line = inspect.getsourcelines(obj)
-            classes.append([name, obj, start_line])
-            # print(f"\n\nIn module {name} we find the following:")
-            # morestuff = inspect.getmembers(obj)
-            # print(morestuff)  # e.g. functions, PARAMETERS dict,...
+            # only generate documentation for tlo subclasses (considers other classes internal implementation detail)
+            bases = inspect.getmro(obj)
+            # skip this filtering if we're working with classes for testing
+            if fqn.startswith("test_docs_data") or any(base in bases for base in [Module, Event, HSI_Event]):
+                # print(name)  # e.g. MockitisEvent
+                # print(obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
+                source, start_line = inspect.getsourcelines(obj)
+                classes.append([name, obj, start_line])
+                # print(f"\n\nIn module {name} we find the following:")
+                # morestuff = inspect.getmembers(obj)
+                # print(morestuff)  # e.g. functions, PARAMETERS dict,...
 
     # print(f"before sorting, {classes}")
     # https://stackoverflow.com/questions/3169014/inspect-getmembers-in-order
@@ -305,7 +314,8 @@ def get_class_output_string(classinfo):
             if obj in func_objects_to_document:  # Should be always True!
                 mystr += f"{spacer}.. automethod:: {name}\n\n"
     else:
-        print(f"**DEBUG: no func_objects_to_document in class {class_name}")
+        # print(f"**DEBUG: no func_objects_to_document in class {class_name}")
+        pass
 
     # Anything else?
     # mystr += f"{name} : {obj}\n\n"
@@ -354,23 +364,26 @@ def which_functions_to_print(clazz):
                     # if the function object is the same
                     # as one defined in a base class
                     if func_obj == functions_base_class[func_name]:
-                        print(f'{func_name} in subclass is same as function in'
-                              f'{baseclass.__name__} (not overridden)')
+                        # print(f'{func_name} in subclass is same as function in'
+                        #       f'{baseclass.__name__} (not overridden)')
                         should_i_print = False
                         break
                     else:
-                        print(f'{func_name} in subclass is not the same '
-                              f'as one in baseclass {baseclass.__name__}')
+                        # print(f'{func_name} in subclass is not the same '
+                        #       f'as one in baseclass {baseclass.__name__}')
+                        pass
                 else:
-                    print(f'{func_name} is not in '
-                          f'baseclass {baseclass.__name__}')
+                    # print(f'{func_name} is not in '
+                    #       f'baseclass {baseclass.__name__}')
+                    pass
 
         if should_i_print:
-            print(f'\t✓✓✓ {func_name} is implemented in the subclass - print ')
+            # print(f'\t✓✓✓ {func_name} is implemented in the subclass - print ')
             ok_to_print.append(func_obj)
         else:
-            print(f'\txxx {func_name} has been inherited from a subclass'
-                  f'- do not print')
+            # print(f'\txxx {func_name} has been inherited from a subclass'
+            #       f'- do not print')
+            pass
 
     return ok_to_print
 

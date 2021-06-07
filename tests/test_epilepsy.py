@@ -17,14 +17,15 @@ def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-
-    sim.register(epilepsy.Epilepsy(resourcefilepath=resourcefilepath))
-
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            mode_appt_constraints=0),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
+    )
     sim.seed_rngs(0)
     return sim
 
