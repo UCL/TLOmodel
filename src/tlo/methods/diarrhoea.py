@@ -1,7 +1,6 @@
 """
 Childhood Diarrhoea Module
-Documentation: '04 - Methods Repository/Childhood Disease Methods.docx'
-gi_last_diarrhoea_treatment_date
+
 Overview
 =======
 Individuals are exposed to the risk of onset of diarrhoea. They can have diarrhoea caused by one pathogen at a time.

@@ -56,6 +56,7 @@ if not on_rtd:  # only set the theme if we're building docs locally
 html_use_smartypants = True
 html_last_updated_fmt = '%b %d, %Y'
 html_split_index = False
+html_show_copyright = False
 html_sidebars = {
     '**': ['searchbox.html', 'globaltoc.html', 'sourcelink.html'],
 }
@@ -63,6 +64,7 @@ html_short_title = '%s-%s' % (project, version)
 
 html_static_path = ['_static']
 html_extra_path = ['./.nojekyll', './.gitattributes']
+html_favicon = 'favicon.png'
 
 rawfiles = ['.github']
 
