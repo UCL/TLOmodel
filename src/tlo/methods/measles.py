@@ -2,7 +2,6 @@ import math
 import os
 
 import pandas as pd
-
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
@@ -353,7 +352,6 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
                 reduction_in_death_risk = self.module.rng.uniform(low=0.2, high=0.6, size=1)
 
                 if self.module.rng.rand() < reduction_in_death_risk:
-
                     logger.debug(key="MeaslesDeathEvent",
                                  data=f"MeaslesDeathEvent: scheduling death for treated {person_id} on {self.sim.date}")
 
@@ -501,7 +499,6 @@ class MeaslesLoggingFortnightEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        now = self.sim.date
 
         # ------------------------------------ SYMPTOMS ------------------------------------
         # this will check for all measles cases in the past two weeks (average symptom duration)

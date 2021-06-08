@@ -94,7 +94,7 @@ def test_single_person():
     events_for_this_person = sim.find_events_for_person(person_id)
     assert len(events_for_this_person) > 0
     next_event_date, next_event_obj = events_for_this_person[0]
-    assert (isinstance(next_event_obj, measles.MeaslesSymptomResolveEvent) or isinstance(next_event_obj, measles.MeaslesDeathEvent))
+    assert isinstance(next_event_obj, (measles.MeaslesDeathEvent, measles.MeaslesSymptomResolveEvent))
 
 
 def test_measles_cases_and_hsi_occurring():
