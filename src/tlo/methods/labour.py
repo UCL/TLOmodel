@@ -1494,16 +1494,31 @@ class Labour(Module):
 
                 else:
                     # If she has not already receive antibiotics, we check for consumables
-                    pkg_code_pprom = pd.unique(
-                        consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for pPRoM',
-                                        'Intervention_Pkg_Code'])[0]
+                    item_code_benpen = pd.unique(
+                        consumables.loc[
+                            consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
+                            'Item_Code'])[0]
+                    item_code_wfi = pd.unique(
+                        consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
+                    item_code_needle = pd.unique(
+                        consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+                    item_code_gloves = pd.unique(
+                        consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[
+                        0]
 
-                    all_available = hsi_event.get_all_consumables(
-                        pkg_codes=[pkg_code_pprom])
+                    consumables_abx_for_prom = {
+                        'Intervention_Package_Code': {},
+                        'Item_Code': {item_code_benpen: 4, item_code_wfi: 1, item_code_needle: 1,
+                                      item_code_gloves: 1}}
+
+                    # Then query if these consumables are available during this HSI
+                    outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                        hsi_event=hsi_event,
+                        cons_req_as_footprint=consumables_abx_for_prom)
 
                     # And provide if available. Antibiotics for from reduce risk of newborn sepsis within the first
                     # week of life
-                    if all_available:
+                    if outcome_of_request_for_consumables['Item_Code'][item_code_benpen]:
                         mni[person_id]['abx_for_prom_given'] = True
                         logger.debug(key='message', data=f'This facility has provided antibiotics for mother '
                                                          f'{person_id} who is a risk of sepsis due to PROM')

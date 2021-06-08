@@ -228,7 +228,7 @@ class SymptomManager(Module):
             'generic_symptom_name')['odds_ratio_for_health_seeking_in_adults'].to_dict()
 
         # Register the Generic Symptoms
-        for generic_symptom_name in self.generic_symptoms:
+        for generic_symptom_name in sorted(self.generic_symptoms):
             self.register_symptom(
                 Symptom(
                     name=generic_symptom_name,
@@ -600,7 +600,7 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
         }
 
         # For each generic symptom, impose it on a random sample of persons who do not have that symptom currently:
-        for symp in self.module.generic_symptoms:
+        for symp in sorted(self.module.generic_symptoms):
             does_not_have_symptom = self.module.who_not_have(symptom_string=symp)
 
             for group in ['children', 'adults']:
@@ -641,7 +641,7 @@ class SymptomManager_SpuriousSymptomResolve(RegularEvent, PopulationScopeEventMi
 
         # Create the dict structures to store information about for whom and when each symptoms must be resolved
         self.to_resolve = dict()
-        for symp in self.module.generic_symptoms:
+        for symp in sorted(self.module.generic_symptoms):
             self.to_resolve[symp] = defaultdict(set)
 
     def schedule_symptom_resolve(self, person_id, date_of_resolution, symptom_string):
