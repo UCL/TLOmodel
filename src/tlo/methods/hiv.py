@@ -1671,7 +1671,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             ):
                 # Schedule the TB treatment event:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    tb.HSI_Tb_Start_or_Continue_Ipt(self.module['Tb'], person_id=person_id),
+                    tb.HSI_Tb_Start_or_Continue_Ipt(self.sim.modules['Tb'], person_id=person_id),
                     priority=1,
                     topen=self.sim.date,
                     tclose=None
