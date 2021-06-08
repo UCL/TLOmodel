@@ -1,27 +1,28 @@
-from pathlib import Path
-import pandas as pd
-import time
 import datetime
-import matplotlib.pyplot as plt
 import os
+import time
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    demography,
-    contraception,
-    healthburden,
-    healthsystem,
-    enhanced_lifestyle,
-    dx_algorithm_child,
-    healthseekingbehaviour,
-    symptommanager,
     antenatal_care,
+    contraception,
+    demography,
+    dx_algorithm_child,
+    enhanced_lifestyle,
+    epi,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
     labour,
+    measles,
     newborn_outcomes,
     pregnancy_supervisor,
-    epi,
-    measles
+    symptommanager,
 )
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs

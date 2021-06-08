@@ -31,9 +31,9 @@ from tlo.methods.malaria import (
     HSI_Malaria_non_complicated_treatment_age0_5,
     HSI_Malaria_non_complicated_treatment_age5_15,
 )
+from tlo.methods.measles import HSI_Measles_Treatment
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
-from tlo.methods.measles import HSI_Measles_Treatment
 from tlo.methods.other_adult_cancers import (
     HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom,
 )

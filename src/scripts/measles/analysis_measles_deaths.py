@@ -1,28 +1,30 @@
-from pathlib import Path
-import pandas as pd
-import time
 import datetime
-import matplotlib.pyplot as plt
 import os
+import time
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    demography,
-    contraception,
-    healthburden,
-    healthsystem,
-    enhanced_lifestyle,
-    dx_algorithm_child,
-    healthseekingbehaviour,
-    symptommanager,
     antenatal_care,
-    labour,
-    newborn_outcomes,
-    pregnancy_supervisor,
+    contraception,
+    demography,
+    dx_algorithm_child,
+    enhanced_lifestyle,
     epi,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    labour,
     measles,
-    postnatal_supervisor)
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
+    symptommanager,
+)
 
 # The resource files
 resourcefilepath = Path("./resources")
