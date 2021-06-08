@@ -1,31 +1,25 @@
 import os
 from pathlib import Path
+
 import pandas as pd
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
-    contraception,
-    healthburden,
-    healthsystem,
-    enhanced_lifestyle,
     dx_algorithm_child,
-    healthseekingbehaviour,
-    symptommanager,
-    antenatal_care,
-    labour,
-    newborn_outcomes,
-    pregnancy_supervisor,
+    enhanced_lifestyle,
     epi,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
     measles,
-    postnatal_supervisor)
-from tlo.methods.healthsystem import HSI_Event
+    simplified_births,
+    symptommanager,
+)
 
 try:
     resources = Path(os.path.dirname(__file__)) / "../resources"
 except NameError:
-    # running interactively
     resources = "resources"
 
 
@@ -55,6 +49,11 @@ def make_sim():
     # Register the appropriate modules
     sim.register(
         demography.Demography(resourcefilepath=resources),
+        simplified_births.SimplifiedBirths(resourcefilepath=resources),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+        symptommanager.SymptomManager(resourcefilepath=resources),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+        healthburden.HealthBurden(resourcefilepath=resources),
         healthsystem.HealthSystem(
             resourcefilepath=resources,
             service_availability=["*"],  # all treatment IDs allowed
@@ -65,17 +64,7 @@ def make_sim():
             disable=False,
         ),
         # disables the health system constraints so all HSI events run
-        symptommanager.SymptomManager(resourcefilepath=resources),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
         dx_algorithm_child.DxAlgorithmChild(),
-        healthburden.HealthBurden(resourcefilepath=resources),
-        contraception.Contraception(resourcefilepath=resources),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-        labour.Labour(resourcefilepath=resources),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resources),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
         epi.Epi(resourcefilepath=resources),
         measles.Measles(resourcefilepath=resources),
     )
@@ -190,6 +179,3 @@ def test_measles_zero_death_rate():
 
     # check that there have been no deaths caused by measles
     assert not df.cause_of_death.loc[~df.is_alive].str.startswith('measles').any()
-
-
-
