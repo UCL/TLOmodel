@@ -16,7 +16,7 @@ from tlo import Module, logging
 from tlo.methods import Metadata
 from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Dysentery,
-    HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea,
+    HSI_Diarrhoea_Persistent_Diarrhoea,
     HSI_Diarrhoea_Severe_Persistent_Diarrhoea,
     HSI_Diarrhoea_Treatment_PlanA,
     HSI_Diarrhoea_Treatment_PlanB,
