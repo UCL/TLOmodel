@@ -510,9 +510,8 @@ class HealthSystem(Module):
             # (ie. Check that this does not demand officers that are never available at a particular facility)
             caps = self.parameters['Daily_Capabilities']
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
-
             footprint_is_possible = (len(footprint) > 0) & (
-                caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
+                caps.loc[footprint.keys(), 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
                 logger.warning(key="message",
                                data=f"The expected footprint is not possible with the configuration of officers: "
@@ -787,7 +786,7 @@ class HealthSystem(Module):
                     f"FacilityID_{the_facility.id}_Officer_{appt_info.officer_type}"
                 ] += appt_info.time_taken
 
-        return pd.Series(appt_footprint_times)
+        return appt_footprint_times
 
     def get_squeeze_factors(self, all_calls_today, current_capabilities):
         """
@@ -1461,7 +1460,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                         # Update load factors:
                         updated_call = self.module.get_appt_footprint_as_time_request(event, actual_appt_footprint)
-                        df_footprints_of_all_individual_level_hsi_event.loc[updated_call.index, ev_num] = updated_call
+                        df_footprints_of_all_individual_level_hsi_event.loc[updated_call.keys(), ev_num] = updated_call
                         squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
                             all_calls_today=df_footprints_of_all_individual_level_hsi_event,
                             current_capabilities=current_capabilities,
