@@ -105,17 +105,33 @@ def make_plot(
     plt.title(title_str)
     plt.legend(['Model', 'Data'])
     plt.gca().set_ylim(bottom=0)
-    plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
+    # plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
     plt.show()
 
 
 # ------------------------- OUTPUTS ------------------------- #
-# Active TB incidence
+
+# person-years all ages (irrespective of HIV status)
+py_ = output['tlo.methods.demography']['person_years']
+years = pd.to_datetime(py_['date']).dt.year
+py = pd.Series(dtype='int64', index=years)
+for year in years:
+    tot_py = (
+        (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
+        (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
+    ).transpose()
+    py[year] = tot_py.sum().values[0]
+
+
+# Active TB incidence - annual outputs
 activeTB_inc = output['tlo.methods.tb']['tb_incidence']
+activeTB_inc['date'] = pd.DatetimeIndex(activeTB_inc['date']).year
 activeTB_inc = activeTB_inc.set_index('date')
+activeTB_inc_rate = (activeTB_inc / py) * 100000
 
 # latent TB prevalence
 latentTB_prev = output['tlo.methods.tb']['tb_prevalence']
+latentTB_prev['date'] = pd.DatetimeIndex(latentTB_prev['date']).year
 latentTB_prev = latentTB_prev.set_index('date')
 
 # deaths
@@ -137,12 +153,17 @@ tot_tb_hiv_deaths = deaths_TB_HIV.groupby(by=['year']).size()
 # total TB deaths (including HIV+)
 total_tb_deaths = tot_tb_non_hiv_deaths.add(tot_tb_hiv_deaths, fill_value=0)
 
+# mortality rates per 100k person-years
+total_tb_deaths_rate = (total_tb_deaths / py) * 100000
+tot_tb_hiv_deaths_rate = (tot_tb_hiv_deaths / py) * 100000
+tot_tb_non_hiv_deaths_rate = (tot_tb_non_hiv_deaths / py) * 100000
+
 # ------------------------- PLOTS ------------------------- #
 
-# plot active tb incidence per 1000 population
+# plot active tb incidence per 100k person-years
 make_plot(
-    title_str="Active TB Incidence (per 1000 person-years)",
-    model=activeTB_inc['tbIncActive100k'],
+    title_str="Active TB Incidence (per 100k person-years)",
+    model=activeTB_inc_rate,
 )
 # plot latent prevalence
 make_plot(
@@ -150,6 +171,23 @@ make_plot(
     model=latentTB_prev['tbPrevLatent'],
 )
 
+# plot tb (non-hiv) deaths per 100k person-years
+make_plot(
+    title_str="Mortality TB (excl HIV) per 100k py",
+    model=tot_tb_non_hiv_deaths_rate,
+)
+
+# plot tb_hiv deaths per 100k person-years
+make_plot(
+    title_str="Mortality TB_HIV per 100k py",
+    model=tot_tb_hiv_deaths_rate,
+)
+
+# plot total tb deaths
+make_plot(
+    title_str="Mortality TB (all incl HIV) per 100k",
+    model=total_tb_deaths_rate,
+)
 
 # plot proportion of active tb cases on treatment
 

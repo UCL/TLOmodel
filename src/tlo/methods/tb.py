@@ -1967,9 +1967,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.tb_date_active > (now - DateOffset(months=self.repeat)))]
         )
 
-        # incidence per 100k
-        inc100k = (new_tb_cases / len(df[df.is_alive])) * 100000
-
         # number of latent cases
         new_latent_cases = len(
             df[(df.tb_date_latent > (now - DateOffset(months=self.repeat)))]
@@ -1983,9 +1980,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # proportion of active TB cases in the last year who are HIV-positive
         prop_hiv = inc_active_hiv / new_tb_cases if new_tb_cases else 0
 
-        # incidence of TB-HIV per 100k
-        inc100k_hiv = (inc_active_hiv / len(df[df.is_alive])) * 100000
-
         # number new mdr tb cases
         # TODO this will exclude mdr cases occurring in the last timeperiod but already cured
         new_mdr_cases = len(
@@ -1993,20 +1987,15 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.tb_date_active > (now - DateOffset(months=self.repeat)))]
         )
 
-        # incidence of mdr-tb per 100k
-        inc_mdr100k = (new_mdr_cases / len(df[df.is_alive])) * 100000
-
         logger.info(
             '%s|tb_incidence|%s',
             now,
             {
                 'tbNewActiveCases': new_tb_cases,
                 'tbNewLatentCases': new_latent_cases,
-                'tbIncActive100k': inc100k,
+                'tbNewActive_Hiv': inc_active_hiv,
                 'tb_prop_hiv_pos': prop_hiv,
                 'tbNewActiveMdrCases': new_mdr_cases,
-                'tbIncActive100k_hiv': inc100k_hiv,
-                'tbIncActiveMdr100k': inc_mdr100k,
             },
         )
 
