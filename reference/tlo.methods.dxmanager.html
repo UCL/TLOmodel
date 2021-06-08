@@ -179,134 +179,6 @@
 <span id="tlo-methods-dxmanager-module"></span><h1>tlo.methods.dxmanager module<a class="headerlink" href="#module-tlo.methods.dxmanager" title="Permalink to this headline">¶</a></h1>
 <p>The is the Diagnostic Tests Manager (DxManager). It simplifies the process of conducting diagnostic tests on a person.
 See <a class="reference external" href="https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagnostic-Tests-Manager-(DxManager">https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagnostic-Tests-Manager-(DxManager</a>)</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.dxmanager.DxManager">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DxManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hs_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dxmanager.html#DxManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dxmanager.DxManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>The is the Diagnostic Tests Manager (DxManager).
-It simplifies the process of conducting diagnostic tests on a person.
-It can store and then apply Diagnostic Tests (DxTest) and return the result.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>hs_module</strong> – an instance of HealthSystem module</p>
-</dd>
-</dl>
-<p><strong>Functions (defined or overridden in class DxManager):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.dxmanager.DxManager.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hs_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dxmanager.html#DxManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dxmanager.DxManager.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.dxmanager.DxManager.register_dx_test">
-<span class="sig-name descname"><span class="pre">register_dx_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">dict_of_tests_to_register</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dxmanager.html#DxManager.register_dx_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dxmanager.DxManager.register_dx_test" title="Permalink to this definition">¶</a></dt>
-<dd><p>Diagnostics tests are registered in the DxManager by passing in a dictionary of one of more DxTests:</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.dxmanager.DxManager.print_info_about_dx_test">
-<span class="sig-name descname"><span class="pre">print_info_about_dx_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name_of_dx_test</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dxmanager.html#DxManager.print_info_about_dx_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dxmanager.DxManager.print_info_about_dx_test" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.dxmanager.DxManager.print_info_about_all_dx_tests">
-<span class="sig-name descname"><span class="pre">print_info_about_all_dx_tests</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dxmanager.html#DxManager.print_info_about_all_dx_tests"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dxmanager.DxManager.print_info_about_all_dx_tests" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.dxmanager.DxManager.run_dx_test">
-<span class="sig-name descname"><span class="pre">run_dx_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dx_tests_to_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_dict_for_single</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_dxtest_tried</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dxmanager.html#DxManager.run_dx_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dxmanager.DxManager.run_dx_test" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.dxmanager.DxTest">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DxTest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">property</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_req_as_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_req_as_item_code</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensitivity</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specificity</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measure_error_stdev</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_categories</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dxmanager.html#DxTest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dxmanager.DxTest" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is the helper class that contains information about a Diagnostic Test.
-It is specified by passing at initialisation:
-* Mandatory:
-:param property: the column in the sim.population.props that the diagnostic will observe
-* Optional:
-Use of consumable - specify either:</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">param cons_req_as_footprint</dt>
-<dd class="field-odd"><p>the footprint of the consumables that are required for the test to be done.</p>
-</dd>
-</dl>
-<p>or:
-:param cons_req_as_footprint: the item code of the consumables that are required for the test to be done.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>Performance of test:</dt><dd><dl class="simple">
-<dt>Specify any of the following if the property’s dtype is bool</dt><dd><dl class="field-list simple">
-<dt class="field-odd">param sensitivity</dt>
-<dd class="field-odd"><p>the sensitivity of the test (probability that a true value will be observed as true)</p>
-</dd>
-<dt class="field-even">param specificity</dt>
-<dd class="field-even"><p>the specificity of the test (probabilit that a false value will be observed as false)</p>
-</dd>
-</dl>
-</dd>
-<dt>Specify any of the following if the property’s dtype is numeric</dt><dd><dl class="field-list simple">
-<dt class="field-odd">param measure_error_stdev</dt>
-<dd class="field-odd"><p>the standard deviation of the normally distributed (and zero-centered) error in
-the observation of a continuous property</p>
-</dd>
-<dt class="field-even">param threshold</dt>
-<dd class="field-even"><p>the observed value of a continuous property above which the result of the test is True.</p>
-</dd>
-<dt class="field-odd">param target_categories</dt>
-<dd class="field-odd"><p>if property is categorical, a list of categories corresponding
-to a positive result.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd>
-</dl>
-<p><strong>Functions (defined or overridden in class DxTest):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.dxmanager.DxTest.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">property</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_req_as_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_req_as_item_code</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensitivity</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specificity</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measure_error_stdev</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_categories</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dxmanager.html#DxTest.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dxmanager.DxTest.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.dxmanager.DxTest._DxTest__hash_key">
-<span class="sig-name descname"><span class="pre">_DxTest__hash_key</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.dxmanager.DxTest._DxTest__hash_key" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.dxmanager.DxTest.__hash__">
-<span class="sig-name descname"><span class="pre">__hash__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dxmanager.html#DxTest.__hash__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dxmanager.DxTest.__hash__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return hash(self).</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.dxmanager.DxTest.__eq__">
-<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dxmanager.html#DxTest.__eq__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dxmanager.DxTest.__eq__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return self==value.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.dxmanager.DxTest.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hs_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dxmanager.html#DxTest.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dxmanager.DxTest.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is where the test is applied.
-If this test returns None this means the test has failed due to there not being the required consumables.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>hsi_event</strong> – </p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>value of test or None.</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 
 
@@ -324,7 +196,7 @@ If this test returns None this means the test has failed due to there not being 
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 27, 2021.
+        Last updated on Jun 08, 2021.
       </span>
 
     </p>

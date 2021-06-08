@@ -200,7 +200,7 @@
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
 
-<div class="viewcode-block" id="Symptom"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.Symptom">[docs]</a><span class="k">class</span> <span class="nc">Symptom</span><span class="p">:</span>
+<span class="k">class</span> <span class="nc">Symptom</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Data structure to hold the information about a symptom.</span>
 <span class="sd">    Adult is peron aged 15+</span>
 <span class="sd">    Child is someone aged &lt;15</span>
@@ -212,7 +212,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Symptom.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.Symptom.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">no_healthcareseeking_in_adults</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">no_healthcareseeking_in_children</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -287,12 +287,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">emergency_in_adults</span> <span class="o">=</span> <span class="n">emergency_in_adults</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emergency_in_children</span> <span class="o">=</span> <span class="n">emergency_in_children</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_adults</span> <span class="o">=</span> <span class="n">odds_ratio_health_seeking_in_adults</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span> <span class="o">=</span> <span class="n">odds_ratio_health_seeking_in_children</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span> <span class="o">=</span> <span class="n">odds_ratio_health_seeking_in_children</span>
 
 
-<div class="viewcode-block" id="DuplicateSymptomWithNonIdenticalPropertiesError"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.DuplicateSymptomWithNonIdenticalPropertiesError">[docs]</a><span class="k">class</span> <span class="nc">DuplicateSymptomWithNonIdenticalPropertiesError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<div class="viewcode-block" id="DuplicateSymptomWithNonIdenticalPropertiesError.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.DuplicateSymptomWithNonIdenticalPropertiesError.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;A symptom with this name has been registered already but with different properties&quot;</span><span class="p">)</span></div></div>
+<span class="k">class</span> <span class="nc">DuplicateSymptomWithNonIdenticalPropertiesError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;A symptom with this name has been registered already but with different properties&quot;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="SymptomManager"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager">[docs]</a><span class="k">class</span> <span class="nc">SymptomManager</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
@@ -378,7 +378,7 @@
             <span class="s1">&#39;generic_symptom_name&#39;</span><span class="p">)[</span><span class="s1">&#39;odds_ratio_for_health_seeking_in_adults&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
 
         <span class="c1"># Register the Generic Symptoms</span>
-        <span class="k">for</span> <span class="n">generic_symptom_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">generic_symptoms</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">generic_symptom_name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generic_symptoms</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">register_symptom</span><span class="p">(</span>
                 <span class="n">Symptom</span><span class="p">(</span>
                     <span class="n">name</span><span class="o">=</span><span class="n">generic_symptom_name</span><span class="p">,</span>
@@ -751,7 +751,7 @@
 
         <span class="c1"># For each generic symptom, impose it on a random sample of persons who do not have that symptom caused by</span>
         <span class="c1"># SymptomManager currently:</span>
-        <span class="k">for</span> <span class="n">symp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">generic_symptoms</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">symp</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">generic_symptoms</span><span class="p">):</span>
             <span class="n">does_not_have_symptom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">who_not_have</span><span class="p">(</span><span class="n">symptom_string</span><span class="o">=</span><span class="n">symp</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;children&#39;</span><span class="p">,</span> <span class="s1">&#39;adults&#39;</span><span class="p">]:</span>
@@ -792,7 +792,7 @@
 
         <span class="c1"># Create the dict structures to store information about for whom and when each symptoms must be resolved</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">to_resolve</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">symp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">generic_symptoms</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">symp</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">generic_symptoms</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">to_resolve</span><span class="p">[</span><span class="n">symp</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve.schedule_symptom_resolve"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve.schedule_symptom_resolve">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_symptom_resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">date_of_resolution</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">):</span>
@@ -826,7 +826,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 27, 2021.
+        Last updated on Jun 08, 2021.
       </span>
 
     </p>

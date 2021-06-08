@@ -1652,16 +1652,31 @@
 
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># If she has not already receive antibiotics, we check for consumables</span>
-                    <span class="n">pkg_code_pprom</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                        <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Antibiotics for pPRoM&#39;</span><span class="p">,</span>
-                                        <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">item_code_benpen</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+                        <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                            <span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Benzathine benzylpenicillin, powder for injection, 2.4 million IU&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">item_code_wfi</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+                        <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Water for injection, 10ml_Each_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">item_code_needle</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+                        <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Syringe, needle + swab&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+                        <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Gloves, exam, latex, disposable, pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span>
+                        <span class="mi">0</span><span class="p">]</span>
 
-                    <span class="n">all_available</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-                        <span class="n">pkg_codes</span><span class="o">=</span><span class="p">[</span><span class="n">pkg_code_pprom</span><span class="p">])</span>
+                    <span class="n">consumables_abx_for_prom</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
+                        <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_benpen</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="n">item_code_wfi</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_needle</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                      <span class="n">item_code_gloves</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+
+                    <span class="c1"># Then query if these consumables are available during this HSI</span>
+                    <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
+                        <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
+                        <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_abx_for_prom</span><span class="p">)</span>
 
                     <span class="c1"># And provide if available. Antibiotics for from reduce risk of newborn sepsis within the first</span>
                     <span class="c1"># week of life</span>
-                    <span class="k">if</span> <span class="n">all_available</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_benpen</span><span class="p">]:</span>
                         <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;abx_for_prom_given&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;This facility has provided antibiotics for mother &#39;</span>
                                                          <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1"> who is a risk of sepsis due to PROM&#39;</span><span class="p">)</span>
@@ -3608,7 +3623,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 27, 2021.
+        Last updated on Jun 08, 2021.
       </span>
 
     </p>

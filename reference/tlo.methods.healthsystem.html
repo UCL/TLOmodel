@@ -222,7 +222,7 @@ The execution of all health systems interactions are controlled through this mod
 <td><p>The names of the type of appointments with the health system</p></td>
 </tr>
 <tr class="row-odd"><td><p>Appt_Time_Table</p></td>
-<td><p>DATA_FRAME</p></td>
+<td><p>DICT</p></td>
 <td><p>The time taken for each appointment, according to officer and facility type.</p></td>
 </tr>
 <tr class="row-even"><td><p>ApptType_By_FacLevel</p></td>
@@ -234,7 +234,7 @@ The execution of all health systems interactions are controlled through this mod
 <td><p>Listing of all health facilities.</p></td>
 </tr>
 <tr class="row-even"><td><p>Facilities_For_Each_District</p></td>
-<td><p>DATA_FRAME</p></td>
+<td><p>DICT</p></td>
 <td><p>Mapping between a district and all of the health facilities to which its                       population have access.</p></td>
 </tr>
 <tr class="row-odd"><td><p>BedCapacity</p></td>
@@ -488,9 +488,9 @@ HealthSeekingBehaviour module will schedule a generic hsi.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_facility_id">
-<span class="sig-name descname"><span class="pre">get_facility_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_facility_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_facility_id" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function to find the facility_id (the integer value) at which an HSI event will take place</p>
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_facility_info">
+<span class="sig-name descname"><span class="pre">get_facility_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">tlo.methods.healthsystem.FacilityInfo</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_facility_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_facility_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to find the facility at which an HSI event will take place</p>
 </dd></dl>
 
 <dl class="py method">
@@ -797,7 +797,7 @@ The overall Prioritation algorithm is:</p>
 <p>Concrete subclasses should also inherit from one of the EventMixin classes
 defined below, and implement at least an <cite>apply</cite> and <cite>did_not_run</cite> method.</p>
 <p><strong>Class attributes:</strong></p>
-<p>bed_days_allocated_to_this_event : &lt;property object at 0x7fca9b51a9f0&gt;</p>
+<p>bed_days_allocated_to_this_event : &lt;property object at 0x7fb4fbcc0d60&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.__init__">
@@ -933,7 +933,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 27, 2021.
+        Last updated on Jun 08, 2021.
       </span>
 
     </p>

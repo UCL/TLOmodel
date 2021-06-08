@@ -28,7 +28,7 @@ tlo.methods.healthsystem module
           - DATA_FRAME
           - The names of the type of appointments with the health system
         * - Appt_Time_Table
-          - DATA_FRAME
+          - DICT
           - The time taken for each appointment, according to officer and facility type.
         * - ApptType_By_FacLevel
           - DATA_FRAME
@@ -37,7 +37,7 @@ tlo.methods.healthsystem module
           - DATA_FRAME
           - Listing of all health facilities.
         * - Facilities_For_Each_District
-          - DATA_FRAME
+          - DICT
           - Mapping between a district and all of the health facilities to which its                       population have access.
         * - BedCapacity
           - DATA_FRAME
@@ -129,7 +129,7 @@ tlo.methods.healthsystem module
 
      .. automethod:: get_prob_seek_care
 
-     .. automethod:: get_facility_id
+     .. automethod:: get_facility_info
 
      .. automethod:: get_appt_footprint_as_time_request
 
@@ -217,7 +217,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x7fca9b51a9f0>
+     bed_days_allocated_to_this_event : <property object at 0x7fb4fbcc0d60>
 
      **Functions (defined or overridden in class HSI_Event):**
 

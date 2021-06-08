@@ -180,7 +180,9 @@
 
 <span class="kn">import</span> <span class="nn">heapq</span> <span class="k">as</span> <span class="nn">hp</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">defaultdict</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NamedTuple</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -193,6 +195,18 @@
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">FacilityInfo</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Information about a specific health facility.&quot;&quot;&quot;</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">AppointmentSubunit</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Component of an appointment relating to a specific officer type.&quot;&quot;&quot;</span>
+    <span class="n">officer_type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">time_taken</span><span class="p">:</span> <span class="nb">float</span>
 
 
 <div class="viewcode-block" id="HealthSystem"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem">[docs]</a><span class="k">class</span> <span class="nc">HealthSystem</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
@@ -217,14 +231,14 @@
         <span class="p">),</span>
         <span class="s1">&#39;Appt_Types_Table&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;The names of the type of appointments with the health system&#39;</span><span class="p">),</span>
         <span class="s1">&#39;Appt_Time_Table&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;The time taken for each appointment, according to officer and facility type.&#39;</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span> <span class="s1">&#39;The time taken for each appointment, according to officer and facility type.&#39;</span>
         <span class="p">),</span>
         <span class="s1">&#39;ApptType_By_FacLevel&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;Indicates whether an appointment type can occur at a facility level.&#39;</span>
         <span class="p">),</span>
         <span class="s1">&#39;Master_Facilities_List&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;Listing of all health facilities.&#39;</span><span class="p">),</span>
         <span class="s1">&#39;Facilities_For_Each_District&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span>
             <span class="s1">&#39;Mapping between a district and all of the health facilities to which its </span><span class="se">\</span>
 <span class="s1">                      population have access.&#39;</span><span class="p">,</span>
         <span class="p">),</span>
@@ -330,9 +344,38 @@
             <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Appt_Types_Table.csv&#39;</span>
         <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Appt_Time_Table&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+        <span class="n">appt_time_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
             <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Appt_Time_Table.csv&#39;</span>
         <span class="p">)</span>
+        <span class="n">facility_levels</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">appt_time_data</span><span class="p">[</span><span class="s1">&#39;Facility_Level&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+        <span class="c1"># Check that facility levels are consecutive integers starting from 0</span>
+        <span class="k">assert</span> <span class="n">facility_levels</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">facility_levels</span><span class="p">)))</span>
+        <span class="c1"># Store facility levels in module for check in schedule_hsi_event and for</span>
+        <span class="c1"># check against levels in facilities per district resource file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_facility_levels</span> <span class="o">=</span> <span class="n">facility_levels</span>
+        <span class="c1"># Store data as tuple of dicts, with tuple indexed by integer facility level and</span>
+        <span class="c1"># dict indexed by string type code with values corresponding to list of (named)</span>
+        <span class="c1"># tuples of appointment officer type codes and time takens</span>
+        <span class="n">appt_times_per_level_and_type</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">facility_levels</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">appt_time_tuple</span> <span class="ow">in</span> <span class="n">appt_time_data</span><span class="o">.</span><span class="n">itertuples</span><span class="p">():</span>
+            <span class="n">appt_times_per_level_and_type</span><span class="p">[</span>
+                <span class="n">appt_time_tuple</span><span class="o">.</span><span class="n">Facility_Level</span>
+            <span class="p">][</span>
+                <span class="n">appt_time_tuple</span><span class="o">.</span><span class="n">Appt_Type_Code</span>
+            <span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">AppointmentSubunit</span><span class="p">(</span>
+                    <span class="n">officer_type</span><span class="o">=</span><span class="n">appt_time_tuple</span><span class="o">.</span><span class="n">Officer_Type_Code</span><span class="p">,</span>
+                    <span class="n">time_taken</span><span class="o">=</span><span class="n">appt_time_tuple</span><span class="o">.</span><span class="n">Time_Taken</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="nb">sum</span><span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">appt_info_list</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">facility_levels</span>
+                <span class="k">for</span> <span class="n">appt_info_list</span> <span class="ow">in</span> <span class="n">appt_times_per_level_and_type</span><span class="p">[</span><span class="n">level</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">appt_time_data</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Appt_Time_Table&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">appt_times_per_level_and_type</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;ApptType_By_FacLevel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
             <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_ApptType_By_FacLevel.csv&#39;</span>
@@ -341,9 +384,34 @@
         <span class="n">mfl</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Master_Facilities_List.csv&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Master_Facilities_List&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mfl</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span>  <span class="c1"># get rid of extra column</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Facilities_For_Each_District&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+        <span class="n">facilities_per_district_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
             <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Facilities_For_Each_District.csv&#39;</span>
         <span class="p">)</span>
+        <span class="n">districts</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">facilities_per_district_data</span><span class="p">[</span><span class="s1">&#39;District&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+        <span class="n">facility_levels</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">facilities_per_district_data</span><span class="p">[</span><span class="s1">&#39;Facility_Level&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+        <span class="c1"># Check facility levels match those from appointment time table</span>
+        <span class="k">assert</span> <span class="n">facility_levels</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_facility_levels</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">&quot;Mismatch between facility levels in Facilities_For_Each_District &quot;</span>
+            <span class="s2">&quot;resource file and Appt_Time_Table resource files&quot;</span>
+        <span class="p">)</span>
+        <span class="c1"># Store data as tuple of dicts, with tuple indexed by integer facility level and</span>
+        <span class="c1"># dict indexed by district name with values corresponding to (named) tuples of</span>
+        <span class="c1"># facility ID and name</span>
+        <span class="n">facilities_per_level_and_district</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">({}</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">facility_levels</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">facility_tuple</span> <span class="ow">in</span> <span class="n">facilities_per_district_data</span><span class="o">.</span><span class="n">itertuples</span><span class="p">():</span>
+            <span class="n">facilities_per_level_and_district</span><span class="p">[</span>
+                <span class="n">facility_tuple</span><span class="o">.</span><span class="n">Facility_Level</span>
+            <span class="p">][</span>
+                <span class="n">facility_tuple</span><span class="o">.</span><span class="n">District</span>
+            <span class="p">]</span> <span class="o">=</span> <span class="n">FacilityInfo</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="n">facility_tuple</span><span class="o">.</span><span class="n">Facility_ID</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">facility_tuple</span><span class="o">.</span><span class="n">Facility_Name</span>
+            <span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">==</span> <span class="n">districts</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">facilities_per_level_and_district</span><span class="p">),</span> <span class="p">(</span>
+            <span class="s2">&quot;Facilities_For_Each_District resource file does not contain facilities &quot;</span>
+            <span class="s2">&quot;at all levels for all districts&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Facilities_For_Each_District&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">facilities_per_level_and_district</span>
 
         <span class="n">caps</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Daily_Capabilities.csv&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Daily_Capabilities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">caps</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span>
@@ -424,18 +492,17 @@
             <span class="n">m</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHSYSTEM</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">METADATA</span>
         <span class="p">]</span>
 
-        <span class="c1"># Check that each person is being associated with a facility of each type</span>
+        <span class="c1"># Check that set of districts of residence in population are subset o districts from</span>
+        <span class="c1"># Facilities_For_Each_District resource file</span>
         <span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">fac_per_district</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Facilities_For_Each_District&#39;</span><span class="p">]</span>
-        <span class="n">mfl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Master_Facilities_List&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Facility_Levels</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">mfl</span><span class="p">[</span><span class="s1">&#39;Facility_Level&#39;</span><span class="p">])</span>
-
-        <span class="k">for</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">pop</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">pop</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]:</span>
-            <span class="n">my_district</span> <span class="o">=</span> <span class="n">pop</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;district_of_residence&#39;</span><span class="p">]</span>
-            <span class="n">my_health_facilities</span> <span class="o">=</span> <span class="n">fac_per_district</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">fac_per_district</span><span class="p">[</span><span class="s1">&#39;District&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">my_district</span><span class="p">]</span>
-            <span class="n">my_health_facility_level</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">my_health_facilities</span><span class="o">.</span><span class="n">Facility_Level</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">my_health_facilities</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Facility_Levels</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">my_health_facility_level</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Facility_Levels</span><span class="p">)</span>
+        <span class="n">districts_of_residence</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">pop</span><span class="o">.</span><span class="n">is_alive</span><span class="p">][</span><span class="s2">&quot;district_of_residence&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="n">districts_of_residence</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">per_level_facilities</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">per_level_facilities</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Facilities_For_Each_District&quot;</span><span class="p">]</span>
+        <span class="p">),</span> <span class="p">(</span>
+            <span class="s2">&quot;At least one district_of_residence value in population not present in &quot;</span>
+            <span class="s2">&quot;Facilities_For_Each_District resource file&quot;</span>
+        <span class="p">)</span>
 
         <span class="c1"># Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">disable</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">disable_and_reject_all</span><span class="p">):</span>
@@ -537,9 +604,7 @@
             <span class="c1"># (Integer specificying the facility level at which HSI_Event must occur)</span>
             <span class="k">assert</span> <span class="s1">&#39;ACCEPTED_FACILITY_LEVEL&#39;</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">)</span>
             <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span>
-            <span class="k">assert</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Facilities_For_Each_District&#39;</span><span class="p">][</span><span class="s1">&#39;Facility_Level&#39;</span><span class="p">])</span>
-            <span class="p">)</span>
+            <span class="k">assert</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_facility_levels</span>
 
             <span class="k">assert</span> <span class="s1">&#39;BEDDAYS_FOOTPRINT&#39;</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">check_beddays_footrpint_format</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span><span class="p">)</span>
@@ -830,29 +895,16 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Do not use get_prob_seek_care().&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_facility_id"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_facility_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_facility_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Helper function to find the facility_id (the integer value) at which an HSI event will take place&quot;&quot;&quot;</span>
-        <span class="c1"># Gather useful information</span>
-
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">fac_per_district</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Facilities_For_Each_District&#39;</span><span class="p">]</span>
-
+<div class="viewcode-block" id="HealthSystem.get_facility_info"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_facility_info">[docs]</a>    <span class="k">def</span> <span class="nf">get_facility_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FacilityInfo</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Helper function to find the facility at which an HSI event will take place&quot;&quot;&quot;</span>
         <span class="c1"># Gather information about the HSI event</span>
-        <span class="n">the_person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-        <span class="n">the_district</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">the_person_id</span><span class="p">,</span> <span class="s1">&#39;district_of_residence&#39;</span><span class="p">]</span>
+        <span class="n">the_district</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span>
+            <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="s1">&#39;district_of_residence&#39;</span><span class="p">]</span>
+        <span class="n">the_level</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span>
 
-        <span class="c1"># Get the (one) health_facility available to this person (based on their district), which is accepted by the</span>
-        <span class="c1"># hsi_event.ACCEPTED_FACILITY_LEVEL:</span>
-        <span class="n">the_facility_info</span> <span class="o">=</span> <span class="n">fac_per_district</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-            <span class="p">(</span><span class="n">fac_per_district</span><span class="p">[</span><span class="s1">&#39;District&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">the_district</span><span class="p">)</span>
-            <span class="o">&amp;</span> <span class="p">(</span><span class="n">fac_per_district</span><span class="p">[</span><span class="s1">&#39;Facility_Level&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">),</span>
-            <span class="p">[</span><span class="s1">&#39;Facility_ID&#39;</span><span class="p">,</span> <span class="s1">&#39;Facility_Name&#39;</span><span class="p">],</span>
-        <span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">the_facility_id</span> <span class="o">=</span> <span class="n">the_facility_info</span><span class="o">.</span><span class="n">Facility_ID</span>
-        <span class="n">the_facility_name</span> <span class="o">=</span> <span class="n">the_facility_info</span><span class="o">.</span><span class="n">Facility_Name</span>
-
-        <span class="k">return</span> <span class="n">the_facility_id</span><span class="p">,</span> <span class="n">the_facility_name</span></div>
+        <span class="c1"># Return the (one) health_facility available to this person (based on their</span>
+        <span class="c1"># district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Facilities_For_Each_District&quot;</span><span class="p">][</span><span class="n">the_level</span><span class="p">][</span><span class="n">the_district</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="HealthSystem.get_appt_footprint_as_time_request"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_appt_footprint_as_time_request">[docs]</a>    <span class="k">def</span> <span class="nf">get_appt_footprint_as_time_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">actual_appt_footprint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -881,37 +933,31 @@
             <span class="c1"># use the actual_appt_provided</span>
             <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="n">actual_appt_footprint</span>
 
-        <span class="c1"># Get the (one) health_facility available to this person (based on their district), which is accepted by the</span>
-        <span class="c1"># hsi_event.ACCEPTED_FACILITY_LEVEL:</span>
-        <span class="n">the_facility_id</span><span class="p">,</span> <span class="n">the_facility_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_facility_id</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">)</span>
+        <span class="c1"># Get the (one) health_facility available to this person (based on their</span>
+        <span class="c1"># district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL:</span>
+        <span class="n">the_facility</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_facility_info</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">)</span>
 
-        <span class="c1"># Transform the treatment footprint into a demand for time for officers of each type, for this</span>
-        <span class="c1"># facility level (it varies by facility level)</span>
-        <span class="n">appts_with_duration</span> <span class="o">=</span> <span class="p">[</span><span class="n">appt_type</span> <span class="k">for</span> <span class="n">appt_type</span> <span class="ow">in</span> <span class="n">appt_types</span> <span class="k">if</span> <span class="n">the_appt_footprint</span><span class="p">[</span><span class="n">appt_type</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="n">df_appt_footprint</span> <span class="o">=</span> <span class="n">appt_times</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-            <span class="p">(</span><span class="n">appt_times</span><span class="p">[</span><span class="s1">&#39;Facility_Level&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">the_facility_level</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">appt_times</span><span class="o">.</span><span class="n">Appt_Type_Code</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">appts_with_duration</span><span class="p">),</span>
-            <span class="p">[</span><span class="s1">&#39;Officer_Type_Code&#39;</span><span class="p">,</span> <span class="s1">&#39;Time_Taken&#39;</span><span class="p">],</span>
-        <span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># Transform the treatment footprint into a demand for time for officers of each</span>
+        <span class="c1"># type, for this facility level (it varies by facility level)</span>
+        <span class="n">appts_with_duration</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">appt_type</span> <span class="k">for</span> <span class="n">appt_type</span> <span class="ow">in</span> <span class="n">appt_types</span> <span class="k">if</span> <span class="n">the_appt_footprint</span><span class="p">[</span><span class="n">appt_type</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="p">]</span>
+        <span class="n">appt_footprint_times</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">appt_type</span> <span class="ow">in</span> <span class="n">appts_with_duration</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">appt_info_list</span> <span class="o">=</span> <span class="n">appt_times</span><span class="p">[</span><span class="n">the_facility_level</span><span class="p">][</span><span class="n">appt_type</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;The time needed for this appointment is not defined for this &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;specified facility level in the Appt_Time_Table. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Event treatment ID: </span><span class="si">{</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+            <span class="k">for</span> <span class="n">appt_info</span> <span class="ow">in</span> <span class="n">appt_info_list</span><span class="p">:</span>
+                <span class="n">appt_footprint_times</span><span class="p">[</span>
+                    <span class="sa">f</span><span class="s2">&quot;FacilityID_</span><span class="si">{</span><span class="n">the_facility</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">_Officer_</span><span class="si">{</span><span class="n">appt_info</span><span class="o">.</span><span class="n">officer_type</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">]</span> <span class="o">+=</span> <span class="n">appt_info</span><span class="o">.</span><span class="n">time_taken</span>
 
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_appt_footprint</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> \
-            <span class="s2">&quot;The time needed for this appointment&quot;</span> \
-            <span class="s2">&quot; is not defined for this specified facility level in the Appt_Time_Table. &quot;</span> \
-            <span class="s2">&quot;And it should not go to this point&quot;</span> \
-            <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span>
-
-        <span class="c1"># Using f string or format method throws and error when df_appt_footprint is empty so hybrid used</span>
-        <span class="n">df_appt_footprint</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;FacilityID_</span><span class="si">{</span><span class="n">the_facility_id</span><span class="si">}</span><span class="s1">_Officer_&#39;</span> <span class="o">+</span> <span class="n">df_appt_footprint</span><span class="p">[</span><span class="s1">&#39;Officer_Type_Code&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Create Series of summed required time for each officer type</span>
-        <span class="n">appt_footprint_as_time_request</span> <span class="o">=</span> <span class="n">df_appt_footprint</span><span class="p">[</span><span class="s1">&#39;Time_Taken&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-
-        <span class="c1"># Check that indicies are unique</span>
-        <span class="k">assert</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">appt_footprint_as_time_request</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">duplicated</span><span class="p">())</span>
-
-        <span class="c1"># Return</span>
-        <span class="k">return</span> <span class="n">appt_footprint_as_time_request</span></div>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">appt_footprint_times</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSystem.get_squeeze_factors"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_squeeze_factors">[docs]</a>    <span class="k">def</span> <span class="nf">get_squeeze_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_calls_today</span><span class="p">,</span> <span class="n">current_capabilities</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1789,8 +1835,7 @@
         <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">))</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dict_of_appts</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
 
         <span class="c1"># make footprint (defaulting to zero where a type of appointment is not specified)</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dict_of_appts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">footprint</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="n">footprint</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dict_of_appts</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">footprint</span></div></div>
 
@@ -1828,7 +1873,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 27, 2021.
+        Last updated on Jun 08, 2021.
       </span>
 
     </p>

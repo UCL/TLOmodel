@@ -4,37 +4,6 @@ tlo.methods.symptommanager module
 .. automodule:: tlo.methods.symptommanager
 
 
-.. autoclass:: Symptom
-
-
-
-     **Functions (defined or overridden in class Symptom):**
-
-     .. automethod:: __init__
-
-
-
-
-
-
-
-
-.. autoclass:: DuplicateSymptomWithNonIdenticalPropertiesError
-
-     Bases: :class:`Exception`, :class:`BaseException`
-
-
-     **Functions (defined or overridden in class DuplicateSymptomWithNonIdenticalPropertiesError):**
-
-     .. automethod:: __init__
-
-
-
-
-
-
-
-
 .. autoclass:: SymptomManager
 
      Bases: :class:`tlo.core.Module`
