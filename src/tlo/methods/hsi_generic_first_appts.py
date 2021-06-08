@@ -10,6 +10,9 @@ from tlo.methods.bladder_cancer import (
     HSI_BladderCancer_Investigation_Following_Blood_Urine,
     HSI_BladderCancer_Investigation_Following_pelvic_pain,
 )
+from tlo.methods.breast_cancer import (
+    HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
+)
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
@@ -286,6 +289,21 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                                                                             topen=self.sim.date,
                                                                             tclose=None
                                                                             )
+
+                if 'BreastCancer' in self.sim.modules:
+                    # If the symptoms include breast lump discernible:
+                    if ('breast_lump_discernible' in symptoms):
+                        hsi_event = HSI_BreastCancer_Investigation_Following_breast_lump_discernible(
+                            module=self.sim.modules['BreastCancer'],
+                            person_id=person_id,
+                        )
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            hsi_event,
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None
+                        )
+
                 # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
                 if 'Depression' in self.sim.modules:
                     depr = self.sim.modules['Depression']

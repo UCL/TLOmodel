@@ -3,8 +3,6 @@ this is the malaria module which assigns malaria infections to the population: a
 it also holds the hsi events pertaining to malaria testing and treatment
 including the malaria RDT using DxTest
 
-write-up
-https://www.dropbox.com/scl/fi/p696ddbwlpn2yug2xuuuk/Method_malaria-Sept2019.docx?dl=0
 """
 from pathlib import Path
 

@@ -1,6 +1,5 @@
 """
-This is the Depression Module. Documentation at:
-https://www.dropbox.com/s/8q9etj23owwlubx/Depression%20and%20Antidepressants%20-%20Description%20-%20Feb%2020.docx?dl=0
+This is the Depression Module.
 """
 from pathlib import Path
 
