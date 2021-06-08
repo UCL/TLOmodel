@@ -33,7 +33,7 @@ resourcefilepath = Path('./resources')
 # Establish the simulation object
 # Create the conditions for the simulations, i.e. how long it runs for, how many people are involved and the
 # number of simulations this analysis will be run for, to try and account for some of the variation between simulations
-yearsrun = 10
+yearsrun = 1
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 smaller_pop_size = 20000

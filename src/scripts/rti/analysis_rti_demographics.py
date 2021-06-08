@@ -39,11 +39,11 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 10
+yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 200000
+pop_size = 2000
 nsim = 2
 # Create a variable whether to save figures or not (used in debugging)
 save_figures = True
