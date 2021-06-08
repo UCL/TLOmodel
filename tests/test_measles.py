@@ -56,12 +56,7 @@ def make_sim():
         healthburden.HealthBurden(resourcefilepath=resources),
         healthsystem.HealthSystem(
             resourcefilepath=resources,
-            service_availability=["*"],  # all treatment IDs allowed
-            mode_appt_constraints=0,
-            ignore_cons_constraints=True,
-            ignore_priority=True,
-            capabilities_coefficient=1.0,  # multiplier for capabilities of health officer
-            disable=False,
+            disable=True,
         ),
         # disables the health system constraints so all HSI events run
         dx_algorithm_child.DxAlgorithmChild(),
