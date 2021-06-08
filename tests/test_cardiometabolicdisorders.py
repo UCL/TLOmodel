@@ -6,13 +6,13 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    cardio_metabolic_disorders,
     demography,
     depression,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    cardio_metabolic_disorders,
     simplified_births,
     symptommanager,
 )
