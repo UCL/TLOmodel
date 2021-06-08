@@ -955,15 +955,15 @@ class Tb(Module):
         }
 
         # ipt
-        pkg_code6 = pd.unique(
+        item_code6 = pd.unique(
             consumables.loc[
                 consumables['Items'] == 'Isoniazid Preventive Therapy',
-                'Intervention_Pkg_Code',
+                'Item_Code',
             ]
         )[0]
         self.footprints_for_consumables_required['tb_ipt'] = {
-            "Intervention_Package_Code": {pkg_code6: 1},
-            "Item_Code": {}
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code6: 1}
         }
 
     def on_birth(self, mother_id, child_id):

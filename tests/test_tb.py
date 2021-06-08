@@ -13,3 +13,6 @@
 # infect one person
 # check all properties
 # check smear status
+
+# check risk of relapse
+
