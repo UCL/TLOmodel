@@ -10,8 +10,6 @@ from matplotlib import pyplot as plt
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    antenatal_care,
-    contraception,
     demography,
     dx_algorithm_adult,
     dx_algorithm_child,
@@ -19,20 +17,18 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     malaria,
-    newborn_outcomes,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 
 t0 = time.time()
 
 # The resource files
-resourcefilepath = Path("./resources")
+resources = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 12, 31)
+end_date = Date(2012, 12, 31)
 popsize = 500
 
 # Establish the simulation object
@@ -48,36 +44,30 @@ sim = Simulation(start_date=start_date, seed=25, log_config=log_config)
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
 service_availability = ["*"]
-malaria_testing = 0.35  # adjust this to match rdt/tx levels
-itn = 0.6  # adjust if changing ITN coverage from 2019 onwards, should be <=0.7 for matching to ICL incidence tables
+# malaria_testing = 0.35  # adjust this to match rdt/tx levels
+# itn = 0.6  # adjust if changing ITN coverage from 2019 onwards, should be <=0.7 for matching to ICL incidence tables
 
 # Register the appropriate modules
 sim.register(
-    demography.Demography(resourcefilepath=resourcefilepath),
+    demography.Demography(resourcefilepath=resources),
+    simplified_births.SimplifiedBirths(resourcefilepath=resources),
     healthsystem.HealthSystem(
-        resourcefilepath=resourcefilepath,
+        resourcefilepath=resources,
         service_availability=service_availability,
         mode_appt_constraints=0,
         ignore_cons_constraints=True,
         ignore_priority=True,
         capabilities_coefficient=1.0,
-        disable=False,
+        disable=True,
     ),
-    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    symptommanager.SymptomManager(resourcefilepath=resources),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
     dx_algorithm_child.DxAlgorithmChild(),
     dx_algorithm_adult.DxAlgorithmAdult(),
-    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    contraception.Contraception(resourcefilepath=resourcefilepath),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    labour.Labour(resourcefilepath=resourcefilepath),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-    antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resources),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
     malaria.Malaria(
-        resourcefilepath=resourcefilepath,
-        testing=malaria_testing,
-        itn=itn,
+        resourcefilepath=resources,
     )
 )
 
@@ -141,23 +131,23 @@ end_date = 2025
 # import malaria data
 # MAP
 incMAP_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
+    Path(resources) / "ResourceFile_malaria.xlsx",
     sheet_name="inc1000py_MAPdata",
 )
 PfPRMAP_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="PfPR_MAPdata",
+    Path(resources) / "ResourceFile_malaria.xlsx", sheet_name="PfPR_MAPdata",
 )
 mortMAP_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
+    Path(resources) / "ResourceFile_malaria.xlsx",
     sheet_name="mortalityRate_MAPdata",
 )
 txMAP_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="txCov_MAPdata",
+    Path(resources) / "ResourceFile_malaria.xlsx", sheet_name="txCov_MAPdata",
 )
 
 # WHO
 WHO_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_MalReport",
+    Path(resources) / "ResourceFile_malaria.xlsx", sheet_name="WHO_MalReport",
 )
 
 # ------------------------------------- SINGLE RUN FIGURES -----------------------------------------#

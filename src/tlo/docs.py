@@ -4,6 +4,10 @@ import inspect
 from inspect import isclass, iscode, isframe, isfunction, ismethod, ismodule, istraceback
 from os import walk
 
+from tlo import Module
+from tlo.events import Event
+from tlo.methods.healthsystem import HSI_Event
+
 
 def get_package_name(dirpath):
     """
@@ -83,13 +87,17 @@ def get_classes_in_module(fqn, module_obj):
 
         # Pick out only the classes defined in this module:
         if inspect.isclass(obj) and fqn in str(obj):
-            # print(name)  # e.g. MockitisEvent
-            # print(obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
-            source, start_line = inspect.getsourcelines(obj)
-            classes.append([name, obj, start_line])
-            # print(f"\n\nIn module {name} we find the following:")
-            # morestuff = inspect.getmembers(obj)
-            # print(morestuff)  # e.g. functions, PARAMETERS dict,...
+            # only generate documentation for tlo subclasses (considers other classes internal implementation detail)
+            bases = inspect.getmro(obj)
+            # skip this filtering if we're working with classes for testing
+            if fqn.startswith("test_docs_data") or any(base in bases for base in [Module, Event, HSI_Event]):
+                # print(name)  # e.g. MockitisEvent
+                # print(obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
+                source, start_line = inspect.getsourcelines(obj)
+                classes.append([name, obj, start_line])
+                # print(f"\n\nIn module {name} we find the following:")
+                # morestuff = inspect.getmembers(obj)
+                # print(morestuff)  # e.g. functions, PARAMETERS dict,...
 
     # print(f"before sorting, {classes}")
     # https://stackoverflow.com/questions/3169014/inspect-getmembers-in-order

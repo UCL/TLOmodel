@@ -2,7 +2,7 @@
 Contributing
 ============
 
-We'll flesh out the guidelines here further as the project gets going!
+We welcome the usage of the modelling framework by all those interested and encourage them to work with us to develop it further.
 
 Bug reports
 ===========

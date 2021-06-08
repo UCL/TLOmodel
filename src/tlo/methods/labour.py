@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
-from tlo.methods import Metadata, demography, labour_lm
+from tlo.methods import Metadata, labour_lm
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -461,127 +461,6 @@ class Labour(Module):
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirthAttendance.xlsx',
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
-        params = self.parameters
-
-        # ======================================= LINEAR MODEL EQUATIONS ==============================================
-        # Here we define the equations that will be used throughout this module using the linear
-        # model and stored them as a parameter
-
-        # TODO: process of 'selection' of important predictors in linear equations is ongoing, a linear model that
-        #  is empty of predictors at the end of this process will be converted to a set probability
-
-        params['la_labour_equations'] = {
-
-            # This equation predicts the parity of each woman at baseline (who is of reproductive age)
-            'parity': LinearModel.custom(labour_lm.predict_parity, parameters=params),
-
-            # This equation is used to calculate a womans risk of obstructed labour. As we assume obstructed labour can
-            # only occur following on of three preceding causes, this model is additive
-            'obstructed_labour_ip': LinearModel.custom(labour_lm.predict_obstructed_labour_ip,
-                                                       module=self),
-
-            # This equation is used to calculate a womans risk of developing chorioamnionitis infection during the
-            # intrapartum phase of labour and is mitigated by clean delivery
-            'chorioamnionitis_ip': LinearModel.custom(labour_lm.predict_chorioamnionitis_ip,
-                                                      parameters=params),
-
-            # This equation is used to calculate a womans risk of developing other undefined infection during the
-            # intrapartum phase of labour and is mitigated by clean delivery
-            'other_maternal_infection_ip': LinearModel.custom(labour_lm.predict_other_maternal_infections_ip,
-                                                              parameters=params),
-
-            # This equation is used to calculate a womans risk of developing endometritis infection during the
-            # postpartum phase of labour and is mitigated by clean delivery
-            'endometritis_pp': LinearModel.custom(labour_lm.predict_endometritis_pp, parameters=params),
-
-            # This equation is used to calculate a womans risk of developing skin or soft tissue infection during the
-            # postpartum phase of labour and is mitigated by clean delivery
-            'skin_soft_tissue_inf_pp': LinearModel.custom(labour_lm.predict_skin_soft_tissue_inf_pp, parameters=params),
-
-            # This equation is used to calculate a womans risk of developing a urinary tract infection during the
-            # postpartum phase of labour and is mitigated by clean delivery
-            'urinary_tract_inf_pp': LinearModel.custom(labour_lm.predict_urinary_tract_inf_pp, parameters=params),
-
-            # This equation is used to calculate a womans risk of developing other undefined infection during the
-            # postpartum phase of labour and is mitigated by clean delivery
-            'other_maternal_infection_pp': LinearModel.custom(labour_lm.predict_other_maternal_infection_pp,
-                                                              parameters=params),
-
-            # This equation is used to calculate a womans risk risk of developing intrapartum sepsis. We assume sepsis
-            # can only occur in the presence of a preceding infection therefore this model is additive
-            'sepsis_ip': LinearModel.custom(labour_lm.predict_sepsis_ip, module=self),
-
-            # This equation is used to calculate a womans risk of death following sepsis during labour and is mitigated
-            # by treatment
-            'sepsis_death': LinearModel.custom(labour_lm.predict_sepsis_death, parameters=params),
-
-            # This equation is used to calculate a womans risk risk of developing postpartum sepsis. We assume sepsis
-            # can only occur in the presence of a preceding infection therefore this model is additive
-            'sepsis_pp': LinearModel.custom(labour_lm.predict_sepsis_pp, module=self),
-
-            # This equation is used to calculate a womans risk of death following postpartum sepsis and is mitigated
-            # by treatment
-            'sepsis_pp_death': LinearModel.custom(labour_lm.predict_sepsis_pp_death, parameters=params),
-
-            # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
-            # by treatment delivered either immediately prior to admission for delivery or during labour
-            'eclampsia_death': LinearModel.custom(labour_lm.predict_eclampsia_death, parameters=params),
-
-            # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
-            # by treatment delivered either immediately prior to admission for delivery or during labour
-            'eclampsia_pp_death': LinearModel.custom(labour_lm.predict_eclampsia_pp_death, parameters=params),
-
-            # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
-            # by treatment delivered either immediately prior to admission for delivery or during labour
-            'severe_pre_eclamp_death': LinearModel.custom(labour_lm.predict_severe_pre_eclamp_death, parameters=params),
-
-            # This equation is used to calculate a womans risk of placental abruption in labour
-            'placental_abruption_ip': LinearModel.custom(labour_lm.predict_placental_abruption_ip, parameters=params),
-
-            # This equation is used to calculate a womans risk of antepartum haemorrhage. We assume APH can only occur
-            # in the presence of a preceding placental causes (abruption/praevia) therefore this model is additive
-            'antepartum_haem_ip': LinearModel.custom(labour_lm.predict_antepartum_haem_ip, parameters=params),
-
-            # This equation is used to calculate a womans risk of death following antepartum haemorrhage. Risk is
-            # mitigated by treatment
-            'antepartum_haem_death': LinearModel.custom(labour_lm.predict_antepartum_haem_death, parameters=params),
-
-            # This equation is used to calculate a womans risk of postpartum haemorrhage. We assume PPH can only occur
-            # in the presence of a preceding causes (uterine atony/retained placenta/lacerations/other) therefore this
-            # model is additive
-            'postpartum_haem_pp': LinearModel.custom(labour_lm.predict_postpartum_haem_pp, module=self),
-
-            # This equation is used to calculate a womans risk of death following postpartum haemorrhage. Risk is
-            # mitigated by treatment
-            'postpartum_haem_pp_death': LinearModel.custom(labour_lm.predict_postpartum_haem_pp_death, module=self),
-
-            # This equation is used to calculate a womans risk of uterine rupture
-            'uterine_rupture_ip': LinearModel.custom(labour_lm.predict_uterine_rupture_ip, parameters=params),
-
-            # This equation is used to calculate a womans risk of death following uterine rupture. Risk if reduced by
-            # treatment
-            'uterine_rupture_death': LinearModel.custom(labour_lm.predict_uterine_rupture_death, parameters=params),
-
-            # This equation is used to calculate a womans risk of still birth during the intrapartum period. Assisted
-            # vaginal delivery and caesarean delivery are assumed to significantly reduce risk
-            'intrapartum_still_birth': LinearModel.custom(labour_lm.predict_intrapartum_still_birth,
-                                                          parameters=params),
-
-            # This regression equation uses data from the DHS to predict a womans probability of choosing to deliver in
-            # a health centre
-            'probability_delivery_health_centre': LinearModel.custom(
-                labour_lm.predict_probability_delivery_health_centre, parameters=params),
-
-            # This regression equation uses data from the DHS to predict a womans probability of choosing to deliver in
-            # at home
-            'probability_delivery_at_home': LinearModel.custom(
-                labour_lm.predict_probability_delivery_at_home, parameters=params),
-
-            # This equation calculates a womans probability of seeking care following a complication during labour or
-            # immediately after birth
-            'care_seeking_for_complication': LinearModel.custom(
-                labour_lm.predict_care_seeking_for_complication, parameters=params),
-        }
 
     def initialise_population(self, population):
         df = population.props
@@ -639,10 +518,12 @@ class Labour(Module):
                                            ['uterotonics', 'manual_removal_placenta', 'surgery', 'hysterectomy'])
 
         #  ----------------------------ASSIGNING PARITY AT BASELINE --------------------------------------------------
-        # We assign parity to all women of reproductive age at baseline
+        # This equation predicts the parity of each woman at baseline (who is of reproductive age)
+        parity_equation = LinearModel.custom(labour_lm.predict_parity, parameters=params)
 
+        # We assign parity to all women of reproductive age at baseline
         df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] = np.ceil(
-            params['la_labour_equations']['parity'].predict(df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14)])
+            parity_equation.predict(df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14)])
         )
 
         assert (df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] >= 0).all().all()
@@ -774,6 +655,126 @@ class Labour(Module):
                 sensitivity=p['sensitivity_of_assessment_of_pph_hp']),
         )
 
+        # ======================================= LINEAR MODEL EQUATIONS ==============================================
+        # Here we define the equations that will be used throughout this module using the linear
+        # model and stored them as a parameter
+
+        # TODO: process of 'selection' of important predictors in linear equations is ongoing, a linear model that
+        #  is empty of predictors at the end of this process will be converted to a set probability
+        params = self.parameters
+        params['la_labour_equations'] = {
+
+            # This equation predicts the parity of each woman at baseline (who is of reproductive age)
+            'parity': LinearModel.custom(labour_lm.predict_parity, parameters=params),
+
+            # This equation is used to calculate a womans risk of obstructed labour. As we assume obstructed labour can
+            # only occur following on of three preceding causes, this model is additive
+            'obstructed_labour_ip': LinearModel.custom(labour_lm.predict_obstructed_labour_ip,
+                                                       module=self),
+
+            # This equation is used to calculate a womans risk of developing chorioamnionitis infection during the
+            # intrapartum phase of labour and is mitigated by clean delivery
+            'chorioamnionitis_ip': LinearModel.custom(labour_lm.predict_chorioamnionitis_ip,
+                                                      parameters=params),
+
+            # This equation is used to calculate a womans risk of developing other undefined infection during the
+            # intrapartum phase of labour and is mitigated by clean delivery
+            'other_maternal_infection_ip': LinearModel.custom(labour_lm.predict_other_maternal_infections_ip,
+                                                              parameters=params),
+
+            # This equation is used to calculate a womans risk of developing endometritis infection during the
+            # postpartum phase of labour and is mitigated by clean delivery
+            'endometritis_pp': LinearModel.custom(labour_lm.predict_endometritis_pp, parameters=params),
+
+            # This equation is used to calculate a womans risk of developing skin or soft tissue infection during the
+            # postpartum phase of labour and is mitigated by clean delivery
+            'skin_soft_tissue_inf_pp': LinearModel.custom(labour_lm.predict_skin_soft_tissue_inf_pp, parameters=params),
+
+            # This equation is used to calculate a womans risk of developing a urinary tract infection during the
+            # postpartum phase of labour and is mitigated by clean delivery
+            'urinary_tract_inf_pp': LinearModel.custom(labour_lm.predict_urinary_tract_inf_pp, parameters=params),
+
+            # This equation is used to calculate a womans risk of developing other undefined infection during the
+            # postpartum phase of labour and is mitigated by clean delivery
+            'other_maternal_infection_pp': LinearModel.custom(labour_lm.predict_other_maternal_infection_pp,
+                                                              parameters=params),
+
+            # This equation is used to calculate a womans risk risk of developing intrapartum sepsis. We assume sepsis
+            # can only occur in the presence of a preceding infection therefore this model is additive
+            'sepsis_ip': LinearModel.custom(labour_lm.predict_sepsis_ip, module=self),
+
+            # This equation is used to calculate a womans risk of death following sepsis during labour and is mitigated
+            # by treatment
+            'sepsis_death': LinearModel.custom(labour_lm.predict_sepsis_death, parameters=params),
+
+            # This equation is used to calculate a womans risk risk of developing postpartum sepsis. We assume sepsis
+            # can only occur in the presence of a preceding infection therefore this model is additive
+            'sepsis_pp': LinearModel.custom(labour_lm.predict_sepsis_pp, module=self),
+
+            # This equation is used to calculate a womans risk of death following postpartum sepsis and is mitigated
+            # by treatment
+            'sepsis_pp_death': LinearModel.custom(labour_lm.predict_sepsis_pp_death, parameters=params),
+
+            # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
+            # by treatment delivered either immediately prior to admission for delivery or during labour
+            'eclampsia_death': LinearModel.custom(labour_lm.predict_eclampsia_death, parameters=params),
+
+            # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
+            # by treatment delivered either immediately prior to admission for delivery or during labour
+            'eclampsia_pp_death': LinearModel.custom(labour_lm.predict_eclampsia_pp_death, parameters=params),
+
+            # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
+            # by treatment delivered either immediately prior to admission for delivery or during labour
+            'severe_pre_eclamp_death': LinearModel.custom(labour_lm.predict_severe_pre_eclamp_death, parameters=params),
+
+            # This equation is used to calculate a womans risk of placental abruption in labour
+            'placental_abruption_ip': LinearModel.custom(labour_lm.predict_placental_abruption_ip, parameters=params),
+
+            # This equation is used to calculate a womans risk of antepartum haemorrhage. We assume APH can only occur
+            # in the presence of a preceding placental causes (abruption/praevia) therefore this model is additive
+            'antepartum_haem_ip': LinearModel.custom(labour_lm.predict_antepartum_haem_ip, parameters=params),
+
+            # This equation is used to calculate a womans risk of death following antepartum haemorrhage. Risk is
+            # mitigated by treatment
+            'antepartum_haem_death': LinearModel.custom(labour_lm.predict_antepartum_haem_death, parameters=params),
+
+            # This equation is used to calculate a womans risk of postpartum haemorrhage. We assume PPH can only occur
+            # in the presence of a preceding causes (uterine atony/retained placenta/lacerations/other) therefore this
+            # model is additive
+            'postpartum_haem_pp': LinearModel.custom(labour_lm.predict_postpartum_haem_pp, module=self),
+
+            # This equation is used to calculate a womans risk of death following postpartum haemorrhage. Risk is
+            # mitigated by treatment
+            'postpartum_haem_pp_death': LinearModel.custom(labour_lm.predict_postpartum_haem_pp_death, module=self),
+
+            # This equation is used to calculate a womans risk of uterine rupture
+            'uterine_rupture_ip': LinearModel.custom(labour_lm.predict_uterine_rupture_ip, parameters=params),
+
+            # This equation is used to calculate a womans risk of death following uterine rupture. Risk if reduced by
+            # treatment
+            'uterine_rupture_death': LinearModel.custom(labour_lm.predict_uterine_rupture_death, parameters=params),
+
+            # This equation is used to calculate a womans risk of still birth during the intrapartum period. Assisted
+            # vaginal delivery and caesarean delivery are assumed to significantly reduce risk
+            'intrapartum_still_birth': LinearModel.custom(labour_lm.predict_intrapartum_still_birth,
+                                                          parameters=params),
+
+            # This regression equation uses data from the DHS to predict a womans probability of choosing to deliver in
+            # a health centre
+            'probability_delivery_health_centre': LinearModel.custom(
+                labour_lm.predict_probability_delivery_health_centre, parameters=params),
+
+            # This regression equation uses data from the DHS to predict a womans probability of choosing to deliver in
+            # at home
+            'probability_delivery_at_home': LinearModel.custom(
+                labour_lm.predict_probability_delivery_at_home, parameters=params),
+
+            # This equation calculates a womans probability of seeking care following a complication during labour or
+            # immediately after birth
+            'care_seeking_for_complication': LinearModel.custom(
+                labour_lm.predict_care_seeking_for_complication, parameters=params),
+        }
+
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
 
@@ -828,10 +829,8 @@ class Labour(Module):
                                                 'child': child_id})
 
         if mother.la_intrapartum_still_birth:
-            death = demography.InstantaneousDeath(self.sim.modules['Demography'],
-                                                  child_id,
-                                                  cause='intrapartum stillbirth')
-            self.sim.schedule_event(death, self.sim.date)
+            self.sim.modules['Demography'].do_death(individual_id=child_id, cause='intrapartum stillbirth',
+                                                    originating_module=self.sim.modules['Labour'])
 
         # We use this variable in the postnatal supervisor module to track postpartum women
         df.at[mother_id, 'la_is_postpartum'] = True
@@ -1206,21 +1205,23 @@ class Labour(Module):
                 risk_prog_gh_sgh = params['prob_progression_gest_htn']
             if risk_prog_gh_sgh > self.rng.random_sample():
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_gest_htn'
-                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_gest_htn{property_prefix}')
+                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_gest_htn_{property_prefix}')
 
         # Or from severe gestational hypertension to severe pre-eclampsia...
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'severe_gest_htn':
             if params['prob_progression_severe_gest_htn'] > self.rng.random_sample():
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_pre_eclamp'
                 self.labour_tracker['severe_pre_eclampsia'] += 1
-                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_pre_eclamp{property_prefix}')
+                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_pre_eclamp_'
+                                             f'{property_prefix}')
 
         # Or from mild pre-eclampsia to severe pre-eclampsia...
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'mild_pre_eclamp':
             if params['prob_progression_mild_pre_eclamp'] > self.rng.random_sample():
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_pre_eclamp'
                 self.labour_tracker['severe_pre_eclampsia'] += 1
-                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_pre_eclamp{property_prefix}')
+                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_pre_eclamp_'
+                                             f'{property_prefix}')
 
     def set_maternal_death_status_intrapartum(self, individual_id, cause):
         """
@@ -1283,7 +1284,7 @@ class Labour(Module):
 
         else:
             if cause == 'eclampsia':
-                df.at[individual_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
+                df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
 
     def apply_risk_of_early_postpartum_death(self, individual_id):
         """
@@ -1314,8 +1315,8 @@ class Labour(Module):
 
         if mni[individual_id]['death_postpartum']:
             self.labour_tracker['maternal_death'] += 1
-            self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id, cause='maternal'),
-                                    self.sim.date)
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+                                                    originating_module=self.sim.modules['Labour'])
 
             logger.debug(key='message', data=f'Mother {individual_id} has died due to postpartum complications')
 
@@ -1481,16 +1482,31 @@ class Labour(Module):
 
                 else:
                     # If she has not already receive antibiotics, we check for consumables
-                    pkg_code_pprom = pd.unique(
-                        consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for pPRoM',
-                                        'Intervention_Pkg_Code'])[0]
+                    item_code_benpen = pd.unique(
+                        consumables.loc[
+                            consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
+                            'Item_Code'])[0]
+                    item_code_wfi = pd.unique(
+                        consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
+                    item_code_needle = pd.unique(
+                        consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+                    item_code_gloves = pd.unique(
+                        consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[
+                        0]
 
-                    all_available = hsi_event.get_all_consumables(
-                        pkg_codes=[pkg_code_pprom])
+                    consumables_abx_for_prom = {
+                        'Intervention_Package_Code': {},
+                        'Item_Code': {item_code_benpen: 4, item_code_wfi: 1, item_code_needle: 1,
+                                      item_code_gloves: 1}}
+
+                    # Then query if these consumables are available during this HSI
+                    outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                        hsi_event=hsi_event,
+                        cons_req_as_footprint=consumables_abx_for_prom)
 
                     # And provide if available. Antibiotics for from reduce risk of newborn sepsis within the first
                     # week of life
-                    if all_available:
+                    if outcome_of_request_for_consumables['Item_Code'][item_code_benpen]:
                         mni[person_id]['abx_for_prom_given'] = True
                         logger.debug(key='message', data=f'This facility has provided antibiotics for mother '
                                                          f'{person_id} who is a risk of sepsis due to PROM')
@@ -2100,10 +2116,10 @@ class Labour(Module):
         :param hsi_event: HSI event in which the function has been called:
         """
         df = self.sim.population.props
-        person_id = hsi_event.target
+        person_id = int(hsi_event.target)
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        if 'hiv' in self.sim.modules.keys():
+        if 'Hiv' in self.sim.modules.keys():
             if ~df.at[person_id, 'hv_diagnosed']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
@@ -2685,8 +2701,8 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         # For a woman who die (due to the effect of one or more of the above complications) we schedule the death event
         if mni[individual_id]['death_in_labour']:
             self.module.labour_tracker['maternal_death'] += 1
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                  cause='maternal'), self.sim.date)
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+                                                    originating_module=self.sim.modules['Labour'])
 
             # Log the maternal death
             logger.info(key='message', data=f'This is LabourDeathEvent scheduling a death for person {individual_id} on'

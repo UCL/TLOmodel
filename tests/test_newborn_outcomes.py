@@ -5,7 +5,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -19,7 +19,7 @@ from tlo.methods import (
     symptommanager,
 )
 
-seed = 567
+seed = 8974
 
 
 # The resource files
@@ -82,7 +82,7 @@ def register_modules(ignore_cons_constraints):
                                            ignore_cons_constraints=ignore_cons_constraints),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
@@ -173,6 +173,7 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications():
     # set risk of comps to 1 and force care seeking
     params = sim.modules['NewbornOutcomes'].parameters
     params['prob_early_onset_neonatal_sepsis_day_0'] = 1
+    params['prob_early_breastfeeding_hb'] = 0
     params['prob_care_seeking_for_complication'] = 1
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -237,9 +238,7 @@ def test_twin_and_single_twin_still_birth_logic_for_twins():
     assert (mni[mother_id]['twin_count'] == 2)
 
     # And using that logging registered that one twin had died intrapartum and scheduled the death event accordingly
-    events = sim.find_events_for_person(person_id=child_id_two)
-    events = [e.__class__ for d, e in events]
-    assert demography.InstantaneousDeath in events
+    assert not sim.population.props.at[child_id_two, 'is_alive']
 
 
 def test_care_seeking_for_twins_delivered_at_home_who_develop_complications():
@@ -252,6 +251,7 @@ def test_care_seeking_for_twins_delivered_at_home_who_develop_complications():
     # of care seeking to 1
     params = sim.modules['NewbornOutcomes'].parameters
     params['prob_early_onset_neonatal_sepsis_day_0'] = 1
+    params['prob_early_breastfeeding_hb'] = 0
     params['prob_care_seeking_for_complication'] = 1
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -304,6 +304,7 @@ def test_on_birth_applies_risk_of_complications_in_term_newborns_delivered_at_ho
     # set risk of comps to 1 and force care seeking
     params = sim.modules['NewbornOutcomes'].parameters
     params['prob_early_onset_neonatal_sepsis_day_0'] = 1
+    params['prob_early_breastfeeding_hb'] = 0
     params['prob_failure_to_transition'] = 1
     params['prob_encephalopathy'] = 1
     params['prob_enceph_severity'] = [0, 0, 1]
@@ -349,6 +350,7 @@ def test_on_birth_applies_risk_of_complications_in_preterm_newborns_delivered_at
     # set risk of comps to 1 and force care seeking
     params = sim.modules['NewbornOutcomes'].parameters
     params['prob_early_onset_neonatal_sepsis_day_0'] = 1
+    params['prob_early_breastfeeding_hb'] = 0
     params['prob_failure_to_transition'] = 1
     params['prob_retinopathy_preterm'] = 1
     params['prob_respiratory_distress_preterm'] = 1
@@ -390,9 +392,14 @@ def test_newborn_hsi_applies_risk_of_complications_and_delivers_treatment_to_fac
     sim = register_modules(ignore_cons_constraints=True)
     sim.make_initial_population(n=100)
 
-    # set risk of comps to 1 and force care seeking
+    # set risk of comps very high and force care seeking
     params = sim.modules['NewbornOutcomes'].parameters
     params['prob_early_onset_neonatal_sepsis_day_0'] = 1
+    params['treatment_effect_clean_birth'] = 1
+    params['treatment_effect_cord_care'] = 1
+    params['treatment_effect_early_init_bf'] = 1
+    params['treatment_effect_abx_prom'] = 1
+    params['prob_early_breastfeeding_hf'] = 0
     params['prob_failure_to_transition'] = 1
     params['prob_congenital_ba'] = 1
     params['prev_types_of_ca'] = [1, 0, 0, 0, 0, 0, 0]
@@ -457,6 +464,7 @@ def test_function_which_applies_risk_of_death_following_birth():
     params['cfr_severe_enceph'] = 1
     params['cfr_congenital_anomaly'] = 1
     params['cfr_rds_preterm'] = 1
+    params['cfr_neonatal_sepsis'] = 1
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
