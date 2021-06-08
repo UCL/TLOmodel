@@ -75,7 +75,11 @@ with open(outputpath / 'default_run.pickle', 'wb') as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
 
-# ----------------------------------- PLOTS ----------------------------------- #
+
+# ---------------------------------------------------------------------- #
+# PLOTS
+# ---------------------------------------------------------------------- #
+
 # %% Function to make standard plot to compare model and data
 def make_plot(
     model=None,
@@ -105,7 +109,7 @@ def make_plot(
     plt.show()
 
 
-# OUTPUTS
+# ------------------------- OUTPUTS ------------------------- #
 # Active TB incidence
 activeTB_inc = output['tlo.methods.tb']['tb_incidence']
 activeTB_inc = activeTB_inc.set_index('date')
@@ -114,7 +118,27 @@ activeTB_inc = activeTB_inc.set_index('date')
 latentTB_prev = output['tlo.methods.tb']['tb_prevalence']
 latentTB_prev = latentTB_prev.set_index('date')
 
-# PLOTS
+# deaths
+deaths = output['tlo.methods.demography']['death'].copy()  # outputs individual deaths
+deaths = deaths.set_index('date')
+
+# TB deaths will exclude TB/HIV
+to_drop = (deaths.cause != 'TB')
+deaths_TB = deaths.drop(index=to_drop[to_drop].index).copy()
+deaths_TB['year'] = deaths_TB.index.year  # count by year
+tot_tb_non_hiv_deaths = deaths_TB.groupby(by=['year']).size()
+
+# TB/HIV deaths
+to_drop = (deaths.cause != 'AIDS_non_TB')
+deaths_TB_HIV = deaths.drop(index=to_drop[to_drop].index).copy()
+deaths_TB_HIV['year'] = deaths_TB_HIV.index.year  # count by year
+tot_tb_hiv_deaths = deaths_TB_HIV.groupby(by=['year']).size()
+
+# total TB deaths (including HIV+)
+total_tb_deaths = tot_tb_non_hiv_deaths.add(tot_tb_hiv_deaths, fill_value=0)
+
+# ------------------------- PLOTS ------------------------- #
+
 # plot active tb incidence per 1000 population
 make_plot(
     title_str="Active TB Incidence (per 1000 person-years)",

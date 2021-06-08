@@ -71,6 +71,7 @@ class Hiv(Module):
     # Declare Causes of Death
     # CAUSES_OF_DEATH = {
     #     'AIDS_non_TB': Cause(gbd_causes='HIV/AIDS', label='AIDS_non_TB'),
+    #     'AIDS_TB': Cause(gbd_causes='HIV/AIDS', label='AIDS_TB'),
     # }
     #
     # CAUSES_OF_DISABILITY = {
@@ -1220,8 +1221,12 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, "hv_art"] == "on_VL_suppressed":
             return
 
-        # Cause the death to happen immediately
-        demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS_non_TB").apply(person_id)
+        # Cause the death to happen immediately, cause defined by TB status
+        if df.at[person_id, 'tb_inf'] == "active":
+            demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS_TB").apply(person_id)
+
+        else:
+            demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS_non_TB").apply(person_id)
 
 
 class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
