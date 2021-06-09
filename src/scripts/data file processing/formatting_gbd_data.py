@@ -1,10 +1,12 @@
 """
-This is a to process the data from the GBD to create the ResourceFiles used for model running and calibration checks.
+This is a script to process the data from the GBD to create the ResourceFiles used for model running and calibration checks.
 
-It reads in the files that were downloaded and saves them as ResourceFiles in the `resources` directory:
-    resources/demography/
+It reads in the files that were downloaded externally and saves them as ResourceFiles in the `resources` directory:
+    resources/gbd/
 
 The following files are created:
+
+* 'ResourceFile_Deaths_And_DALYS_GBD2019.csv': the GBD 2019 data, with some light fomatting done to aid use.
 
 """
 
@@ -21,7 +23,7 @@ from tlo.analysis.utils import (
     make_calendar_period_type,
 )
 
-path_for_saved_files = Path("./resources/demography")
+path_for_saved_files = Path("./resources/gbd")
 
 # %%
 # *** USE OF THE GBD DATA ****
@@ -37,7 +39,7 @@ make_calendar_type = make_calendar_period_type()
 (__tmp__, calendar_period_lookup) = make_age_grp_lookup()
 age_grp_type= make_age_grp_types()
 
-# %% Load, format and save ResourceFile_XXXX
+# %% Load and do light formatting on the GBD dataset overall
 
 gbd = pd.read_csv(gbd_working_file)
 
@@ -63,7 +65,6 @@ gbd['Age_Grp'] = gbd['Age_Grp_GBD']\
         .str.replace('<1year', '0-4')
 
 # Add Period information:
-(__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
 gbd['Period'] = gbd['Year'].map(calendar_period_lookup)
 
 # Rename the 'variants'
@@ -90,11 +91,13 @@ gbd = gbd[['measure_name',
 # checks
 assert not pd.isnull(gbd).any().any()
 
-# 1) Save all outputs as 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'
+# %% Save all outputs as `ResourceFile_Deaths_And_DALYS_GBD2019.csv`
 gbd.to_csv(path_for_saved_files / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv', index=False)
 
-# 2) Output Deaths (all-cause) using standard Age-Grps to create 'ResourceFile_TotalDeaths_GBD.csv'
-gbd_deaths = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
-gbd_deaths = gbd_deaths.groupby(by=['Year', 'Sex', 'Age_Grp'], as_index=False)[['GBD_Est', 'GBD_Lower', 'GBD_Upper']].sum()
-gbd_deaths = gbd_deaths.melt(id_vars=['Year', 'Sex', 'Age_Grp'], var_name='Variant', value_name='Count')
-gbd_deaths.to_csv(path_for_saved_files / 'ResourceFile_TotalDeaths_GBD.csv', index=False)
+
+# %% todo DELETE THE BELOW
+# # 2) Output Deaths (all-cause) using standard Age-Grps to create 'ResourceFile_TotalDeaths_GBD.csv'
+# gbd_deaths = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
+# gbd_deaths = gbd_deaths.groupby(by=['Year', 'Sex', 'Age_Grp'], as_index=False)[['GBD_Est', 'GBD_Lower', 'GBD_Upper']].sum()
+# gbd_deaths = gbd_deaths.melt(id_vars=['Year', 'Sex', 'Age_Grp'], var_name='Variant', value_name='Count')
+# gbd_deaths.to_csv(path_for_saved_files / 'ResourceFile_TotalDeaths_GBD.csv', index=False)

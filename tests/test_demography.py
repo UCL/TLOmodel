@@ -144,7 +144,7 @@ def test_cause_of_death_being_registered():
         sim.modules['Demography'].create_mappers_from_causes_of_death_to_label()
 
     assert set(mapper_from_tlo_causes.keys()) == set(sim.modules['Demography'].causes_of_death)
-    assert set(mapper_from_gbd_causes.keys()) == set(sim.modules['Demography'].parameters['gbd_causes_of_death'])
+    assert set(mapper_from_gbd_causes.keys()) == sim.modules['Demography'].gbd_causes_of_death
     assert set(mapper_from_gbd_causes.values()) == set(mapper_from_tlo_causes.values())
 
 

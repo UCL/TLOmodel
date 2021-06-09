@@ -246,9 +246,6 @@ def make_age_grp_types():
     return pd.CategoricalDtype(categories=keys, ordered=True)
 
 
-
-
-
 def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
     """Returns paths of folders associated with a batch_file, in chronological order."""
     stub = scenario_filename.rstrip('.py')

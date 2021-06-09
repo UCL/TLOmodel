@@ -36,7 +36,9 @@ class Demography(Module):
         self.resourcefilepath = resourcefilepath
         self.causes_of_death = dict()  # will store all the causes of death that are possible in the simulation
         self.popsize_by_year = dict()  # will store total population size each year
-        self.gbd_causes_of_death_not_represented_in_disease_modules = set()
+        self.gbd_causes_of_death = set()  # will store all the causes of death defined in the GBD data
+        self.gbd_causes_of_death_not_represented_in_disease_modules = set()  # will store causes of death in GBD not
+                                                                             # represented in the simulation
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
@@ -101,14 +103,9 @@ class Demography(Module):
             Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
         )
 
-        # GBD causes of death:
-        self.parameters['gbd_causes_of_death'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'
-        )['cause_name'].unique().tolist()
-
         # GBD Dataset
         self.parameters['gbd_data'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'
+            Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'
         )
 
         # Lookup dicts to map from district_num_of_residence (in the df) and District name and Region name
@@ -124,14 +121,19 @@ class Demography(Module):
 
     def pre_initialise_population(self):
         """
-        1) Process the declarations of causes of death made by the disease modules
+        1) Store all the cause of death represented in the imported GBD data
+        2) Process the declarations of causes of death made by the disease modules
         3) Define categorical properties for 'cause_of_death', 'region_of_residence' and 'district_of_residence'
         """
 
-        # 1) Process the declarations of causes of death made by the disease modules
+        # 1) Store all the cause of death represented in the imported GBD data
+        self.gbd_causes_of_death = set(self.parameters['gbd_data'].loc[
+            lambda df: df['measure_name'] == 'Deaths']['cause_name'].unique().tolist())
+
+        # 2) Process the declarations of causes of death made by the disease modules
         self.process_causes_of_death()
 
-        # 2) Define categorical properties for 'cause_of_death', 'region_of_residence' and 'district_of_residence'
+        # 3) Define categorical properties for 'cause_of_death', 'region_of_residence' and 'district_of_residence'
         # Nb. This couldn't be done before categories for each of these has been determined following read-in of data
         # and initialising of other modules.
         self.PROPERTIES['cause_of_death'] = Property(
@@ -160,7 +162,7 @@ class Demography(Module):
         self.causes_of_death = collect_causes_from_disease_modules(
             all_modules=self.sim.modules.values(),
             collect='CAUSES_OF_DEATH',
-            acceptable_causes=set(self.parameters['gbd_causes_of_death'])
+            acceptable_causes=self.gbd_causes_of_death
         )
 
         # 2) Define the "Other" tlo_cause of death (that is managed in this module by the OtherDeathPoll)
@@ -363,13 +365,13 @@ class Demography(Module):
         for c in causes_of_death.values():
             all_gbd_causes_in_sim.update(c.gbd_causes)
 
-        return set(self.parameters['gbd_causes_of_death']) - all_gbd_causes_in_sim
+        return self.gbd_causes_of_death - all_gbd_causes_in_sim
 
     def create_mappers_from_causes_of_death_to_label(self):
         """Use a helper function to create mappers for causes of death to label."""
         return create_mappers_from_causes_to_label(
             causes=self.causes_of_death,
-            all_gbd_causes=set(self.parameters['gbd_causes_of_death'])
+            all_gbd_causes=self.gbd_causes_of_death
         )
 
     def calc_py_lived_in_last_year(self, delta=pd.DateOffset(years=1), mask=None):
@@ -494,10 +496,15 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
     def get_mort_risk_per_poll(self):
         """Compute the death-rates to use (i.e., those from causes of death defined in `self.causes_to_represent`).
+        This is based on using the WPP schedule for all-cause deaths, scaled by the proportion of deaths that the
+        simulation does not represent (based on latest available GBD data).
         Adjust the rates of death so that it is a risk of death per person per occurrence of the polling event.
         """
-        # todo - this is pending a further PR that brings in newest GBD data. For now, just retrn the mortality
-        #  schedule from WPP
+
+        # Get the proportion of the total death rates that the Other Death Poll must represent
+        prop_of_deaths_to_represent = get_proportion_of_deaths_to_represent_as_other_deaths()
+
+        # todo - further steps!?!?
 
         # Work out probability of dying in the time before the next occurrence of this poll
         dur_in_years_between_polls = np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y')
@@ -505,6 +512,35 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         return self.module.parameters['mortality_schedule'].assign(
             prob_of_dying_before_next_poll=lambda x: (1.0 - np.exp(-x.death_rate * dur_in_years_between_polls))
         ).drop(columns={'death_rate'})
+
+    def get_proportion_of_deaths_to_represent_as_other_deaths(self):
+        """Compute the fraction of deaths that occur in GBD that are not represented in this simulation"""
+        # Get the breakdown of deaths by cause from GBD data:
+        gbd_deaths = get_gbd_proportion_of_death_by_cause
+
+        # Find the proportion of deaths that are not represented in the simulation
+        print('eh?')
+
+    def get_gbd_proportion_of_death_by_cause(self):
+        """Compute the fraction of deaths due to each cause (for the latest year available)"""
+        # Get the full GBD dataset:
+        gbd = self.module.parameters['gbd_data']
+        latest_year = max(gbd['Year'])
+        gbd_deaths = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
+        gbd_deaths = \
+        gbd_deaths.loc[gbd_deaths['Year'] == latest_year].groupby(by=['Sex', 'Age_Grp', 'cause_name'], as_index=False)[
+            ['GBD_Est']].sum()
+        gbd_deaths = gbd_deaths.pivot(index=['Sex', 'Age_Grp'], columns='cause_name', values='GBD_Est').fillna(0)
+        prop_deaths = gbd_deaths.div(gbd_deaths.sum(axis=1), axis=0)
+
+        # Check that all causes sum to 1.0 within each sex/age group
+        assert (abs(1.0 - prop_deaths.sum(axis=1)) < 1e-6).all()
+
+        # Check that every cause is represented in this table
+        causes_of_death = gbd.loc[gbd['measure_name'] == 'Deaths', 'cause_name'].unique()
+        assert set(prop_deaths.columns) == set(causes_of_death)
+
+        return gbd_deaths
 
     def apply(self, population):
         """Randomly select some persons to die of the 'Other' tlo cause (the causes of death that are not represented

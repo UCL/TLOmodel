@@ -50,8 +50,8 @@ class HealthBurden(Module):
         p['DALY_Weight_Database'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_DALY_Weights.csv')
         p['Age_Limit_For_YLL'] = 70.0  # Assumption that only deaths younger than 70y incur years of lost life
         p['gbd_causes_of_disability'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'
-        )['cause_name'].unique().tolist()
+            Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'
+        ).loc[lambda df: df['measure_name'] == 'DALYs (Disability-Adjusted Life Years)']['cause_name'].unique().tolist()
 
     def initialise_population(self, population):
         pass

@@ -1,8 +1,8 @@
 """
-This is a to process the data from the Malawi 2018 Census, WPP 2019 and DHS to create the ResourceFiles used for model
-running and calibration checks.
+This is a script to process the data from the Malawi 2018 Census, WPP 2019 and DHS to create the ResourceFiles used for
+model running and calibration checks.
 
-It reads in the files that were downloaded and saves them as ResourceFiles in the `resources` directory:
+It reads in the files that were downloaded externally and saves them as ResourceFiles in the `resources` directory:
     resources/demography/
 
 The following files are created:
