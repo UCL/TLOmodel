@@ -54,7 +54,7 @@ class Demography(Module):
         'pop_2010': Parameter(Types.DATA_FRAME, 'Population in 2010 for initialising population'),
         'district_num_to_district_name': Parameter(Types.DICT, 'Mapping from district_num to district name'),
         'district_num_to_region_name': Parameter(Types.DICT, 'Mapping from district_num to region name'),
-        'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec mortality rates from WPP'),
+        'all_cause_mortality_schedule': Parameter(Types.DATA_FRAME, 'All-cause age-specific mortality rates from WPP'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
         'gbd_data': Parameter(Types.DATA_FRAME,
                               'Data from GBD, including deaths and dalys by cause, age, sex and year'),
@@ -99,7 +99,7 @@ class Demography(Module):
         ).set_index('Year')['frac_births_male']
 
         # Mortality schedule:
-        self.parameters['mortality_schedule'] = pd.read_csv(
+        self.parameters['all_cause_mortality_schedule'] = pd.read_csv(
             Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
         )
 
@@ -501,25 +501,35 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         Adjust the rates of death so that it is a risk of death per person per occurrence of the polling event.
         """
 
-        # Get the proportion of the total death rates that the Other Death Poll must represent
-        prop_of_deaths_to_represent = get_proportion_of_deaths_to_represent_as_other_deaths()
-
-        # todo - further steps!?!?
-
-        # Work out probability of dying in the time before the next occurrence of this poll
+        # Get time elasped between each poll:
         dur_in_years_between_polls = np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y')
 
-        return self.module.parameters['mortality_schedule'].assign(
+        # Computed all-cause mortality risk per poll
+        all_cause_mort_risk = self.module.parameters['all_cause_mortality_schedule'].assign(
             prob_of_dying_before_next_poll=lambda x: (1.0 - np.exp(-x.death_rate * dur_in_years_between_polls))
         ).drop(columns={'death_rate'})
 
-    def get_proportion_of_deaths_to_represent_as_other_deaths(self):
-        """Compute the fraction of deaths that occur in GBD that are not represented in this simulation"""
-        # Get the breakdown of deaths by cause from GBD data:
-        gbd_deaths = get_gbd_proportion_of_death_by_cause
+        # Get the proportion of the total death rates that the Other Death Poll must represent
+        #  - and format ready for merging (reset the index and expand age-groups to single years)
+        prop_of_deaths_to_represent = self.get_proportion_of_deaths_to_represent_as_other_deaths()
 
-        # Find the proportion of deaths that are not represented in the simulation
-        print('eh?')
+        # Mulitiply all probabilities by the proportion of all_cause death to be represented by this poll
+        all_cause_mort_risk['age_group'] = all_cause_mort_risk['age_years'].map(self.module.AGE_RANGE_LOOKUP)
+        mort_risk = all_cause_mort_risk.merge(prop_of_deaths_to_represent.reset_index(name='prop'),
+                                  left_on=['sex', 'age_group'], right_on=['Sex', 'Age_Grp'], how='left')
+        mort_risk['prop'] = mort_risk['prop'].fillna(method='ffill')
+        mort_risk['prob_of_dying_before_next_poll'] *= mort_risk['prop']
+        assert not mort_risk['prob_of_dying_before_next_poll'].isna().any()
+
+        return mort_risk[['fallbackyear', 'sex', 'age_years', 'prob_of_dying_before_next_poll']]
+
+    def get_proportion_of_deaths_to_represent_as_other_deaths(self):
+        """Compute the fraction of deaths that will be reprsented by the OtherDeathPoll"""
+        # Get the breakdown of deaths by cause from GBD data:
+        gbd_deaths = self.get_gbd_proportion_of_death_by_cause()
+
+        # Find the proportion of deaths to be represented by the OtherDeathPoll
+        return gbd_deaths[self.causes_to_represent].sum(axis=1)
 
     def get_gbd_proportion_of_death_by_cause(self):
         """Compute the fraction of deaths due to each cause (for the latest year available)"""
@@ -538,9 +548,9 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
         # Check that every cause is represented in this table
         causes_of_death = gbd.loc[gbd['measure_name'] == 'Deaths', 'cause_name'].unique()
-        assert set(prop_deaths.columns) == set(causes_of_death)
+        assert set(prop_deaths.columns) == set(causes_of_death) == self.module.gbd_causes_of_death
 
-        return gbd_deaths
+        return prop_deaths
 
     def apply(self, population):
         """Randomly select some persons to die of the 'Other' tlo cause (the causes of death that are not represented
