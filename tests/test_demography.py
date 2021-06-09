@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tlo import Date, Module, Simulation
+from tlo import Date, Module, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.core import Cause
 from tlo.methods import (
     Metadata,
@@ -109,12 +110,21 @@ def test_storage_of_cause_of_death():
     test_dtypes(sim)
 
 
-def test_cause_of_death_being_registered():
+
+
+def test_cause_of_death_being_registered(tmpdir):
     """Test that the modules can declare causes of death, and that the mappers between tlo causes of death and gbd
     causes of death can be created correctly."""
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "*": logging.WARNING,
+            'tlo.methods.demography': logging.INFO
+        }
+    })
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         symptommanager.SymptomManager(resourcefilepath=rfp),
@@ -146,6 +156,14 @@ def test_cause_of_death_being_registered():
     assert set(mapper_from_tlo_causes.keys()) == set(sim.modules['Demography'].causes_of_death)
     assert set(mapper_from_gbd_causes.keys()) == sim.modules['Demography'].gbd_causes_of_death
     assert set(mapper_from_gbd_causes.values()) == set(mapper_from_tlo_causes.values())
+
+    # check that these mappers come out in the log correctly
+    output = parse_log_file(sim.log_filepath)
+    demoglog = output['tlo.methods.demography']
+    assert mapper_from_tlo_causes == \
+           pd.Series(demoglog['mapper_from_tlo_cause_to_common_label'].drop(columns={'date'}).loc[0]).to_dict()
+    assert mapper_from_gbd_causes == \
+           pd.Series(demoglog['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]).to_dict()
 
     # Check that the mortality risks being used in Other Death Poll have been reduced from the 'all-cause' rates
     odp = sim.modules['Demography'].other_death_poll

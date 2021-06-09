@@ -4,13 +4,15 @@ Plot to demonstrate correspondence between model and data outputs wrt births, po
 This uses Scenario file: src/scripts/long_run/long_run.py
 
 """
+# TODO GET SCALING FACTOR FROM INSIDE SIM LOG
 
 # TODO -- Coding -- ordering of each element on the plot to get the consistent pattern of overlay;
+
 
 import pickle
 from datetime import datetime
 from pathlib import Path
-
+from pytest import approx
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt

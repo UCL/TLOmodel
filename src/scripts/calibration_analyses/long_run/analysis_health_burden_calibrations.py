@@ -1,5 +1,8 @@
 """Produce comparisons between model and GBD of deaths by cause in a particular period."""
 
+# TODO - GET SCALING FACTOR FROM INSIDE SIM LOG
+# TODO - GET MAPPERS FROM INSIDE SIM LOG (AND REMOVE FRMO UTILS)
+
 # todo - unify the labelling of causes in the HealthBurden module to simplify processing
 # todo - do all the same for DALYS
 
