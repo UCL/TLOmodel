@@ -60,8 +60,6 @@ def create_rti_data(logfile):
     ICU_eye = []
     ICU_lac = []
     ICU_burn = []
-
-
     parsed_log = parse_log_file(logfile)
     rti_log = parsed_log['tlo.methods.rti']
     # get the demographic data of those in RTI
@@ -918,9 +916,6 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description):
     # Calculate the upper and lowere limits for the confidence intervals of RTI death
     death_upper = [inc + (1.96 * std) / nsim for inc, std in zip(average_deaths, std_deaths)]
     death_lower = [inc - (1.96 * std) / nsim for inc, std in zip(average_deaths, std_deaths)]
-    # Calculate the average incidence of injuries occuring at each logging event
-    average_injury_incidence = [float(sum(col)) / len(col) for col in
-                                zip(*results_all_runs['incidences_of_injuries'])]
     # calculate the overall average incidence in the simulations
     overall_av_inc_sim = np.mean(average_incidence)
     # Calculate the overall average deaths incidence in the simulations
@@ -1247,7 +1242,7 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description):
     plt.savefig(save_directory + "/" + filename_description + "_" + "Average_inpatient_days_"
                                                                     "used.png", bbox_inches='tight')
     plt.clf()
-    # ================================== Plot inpatient day distribution ==================================================
+    # ====================== Plot inpatient day distribution ==================================================
     # Malawi injury inpatient days data from https://doi.org/10.1016/j.jsurg.2014.09.010
     flatten_inpatient_days = [day for day_list in sim_inpatient_days for day in day_list]
     # Create labels

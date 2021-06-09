@@ -6,5 +6,3 @@ create_rti_graphs('outputs/single_injury_model_vs_multiple_injury/single_injury'
 create_rti_graphs('outputs/single_injury_model_vs_multiple_injury/multiple_injury',
                   'C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/Multiple_Injury',
                   'Multiple_Injury')
-
-
