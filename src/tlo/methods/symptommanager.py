@@ -599,8 +599,7 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
             'adults': df.loc[df.is_alive & (df.age_years >= 15)].index
         }
 
-        # For each generic symptom, impose it on a random sample of persons who do not have that symptom caused by
-        # SymptomManager currently:
+        # For each generic symptom, impose it on a random sample of persons who do not have that symptom currently:
         for symp in sorted(self.module.generic_symptoms):
             does_not_have_symptom = self.module.who_not_have(symptom_string=symp)
 

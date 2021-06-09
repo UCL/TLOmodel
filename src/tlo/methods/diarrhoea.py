@@ -859,10 +859,12 @@ class Diarrhoea(Module):
         if not person.is_alive:
             return
 
-        # Do nothing if the diarrhoea has not been caused by a pathogen
+        # Do nothing if the diarrhoea has not been caused by a pathogen or has otherwise resolved already
         if not (
             (person.gi_last_diarrhoea_pathogen != 'not_applicable') &
             (person.gi_last_diarrhoea_date_of_onset <= self.sim.date <= person.gi_end_of_last_episode)
+        ) or (
+            'Diarrhoea' not in self.sim.modules['SymptomManager'].causes_of(person_id, 'diarrhoea')
         ):
             return
 
@@ -916,11 +918,12 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
 
         # Those susceptible are children that do not currently have an episode (never had an episode or last episode
-        # resolved)
+        # resolved) and who do not have diarrhoea as a 'spurious symptom' of diarrhoea already.
         mask_could_get_new_diarrhoea_episode = (
-            df.is_alive & (df.age_years < 5) & (
-                (df.gi_end_of_last_episode < self.sim.date) | pd.isnull(df.gi_end_of_last_episode)
-            )
+            df.is_alive &
+            (df.age_years < 5) &
+            ((df.gi_end_of_last_episode < self.sim.date) | pd.isnull(df.gi_end_of_last_episode)) &
+            ~df.index.isin(self.sim.modules['SymptomManager'].who_has('diarrhoea'))
         )
 
         # Compute the incidence rate for each person getting diarrhoea
@@ -1220,21 +1223,18 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
             return
 
         # Confirm that this is event is occurring during a current episode of diarrhoea
-        if not (person.gi_last_diarrhoea_date_of_onset <= self.sim.date <= person.gi_end_of_last_episode):
+        if ~(
+            person.gi_last_diarrhoea_date_of_onset <= self.sim.date <= person.gi_end_of_last_episode
+        )\
+            or (
+            'Diarrhoea' not in self.sim.modules['SymptomManager'].causes_of(person_id, 'diarrhoea')
+        ):
             # If not, then the event has been caused by another cause of diarrhoea (which may has resolved by now)
             return
 
         # Cure should not happen if the person has already recovered
         if person.gi_last_diarrhoea_recovered_date <= self.sim.date:
             return
-
-        # If cure should go ahead, check that it is after when the person has received a treatment during this episode
-        assert (
-            person.gi_last_diarrhoea_date_of_onset <=
-            person.gi_last_diarrhoea_treatment_date <=
-            self.sim.date <=
-            person.gi_end_of_last_episode
-        )
 
         # Stop the person from dying of Diarrhoea (if they were going to die) and record date of recovery
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = self.sim.date
