@@ -145,3 +145,10 @@ def test_basic_run():
 
 # check risk of relapse
 
+# test running without hiv
+
+# check dates of follow-up appts following schedule
+
+# check treatment ends at appropriate time
+
+# if child born to mother with diagnosed tb, check give ipt
