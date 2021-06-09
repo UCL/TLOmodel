@@ -61,7 +61,7 @@ Communicable Diseases
 
 * **Measles**: Measles-related disease and associated prevention and treatment programmes. (Forthcoming)
 
-* **Malaria**: Malaria disease and associated prevention and treatment programmes. (Forthcoming)
+* **Malaria**: Malaria disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Malaria.docx>`
 
 * **Schistosomiasis**: Schistosomiasis disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Schistosomiasis.docx>`
 
