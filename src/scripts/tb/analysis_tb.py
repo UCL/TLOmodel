@@ -36,7 +36,7 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 15000
 
-# Establish the simulation object
+# set up the log config
 log_config = {
     'filename': 'Logfile',
     'directory': outputpath,
