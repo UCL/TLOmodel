@@ -5,8 +5,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from pytest import approx
 
-from tlo import Date, Module, Simulation
+from tlo import Date, Module, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.core import Cause
 from tlo.methods import (
     Metadata,
@@ -107,6 +109,29 @@ def test_storage_of_cause_of_death():
     assert person.cause_of_death == 'a_cause'
     assert (df.dtypes == orig).all()
     test_dtypes(sim)
+
+
+def test_calc_of_scaling_factor(tmpdir):
+    """Test that the scaling factor is computed and put out to the log"""
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+    popsize = 10_000
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "*": logging.INFO,
+        }
+    })
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+    )
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2019, 12, 31))
+
+    # Check that the scaling factor is calculated in the log correctly:
+    output = parse_log_file(sim.log_filepath)
+    sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
+    assert sf == approx(18.6e6 / popsize, rel=0.05)
 
 
 def test_cause_of_death_being_registered():

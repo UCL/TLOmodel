@@ -291,7 +291,7 @@ class Demography(Module):
         if not np.isnan(sf):
             logger.info(
                 key='scaling_factor',
-                data=sf,
+                data={'scaling_factor': sf},
                 description='The scaling factor (if can be computed)'
             )
 
