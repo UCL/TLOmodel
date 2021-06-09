@@ -30,7 +30,7 @@ from tlo.methods import (
     prostate_cancer,
     symptommanager,
 )
-from tlo.methods.demography import AgeUpdateEvent
+from tlo.methods.demography import AgeUpdateEvent, OtherDeathPoll
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
@@ -146,6 +146,14 @@ def test_cause_of_death_being_registered():
     assert set(mapper_from_tlo_causes.keys()) == set(sim.modules['Demography'].causes_of_death)
     assert set(mapper_from_gbd_causes.keys()) == sim.modules['Demography'].gbd_causes_of_death
     assert set(mapper_from_gbd_causes.values()) == set(mapper_from_tlo_causes.values())
+
+    # Check that the mortality risks being used in Other Death Poll have been reduced from the 'all-cause' rates
+    odp = sim.modules['Demography'].other_death_poll
+    all_cause_risk = odp.get_all_cause_mort_risk_per_poll()
+    actual_risk_per_poll = odp.mort_risk_per_poll
+    assert (
+        actual_risk_per_poll['prob_of_dying_before_next_poll'] < all_cause_risk['prob_of_dying_before_next_poll']
+    ).all()
 
 
 def test_py_calc(simulation):
