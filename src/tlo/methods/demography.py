@@ -488,7 +488,7 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
     """
     This event causes deaths to persons from cause that are _not_ being modelled explicitly by a disease module.
-    It does this by computing the GBD death rates that are implied by all the causes of death other than those that are
+    It does this by computing the death rates that are implied by all the causes of death other than those that are
     represented in the disease module registerd in this simulation.
     """
     def __init__(self, module):
@@ -498,18 +498,18 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
     def get_mort_risk_per_poll(self):
         """Compute the death-rates to use (i.e., those from causes of death defined in `self.causes_to_represent`).
-        This is based on using the WPP schedule for all-cause deaths, scaled by the proportion of deaths that the
-        simulation does not represent (based on latest available GBD data).
-        Adjust the rates of death so that it is a risk of death per person per occurrence of the polling event.
+        This is based on using the WPP schedule for all-cause deaths and scaling by the proportion of deaths caused by
+        those caused defined in `self.causes_to_represent` (as per the latest available GBD data).
+        These mortality rates are used to compute a risk of death per person per occurrence of the polling event.
         """
 
         # Get the all-cause risk of death per poll
         all_cause_mort_risk = self.get_all_cause_mort_risk_per_poll()
 
-        # Get the proportion of the total death rates that the Other Death Poll must represent
+        # Get the proportion of the total death rates that the OtherDeathPollEvent must represent
         prop_of_deaths_to_represent = self.get_proportion_of_deaths_to_represent_as_other_deaths()
 
-        # Mulitiply all probabilities by the proportion of all_cause death to be represented by this poll
+        # Mulitiply probabilities by the proportion of deaths that are to be represented by OtherDeathPollEvent
         all_cause_mort_risk['age_group'] = all_cause_mort_risk['age_years'].map(self.module.AGE_RANGE_LOOKUP)
         mort_risk = all_cause_mort_risk.merge(prop_of_deaths_to_represent.reset_index(name='prop'),
                                   left_on=['sex', 'age_group'], right_on=['Sex', 'Age_Grp'], how='left')
@@ -539,17 +539,19 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
     def get_gbd_proportion_of_death_by_cause(self):
         """Compute the fraction of deaths due to each cause (for the latest year available)"""
-        # Get the full GBD dataset:
+        # Get the full GBD dataset and find the latest year
         gbd = self.module.parameters['gbd_data']
         latest_year = max(gbd['Year'])
+
+        # Produce pivot table that gives causes of death in columns
         gbd_deaths = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
         gbd_deaths = \
         gbd_deaths.loc[gbd_deaths['Year'] == latest_year].groupby(by=['Sex', 'Age_Grp', 'cause_name'], as_index=False)[
             ['GBD_Est']].sum()
         gbd_deaths = gbd_deaths.pivot(index=['Sex', 'Age_Grp'], columns='cause_name', values='GBD_Est').fillna(0)
-        prop_deaths = gbd_deaths.div(gbd_deaths.sum(axis=1), axis=0)
 
-        # Check that all causes sum to 1.0 within each sex/age group
+        # Compute the proportion of deaths due to each cause (within each sex/age group)
+        prop_deaths = gbd_deaths.div(gbd_deaths.sum(axis=1), axis=0)
         assert (abs(1.0 - prop_deaths.sum(axis=1)) < 1e-6).all()
 
         # Check that every cause is represented in this table
