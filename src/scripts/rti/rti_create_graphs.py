@@ -48,93 +48,6 @@ def create_rti_data(logfile):
     sim_age_range = []
     sim_male_age_range = []
     sim_female_age_range = []
-    # Gender demographics
-    females = []
-    males = []
-    # Alcohol consumption demographics
-    percents_attributable_to_alcohol = []
-    # Health outcomes
-    list_number_of_crashes = []
-    list_number_of_disabilities = []
-    number_of_deaths_pre_hospital = []
-    number_of_deaths_in_hospital = []
-    number_of_deaths_no_med = []
-    number_of_deaths_unavailable_med = []
-    # Incidences
-    incidences_of_rti = []
-    incidences_of_rti_in_children = []
-    incidences_of_death = []
-    incidences_of_death_pre_hospital = []
-    incidences_of_death_post_med = []
-    incidences_of_death_no_med = []
-    incidences_of_death_unavailable_med = []
-    incidences_of_rti_yearly_average = []
-    incidences_of_death_yearly_average = []
-    incidences_of_injuries = []
-    inc_amputations = []
-    inc_burns = []
-    inc_fractures = []
-    inc_tbi = []
-    inc_sci = []
-    inc_minor = []
-    inc_other = []
-    tot_inc_injuries = []
-    # Percentages of the context of deaths
-    ps_of_imm_death = []
-    ps_of_death_post_med = []
-    ps_of_death_without_med = []
-    ps_of_death_unavailable_med = []
-    percent_died_after_med = []
-    # Overall percentage of fatal crashes
-    percent_of_fatal_crashes = []
-    # Injury severity
-    perc_mild = []
-    perc_severe = []
-    iss_scores = []
-    # Injury level data
-    number_of_injured_body_locations = []
-    inj_loc_data = []
-    inj_cat_data = []
-    per_injury_fatal = []
-    number_of_injuries_per_sim = []
-    # Flows between model states
-    rti_model_flow_summary = []
-    # Health seeking behaviour
-    percent_sought_healthcare = []
-    # Admitted to ICU or HDU
-    percent_admitted_to_icu_or_hdu = []
-    # Inpatient days
-    all_sim_inpatient_days = []
-    # Per sim inpatient days
-    per_sim_inpatient_days = []
-    # Number of consumables used
-    list_consumables_dict = []
-    # Overall healthsystem time usage
-    health_system_time_usage = []
-    # number of major surgeries
-    per_sim_major_surg = []
-    # number of minor surgeries
-    per_sim_minor_surg = []
-    # number of fractures cast
-    per_sim_frac_cast = []
-    # number of lacerations stitched
-    per_sim_laceration = []
-    # number of burns managed
-    per_sim_burn_treated = []
-    # number of tetanus vaccine administered
-    per_sim_tetanus = []
-    # number of pain medicine requested
-    per_sim_pain_med = []
-    # number of open fracture appointments used
-    per_sim_open_frac = []
-    # Deaths in 2010
-    deaths_2010 = []
-    # Injuries in 2010
-    injuries_in_2010 = []
-    # Number of injuries per year
-    injuries_per_year = []
-    # Number of prehospital deaths in 2010
-    number_of_prehospital_deaths_2010 = []
     # ICU injury characteristics
     ICU_frac = []
     ICU_dis = []
@@ -147,15 +60,12 @@ def create_rti_data(logfile):
     ICU_eye = []
     ICU_lac = []
     ICU_burn = []
-    # injury severity of rural vs urban injuries
-    per_sim_rural_severe = []
-    per_sim_urban_severe = []
-    # proportion of lower extremity fractures that are open
-    per_sim_average_percentage_lx_open = []
+
 
     parsed_log = parse_log_file(logfile)
-    # get
-    demog = parsed_log['tlo.methods.rti']['rti_demography']
+    rti_log = parsed_log['tlo.methods.rti']
+    # get the demographic data of those in RTI
+    demog = rti_log['rti_demography']
 
     # Get the total age demographics of those with RTI in the sim
     this_sim_ages = demog['age'].tolist()
@@ -182,36 +92,32 @@ def create_rti_data(logfile):
     # Get the percentage of RTI crashes attributable to RTI
     percent_attributable_to_alcohol = np.mean(demog['percent_related_to_alcohol'].tolist())
     # Number permanently disabled
-    number_perm_disabled = parsed_log['tlo.methods.rti']['summary_1m']['number permanently disabled'].iloc[-1]
+    number_perm_disabled = rti_log['summary_1m']['number permanently disabled'].iloc[-1]
     # Deaths in different contexts
-    number_of_deaths_pre_hospital = parsed_log['tlo.methods.rti']['summary_1m']['number immediate deaths'].sum()
-    number_of_deaths_in_hospital = parsed_log['tlo.methods.rti']['summary_1m']['number deaths post med'].sum()
-    number_of_deaths_no_med = parsed_log['tlo.methods.rti']['summary_1m']['number deaths without med'].sum()
-    number_of_deaths_unavailable_med = parsed_log['tlo.methods.rti']['summary_1m']['number deaths unavailable med'] \
-        .sum()
+    number_of_deaths_pre_hospital = rti_log['summary_1m']['number immediate deaths'].sum()
+    number_of_deaths_in_hospital = rti_log['summary_1m']['number deaths post med'].sum()
+    number_of_deaths_no_med = rti_log['summary_1m']['number deaths without med'].sum()
+    number_of_deaths_unavailable_med = rti_log['summary_1m']['number deaths unavailable med'].sum()
     # Store the number of prehospital deaths in 2010
     # Create and extra column in log_df['tlo.methods.rti']['summary_1m'] which stores the year information
-    parsed_log['tlo.methods.rti']['summary_1m']['year'] = parsed_log['tlo.methods.rti']['summary_1m'][
-        'date'].dt.year
+    rti_log['summary_1m']['year'] = rti_log['summary_1m']['date'].dt.year
     # group log_df['tlo.methods.rti']['summary_1m'] by simulated year
-    grouped_by_year = parsed_log['tlo.methods.rti']['summary_1m'].groupby('year')
+    grouped_by_year = rti_log['summary_1m'].groupby('year')
     # store the number of prehospital deaths in 2010
     number_of_prehospital_deaths_2010 = grouped_by_year.get_group(2010)['number immediate deaths'].sum()
     # Store the percentage of those who sought health care. I made the logging output 'none_injured' if no one
     # was injured that month, so need to filter out those instances
     percent_sought_healthcare = \
-        [i for i in parsed_log['tlo.methods.rti']['summary_1m']['percent sought healthcare'].tolist() if i !=
-         'none_injured']
+        [i for i in rti_log['summary_1m']['percent sought healthcare'].tolist() if i != 'none_injured']
 
     # Store the percentage of patients admitted to ICU or HDU
     percent_admitted_to_icu_or_hdu = \
-        [i for i in parsed_log['tlo.methods.rti']['summary_1m']['percent admitted to ICU or HDU'].tolist() if i !=
-         'none_injured']
+        [i for i in rti_log['summary_1m']['percent admitted to ICU or HDU'].tolist() if i != 'none_injured']
     percent_admitted_to_icu_or_hdu = np.mean(percent_admitted_to_icu_or_hdu)
     # Create a dataframe which handles the information on ICU patients to create a picture of which injuries the
     # model is predicting will need a stay in ICU
     try:
-        icu_df = parsed_log['tlo.methods.rti']['ICU_patients']
+        icu_df = rti_log['ICU_patients']
         # Drop the date of the logging
         icu_df = icu_df.drop('date', axis=1)
         # Find all the fracture injuries in ICU patients
@@ -299,39 +205,30 @@ def create_rti_data(logfile):
         ICU_lac = 0
         ICU_burn = 0
     # Store the percentage of people who died after seeking healthcare in this sim
-    percent_died_after_med = parsed_log['tlo.methods.rti']['summary_1m']['number deaths post med'].sum() / \
-                             parsed_log['tlo.methods.rti']['model_progression']['total_sought_medical_care'].iloc[
-                                 -1]
+    percent_died_after_med = (rti_log['summary_1m']['number deaths post med'].sum() /
+                              rti_log['model_progression']['total_sought_medical_care'].iloc[-1])
     # Store the incidence of RTI per 100,000 person years in this sim
-    incidences_of_rti = parsed_log['tlo.methods.rti']['summary_1m']['incidence of rti per 100,000'].tolist()
+    incidences_of_rti = rti_log['summary_1m']['incidence of rti per 100,000'].tolist()
     # Store the incidence of death due to RTI per 100,000 person years and the sub categories in this sim
-    incidences_of_death = parsed_log['tlo.methods.rti']['summary_1m']['incidence of rti death per 100,000'].tolist()
-    incidences_of_death_pre_hospital = \
-        parsed_log['tlo.methods.rti']['summary_1m']['incidence of prehospital death per 100,000'].tolist()
+    incidences_of_death = rti_log['summary_1m']['incidence of rti death per 100,000'].tolist()
+    incidences_of_death_pre_hospital = rti_log['summary_1m']['incidence of prehospital death per 100,000'].tolist()
 
-    incidences_of_death_post_med = \
-        parsed_log['tlo.methods.rti']['summary_1m']['incidence of death post med per 100,000'].tolist()
+    incidences_of_death_post_med = rti_log['summary_1m']['incidence of death post med per 100,000'].tolist()
 
-    incidences_of_death_no_med = \
-        parsed_log['tlo.methods.rti']['summary_1m']['incidence of death without med per 100,000'].tolist()
+    incidences_of_death_no_med = rti_log['summary_1m']['incidence of death without med per 100,000'].tolist()
 
     incidences_of_death_unavailable_med = \
-        parsed_log['tlo.methods.rti']['summary_1m'][
-            'incidence of death due to unavailable med per 100,000'].tolist()
+        rti_log['summary_1m']['incidence of death due to unavailable med per 100,000'].tolist()
     # Store incidences of death average per year in this sim
-    parsed_log['tlo.methods.rti']['summary_1m']['year'] = parsed_log['tlo.methods.rti']['summary_1m'][
-        'date'].dt.year
-    incidences_of_death_yearly_average = \
-        parsed_log['tlo.methods.rti']['summary_1m'].groupby('year').mean()['incidence of rti death per 100,000'] \
-            .tolist()
+    rti_log['summary_1m']['year'] = rti_log['summary_1m']['date'].dt.year
+    summary_1m_by_year_mean = rti_log['summary_1m'].groupby('year').mean()
+    incidences_of_death_yearly_average = summary_1m_by_year_mean['incidence of rti death per 100,000'].tolist()
     # Store the incidence of rtis average per year in this sim
-    incidences_of_rti_yearly_average = \
-        parsed_log['tlo.methods.rti']['summary_1m'].groupby('year').mean()['incidence of rti per 100,000'].tolist()
+    incidences_of_rti_yearly_average = summary_1m_by_year_mean['incidence of rti per 100,000'].tolist()
     # Store the incidence of rtis in children per year in this sim
-    incidences_of_rti_in_children = \
-        parsed_log['tlo.methods.rti']['summary_1m']['incidence of rti per 100,000 in children'].tolist()
+    incidences_of_rti_in_children = rti_log['summary_1m']['incidence of rti per 100,000 in children'].tolist()
     # Store the incidence of injuries per 100,000 in this sim
-    incidences_of_injuries = parsed_log['tlo.methods.rti']['summary_1m']['injury incidence per 100,000'].tolist()
+    incidences_of_injuries = rti_log['summary_1m']['injury incidence per 100,000'].tolist()
     # Get information on the deaths that occurred in the sim
     deaths_df = parsed_log['tlo.methods.demography']['death']
     # Create list of RTI specific deaths
@@ -361,11 +258,11 @@ def create_rti_data(logfile):
         ps_of_death_shock = 0
     # Get a rough estimate for the percentage road traffic injury deaths for those involved in RTI
     # Get the number of people with RTIs
-    number_of_crashes = sum(parsed_log['tlo.methods.rti']['summary_1m']['number involved in a rti'])
+    number_of_crashes = sum(rti_log['summary_1m']['number involved in a rti'])
     # Store the number of RTI deaths divided by the number of RTIs
     percent_of_fatal_crashes = rti_deaths / number_of_crashes
     # Get qualitative description of RTI injuries, stored in Injury_information
-    injury_info = parsed_log['tlo.methods.rti']['Injury_information']
+    injury_info = rti_log['Injury_information']
     # Get information on injury severity
     mild_inj = [1 for sublist in injury_info['Per_person_severity_category'].tolist() for item in sublist if
                 'mild' in item]
@@ -423,7 +320,7 @@ def create_rti_data(logfile):
     # Store the injury category information
     inj_cat_data = binned_cat_dist
     # Get information on the total incidence of injuries and the breakdown of injury by type
-    injury_category_incidence = parsed_log['tlo.methods.rti']['Inj_category_incidence']
+    injury_category_incidence = rti_log['Inj_category_incidence']
     inc_amputations = injury_category_incidence['inc_amputations'].tolist()
     inc_burns = injury_category_incidence['inc_burns'].tolist()
     inc_fractures = injury_category_incidence['inc_fractures'].tolist()
@@ -476,11 +373,11 @@ def create_rti_data(logfile):
     per_sim_open_frac = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Open_Fracture_Treatment'])
     per_sim_shock = len(appointments.loc[appointments['TREATMENT_ID'] == 'RTI_Shock_Treatment'])
     # store the relating to the percentage of injury severity in both rural and urban settings
-    per_sim_rural_severe = parsed_log['tlo.methods.rti']['injury_severity']['Percent_severe_rural'].tolist()
-    per_sim_urban_severe = parsed_log['tlo.methods.rti']['injury_severity']['Percent_severe_urban'].tolist()
+    per_sim_rural_severe = rti_log['injury_severity']['Percent_severe_rural'].tolist()
+    per_sim_urban_severe = rti_log['injury_severity']['Percent_severe_urban'].tolist()
     # Store the proportion of lower extremity fractures that are open in this sim
     proportions_of_open_lx_fractures_in_sim = \
-        [i for i in parsed_log['tlo.methods.rti']['Open_fracture_information']['Proportion_lx_fracture_open'].values
+        [i for i in rti_log['Open_fracture_information']['Proportion_lx_fracture_open'].values
          if i != 'no_lx_fractures']
     per_sim_average_percentage_lx_open = np.mean(proportions_of_open_lx_fractures_in_sim)
 
@@ -489,7 +386,7 @@ def create_rti_data(logfile):
     sim_start_date = parsed_log['tlo.methods.demography']['population']['date'].iloc[0]
     sim_end_date = parsed_log['tlo.methods.healthburden']['dalys']['date'].iloc[0]
     years_run = sim_end_date.year - sim_start_date.year
-    time = parsed_log['tlo.methods.rti']['summary_1m']['date'].tolist()
+    time = rti_log['summary_1m']['date'].tolist()
     results_dict = {'age_range': sim_age_range,
                     'male_age_range': sim_male_age_range,
                     'female_age_range': sim_female_age_range,
@@ -573,6 +470,7 @@ def create_rti_data(logfile):
                     'time': time
                     }
     return results_dict
+
 
 # create a function to plot general simulation outputs
 def create_rti_graphs(logfile_directory, save_directory, filename_description):
@@ -937,8 +835,9 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description):
     # Calculate the number of permanent disabilities due to RTI
     total_n_perm_disability = results_all_runs['number_perm_disabled'].mean()
     # Calculate the total number of people who survived their injuries
-    total_survived = total_n_crashes - total_n_hospital_deaths - total_n_prehospital_deaths - \
-                     total_n_no_hospital_deaths - total_n_unavailable_med_deaths
+    total_survived = \
+        total_n_crashes - total_n_hospital_deaths - total_n_prehospital_deaths - total_n_no_hospital_deaths - \
+        total_n_unavailable_med_deaths
     # Plot a pie chart showing the health outcomes of those with RTI
     plt.pie([total_survived, total_n_perm_disability, total_n_prehospital_deaths, total_n_hospital_deaths,
              total_n_no_hospital_deaths, total_n_unavailable_med_deaths], explode=None,
@@ -1026,8 +925,6 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description):
     overall_av_inc_sim = np.mean(average_incidence)
     # Calculate the overall average deaths incidence in the simulations
     overall_av_death_inc_sim = np.mean(average_deaths)
-    # Calculate the average injury incidence in the simulations
-    overall_av_inc_injuries = np.mean(average_injury_incidence)
     # Get the time stamps of the logging events to use as our x axis intervals
     time = results_all_runs['time'].iloc[-1]
     # plot the average incidence of rtis
@@ -1290,6 +1187,39 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description):
     average_number_of_pain_meds = results_all_runs['per_sim_pain_med'].mean()
     # Calculate average number of open fracture treatments provided
     average_number_of_open_fracs = results_all_runs['per_sim_open_frac'].mean()
+    # plot the average number of treatments provided in the simulations
+    data = [average_number_of_burns_treated,
+            average_number_of_fractures_treated,
+            average_number_of_lacerations_treated,
+            average_number_of_major_surgeries_performed,
+            average_number_of_minor_surgeries_performed,
+            average_number_of_tetanus_jabs,
+            average_number_of_pain_meds,
+            average_number_of_open_fracs]
+    labels = ['Burn\nmanagement', 'Fracture\ncast', 'Suture', 'Major\nsurgery', 'Minor\nsurgery', 'Tetanus\nvaccine',
+              'Pain\nmanagement', 'Open \nfracture\ntreatment']
+    # plot data in bar chart
+    plt.bar(np.arange(len(data)), data, color='cornflowerblue')
+    plt.xticks(np.arange(len(data)), labels)
+    plt.ylabel('Average number of appointments')
+    plt.title(f"Average number of HSI events performed per sim"
+              f"\n"
+              f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+
+    plt.savefig(save_directory + "/" + filename_description + "_" + "Average_HSI_appointments_per_sim.png",
+                bbox_inches='tight')
+    plt.clf()
+    # plot the average health system time usage on a bar chart
+    plt.bar(np.arange(1), mean_fraction_health_system_time_used, color='wheat')
+    plt.xticks(np.arange(1), ['Fraction of time'])
+    plt.ylabel('Average health system time usage')
+    plt.title(f"Average fraction of total health system time usage per sim"
+              f"\n"
+              f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+    plt.savefig(save_directory + "/" + filename_description + "_" + "Average_health_sys_time_used.png",
+                bbox_inches='tight')
+    plt.clf()
+
     # plot the number of consumables used on a bar chart
     plt.bar(np.arange(1), mean_consumables_used_per_sim, color='lightsteelblue')
     plt.xticks(np.arange(1), ['Consumables'])
@@ -1315,7 +1245,7 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description):
               f"\n"
               f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
     plt.savefig(save_directory + "/" + filename_description + "_" + "Average_inpatient_days_"
-                "used.png", bbox_inches='tight')
+                                                                    "used.png", bbox_inches='tight')
     plt.clf()
     # ================================== Plot inpatient day distribution ==================================================
     # Malawi injury inpatient days data from https://doi.org/10.1016/j.jsurg.2014.09.010
@@ -1323,9 +1253,9 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description):
     # Create labels
     labels = ['< 1', '1', '2', '3', '4-7', '8-14', '15-30', '> 30']
     # get data from https://doi.org/10.1016/j.jsurg.2014.09.010
-    inpatient_days_Tyson_et_al = [107 + 40, 854 + 56, 531 + 19, 365 + 22, 924 + 40, 705 + 23, 840 + 8, 555 + 11]
+    inpatient_days_tyson_et_al = [107 + 40, 854 + 56, 531 + 19, 365 + 22, 924 + 40, 705 + 23, 840 + 8, 555 + 11]
     # Calculate inpatient days distribution
-    inpatient_days_Tyson_et_al_dist = np.divide(inpatient_days_Tyson_et_al, sum(inpatient_days_Tyson_et_al))
+    inpatient_days_tyson_et_al_dist = np.divide(inpatient_days_tyson_et_al, sum(inpatient_days_tyson_et_al))
     # Sort model data to fit the above boundaries
     zero_days = [1 if inpatient_day == 0 else 0 for inpatient_day in flatten_inpatient_days]
     one_day = [1 if inpatient_day == 1 else 0 for inpatient_day in flatten_inpatient_days]
@@ -1341,7 +1271,7 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description):
     # Calculate distribution of inpatient days in model
     model_inpatient_days_dist = np.divide(model_inpatient_days, sum(model_inpatient_days))
     # plot data in a bar chart
-    plt.bar(np.arange(len(inpatient_days_Tyson_et_al_dist)), inpatient_days_Tyson_et_al_dist, width=0.3,
+    plt.bar(np.arange(len(inpatient_days_tyson_et_al_dist)), inpatient_days_tyson_et_al_dist, width=0.3,
             color='lightsalmon', label='Inpatient day data\nfrom Kamuza central hospital')
     plt.bar(np.arange(len(model_inpatient_days_dist)) + 0.5, model_inpatient_days_dist, width=0.3,
             color='lightsteelblue', label='Model inpatient days')
@@ -1354,7 +1284,7 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description):
               f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 
     plt.savefig(save_directory + "/" + filename_description + "_" + "Inpatient_day_distribution_comp_"
-                "to_kamuzu.png", bbox_inches='tight')
+                                                                    "to_kamuzu.png", bbox_inches='tight')
     plt.clf()
 
     # ====================== Compare inpatient admissions from the model to Kamuzu central hospital data =========
@@ -1388,4 +1318,3 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description):
     plt.savefig(save_directory + "/" + filename_description + "_" + "Inpatient_day_distribution.png",
                 bbox_inches='tight')
     plt.clf()
-
