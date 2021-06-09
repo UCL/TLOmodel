@@ -1,11 +1,7 @@
 import datetime
-import os
-import time
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -35,7 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 seed = 100
 
 log_config = {
-    'filename': 'measles_analysis',   # The name of the output file (a timestamp will be appended).
+    'filename': 'measles_analysis',  # The name of the output file (a timestamp will be appended).
     'directory': './outputs',  # The default output path is `./outputs`. Change it here, if necessary
     'custom_levels': {  # Customise the output of specific loggers. They are applied in order:
         '*': logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
@@ -50,7 +46,6 @@ pop_size = 25000
 
 # Path to the resource files used by the disease and intervention methods
 resources = Path('./resources')
-
 
 # ------------------------------------- BASELINE  ------------------------------------- #
 sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
@@ -112,7 +107,6 @@ baseline_deaths = deaths_df.loc[deaths_df['cause'].str.startswith('measles')].gr
 # symptoms
 symptoms_output = log_df['tlo.methods.measles']['measles_symptoms']
 symptoms_output.to_csv(r'./outputs/Measles_symptom_distribution.csv', index=False)
-
 
 # # ------------------------------------- STOP VACCINES FROM 2019  ------------------------------------- #
 # # vaccines still available from 2010-2018 but not through HSI from 2019 onwards
@@ -304,5 +298,3 @@ symptoms_output.to_csv(r'./outputs/Measles_symptom_distribution.csv', index=Fals
 # baseline_measles_age.to_csv(r'./outputs/Measles_age_distribution.csv', index=False)
 # stop_vaccine_measles_age.to_csv(r'./outputs/Measles_age_distribution_stop_vaccine.csv', index=False)
 #
-
-
