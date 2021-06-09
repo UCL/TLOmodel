@@ -5,6 +5,9 @@ health burdens and healthsytstem usage)
 Run on the batch system using:
 ```tlo batch-submit src/scripts/calibration_analyses/long_run/long_run.py```
 
+or locally using:
+    ```tlo scenario-run src/scripts/calibration_analyses/long_run/long_run.py```
+
 """
 
 import numpy as np
