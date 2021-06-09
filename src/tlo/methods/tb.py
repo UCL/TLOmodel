@@ -472,9 +472,6 @@ class Tb(Module):
             Predictor('age_years').when('<15', p["prob_latent_tb_0_14"]).otherwise(p["prob_latent_tb_15plus"]),
         )
 
-        # linear model for relative risk of active tb infection
-        # intercept= prog_active
-
         # adults progressing to active disease
         self.lm['active_tb'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -597,14 +594,13 @@ class Tb(Module):
                       ~df.hv_inf &
                       (rng.rand() < p['prop_fast_progressor'])].index
 
-        if 'Hiv' in self.sim.modules:
-            fast_hiv = df.loc[(df.tb_date_latent == now) &
-                              df.is_alive &
-                              (df.age_years >= 15) &
-                              df.hv_inf &
-                              (rng.rand() < p['prop_fast_progressor_hiv'])].index
+        fast_hiv = df.loc[(df.tb_date_latent == now) &
+                          df.is_alive &
+                          (df.age_years >= 15) &
+                          df.hv_inf &
+                          (rng.rand() < p['prop_fast_progressor_hiv'])].index
 
-            fast = fast.union(fast_hiv)  # join indices (checked)
+        fast = fast.union(fast_hiv)  # join indices (checked)
 
         for person in fast:
             self.sim.schedule_event(TbActiveEvent(self, person), now)
@@ -743,9 +739,14 @@ class Tb(Module):
 
     def initialise_population(self, population):
 
-        # Set our property values for the initial population
         df = population.props
 
+        # if HIV is not registered, create a dummy property
+        if 'Hiv' not in self.sim.modules:
+            population.make_test_property('hv_inf', Types.BOOL)
+            df['hv_inf'] = False
+
+        # Set our property values for the initial population
         df['tb_inf'].values[:] = 'uninfected'
         df['tb_strain'].values[:] = 'none'
 
@@ -1218,14 +1219,14 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
                 )
 
             # -------- 4) if HIV+ schedule AIDS onset --------
-            if 'Hiv' in self.sim.modules:
-                # todo think about logging COD in HIV/TB
-                if df.at[person_id, 'hv_inf']:
-                    self.sim.schedule_event(hiv.HivAidsOnsetEvent(self.sim.modules['Hiv'], person_id), now)
-
+            if df.at[person_id, 'hv_inf']:
                 # higher probability of being smear positive
                 if rng.rand() < params['prop_smear_positive_hiv']:
                     df.at[person_id, 'tb_smear'] = True
+
+                if 'Hiv' in self.sim.modules:
+                    # todo think about logging COD in HIV/TB
+                    self.sim.schedule_event(hiv.HivAidsOnsetEvent(self.sim.modules['Hiv'], person_id), now)
 
         # todo add tb_stage == active_extra with prob based on HIV status
 
@@ -1356,7 +1357,6 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
 
-#
 # # ---------------------------------------------------------------------------
 # #   HEALTH SYSTEM INTERACTIONS
 # # ---------------------------------------------------------------------------
