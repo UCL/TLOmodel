@@ -93,9 +93,9 @@ class BedDays(Module):
         # Schedule the first (repeating daily) event to update status of hs_is_in_patient
         sim.schedule_event(RefreshInPatientStatus(self), sim.date)
 
-    def on_simulation_end(self):
-        """Get the record of the bed_tracker and put into the log"""
-        self.log_bed_tracker()
+    # def on_simulation_end(self):
+    #     """Get the record of the bed_tracker and put into the log"""
+    #     print(self.bed_tracker)
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -143,18 +143,19 @@ class BedDays(Module):
                 pd.DatetimeIndex(new_index)).sort_index()  # update the index
         return tracker
 
-    def log_bed_tracker(self):
-        """Dump entire current status of bed-day tracker to the log"""
+    def log_yesterday_info_from_bed_tracker(self):
+        """Dump yesterday's status of bed-day tracker to the log"""
         for bed_type in self.bed_tracker:
             for index, row in self.bed_tracker[bed_type].iterrows():
                 row.index = row.index.astype(str)
                 row['Facility_Name'] = index
-
                 logger.info(
                     key=f'bed_tracker_{bed_type}',
                     data=row,
                     description=f'dataframe of bed_tracker of type {bed_type}, broken down by day and facility'
                 )
+                break
+        self.move_tracker_by_one_day(self.bed_tracker)
 
     def get_footprint_according_to_capacity(self, footprint):
         """A function to check if the required bed days are within or beyond the facility bed days capacity.
@@ -348,3 +349,4 @@ class RefreshInPatientStatus(RegularEvent, PopulationScopeEventMixin):
             ((~df.loc[df.is_alive, exit_cols].isnull()) & ~(
                 df.loc[df.is_alive, exit_cols] < self.sim.date)).any(axis=1)
 
+        #  self.module.log_yesterday_info_from_bed_tracker()

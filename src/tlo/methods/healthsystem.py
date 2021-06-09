@@ -1036,6 +1036,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(days=1))
 
     def apply(self, population):
+        #  logging yesterday's date and move bed days tracker by one day
+        self.module.sim.modules['BedDays'].log_yesterday_info_from_bed_tracker()
 
         # 0) Determine the availability of consumables today based on their probabilities
         self.module.determine_availability_of_consumables_today()
@@ -1366,6 +1368,7 @@ class HSI_Event:
                 footprint[k] = v
 
             # check the footprint against capacity and return bed days according to capacity
+            #  todo -- move the available_footprint check to line 1161
             available_footprint = self.module.sim.modules['BedDays'].get_footprint_according_to_capacity(
                 footprint)
             return available_footprint
