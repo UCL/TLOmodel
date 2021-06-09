@@ -1,6 +1,6 @@
 """
-This file runs the NCDs module and outputs graphs with data for comparison for incidence, prevalence, and deaths.
-It also produces a csv file of prevalence of different co-morbidities.
+This file runs the CardioMetabolicDisorders module and outputs graphs with data for comparison for incidence,
+prevalence, and deaths. It also produces a csv file of prevalence of different co-morbidities.
 """
 
 import datetime
@@ -14,6 +14,8 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     bladder_cancer,
+    cardio_metabolic_disorders,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     depression,
@@ -23,8 +25,9 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    ncds,
+    newborn_outcomes,
     oesophagealcancer,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -43,12 +46,13 @@ def runsim(seed=0):
 
     start_date = Date(2010, 1, 1)
     end_date = Date(2020, 12, 31)
-    popsize = 10000
+    popsize = 20000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
@@ -56,8 +60,10 @@ def runsim(seed=0):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 ncds.Ncds(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
@@ -76,7 +82,7 @@ output = parse_log_file(sim.log_filepath)
 # ----------------------------------------------- SET UP FUNCTIONS ----------------------------------------------
 
 # list all of the conditions in the module to loop through
-conditions = sim.modules['Ncds'].conditions
+conditions = sim.modules['CardioMetabolicDisorders'].conditions
 age_range = sim.modules['Demography'].AGE_RANGE_CATEGORIES
 
 
@@ -118,14 +124,14 @@ for condition in conditions:
     # Plot prevalence by age and sex for each condition
     prev_condition_age_sex = restore_multi_index(
         transform_output(
-            output['tlo.methods.ncds'][f'{condition}_prevalence_by_age_and_sex']
+            output['tlo.methods.cardio_metabolic_disorders'][f'{condition}_prevalence_by_age_and_sex']
         )
     )
 
-    # need to drop some age cats to match model
-    data = sim.modules['Ncds'].parameters[f'{condition}_initial_prev']
-    asymptomatic_error = [(data['value'].values - data['lower'].values),
-                          (data['upper'].values - data['value'].values)]
+    # get prevalence + lower and upper values
+    prev_range = pd.read_excel("resources/cmd/ResourceFile_cmd_condition_prevalence.xlsx", sheet_name=None)
+    asymptomatic_error = [(prev_range[f'{condition}']['value'].values - prev_range[f'{condition}']['lower'].values),
+                          (prev_range[f'{condition}']['upper'].values - prev_range[f'{condition}']['value'].values)]
 
     bar_width = 0.75
     opacity = 0.25
@@ -143,12 +149,13 @@ for condition in conditions:
                   alpha=opacity,
                   color='b',
                   label='Model')
-    scatter = plt.scatter(data.index, data['value'].values, s=20,
+    scatter = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values, s=20,
                           alpha=1.0,
                           color='gray',
                           label="Data")
     plt.xticks(rotation=90)
-    plt.errorbar(data.index, data['value'].values, yerr=asymptomatic_error, fmt='o', c='gray')
+    plt.errorbar(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values, yerr=asymptomatic_error,
+                 fmt='o', c='gray')
     plt.ylabel(f'Proportion With {condition_title}')
     plt.title(f'Prevalence of {condition_title} by Age and Sex')
     plt.legend([bar, scatter], ['Model', 'Data'])
@@ -158,7 +165,7 @@ for condition in conditions:
     plt.show()
 
     # Plot prevalence among all adults over time for each condition
-    prev_condition_all = output['tlo.methods.ncds'][f'{condition}_prevalence']
+    prev_condition_all = output['tlo.methods.cardio_metabolic_disorders'][f'{condition}_prevalence']
     plt.plot(prev_condition_all)
     plt.ylabel(f'Prevalence of {condition_title} Over Time (Ages 20+)')
     plt.xlabel('Year')
@@ -169,7 +176,7 @@ for condition in conditions:
 
 # plot prevalence of multi-morbidities
 age_range = sim.modules['Demography'].AGE_RANGE_CATEGORIES
-prev_mm_age_all = convert_output(output['tlo.methods.ncds']['mm_prevalence_by_age_all'])
+prev_mm_age_all = convert_output(output['tlo.methods.cardio_metabolic_disorders']['mm_prevalence_by_age_all'])
 last_year = prev_mm_age_all.iloc[-1, :].to_frame(name="counts")
 n_conditions_by_age = pd.DataFrame(index=last_year.index, columns=age_range)
 for age_grp in age_range:
@@ -242,7 +249,7 @@ plt.show()
 
 # ----------------------------------------------- RETRIEVE COMBINATION OF CONDITIONS ----------------------------------
 
-prop_combos = convert_output(output['tlo.methods.ncds']['prop_combos'])
+prop_combos = convert_output(output['tlo.methods.cardio_metabolic_disorders']['prop_combos'])
 last_year = prop_combos.iloc[-1, :].to_frame(name="props")
 props_by_age = pd.DataFrame(index=last_year.index, columns=age_range)
 for age_grp in age_range:
@@ -258,14 +265,14 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     output = parse_log_file(logfile)
 
     # Calculate the "incidence rate" from the output counts of incidence
-    counts = convert_output(output['tlo.methods.ncds']['incidence_count_by_condition'])
+    counts = convert_output(output['tlo.methods.cardio_metabolic_disorders']['incidence_count_by_condition'])
 
     # create empty dict to store incidence rates
     inc_rate = dict()
 
     for condition in conditions:
         # get person-years of time lived without condition
-        py_ = output['tlo.methods.ncds'][f'person_years_{condition}']
+        py_ = output['tlo.methods.cardio_metabolic_disorders'][f'person_years_{condition}']
         years = pd.to_datetime(py_['date']).dt.year
         py = pd.DataFrame(index=years, columns=age_range)
 
@@ -312,7 +319,7 @@ def plot_for_column_of_interest(results, column_of_interest):
     data = 100 * pd.concat(summary_table, axis=1)
     data.plot.bar()
     plt.title(f'Incidence rate (/100 py): {column_of_interest}')
-    plt.savefig(outputpath / ("NCDs_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
+    plt.savefig(outputpath / ("CardioMetabolicDisorders_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
     plt.show()
 
 
