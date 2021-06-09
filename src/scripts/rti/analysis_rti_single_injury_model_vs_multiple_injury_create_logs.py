@@ -44,7 +44,7 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 20000
+pop_size = 30000
 nsim = 3
 # Create a variable whether to save figures or not (used in debugging)
 save_figures = True
@@ -209,14 +209,14 @@ n = np.arange(3)
 plt.bar(n, results_gbd, width=0.3, color='lightsalmon', label='GBD estimates')
 plt.bar(n + 0.3, results_single, width=0.3, color='lightsteelblue', label='Single injury model run')
 plt.bar(n + 0.6, results_mult, width=0.3, color='burlywood', label='multiple injury model run')
-plt.xticks(n + 0.45, ['Incidence of \nRTI', 'Incidence of \nRTI death', 'Incidence of \ninjuries'])
+plt.xticks(n + 0.3, ['Incidence of \nRTI', 'Incidence of \nRTI death', 'Incidence of \ninjuries'])
 for i in range(len(results_gbd)):
     plt.annotate(str(np.round(results_gbd[i], 1)), xy=(n[i], results_gbd[i]), ha='center', va='bottom', rotation=60)
 for i in range(len(results_single)):
-    plt.annotate(str(np.round(results_single[i], 1)), xy=(n[i] + 0.2, results_single[i]), ha='center', va='bottom',
+    plt.annotate(str(np.round(results_single[i], 1)), xy=(n[i] + 0.3, results_single[i]), ha='center', va='bottom',
                  rotation=60)
 for i in range(len(results_mult)):
-    plt.annotate(str(np.round(results_mult[i], 1)), xy=(n[i] + 0.4, results_mult[i]), ha='center', va='bottom',
+    plt.annotate(str(np.round(results_mult[i], 1)), xy=(n[i] + 0.6, results_mult[i]), ha='center', va='bottom',
                  rotation=60)
 
 plt.ylabel('Incidence per 100,000')
@@ -225,17 +225,19 @@ plt.title(f"The effect of allowing multiple injuries\n in the model on populatio
           f"Number of simulations: {nsim}, population size: {pop_size}, years run: {yearsrun}")
 plt.savefig(save_file_path + f"Single_vs_multiple_injuries_full_comp_imm_death_{imm_death}.png",
             bbox_inches='tight')
+plt.ylim([0, 1200])
 plt.clf()
-plt.bar(np.arange(2), results_gbd, width=0.3, color='lightsalmon', label='GBD estimates')
+plt.bar(np.arange(2), results_single, width=0.3, color='lightsalmon', label='GBD estimates')
 plt.bar(np.arange(2) + 0.3, results_mult, width=0.3, color='burlywood', label='multiple injury model run')
 plt.xticks(n + 0.3, ['Incidence of \nRTI', 'Incidence of \nRTI death', 'Incidence of \ninjuries'])
-for i in range(len(results_gbd)):
-    plt.annotate(str(np.round(results_gbd[i], 1)), xy=(n[i], results_gbd[i]), ha='center', va='bottom', rotation=60)
+for i in range(len(results_single)):
+    plt.annotate(str(np.round(results_single[i], 1)), xy=(n[i], results_single[i]), ha='center', va='bottom',
+                 rotation=60)
 for i in range(len(results_mult)):
-    plt.annotate(str(np.round(results_mult[i], 1)), xy=(n[i] + 0.4, results_mult[i]), ha='center', va='bottom',
+    plt.annotate(str(np.round(results_mult[i], 1)), xy=(n[i] + 0.3, results_mult[i]), ha='center', va='bottom',
                  rotation=60)
 plt.ylabel('Incidence per 100,000')
 plt.legend()
 plt.title(f"The effect of allowing multiple injuries\n in the model on population health outcomes.\n"
           f"Number of simulations: {nsim}, population size: {pop_size}, years run: {yearsrun}")
-plt.savefig(save_file_path + f"Single_vs_multiple_injuries_imm_death_{imm_death}.png", bbox_inches='tight')
+plt.savefig(save_file_path + f"Single_vs_multiple_injurie_model_comp_imm_death_{imm_death}.png", bbox_inches='tight')
