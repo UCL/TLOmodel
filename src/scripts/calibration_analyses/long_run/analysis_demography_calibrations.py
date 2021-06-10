@@ -1,8 +1,7 @@
 """
 Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths.
 
-This uses Scenario file: src/scripts/long_run/long_run.py
-
+This uses the results of the Scenario defined in: src/scripts/long_run/long_run.py
 """
 # TODO GET SCALING FACTOR FROM INSIDE SIM LOG
 
@@ -371,7 +370,7 @@ deaths_model['Variant'] = 'Model_' + deaths_model['Variant']
 wpp_deaths = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")
 
 # Load GBD
-gbd = format_gbd(pd.read_csv(rfp / "demography" / "ResourceFile_TotalDeaths_GBD.csv"))
+gbd = format_gbd(pd.read_csv(rfp / "gbd" / "ResourceFile_TotalDeaths_GBD.csv"))
 
 # Compute sums by period
 gbd = pd.DataFrame(gbd.drop(columns=['Year']).groupby(by=['Period', 'Sex', 'Age_Grp', 'Variant']).sum()).reset_index()
