@@ -40,7 +40,7 @@ class HealthBurden(Module):
         'Age_Limit_For_YLL': Parameter(
             Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
         'gbd_causes_of_disability': Parameter(
-            Types.LIST, 'List of the strings of causes of disability defined in the GBD data')
+            Types.SET, 'Set of the strings of causes of disability defined in the GBD data')
     }
 
     PROPERTIES = {}
@@ -49,9 +49,8 @@ class HealthBurden(Module):
         p = self.parameters
         p['DALY_Weight_Database'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_DALY_Weights.csv')
         p['Age_Limit_For_YLL'] = 70.0  # Assumption that only deaths younger than 70y incur years of lost life
-        p['gbd_causes_of_disability'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'
-        ).loc[lambda df: df['measure_name'] == 'DALYs (Disability-Adjusted Life Years)']['cause_name'].unique().tolist()
+        p['gbd_causes_of_disability'] = set(pd.read_csv(
+            Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDALYS_GBD2019.csv', header=None)[0].values)
 
     def initialise_population(self, population):
         pass

@@ -8,11 +8,13 @@ The following files are created:
 
 * 'ResourceFile_Deaths_And_DALYS_GBD2019.csv': the GBD 2019 data, with some light fomatting done to aid use.
 
-* ResourceFile_TotalDeaths_GBD: all-cause deaths by age/sex/year (in standard groups): used in calibrations
+* `ResourceFile_TotalDeaths_GBD2019`: all-cause deaths by age/sex/year (in standard groups): used in calibrations
 
-todo:
-* ResourceFile_CausesOfDeath_GBD: used during simulation by 'Demography' module to construct the death rates used in the
+* `ResourceFile_CausesOfDeath_GBD2019`: used during simulation by 'Demography' module to construct the death rates used in the
  `OtherDeathPoll`
+
+* `ResourceFile_CausesOfDALYS_GBD2019`: used during simulation by 'HealthBurden' module to retrive all the causes of DALYS
+
 """
 
 from pathlib import Path
@@ -100,14 +102,14 @@ assert not pd.isnull(gbd).any().any()
 gbd.to_csv(path_for_saved_files / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv', index=False)
 
 
-# %% Make: ResourceFile_TotalDeaths_GBD
+# %% Make: ResourceFile_TotalDeaths_GBD2019
 # Output Deaths (all-cause) using standard Age-Grps
 gbd_deaths = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
 gbd_deaths = gbd_deaths.groupby(by=['Year', 'Sex', 'Age_Grp'], as_index=False)[['GBD_Est', 'GBD_Lower', 'GBD_Upper']].sum()
 gbd_deaths = gbd_deaths.melt(id_vars=['Year', 'Sex', 'Age_Grp'], var_name='Variant', value_name='Count')
 gbd_deaths.to_csv(path_for_saved_files / 'ResourceFile_TotalDeaths_GBD2019.csv', index=False)
 
-# %% Make: ResourceFile_CausesOfDeath_GBD
+# %% Make: ResourceFile_CausesOfDeath_GBD2019
 
 cod = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
 
@@ -127,3 +129,9 @@ causes_of_death = gbd.loc[gbd['measure_name'] == 'Deaths', 'cause_name'].unique(
 assert set(prop_deaths.columns) == set(causes_of_death)
 
 prop_deaths.reset_index().to_csv(path_for_saved_files / 'ResourceFile_CausesOfDeath_GBD2019.csv', index=False)
+
+# %% Make: ResourceFile_CausesOfDALYS_GBD2019
+causes_of_disability = gbd.loc[lambda df: df['measure_name'] == 'DALYs (Disability-Adjusted Life Years)'][
+    'cause_name'].unique().tolist()
+pd.Series(causes_of_disability).to_csv(path_for_saved_files / 'ResourceFile_CausesOfDALYS_GBD2019.csv',
+                                       index=False, header=False)

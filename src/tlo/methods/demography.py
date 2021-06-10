@@ -505,8 +505,13 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # Get the all-cause risk of death per poll
         all_cause_mort_risk = self.get_all_cause_mort_risk_per_poll()
 
-        # Get the proportion of the total death rates that the OtherDeathPollEvent must represent
+        # Get the proportion of the total death rates that the OtherDeathPollEvent must represent (and log it)
         prop_of_deaths_to_represent = self.get_proportion_of_deaths_to_represent_as_other_deaths()
+        logger.info(
+            key='other_deaths',
+            data=prop_of_deaths_to_represent,
+            description='proportion of all deaths that are represented as OtherDeaths'
+        )
 
         # Mulitiply probabilities by the proportion of deaths that are to be represented by OtherDeathPollEvent
         all_cause_mort_risk['age_group'] = all_cause_mort_risk['age_years'].map(self.module.AGE_RANGE_LOOKUP)
