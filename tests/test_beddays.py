@@ -473,3 +473,30 @@ def test_bed_days_if_healthsystem_is_disabled():
     check_bed_days_basics(hs_disable=True)
     # check_bed_days_property_is_inpatient(hs_disable=True)
     # check_bed_days_released_on_death(hs_disable=True)
+
+
+def test_example_for_Emmanuel_of_reading_the_generated_log_file(tmpdir):
+    """This is an example from Emmanuel  of reading the log file that is generated during the run of the simulation.
+    He will need this to finish off the tests being developed in this file.
+    This test can be DELETED when this PR is ready.
+    """
+
+    sim = Simulation(start_date=Date(2010, 1, 1), show_progress_bar=True, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "*": logging.INFO,
+        }
+    })
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        bed_days.BedDays(resourcefilepath=resourcefilepath)
+    )
+    sim.make_initial_population(n=1000)
+    sim.simulate(end_date=Date(2011, 12, 31))
+
+    # Read the log file and generate the output:
+    output = parse_log_file(sim.log_filepath)
+
+    bed_days_log_output = output['tlo.methods.bed_days']
