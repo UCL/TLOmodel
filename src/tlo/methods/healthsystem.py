@@ -1408,7 +1408,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 self.module.get_appt_footprint_as_time_request(hsi_event=(event_tuple[4]))
                 for event_tuple in list_of_individual_hsi_event_tuples_due_today
             ]
-            total_footprint = sum(footprints_of_all_individual_level_hsi_event, Counter())
+
+            # Compute total appointment footprint across all events
+            # Summing manually in loop seems to be ~3 time quicker than
+            # sum(footprints_of_all_individual_level_hsi_event, Counter())
+            total_footprint = Counter()
+            for footprint in footprints_of_all_individual_level_hsi_event:
+                total_footprint += footprint
 
             # 5) Estimate Squeeze-Factors for today
             if self.module.mode_appt_constraints == 0:
