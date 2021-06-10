@@ -108,4 +108,22 @@ gbd_deaths = gbd_deaths.melt(id_vars=['Year', 'Sex', 'Age_Grp'], var_name='Varia
 gbd_deaths.to_csv(path_for_saved_files / 'ResourceFile_TotalDeaths_GBD.csv', index=False)
 
 # %% Make: ResourceFile_CausesOfDeath_GBD
-#todo
+
+cod = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
+
+# Find the latest year
+latest_year = max(cod['Year'])
+
+# Produce pivot table that gives causes of death in columns
+cod = cod.loc[cod['Year'] == latest_year].groupby(by=['Sex', 'Age_Grp', 'cause_name'], as_index=False)[['GBD_Est']].sum()
+cod = cod.pivot(index=['Sex', 'Age_Grp'], columns='cause_name', values='GBD_Est').fillna(0)
+
+# Compute the proportion of deaths due to each cause (within each sex/age group)
+prop_deaths = cod.div(cod.sum(axis=1), axis=0)
+assert (abs(1.0 - prop_deaths.sum(axis=1)) < 1e-6).all()
+
+# Check that every cause is represented in this table
+causes_of_death = gbd.loc[gbd['measure_name'] == 'Deaths', 'cause_name'].unique()
+assert set(prop_deaths.columns) == set(causes_of_death)
+
+prop_deaths.to_csv(path_for_saved_files / 'ResourceFile_CausesOfDeath_GBD.csv', index=False)

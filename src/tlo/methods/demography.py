@@ -539,26 +539,27 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
     def get_gbd_proportion_of_death_by_cause(self):
         """Compute the fraction of deaths due to each cause (for the latest year available)"""
-        # Get the full GBD dataset and find the latest year
-        gbd = self.module.parameters['gbd_data']
-        latest_year = max(gbd['Year'])
-
-        # Produce pivot table that gives causes of death in columns
-        gbd_deaths = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
-        gbd_deaths = \
-        gbd_deaths.loc[gbd_deaths['Year'] == latest_year].groupby(by=['Sex', 'Age_Grp', 'cause_name'], as_index=False)[
-            ['GBD_Est']].sum()
-        gbd_deaths = gbd_deaths.pivot(index=['Sex', 'Age_Grp'], columns='cause_name', values='GBD_Est').fillna(0)
-
-        # Compute the proportion of deaths due to each cause (within each sex/age group)
-        prop_deaths = gbd_deaths.div(gbd_deaths.sum(axis=1), axis=0)
-        assert (abs(1.0 - prop_deaths.sum(axis=1)) < 1e-6).all()
-
-        # Check that every cause is represented in this table
-        causes_of_death = gbd.loc[gbd['measure_name'] == 'Deaths', 'cause_name'].unique()
-        assert set(prop_deaths.columns) == set(causes_of_death) == self.module.gbd_causes_of_death
-
-        return prop_deaths
+        raise NotImplementedError
+        # # Get the full GBD dataset and find the latest year
+        # gbd = self.module.parameters['gbd_data']
+        # latest_year = max(gbd['Year'])
+        #
+        # # Produce pivot table that gives causes of death in columns
+        # gbd_deaths = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
+        # gbd_deaths = \
+        # gbd_deaths.loc[gbd_deaths['Year'] == latest_year].groupby(by=['Sex', 'Age_Grp', 'cause_name'], as_index=False)[
+        #     ['GBD_Est']].sum()
+        # gbd_deaths = gbd_deaths.pivot(index=['Sex', 'Age_Grp'], columns='cause_name', values='GBD_Est').fillna(0)
+        #
+        # # Compute the proportion of deaths due to each cause (within each sex/age group)
+        # prop_deaths = gbd_deaths.div(gbd_deaths.sum(axis=1), axis=0)
+        # assert (abs(1.0 - prop_deaths.sum(axis=1)) < 1e-6).all()
+        #
+        # # Check that every cause is represented in this table
+        # causes_of_death = gbd.loc[gbd['measure_name'] == 'Deaths', 'cause_name'].unique()
+        # assert set(prop_deaths.columns) == set(causes_of_death) == self.module.gbd_causes_of_death
+        #
+        # return prop_deaths
 
     def apply(self, population):
         """Randomly select some persons to die of the 'Other' tlo cause (the causes of death that are not represented
