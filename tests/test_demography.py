@@ -152,7 +152,7 @@ def test_cause_of_death_being_registered():
         diarrhoea.Diarrhoea(resourcefilepath=rfp),
         hiv.Hiv(resourcefilepath=rfp),
         malaria.Malaria(resourcefilepath=rfp),
-        cardio_metabolic_disorders.CardiometabolicDisorders(resourcefilepath=rfp),
+        cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=rfp),
         oesophagealcancer.OesophagealCancer(resourcefilepath=rfp),
         contraception.Contraception(resourcefilepath=rfp),
         labour.Labour(resourcefilepath=rfp),
