@@ -40,7 +40,7 @@ class HealthBurden(Module):
         'Age_Limit_For_YLL': Parameter(
             Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
         'gbd_causes_of_disability': Parameter(
-            Types.SET, 'Set of the strings of causes of disability defined in the GBD data')
+            Types.LIST, 'Set of the strings of causes of disability defined in the GBD data')
     }
 
     PROPERTIES = {}

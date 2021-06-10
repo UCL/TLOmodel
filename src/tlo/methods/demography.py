@@ -509,7 +509,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         prop_of_deaths_to_represent = self.get_proportion_of_deaths_to_represent_as_other_deaths()
         logger.info(
             key='other_deaths',
-            data=prop_of_deaths_to_represent,
+            data=prop_of_deaths_to_represent.reset_index().to_dict(),
             description='proportion of all deaths that are represented as OtherDeaths'
         )
 

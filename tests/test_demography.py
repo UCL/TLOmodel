@@ -195,6 +195,13 @@ def test_cause_of_death_being_registered(tmpdir):
         actual_risk_per_poll['prob_of_dying_before_next_poll'] < all_cause_risk['prob_of_dying_before_next_poll']
     ).all()
 
+    # check that can recover from the log the proportion of deaths represented by the OtherDeaths
+    logged_prop_of_death_by_odp = demoglog['other_deaths'][['Sex', 'Age_Grp', '0']].to_dict()
+    dict_of_ser = {k: pd.DataFrame(v)[0] for k, v in logged_prop_of_death_by_odp.items()}
+    log_odp = pd.concat(dict_of_ser, axis=1).set_index(['Sex', 'Age_Grp'])['0']
+    assert (log_odp < 1.0).all()
+    actual_risk_per_poll / all_cause_risk.set_index(['Sex', 'Age_Grp'])
+
 
 def test_py_calc(simulation):
     # make population of one person:
