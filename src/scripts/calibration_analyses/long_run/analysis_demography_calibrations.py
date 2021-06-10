@@ -63,11 +63,8 @@ log = load_pickled_dataframes(results_folder)
 # get basic information about the results
 info = get_scenario_info(results_folder)
 
-# 1) Extract the parameters that have varied over the set of simulations
-try:
-    params = extract_params(results_folder)
-except KeyError:
-    print("No parameters changed between the runs")
+# 1) Extract the parameters that have varied over the set of simulations (will report that no parameters changed)
+params = extract_params(results_folder)
 
 # %% Population Size
 # Trend in Number Over Time
@@ -76,10 +73,12 @@ except KeyError:
 
 # Load and format model results (with year as integer):
 pop_model = summarize(extract_results(results_folder,
-                            module="tlo.methods.demography",
-                            key="population",
-                            column="total",
-                            index="date"),
+                                      module="tlo.methods.demography",
+                                      key="population",
+                                      column="total",
+                                      index="date",
+                                      do_scaling=True
+                                      ),
                       collapse_columns=True
                       )
 pop_model.index = pop_model.index.year
@@ -87,21 +86,12 @@ pop_model.index = pop_model.index.year
 # Load Data: WPP_Annual
 wpp_ann = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
 wpp_ann['Age_Grp'] = wpp_ann['Age_Grp'].astype(make_age_grp_types())
-
 wpp_ann_total = wpp_ann.groupby(['Year']).sum().sum(axis=1)
 
 # Load Data: Census
 cens = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
 cens['Age_Grp'] = cens['Age_Grp'].astype(make_age_grp_types())
-
 cens_2018 = cens.groupby('Sex')['Count'].sum()
-
-# Work out the scaling-factor (using mean in case sampling is ever greater than once per year):
-mean_pop_2018 = pop_model.loc[pop_model.index == 2018, 'mean'].mean()
-sf = cens_2018.sum() / mean_pop_2018
-
-# Update the model results to incorporate the scaling factor
-pop_model *= sf
 
 # Plot population size over time
 fig, ax = plt.subplots()
@@ -140,18 +130,20 @@ pop_model_male = summarize(extract_results(results_folder,
                             module="tlo.methods.demography",
                             key="population",
                             column="male",
-                            index="date"),
+                            index="date",
+                                           do_scaling=True),
                       collapse_columns=True
-                      ).mul(sf)
+                      )
 pop_model_male.index = pop_model_male.index.year
 
 pop_model_female = summarize(extract_results(results_folder,
                             module="tlo.methods.demography",
                             key="population",
                             column="female",
-                            index="date"),
+                            index="date",
+                                             do_scaling=True),
                       collapse_columns=True
-                      ).mul(sf)
+                      )
 pop_model_female.index = pop_model_female.index.year
 
 pop_2018 = {
@@ -209,7 +201,8 @@ def get_mean_pop_by_age_for_sex_and_year(sex, year):
                                 module="tlo.methods.demography",
                                 key=key,
                                 column=agegroup,
-                                index="date"),
+                                index="date",
+                                        do_scaling=True),
                   collapse_columns=True,
                   only_mean=True
                   )
@@ -225,7 +218,7 @@ for year in [2018, 2030]:
     pops = dict()
     for sex in ['M', 'F']:
         # Import model results and scale:
-        model = get_mean_pop_by_age_for_sex_and_year(sex, year).mul(sf)
+        model = get_mean_pop_by_age_for_sex_and_year(sex, year)
 
         # Make into dataframes for plotting:
         pops[sex] = {
@@ -267,10 +260,11 @@ births_by_year = summarize(extract_results(
     module="tlo.methods.demography",
     key="on_birth",
     custom_generate_series="assign(year = lambda x: x['date'].dt.year)"
-                           ".groupby(['year'])['year'].count()"
+                           ".groupby(['year'])['year'].count()",
+    do_scaling=True
 ),
     collapse_columns=True
-).mul(sf)
+)
 
 # Aggregate the model outputs into five year periods:
 calperiods, calperiodlookup = make_calendar_period_lookup()
@@ -353,10 +347,11 @@ deaths_by_age_and_year = summarize(extract_results(
     module="tlo.methods.demography",
     key="death",
     custom_generate_series="assign(year = lambda x: x['date'].dt.year)"
-                           ".groupby(['sex', 'year', 'age'])['person_id'].count()"
+                           ".groupby(['sex', 'year', 'age'])['person_id'].count()",
+    do_scaling=True
 ),
     collapse_columns=True
-).mul(sf).reset_index()
+).reset_index()
 
 # Aggregate the model outputs into five year periods for age and time:
 calperiods, calperiodlookup = make_calendar_period_lookup()

@@ -294,26 +294,30 @@ def extract_params(results_folder: Path) -> pd.DataFrame:
     in each draw, under the assumption that the over-written parameters are the same in each run.
     """
 
-    # Get the paths for the draws
-    draws = [f for f in os.scandir(results_folder) if f.is_dir()]
+    try:
+        # Get the paths for the draws
+        draws = [f for f in os.scandir(results_folder) if f.is_dir()]
 
-    list_of_param_changes = list()
+        list_of_param_changes = list()
 
-    for d in draws:
-        p = load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")
-        p = p["tlo.scenario"]["override_parameter"]
+        for d in draws:
+            p = load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")
+            p = p["tlo.scenario"]["override_parameter"]
 
-        p['module_param'] = p['module'] + ':' + p['name']
-        p.index = [int(d.name)] * len(p.index)
+            p['module_param'] = p['module'] + ':' + p['name']
+            p.index = [int(d.name)] * len(p.index)
 
-        list_of_param_changes.append(p[['module_param', 'new_value']])
+            list_of_param_changes.append(p[['module_param', 'new_value']])
 
-    params = pd.concat(list_of_param_changes)
-    params.index.name = 'draw'
-    params = params.rename(columns={'new_value': 'value'})
-    params = params.sort_index()
+        params = pd.concat(list_of_param_changes)
+        params.index.name = 'draw'
+        params = params.rename(columns={'new_value': 'value'})
+        params = params.sort_index()
+        return params
 
-    return params
+    except KeyError:
+        print("No parameters changed between the runs")
+        return None
 
 
 def extract_results(results_folder: Path,
@@ -321,7 +325,8 @@ def extract_results(results_folder: Path,
                     key: str,
                     column: str = None,
                     index: str = None,
-                    custom_generate_series: str = None
+                    custom_generate_series: str = None,
+                    do_scaling: bool = False,
                     ) -> pd.DataFrame:
     """Utility function to unpack results
 
@@ -330,6 +335,8 @@ def extract_results(results_folder: Path,
     index is the same in each run).
     Optionally, instead of a series that exists in the dataframe already, a command can be provided that, when applied
     to the dataframe indicated, yields a new pd.Series.
+    Optionally, with `do_scaling`, each element is multiplied by the the scaling_factor recorded in the simulation
+    (if available)
     """
 
     # get number of draws and numbers of runs
@@ -339,6 +346,17 @@ def extract_results(results_folder: Path,
         [range(info['number_of_draws']), range(info['runs_per_draw'])],
         names=["draw", "run"]
     )
+
+    def get_multiplier(draw, run):
+        """Helper function to get the multiplier from the simulation, if it's specified and do_scaling=True"""
+        if not do_scaling:
+            return 1.0
+        else:
+            try:
+                return load_pickled_dataframes(results_folder, draw, run, 'tlo.methods.demography'
+                                               )['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
+            except KeyError:
+                return 1.0
 
     if custom_generate_series is None:
 
@@ -351,13 +369,15 @@ def extract_results(results_folder: Path,
             df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
             results_index = df[index]
 
-        results = pd.DataFrame(columns=cols)
 
+
+        results = pd.DataFrame(columns=cols)
         for draw in range(info['number_of_draws']):
             for run in range(info['runs_per_draw']):
+
                 try:
                     df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                    results[draw, run] = df[column]
+                    results[draw, run] = df[column] * get_multiplier(draw, run)
 
                     if index is not None:
                         idx = df[index]
@@ -385,7 +405,7 @@ def extract_results(results_folder: Path,
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval = eval(f"df.{custom_generate_series}")
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
-                res[f"{draw}_{run}"] = output_from_eval
+                res[f"{draw}_{run}"] = output_from_eval * get_multiplier(draw, run)
         results = pd.concat(res.values(), axis=1).fillna(0)
         results.columns = cols
 
@@ -449,23 +469,26 @@ def get_grid(params: pd.DataFrame, res: pd.Series):
 
 def get_scaling_factor(results_folder, resourcefilepath):
     """Compute the ratio of 'Actual Population Size' : 'Model Population Size'
+    todo - remove this
     """
-    pop_model = summarize(extract_results(results_folder,
-                                          module="tlo.methods.demography",
-                                          key="population",
-                                          column="total",
-                                          index="date"),
-                          only_mean=True
-                          )
-
-    # Get Mean for 2018, acrosss all runs and draws:
-    mean_pop_2018 = pop_model.loc[pop_model.index.year == 2018].mean().mean()
-
-    # Load Data: Census
-    cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
-    cens_2018 = cens.groupby('Sex')['Count'].sum()
-
-    return cens_2018.sum() / mean_pop_2018
+    print("DO NOT USE")
+    raise NotImplementedError
+    # pop_model = summarize(extract_results(results_folder,
+    #                                       module="tlo.methods.demography",
+    #                                       key="population",
+    #                                       column="total",
+    #                                       index="date"),
+    #                       only_mean=True
+    #                       )
+    #
+    # # Get Mean for 2018, acrosss all runs and draws:
+    # mean_pop_2018 = pop_model.loc[pop_model.index.year == 2018].mean().mean()
+    #
+    # # Load Data: Census
+    # cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
+    # cens_2018 = cens.groupby('Sex')['Count'].sum()
+    #
+    # return cens_2018.sum() / mean_pop_2018
 
 
 def format_gbd(gbd_df: pd.DataFrame):
@@ -494,6 +517,8 @@ def get_causes_mappers(gbd_causes, tlo_causes):
 
     :return: mapper_from_tlo_strings{tlo_string: unified_cause}, mapper_from_gbd_strings{gbd_strings: unified_cause}
     """
+    print("DO NOT USE!!!!!!")
+    raise NotImplementedError
 
     causes = dict()
     causes['AIDS'] = {
