@@ -842,7 +842,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
-class HSI_NCDs_InvestigationFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
+class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
     for each condition.
@@ -891,7 +891,7 @@ class HSI_NCDs_InvestigationFollowingSymptoms(HSI_Event, IndividualScopeEventMix
             )
     def did_not_run(self):
         pass
-class HSI_NCDs_StartWeightLoss(HSI_Event, IndividualScopeEventMixin):
+class HSI_CardioMetabolicDisorders_StartWeightLoss(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event in which a person receives a recommendation of weight loss.
     This results in an individual having a probability of reducing their BMI by one category by the 6-month check.
@@ -923,7 +923,7 @@ class HSI_NCDs_StartWeightLoss(HSI_Event, IndividualScopeEventMixin):
             if self.module.rng.rand() < p_bmi_reduction:
                 df.at[person_id, 'li_bmi'] = df.at[person_id, 'li_bmi'] - 1
                 self.sim.population.props.at[person_id, 'nc_weight_loss_worked'] = True
-class HSI_NCDs_PostWeightLossCheck(HSI_Event, IndividualScopeEventMixin):
+class HSI_CardioMetabolicDisorders_PostWeightLossCheck(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event in which a person receives a check-up following a recommendation of weight
     loss.
@@ -949,7 +949,7 @@ class HSI_NCDs_PostWeightLossCheck(HSI_Event, IndividualScopeEventMixin):
                 topen=self.sim.date,
                 tclose=None
             )
-class HSI_NCDs_Start_Medication(HSI_Event, IndividualScopeEventMixin):
+class HSI_CardioMetabolicDisorders_Start_Medication(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event in which a person is started on treatment.
     The facility_level is modified as a input parameter.
@@ -988,7 +988,7 @@ class HSI_NCDs_Start_Medication(HSI_Event, IndividualScopeEventMixin):
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
             )
-class HSI_NCDs_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
+class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event in which a person seeks a refill prescription of medication.
     The next refill of medication is also scheduled.
@@ -1036,7 +1036,7 @@ class HSI_NCDs_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
         # If this HSI event did not run, then the persons ceases to be taking medication
         person_id = self.target
         self.sim.population.props.at[person_id, f'nc_{self.condition}_on_medication'] = False
-class HSI_NCDs_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is the event when a person with the severe symptoms of chronic syndrome presents for emergency care
