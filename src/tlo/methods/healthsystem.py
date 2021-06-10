@@ -1062,10 +1062,10 @@ class HealthSystem(Module):
         This will log the percentage of the current capabilities that is used at each Facility Type
         NB. To get this per Officer_Type_Code, it would be possible to simply log the entire current_capabilities df.
         :param current_capabilities: the current_capabilities of the health system.
-        :param all_calls_today: list of footprints of all the HSI events that ran
+        :param total_footprint: Per-officer totals of footprints of all the HSI events that ran
         """
 
-        # Combine the current_capabiliites and the sum-across-columns of all_calls_today
+        # Combine the current_capabiliites and total_footprint per-officer totals
         total_calls_per_officer = pd.Series(total_footprint, dtype='float64')
         comparison = current_capabilities[['Facility_ID', 'Total_Minutes_Per_Day']].copy()
         comparison['Minutes_Used'] = total_calls_per_officer
