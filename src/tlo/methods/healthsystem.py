@@ -1395,8 +1395,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         current_capabilities = self.module.get_capabilities_today()
 
         if not list_of_individual_hsi_event_tuples_due_today:
-            num_events_due = len(list_of_individual_hsi_event_tuples_due_today)
-            footprints_of_all_individual_level_hsi_event = [0] * num_events_due
+            # Empty counter for log_current_capabilities call below
             total_footprint = Counter()
         else:
             # 4) Examine total call on health officers time from the HSI events that are due today
