@@ -26,7 +26,7 @@ start_time = time.time()
 # Where will output go
 outputpath = Path("./outputs/epi")
 
-# date-stamp to cause_of_death log files and any other outputs
+# date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files

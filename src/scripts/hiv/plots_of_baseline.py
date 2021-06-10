@@ -24,7 +24,7 @@ from tlo.methods.hiv import map_to_age_group, set_age_group, unpack_raw_output_d
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
-# date-stamp to cause_of_death log files and any other outputs
+# date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files

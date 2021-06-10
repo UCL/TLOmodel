@@ -85,7 +85,7 @@ def run():
     return sim
 
 
-# date-stamp to cause_of_death log files and any other outputs
+# date-stamp to label log files and any other outputs
 datestamp = "__2020_06_16"
 resourcefilepath = "./resources"
 outputpath = Path("./outputs")

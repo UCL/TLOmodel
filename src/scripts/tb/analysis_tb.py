@@ -29,7 +29,7 @@ This file to be updated in full when TB module is completed.
 # # Where will output go
 # outputpath = Path("./outputs/hiv_tb")
 #
-# # date-stamp to cause_of_death log files and any other outputs
+# # date-stamp to label log files and any other outputs
 # datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #
 # # The resource files
