@@ -3520,7 +3520,7 @@ class RTI(Module):
                           'inc_minor': inc_minor,
                           'inc_other': inc_other,
                           'tot_inc_injuries': tot_inc_all_inj,
-                          'number_of_injuries': number_of_injuries,}
+                          'number_of_injuries': number_of_injuries}
 
         logger.info(key='Inj_category_incidence',
                     data=dict_to_output,
