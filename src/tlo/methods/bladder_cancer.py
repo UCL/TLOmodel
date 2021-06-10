@@ -763,6 +763,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
+        the_appt_footprint['MajorSurg'] = 1
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "BladderCancer_StartTreatment"
