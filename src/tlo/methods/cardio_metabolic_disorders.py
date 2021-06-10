@@ -452,7 +452,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 else:
                     # if there is only one eligible person, the predict method of linear model will return just a bool
                     #  instead of a pd.Series. Handle this special case:
-                    idx_selected_to_die = eligible_population.index.to_list()
+                    idx_selected_to_die = eligible_population.index
 
                 for person_id in idx_selected_to_die:
                     schedule_death_to_occur_before_next_poll(person_id, condition,
