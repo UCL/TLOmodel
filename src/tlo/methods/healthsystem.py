@@ -615,9 +615,6 @@ class HealthSystem(Module):
         # Get the capabilities data as they are imported
         capabilities = self.parameters['Daily_Capabilities']
 
-        # apply the capabilities_coefficient
-        capabilities['Total_Minutes_Per_Day'] = capabilities['Total_Minutes_Per_Day'] * self.capabilities_coefficient
-
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
         officer_type_codes = self.parameters['Officer_Types_Table']['Officer_Type_Code'].values
