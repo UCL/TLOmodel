@@ -813,7 +813,7 @@ class HealthSystem(Module):
             (position in array matches that in the all_call_today list).
         """
 
-        # 1) Compute the load factors
+        # 1) Compute the load factors for each officer type at each facility that is called-upon in this list of HSIs
         total_available = current_capabilities['Total_Minutes_Per_Day']
         load_factor = {}
         for officer, call in total_footprint.items():
@@ -825,9 +825,8 @@ class HealthSystem(Module):
             else:
                 load_factor[officer] = max(call / availability - 1, 0)
 
-        # 5) Convert these load-factors into an overall 'squeeze' signal for each
-        # appointment_type requested, based on the highest load-factor of any officer
-        # required
+        # 5) Convert these load-factors into an overall 'squeeze' signal for eachHSI, based on the highest load-factor
+        # of any officer required
         squeeze_factor_per_hsi_event = np.array([
             max(load_factor[officer] for officer in footprint)
             for footprint in footprints_per_event
