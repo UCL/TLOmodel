@@ -53,9 +53,9 @@ class LongRun(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 12, 31)
-        self.pop_size = 1_000              # <- recommened population size for the runs
+        self.pop_size = 20_000              # <- recommened population size for the runs
         self.number_of_draws = 1            # <- one scenario
-        self.runs_per_draw = 1             # <- repeated this many times
+        self.runs_per_draw = 10             # <- repeated this many times
 
     def log_configuration(self):
         return {
@@ -100,7 +100,7 @@ class LongRun(BaseScenario):
             # - Non-Communicable Conditions
             # -- Cancers
             bladder_cancer.BladderCancer(resourcefilepath=self.resources),
-            breast_canccer.BreastCancer(resourcefilepath=self.resources),
+            breast_cancer.BreastCancer(resourcefilepath=self.resources),
             oesophagealcancer.OesophagealCancer(resourcefilepath=self.resources),
             other_adult_cancers.OtherAdultCancer(resourcefilepath=self.resources),
             prostate_cancer.ProstateCancer(resourcefilepath=self.resources),
@@ -114,7 +114,6 @@ class LongRun(BaseScenario):
             depression.Depression(resourcefilepath=self.resources),
             epilepsy.Epilepsy(resourcefilepath=self.resources),
         ]
-
 
 
     def draw_parameters(self, draw_number, rng):
