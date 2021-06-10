@@ -15,6 +15,7 @@ import shared
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    cardio_metabolic_disorders,
     demography,
     depression,
     diarrhoea,
@@ -28,7 +29,6 @@ from tlo.methods import (
     healthsystem,
     hiv,
     malaria,
-    ncds,
     oesophagealcancer,
     other_adult_cancers,
     simplified_births,
@@ -80,7 +80,7 @@ sim.register(
     epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath),
     malaria.Malaria(resourcefilepath=resourcefilepath),
-    ncds.Ncds(resourcefilepath=resourcefilepath),
+    cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
     other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
 )
