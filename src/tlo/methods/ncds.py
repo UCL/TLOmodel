@@ -501,8 +501,14 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             eligible_population = df.is_alive & df[f'nc_{event}']
             selected_to_die = self.module.lms_event_death[event].predict(df.loc[eligible_population], rng)
+
             if selected_to_die.any():  # catch in case no one dies
-                idx_selected_to_die = selected_to_die[selected_to_die].index
+                if len(eligible_population) > 1:
+                    idx_selected_to_die = selected_to_die[selected_to_die].index
+                else:
+                    # if there is only one eligible person, the predict method of linear model will return just a bool
+                    #  instead of a pd.Series. Handle this special case:
+                    idx_selected_to_die = eligible_population.index.to_list()
 
                 for person_id in idx_selected_to_die:
                     schedule_death_to_occur_before_next_poll(person_id, event.replace('ever_', ''),
