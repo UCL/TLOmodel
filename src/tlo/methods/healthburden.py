@@ -356,7 +356,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         disease_specific_daly_values_this_month = disease_specific_daly_values_this_month.multiply(scaling_factor,
                                                                                                    axis=0)
-        assert (disease_specific_daly_values_this_month.sum(axis=1) <= 1.0).all()
+        assert ((disease_specific_daly_values_this_month.sum(axis=1) - 1.0) < 1e-6).all()
 
         # Multiply 1/12 as these weights are for one month only
         disease_specific_daly_values_this_month = disease_specific_daly_values_this_month * (1 / 12)
