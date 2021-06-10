@@ -447,7 +447,12 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             eligible_population = df.is_alive & df[f'nc_{condition}']
             selected_to_die = self.module.lms_death[condition].predict(df.loc[eligible_population], rng)
             if selected_to_die.any():  # catch in case no one dies
-                idx_selected_to_die = selected_to_die[selected_to_die].index
+                if sum(eligible_population) > 1:
+                    idx_selected_to_die = selected_to_die[selected_to_die].index
+                else:
+                    # if there is only one eligible person, the predict method of linear model will return just a bool
+                    #  instead of a pd.Series. Handle this special case:
+                    idx_selected_to_die = eligible_population[eligible_population].index
 
                 for person_id in idx_selected_to_die:
                     schedule_death_to_occur_before_next_poll(person_id, condition,
