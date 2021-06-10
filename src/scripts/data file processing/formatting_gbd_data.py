@@ -105,7 +105,7 @@ gbd.to_csv(path_for_saved_files / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv', i
 gbd_deaths = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
 gbd_deaths = gbd_deaths.groupby(by=['Year', 'Sex', 'Age_Grp'], as_index=False)[['GBD_Est', 'GBD_Lower', 'GBD_Upper']].sum()
 gbd_deaths = gbd_deaths.melt(id_vars=['Year', 'Sex', 'Age_Grp'], var_name='Variant', value_name='Count')
-gbd_deaths.to_csv(path_for_saved_files / 'ResourceFile_TotalDeaths_GBD.csv', index=False)
+gbd_deaths.to_csv(path_for_saved_files / 'ResourceFile_TotalDeaths_GBD2019.csv', index=False)
 
 # %% Make: ResourceFile_CausesOfDeath_GBD
 
@@ -126,4 +126,4 @@ assert (abs(1.0 - prop_deaths.sum(axis=1)) < 1e-6).all()
 causes_of_death = gbd.loc[gbd['measure_name'] == 'Deaths', 'cause_name'].unique()
 assert set(prop_deaths.columns) == set(causes_of_death)
 
-prop_deaths.to_csv(path_for_saved_files / 'ResourceFile_CausesOfDeath_GBD.csv', index=False)
+prop_deaths.reset_index().to_csv(path_for_saved_files / 'ResourceFile_CausesOfDeath_GBD2019.csv', index=False)

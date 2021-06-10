@@ -57,9 +57,9 @@ class Demography(Module):
         'district_num_to_region_name': Parameter(Types.DICT, 'Mapping from district_num to region name'),
         'all_cause_mortality_schedule': Parameter(Types.DATA_FRAME, 'All-cause age-specific mortality rates from WPP'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
-        'gbd_data': Parameter(Types.DATA_FRAME,
-                              'Data from GBD, including deaths and dalys by cause, age, sex and year'),
-        'gbd_causes_of_death': Parameter(Types.LIST, 'List of the strings of causes of death defined in the GBD data')
+        'gbd_causes_of_death_data': Parameter(Types.DATA_FRAME,
+                              'Proportion of deaths in each age/sex group attributable to each possible cause of death '
+                              'in the GBD dataset.'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -105,9 +105,9 @@ class Demography(Module):
         )
 
         # GBD Dataset
-        self.parameters['gbd_data'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'
-        )
+        self.parameters['gbd_causes_of_death_data'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDeath_GBD2019.csv'
+        ).set_index(['Sex', 'Age_Grp'])
 
         # Lookup dicts to map from district_num_of_residence (in the df) and District name and Region name
         self.parameters['district_num_to_district_name'] = \
@@ -128,8 +128,7 @@ class Demography(Module):
         """
 
         # 1) Store all the cause of death represented in the imported GBD data
-        self.gbd_causes_of_death = set(self.parameters['gbd_data'].loc[
-            lambda df: df['measure_name'] == 'Deaths']['cause_name'].unique().tolist())
+        self.gbd_causes_of_death = set(self.parameters['gbd_causes_of_death_data'].columns)
 
         # 2) Process the declarations of causes of death made by the disease modules
         self.process_causes_of_death()
@@ -532,34 +531,10 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
     def get_proportion_of_deaths_to_represent_as_other_deaths(self):
         """Compute the fraction of deaths that will be reprsented by the OtherDeathPoll"""
         # Get the breakdown of deaths by cause from GBD data:
-        gbd_deaths = self.get_gbd_proportion_of_death_by_cause()
+        gbd_deaths = self.module.parameters['gbd_causes_of_death_data']
 
         # Find the proportion of deaths to be represented by the OtherDeathPoll
         return gbd_deaths[self.causes_to_represent].sum(axis=1)
-
-    def get_gbd_proportion_of_death_by_cause(self):
-        """Compute the fraction of deaths due to each cause (for the latest year available)"""
-        raise NotImplementedError
-        # # Get the full GBD dataset and find the latest year
-        # gbd = self.module.parameters['gbd_data']
-        # latest_year = max(gbd['Year'])
-        #
-        # # Produce pivot table that gives causes of death in columns
-        # gbd_deaths = gbd.loc[gbd['measure_name'] == 'Deaths'].copy().reset_index(drop=True)
-        # gbd_deaths = \
-        # gbd_deaths.loc[gbd_deaths['Year'] == latest_year].groupby(by=['Sex', 'Age_Grp', 'cause_name'], as_index=False)[
-        #     ['GBD_Est']].sum()
-        # gbd_deaths = gbd_deaths.pivot(index=['Sex', 'Age_Grp'], columns='cause_name', values='GBD_Est').fillna(0)
-        #
-        # # Compute the proportion of deaths due to each cause (within each sex/age group)
-        # prop_deaths = gbd_deaths.div(gbd_deaths.sum(axis=1), axis=0)
-        # assert (abs(1.0 - prop_deaths.sum(axis=1)) < 1e-6).all()
-        #
-        # # Check that every cause is represented in this table
-        # causes_of_death = gbd.loc[gbd['measure_name'] == 'Deaths', 'cause_name'].unique()
-        # assert set(prop_deaths.columns) == set(causes_of_death) == self.module.gbd_causes_of_death
-        #
-        # return prop_deaths
 
     def apply(self, population):
         """Randomly select some persons to die of the 'Other' tlo cause (the causes of death that are not represented
