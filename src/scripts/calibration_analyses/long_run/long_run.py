@@ -14,6 +14,8 @@ import numpy as np
 
 from tlo import Date, logging
 from tlo.methods import (
+    bladder_cancer,
+    breast_cancer,
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
@@ -38,6 +40,7 @@ from tlo.methods import (
     postnatal_supervisor,
     postnatal_supervisor_lm,
     pregnancy_supervisor,
+    prostate_cancer,
     simplified_births,
     symptommanager,
 )
@@ -50,9 +53,9 @@ class LongRun(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 12, 31)
-        self.pop_size = 20_000              # <- recommened population size for the runs
+        self.pop_size = 1_000              # <- recommened population size for the runs
         self.number_of_draws = 1            # <- one scenario
-        self.runs_per_draw = 10             # <- repeated this many times
+        self.runs_per_draw = 1             # <- repeated this many times
 
     def log_configuration(self):
         return {
@@ -68,35 +71,51 @@ class LongRun(BaseScenario):
             # Core Modules
             demography.Demography(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources),
-            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
-            dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=self.resources),
             symptommanager.SymptomManager(resourcefilepath=self.resources, spurious_symptoms=False),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
 
-            # # Pregnancy and Birth
+            # Representations of the Healthcare System
+            healthsystem.HealthSystem(resourcefilepath=self.resources),
+            epi.Epi(resourcefilepath=self.resources),
+            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
+            dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=self.resources),
+
+            # - Contraception, Pregnancy and Labour
             # contraception.Contraception(resourcefilepath=self.resources),
             # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
             # care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
             # labour.Labour(resourcefilepath=self.resources),
             # newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
             # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
+            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),    # Use Simplified Births for speed
 
-            # Using Simplified Births for speed currently
-            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
-
-            # Disease modules considered complete:
+            # - Conditions of Early Childhood
             diarrhoea.Diarrhoea(resourcefilepath=self.resources),
-            malaria.Malaria(resourcefilepath=self.resources),
+
+            # - Communicable Diseases
             hiv.Hiv(resourcefilepath=self.resources),
-            epi.Epi(resourcefilepath=self.resources),
-            depression.Depression(resourcefilepath=self.resources),
+            malaria.Malaria(resourcefilepath=self.resources),
+
+            # - Non-Communicable Conditions
+            # -- Cancers
+            bladder_cancer.BladderCancer(resourcefilepath=self.resources),
+            breast_canccer.BreastCancer(resourcefilepath=self.resources),
             oesophagealcancer.OesophagealCancer(resourcefilepath=self.resources),
-            epilepsy.Epilepsy(resourcefilepath=self.resources),
             other_adult_cancers.OtherAdultCancer(resourcefilepath=self.resources),
-            cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources)
+            prostate_cancer.ProstateCancer(resourcefilepath=self.resources),
+
+            # -- Caridometabolic Diorders
+            cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
+
+            # -- Injuries (Forthcoming)
+
+            # -- Other Non-Communicable Conditions
+            depression.Depression(resourcefilepath=self.resources),
+            epilepsy.Epilepsy(resourcefilepath=self.resources),
         ]
+
+
 
     def draw_parameters(self, draw_number, rng):
         # Using default parameters in all cases
