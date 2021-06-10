@@ -200,7 +200,6 @@ def test_cause_of_death_being_registered(tmpdir):
     dict_of_ser = {k: pd.DataFrame(v)[0] for k, v in logged_prop_of_death_by_odp.items()}
     log_odp = pd.concat(dict_of_ser, axis=1).set_index(['Sex', 'Age_Grp'])['0']
     assert (log_odp < 1.0).all()
-    actual_risk_per_poll / all_cause_risk.set_index(['Sex', 'Age_Grp'])
 
 
 def test_py_calc(simulation):
