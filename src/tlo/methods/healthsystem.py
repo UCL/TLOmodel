@@ -567,13 +567,14 @@ class HealthSystem(Module):
         This function runs some checks on the appt_footprint to ensure it is the right format
         :return: None
         """
-
-        assert set(appt_footprint.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
-        # All sensible numbers for the number of appointments requested (no negative and at least one appt required)
-
-        assert all(np.asarray([(appt_footprint[k]) for k in appt_footprint.keys()]) >= 0)
-
-        assert not all(value == 0 for value in appt_footprint.values())
+        appointment_types = set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
+        # Check that the number of appointments requested are sensible: at least one
+        # appointment required, all keys known appointment types and all values
+        # non-negative
+        assert isinstance(appt_footprint, dict) and len(appt_footprint) > 0 and all(
+            k in appointment_types and v > 0
+            for k, v in appt_footprint.items()
+        )
 
     def broadcast_healthsystem_interaction(self, hsi_event):
         """
@@ -686,15 +687,10 @@ class HealthSystem(Module):
     def get_blank_appt_footprint(self):
         """
         This is a helper function so that disease modules can easily create their appt_footprints.
-        It returns a dataframe containing the appointment footprint information in the format that /
-        the HealthSystemScheduler expects.
+        It returns an empty Counter instance.
 
         """
-
-        keys = self.parameters['Appt_Types_Table']['Appt_Type_Code']
-        values = np.zeros(len(keys))
-        blank_footprint = dict(zip(keys, values))
-        return blank_footprint
+        return Counter()
 
     def get_blank_cons_footprint(self):
         """
@@ -748,7 +744,6 @@ class HealthSystem(Module):
         """
 
         # Gather useful information
-        appt_types = self.parameters['Appt_Types_Table']['Appt_Type_Code'].values
         appt_times = self.parameters['Appt_Time_Table']
 
         # Gather information about the HSI event
@@ -766,13 +761,8 @@ class HealthSystem(Module):
         # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL:
         the_facility = self.get_facility_info(hsi_event)
 
-        # Transform the treatment footprint into a demand for time for officers of each
-        # type, for this facility level (it varies by facility level)
-        appts_with_duration = [
-            appt_type for appt_type in appt_types if the_appt_footprint[appt_type] > 0
-        ]
         appt_footprint_times = Counter()
-        for appt_type in appts_with_duration:
+        for appt_type in the_appt_footprint:
             try:
                 appt_info_list = appt_times[the_facility_level][appt_type]
             except KeyError as e:
@@ -1646,27 +1636,30 @@ class HSI_Event:
         return footprint
 
     def is_all_beddays_allocated(self):
-        """Check if the entire footprint requested is allocated"""
+        """Check if the entire footprint requestded is allocated"""
         return all(
             [self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT]
         )
 
     def make_appt_footprint(self, dict_of_appts):
-        """Helper function to make an appt_footprint. Create the full appt_footprint that is expected from a dictionary
-        only giving the types of appointments needed."""
+        """Helper function to make appointment footprint in format expected downstream.
 
-        # get blank footprint
-        footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-
-        # do checks
-        assert isinstance(dict_of_appts, dict)
-        assert all([(k in footprint.keys()) for k in dict_of_appts.keys()])
-        assert all([isinstance(v, (float, int)) for v in dict_of_appts.values()])
-
-        # make footprint (defaulting to zero where a type of appointment is not specified)
-        footprint.update(dict_of_appts)
-
-        return footprint
+        Should be passed a dictionary keyed by appointment type codes with values set to
+        number of appointments (non-negative integer).
+        """
+        health_system = self.sim.modules['HealthSystem']
+        appointment_types = set(
+            health_system.parameters['Appt_Types_Table']['Appt_Type_Code'])
+        if isinstance(dict_of_appts, dict) and all(
+                k in appointment_types and v > 0
+                for k, v in dict_of_appts.items()):
+            return Counter(dict_of_appts)
+        else:
+            raise ValueError(
+                "Argument to make_appt_footprint should be a dictionary keyed by "
+                "appointment type code strings in Appt_Types_Table with non-negative "
+                "values"
+            )
 
 
 class HSIEventWrapper(Event):
