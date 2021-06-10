@@ -14,6 +14,7 @@ import numpy as np
 
 from tlo import Date, logging
 from tlo.methods import (
+    cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
     demography,
@@ -31,7 +32,6 @@ from tlo.methods import (
     labour,
     malaria,
     mockitis,
-    ncds,
     newborn_outcomes,
     oesophagealcancer,
     other_adult_cancers,
@@ -95,7 +95,7 @@ class LongRun(BaseScenario):
             oesophagealcancer.OesophagealCancer(resourcefilepath=self.resources),
             epilepsy.Epilepsy(resourcefilepath=self.resources),
             other_adult_cancers.OtherAdultCancer(resourcefilepath=self.resources),
-            ncds.Ncds(resourcefilepath=self.resources)
+            cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources)
         ]
 
     def draw_parameters(self, draw_number, rng):
