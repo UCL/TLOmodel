@@ -173,6 +173,8 @@ class HealthSystem(Module):
         self.parameters['Appt_Types_Table'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Appt_Types_Table.csv'
         )
+        self._appointment_types = set(
+            self.parameters['Appt_Types_Table']['Appt_Type_Code'])
 
         appt_time_data = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Appt_Time_Table.csv'
@@ -428,7 +430,7 @@ class HealthSystem(Module):
 
             # Correct formated EXPECTED_APPT_FOOTPRINT
             assert 'EXPECTED_APPT_FOOTPRINT' in dir(hsi_event)
-            self.check_appt_footprint_format(hsi_event.EXPECTED_APPT_FOOTPRINT)
+            assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
 
             # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
             # (Integer specificying the facility level at which HSI_Event must occur)
@@ -562,17 +564,15 @@ class HealthSystem(Module):
                      f" {hsi_event.TREATMENT_ID}"
             )
 
-    def check_appt_footprint_format(self, appt_footprint):
+    def appt_footprint_is_valid(self, appt_footprint):
         """
-        This function runs some checks on the appt_footprint to ensure it is the right format
-        :return: None
+        Checks an appointment footprint to ensure it is in the correct format.
+        :param appt_footprint: Appointment footprint to check.
+        :return: True if valid and False otherwise.
         """
-        appointment_types = set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
-        # Check that the number of appointments requested are sensible: at least one
-        # appointment required, all keys known appointment types and all values
-        # non-negative
-        assert isinstance(appt_footprint, dict) and len(appt_footprint) > 0 and all(
-            k in appointment_types and v > 0
+        # Check that all keys known appointment types and all values non-negative
+        return isinstance(appt_footprint, dict) and all(
+            k in self._appointment_types and v > 0
             for k, v in appt_footprint.items()
         )
 
@@ -1446,7 +1446,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # The returned footprint is different to the expected footprint: so must update load factors
 
                         # check its formatting:
-                        self.module.check_appt_footprint_format(actual_appt_footprint)
+                        assert self.module.appt_footprint_is_valid(actual_appt_footprint)
 
                         # Update load factors:
                         updated_call = self.module.get_appt_footprint_as_time_request(event, actual_appt_footprint)
@@ -1636,7 +1636,7 @@ class HSI_Event:
         return footprint
 
     def is_all_beddays_allocated(self):
-        """Check if the entire footprint requestded is allocated"""
+        """Check if the entire footprint requested is allocated"""
         return all(
             [self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT]
         )
@@ -1644,15 +1644,11 @@ class HSI_Event:
     def make_appt_footprint(self, dict_of_appts):
         """Helper function to make appointment footprint in format expected downstream.
 
-        Should be passed a dictionary keyed by appointment type codes with values set to
-        number of appointments (non-negative integer).
+        Should be passed a dictionary keyed by appointment type codes with non-negative
+        values.
         """
         health_system = self.sim.modules['HealthSystem']
-        appointment_types = set(
-            health_system.parameters['Appt_Types_Table']['Appt_Type_Code'])
-        if isinstance(dict_of_appts, dict) and all(
-                k in appointment_types and v > 0
-                for k, v in dict_of_appts.items()):
+        if health_system.appt_footprint_is_valid(dict_of_appts):
             return Counter(dict_of_appts)
         else:
             raise ValueError(
