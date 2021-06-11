@@ -1933,25 +1933,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # proportion of active TB cases in the last year who are HIV-positive
         prop_hiv = inc_active_hiv / new_tb_cases if new_tb_cases else 0
 
-        # number new mdr tb cases
-        # TODO this will exclude mdr cases occurring in the last timeperiod but already cured
-        new_mdr_cases = len(
-            df[(df.tb_strain == 'mdr')
-            & (df.tb_date_active > (now - DateOffset(months=self.repeat)))]
-        )
-
-        logger.info(
-            '%s|tb_incidence|%s',
-            now,
-            {
-                'tbNewActiveCases': new_tb_cases,
-                'tbNewLatentCases': new_latent_cases,
-                'tbNewActive_Hiv': inc_active_hiv,
-                'tb_prop_hiv_pos': prop_hiv,
-                'tbNewActiveMdrCases': new_mdr_cases,
-            },
-        )
-
         # ------------------------------------ PREVALENCE ------------------------------------
         # number of current active cases divided by population alive
 
@@ -2014,6 +1995,26 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 'tbPrevLatent': prev_latent,
                 'tbPrevLatentAdult': prev_latent_adult,
                 'tbPrevLatentChild': prev_latent_child,
+            },
+        )
+
+        # ------------------------------------ MDR ------------------------------------
+        # number new mdr tb cases
+        # TODO this will exclude mdr cases occurring in the last timeperiod but already cured
+        new_mdr_cases = len(
+            df[(df.tb_strain == 'mdr')
+            & (df.tb_date_active > (now - DateOffset(months=self.repeat)))]
+        )
+
+        if new_mdr_cases:
+            prop_mdr = new_mdr_cases / new_tb_cases
+
+        logger.info(
+            '%s|tb_mdr|%s',
+            now,
+            {
+                'tbNewActiveMdrCases': new_mdr_cases,
+                'tbPropActiveCasesMdr': prop_mdr
             },
         )
 

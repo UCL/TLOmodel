@@ -33,7 +33,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2013, 1, 1)
 popsize = 15000
 
 # set up the log config
@@ -111,6 +111,11 @@ def make_plot(
 
 # ------------------------- OUTPUTS ------------------------- #
 
+# load the calibration data
+data = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_name='WHO_estimates')
+data.index = pd.to_datetime(data['year'], format='%Y')
+data = data.drop(columns=['year'])
+
 # person-years all ages (irrespective of HIV status)
 py_ = output['tlo.methods.demography']['person_years']
 years = pd.to_datetime(py_['date']).dt.year
@@ -133,6 +138,11 @@ activeTB_inc_rate = (activeTB_inc / py) * 100000
 latentTB_prev = output['tlo.methods.tb']['tb_prevalence']
 latentTB_prev['date'] = pd.DatetimeIndex(latentTB_prev['date']).year
 latentTB_prev = latentTB_prev.set_index('date')
+
+# proportion TB cases that are MDR
+mdr = output['tlo.methods.tb']['tb_mdr']
+mdr['date'] = pd.DatetimeIndex(mdr['date']).year
+mdr = latentTB_prev.set_index('date')
 
 # deaths
 deaths = output['tlo.methods.demography']['death'].copy()  # outputs individual deaths
@@ -158,13 +168,23 @@ total_tb_deaths_rate = (total_tb_deaths / py) * 100000
 tot_tb_hiv_deaths_rate = (tot_tb_hiv_deaths / py) * 100000
 tot_tb_non_hiv_deaths_rate = (tot_tb_non_hiv_deaths / py) * 100000
 
+# treatment coverage
+Tb_tx_coverage = output['tlo.methods.tb']['tbTreatmentCoverage']
+Tb_tx_coverage['date'] = pd.DatetimeIndex(Tb_tx_coverage['date']).year
+Tb_tx_coverage = Tb_tx_coverage.set_index('date')
+
+
 # ------------------------- PLOTS ------------------------- #
 
 # plot active tb incidence per 100k person-years
 make_plot(
     title_str="Active TB Incidence (per 100k person-years)",
     model=activeTB_inc_rate,
+    data_mid=data['incidence_per_100k'],
+    data_low=data['incidence_per_100k_low'],
+    data_high=data['incidence_per_100k_high']
 )
+
 # plot latent prevalence
 make_plot(
     title_str="Latent TB prevalence",
@@ -175,23 +195,42 @@ make_plot(
 make_plot(
     title_str="Mortality TB (excl HIV) per 100k py",
     model=tot_tb_non_hiv_deaths_rate,
+    data_mid=data['mortality_tb_excl_hiv_per_100k'],
+    data_low=data['mortality_tb_excl_hiv_per_100k_low'],
+    data_high=data['mortality_tb_excl_hiv_per_100k_high']
 )
 
-# plot tb_hiv deaths per 100k person-years
+# plot tb deaths per 100k person-years in PLHIV
 make_plot(
     title_str="Mortality TB_HIV per 100k py",
     model=tot_tb_hiv_deaths_rate,
+    data_mid=data['mortality_tb_hiv_per_100k'],
+    data_low=data['mortality_tb_hiv_per_100k_low'],
+    data_high=data['mortality_tb_hiv_per_100k_high']
 )
 
 # plot total tb deaths
 make_plot(
     title_str="Mortality TB (all incl HIV) per 100k",
     model=total_tb_deaths_rate,
+    data_mid=data['total_mortality_tb_per_100k'],
+    data_low=data['total_mortality_tb_per_100k_low'],
+    data_high=data['total_mortality_tb_per_100k_high']
 )
 
 # plot proportion of active tb cases on treatment
+make_plot(
+    title_str="TB treatment coverage",
+    model=Tb_tx_coverage['tx_coverage'],
+    data_mid=data['TB_program_tx_coverage'],
+)
 
-# plot number tb-mdr
+# plot proportion of active tb cases that are tb-mdr
+# expect <1%
+make_plot(
+    title_str="Proportion TB cases that are MDR",
+    model=mdr['tbPropActiveCasesMdr'],
+)
 
 # plot numbers of sputum tests / xpert tests per month
 
