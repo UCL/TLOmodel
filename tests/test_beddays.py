@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
-from _pytest import tmpdir
+import pytest
 
 from tlo import Date, Module, Simulation, logging
 # 1) Core functionality of the BedDays module
