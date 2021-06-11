@@ -788,46 +788,51 @@ class HealthSystem(Module):
 
         return appt_footprint_times
 
-    def get_squeeze_factors(self, all_calls_today, current_capabilities):
+    def get_squeeze_factors(self, footprints_per_event, total_footprint, current_capabilities):
         """
-        This will compute the squeeze factors for each HSI event from the dataframe that lists all the calls on health
-        system resources for the day.
-        The squeeze factor is defined as (call/available - 1). ie. the highest fractional over-demand among any type of
-        officer that is called-for in the appt_footprint of an HSI event.
-        A value of 0.0 signifies that there is no squeezeing (sufficient resources for the EXPECTED_APPT_FOOTPRINT).
-        A value of 99.99 signifies that the call is for an officer_type in a health-facility that is not available.
+        This will compute the squeeze factors for each HSI event from the list of all
+        the calls on health system resources for the day.
+        The squeeze factor is defined as (call/available - 1). ie. the highest
+        fractional over-demand among any type of officer that is called-for in the
+        appt_footprint of an HSI event.
+        A value of 0.0 signifies that there is no squeezing (sufficient resources for
+        the EXPECTED_APPT_FOOTPRINT).
+        A value of 99.99 signifies that the call is for an officer_type in a
+        health-facility that is not available.
 
-        :param all_calls_today: Dataframe, one column per HSI event, containing the minutes required from each health
-            officer in each health facility (using the standard index)
-        :param current_capabilities: Dataframe giving the amount of time available from each health officer in each
-            health facility (using the standard index)
+        :param footprints_per_event: List, one entry per HSI event, containing the
+            minutes required from each health officer in each health facility as a
+            Counter (using the standard index)
+        :param total_footprint: Counter, containing the total minutes required from
+            each health officer in each health facility when non-zero, (using the
+            standard index)
+        :param current_capabilities: Dataframe giving the amount of time available from
+            each health officer in each health facility (using the standard index)
 
-        :return: squeeze_factors: a list of the squeeze factors for each HSI event
-            (position in list matches column number in the all_call_today dataframe).
+        :return: squeeze_factors: an array of the squeeze factors for each HSI event
+            (position in array matches that in the all_call_today list).
         """
 
-        # 1) Compute the load factors
-        total_call = all_calls_today.sum(axis=1)
+        # 1) Compute the load factors for each officer type at each facility that is called-upon in this list of HSIs
         total_available = current_capabilities['Total_Minutes_Per_Day']
+        load_factor = {}
+        for officer, call in total_footprint.items():
+            availability = total_available.get(officer)
+            if availability is None:
+                load_factor[officer] = 99.99
+            elif availability == 0:
+                load_factor[officer] = float('inf')
+            else:
+                load_factor[officer] = max(call / availability - 1, 0)
 
-        load_factor = (total_call / total_available) - 1
-        load_factor.loc[pd.isnull(load_factor)] = 99.99
-        load_factor = load_factor.where(load_factor > 0, 0)
+        # 5) Convert these load-factors into an overall 'squeeze' signal for eachHSI, based on the highest load-factor
+        # of any officer required
+        squeeze_factor_per_hsi_event = np.array([
+            max(load_factor[officer] for officer in footprint)
+            for footprint in footprints_per_event
+        ])
 
-        # 5) Convert these load-factors into an overall 'squeeze' signal for each appointment_type requested
-        squeeze_factor_per_hsi_event = list()  # The "squeeze factor" for each HSI event
-        # [based on the highest load-factor of any officer required]
-
-        for col_num in np.arange(0, len(all_calls_today.columns)):
-            load_factor_per_officer_needed = list()
-            officers_needed = all_calls_today.loc[all_calls_today[col_num] > 0, col_num].index.astype(str)
-            assert len(officers_needed) > 0
-            for officer in officers_needed:
-                load_factor_per_officer_needed.append(load_factor.loc[officer])
-            squeeze_factor_per_hsi_event.append(max(load_factor_per_officer_needed))
-
-        assert len(squeeze_factor_per_hsi_event) == len(all_calls_today.columns)
-        assert (np.asarray(squeeze_factor_per_hsi_event) >= 0).all()
+        assert (squeeze_factor_per_hsi_event >= 0).all()
 
         return squeeze_factor_per_hsi_event
 
@@ -1051,22 +1056,24 @@ class HealthSystem(Module):
             log_info['date'] = self.sim.date
             self.store_of_hsi_events_that_have_run.append(log_info)
 
-    def log_current_capabilities(self, current_capabilities, all_calls_today):
+    def log_current_capabilities(self, current_capabilities, total_footprint):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type
         NB. To get this per Officer_Type_Code, it would be possible to simply log the entire current_capabilities df.
         :param current_capabilities: the current_capabilities of the health system.
-        :param all_calls_today: dataframe of all the HSI events that ran
+        :param total_footprint: Per-officer totals of footprints of all the HSI events that ran
         """
 
-        # Combine the current_capabiliites and the sum-across-columns of all_calls_today
-        comparison = current_capabilities[['Facility_ID', 'Total_Minutes_Per_Day']].merge(
-            all_calls_today.sum(axis=1).to_frame(), left_index=True, right_index=True, how='inner'
-        )
-        comparison = comparison.rename(columns={0: 'Minutes_Used'})
+        # Combine the current_capabiliites and total_footprint per-officer totals
+        total_calls_per_officer = pd.Series(total_footprint, dtype='float64')
+        comparison = current_capabilities[['Facility_ID', 'Total_Minutes_Per_Day']].copy()
+        comparison['Minutes_Used'] = total_calls_per_officer
+        comparison['Minutes_Used'].fillna(0, inplace=True)
+        total_calls = total_calls_per_officer.sum()
+
         assert len(comparison) == len(current_capabilities)
         assert (
-            abs(comparison['Minutes_Used'].sum() - all_calls_today.sum().sum()) <= 0.0001 * all_calls_today.sum().sum()
+            abs(comparison['Minutes_Used'].sum() - total_calls) <= 0.0001 * total_calls
         )
 
         # Sum within each Facility_ID using groupby (Index of 'summary' is Facility_ID)
@@ -1388,39 +1395,37 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         current_capabilities = self.module.get_capabilities_today()
 
         if not list_of_individual_hsi_event_tuples_due_today:
-            # empty dataframe for logging
-            df_footprints_of_all_individual_level_hsi_event = pd.DataFrame(index=current_capabilities.index)
+            # Empty counter for log_current_capabilities call below
+            total_footprint = Counter()
         else:
             # 4) Examine total call on health officers time from the HSI events that are due today
 
             # For all events in 'list_of_individual_hsi_event_tuples_due_today',
-            # expand the appt-footprint of the event into give the demands on
-            # each officer-type in each facility_id. [Name of columns is the position in the list of event_due_today)
+            # expand the appt-footprint of the event to give the demands on
+            # each officer-type in each facility_id.
 
-            footprints_of_all_individual_level_hsi_event = {
-                event_number: self.module.get_appt_footprint_as_time_request(hsi_event=(event_tuple[4]))
-                for event_number, event_tuple in enumerate(list_of_individual_hsi_event_tuples_due_today)
-            }
+            footprints_of_all_individual_level_hsi_event = [
+                self.module.get_appt_footprint_as_time_request(hsi_event=(event_tuple[4]))
+                for event_tuple in list_of_individual_hsi_event_tuples_due_today
+            ]
 
-            # dataframe to store all the calls to the healthsystem today
-            df_footprints_of_all_individual_level_hsi_event = pd.DataFrame(
-                footprints_of_all_individual_level_hsi_event, index=current_capabilities.index
-            )
-            df_footprints_of_all_individual_level_hsi_event.fillna(0, inplace=True)
-
-            assert len(df_footprints_of_all_individual_level_hsi_event.columns) == len(
-                list_of_individual_hsi_event_tuples_due_today
-            )
-            assert df_footprints_of_all_individual_level_hsi_event.index.equals(current_capabilities.index)
+            # Compute total appointment footprint across all events
+            # Summing manually in loop seems to be ~3 time quicker than
+            # sum(footprints_of_all_individual_level_hsi_event, Counter())
+            total_footprint = Counter()
+            for footprint in footprints_of_all_individual_level_hsi_event:
+                total_footprint += footprint
 
             # 5) Estimate Squeeze-Factors for today
             if self.module.mode_appt_constraints == 0:
                 # For Mode 0 (no Constraints), the squeeze factors are all zero.
-                squeeze_factor_per_hsi_event = [0] * len(df_footprints_of_all_individual_level_hsi_event.columns)
+                squeeze_factor_per_hsi_event = np.zeros(
+                    len(footprints_of_all_individual_level_hsi_event))
             else:
                 # For Other Modes, the squeeze factors must be computed
                 squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
-                    all_calls_today=df_footprints_of_all_individual_level_hsi_event,
+                    footprints_per_event=footprints_of_all_individual_level_hsi_event,
+                    total_footprint=total_footprint,
                     current_capabilities=current_capabilities,
                 )
 
@@ -1459,10 +1464,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         self.module.check_appt_footprint_format(actual_appt_footprint)
 
                         # Update load factors:
-                        updated_call = self.module.get_appt_footprint_as_time_request(event, actual_appt_footprint)
-                        df_footprints_of_all_individual_level_hsi_event.loc[updated_call.keys(), ev_num] = updated_call
+                        updated_call = self.module.get_appt_footprint_as_time_request(
+                            event, actual_appt_footprint)
+                        original_call = footprints_of_all_individual_level_hsi_event[ev_num]
+                        footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
+                        total_footprint -= original_call
+                        total_footprint += updated_call
                         squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
-                            all_calls_today=df_footprints_of_all_individual_level_hsi_event,
+                            footprints_per_event=footprints_of_all_individual_level_hsi_event,
+                            total_footprint=total_footprint,
                             current_capabilities=current_capabilities,
                         )
                     else:
@@ -1505,7 +1515,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # 8) After completing routine for the day, log total usage of the facilities
         self.module.log_current_capabilities(
-            current_capabilities=current_capabilities, all_calls_today=df_footprints_of_all_individual_level_hsi_event
+            current_capabilities=current_capabilities,
+            total_footprint=total_footprint
         )
 
 
