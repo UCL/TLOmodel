@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 
 import pandas as pd
-from _pytest import tmpdir
 
 from tlo import Date, Module, Simulation, logging
 # 1) Core functionality of the BedDays module
@@ -12,7 +11,6 @@ from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, bed_days, demography, healthsystem
 from tlo.methods.healthsystem import HSI_Event
-
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -127,12 +125,7 @@ def check_bed_days_basics(hs_disable):
             print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
 
     # Create simulation with the healthsystem and DummyModule
-    sim = Simulation(start_date=start_date, seed=0, log_config={
-        'filename': 'bed_days',
-        'directory': tmpdir,
-        'custom_levels': {
-            "*": logging.INFO, }
-    })
+    sim = Simulation(start_date=start_date, seed=0)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=hs_disable),
@@ -193,7 +186,7 @@ def check_bed_days_basics(hs_disable):
     assert not df.at[person_id, 'bd_is_inpatient']
 
     # impose the footprint:
-    sim.date = start_date + pd.DateOffset(days=5)
+    sim.date = min(bd.bed_tracker['high_dependency_bed'].index) + pd.DateOffset(days=5)
     hsi_bd.post_apply_hook()
 
     # check that person is an in-patient now
@@ -208,10 +201,6 @@ def check_bed_days_basics(hs_disable):
         diff[bed_type] = - (
             bd.bed_tracker[bed_type].loc[:, the_facility_id] - orig[bed_type].loc[:, the_facility_id]
         )
-
-    output = parse_log_file(sim.log_filepath)
-    log_df = output['tlo.methods.bed_days']
-    print(f'the log is: {log_df}')
 
     first_day = diff[diff.sum(axis=1) > 0].index.min()
     last_day = diff[diff.sum(axis=1) > 0].index.max()
@@ -267,7 +256,7 @@ def check_bed_days_basics(hs_disable):
     )
 
 
-def check_bed_days_property_is_inpatient(hs_disable):
+def check_bed_days_property_is_inpatient(tmpdir, hs_disable):
     """Check that the is_inpatient property is controlled correctly and kept in sync with the bed-tracker"""
 
     class DummyModule(Module):
@@ -340,7 +329,12 @@ def check_bed_days_property_is_inpatient(hs_disable):
             pass
 
     # Create simulation with the health system and DummyModule
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=0, log_config={
+        'filename': 'bed_days',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.bed_days": logging.INFO, }
+    })
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=hs_disable),
@@ -348,7 +342,7 @@ def check_bed_days_property_is_inpatient(hs_disable):
         DummyModule()
     )
     sim.make_initial_population(n=100)
-    sim.simulate(end_date=start_date + pd.DateOffset(days=20))
+    sim.simulate(end_date=start_date + pd.DateOffset(days=22))
 
     number_of_bed_days = sum(sim.modules['BedDays'].available_footprint.values())
     length_of_bed_days_tracker = sim.modules['BedDays'].parameters['days_until_last_day_of_bed_tracker'] + 1
@@ -367,17 +361,26 @@ def check_bed_days_property_is_inpatient(hs_disable):
                                                                              (number_of_bed_days + 2)) ==
                sim.modules['DummyModule'].in_patient_status[2].values
                )
+    #  read log results
+    if not hs_disable:
+        output = parse_log_file(sim.log_filepath)
+        bed_days_log_output = output['tlo.methods.bed_days']
 
-    # check that in-patient status is consistent with recorded usage of beds
-    tot_time_as_in_patient = sim.modules['DummyModule'].in_patient_status.sum(axis=1)
-    tracker = sim.modules['BedDays'].bed_tracker['general_bed']
-    beds_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
-    assert (beds_occupied == tot_time_as_in_patient).all()
+        # check that in-patient status is consistent with recorded usage of beds
+        tot_time_as_in_patient = sim.modules['DummyModule'].in_patient_status.sum(axis=1)
+        tracker = bed_days_log_output['bed_tracker_general_bed']
+        tracker.set_index('date', inplace=True)
+        beds_occupied = tracker.sum(axis=1)[1] - tracker.sum(axis=1)
+
+        print(f'Total in patient days are: {tot_time_as_in_patient}')
+        print(f'The bed_tracker from log file: {beds_occupied}')
+
+        assert (beds_occupied == tot_time_as_in_patient).all()
 
     check_dtypes(sim)
 
 
-def check_bed_days_released_on_death(hs_disable):
+def check_bed_days_released_on_death(tmpdir, hs_disable):
     """Check that bed-days scheduled to be occupied are released upon the death of the person"""
 
     class DummyModule(Module):
@@ -411,7 +414,7 @@ def check_bed_days_released_on_death(hs_disable):
                 priority=0)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Dummy(self, person_id=1),
+                HSI_Dummy(self, person_id=2),
                 topen=self.sim.date + pd.DateOffset(days=2),
                 tclose=None,
                 priority=0)
@@ -444,7 +447,12 @@ def check_bed_days_released_on_death(hs_disable):
             pass
 
     # Create simulation with the health system and DummyModule
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=0, log_config={
+        'filename': 'bed_days',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.bed_days": logging.INFO, }
+    })
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=hs_disable),
@@ -452,24 +460,31 @@ def check_bed_days_released_on_death(hs_disable):
         DummyModule()
     )
     sim.make_initial_population(n=100)
-    sim.simulate(end_date=start_date + pd.DateOffset(days=20))
+    sim.simulate(end_date=start_date + pd.DateOffset(days=22))
 
     # Test that all bed-days released when person dies
     assert not sim.population.props.at[0, 'is_alive']  # person 0 has died
     assert sim.population.props.at[1, 'is_alive']  # person 1 is alive
 
-    tracker = sim.modules['BedDays'].bed_tracker['general_bed']
-    bed_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
-    assert all([0] * 2 + [2] * 3 + [1] * 7 + [0] * 10 == bed_occupied.values)
+    #  read log results
+    if not hs_disable:
+        output = parse_log_file(sim.log_filepath)
+        bed_days_log_output = output['tlo.methods.bed_days']
+
+        tracker = bed_days_log_output['bed_tracker_general_bed']
+        tracker.set_index('date', inplace=True)
+        bed_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
+        print(f'the beds occupied are {bed_occupied}')
+        assert all([0] * 2 + [2] * 3 + [1] * 7 + [0] * 10 == bed_occupied.values)
 
 
-def test_bed_days_if_healthsystem_not_disabled():
+def test_bed_days_if_healthsystem_not_disabled(tmpdir):
     check_bed_days_basics(hs_disable=False)
-    #  check_bed_days_property_is_inpatient(hs_disable=False)
-    #  check_bed_days_released_on_death(hs_disable=False)
+    check_bed_days_property_is_inpatient(tmpdir, hs_disable=False)
+    check_bed_days_released_on_death(tmpdir, hs_disable=False)
 
 
-def test_bed_days_if_healthsystem_is_disabled():
+def test_bed_days_if_healthsystem_is_disabled(tmpdir):
     check_bed_days_basics(hs_disable=True)
-    # check_bed_days_property_is_inpatient(hs_disable=True)
-    # check_bed_days_released_on_death(hs_disable=True)
+    check_bed_days_property_is_inpatient(tmpdir, hs_disable=True)
+    check_bed_days_released_on_death(tmpdir, hs_disable=True)
