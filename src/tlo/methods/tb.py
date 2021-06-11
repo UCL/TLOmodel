@@ -125,9 +125,6 @@ class Tb(Module):
             Types.REAL,
             'coverage of IPT among contacts of TB cases in high-risk districts',
         ),
-        'bcg_coverage_year': Parameter(
-            Types.REAL, 'bcg coverage estimates in children <1 years by calendar year'
-        ),
         'initial_bcg_coverage': Parameter(
             Types.REAL, 'bcg coverage by age in baseline population'
         ),
@@ -438,7 +435,6 @@ class Tb(Module):
         p['followup_times'] = workbook['followup']
         p['tb_high_risk_distr'] = workbook['IPTdistricts']
         p['ipt_contact_cov'] = workbook['ipt_coverage']
-        p['bcg_coverage_year'] = workbook['BCG']
         p['initial_bcg_coverage'] = workbook['BCG_baseline']
 
         # 2) Get the DALY weights
@@ -2008,6 +2004,8 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         if new_mdr_cases:
             prop_mdr = new_mdr_cases / new_tb_cases
+        else:
+            prop_mdr = 0
 
         logger.info(
             '%s|tb_mdr|%s',

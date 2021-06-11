@@ -33,8 +33,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 15000
+end_date = Date(2020, 1, 1)
+popsize = 100000
 
 # set up the log config
 log_config = {
@@ -60,7 +60,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
              epi.Epi(resourcefilepath=resourcefilepath),
              hiv.Hiv(resourcefilepath=resourcefilepath),
-             tb.Tb(resourcefilepath=resourcefilepath),
+             tb.Tb(resourcefilepath=resourcefilepath)
              )
 
 # Run the simulation and flush the logger
@@ -237,4 +237,3 @@ make_plot(
 # plot ipt for HIV+ and contacts of TB cases
 
 # plot by district
-
