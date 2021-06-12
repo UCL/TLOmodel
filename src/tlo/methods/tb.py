@@ -1929,6 +1929,17 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # proportion of active TB cases in the last year who are HIV-positive
         prop_hiv = inc_active_hiv / new_tb_cases if new_tb_cases else 0
 
+        logger.info(
+            '%s|tb_incidence|%s',
+            now,
+            {
+                'num_new_active_tb': new_tb_cases,
+                'num_new_latent_tb': new_latent_cases,
+                'num_new_active_tb_in_hiv': inc_active_hiv,
+                'prop_active_tb_in_plhiv': prop_hiv,
+            },
+        )
+
         # ------------------------------------ PREVALENCE ------------------------------------
         # number of current active cases divided by population alive
 

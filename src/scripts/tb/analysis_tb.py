@@ -129,10 +129,10 @@ for year in years:
 
 
 # Active TB incidence - annual outputs
-activeTB_inc = output['tlo.methods.tb']['tb_incidence']
-activeTB_inc['date'] = pd.DatetimeIndex(activeTB_inc['date']).year
-activeTB_inc = activeTB_inc.set_index('date')
-activeTB_inc_rate = (activeTB_inc / py) * 100000
+TB_inc = output['tlo.methods.tb']['tb_incidence']
+TB_inc['date'] = pd.DatetimeIndex(TB_inc['date']).year
+TB_inc = TB_inc.set_index('date')
+activeTB_inc_rate = (TB_inc['num_new_active_tb'] / py) * 100000
 
 # latent TB prevalence
 latentTB_prev = output['tlo.methods.tb']['tb_prevalence']
