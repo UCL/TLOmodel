@@ -1035,6 +1035,9 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # check who should progress from latent to active disease
         self.module.progression_to_active(population)
 
+        # schedule some background rates of tb testing (non-symptom driven)
+        self.module.send_for_screening(population)
+
     def latent_transmission(self, strain):
         # assume while on treatment, not infectious
         # consider relative infectivity of smear positive/negative and pulmonary / extrapulmonary
@@ -1122,6 +1125,27 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[tb_idx, 'tb_inf'] = 'latent'
         df.loc[tb_idx, 'tb_date_latent'] = now
         df.loc[tb_idx, 'tb_strain'] = strain
+
+    def send_for_screening(self, population):
+        # randomly select some individuals for screening and testing
+
+        df = population.props
+        p = self.module.parameters
+        rng = self.module.rng
+
+        # get a list of random numbers between 0 and 1 for each infected individual
+        random_draw = rng.random_sample(size=len(df))
+        screen_idx = df.index[
+            df.is_alive & (random_draw < p['rate_testing_non_tb'])
+            ]
+
+        for person in screen_idx:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Tb_ScreeningAndRefer(person_id=person, module=self.module),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
 
 
 class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):

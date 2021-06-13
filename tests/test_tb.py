@@ -147,6 +147,8 @@ def test_natural_history():
 
     # Make the population
     sim.make_initial_population(n=popsize)
+    # simulate for 0 days, just get everthing set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     df = sim.population.props
 
@@ -176,6 +178,7 @@ def test_natural_history():
     # check properties set
     assert df.at[person_id, 'tb_inf'] == 'active'
     assert df.at[person_id, 'tb_date_active'] == sim.date
+    assert df.at[person_id, 'tb_smear']
 
     # check symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
@@ -183,6 +186,28 @@ def test_natural_history():
     for symptom in symptom_list:
         assert symptom in sim.modules['SymptomManager'].has_what(person_id)
 
+    # run HSI_Tb_ScreeningAndRefer and check outcomes
+    screening_and_refer = tb.HSI_Tb_ScreeningAndRefer(module=sim.modules['Tb'], person_id=person_id)
+    screening_and_refer.apply(person_id=person_id, squeeze_factor=0.0)
+
+
+
+
+
+    # Run the TestAndRefer event for the child
+    rtn = event.apply(person_id=child_id, squeeze_factor=0.0)
+
+    # check that the event returned a footprint for a VCTPositive
+    assert rtn == event.make_appt_footprint({'VCTPositive': 1.0})
+
+    # check that child is now diagnosed
+    assert sim.population.props.at[child_id, "hv_diagnosed"]
+
+    # Check that the child has an art initiation event scheduled
+    assert 1 == len([
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(child_id) if
+        isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment)
+    ])
 
 
 
