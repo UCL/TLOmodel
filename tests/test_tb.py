@@ -4,6 +4,7 @@
 import datetime
 import pickle
 from pathlib import Path
+import os
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -11,13 +12,18 @@ import pandas as pd
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    care_of_women_during_pregnancy,
     demography,
-    simplified_births,
     dx_algorithm_child,
     enhanced_lifestyle,
-    healthburden,
     healthseekingbehaviour,
     healthsystem,
+    healthburden,
+    labour,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
     epi,
     hiv,
@@ -37,36 +43,45 @@ def check_dtypes(simulation):
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
-# set up the log config
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
-log_config = {
-    'filename': 'Logfile',
-    'directory': outputpath,
-    'custom_levels': {
-        '*': logging.WARNING,
-        'tlo.methods.tb': logging.INFO,
-        'tlo.methods.demography': logging.INFO
-    }
-}
 
-start_date = Date(2010, 1, 1)
+def get_sim(use_simplified_birth=True):
+    """get sim with the checks for configuration of properties running in the TB module"""
+    start_date = Date(2010, 1, 1)
+    popsize = 1000
+    sim = Simulation(start_date=start_date, seed=0)
 
+    # Register the appropriate modules
+    if use_simplified_birth:
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                     epi.Epi(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+                     tb.Tb(resourcefilepath=resourcefilepath),
+                     )
+    else:
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                     labour.Labour(resourcefilepath=resourcefilepath),
+                     newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                     epi.Epi(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+                     tb.Tb(resourcefilepath=resourcefilepath),
+                     )
 
-def register_sim():
-
-    sim = Simulation(start_date=start_date, seed=100, log_config=log_config)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 tb.Tb(resourcefilepath=resourcefilepath),
-                 )
     return sim
 
 
@@ -76,18 +91,19 @@ def test_basic_run():
     end_date = Date(2012, 12, 31)
     popsize = 1000
 
-    sim = register_sim()
+    sim = get_sim(use_simplified_birth=True)
 
     # set high transmission rate and all are fast progressors
     sim.modules['Tb'].parameters['transmission_rate'] = 0.5
     sim.modules['Tb'].parameters['prop_fast_progressor'] = 1.0
 
-    # Run the simulation and flush the logger
+    # Make the population
     sim.make_initial_population(n=popsize)
+
     df = sim.population.props
 
     # check properties assigned correctly for baseline population
-    # should be some latent infections, maybe few active infections
+    # should be some latent infections, no active infections
     num_latent = len(df[(df.tb_inf == 'latent') & df.is_alive])
     prev_latent = num_latent / len(df[df.is_alive])
     assert prev_latent > 0
@@ -99,16 +115,8 @@ def test_basic_run():
     ]).all().all()
 
     # no-one should be on tb treatment yet
-    assert pd.isnull(df.loc[~df.date_of_birth.isna(), [
-        'tb_on_treatment',
-        'tb_date_treated',
-        'tb_ever_treated',
-        'tb_treatment_failure',
-        'tb_treated_mdr',
-        'tb_date_treated_mdr',
-        'tb_on_ipt',
-        'tb_date_ipt']
-    ]).all().all()
+    assert not df.tb_on_treatment.all()
+    assert pd.isnull(df.tb_date_treated).all()
 
     # run the simulation
     sim.simulate(end_date=end_date)
@@ -117,31 +125,104 @@ def test_basic_run():
     df = sim.population.props  # updated dataframe
 
     # some should have treatment dates
-    # some mdr cases should be occurring
     assert not pd.isnull(df.loc[~df.date_of_birth.isna(), [
         'tb_on_treatment',
         'tb_date_treated',
         'tb_ever_treated',
-        'tb_diagnosed',
-        'tb_diagnosed_mdr']
+        'tb_diagnosed']
     ]).all().all()
 
 
+# check natural history of TB infection
+def test_natural_history():
+    """ test natural history and progression """
+    end_date = Date(2012, 12, 31)
+    popsize = 10
 
+    sim = get_sim(use_simplified_birth=True)
+
+    # set all to be fast progressors
+    sim.modules['Tb'].parameters['prop_fast_progressor'] = 1.0
+    sim.modules['Tb'].parameters['prop_smear_positive'] = 1.0
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    df = sim.population.props
+
+    # select an adult who is alive with latent tb
+    person_id = df.loc[df.is_alive & (df.tb_inf == 'latent') &
+                       df.age_years.between(15, 80)].index[0]
+    assert person_id  # check person has been identified
+
+    # set tb strain to ds
+    df.at[person_id, 'tb_strain'] = 'ds'
+    # set hiv status to uninfected
+    df.at[person_id, 'hv_inf'] = False
+
+    # run TB polling event to schedule progression to active stage
+    progression_event = tb.TbRegularPollingEvent(module=sim.modules['Tb'])
+    progression_event.apply(population=sim.population)
+
+    # check if TbActiveEvent was scheduled
+    date_active_event, active_event = \
+        [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], tb.TbActiveEvent)][0]
+    assert date_active_event >= sim.date
+
+    # run TbActiveEvent
+    active_event_run = tb.TbActiveEvent(module=sim.modules['Tb'], person_id=person_id)
+    active_event_run.apply(person_id)
+
+    # check properties set
+    assert df.at[person_id, 'tb_inf'] == 'active'
+    assert df.at[person_id, 'tb_date_active'] == sim.date
+
+    # check symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+    for symptom in symptom_list:
+        assert symptom in sim.modules['SymptomManager'].has_what(person_id)
+
+
+
+
+
+
+    # should call progression to active if eligible
+    # which schedules TbActiveEvent for now - does it actually occur here or need to be called
+
+
+    assert True is bool(df.at[person_id, 'hv_inf'])
+    assert "not" == df.at[person_id, 'hv_art']
+    assert sim.date == df.at[person_id, 'hv_date_inf']
 
 
 # test overall proportion of new latent cases which progress to active
 # ahould be 14% fast progressors, 67% hiv+ fast progressors
 # overall lifetime risk 5-10%
+def test_latent_prevalence():
+    """ test basic run and properties assigned correctly """
+
+    end_date = Date(2012, 12, 31)
+    popsize = 1000
+
+    sim = register_sim()
+
+    # Run the simulation and flush the logger
+    sim.make_initial_population(n=popsize)
+    df = sim.population.props
+
+    # run TB polling event
+
+
+
 
 # check treatment failure
 # start high active infection rate
 # assign treatment to all
 # check proportion treatment failure
 
-# infect one person
-# check all properties
-# check smear status
+
 
 # check risk of relapse
 
@@ -153,3 +234,5 @@ def test_basic_run():
 # check treatment ends at appropriate time
 
 # if child born to mother with diagnosed tb, check give ipt
+
+# check testing rates

@@ -33,8 +33,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 100000
+end_date = Date(2012, 1, 1)
+popsize = 10000
 
 # set up the log config
 log_config = {
@@ -60,7 +60,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
              epi.Epi(resourcefilepath=resourcefilepath),
              hiv.Hiv(resourcefilepath=resourcefilepath),
-             tb.Tb(resourcefilepath=resourcefilepath)
+             tb.Tb(resourcefilepath=resourcefilepath),
              )
 
 # Run the simulation and flush the logger
@@ -133,6 +133,7 @@ TB_inc = output['tlo.methods.tb']['tb_incidence']
 TB_inc['date'] = pd.DatetimeIndex(TB_inc['date']).year
 TB_inc = TB_inc.set_index('date')
 activeTB_inc_rate = (TB_inc['num_new_active_tb'] / py) * 100000
+activeTB_inc_rate.index = pd.to_datetime(activeTB_inc_rate.index, format='%Y')
 
 # latent TB prevalence
 latentTB_prev = output['tlo.methods.tb']['tb_prevalence']
@@ -142,7 +143,7 @@ latentTB_prev = latentTB_prev.set_index('date')
 # proportion TB cases that are MDR
 mdr = output['tlo.methods.tb']['tb_mdr']
 mdr['date'] = pd.DatetimeIndex(mdr['date']).year
-mdr = latentTB_prev.set_index('date')
+mdr = mdr.set_index('date')
 
 # deaths
 deaths = output['tlo.methods.demography']['death'].copy()  # outputs individual deaths
@@ -165,11 +166,16 @@ total_tb_deaths = tot_tb_non_hiv_deaths.add(tot_tb_hiv_deaths, fill_value=0)
 
 # mortality rates per 100k person-years
 total_tb_deaths_rate = (total_tb_deaths / py) * 100000
+total_tb_deaths_rate.index = pd.to_datetime(total_tb_deaths_rate.index, format='%Y')
+
 tot_tb_hiv_deaths_rate = (tot_tb_hiv_deaths / py) * 100000
+tot_tb_hiv_deaths_rate.index = pd.to_datetime(tot_tb_hiv_deaths_rate.index, format='%Y')
+
 tot_tb_non_hiv_deaths_rate = (tot_tb_non_hiv_deaths / py) * 100000
+tot_tb_non_hiv_deaths_rate.index = pd.to_datetime(tot_tb_non_hiv_deaths_rate.index, format='%Y')
 
 # treatment coverage
-Tb_tx_coverage = output['tlo.methods.tb']['tbTreatmentCoverage']
+Tb_tx_coverage = output['tlo.methods.tb']['tb_treatment']
 Tb_tx_coverage['date'] = pd.DatetimeIndex(Tb_tx_coverage['date']).year
 Tb_tx_coverage = Tb_tx_coverage.set_index('date')
 
@@ -221,7 +227,7 @@ make_plot(
 # plot proportion of active tb cases on treatment
 make_plot(
     title_str="TB treatment coverage",
-    model=Tb_tx_coverage['tx_coverage'],
+    model=Tb_tx_coverage['tbTreatmentCoverage'],
     data_mid=data['TB_program_tx_coverage'],
 )
 
