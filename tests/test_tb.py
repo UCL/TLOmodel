@@ -86,51 +86,51 @@ def get_sim(use_simplified_birth=True):
 
 
 # simple checks
-def test_basic_run():
-    """ test basic run and properties assigned correctly """
-    end_date = Date(2012, 12, 31)
-    popsize = 1000
-
-    sim = get_sim(use_simplified_birth=True)
-
-    # set high transmission rate and all are fast progressors
-    sim.modules['Tb'].parameters['transmission_rate'] = 0.5
-    sim.modules['Tb'].parameters['prop_fast_progressor'] = 1.0
-
-    # Make the population
-    sim.make_initial_population(n=popsize)
-
-    df = sim.population.props
-
-    # check properties assigned correctly for baseline population
-    # should be some latent infections, no active infections
-    num_latent = len(df[(df.tb_inf == 'latent') & df.is_alive])
-    prev_latent = num_latent / len(df[df.is_alive])
-    assert prev_latent > 0
-
-    assert not pd.isnull(df.loc[~df.date_of_birth.isna(), [
-        'tb_inf',
-        'tb_strain',
-        'tb_date_latent']
-    ]).all().all()
-
-    # no-one should be on tb treatment yet
-    assert not df.tb_on_treatment.all()
-    assert pd.isnull(df.tb_date_treated).all()
-
-    # run the simulation
-    sim.simulate(end_date=end_date)
-    check_dtypes(sim)
-
-    df = sim.population.props  # updated dataframe
-
-    # some should have treatment dates
-    assert not pd.isnull(df.loc[~df.date_of_birth.isna(), [
-        'tb_on_treatment',
-        'tb_date_treated',
-        'tb_ever_treated',
-        'tb_diagnosed']
-    ]).all().all()
+# def test_basic_run():
+#     """ test basic run and properties assigned correctly """
+#     end_date = Date(2012, 12, 31)
+#     popsize = 1000
+#
+#     sim = get_sim(use_simplified_birth=True)
+#
+#     # set high transmission rate and all are fast progressors
+#     sim.modules['Tb'].parameters['transmission_rate'] = 0.5
+#     sim.modules['Tb'].parameters['prop_fast_progressor'] = 1.0
+#
+#     # Make the population
+#     sim.make_initial_population(n=popsize)
+#
+#     df = sim.population.props
+#
+#     # check properties assigned correctly for baseline population
+#     # should be some latent infections, no active infections
+#     num_latent = len(df[(df.tb_inf == 'latent') & df.is_alive])
+#     prev_latent = num_latent / len(df[df.is_alive])
+#     assert prev_latent > 0
+#
+#     assert not pd.isnull(df.loc[~df.date_of_birth.isna(), [
+#         'tb_inf',
+#         'tb_strain',
+#         'tb_date_latent']
+#     ]).all().all()
+#
+#     # no-one should be on tb treatment yet
+#     assert not df.tb_on_treatment.all()
+#     assert pd.isnull(df.tb_date_treated).all()
+#
+#     # run the simulation
+#     sim.simulate(end_date=end_date)
+#     check_dtypes(sim)
+#
+#     df = sim.population.props  # updated dataframe
+#
+#     # some should have treatment dates
+#     assert not pd.isnull(df.loc[~df.date_of_birth.isna(), [
+#         'tb_on_treatment',
+#         'tb_date_treated',
+#         'tb_ever_treated',
+#         'tb_diagnosed']
+#     ]).all().all()
 
 
 # check natural history of TB infection
@@ -187,39 +187,48 @@ def test_natural_history():
         assert symptom in sim.modules['SymptomManager'].has_what(person_id)
 
     # run HSI_Tb_ScreeningAndRefer and check outcomes
-    screening_and_refer = tb.HSI_Tb_ScreeningAndRefer(module=sim.modules['Tb'], person_id=person_id)
-    screening_and_refer.apply(person_id=person_id, squeeze_factor=0.0)
+    # this schedules the event
+    sim.modules['HealthSystem'].schedule_hsi_event(
+        tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb']),
+        topen=sim.date,
+        tclose=None,
+        priority=0
+    )
+
+    # Check person has a ScreeningAndRefer event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_ScreeningAndRefer)
+    ][0]
+    assert date_event == sim.date
+
+    list_of_hsi = [
+        'tb.HSI_Tb_ScreeningAndRefer',
+        'tb.HSI_Tb_StartTreatment'
+    ]
+
+    # hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
+    # hsi_event.run(squeeze_factor=0)
+
+    for name_of_hsi in list_of_hsi:
+        hsi_event = eval(name_of_hsi +
+                         "(person_id=" +
+                         str(person_id) +
+                         ", "
+                         "module=sim.modules['Tb'],"
+                         ""
+                         ")"
+                         )
+        hsi_event.run(squeeze_factor=0)
+
+    assert df.at[person_id, 'tb_ever_tested']
+    assert df.at[person_id, 'tb_diagnosed']
 
 
 
 
 
-    # Run the TestAndRefer event for the child
-    rtn = event.apply(person_id=child_id, squeeze_factor=0.0)
 
-    # check that the event returned a footprint for a VCTPositive
-    assert rtn == event.make_appt_footprint({'VCTPositive': 1.0})
-
-    # check that child is now diagnosed
-    assert sim.population.props.at[child_id, "hv_diagnosed"]
-
-    # Check that the child has an art initiation event scheduled
-    assert 1 == len([
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(child_id) if
-        isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment)
-    ])
-
-
-
-
-
-    # should call progression to active if eligible
-    # which schedules TbActiveEvent for now - does it actually occur here or need to be called
-
-
-    assert True is bool(df.at[person_id, 'hv_inf'])
-    assert "not" == df.at[person_id, 'hv_art']
-    assert sim.date == df.at[person_id, 'hv_date_inf']
 
 
 # test overall proportion of new latent cases which progress to active

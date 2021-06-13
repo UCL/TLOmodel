@@ -116,17 +116,14 @@ class Tb(Module):
         'prop_active_2010': Parameter(
             Types.REAL, 'Proportion of population with active tb in 2010'
         ),
-        'pulm_tb': Parameter(Types.REAL, 'probability of pulmonary tb'),
+        'pulm_tb': Parameter(Types.DATA_FRAME, 'probability of pulmonary tb'),
         'followup_times': Parameter(
-            Types.INT, 'times(weeks) tb treatment monitoring required after tx start'
+            Types.DATA_FRAME, 'times(weeks) tb treatment monitoring required after tx start'
         ),
         'tb_high_risk_distr': Parameter(Types.LIST, 'list of ten high-risk districts'),
         'ipt_contact_cov': Parameter(
-            Types.REAL,
+            Types.DATA_FRAME,
             'coverage of IPT among contacts of TB cases in high-risk districts',
-        ),
-        'initial_bcg_coverage': Parameter(
-            Types.REAL, 'bcg coverage by age in baseline population'
         ),
 
         # ------------------ baseline population ------------------ #
@@ -435,7 +432,6 @@ class Tb(Module):
         p['followup_times'] = workbook['followup']
         p['tb_high_risk_distr'] = workbook['IPTdistricts']
         p['ipt_contact_cov'] = workbook['ipt_coverage']
-        p['initial_bcg_coverage'] = workbook['BCG_baseline']
 
         # 2) Get the DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
@@ -664,7 +660,7 @@ class Tb(Module):
 
         if person['tb_diagnosed_mdr']:
 
-            drugs_available = self.get_all_consumables(
+            drugs_available = HSI_Event.get_all_consumables(self,
                 footprint=self.footprints_for_consumables_required['tb_mdrtx'])
 
         # -------- First TB infection -------- #
@@ -672,13 +668,13 @@ class Tb(Module):
 
         elif not person['tb_ever_treated']:
 
-            if df.at['age_years'] >= 15:
+            if person['age_years'] >= 15:
                 # treatment for ds-tb: adult
-                drugs_available = self.get_all_consumables(
+                drugs_available = HSI_Event.get_all_consumables(self,
                     footprint=self.footprints_for_consumables_required['tb_tx_adult'])
             else:
                 # treatment for ds-tb: child
-                drugs_available = self.get_all_consumables(
+                drugs_available = HSI_Event.get_all_consumables(self,
                     footprint=self.footprints_for_consumables_required['tb_tx_child'])
 
         # -------- Secondary TB infection -------- #
@@ -686,13 +682,13 @@ class Tb(Module):
         # possible treatment failure or subsequent reinfection
         elif person['tb_ever_treated']:
 
-            if df.at['age_years'] >= 15:
+            if person['age_years'] >= 15:
                 # treatment for reinfection ds-tb: adult
-                drugs_available = self.get_all_consumables(
+                drugs_available = HSI_Event.get_all_consumables(self,
                     footprint=self.footprints_for_consumables_required['tb_retx_adult'])
             else:
                 # treatment for reinfection ds-tb: child
-                drugs_available = self.get_all_consumables(
+                drugs_available = HSI_Event.get_all_consumables(self,
                     footprint=self.footprints_for_consumables_required['tb_retx_child'])
 
         return drugs_available
@@ -709,28 +705,33 @@ class Tb(Module):
         df = self.sim.population.props
         p = self.parameters
 
+        follow_up_times = p['followup_times']
+
         # default clinical monitoring schedule for first infection ds-tb
-        clinical_fup = p['followup_times'].loc['ds_clinical_monitor']
+        clinical_fup = follow_up_times['ds_clinical_monitor'].dropna()
 
         # if previously treated:
         if df.at[person_id, 'tb_ever_treated']:
 
             # if strain is ds and person previously treated:
-            clinical_fup = p['followup_times'].loc['ds_retreatment_clinical']
+            clinical_fup = follow_up_times['ds_retreatment_clinical'].dropna()
 
         # if strain is mdr - this treatment schedule takes precedence
         elif df.at[person_id, 'tb_strain'] == 'mdr':
 
             # if strain is mdr:
-            clinical_fup = p['followup_times'].loc['mdr_clinical']
+            clinical_fup = follow_up_times['mdr_clinical'].dropna()
 
-        # todo does this use the right value for appt?
         for appt in clinical_fup:
             # schedule a clinical check-up appointment
             date_appt = self.sim.date + \
                         pd.DateOffset(days=appt * 30.5)
-            self.sim.schedule_event(
-                HSI_Tb_FollowUp(self, person_id), date_appt
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Tb_FollowUp(person_id=person_id, module=self),
+                topen=date_appt,
+                tclose=None,
+                priority=0
             )
 
     def initialise_population(self, population):
@@ -1036,7 +1037,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.progression_to_active(population)
 
         # schedule some background rates of tb testing (non-symptom driven)
-        self.module.send_for_screening(population)
+        self.send_for_screening(population)
 
     def latent_transmission(self, strain):
         # assume while on treatment, not infectious
@@ -1136,7 +1137,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = rng.random_sample(size=len(df))
         screen_idx = df.index[
-            df.is_alive & (random_draw < p['rate_testing_non_tb'])
+            df.is_alive & (random_draw < p['rate_testing_tb'])
             ]
 
         for person in screen_idx:
@@ -1495,6 +1496,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         test_result = None
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
         # check if patient has: cough, fever, night sweat, weight loss
         # if any of the above conditions are present request appropriate test
