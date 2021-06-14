@@ -163,18 +163,6 @@ class Tb(Module):
             Types.REAL,
             'relative transmissibility of MDR compared with drug-susceptible TB',
         ),
-        'p_mdr_new': Parameter(
-            Types.REAL,
-            'probability of MDR emergence per treatment course – new patients',
-        ),
-        'p_mdr_retreat': Parameter(
-            Types.REAL,
-            'multiplier for probability of MDR emergence per treatment course – re-treatment',
-        ),
-        'p_mdr_tx_fail': Parameter(
-            Types.REAL,
-            'multiplier for probability of MDR emergence per treatment course – treatment failure',
-        ),
 
         # ------------------ progression ------------------ #
         'prop_fast_progressor': Parameter(
@@ -207,11 +195,8 @@ class Tb(Module):
             Types.REAL,
             'proportion children aged 10-15 years progressing to active disease',
         ),
-        'monthly_prob_self_cure': Parameter(
-            Types.REAL, 'monthly probability of self-cure'
-        ),
-        'monthly_prob_self_cure_hiv': Parameter(
-            Types.REAL, 'monthly probability of self-cure in plhiv'
+        'annual_prob_self_cure': Parameter(
+            Types.REAL, 'annual probability of self-cure in HIV- or HIV+ and virally suppressed'
         ),
 
         # ------------------ clinical features ------------------ #
@@ -1272,36 +1257,44 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ---------------------- first case ds-tb (6 months) ---------------------- #
         end_ds_idx = df.loc[df.is_alive & df.tb_on_treatment & ~df.tb_treated_mdr &
-                            (df.tb_date_treated < (now - DateOffset(days=p['ds_treatment_length']))) &
+                            (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
                             ~df.tb_ever_treated].index
 
         # sample some to have treatment failure
-        # todo check whether this returns series of tx failure selected from end_ds_idx
         ds_tx_failure = rng.random_sample(size=len(end_ds_idx)) < (1 - p['prob_tx_success_new'])
 
         if ds_tx_failure:
-            idx_ds_tx_failure = ds_tx_failure[ds_tx_failure]
+            idx_ds_tx_failure = end_ds_idx[ds_tx_failure]
             df.loc[idx_ds_tx_failure, 'tb_treatment_failure'] = True
+            df.loc[idx_ds_tx_failure, 'tb_ever_treated'] = True  # ensure classed as retreatment case
+
+            # remove treatment failure cases from those finishing treatment
+            # refer for further testing and retreatment
+            end_ds_idx = end_ds_idx[~ds_tx_failure]
+
+            for person in idx_ds_tx_failure:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    HSI_Tb_ScreeningAndRefer(person_id=person, module=self.sim.module),
+                    topen=self.sim.date,
+                    tclose=None,
+                    priority=0
+                )
 
         # ----------------------retreatment ds-tb (7 months) ---------------------- #
         # defined as a current ds-tb cases with property tb_ever_treated as true
         # has completed full tb treatment course previously
         end_ds_retx_idx = df.loc[df.is_alive & df.tb_on_treatment & ~df.tb_treated_mdr &
-                                 (df.tb_date_treated < (now - DateOffset(days=p['ds_retreatment_length']))) &
+                                 (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_retreatment_length']))) &
                                  df.tb_ever_treated].index
 
         # ---------------------- mdr-tb (24 months) ---------------------- #
         end_mdr_tx_idx = df.loc[df.is_alive & df.tb_treated_mdr &
                                 (df.tb_date_treated < (
-                                    now - DateOffset(days=p['mdr_treatment_length'])))].index
+                                    now - pd.DateOffset(days=p['mdr_treatment_length'])))].index
 
-        # todo check index appends
-        # end_tx_indx = end_ds_idx.union(end_ds_retx_idx, end_mdr_tx_idx, sort=None)
+        # join indices
         end_tx_indx = end_ds_idx.union(end_ds_retx_idx)
         end_tx_indx = end_tx_indx.union(end_mdr_tx_idx)
-
-        # end_tx_indx = np.concatenate(end_ds_idx, end_ds_retx_idx, end_mdr_tx_idx)
-        # end_tx_indx = end_ds_idx + end_ds_retx_idx + end_mdr_tx_idx
 
         # change individual properties to off treatment
         df.loc[end_tx_indx, 'tb_on_treatment'] = False
@@ -1317,11 +1310,13 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
-    """ regular event for TB self-cure
+    """ annual event which allows some individuals to self-cure
+    approximate time from infection to self-cure is 3 years
+    HIV+ and not virally suppressed cannot self-cure
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=12))
 
     def apply(self, population):
         params = self.module.parameters
@@ -1339,22 +1334,8 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & df.is_alive
             & ~df.hv_inf
             & (df.tb_date_active < now)
-            & (random_draw < params['monthly_prob_self_cure'])
+            & (random_draw < params['annual_prob_self_cure'])
         ].index
-        df.loc[self_cure, 'tb_inf'] = 'latent'
-        df.loc[self_cure, 'tb_diagnosed'] = False
-
-        # hiv-positive, not on art (or on art but not virally suppressed)
-        self_cure_hiv = df.loc[
-            (df.tb_inf == 'active')
-            & df.is_alive
-            & df.hv_inf
-            & (df.hv_art != 'on_VL_suppressed')
-            & (df.tb_date_active < now)
-            & (random_draw < params['monthly_prob_self_cure_hiv'])
-        ].index
-        df.loc[self_cure_hiv, 'tb_inf'] = 'latent'
-        df.loc[self_cure_hiv, 'tb_diagnosed'] = False
 
         # hiv-positive, on art and virally suppressed
         self_cure_art = df.loc[
@@ -1363,13 +1344,16 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & df.hv_inf
             & (df.hv_art == 'on_VL_suppressed')
             & (df.tb_date_active < now)
-            & (random_draw < params['monthly_prob_self_cure'])
+            & (random_draw < params['annual_prob_self_cure'])
         ].index
-        df.loc[self_cure_art, 'tb_inf'] = 'latent'
-        df.loc[self_cure_art, 'tb_diagnosed'] = False
 
-        # check that tb symptoms are present and caused by tb before resolving
-        all_self_cure = [*self_cure, *self_cure_hiv, *self_cure_art]
+        # resolve symptoms and change properties
+        all_self_cure = [*self_cure, *self_cure_art]
+
+        df.loc[all_self_cure, 'tb_inf'] = 'latent'
+        df.loc[all_self_cure, 'tb_diagnosed'] = False
+        df.loc[all_self_cure, 'tb_strain'] = 'none'
+        df.loc[all_self_cure, 'tb_smear'] = False
 
         for person_id in all_self_cure:
             # this will clear all tb symptoms
@@ -1486,13 +1470,12 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         """ Do the screening and referring to next tests """
 
         df = self.sim.population.props
-        person = df.loc[person_id]
 
-        if not person['is_alive']:
+        if not df.at[person_id, 'is_alive']:
             return
 
         # If the person has previously been diagnosed do nothing do not occupy any resources
-        if person['tb_diagnosed']:
+        if df.at[person_id, 'tb_diagnosed']:
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         test_result = None
@@ -1505,7 +1488,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             # if screening indicates presumptive tb
             # child under 5 -> chest x-ray, has to be health system level 2 or above
-            if person['age_years'] < 5:
+            if df.at[person_id, 'age_years'] < 5:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Tb_Xray(person_id=person_id, module=self.module),
                     topen=self.sim.date,
@@ -1514,7 +1497,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 )
 
             # never diagnosed/treated before and hiv-neg -> sputum smear
-            elif not person['tb_ever_treated'] and not person['hv_inf']:
+            elif not df.at[person_id, 'tb_ever_treated'] and not df.at[person_id, 'hv_inf']:
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'LabTBMicro': 1})
                 test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                     dx_tests_to_run='tb_sputum_test',
@@ -1522,14 +1505,14 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 )
 
             # previously diagnosed/treated or hiv+ -> xpert
-            elif person['tb_ever_treated'] or person['hv_inf']:
+            elif df.at[person_id, 'tb_ever_treated'] or df.at[person_id, 'hv_inf']:
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'LabMolec': 1})
                 test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                     dx_tests_to_run='tb_xpert_test',
                     hsi_event=self
                 )
-                if test_result and (person['tb_strain'] == 'mdr'):
-                    person['tb_diagnosed_mdr'] = True
+                if test_result and (df.at[person_id, 'tb_strain'] == 'mdr'):
+                    df.at[person_id, 'tb_diagnosed_mdr'] = True
 
                 # if xpert not available perform sputum test
                 if test_result is None:
@@ -1545,11 +1528,11 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # if a test has been performed, update person's properties
         if test_result is not None:
-            person['tb_ever_tested'] = True
+            df.at[person_id, 'tb_ever_tested'] = True
 
             # if any test returns positive result, refer for appropriate treatment
             if test_result:
-                person['tb_diagnosed'] = True
+                df.at[person_id, 'tb_diagnosed'] = True
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
@@ -1591,9 +1574,8 @@ class HSI_Tb_Xray(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        person = df.loc[person_id]
 
-        if not person['is_alive']:
+        if not df.at[person_id, 'is_alive']:
             return
 
         test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
@@ -1603,7 +1585,7 @@ class HSI_Tb_Xray(HSI_Event, IndividualScopeEventMixin):
 
         # if test returns positive result, refer for appropriate treatment
         if test_result:
-            person['tb_diagnosed'] = True
+            df.at[person_id, 'tb_diagnosed'] = True
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
@@ -1635,18 +1617,17 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if available, change person's properties
         """
         df = self.sim.population.props
-        person = df.loc[person_id]
         now = self.sim.date
 
-        if not person["is_alive"]:
+        if not df.at[person_id, "is_alive"]:
             return
 
         treatment_available = self.module.select_treatment(person_id)
 
         if treatment_available:
             # start person on tb treatment - update properties
-            person['tb_on_treatment'] = True
-            person['tb_date_treated'] = now
+            df.at[person_id, 'tb_on_treatment'] = True
+            df.at[person_id, 'tb_date_treated'] = now
 
             # schedule clinical monitoring
             self.module.clinical_monitoring(person_id)
