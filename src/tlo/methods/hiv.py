@@ -1663,15 +1663,14 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         Consider whether IPT is needed at this time. This is run only when treatment is initiated.
         """
         df = self.sim.population.props
-        p = self.module.parameters
 
         if 'Tb' in self.sim.modules:
             high_risk_districts = self.sim.modules["Tb"].parameters["tb_high_risk_distr"]
             district = df.at[person_id, "district_of_residence"]
-            eligible = df.at[person_id, "tb_inf"] == "active"
+            eligible = df.at[person_id, "tb_inf"] != "active"
             if (
                 (district in high_risk_districts.values)
-                & (self.sim.date.year > 2012)
+                & (self.sim.date.year > 2017)
                 & eligible
             ):
                 # Schedule the TB treatment event:

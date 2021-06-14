@@ -15,7 +15,6 @@ from tlo.methods import Metadata, demography
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.util import create_age_range_lookup
 from tlo.methods import hiv
 # from tlo.core import Cause
 
@@ -77,21 +76,10 @@ class Tb(Module):
         ),
         'tb_date_active': Property(Types.DATE, 'Date active tb started'),
         'tb_smear': Property(Types.BOOL, 'smear positivity with active infection: False=negative, True=positive'),
-        # 'tb_stage': Property(
-        #     Types.CATEGORICAL,
-        #     'Level of symptoms for tb',
-        #     categories=['none', 'latent', 'active_pulm', 'active_extra'],
-        # ),
         'tb_date_death': Property(Types.DATE, 'date of scheduled tb death'),
 
         # ------------------ testing status ------------------ #
         'tb_ever_tested': Property(Types.BOOL, 'ever had a tb test'),
-        # 'tb_smear_test': Property(Types.BOOL, 'ever had a tb smear test'),
-        # 'tb_result_smear_test': Property(Types.BOOL, 'result from tb smear test'),
-        # 'tb_date_smear_test': Property(Types.DATE, 'date of tb smear test'),
-        # 'tb_xpert_test': Property(Types.BOOL, 'ever had a tb Xpert test'),
-        # 'tb_result_xpert_test': Property(Types.BOOL, 'result from tb Xpert test'),
-        # 'tb_date_xpert_test': Property(Types.DATE, 'date of tb Xpert test'),
         'tb_diagnosed': Property(Types.BOOL, 'person has current diagnosis of active tb'),
         'tb_diagnosed_mdr': Property(Types.BOOL, 'person has current diagnosis of active mdr-tb'),
 
@@ -352,43 +340,8 @@ class Tb(Module):
         'mdr_treatment_length': Parameter(
             Types.REAL, 'length of treatment for mdr-tb in days'
         ),
-
-        # ------------------ daly weights ------------------ #
-        # no daly for latent tb
-        'daly_wt_susc_tb': Parameter(
-            Types.REAL, 'Drug-susecptible tuberculosis, not HIV infected'
-        ),
-        'daly_wt_resistant_tb': Parameter(
-            Types.REAL, 'multidrug-resistant tuberculosis, not HIV infected'
-        ),
-        'daly_wt_susc_tb_hiv_severe_anaemia': Parameter(
-            Types.REAL,
-            '# Drug-susecptible Tuberculosis, HIV infected and anemia, severe',
-        ),
-        'daly_wt_susc_tb_hiv_moderate_anaemia': Parameter(
-            Types.REAL,
-            'Drug-susecptible Tuberculosis, HIV infected and anemia, moderate',
-        ),
-        'daly_wt_susc_tb_hiv_mild_anaemia': Parameter(
-            Types.REAL, 'Drug-susecptible Tuberculosis, HIV infected and anemia, mild'
-        ),
-        'daly_wt_susc_tb_hiv': Parameter(
-            Types.REAL, 'Drug-susecptible Tuberculosis, HIV infected'
-        ),
-        'daly_wt_resistant_tb_hiv_severe_anaemia': Parameter(
-            Types.REAL,
-            'Multidrug resistant Tuberculosis, HIV infected and anemia, severe',
-        ),
-        'daly_wt_resistant_tb_hiv': Parameter(
-            Types.REAL, 'Multidrug resistant Tuberculosis, HIV infected'
-        ),
-        'daly_wt_resistant_tb_hiv_moderate_anaemia': Parameter(
-            Types.REAL,
-            'Multidrug resistant Tuberculosis, HIV infected and anemia, moderate',
-        ),
-        'daly_wt_resistant_tb_hiv_mild_anaemia': Parameter(
-            Types.REAL,
-            'Multidrug resistant Tuberculosis, HIV infected and anemia, mild',
+        'prob_retained_ipt_6_months': Parameter(
+            Types.REAL, 'probability of being retained on IPT every 6 months if still eligible'
         ),
     }
 
@@ -735,7 +688,6 @@ class Tb(Module):
         df['tb_date_latent'] = pd.NaT
         df['tb_date_active'] = pd.NaT
         df['tb_smear'] = False
-        # df['tb_stage'].values[:] = 'none'
         df['tb_date_death'] = pd.NaT
 
         # ------------------ testing status ------------------ #
@@ -921,17 +873,11 @@ class Tb(Module):
         df.at[child_id, 'tb_date_latent'] = pd.NaT
         df.at[child_id, 'tb_date_active'] = pd.NaT
         df.at[child_id, 'tb_smear'] = False
-        # df.at[child_id, 'tb_stage'] = 'none'
         df.at[child_id, 'tb_date_death'] = pd.NaT
 
         # ------------------ testing status ------------------ #
         df.at[child_id, 'tb_ever_tested'] = False
-        # df.at[child_id, 'tb_smear_test'] = False
-        # df.at[child_id, 'tb_result_smear_test'] = False
-        # df.at[child_id, 'tb_date_smear_test'] = pd.NaT
-        # df.at[child_id, 'tb_xpert_test'] = False
-        # df.at[child_id, 'tb_result_xpert_test'] = False
-        # df.at[child_id, 'tb_date_xpert_test'] = pd.NaT
+
         df.at[child_id, 'tb_diagnosed'] = False
         df.at[child_id, 'tb_diagnosed_mdr'] = False
 
@@ -1003,6 +949,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """ The Tb Regular Polling Events
     * Schedules persons becoming newly infected with latent tb
     * Schedules progression to active tb
+    * schedules tb screening / testing
     """
 
     def __init__(self, module):
@@ -1239,9 +1186,9 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
 
 class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    regular monthly check for people currently on treatment
-    if treatment has finished, change individual properties
-    todo treatment success rates not included
+    * check for those eligible to finish treatment
+    * sample for treatment failure and refer for follow-up screening/testing
+    * if treatment has finished, change individual properties
     """
 
     def __init__(self, module):
@@ -1435,16 +1382,13 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
     The is the Screening-and-Refer HSI.
-    A positive outcome from screening will prompt referral to tb tests (sputum/xpert/xray)
+    A positive outcome from symptom-based screening will prompt referral to tb tests (sputum/xpert/xray)
     no consumables are required for screening (4 clinical questions)
 
     This event is scheduled by:
         * the main event poll,
         * when someone presents for care through a Generic HSI with tb-like symptoms
         * active screening / contact tracing programmes
-
-    Following the screening, they may or may not go on to present for uptake an HIV service: ART (if HIV-positive), VMMC (if
-    HIV-negative and male) or PrEP (if HIV-negative and a female sex worker).
 
     If this event is called within another HSI, it may be desirable to limit the functionality of the HSI: do this
     using the arguments:
@@ -1481,10 +1425,14 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         test_result = None
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
+        # ------------------------- screening ------------------------- #
+
         # check if patient has: cough, fever, night sweat, weight loss
         # if any of the above conditions are present request appropriate test
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if any(x in self.module.symptom_list for x in persons_symptoms):
+
+            # ------------------------- testing ------------------------- #
 
             # if screening indicates presumptive tb
             # child under 5 -> chest x-ray, has to be health system level 2 or above
@@ -1718,7 +1666,13 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------
 class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
     """
-        This is a Health System Interaction Event - give ipt to contacts of tb cases for 6 months
+        This is a Health System Interaction Event - give ipt to reduce risk of active TB
+        It can be scheduled by:
+        * HIV.HSI_Hiv_StartOrContinueTreatment for PLHIV, diagnosed and on ART
+        * Tb.HSI_Tb_StartTreatment for up to 5 contacts of diagnosed active TB case
+
+        if person referred by ART initiation (HIV+), IPT given for 36 months
+        paediatric IPT is 6-9 months
     """
 
     def __init__(self, module, person_id):
@@ -1737,8 +1691,8 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
 
         person = df.loc[person_id]
 
-        # Do not run if the person is not alive or is already on IPT
-        if not (person['is_alive'] & ~person['tb_on_ipt']):
+        # Do not run if the person is not alive or already on IPT or diagnosed active infection
+        if not (person['is_alive'] & person['tb_on_ipt'] & ~person['tb_diagnosed']):
             return
 
         # Check/log use of consumables, and give IPT if available
@@ -1768,12 +1722,17 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
         m = self.module
 
-        # Check that they are on IPT currently:
-        if not person['is_alive'] or not person['tb_on_ipt']:
+# todo check not now diagnosed with active TB, check length of IPT already and finish if needed
+
+        # Do not run if the person is not alive or has diagnosed active infection
+        if not (person['is_alive'] & ~person['tb_diagnosed']):
             return
 
+        # if HIV+, end IPT after 36 months
+        if person['tb_date_ipt'] > self.sim.date - pd.DateOffset(days=9*30.5)
+
         # Determine if this appointment is actually attended by the person who has already started on IPT
-        if m.rng.random_sample() < m.parameters['prob_of_being_retained_on_ipt_every_6_months']:
+        if m.rng.random_sample() < m.parameters['prob_retained_ipt_6_months']:
             # Continue on Treatment - and schedule an HSI for a continuation appointment today
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=m),
