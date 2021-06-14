@@ -270,3 +270,5 @@ def test_latent_prevalence():
 # if child born to mother with diagnosed tb, check give ipt
 
 # check testing rates
+
+# check ipt administered and ended correctly

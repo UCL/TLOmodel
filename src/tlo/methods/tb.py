@@ -343,6 +343,9 @@ class Tb(Module):
         'prob_retained_ipt_6_months': Parameter(
             Types.REAL, 'probability of being retained on IPT every 6 months if still eligible'
         ),
+        'ipt_start_date': Parameter(
+            Types.INT, 'year from which IPT is available for paediatric contacts of diagnosed active TB cases'
+        ),
     }
 
     # cough and fever are part of generic symptoms
@@ -1393,6 +1396,12 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     If this event is called within another HSI, it may be desirable to limit the functionality of the HSI: do this
     using the arguments:
         * suppress_footprint=True : the HSI will not have any footprint
+
+    This event will:
+    * screen individuals for TB symptoms
+    * administer appropriate TB test
+    * schedule treatment if needed
+    * give IPT for paediatric contacts of diagnosed case
     """
 
     def __init__(self, module, person_id, suppress_footprint=False):
@@ -1414,6 +1423,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         """ Do the screening and referring to next tests """
 
         df = self.sim.population.props
+        now = self.sim.date
+        p = self.module.parameters
+        rng = self.module.rng
 
         if not df.at[person_id, 'is_alive']:
             return
@@ -1439,7 +1451,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             if df.at[person_id, 'age_years'] < 5:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Tb_Xray(person_id=person_id, module=self.module),
-                    topen=self.sim.date,
+                    topen=now,
                     tclose=None,
                     priority=0
                 )
@@ -1484,10 +1496,54 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
-                topen=self.sim.date,
+                topen=now,
                 tclose=None,
                 priority=0
             )
+
+            # ------------------------- give IPT to contacts ------------------------- #
+            # if diagnosed, trigger ipt outreach event for up to 5 paediatric contacts of case
+            # only high-risk districts are eligible
+
+            # todo check these coverage levels relate to paed contacts not HIV cases
+            if now.year >= p['ipt_start_date']:
+                district = df.at[person_id, 'district_of_residence']
+                ipt_cov = p['ipt_contact_cov']
+                ipt_cov_year = ipt_cov.loc[
+                    ipt_cov.year == now.year
+                ].coverage.values
+
+                if (district in p['tb_high_risk_distr'].values) & (
+                    self.module.rng.rand() < ipt_cov_year
+                ):
+                    # randomly sample from <5 yr olds within district
+                    ipt_eligible = df.loc[
+                            (df.age_years <= 5)
+                            & ~df.tb_diagnosed
+                            & df.is_alive
+                            & (df.district_of_residence == district)
+                        ].index
+
+                    if ipt_eligible:
+                        # sample with replacement in case eligible population n<5
+                        ipt_sample = rng.choice(ipt_eligible, size=5, replace=True)
+                        # retain unique indices only
+                        # fine to have variability in number sampled (between 0-5)
+                        ipt_sample = list(set(ipt_sample))
+
+                        for person_id in ipt_sample:
+                            logger.debug(
+                                'HSI_Tb_ScreeningAndRefer: scheduling IPT for person %d',
+                                person_id,
+                            )
+
+                            ipt_event = HSI_Tb_Start_or_Continue_Ipt(self.module, person_id=person_id)
+                            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                ipt_event,
+                                priority=1,
+                                topen=now,
+                                tclose=None,
+                            )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
@@ -1692,7 +1748,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         # Do not run if the person is not alive or already on IPT or diagnosed active infection
-        if not (person['is_alive'] & person['tb_on_ipt'] & ~person['tb_diagnosed']):
+        if (not person['is_alive']) and person['tb_on_ipt'] and (not person['tb_diagnosed']):
             return
 
         # Check/log use of consumables, and give IPT if available
@@ -1711,7 +1767,10 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
     """Helper event that is used to 'decide' if someone on IPT should continue or end
-    This event is scheduled by 'HSI_Tb_Start_or_Continue_Ipt' 6 months after it is run.
+    This event is scheduled by 'HSI_Tb_Start_or_Continue_Ipt' after 6 months
+
+    * end IPT for all
+    * schedule further IPT for HIV+ if still eligible (no active TB diagnosed, <36 months IPT)
     """
 
     def __init__(self, module, person_id):
@@ -1722,28 +1781,23 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
         m = self.module
 
-# todo check not now diagnosed with active TB, check length of IPT already and finish if needed
-
-        # Do not run if the person is not alive or has diagnosed active infection
-        if not (person['is_alive'] & ~person['tb_diagnosed']):
+        if not (person['is_alive']):
             return
 
-        # if HIV+, end IPT after 36 months
-        if person['tb_date_ipt'] > self.sim.date - pd.DateOffset(days=9*30.5)
+        # default update properties for all
+        df.at[person_id, 'tb_on_ipt'] = False
 
-        # Determine if this appointment is actually attended by the person who has already started on IPT
-        if m.rng.random_sample() < m.parameters['prob_retained_ipt_6_months']:
-            # Continue on Treatment - and schedule an HSI for a continuation appointment today
+        # decide whether PLHIV will continue
+        if (not person['tb_diagnosed']) and (
+            person['tb_date_ipt'] < (self.sim.date - pd.DateOffset(days=36 * 30.5))) and (
+            m.rng.random_sample() < m.parameters['prob_retained_ipt_6_months']):
+
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=m),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=14),
                 priority=0
             )
-
-        else:
-            # Defaults to being off IPT
-            df.loc[person_id, 'tb_on_ipt'] = False
 
 
 # ---------------------------------------------------------------------------
