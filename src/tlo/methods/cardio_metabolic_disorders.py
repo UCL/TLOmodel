@@ -190,8 +190,8 @@ class CardioMetabolicDisorders(Module):
         cond_hsi = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_hsi.xlsx", sheet_name=None)
         events_onset = pd.read_excel(cmd_path / "ResourceFile_cmd_events.xlsx", sheet_name=None)
         events_death = pd.read_excel(cmd_path / "ResourceFile_cmd_events_death.xlsx", sheet_name=None)
-        events_symptoms = pd.read_excel(cmd_path / "ResourceFile_cmd_symptoms.xlsx", sheet_name=None)
-        events_hsi = pd.read_excel(cmd_path / "ResourceFile_cmd_hsi.xlsx", sheet_name=None)
+        events_symptoms = pd.read_excel(cmd_path / "ResourceFile_cmd_events_symptoms.xlsx", sheet_name=None)
+        events_hsi = pd.read_excel(cmd_path / "ResourceFile_cmd_events_hsi.xlsx", sheet_name=None)
 
         def get_values(params, value):
             """replaces nans in the 'value' key with specified value"""
@@ -207,13 +207,13 @@ class CardioMetabolicDisorders(Module):
             p[f'{condition}_death'] = get_values(cond_death[condition], 1)
             p[f'{condition}_initial_prev'] = get_values(cond_prevalence[condition], 0)
             p[f'{condition}_symptoms'] = get_values(cond_symptoms[condition], 1)
-            p[f'{condition}_hsi'] = get_values(cond_symptoms[condition], 1)
+            p[f'{condition}_hsi'] = get_values(cond_hsi[condition], 1)
 
         for event in self.events:
             p[f'{event}_onset'] = get_values(events_onset[event], 1)
             p[f'{event}_death'] = get_values(events_death[event], 1)
             p[f'{event}_symptoms'] = get_values(events_symptoms[event], 1)
-            p[f'{event}_hsi'] = get_values(events_symptoms[event], 1)
+            p[f'{event}_hsi'] = get_values(events_hsi[event], 1)
 
         # Set the interval (in months) between the polls
         p['interval_between_polls'] = 3
@@ -260,15 +260,13 @@ class CardioMetabolicDisorders(Module):
 
                     # get symptom probabilities
             if not self.parameters[f'{condition}_symptoms'].empty:
-                self.prob_symptoms[condition] = \
-                    self.parameters[f'{condition}_symptoms'].set_index('parameter_name').T.to_dict('records')[0]
+                self.prob_symptoms[condition] = self.parameters[f'{condition}_symptoms']
             else:
                 self.prob_symptoms[condition] = {}
             for event in self.events:
                 # get symptom probabilities
                 if not self.parameters[f'{event}_symptoms'].empty:
-                    self.prob_symptoms[event] = \
-                        self.parameters[f'{event}_symptoms'].set_index('parameter_name').T.to_dict('records')[0]
+                    self.prob_symptoms[event] = self.parameters[f'{event}_symptoms']
                 else:
                     self.prob_symptoms[event] = {}
                 # -------------------- SYMPTOMS ---------------------------------------------------------------
