@@ -260,7 +260,9 @@ def test_latent_prevalence():
 
 # check risk of relapse
 
+
 # test running without hiv
+
 # check smear positive rates in hiv- and hiv+ to confirm process still working with dummy property
 
 # check dates of follow-up appts following schedule

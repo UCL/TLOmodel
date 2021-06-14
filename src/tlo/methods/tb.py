@@ -124,6 +124,7 @@ class Tb(Module):
         'prob_latent_tb_0_14': Parameter(Types.REAL, 'probability of latent infection in ages 0-14 years'),
         'prob_latent_tb_15plus': Parameter(Types.REAL, 'probability of latent infection in ages 15+'),
         'transmission_rate': Parameter(Types.REAL, 'TB transmission rate, calibrated'),
+        'mixing_parameter': Parameter(Types.REAL, 'mixing parameter adjusts transmission rate for force of infection between districts'),
         'rel_inf_smear_ng': Parameter(
             Types.REAL, 'relative infectiousness of tb in hiv+ compared with hiv-'
         ),
@@ -399,8 +400,8 @@ class Tb(Module):
 
         # 4) Define the linear models
         # linear model for risk of latent tb in baseline population 2010
-        # latent tb risk not affected by bcg
-        # assumes intercept=1
+        # assume latent tb risk not affected by bcg
+        # intercept=1
         self.lm['latent_tb_2010'] = LinearModel.multiplicative(
             Predictor('age_years').when('<15', p["prob_latent_tb_0_14"]).otherwise(p["prob_latent_tb_15plus"]),
         )
@@ -668,6 +669,7 @@ class Tb(Module):
             date_appt = self.sim.date + \
                         pd.DateOffset(days=appt * 30.5)
 
+            # this schedules all clinical monitoring appts, tests will occur in some of these
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Tb_FollowUp(person_id=person_id, module=self),
                 topen=date_appt,
@@ -988,6 +990,8 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
         districts = df['district_of_residence'].unique()
 
+        # -------------- district-level transmission -------------- #
+
         # smear-positive cases by district
         df['tmp'] = pd.Series(0, index=df.index)
         df.loc[
@@ -1017,9 +1021,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         pop = df.groupby(['district_of_residence'])[['tmp3']].sum()
         pop = pop.iloc[:, 0]  # convert to series
 
-        del df['tmp']
-        del df['tmp2']
-        del df['tmp3']
+        del df['tmp'], df['tmp2'], df['tmp3']
 
         # calculate foi by district
         foi = pd.Series(0, index=districts)
@@ -1035,14 +1037,38 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # look up value for each row in df
         foi_for_individual = df['district_of_residence'].map(foi_dict)
-        foi_for_individual.loc[~df.is_alive] = 0
+        foi_for_individual = foi_for_individual.fillna(0)  # newly added rows to df will have nan entries
 
         assert (
             foi_for_individual.isna().sum() == 0
         )  # check there is a district-level foi for every person
 
+        # -------------- national-level transmission -------------- #
+
+        # add additional background risk of infection to occur nationally
+        # accounts for population movement
+        # use mixing param to adjust transmission rate
+        # apply equally to all
+
+        # total number smear-positive
+        total_smear_pos = smear_pos.sum()
+
+        # total number smear-negative
+        total_smear_neg = smear_neg.sum()
+
+        # total population
+        total_pop = pop.sum()
+
+        foi_national = (p['mixing_parameter'] *
+                  p['transmission_rate']
+                  * (total_smear_pos + (total_smear_neg * p['rel_inf_smear_ng']))
+              ) / total_pop
+
+        # -------------- individual risk of acquisition -------------- #
+
         # adjust individual risk by bcg status
         risk_tb = pd.Series(foi_for_individual, index=df.index)
+        risk_tb.loc[df.is_alive] += foi_national  # add in background risk (national)
         risk_tb.loc[~df.is_alive] *= 0  # to ensure no risk if dead
         risk_tb.loc[df.va_bcg & df.age_years < 10] *= p['rr_bcg_inf']
         del foi_for_individual
@@ -1097,7 +1123,6 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
         rng = self.module.rng
         now = self.sim.date
-        p = self.module.parameters
 
         # need a monthly relapse for every person in df
         # should return risk=0 for everyone not eligible for relapse
@@ -1127,7 +1152,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
 
         # schedule progression to active
         for person in idx_will_relapse:
-            self.sim.schedule_event(TbActiveEvent(self, person), now)
+            self.sim.schedule_event(TbActiveEvent(self.module, person), now)
 
 
 class TbActiveEvent(Event, IndividualScopeEventMixin):
@@ -1144,7 +1169,7 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
 
         df = self.sim.population.props
-        params = self.module.parameters
+        p = self.module.parameters
         rng = self.module.rng
         now = self.sim.date
 
@@ -1160,7 +1185,7 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
 
             # -------- 2) assign smear status --------
             # hiv-negative
-            if rng.rand() < params['prop_smear_positive']:
+            if rng.rand() < p['prop_smear_positive']:
                 df.at[person_id, 'tb_smear'] = True
 
             # -------- 3) assign symptoms --------
@@ -1177,7 +1202,7 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
             # -------- 4) if HIV+ schedule AIDS onset --------
             if df.at[person_id, 'hv_inf']:
                 # higher probability of being smear positive
-                if rng.rand() < params['prop_smear_positive_hiv']:
+                if rng.rand() < p['prop_smear_positive_hiv']:
                     df.at[person_id, 'tb_smear'] = True
 
                 if 'Hiv' in self.sim.modules:
@@ -1213,7 +1238,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # sample some to have treatment failure
         ds_tx_failure = rng.random_sample(size=len(end_ds_idx)) < (1 - p['prob_tx_success_new'])
 
-        if ds_tx_failure:
+        if ds_tx_failure.any():
             idx_ds_tx_failure = end_ds_idx[ds_tx_failure]
             df.loc[idx_ds_tx_failure, 'tb_treatment_failure'] = True
             df.loc[idx_ds_tx_failure, 'tb_ever_treated'] = True  # ensure classed as retreatment case
@@ -1224,7 +1249,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
 
             for person in idx_ds_tx_failure:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Tb_ScreeningAndRefer(person_id=person, module=self.sim.module),
+                    HSI_Tb_ScreeningAndRefer(person_id=person, module=self.module),
                     topen=self.sim.date,
                     tclose=None,
                     priority=0
@@ -1666,24 +1691,27 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
         df = self.sim.population.props
 
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+
         # months since treatment start - to compare with monitoring schedule
         # round to lower integer value
         months_since_tx = int((self.sim.date - df.at[person_id, 'tb_date_treated']).days / 30.5)
 
         # default clinical monitoring schedule for first infection ds-tb
-        sputum_fup = p['followup_times'].loc['ds_sputum']
+        follow_up_times = p['followup_times']
+        sputum_fup = follow_up_times['ds_sputum'].dropna()
 
         # if previously treated:
         if df.at[person_id, 'tb_ever_treated']:
 
             # if strain is ds and person previously treated:
-            sputum_fup = p['followup_times'].loc['ds_retreatment_sputum']
+            sputum_fup = follow_up_times['ds_retreatment_sputum'].dropna()
 
         # if strain is mdr - this treatment schedule takes precedence
         elif df.at[person_id, 'tb_strain'] == 'mdr':
 
             # if strain is mdr:
-            sputum_fup = p['followup_times'].loc['mdr_sputum']
+            sputum_fup = follow_up_times['mdr_sputum'].dropna()
 
         # check schedule for sputum test and perform if necessary
         if months_since_tx in sputum_fup:
