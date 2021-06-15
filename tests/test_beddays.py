@@ -449,10 +449,3 @@ def test_bed_days_released_on_death(tmpdir):
 
     check_dtypes(sim)
 
-
-def test_bed_days_if_healthsystem_is_disabled(tmpdir):
-    # todo -this
-    pass
-
-
-
