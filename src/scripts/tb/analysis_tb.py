@@ -33,8 +33,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 20000
+end_date = Date(2013, 1, 1)
+popsize = 1000
 
 # set up the log config
 log_config = {
@@ -127,12 +127,14 @@ for year in years:
     ).transpose()
     py[year] = tot_py.sum().values[0]
 
+py.index = pd.to_datetime(years, format='%Y')
 
 # Active TB incidence - annual outputs
 TB_inc = output['tlo.methods.tb']['tb_incidence']
 TB_inc = TB_inc.set_index('date')
+TB_inc.index = pd.to_datetime(TB_inc.index)
 activeTB_inc_rate = (TB_inc['num_new_active_tb'] / py) * 100000
-activeTB_inc_rate.index = pd.to_datetime(activeTB_inc_rate.index, format='%Y')
+
 
 # latent TB prevalence
 latentTB_prev = output['tlo.methods.tb']['tb_prevalence']
@@ -151,29 +153,30 @@ to_drop = (deaths.cause != 'TB')
 deaths_TB = deaths.drop(index=to_drop[to_drop].index).copy()
 deaths_TB['year'] = deaths_TB.index.year  # count by year
 tot_tb_non_hiv_deaths = deaths_TB.groupby(by=['year']).size()
+tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format='%Y')
 
 # TB/HIV deaths
 to_drop = (deaths.cause != 'AIDS_non_TB')
 deaths_TB_HIV = deaths.drop(index=to_drop[to_drop].index).copy()
 deaths_TB_HIV['year'] = deaths_TB_HIV.index.year  # count by year
 tot_tb_hiv_deaths = deaths_TB_HIV.groupby(by=['year']).size()
+tot_tb_hiv_deaths.index = pd.to_datetime(tot_tb_hiv_deaths.index, format='%Y')
 
 # total TB deaths (including HIV+)
 total_tb_deaths = tot_tb_non_hiv_deaths.add(tot_tb_hiv_deaths, fill_value=0)
+total_tb_deaths.index = pd.to_datetime(total_tb_deaths.index, format='%Y')
 
 # mortality rates per 100k person-years
 total_tb_deaths_rate = (total_tb_deaths / py) * 100000
-total_tb_deaths_rate.index = pd.to_datetime(total_tb_deaths_rate.index, format='%Y')
 
 tot_tb_hiv_deaths_rate = (tot_tb_hiv_deaths / py) * 100000
-tot_tb_hiv_deaths_rate.index = pd.to_datetime(tot_tb_hiv_deaths_rate.index, format='%Y')
 
 tot_tb_non_hiv_deaths_rate = (tot_tb_non_hiv_deaths / py) * 100000
-tot_tb_non_hiv_deaths_rate.index = pd.to_datetime(tot_tb_non_hiv_deaths_rate.index, format='%Y')
 
 # treatment coverage
 Tb_tx_coverage = output['tlo.methods.tb']['tb_treatment']
 Tb_tx_coverage = Tb_tx_coverage.set_index('date')
+Tb_tx_coverage.index = pd.to_datetime(Tb_tx_coverage.index)
 
 
 # ------------------------- PLOTS ------------------------- #

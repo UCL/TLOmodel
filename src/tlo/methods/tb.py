@@ -662,7 +662,7 @@ class Tb(Module):
         elif df.at[person_id, 'tb_strain'] == 'mdr':
 
             # if strain is mdr:
-            clinical_fup = follow_up_times['mdr_clinical'].dropna()
+            clinical_fup = follow_up_times['mdr_clinical_monitor'].dropna()
 
         for appt in clinical_fup:
             # schedule a clinical check-up appointment
@@ -1549,7 +1549,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                             & (df.district_of_residence == district)
                         ].index
 
-                    if ipt_eligible:
+                    if ipt_eligible.any():
                         # sample with replacement in case eligible population n<5
                         ipt_sample = rng.choice(ipt_eligible, size=5, replace=True)
                         # retain unique indices only
@@ -2076,14 +2076,14 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # ------------------------------------ TREATMENT ------------------------------------
-        # number of tb cases currently on treatment
-        num_tb_tx = len(df[(df.tb_inf == 'active') & df.tb_on_treatment & df.is_alive])
-        if num_active_tb_cases:
-            tx_coverage = num_tb_tx / num_active_tb_cases
+        # number of tb cases initiated treatment in last timeperiod / new active cases
+        new_tb_tx = len(
+            df[(df.tb_date_treated > (now - DateOffset(months=self.repeat)))]
+        )
+        if new_tb_cases:
+            tx_coverage = new_tb_tx / new_tb_cases
         else:
             tx_coverage = 0
-
-        assert tx_coverage <= 1
 
         logger.info(
             '%s|tb_treatment|%s',
