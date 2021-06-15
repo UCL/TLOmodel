@@ -124,36 +124,51 @@ class BedDays(Module):
             assert not df.isna().any().any()
             self.bed_tracker[bed_type] = df
 
-    def move_tracker_by_one_day(self, tracker):
+    def processing_at_start_of_new_day(self):
+        """Things to do at the start of each new day:
+        * Log yesterdays usage of beds
+        * Move the tracker by one day"""
+
+        self.log_yesterday_info_from_all_bed_trackers()
+        self.move_each_tracker_by_one_day()
+
+    def move_each_tracker_by_one_day(self):
         bed_capacity = self.parameters['BedCapacity']
-        for bed_type in self.bed_types:
-            start_date = min(tracker[bed_type].index)
+
+        for bed_type, tracker in self.bed_tracker.items():
+
+            start_date = min(tracker.index)
+
             # reset all the columns for the earliest entry - it's going to become the new day
-            tracker[bed_type].loc[start_date] = bed_capacity.loc[bed_capacity.index[0], bed_type]
-            end_date = max(tracker[bed_type].index)  # get the latest day in the dataframe
+            tracker.loc[start_date] = bed_capacity.loc[bed_capacity.index[0], bed_type]
+
+            # make new index
+            end_date = max(tracker.index)  # get the latest day in the dataframe
             new_day = end_date + pd.DateOffset(days=1)  # the new day is the next day
-            new_index = list(tracker[bed_type].index)
+            new_index = list(tracker.index)
             new_index[0] = new_day  # the earliest day is replaced with the next day
             new_index = pd.DatetimeIndex(new_index)
-            tracker[bed_type] = tracker[bed_type].set_index(
-                pd.DatetimeIndex(new_index)).sort_index()  # update the index
-        return tracker
 
-    def log_yesterday_info_from_bed_tracker(self):
+            # update the index
+            tracker = tracker.set_index(pd.DatetimeIndex(new_index)).sort_index()
+
+            # save the updated trakcer
+            self.bed_tracker[bed_type] = tracker
+
+    def log_yesterday_info_from_all_bed_trackers(self):
         """Dump yesterday's status of bed-day tracker to the log"""
-        # todo - stuff going on here with the index? and labelling of columns?
-        for bed_type in self.bed_tracker:
-            for index, row in self.bed_tracker[bed_type].iterrows():
-                row.index = row.index.astype(str)
-                row['Facility_Name'] = index
-                logger.info(
-                    key=f'bed_tracker_{bed_type}',
-                    data=row,
-                    description=f'dataframe of bed_tracker of type {bed_type}, broken down by day and facility'
-                )
-                break # todo - why break?
-        self.move_tracker_by_one_day(self.bed_tracker)
 
+        for bed_type, tracker in self.bed_tracker.items():
+
+            # skip if the earliest date recorded is not yesterday (i.e., at the beginning of the simulation)
+            if not tracker.index[0] == (self.sim.date - pd.DateOffset(days=1)):
+                break
+
+            logger.info(
+                key=f'bed_tracker_{bed_type}',
+                data=tracker.iloc[0].to_dict(),
+                description=f'Use of bed_type {bed_type}, by day and facility'
+            )
 
     def get_blank_beddays_footprint(self):
         """
@@ -306,7 +321,6 @@ class BedDays(Module):
     def remove_beddays_footprint(self, person_id):
         """Helper function that will remove from the bed-days tracker the days of bed-days remaining for a person.
         This is called when the person dies or when a new footprint is imposed"""
-        # todo - error at the moment that it 'removes' day even when the person does not have days, and so adds days
 
         remaining_footprint = self.get_remaining_footprint(person_id)
         dates_of_bed_use = self.compute_dates_of_bed_use(remaining_footprint)

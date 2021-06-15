@@ -1036,14 +1036,16 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(days=1))
 
     def apply(self, population):
-        #  logging yesterday's date and move bed days tracker by one day
-        self.module.sim.modules['BedDays'].log_yesterday_info_from_bed_tracker()
 
-        # 0) Determine the availability of consumables today based on their probabilities
+        # 0) Refesh information ready for new day:
+        # - Update Bed Days trackers:
+        self.sim.modules['BedDays'].processing_at_start_of_new_day()
+
+        # - Determine the availability of consumables today based on their probabilities
         self.module.determine_availability_of_consumables_today()
 
-        # Create hold-over list (will become a heapq).
-        # This will hold events that cannot occur today before they are added back to the heapq
+        # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
+        #  added back to the heapq
         hold_over = list()
 
         # 1) Get the events that are due today:
