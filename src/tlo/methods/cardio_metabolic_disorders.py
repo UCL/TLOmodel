@@ -222,6 +222,36 @@ class CardioMetabolicDisorders(Module):
         for param_name in self.PARAMETERS:
             assert self.parameters[param_name] is not None, f'Parameter "{param_name}" has not been set.'
 
+        # get symptom probabilities
+        for condition in self.conditions:
+            if not self.parameters[f'{condition}_symptoms'].empty:
+                self.prob_symptoms[condition] = self.parameters[f'{condition}_symptoms']
+            else:
+                self.prob_symptoms[condition] = {}
+
+        for event in self.events:
+            # get symptom probabilities
+            if not self.parameters[f'{event}_symptoms'].empty:
+                self.prob_symptoms[event] = self.parameters[f'{event}_symptoms']
+            else:
+                self.prob_symptoms[event] = {}
+            # -------------------- SYMPTOMS ---------------------------------------------------------------
+            # Declare symptoms that this module will cause and which are not included in the generic symptoms:
+        generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
+        for symptom_name in self.symptoms:
+            if symptom_name not in generic_symptoms:
+                self.sim.modules['SymptomManager'].register_symptom(
+                    Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
+                )
+        # Register symptoms from events and make them emergencies
+        for event in self.events:
+            self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(
+                    name=f'{event}_damage',
+                    emergency_in_adults=True
+                ),
+            )
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
@@ -258,47 +288,20 @@ class CardioMetabolicDisorders(Module):
                     age_min = age_min + 5
                     age_max = age_max + 20
 
-                    # get symptom probabilities
-            if not self.parameters[f'{condition}_symptoms'].empty:
-                self.prob_symptoms[condition] = self.parameters[f'{condition}_symptoms']
-            else:
-                self.prob_symptoms[condition] = {}
-            for event in self.events:
-                # get symptom probabilities
-                if not self.parameters[f'{event}_symptoms'].empty:
-                    self.prob_symptoms[event] = self.parameters[f'{event}_symptoms']
-                else:
-                    self.prob_symptoms[event] = {}
-                # -------------------- SYMPTOMS ---------------------------------------------------------------
-                # Declare symptoms that this module will cause and which are not included in the generic symptoms:
-            generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
-            for symptom_name in self.symptoms:
-                if symptom_name not in generic_symptoms:
-                    self.sim.modules['SymptomManager'].register_symptom(
-                        Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
-                    )
-            # Register symptoms from events and make them emergencies
-            for event in self.events:
-                self.sim.modules['SymptomManager'].register_symptom(
-                    Symptom(
-                        name=f'{event}_damage',
-                        emergency_in_adults=True
-                    ),
-                )
-            # ----- Impose the symptom on random sample of those with each condition to have:
-            for condition in self.conditions:
-                for symptom in self.prob_symptoms[condition].keys():
-                    lm_init_symptoms = LinearModel(
-                        LinearModelType.MULTIPLICATIVE,
-                        self.prob_symptoms[condition].get(f'{symptom}'),
-                        Predictor(f'nc_{condition}').when(True, 1.0)
-                            .otherwise(0.0))
-                    has_symptom_at_init = lm_init_symptoms.predict(df.loc[df.is_alive], self.rng)
-                    self.sim.modules['SymptomManager'].change_symptom(
-                        person_id=has_symptom_at_init.index[has_symptom_at_init].tolist(),
-                        symptom_string=f'{symptom}',
-                        add_or_remove='+',
-                        disease_module=self)
+        # ----- Impose the symptom on random sample of those with each condition to have:
+        for condition in self.conditions:
+            for symptom in self.prob_symptoms[condition].keys():
+                lm_init_symptoms = LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    self.prob_symptoms[condition].get(f'{symptom}'),
+                    Predictor(f'nc_{condition}').when(True, 1.0)
+                        .otherwise(0.0))
+                has_symptom_at_init = lm_init_symptoms.predict(df.loc[df.is_alive], self.rng)
+                self.sim.modules['SymptomManager'].change_symptom(
+                    person_id=has_symptom_at_init.index[has_symptom_at_init].tolist(),
+                    symptom_string=f'{symptom}',
+                    add_or_remove='+',
+                    disease_module=self)
 
     def initialise_simulation(self, sim):
         """Schedule:
@@ -325,10 +328,12 @@ class CardioMetabolicDisorders(Module):
         self.lms_onset = dict()
         self.lms_removal = dict()
         self.lms_death = dict()
+        self.lms_symptoms = dict()
 
         # Build the LinearModel for occurrence of events
         self.lms_event_onset = dict()
         self.lms_event_death = dict()
+        self.lms_event_symptoms = dict()
 
         for condition in self.conditions:
             self.lms_onset[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'],
@@ -878,7 +883,7 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
             df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
             # start weight loss recommendation:
             hs.schedule_hsi_event(
-                hsi_event=HSI_NCDs_StartWeightLoss(
+                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLoss(
                     module=self.module,
                     person_id=person_id,
                     condition=self.condition
@@ -906,7 +911,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLoss(HSI_Event, IndividualScopeEve
         self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
         # Schedule a post-treatment check for 12 months:
         self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_NCDs_PostWeightLossCheck(
+            hsi_event=HSI_CardioMetabolicDisorders_PostWeightLossCheck(
                 module=self.module,
                 person_id=person_id,
                 condition=self.condition
@@ -981,7 +986,7 @@ class HSI_CardioMetabolicDisorders_Start_Medication(HSI_Event, IndividualScopeEv
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
             # Schedule their next HSI for a refill of medication in one month
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_NCDs_Refill_Medication(person_id=person_id, module=self.module, condition=self.condition),
+                hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module, condition=self.condition),
                 priority=1,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
