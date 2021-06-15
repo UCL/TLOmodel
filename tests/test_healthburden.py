@@ -6,7 +6,6 @@ from pytest import approx
 
 from tlo import Date, Module, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.causes import Cause
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.methods import (
     Metadata,
@@ -33,6 +32,7 @@ from tlo.methods import (
     prostate_cancer,
     symptommanager,
 )
+from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthburden import Get_Current_DALYS
 

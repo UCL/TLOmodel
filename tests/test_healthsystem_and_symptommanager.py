@@ -6,7 +6,6 @@ import pytest
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.causes import Cause
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
     Metadata,
@@ -20,6 +19,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 
 try:

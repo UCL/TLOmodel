@@ -9,7 +9,6 @@ from pytest import approx
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.causes import Cause
 from tlo.methods import (
     Metadata,
     bladder_cancer,
@@ -32,6 +31,7 @@ from tlo.methods import (
     prostate_cancer,
     symptommanager,
 )
+from tlo.methods.causes import Cause
 from tlo.methods.demography import AgeUpdateEvent
 
 start_date = Date(2010, 1, 1)

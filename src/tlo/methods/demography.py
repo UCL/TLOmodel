@@ -12,12 +12,12 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.causes import (
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods.causes import (
     Cause,
     collect_causes_from_disease_modules,
     create_mappers_from_causes_to_label,
 )
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
