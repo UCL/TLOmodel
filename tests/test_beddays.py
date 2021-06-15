@@ -81,7 +81,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def check_bed_days_basics(hs_disable):
+def check_bed_days_basics(hs_disable, tmpdir):
     """Check all the basic functionality about bed-days footprints and capacity management by the health-system"""
 
     class DummyModule(Module):
@@ -131,7 +131,7 @@ def check_bed_days_basics(hs_disable):
         'filename': 'bed_days',
         'directory': tmpdir,
         'custom_levels': {
-            "*": logging.INFO, }
+            "BedDays": logging.INFO}
     })
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -212,6 +212,8 @@ def check_bed_days_basics(hs_disable):
     output = parse_log_file(sim.log_filepath)
     log_df = output['tlo.methods.bed_days']
     print(f'the log is: {log_df}')
+    # todo - the columns in the bed-days logs are not being labelled correctly
+    # todo - looks like the second item is just the date on which the log is being called
 
     first_day = diff[diff.sum(axis=1) > 0].index.min()
     last_day = diff[diff.sum(axis=1) > 0].index.max()
@@ -267,7 +269,7 @@ def check_bed_days_basics(hs_disable):
     )
 
 
-def check_bed_days_property_is_inpatient(hs_disable):
+def check_bed_days_property_is_inpatient(hs_disable, tmpdir):
     """Check that the is_inpatient property is controlled correctly and kept in sync with the bed-tracker"""
 
     class DummyModule(Module):
@@ -340,7 +342,13 @@ def check_bed_days_property_is_inpatient(hs_disable):
             pass
 
     # Create simulation with the health system and DummyModule
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=0, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "BedDays": logging.INFO,
+        }
+    })
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=hs_disable),
@@ -377,7 +385,7 @@ def check_bed_days_property_is_inpatient(hs_disable):
     check_dtypes(sim)
 
 
-def check_bed_days_released_on_death(hs_disable):
+def check_bed_days_released_on_death(hs_disable, tmpdir):
     """Check that bed-days scheduled to be occupied are released upon the death of the person"""
 
     class DummyModule(Module):
@@ -444,7 +452,13 @@ def check_bed_days_released_on_death(hs_disable):
             pass
 
     # Create simulation with the health system and DummyModule
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=0, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "BedDays": logging.INFO,
+        }
+    })
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=hs_disable),
@@ -463,16 +477,16 @@ def check_bed_days_released_on_death(hs_disable):
     assert all([0] * 2 + [2] * 3 + [1] * 7 + [0] * 10 == bed_occupied.values)
 
 
-def test_bed_days_if_healthsystem_not_disabled():
-    check_bed_days_basics(hs_disable=False)
-    #  check_bed_days_property_is_inpatient(hs_disable=False)
-    #  check_bed_days_released_on_death(hs_disable=False)
+def test_bed_days_if_healthsystem_not_disabled(tmpdir):
+     check_bed_days_basics(hs_disable=False, tmpdir=tmpdir)
+     check_bed_days_property_is_inpatient(hs_disable=False, tmpdir=tmpdir)
+     check_bed_days_released_on_death(hs_disable=False, tmpdir=tmpdir)
 
 
-def test_bed_days_if_healthsystem_is_disabled():
-    check_bed_days_basics(hs_disable=True)
-    # check_bed_days_property_is_inpatient(hs_disable=True)
-    # check_bed_days_released_on_death(hs_disable=True)
+def test_bed_days_if_healthsystem_is_disabled(tmpdir):
+    check_bed_days_basics(hs_disable=True, tmpdir=tmpdir)
+    check_bed_days_property_is_inpatient(hs_disable=True, tmpdir=tmpdir)
+    check_bed_days_released_on_death(hs_disable=True, tmpdir=tmpdir)
 
 
 def test_example_for_Emmanuel_of_reading_the_generated_log_file(tmpdir):
