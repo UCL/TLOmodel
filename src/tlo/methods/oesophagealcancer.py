@@ -670,8 +670,8 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OesophagealCancer_StartTreatment"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 2
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, 'MajorSurg': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

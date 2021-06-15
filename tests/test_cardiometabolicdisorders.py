@@ -6,13 +6,13 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    cardio_metabolic_disorders,
     demography,
     depression,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    ncds,
     simplified_births,
     symptommanager,
 )
@@ -77,12 +77,12 @@ def test_basic_run():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
-                 ncds.Ncds(resourcefilepath=resourcefilepath)
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
                  )
 
     # Set incidence/death rates of conditions to high values to decrease run time
 
-    p = sim.modules['Ncds'].parameters
+    p = sim.modules['CardioMetabolicDisorders'].parameters
 
     p['diabetes_onset']["baseline_annual_probability"] = 0.75
     p['hypertension_onset']["baseline_annual_probability"] = 0.75
@@ -102,7 +102,7 @@ def test_basic_run():
 
 
 def test_basic_run_with_high_incidence_hypertension():
-    """This sim makes one ncd very common and the others non-existent to check basic functions for prevalence and
+    """This sim makes one condition very common and the others non-existent to check basic functions for prevalence and
     death"""
 
     # Create and run a short but big population simulation for use in the tests
@@ -117,13 +117,13 @@ def test_basic_run_with_high_incidence_hypertension():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
-                 ncds.Ncds(resourcefilepath=resourcefilepath)
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
                  )
 
     # Set incidence of hypertension very high and incidence of all other conditions to 0, set initial prevalence of
     # other conditions to 0
 
-    p = sim.modules['Ncds'].parameters
+    p = sim.modules['CardioMetabolicDisorders'].parameters
 
     p['hypertension_onset']["baseline_annual_probability"] = 10000
     p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = 10

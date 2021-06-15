@@ -7,12 +7,12 @@ Aims
 ====
 Our fundamental aim is to develop the use of epidemiological and economic science to effect a step-change in the way that health priorities are addressed through policy interventions in low-income countries.
 
-We are doing this by developing a model that represents the generation of healthcare gains that can be used to examine the effect of resource allocation, management and clinical practice, that can contribute to informing decision-making.
+We are doing this by developing a model that represents explicitly the generation of health gains in a population, which can be used to examine the effect of resource allocation, management and clinical practice, in order to contribute to informing decision-making.
 
 
 Objective
 =========
-To accomplish this aim, the model represents each step in the generation of health gains:
+To create a data-grounded internally-consistent model representation of each step in the generation of health gains:
 
 * The means by which resources for health generate capabilities to deliver services;
 
@@ -22,7 +22,9 @@ To accomplish this aim, the model represents each step in the generation of heal
 
 * The effectiveness of the care as delivered, accounting for gaps in quality in the healthcare system.
 
+* The effect of healthcare, and other forms of programme, on disease burdens in the future.
 
-These distinct processes are represented within an internally consistent model framework that mediates dynamic feedback among them.
+These distinct processes must be represented within a framework that mediates dynamic feedback between them.
+
 
 .. figure:: aims_figure.png

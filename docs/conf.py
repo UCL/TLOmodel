@@ -64,6 +64,7 @@ html_short_title = '%s-%s' % (project, version)
 
 html_static_path = ['_static']
 html_extra_path = ['./.nojekyll', './.gitattributes']
+html_favicon = 'favicon.png'
 
 rawfiles = ['.github']
 
