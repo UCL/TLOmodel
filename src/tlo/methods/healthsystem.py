@@ -1088,7 +1088,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # 0) Refesh information ready for new day:
         # - Update Bed Days trackers:
-        self.sim.modules['BedDays'].processing_at_start_of_new_day()
+        if 'BedDays' in self.sim.modules:
+            self.sim.modules['BedDays'].processing_at_start_of_new_day()
 
         # - Determine the availability of consumables today based on their probabilities
         self.module.determine_availability_of_consumables_today()
