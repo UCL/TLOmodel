@@ -6,7 +6,7 @@ from pytest import approx
 
 from tlo import Date, Module, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.core import Cause
+from tlo.causes import Cause
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.methods import (
     Metadata,

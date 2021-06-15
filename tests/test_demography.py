@@ -9,7 +9,7 @@ from pytest import approx
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.core import Cause
+from tlo.causes import Cause
 from tlo.methods import (
     Metadata,
     bladder_cancer,

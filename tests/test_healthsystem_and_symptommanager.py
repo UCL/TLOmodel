@@ -6,7 +6,7 @@ import pytest
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.core import Cause
+from tlo.causes import Cause
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
     Metadata,
