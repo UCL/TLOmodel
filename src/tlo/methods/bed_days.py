@@ -98,6 +98,10 @@ class BedDays(Module):
         df.at[child_id, 'bd_is_inpatient'] = False
         df.loc[child_id, self.list_of_cols_with_internal_dates['all']] = pd.NaT
 
+    def on_simulation_end(self):
+        """Put out to the log the information from the tracker of the last day of the simulation"""
+        self.log_yesterday_info_from_all_bed_trackers()
+
     def initialise_beddays_tracker(self):
         """Initialise the bed days tracker:
         Create a dataframe for each type of beds that give the total number of beds currently available in each facility
@@ -127,10 +131,14 @@ class BedDays(Module):
     def processing_at_start_of_new_day(self):
         """Things to do at the start of each new day:
         * Log yesterdays usage of beds
-        * Move the tracker by one day"""
+        * Move the tracker by one day
 
-        self.log_yesterday_info_from_all_bed_trackers()
-        self.move_each_tracker_by_one_day()
+        NB. This is skipped on the first day of the simulation as there is nothing to log from yesterday and the tracker
+        is already set.
+        """
+        if not self.sim.date == self.sim.start_date:
+            self.log_yesterday_info_from_all_bed_trackers()
+            self.move_each_tracker_by_one_day()
 
     def move_each_tracker_by_one_day(self):
         bed_capacity = self.parameters['BedCapacity']
@@ -160,13 +168,12 @@ class BedDays(Module):
 
         for bed_type, tracker in self.bed_tracker.items():
 
-            # skip if the earliest date recorded is not yesterday (i.e., at the beginning of the simulation)
-            if not tracker.index[0] == (self.sim.date - pd.DateOffset(days=1)):
-                break
+            occupancy_info = tracker.iloc[0].to_dict()
+            occupancy_info.update({'date_of_bed_occupancy': tracker.index[0].date().strftime(format="%d/%m/%Y")})
 
             logger.info(
                 key=f'bed_tracker_{bed_type}',
-                data=tracker.iloc[0].to_dict(),
+                data=occupancy_info,
                 description=f'Use of bed_type {bed_type}, by day and facility'
             )
 

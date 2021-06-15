@@ -1369,7 +1369,7 @@ class HSI_Event:
             for k, v in dict_of_beddays.items():
                 footprint[k] = v
 
-            return available_footprint
+            return footprint
 
         else:
             return {}
