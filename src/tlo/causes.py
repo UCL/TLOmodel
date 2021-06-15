@@ -1,3 +1,7 @@
+"""
+Classes and functions that support declarations of causes of death and disability.
+"""
+
 from collections import defaultdict
 
 import pandas as pd
