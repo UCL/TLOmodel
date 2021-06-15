@@ -70,10 +70,6 @@ def test_beddays_in_isolation():
     assert ([cap_bedtype1] * (days_sim + 1) == tracker.values).all()
 
 
-"""Suite of tests to examine the use of BedDays module when used as it is during a simulation - i.e. through the
-HealthSystem Module"""
-
-
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
@@ -266,28 +262,31 @@ def test_bed_days_property_is_inpatient(tmpdir):
                 data=False
             )
 
-            # Schedule person_id=0 to attend care on day 2
+            # Schedule person_id=0 to attend care on day 3rd January
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Dummy(self, person_id=0),
-                topen=self.sim.date + pd.DateOffset(days=2),
-                tclose=None,
-                priority=0)
-            # Schedule person_id=1 to attend care on day 5
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Dummy(self, person_id=1),
-                topen=self.sim.date + pd.DateOffset(days=5),
+                topen=Date(2010, 1, 3),
                 tclose=None,
                 priority=0)
 
-            # Schedule person_id=2 to attend care on day 12, and then again on day 14 [overlapping in-patient durations]
+            # Schedule person_id=1 to attend care on day 6th January
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Dummy(self, person_id=2),
-                topen=self.sim.date + pd.DateOffset(days=12),
+                HSI_Dummy(self, person_id=1),
+                topen=Date(2010, 1, 6),
                 tclose=None,
                 priority=0)
+
+            # Schedule person_id=2 to attend care on 13th Jan, and then again on 15th Jan
+            # [overlapping in-patient durations]
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Dummy(self, person_id=2),
-                topen=self.sim.date + pd.DateOffset(days=14),
+                topen=Date(2010, 1, 13),
+                tclose=None,
+                priority=0)
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy(self, person_id=2),
+                topen=Date(2010, 1, 15),
                 tclose=None,
                 priority=0)
 
@@ -327,33 +326,40 @@ def test_bed_days_property_is_inpatient(tmpdir):
         DummyModule()
     )
     sim.make_initial_population(n=100)
-    sim.simulate(end_date=start_date + pd.DateOffset(days=20))
+    sim.simulate(end_date=start_date + pd.DateOffset(days=100))
+    check_dtypes(sim)
 
-    number_of_bed_days = sum(sim.modules['BedDays'].available_footprint.values())
-    length_of_bed_days_tracker = sim.modules['BedDays'].parameters['days_until_last_day_of_bed_tracker'] + 1
+    # Load the logged tracker for general beds
+    log = parse_log_file(sim.log_filepath)['tlo.methods.bed_days']
+    tracker = log['bed_tracker_general_bed'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
+    tracker.index = pd.to_datetime(tracker.index, format="%d/%m/%Y")
+
+    # Load the in-patient status store:
+    ips = sim.modules['DummyModule'].in_patient_status
+    ips.index = pd.to_datetime(ips.index)
 
     # check that the daily checks on 'is_inpatient' are as expected:
-    assert all([False] * 2 + [True] * number_of_bed_days + [False] * ((length_of_bed_days_tracker - 2) -
-                                                                      number_of_bed_days) ==
-               sim.modules['DummyModule'].in_patient_status[0].values
-               )
+    false_ser = pd.Series(index=pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1), freq='D'), data=False)
 
-    assert all([False] * 5 + [True] * number_of_bed_days + [False] * ((length_of_bed_days_tracker - 5) -
-                                                                      number_of_bed_days) ==
-               sim.modules['DummyModule'].in_patient_status[1].values
-               )
-    assert all([False] * 12 + [True] * (number_of_bed_days + 2) + [False] * ((length_of_bed_days_tracker - 12) -
-                                                                             (number_of_bed_days + 2)) ==
-               sim.modules['DummyModule'].in_patient_status[2].values
-               )
+    # person 0
+    person0 = false_ser.copy()
+    person0.loc[pd.date_range(Date(2010, 1, 3), Date(2010, 1, 7))] = True
+    assert ips[0].equals(person0)
+
+    # person 1
+    person1 = false_ser.copy()
+    person1.loc[pd.date_range(Date(2010, 1, 6), Date(2010, 1, 10))] = True
+    assert ips[1].equals(person1)
+
+    # person 2
+    person2 = false_ser.copy()
+    person2.loc[pd.date_range(Date(2010, 1, 13), Date(2010, 1, 19))] = True
+    assert ips[2].equals(person2)
 
     # check that in-patient status is consistent with recorded usage of beds
-    tot_time_as_in_patient = sim.modules['DummyModule'].in_patient_status.sum(axis=1)
-    tracker = sim.modules['BedDays'].bed_tracker['general_bed']
+    tot_time_as_in_patient = ips.sum(axis=1)
     beds_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
-    assert (beds_occupied == tot_time_as_in_patient).all()
-
-    check_dtypes(sim)
+    assert beds_occupied.equals(tot_time_as_in_patient)
 
 
 def test_bed_days_released_on_death(tmpdir):
@@ -382,23 +388,23 @@ def test_bed_days_released_on_death(tmpdir):
                 data=False
             )
 
-            # Schedule person_id=0 and person_id=1 to attend care on day 2 for 10 days
+            # Schedule person_id=0 and person_id=1 to attend care on 3rd January for 10 days
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Dummy(self, person_id=0),
-                topen=self.sim.date + pd.DateOffset(days=2),
+                topen=Date(2010, 1, 3),
                 tclose=None,
                 priority=0)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Dummy(self, person_id=1),
-                topen=self.sim.date + pd.DateOffset(days=2),
+                topen=Date(2010, 1, 3),
                 tclose=None,
                 priority=0)
 
-            # Schedule person_id=0 to die on day 5
+            # Schedule person_id=0 to die on 6th January
             self.sim.schedule_event(
                 demography.InstantaneousDeath(self.sim.modules['Demography'], 0, ''),
-                self.sim.date + pd.DateOffset(days=5)
+                Date(2010, 1, 6)
             )
 
     class QueryInPatientStatus(RegularEvent, PopulationScopeEventMixin):
@@ -438,14 +444,28 @@ def test_bed_days_released_on_death(tmpdir):
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=20))
+    check_dtypes(sim)
 
     # Test that all bed-days released when person dies
     assert not sim.population.props.at[0, 'is_alive']  # person 0 has died
     assert sim.population.props.at[1, 'is_alive']  # person 1 is alive
 
-    tracker = sim.modules['BedDays'].bed_tracker['general_bed']
-    bed_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
-    assert all([0] * 2 + [2] * 3 + [1] * 7 + [0] * 10 == bed_occupied.values)
+    # Load the logged tracker for general beds
+    log = parse_log_file(sim.log_filepath)['tlo.methods.bed_days']
+    tracker = log['bed_tracker_general_bed'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
+    tracker.index = pd.to_datetime(tracker.index, format="%d/%m/%Y")
 
-    check_dtypes(sim)
+    # compute beds occupied
+    beds_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
 
+    expected_beds_occupied = pd.Series(
+        index=pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1), freq='D'), data=0
+    ).add(
+        # two persons occupy beds from 3rd Jan for 10 days
+        pd.Series(index=pd.date_range(Date(2010, 1, 3), Date(2010, 1, 12)), data=2), fill_value=0
+    ).add(
+        # death of one person, releases bed from 6th January - 12th January:
+        pd.Series(index=pd.date_range(Date(2010, 1, 6), Date(2010, 1, 12)), data=-1), fill_value=0
+        )
+
+    assert beds_occupied.equals(expected_beds_occupied.astype(int))

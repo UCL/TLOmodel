@@ -18,6 +18,8 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# todo: **** See if it makes sense to make this not a stand-alone module (that must be registered in the simulation)
+#  but instead just a class that is used internally by health system. This would be much more desirable.
 
 class BedDays(Module):
     """
@@ -202,7 +204,7 @@ class BedDays(Module):
          NB. If multiple bed types are required, then it is assumed that these run in the sequence given in
          ```bed_types```.
          """
-        # exiting the impose bed days if the footprint is empty
+        # Exit if the footprint is empty
         if footprint == self.get_blank_beddays_footprint():
             return
 
