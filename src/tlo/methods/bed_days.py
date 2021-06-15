@@ -171,7 +171,7 @@ class BedDays(Module):
         for bed_type, tracker in self.bed_tracker.items():
 
             occupancy_info = tracker.iloc[0].to_dict()
-            occupancy_info.update({'date_of_bed_occupancy': tracker.index[0].date().strftime(format="%d/%m/%Y")})
+            occupancy_info.update({'date_of_bed_occupancy': tracker.index[0]})
 
             logger.info(
                 key=f'bed_tracker_{bed_type}',

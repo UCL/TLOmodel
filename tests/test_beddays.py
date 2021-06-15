@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
 from tlo import Date, Module, Simulation, logging
 # 1) Core functionality of the BedDays module
@@ -145,7 +144,7 @@ def test_bed_days_basics(tmpdir):
     assert set([f"bed_tracker_{bed}" for bed in bd.bed_types]) == set(log.keys())
     for bed_type in [f"bed_tracker_{bed}" for bed in bd.bed_types]:
         # Check dates are as expected:
-        dates_in_log = pd.to_datetime(log[bed_type]['date_of_bed_occupancy'], format="%d/%m/%Y")
+        dates_in_log = pd.to_datetime(log[bed_type]['date_of_bed_occupancy'])
         date_range = pd.date_range(sim.start_date, sim.end_date, freq='D', closed='left')
         assert set(date_range) == set(dates_in_log)
 
@@ -295,7 +294,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
             super().__init__(module, frequency=pd.DateOffset(days=1))
 
         def apply(self, population):
-            self.module.in_patient_status.loc[self.sim.date.normalize()] = \
+            self.module.in_patient_status.loc[self.sim.date] = \
                 population.props.loc[[0, 1, 2], 'bd_is_inpatient'].values
 
     # Create a dummy HSI with both-types of Bed Day specified
@@ -332,7 +331,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
     # Load the logged tracker for general beds
     log = parse_log_file(sim.log_filepath)['tlo.methods.bed_days']
     tracker = log['bed_tracker_general_bed'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
-    tracker.index = pd.to_datetime(tracker.index, format="%d/%m/%Y")
+    tracker.index = pd.to_datetime(tracker.index)
 
     # Load the in-patient status store:
     ips = sim.modules['DummyModule'].in_patient_status
@@ -364,13 +363,13 @@ def test_bed_days_property_is_inpatient(tmpdir):
 
 def test_bed_days_released_on_death(tmpdir):
     """Check that bed-days scheduled to be occupied are released upon the death of the person"""
+    days_simulation_duration = 20
 
     class DummyModule(Module):
         METADATA = {Metadata.USES_HEALTHSYSTEM}
 
         def read_parameters(self, data_folder):
-            # get 21 day bed days tracking period
-            self.parameters['tracking_period'] = sim.modules['BedDays'].parameters['days_until_last_day_of_bed_tracker']
+            pass
 
         def initialise_population(self, population):
             pass
@@ -382,8 +381,9 @@ def test_bed_days_released_on_death(tmpdir):
                 self.sim.date
             )
             self.in_patient_status = pd.DataFrame(
-                index=pd.date_range(self.sim.start_date, self.sim.start_date + pd.DateOffset(days=self.parameters[
-                    'tracking_period'])),
+                index=pd.date_range(self.sim.start_date,
+                                    self.sim.start_date + pd.DateOffset(days=days_simulation_duration)
+                                    ),
                 columns=[0, 1],
                 data=False
             )
@@ -412,7 +412,7 @@ def test_bed_days_released_on_death(tmpdir):
             super().__init__(module, frequency=pd.DateOffset(days=1))
 
         def apply(self, population):
-            self.module.in_patient_status.loc[self.sim.date.normalize()] = \
+            self.module.in_patient_status.loc[self.sim.date] = \
                 population.props.loc[[0, 1], 'bd_is_inpatient'].values
 
     # Create a dummy HSI with both-types of Bed Day specified
@@ -443,7 +443,7 @@ def test_bed_days_released_on_death(tmpdir):
         DummyModule()
     )
     sim.make_initial_population(n=100)
-    sim.simulate(end_date=start_date + pd.DateOffset(days=20))
+    sim.simulate(end_date=start_date + pd.DateOffset(days=days_simulation_duration))
     check_dtypes(sim)
 
     # Test that all bed-days released when person dies
@@ -453,7 +453,7 @@ def test_bed_days_released_on_death(tmpdir):
     # Load the logged tracker for general beds
     log = parse_log_file(sim.log_filepath)['tlo.methods.bed_days']
     tracker = log['bed_tracker_general_bed'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
-    tracker.index = pd.to_datetime(tracker.index, format="%d/%m/%Y")
+    tracker.index = pd.to_datetime(tracker.index)
 
     # compute beds occupied
     beds_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
