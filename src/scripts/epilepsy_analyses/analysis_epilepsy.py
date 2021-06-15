@@ -7,12 +7,13 @@ from matplotlib import pyplot as plt
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    contraception,
     demography,
     enhanced_lifestyle,
     epilepsy,
     healthburden,
+    healthseekingbehaviour,
     healthsystem,
+    symptommanager,
 )
 
 # Where will outputs go
@@ -44,11 +45,12 @@ sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             contraception.Contraception(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
+             epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+             symptommanager.SymptomManager(resourcefilepath=resourcefilepath)
              )
 
 # Run the simulation and flush the logger
@@ -60,8 +62,8 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(sim.log_filepath)
 
 prop_seiz_stat_0 = pd.Series(
-    output['tlo.methods.epilepsy']['summary_stats_per_3m']['prop_seiz_stat_0'].values,
-    index=output['tlo.methods.epilepsy']['summary_stats_per_3m']['date'])
+    output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_0'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
 
 prop_seiz_stat_0.plot()
 plt.show()
