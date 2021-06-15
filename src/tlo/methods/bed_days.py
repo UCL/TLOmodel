@@ -71,7 +71,7 @@ class BedDays(Module):
                 Types.DATE,
                 f"Date of the last day in the next stay in bed_type {bed_type}. (pd.NaT) is nothing scheduled")
 
-        # Create store columns names
+        # Create store for columns names
         self.list_of_cols_with_internal_dates['entries'] = [
             f"bd_next_first_day_in_bed_{bed_type}" for bed_type in self.bed_types]
         self.list_of_cols_with_internal_dates['exits'] = [
@@ -92,10 +92,6 @@ class BedDays(Module):
 
         # Schedule the first (repeating daily) event to update status of hs_is_in_patient
         sim.schedule_event(RefreshInPatientStatus(self), sim.date)
-
-    # def on_simulation_end(self):
-    #     """Get the record of the bed_tracker and put into the log"""
-    #     print(self.bed_tracker)
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -145,6 +141,7 @@ class BedDays(Module):
 
     def log_yesterday_info_from_bed_tracker(self):
         """Dump yesterday's status of bed-day tracker to the log"""
+        # todo - stuff going on here with the index? and labelling of columns?
         for bed_type in self.bed_tracker:
             for index, row in self.bed_tracker[bed_type].iterrows():
                 row.index = row.index.astype(str)
@@ -154,23 +151,9 @@ class BedDays(Module):
                     data=row,
                     description=f'dataframe of bed_tracker of type {bed_type}, broken down by day and facility'
                 )
-                break
+                break # todo - why break?
         self.move_tracker_by_one_day(self.bed_tracker)
 
-    def get_footprint_according_to_capacity(self, footprint):
-        """A function to check if the required bed days are within or beyond the facility bed days capacity.
-        it sets the requested bed days to a facility bed days capacity if the requested bed days are
-        beyond facility bed days capacity"""
-
-        bed_capacity = self.parameters['BedCapacity']
-
-        for bed_type in self.bed_types:
-            if (footprint[bed_type] > bed_capacity[bed_type]).any():
-                self.available_footprint[bed_type] = int(bed_capacity.loc[bed_capacity.index[0], bed_type])
-            else:
-                self.available_footprint[bed_type] = footprint[bed_type]
-
-        return self.available_footprint
 
     def get_blank_beddays_footprint(self):
         """
