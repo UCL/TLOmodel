@@ -350,66 +350,57 @@ class CardioMetabolicDisorders(Module):
                                                                   lm_type='death')
             self.lms_event_symptoms[event] = self.build_linear_model_symptoms(event, self.parameters[
                 'interval_between_polls'])
-            # ------- DEFINE THE CONSUMABLES USED IN TESETS -------
-            consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-            blood_glucose_test = \
-                pd.unique(consumables.loc[consumables["Items"] == "Blood glucose level test", "Item_Code"])[0]
-            blood_tube = pd.unique(consumables.loc[consumables["Items"] == "Blood collecting tube, 5 ml", "Item_Code"])[
-                0]
-            urine_analysis = pd.unique(consumables.loc[consumables["Items"] == "Urine analysis", "Item_Code"])[0]
-            ecg_electrodes = \
-                pd.unique(consumables.loc[consumables["Items"] == "Electrodes, electrocardiographic", "Item_Code"])[0]
-            ecg_paper = pd.unique(consumables.loc[consumables["Items"] == "Paper, Recording ECG", "Item_Code"])[0]
-            ecg_paper_roll = \
-                pd.unique(consumables.loc[consumables["Items"] == "ECG paper for printing_Roll_CMST", "Item_Code"])[0]
-            # ------- DEFINE THE TESTS -------
-            # Create the diagnostic representing the assessment for whether a person is diagnosed with diabetes
-            # NB. Specificity is assumed to be 100%
-            self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-                assess_diabetes=DxTest(
-                    property='nc_diabetes',
-                    sensitivity=1.0,
-                    specificity=1.0,
-                    cons_req_as_footprint={'Intervention_Package_Code': {},
-                                           'Item_Code': {blood_glucose_test: 1, blood_tube: 1}}
-                )
+
+        # ------- DEFINE THE CONSUMABLES USED IN TESETS -------
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        blood_glucose_test = \
+            pd.unique(consumables.loc[consumables["Items"] == "Blood glucose level test", "Item_Code"])[0]
+        blood_tube = pd.unique(consumables.loc[consumables["Items"] == "Blood collecting tube, 5 ml", "Item_Code"])[
+            0]
+        urine_analysis = pd.unique(consumables.loc[consumables["Items"] == "Urine analysis", "Item_Code"])[0]
+        ecg_electrodes = \
+            pd.unique(consumables.loc[consumables["Items"] == "Electrodes, electrocardiographic", "Item_Code"])[0]
+        ecg_paper = pd.unique(consumables.loc[consumables["Items"] == "Paper, Recording ECG", "Item_Code"])[0]
+        ecg_paper_roll = \
+            pd.unique(consumables.loc[consumables["Items"] == "ECG paper for printing_Roll_CMST", "Item_Code"])[0]
+        # ------- DEFINE THE TESTS -------
+        # Create the diagnostic representing the assessment for whether a person is diagnosed with diabetes
+        # NB. Specificity is assumed to be 100%
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_diabetes=DxTest(
+                property='nc_diabetes',
+                cons_req_as_footprint={'Intervention_Package_Code': {},
+                                        'Item_Code': {blood_glucose_test: 1, blood_tube: 1}}
             )
-            # Create the diagnostic representing the assessment for whether a person is diagnosed with hypertension:
-            # blood pressure measurement
-            self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-                assess_hypertension=DxTest(
-                    property='nc_hypertension',
-                    sensitivity=1.0,
-                    specificity=1.0,
-                )
+        )
+        # Create the diagnostic representing the assessment for whether a person is diagnosed with hypertension:
+        # blood pressure measurement
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_hypertension=DxTest(
+                property='nc_hypertension'
             )
-            # Create the diagnostic representing the assessment for whether a person is diagnosed with
-            # chronic lower back pain
-            self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-                assess_chronic_lower_back_pain=DxTest(
-                    property='nc_chronic_lower_back_pain',
-                    sensitivity=1.0,
-                    specificity=1.0,
-                )
+        )
+        # Create the diagnostic representing the assessment for whether a person is diagnosed with
+        # chronic lower back pain
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_chronic_lower_back_pain=DxTest(
+                property='nc_chronic_lower_back_pain'
             )
-            # Create the diagnostic representing the assessment for whether a person is diagnosed with CKD
-            self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-                assess_chronic_kidney_disease=DxTest(
-                    property='nc_chronic_kidney_disease',
-                    sensitivity=1.0,
-                    specificity=1.0,
-                    cons_req_as_footprint={'Intervention_Package_Code': {}, 'Item_Code': {urine_analysis: 1}}
-                )
+        )
+        # Create the diagnostic representing the assessment for whether a person is diagnosed with CKD
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_chronic_kidney_disease=DxTest(
+                property='nc_chronic_kidney_disease',
+                cons_req_as_footprint={'Intervention_Package_Code': {}, 'Item_Code': {urine_analysis: 1}}
             )
-            self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-                assess_chronic_ischemic_hd=DxTest(
-                    property='nc_chronic_ischemic_hd',
-                    sensitivity=1.0,
-                    specificity=1.0,
-                    cons_req_as_footprint={'Intervention_Package_Code': {},
-                                           'Item_Code': {ecg_electrodes: 1, ecg_paper: 1, ecg_paper_roll: 1}}
-                )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_chronic_ischemic_hd=DxTest(
+                property='nc_chronic_ischemic_hd',
+                cons_req_as_footprint={'Intervention_Package_Code': {},
+                                        'Item_Code': {ecg_electrodes: 1, ecg_paper: 1, ecg_paper_roll: 1}}
             )
+        )
 
     def build_linear_model(self, condition, interval_between_polls, lm_type):
         """
@@ -855,7 +846,7 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "NCDs_Investigation_Following_Symptoms"
+        self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_Following_Symptoms"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -902,7 +893,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLoss(HSI_Event, IndividualScopeEve
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'NCDs_WeightLoss'
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_WeightLoss'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -935,7 +926,7 @@ class HSI_CardioMetabolicDisorders_PostWeightLossCheck(HSI_Event, IndividualScop
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'NCDs_WeightLoss'
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_WeightLoss'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -947,7 +938,7 @@ class HSI_CardioMetabolicDisorders_PostWeightLossCheck(HSI_Event, IndividualScop
         else:
             # Schedule their next HSI to start medication
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_NCDs_Start_Medication(person_id=person_id, module=self.module, condition=self.condition),
+                hsi_event=HSI_CardioMetabolicDisorders_Start_Medication(person_id=person_id, module=self.module, condition=self.condition),
                 priority=1,
                 topen=self.sim.date,
                 tclose=None
@@ -960,7 +951,7 @@ class HSI_CardioMetabolicDisorders_Start_Medication(HSI_Event, IndividualScopeEv
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'NCDs_Medication_Start'
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_Medication_Start'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1001,7 +992,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'NCDs_Medication_Refill'
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_Medication_Refill'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1027,7 +1018,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         if result_of_cons_request:
             # Schedule their next HSI for a refill of medication, one month from now
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_NCDs_Refill_Medication(person_id=person_id, module=self.module, condition=self.condition),
+                hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module, condition=self.condition),
                 priority=1,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
@@ -1039,6 +1030,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         # If this HSI event did not run, then the persons ceases to be taking medication
         person_id = self.target
         self.sim.population.props.at[person_id, f'nc_{self.condition}_on_medication'] = False
+
 class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
@@ -1047,9 +1039,9 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
     """
     def __init__(self, module, person_id, ev):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, Ncds)
+        assert isinstance(module, CardioMetabolicDisorders)
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'NCDs_SeeksEmergencyCareAndGetsTreatment'
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
@@ -1057,12 +1049,12 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
     def apply(self, person_id, squeeze_factor):
         logger.debug(
             key='debug',
-            data=('This is HSI_NCDs_SeeksEmergencyCareAndGetsTreatment: '
+            data=('This is HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: '
                   f'We are now ready to treat this person {person_id}.'),
         )
         logger.debug(
             key='debug',
-            data=('This is HSI_NCDs_SeeksEmergencyCareAndGetsTreatment: '
+            data=('This is HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: '
                   f'The squeeze-factor is {squeeze_factor}.'),
         )
         if squeeze_factor < 0.5:
@@ -1081,5 +1073,5 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             # Squeeze factor is too large
             logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
     def did_not_run(self):
-        logger.debug(key='debug', data='HSI_NCDs_SeeksEmergencyCareAndGetsTreatment: did not run')
+        logger.debug(key='debug', data='HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: did not run')
         pass
