@@ -930,10 +930,16 @@ class PregnancySupervisor(Module):
         """
         df = self.sim.population.props
         params = self.current_parameters
+        months_min_max = {1: [0, 4], 2: [5, 8], 3: [9, 13], 4: [14, 17], 5: [18, 22],
+                          6: [23, 27], 7: [28, 31], 8: [32, 35], 9: [36, 40]}
 
-        days_until_anc_month_start = anc_month * 30  # we approximate 30 days in a month
-        days_until_anc_month_end = days_until_anc_month_start + 29
-        days_until_anc = self.rng.randint(days_until_anc_month_start, days_until_anc_month_end)
+        if anc_month == 1:
+            days_until_anc = self.rng.randint(0, 7)
+
+        else:
+            weeks_of_visit = (self.rng.randint(months_min_max[anc_month][0], months_min_max[anc_month][1]) - 3)
+            days_until_anc = (weeks_of_visit * 7) + self.rng.randint(0, 6)
+
         first_anc_date = self.sim.date + DateOffset(days=days_until_anc)
 
         # We store that date as a property which is used by the HSI to ensure the event only runs when it
@@ -995,7 +1001,9 @@ class PregnancySupervisor(Module):
         # This function follows the same pattern as apply_risk_of_spontaneous_abortion (only women with unintended
         # pregnancy may seek induced abortion)
         at_risk = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
-                  (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient & df.co_unintended_preg
+                  (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient
+
+        # TODO: discuss df.co_unintended_preg with TC
 
         abortion = pd.Series(self.rng.random_sample(len(at_risk.loc[at_risk])) <
                              params['prob_induced_abortion_per_month'], index=at_risk.loc[at_risk].index)
@@ -1058,7 +1066,7 @@ class PregnancySupervisor(Module):
             if self.rng.random_sample() < params['prob_injury_post_abortion']:
                 self.abortion_complications.set([individual_id], 'injury')
                 logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': f'{cause}_complication',
+                                                               'type': f'{cause}_injury',
                                                                'timing': 'antenatal'})
 
         # Then we determine if this woman will seek care, and schedule presentation to the health system
@@ -1782,8 +1790,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # of pregnancy (this simulates time period prior to which symptoms onset- and may trigger care seeking)
         for person in ectopic_risk.loc[ectopic_risk].index:
             logger.info(key='maternal_complication', data={'person': person,
-                                                            'type': 'ectopic_unruptured',
-                                                            'timing': 'antenatal'})
+                                                           'type': 'ectopic_unruptured',
+                                                           'timing': 'antenatal'})
 
             self.sim.schedule_event(EctopicPregnancyEvent(self.module, person),
                                     (self.sim.date + pd.Timedelta(days=7 * 3 + self.module.rng.randint(0, 7 * 2))))
@@ -2039,7 +2047,8 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
             ind_or_df='individual', id_or_index=individual_id)
 
         # Determine if women will seek care at this stage
-        if not self.module.care_seeking_pregnancy_loss_complications(individual_id):
+        care_seeking_result = self.module.care_seeking_pregnancy_loss_complications(individual_id)
+        if not care_seeking_result:
 
             # For women who dont seek care (and get treatment) we schedule EctopicPregnancyRuptureEvent (simulating
             # fallopian tube rupture) in an additional 2-4 weeks from this event (if care seeking is unsuccessful
@@ -2058,6 +2067,8 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
+
+        print(individual_id)
 
         # Check the right woman has arrived at this event
         assert df.at[individual_id, 'ps_ectopic_pregnancy'] == 'not_ruptured'
@@ -2216,9 +2227,6 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
         switch_parameters(self.sim.modules['PostnatalSupervisor'].parameters,
                           self.sim.modules['PostnatalSupervisor'].current_parameters)
-
-        #for key, value in self.module.parameters.items(): # TODO: THIS DOESNT SEEM TO BE WORKING
-        #    self.module.current_parameters[key] = self.module.parameters[key][1]
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):

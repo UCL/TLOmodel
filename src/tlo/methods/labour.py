@@ -857,7 +857,7 @@ class Labour(Module):
         # but the death is recorded through the InstantaneousDeath function
 
         # Store only live births to a mother parity
-        if ~mother.la_intrapartum_still_birth:
+        if  not mother.la_intrapartum_still_birth:
             df.at[mother_id, 'la_parity'] += 1  # Only live births contribute to parity
             logger.info(key='live_birth', data={'mother': mother_id, 'child': child_id})
 
@@ -1178,6 +1178,10 @@ class Labour(Module):
                complication == 'pph_other':
                 # Set primary complication to true
                 df.at[individual_id, 'la_postpartum_haem'] = True
+
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': f'{complication}',
+                                                               'timing': 'intrapartum'})
 
                 # Store mni variables used during treatment
                 if complication == 'pph_uterine_atony':
@@ -2555,6 +2559,9 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                     logger.debug(key='message', data=f'mother {individual_id} will not seek care following a '
                                                      f'complication that has developed during labour')
 
+        if not mni[individual_id]['sought_care_for_complication']:
+            logger.info(key='delivery_setting', data={'mother': individual_id, 'facility_type': 'home_birth'})
+
 
 class BirthEvent(Event, IndividualScopeEventMixin):
     """This is the BirthEvent. It is scheduled by LabourOnsetEvent. For women who survived labour, the appropriate
@@ -3066,8 +3073,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(HSI_Event, Indivi
         df = self.sim.population.props
         params = self.module.current_parameters
 
-        logger.info(key='message', data='This is HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1: Providing '
-                                        f'skilled attendance following birth for person {person_id}')
+        logger.info(key='message', data='This is HSI_Labour_ReceivesCareFuth for person {person_id}')
 
         if not df.at[person_id, 'is_alive']:
             return

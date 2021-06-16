@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 from tlo.analysis.utils import parse_log_file
 from tlo import Date, Simulation, logging
+from tlo.methods.labour import LabourOnsetEvent
 from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
@@ -18,14 +19,6 @@ from tlo.methods import (
 )
 
 
-log_config = {
-    "filename": "calibration",   # The name of the output file (a timestamp will be appended).
-    "directory": "./outputs/calibration_files",  # The default output path is `./outputs`. Change it here, if necessary
-    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
-        "*": logging.DEBUG}}
-
-# %%
-
 # todo: just for reference, can be deleted
 antenatal_comps = ['spontaneous_abortion', 'induced_abortion', 'spontaneous_abortion_haemorrhage',
                    'induced_abortion_haemorrhage', 'spontaneous_abortion_sepsis',
@@ -40,52 +33,188 @@ antenatal_comps = ['spontaneous_abortion', 'induced_abortion', 'spontaneous_abor
 
 resourcefilepath = Path("./resources")
 
+def register_modules(sim):
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*']),
+                 joes_fake_props_module.JoesFakePropsModule(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 
-sim = Simulation(start_date=Date(2010, 1, 1), seed=852, log_config=log_config)
-# run the simulation
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             contraception.Contraception(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       service_availability=['*']),
-             joes_fake_props_module.JoesFakePropsModule(resourcefilepath=resourcefilepath),
-             labour.Labour(resourcefilepath=resourcefilepath),
-             newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 
-sim.make_initial_population(n=5000)
-df = sim.population.props
+def set_pregnant_pop(sim, start_date):
+    df = sim.population.props
 
-all = df.loc[df.is_alive]
-df.loc[all.index, 'sex'] = 'F'
-df.loc[all.index, 'is_pregnant'] = True
-df.loc[all.index, 'date_of_last_pregnancy'] = sim.start_date
-for person in all.index:
-    age = sim.rng.randint(15, 49)
-    df.at[person, 'age_years'] = age
-    df.at[person, 'age_exact_years'] = float(age)
-    df.at[person, 'age_days'] = age * 365
-    df.at[person, 'date_of_birth'] = Date(2010, 1, 1) - pd.DateOffset(days=(age * 365))
+    all = df.loc[df.is_alive]
+    df.loc[all.index, 'sex'] = 'F'
+    df.loc[all.index, 'is_pregnant'] = True
+    df.loc[all.index, 'date_of_last_pregnancy'] = sim.start_date
+    for person in all.index:
+        age = sim.rng.randint(16, 49)
+        df.at[person, 'age_years'] = age
+        df.at[person, 'age_exact_years'] = float(age)
+        df.at[person, 'age_days'] = age * 365
+        df.at[person, 'date_of_birth'] = start_date - pd.DateOffset(days=(age * 365))
 
-    sim.modules['Labour'].set_date_of_labour(person)
+        sim.modules['Labour'].set_date_of_labour(person)
 
-params = sim.modules['PregnancySupervisor'].parameters
-params['prob_ectopic_pregnancy'] = [0.004937, 0.00366]
 
-sim.simulate(end_date=Date(2010, 3, 1))
+def set_labour_pop(sim, start_date):
+    df = sim.population.props
+
+    all = df.loc[df.is_alive]
+    df.loc[all.index, 'sex'] = 'F'
+    df.loc[all.index, 'is_pregnant'] = True
+    for person in all.index:
+        age = sim.rng.randint(16, 49)
+        df.at[person, 'age_years'] = age
+        df.at[person, 'age_exact_years'] = float(age)
+        df.at[person, 'age_days'] = age * 365
+        df.at[person, 'date_of_birth'] = start_date - pd.DateOffset(days=(age * 365))
+
+        df.at[person, 'date_of_last_pregnancy'] = sim.start_date - pd.DateOffset(weeks=35)
+        df.at[person, 'la_due_date_current_pregnancy'] = sim.start_date + pd.DateOffset(days=1)
+        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(person)
+
+        sim.schedule_event(LabourOnsetEvent(sim.modules['Labour'], person),
+                           df.at[person, 'la_due_date_current_pregnancy'])
+
+def set_labour_pop_age_correct(sim):
+    df = sim.population.props
+
+    all = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    df.loc[all.index, 'is_pregnant'] = True
+    for person in all.index:
+        df.at[person, 'date_of_last_pregnancy'] = sim.start_date - pd.DateOffset(weeks=35)
+        df.at[person, 'la_due_date_current_pregnancy'] = sim.start_date + pd.DateOffset(days=1)
+        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(person)
+
+        sim.schedule_event(LabourOnsetEvent(sim.modules['Labour'], person), df.at[person,
+                                                                                  'la_due_date_current_pregnancy'])
+
+
+def do_run_pregnancy_only(config_name, start_date, end_date, seed, population, parameters):
+    log_config = {
+        "filename": f"{config_name}_calibration_{seed}",  # The name of the output file (a timestamp will be appended).
+        "directory": "./outputs/calibration_files",
+        # The default output path is `./outputs`. Change it here, if necessary
+        "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+            "*": logging.DEBUG}}
+
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    register_modules(sim)
+    sim.make_initial_population(n=population)
+    set_pregnant_pop(sim, start_date)
+
+    if parameters == 2015:
+        def switch_parameters(master_params, current_params):
+            for key, value in current_params.items():
+                current_params[key] = master_params[key][1]
+
+        switch_parameters(sim.modules['PregnancySupervisor'].parameters,
+                          sim.modules['PregnancySupervisor'].current_parameters)
+        switch_parameters(sim.modules['CareOfWomenDuringPregnancy'].parameters,
+                          sim.modules['CareOfWomenDuringPregnancy'].current_parameters)
+        switch_parameters(sim.modules['Labour'].parameters,
+                          sim.modules['Labour'].current_parameters)
+        switch_parameters(sim.modules['NewbornOutcomes'].parameters,
+                          sim.modules['NewbornOutcomes'].current_parameters)
+        switch_parameters(sim.modules['PostnatalSupervisor'].parameters,
+                          sim.modules['PostnatalSupervisor'].current_parameters)
+
+    sim.simulate(end_date=end_date)
+
+
+def do_labour_run_only(config_name, start_date, end_date, seed, population, parameters):
+    log_config = {
+        "filename": f"{config_name}_calibration_{seed}",  # The name of the output file (a timestamp will be appended).
+        "directory": "./outputs/calibration_files",
+        # The default output path is `./outputs`. Change it here, if necessary
+        "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+            "*": logging.DEBUG}}
+
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    register_modules(sim)
+    sim.make_initial_population(n=population)
+    set_labour_pop_age_correct(sim)
+
+    if parameters == 2015:
+        def switch_parameters(master_params, current_params):
+            for key, value in current_params.items():
+                current_params[key] = master_params[key][1]
+
+        switch_parameters(sim.modules['PregnancySupervisor'].parameters,
+                          sim.modules['PregnancySupervisor'].current_parameters)
+        switch_parameters(sim.modules['CareOfWomenDuringPregnancy'].parameters,
+                          sim.modules['CareOfWomenDuringPregnancy'].current_parameters)
+        switch_parameters(sim.modules['Labour'].parameters,
+                          sim.modules['Labour'].current_parameters)
+        switch_parameters(sim.modules['NewbornOutcomes'].parameters,
+                          sim.modules['NewbornOutcomes'].current_parameters)
+        switch_parameters(sim.modules['PostnatalSupervisor'].parameters,
+                          sim.modules['PostnatalSupervisor'].current_parameters)
+
+    sim.simulate(end_date=end_date)
+
+
+def do_normal_run_all_pregnant(config_name, start_date, end_date, seed, population, parameters):
+    log_config = {
+        "filename": f"{config_name}_calibration_{seed}",  # The name of the output file (a timestamp will be appended).
+        "directory": "./outputs/calibration_files",
+        # The default output path is `./outputs`. Change it here, if necessary
+        "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+            "*": logging.DEBUG}}
+
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    register_modules(sim)
+    sim.make_initial_population(n=population)
+
+    df = sim.population.props
+    all = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years <50)]
+    df.loc[all.index, 'is_pregnant'] = True
+    df.loc[all.index, 'date_of_last_pregnancy'] = sim.start_date
+    for person in all.index:
+        sim.modules['Labour'].set_date_of_labour(person)
+
+    if parameters == 2015:
+        def switch_parameters(master_params, current_params):
+            for key, value in current_params.items():
+                current_params[key] = master_params[key][1]
+
+        switch_parameters(sim.modules['PregnancySupervisor'].parameters,
+                          sim.modules['PregnancySupervisor'].current_parameters)
+        switch_parameters(sim.modules['CareOfWomenDuringPregnancy'].parameters,
+                          sim.modules['CareOfWomenDuringPregnancy'].current_parameters)
+        switch_parameters(sim.modules['Labour'].parameters,
+                          sim.modules['Labour'].current_parameters)
+        switch_parameters(sim.modules['NewbornOutcomes'].parameters,
+                          sim.modules['NewbornOutcomes'].current_parameters)
+        switch_parameters(sim.modules['PostnatalSupervisor'].parameters,
+                          sim.modules['PostnatalSupervisor'].current_parameters)
+
+    sim.simulate(end_date=end_date)
 
 # Get the log
 
-log_df = parse_log_file(filepath="./outputs/calibration_files/calibration__2021-06-05T125542.log")
+seeds = [84]
+for seed in seeds:
+    #do_normal_run_all_pregnant(config_name='anc_check_new_10', start_date=Date(2010, 1, 1),
+    #                           end_date=Date(2010, 10, 1), seed=seed, population=10000, parameters=2010)
+    do_normal_run_all_pregnant(config_name='anc_check_new_15', start_date=Date(2015, 1, 1),
+                               end_date=Date(2015, 10, 1), seed=seed, population=20000, parameters=2015)
+#seeds = [77]
+#for seed in seeds:
+#    do_normal_run_all_pregnant(config_name='anc_calib_age_corr_15', start_date=Date(2010, 1, 1),
+#                               end_date=Date(2010, 10, 1), seed=seed, population=10000, parameters=2015)
 
-def get_incidence(module, complication):
-    if 'maternal_complication' in log_df[f'tlo.methods.{module}']:
-        comps = log_df[f'tlo.methods.{module}']['maternal_complication']
-        comps['date'] = pd.to_datetime(comps['date'])
-        comps['year'] = comps['date'].dt.year
-        return len(comps.loc[(comps['type'] == f'{complication}')])
-
-
+"""seeds = [77, 78]
+do_labour_run_only(config_name='pnc_test', start_date=Date(2010, 1, 1),
+                   end_date=Date(2010, 3, 1), seed=seeds[0], population=5000, parameters=2010)
+do_labour_run_only(config_name='pnc_test', start_date=Date(2010, 1, 1),
+                   end_date=Date(2010, 3, 1), seed=seeds[1], population=5000, parameters=2015)"""
