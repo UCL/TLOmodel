@@ -477,3 +477,21 @@ def format_gbd(gbd_df: pd.DataFrame):
     gbd_df['Period']  = gbd_df['Year'].map(calperiodlookup).astype(make_calendar_period_type())
 
     return gbd_df
+
+
+def create_pickles_locally(scenario_output_dir):
+    """For a run from the Batch system that has not resulted in the creation of the pickles, locally parse the logfile
+    and create the set of pickles."""
+    def turn_log_into_pickles(logfile):
+        outputs = parse_log_file(logfile)
+        for key, output in outputs.items():
+            if key.startswith("tlo."):
+                with open(logfile.parent / f"{key}.pickle", "wb") as f:
+                    pickle.dump(output, f)
+
+    draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
+    for draw_folder in draw_folders:
+        run_folders = [f for f in os.scandir(draw_folder) if f.is_dir()]
+        for run_folder in run_folders:
+            logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
+            turn_log_into_pickles(logfile)

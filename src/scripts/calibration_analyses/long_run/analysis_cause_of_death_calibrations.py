@@ -36,6 +36,9 @@ rfp = Path('./resources')
 # ** Declare the results folder ***
 results_folder = get_scenario_outputs('long_run.py', outputspath)[-1]
 
+# If needed -- in the case that pickles were not created locally
+# create_pickles_locally(results_folder)
+
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: outputspath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
 
