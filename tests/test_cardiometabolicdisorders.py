@@ -130,12 +130,15 @@ def test_basic_run_with_high_incidence_hypertension():
 
     p['hypertension_onset']["baseline_annual_probability"] = 10000
     p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = 10
-    p['diabetes_onset']["baseline_annual_probability"] = 0
-    p['chronic_lower_back_pain_onset']["baseline_annual_probability"] = 0
-    p['chronic_kidney_disease_onset']["baseline_annual_probability"] = 0
-    p['diabetes_initial_prev']['value'] = 0
-    p['chronic_lower_back_pain_initial_prev']['value'] = 0
-    p['chronic_kidney_disease_initial_prev']['value'] = 0
+    p['diabetes_onset'] = p['diabetes_onset'].mask(p['diabetes_onset'] > 0, 0)
+    p['chronic_lower_back_pain_onset'] = p['chronic_lower_back_pain_onset'].mask(p['chronic_lower_back_pain_onset'] > 0,
+                                                                                 0)
+    p['chronic_kidney_disease_onset'] = p['chronic_kidney_disease_onset'].mask(p['chronic_kidney_disease_onset'] > 0, 0)
+    p['diabetes_initial_prev'] = p['diabetes_initial_prev'].mask(p['diabetes_initial_prev'] > 0, 0)
+    p['chronic_lower_back_pain_initial_prev'] = p['chronic_lower_back_pain_initial_prev'].\
+        mask(p['chronic_lower_back_pain_initial_prev'] > 0, 0)
+    p['chronic_kidney_disease_initial_prev'] = p['chronic_kidney_disease_initial_prev'].\
+        mask(p['chronic_kidney_disease_initial_prev'] > 0, 0)
 
     # Increase RR of heart disease very high if individual has hypertension
     p['chronic_ischemic_hd_onset']["rr_hypertension"] = 1000
@@ -146,9 +149,9 @@ def test_basic_run_with_high_incidence_hypertension():
     df = sim.population.props
 
     # check that no one has any conditions that were set to zero incidence
-    assert ~df.nc_diabetes.all()
-    assert ~df.nc_chronic_lower_back_pain.all()
-    assert ~df.nc_chronic_kidney_disease.all()
+    assert not df.nc_diabetes.any()
+    assert not df.nc_chronic_lower_back_pain.any()
+    assert not df.nc_chronic_kidney_disease.any()
 
     # check that no one has died from conditions that were set to zero incidence
     assert not df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'].str.startswith('diabetes').any()
