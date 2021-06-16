@@ -703,11 +703,10 @@ class Hiv(Module):
             "Item_Code": {item_code_for_prep: 1}
         }
 
-        # First-line ART for adults
-        # todo add in alternative first-line regimens: see write-up for details
+        # First-line ART for adults (age >10)
         item_code_for_art = pd.unique(
             consumables.loc[
-                consumables["Items"] == "Lamivudine/Stavudine/Nevirapine (3TC + d4T + NVP), tablet, 150 + 30 + 200 mg",
+                consumables["Items"] == "First-line ART regimen: adults",
                 "Item_Code"
             ]
         )[0]
@@ -721,10 +720,10 @@ class Hiv(Module):
             "Item_Code": {item_code_for_art: 1, item_code_for_art2: 1}
         }
 
-        # ART for children:
+        # ART for children aged 1-10:
         item_code_for_art_paed = pd.unique(
             consumables.loc[
-                consumables["Items"] == "Paediatric First line 1P d4T-based",
+                consumables["Items"] == "First line ART regimen: children age 1-10",
                 "Item_Code"
             ]
         )[0]
@@ -739,29 +738,16 @@ class Hiv(Module):
             "Item_Code": {item_code_for_art_paed: 1}
         }
 
-        # ART for pregnant women
-        item_code_for_art_preg1 = pd.unique(
+        # ART for children aged <1:
+        item_code_for_art_paed2 = pd.unique(
             consumables.loc[
-                consumables["Items"] == "Tenofovir (TDF), tablet, 300 mg",
+                consumables["Items"] == "First line ART regimen: children age 1",
                 "Item_Code"
             ]
         )[0]
-        # need 300mg 3TC
-        item_code_for_art_preg2 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Lamivudine (3TC), tablet, 150 mg",
-                "Item_Code"
-            ]
-        )[0]
-        item_code_for_art_preg3 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Efavirenz (EFV), tablet, 600 mg ",
-                "Item_Code"
-            ]
-        )[0]
-        self.footprints_for_consumables_required['art_pregnant'] = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code_for_art_preg1: 1, item_code_for_art_preg2: 2, item_code_for_art_preg3: 1}
+        self.footprints_for_consumables_required['art_young_child'] = {
+            "Intervention_Package_Code": {pkg_code_for_art_paed: 1},
+            "Item_Code": {item_code_for_art_paed2: 1}
         }
 
         # Viral Load monitoring
