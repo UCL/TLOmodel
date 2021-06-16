@@ -1,6 +1,5 @@
 """ Tests for for the TB Module """
 
-
 import datetime
 import pickle
 from pathlib import Path
@@ -29,6 +28,7 @@ from tlo.methods import (
     hiv,
     tb
 )
+from tlo.methods.healthsystem import HSI_Event
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -55,7 +55,10 @@ def get_sim(use_simplified_birth=True):
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                      simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(
+                         resourcefilepath=resourcefilepath,
+                         disable=True,
+                     ignore_cons_constraints=True),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -72,7 +75,10 @@ def get_sim(use_simplified_birth=True):
                      newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                      postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(
+                         resourcefilepath=resourcefilepath,
+                         disable=True,
+                     ignore_cons_constraints=True),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -155,7 +161,7 @@ def get_sim(use_simplified_birth=True):
 #     # select an adult who is alive with latent tb
 #     person_id = df.loc[df.is_alive & (df.tb_inf == 'latent') &
 #                        df.age_years.between(15, 80)].index[0]
-#     assert person_id  # check person has been identified
+#     assert person_id  # check person_id has been identified
 #
 #     # set tb strain to ds
 #     df.at[person_id, 'tb_strain'] = 'ds'
@@ -168,7 +174,7 @@ def get_sim(use_simplified_birth=True):
 #
 #     # check if TbActiveEvent was scheduled
 #     date_active_event, active_event = \
-#         [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], tb.TbActiveEvent)][0]
+#         [ev for ev in sim.find_events_for_person_id(person_id) if isinstance(ev[1], tb.TbActiveEvent)][0]
 #     assert date_active_event >= sim.date
 #
 #     # run TbActiveEvent
@@ -195,9 +201,9 @@ def get_sim(use_simplified_birth=True):
 #         priority=0
 #     )
 #
-#     # Check person has a ScreeningAndRefer event scheduled
+#     # Check person_id has a ScreeningAndRefer event scheduled
 #     date_event, event = [
-#         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+#         ev for ev in sim.modules['HealthSystem'].find_events_for_person_id(person_id) if
 #         isinstance(ev[1], tb.HSI_Tb_ScreeningAndRefer)
 #     ][0]
 #     assert date_event == sim.date
@@ -238,36 +244,73 @@ def test_treatment_schedule():
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     df = sim.population.props
-    person = 0
+    person_id = 0
 
-    # assign person active tb
-    df.at[person, 'tb_inf'] = 'active'
-    df.at[person, 'tb_strain'] = 'ds'
-    df.at[person, 'tb_date_active'] = sim.date
-    df.at[person, 'tb_smear'] = True
-    df.at[person, 'age_exact_years'] = 20
-    df.at[person, 'age_years'] = 20
+    # assign person_id active tb
+    df.at[person_id, 'tb_inf'] = 'active'
+    df.at[person_id, 'tb_strain'] = 'ds'
+    df.at[person_id, 'tb_date_active'] = sim.date
+    df.at[person_id, 'tb_smear'] = True
+    df.at[person_id, 'age_exact_years'] = 20
+    df.at[person_id, 'age_years'] = 20
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
     for symptom in symptom_list:
         sim.modules["SymptomManager"].change_symptom(
-            person_id=person,
+            person_id=person_id,
             symptom_string=symptom,
             add_or_remove="+",
             disease_module=sim.modules['Tb'],
             duration_in_days=None,
         )
 
-    # screen and test person
-    screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person,
+    # screen and test person_id
+    screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
                                                  module=sim.modules['Tb'])
-    screening_appt.apply(person_id=person, squeeze_factor=0.0)
+    screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person, 'tb_ever_tested']
-    assert df.at[person, 'tb_diagnosed']
+    assert df.at[person_id, 'tb_ever_tested']
+    assert df.at[person_id, 'tb_diagnosed']
+    assert not df.at[person_id, 'tb_diagnosed_mdr']
 
     # schedule treatment start
+    # this calls clinical_monitoring which should schedule all follow-up appts
+    tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
+                                        module=sim.modules['Tb'])
+    tx_start.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # clinical monitoring
+    follow_up_times = sim.modules['Tb'].parameters['followup_times']
+    # default clinical monitoring schedule for first infection ds-tb
+    clinical_fup = follow_up_times['ds_clinical_monitor'].dropna()
+
+    for appt in clinical_fup:
+        # schedule a clinical check-up appointment
+        date_appt = sim.date + \
+                    pd.DateOffset(days=appt * 30.5)
+        print(date_appt)
+
+        # this schedules all clinical monitoring appts, tests will occur in some of these
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            tb.HSI_Tb_FollowUp(person_id=person_id, module=sim.modules['Tb']),
+            topen=date_appt,
+            tclose=None,
+            priority=0
+        )
+
+# disable=true
+        ignore consumables constraints
+
+
+
+        date_event, event = [
+            ev for ev in sim.modules['HealthSystem'].find_events_for_person_id(person_id) if
+            isinstance(ev[1], tb.HSI_Tb_FollowUp)
+        ][0]
+
+    sim.modules['Tb'].clinical_monitoring(person_id=person_id)
+    sim.modules['HealthSystem'].find_events_for_person_id(person_id)
 
     # check treatment follow-up dates
 
@@ -277,24 +320,12 @@ def test_treatment_schedule():
 
     # check tb treatment - should be retreatment
 
-
-
-
-
-
-
-
 # check referrals for children - should be x-ray at screening/testing
-
 
 
 # test overall proportion of new latent cases which progress to active
 # ahould be 14% fast progressors, 67% hiv+ fast progressors
 # overall lifetime risk 5-10%
-
-
-
-
 
 
 # check treatment failure
@@ -303,13 +334,11 @@ def test_treatment_schedule():
 # check proportion treatment failure
 
 
-
 # check risk of relapse
 
 
 # test running without hiv
 # check smear positive rates in hiv- and hiv+ to confirm process still working with dummy property
-
 
 
 # if child born to mother with diagnosed tb, check give ipt

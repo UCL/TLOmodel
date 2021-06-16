@@ -16,6 +16,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.methods import hiv
+
 # from tlo.core import Cause
 
 logger = logging.getLogger(__name__)
@@ -124,7 +125,8 @@ class Tb(Module):
         'prob_latent_tb_0_14': Parameter(Types.REAL, 'probability of latent infection in ages 0-14 years'),
         'prob_latent_tb_15plus': Parameter(Types.REAL, 'probability of latent infection in ages 15+'),
         'transmission_rate': Parameter(Types.REAL, 'TB transmission rate, calibrated'),
-        'mixing_parameter': Parameter(Types.REAL, 'mixing parameter adjusts transmission rate for force of infection between districts'),
+        'mixing_parameter': Parameter(Types.REAL,
+                                      'mixing parameter adjusts transmission rate for force of infection between districts'),
         'rel_inf_smear_ng': Parameter(
             Types.REAL, 'relative infectiousness of tb in hiv+ compared with hiv-'
         ),
@@ -586,55 +588,6 @@ class Tb(Module):
                 TbActiveEvent(self, person_id), date_progression
             )
 
-    def select_treatment(self, person_id):
-        """
-        helper function to select appropriate treatment and check whether
-        consumables are available to start drug course
-        treatment will always be for ds-tb unless mdr has been identified
-        :return: drug_available [BOOL]
-        """
-        df = self.sim.population.props
-        person = df.loc[person_id]
-
-        drugs_available = False  # default return value
-
-        # -------- MDR-TB -------- #
-
-        if person['tb_diagnosed_mdr']:
-
-            drugs_available = HSI_Event.get_all_consumables(self,
-                footprint=self.footprints_for_consumables_required['tb_mdrtx'])
-
-        # -------- First TB infection -------- #
-        # could be undiagnosed mdr or ds-tb: treat as ds-tb
-
-        elif not person['tb_ever_treated']:
-
-            if person['age_years'] >= 15:
-                # treatment for ds-tb: adult
-                drugs_available = HSI_Event.get_all_consumables(self,
-                    footprint=self.footprints_for_consumables_required['tb_tx_adult'])
-            else:
-                # treatment for ds-tb: child
-                drugs_available = HSI_Event.get_all_consumables(self,
-                    footprint=self.footprints_for_consumables_required['tb_tx_child'])
-
-        # -------- Secondary TB infection -------- #
-        # person has been treated before
-        # possible treatment failure or subsequent reinfection
-        elif person['tb_ever_treated']:
-
-            if person['age_years'] >= 15:
-                # treatment for reinfection ds-tb: adult
-                drugs_available = HSI_Event.get_all_consumables(self,
-                    footprint=self.footprints_for_consumables_required['tb_retx_adult'])
-            else:
-                # treatment for reinfection ds-tb: child
-                drugs_available = HSI_Event.get_all_consumables(self,
-                    footprint=self.footprints_for_consumables_required['tb_retx_child'])
-
-        return drugs_available
-
     def clinical_monitoring(self, person_id):
         """
         schedule appointments for repeat clinical monitoring events
@@ -789,16 +742,26 @@ class Tb(Module):
         # 4) -------- Define the treatment options --------
 
         # adult treatment - primary
-        pkg_code1 = pd.unique(
+        # pkg_code1 = pd.unique(
+        #     consumables.loc[
+        #         consumables['Intervention_Pkg']
+        #         == 'First line treatment for new TB cases for adults',
+        #         'Intervention_Pkg_Code',
+        #     ]
+        # )[0]
+        # self.footprints_for_consumables_required['tb_tx_adult'] = {
+        #     "Intervention_Package_Code": {pkg_code1: 1},
+        #     "Item_Code": {}
+        # }
+        item_code1 = pd.unique(
             consumables.loc[
-                consumables['Intervention_Pkg']
-                == 'First line treatment for new TB cases for adults',
-                'Intervention_Pkg_Code',
+                consumables['Items'] == 'Cat. I & III Patient Kit A',
+                'Item_Code',
             ]
         )[0]
         self.footprints_for_consumables_required['tb_tx_adult'] = {
-            "Intervention_Package_Code": {pkg_code1: 1},
-            "Item_Code": {}
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code1: 1}
         }
 
         # child treatment - primary
@@ -1060,9 +1023,9 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         total_pop = pop.sum()
 
         foi_national = (p['mixing_parameter'] *
-                  p['transmission_rate']
-                  * (total_smear_pos + (total_smear_neg * p['rel_inf_smear_ng']))
-              ) / total_pop
+                        p['transmission_rate']
+                        * (total_smear_pos + (total_smear_neg * p['rel_inf_smear_ng']))
+                        ) / total_pop
 
         # -------------- individual risk of acquisition -------------- #
 
@@ -1130,7 +1093,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         # risk of relapse if <2 years post treatment start, includes risk if HIV+
         # get df of those eligible
         relapse_risk_early = df.loc[df.tb_ever_treated &
-                              (self.sim.date < (df.tb_date_treated + pd.DateOffset(days=732.5)))].index
+                                    (self.sim.date < (df.tb_date_treated + pd.DateOffset(days=732.5)))].index
 
         risk_of_relapse_early = self.module.lm['risk_relapse_2yrs'].predict(df.loc[relapse_risk_early])
 
@@ -1140,7 +1103,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         # risk of relapse if >=2 years post treatment start, includes risk if HIV+
         # get df of those eligible
         relapse_risk_later = df.loc[df.tb_ever_treated &
-                              (self.sim.date >= (df.tb_date_treated + pd.DateOffset(days=732.5)))].index
+                                    (self.sim.date >= (df.tb_date_treated + pd.DateOffset(days=732.5)))].index
 
         risk_of_relapse_later = self.module.lm['risk_relapse_late'].predict(df.loc[relapse_risk_later])
 
@@ -1310,7 +1273,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.hv_inf
             & (df.tb_date_active < now)
             & (random_draw < params['annual_prob_self_cure'])
-        ].index
+            ].index
 
         # hiv-positive, on art and virally suppressed
         self_cure_art = df.loc[
@@ -1320,7 +1283,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.hv_art == 'on_VL_suppressed')
             & (df.tb_date_active < now)
             & (random_draw < params['annual_prob_self_cure'])
-        ].index
+            ].index
 
         # resolve symptoms and change properties
         all_self_cure = [*self_cure, *self_cure_art]
@@ -1536,17 +1499,17 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 ipt_cov = p['ipt_contact_cov']
                 ipt_cov_year = ipt_cov.loc[
                     ipt_cov.year == now.year
-                ].coverage.values
+                    ].coverage.values
 
                 if (district in p['tb_high_risk_distr'].values) & (
                     self.module.rng.rand() < ipt_cov_year
                 ):
                     # randomly sample from <5 yr olds within district
                     ipt_eligible = df.loc[
-                            (df.age_years <= 5)
-                            & ~df.tb_diagnosed
-                            & df.is_alive
-                            & (df.district_of_residence == district)
+                        (df.age_years <= 5)
+                        & ~df.tb_diagnosed
+                        & df.is_alive
+                        & (df.district_of_residence == district)
                         ].index
 
                     if ipt_eligible.any():
@@ -1651,7 +1614,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return
 
-        treatment_available = self.module.select_treatment(person_id)
+        treatment_available = self.select_treatment(person_id)
 
         if treatment_available:
             # start person on tb treatment - update properties
@@ -1660,6 +1623,60 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             # schedule clinical monitoring
             self.module.clinical_monitoring(person_id)
+
+    def select_treatment(self, person_id):
+        """
+        helper function to select appropriate treatment and check whether
+        consumables are available to start drug course
+        treatment will always be for ds-tb unless mdr has been identified
+        :return: drug_available [BOOL]
+        """
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        drugs_available = False  # default return value
+
+        # -------- MDR-TB -------- #
+
+        if person['tb_diagnosed_mdr']:
+
+            drugs_available = HSI_Event.get_all_consumables(
+                self, footprint=self.module.footprints_for_consumables_required[
+                                                                'tb_mdrtx'])
+
+        # -------- First TB infection -------- #
+        # could be undiagnosed mdr or ds-tb: treat as ds-tb
+
+        elif not person['tb_ever_treated']:
+
+            if person['age_years'] >= 15:
+                # treatment for ds-tb: adult
+                drugs_available = HSI_Event.get_all_consumables(
+                    self, footprint=self.module.footprints_for_consumables_required[
+                                                                    'tb_tx_adult'])
+            else:
+                # treatment for ds-tb: child
+                drugs_available = HSI_Event.get_all_consumables(
+                    self, footprint=self.module.footprints_for_consumables_required[
+                                                                    'tb_tx_child'])
+
+        # -------- Secondary TB infection -------- #
+        # person has been treated before
+        # possible treatment failure or subsequent reinfection
+        elif person['tb_ever_treated']:
+
+            if person['age_years'] >= 15:
+                # treatment for reinfection ds-tb: adult
+                drugs_available = HSI_Event.get_all_consumables(
+                    self, footprint=self.module.footprints_for_consumables_required[
+                                                                    'tb_retx_adult'])
+            else:
+                # treatment for reinfection ds-tb: child
+                drugs_available = HSI_Event.get_all_consumables(
+                    self, footprint=self.module.footprints_for_consumables_required[
+                                                                    'tb_retx_child'])
+
+        return drugs_available
 
 
 # # ---------------------------------------------------------------------------
@@ -1819,7 +1836,6 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
         if (not person['tb_diagnosed']) and (
             person['tb_date_ipt'] < (self.sim.date - pd.DateOffset(days=36 * 30.5))) and (
             m.rng.random_sample() < m.parameters['prob_retained_ipt_6_months']):
-
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=m),
                 topen=self.sim.date,
@@ -1858,14 +1874,14 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             (df.tb_inf == 'active')
             & ~df.hv_inf
             & ~df.tb_on_treatment
-        ] = p['monthly_prob_tb_mortality']
+            ] = p['monthly_prob_tb_mortality']
 
         # hiv-negative, tb treated
         mortality_rate.loc[
             (df.tb_inf == 'active')
             & ~df.hv_inf
             & df.tb_on_treatment
-        ] = p['monthly_prob_tb_mortality'] * p['mort_tx']
+            ] = p['monthly_prob_tb_mortality'] * p['mort_tx']
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
@@ -1874,7 +1890,6 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person in will_die:
             if df.at[person, 'is_alive']:
-
                 self.sim.schedule_event(
                     demography.InstantaneousDeath(
                         self.module, individual_id=person, cause='TB'
@@ -1895,7 +1910,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & df.hv_inf
             & (df.hv_art == 'on_VL_suppressed')
             & ~df.tb_on_treatment
-        ] = p['monthly_prob_tb_mortality'] * p['mort_cotrim']
+            ] = p['monthly_prob_tb_mortality'] * p['mort_cotrim']
 
         # hiv-positive, on ART and virally suppressed, on TB treatment
         mort_hiv.loc[
@@ -1903,7 +1918,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & df.hv_inf
             & (df.hv_art == 'on_VL_suppressed')
             & df.tb_on_treatment
-        ] = p['monthly_prob_tb_mortality'] * p['mort_cotrim'] * p['mort_tx']
+            ] = p['monthly_prob_tb_mortality'] * p['mort_cotrim'] * p['mort_tx']
 
         # hiv-positive, not virally suppressed, no TB treatment
         mort_hiv.loc[
@@ -1911,7 +1926,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & df.hv_inf
             & (df.hv_art != 'on_VL_suppressed')
             & ~df.tb_on_treatment
-        ] = p['monthly_prob_tb_mortality_hiv']
+            ] = p['monthly_prob_tb_mortality_hiv']
 
         # hiv-positive, not virally suppressed, on TB treatment
         mort_hiv.loc[
@@ -1919,7 +1934,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & df.hv_inf
             & (df.hv_art != 'on_VL_suppressed')
             & df.tb_on_treatment
-        ] = p['monthly_prob_tb_mortality_hiv'] * p['mort_tx']
+            ] = p['monthly_prob_tb_mortality_hiv'] * p['mort_tx']
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
@@ -1928,7 +1943,6 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person in will_die:
             if df.at[person, 'is_alive']:
-
                 self.sim.schedule_event(
                     demography.InstantaneousDeath(
                         self.module, individual_id=person, cause='AIDS_TB'
@@ -2015,7 +2029,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
         assert prev_active_child <= 1
 
-
         # LATENT
         # proportion of population with latent TB - all pop
         num_latent = len(df[(df.tb_inf == 'latent') & df.is_alive])
@@ -2058,7 +2071,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO this will exclude mdr cases occurring in the last timeperiod but already cured
         new_mdr_cases = len(
             df[(df.tb_strain == 'mdr')
-            & (df.tb_date_active > (now - DateOffset(months=self.repeat)))]
+               & (df.tb_date_active > (now - DateOffset(months=self.repeat)))]
         )
 
         if new_mdr_cases:
@@ -2092,5 +2105,3 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 'tbTreatmentCoverage': tx_coverage,
             },
         )
-
-
