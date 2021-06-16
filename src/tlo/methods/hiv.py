@@ -228,7 +228,9 @@ class Hiv(Module):
         "vls_m": Parameter(Types.REAL, "Rates of viral load suppression males"),
         "vls_f": Parameter(Types.REAL, "Rates of viral load suppression males"),
         "vls_child": Parameter(Types.REAL, "Rates of viral load suppression in children 0-14 years"),
-        "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available")
+        "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available"),
+        "ART_age_cutoff_young_child": Parameter(Types.INT, "Age cutoff for ART regimen for young children"),
+        "ART_age_cutoff_older_child": Parameter(Types.INT, "Age cutoff for ART regimen for older children"),
     }
 
     def read_parameters(self, data_folder):
@@ -1594,7 +1596,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         # Check if drugs are available, and provide drugs:
-        drugs_available = self.get_drugs(age_of_person=person['age_years'], person_id=person_id)
+        drugs_available = self.get_drugs(age_of_person=person['age_years'])
 
         if drugs_available:
             # Assign person to be have suppressed or un-suppressed viral load
@@ -1626,7 +1628,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         _ = self.get_all_consumables(footprint=self.module.footprints_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
-        drugs_available = self.get_drugs(age_of_person=person['age_years'], person_id=person_id)
+        drugs_available = self.get_drugs(age_of_person=person['age_years'])
 
         return drugs_available
 
@@ -1646,25 +1648,27 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         return "on_VL_suppressed" if (self.module.rng.random_sample() < prob_vs) else "on_not_VL_suppressed"
 
-    def get_drugs(self, age_of_person, person_id):
+    def get_drugs(self, age_of_person):
         """Helper function to get the ART according to the age of the person being treated. Returns bool to indicate
         whether drugs were available"""
 
-        df = self.sim.population.props
+        p = self.module.parameters
 
-        if age_of_person < 5.0:
+        if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for children
             drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['art_child'])
+                footprint=self.module.footprints_for_consumables_required['First line ART regimen: children age 1'])
+
+        # todo does this include all ages 1-10?
+        elif age_of_person.between(p["ART_age_cutoff_young_child"], p["ART_age_cutoff_older_child"]):
+            # Formulation for children
+            drugs_available = self.get_all_consumables(
+                footprint=self.module.footprints_for_consumables_required['First line ART regimen: children age 1-10'])
+
         else:
             # Formulation for adults
             drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['art_adult'])
-
-        if df.at[person_id, 'is_pregnant']:
-            # Formulation for pregnant women
-            drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['art_pregnant'])
+                footprint=self.module.footprints_for_consumables_required['First-line ART regimen: adults'])
 
         return drugs_available
 
