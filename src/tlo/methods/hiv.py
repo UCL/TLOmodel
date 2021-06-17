@@ -706,50 +706,51 @@ class Hiv(Module):
         }
 
         # First-line ART for adults (age > "ART_age_cutoff_older_child")
-        item_code_for_art = pd.unique(
+        item_code_for_art_adult = pd.unique(
             consumables.loc[
                 consumables["Items"] == "First-line ART regimen: adult",
                 "Item_Code"
             ]
         )[0]
-        item_code_for_art2 = pd.unique(
+
+        item_code_for_cotrim_adult = pd.unique(
             consumables.loc[
                 consumables["Items"] == "Cotrimoxizole, 960mg pppy", "Item_Code"
             ]
         )[0]  # NB spelling error in consumables file "Cotrimoxizole"
         self.footprints_for_consumables_required['First-line ART regimen: adult'] = {
             "Intervention_Package_Code": {},
-            "Item_Code": {item_code_for_art: 1, item_code_for_art2: 1}
+            "Item_Code": {item_code_for_art_adult: 1, item_code_for_cotrim_adult: 1}
         }
 
-        # ART for children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
-        item_code_for_art_paed = pd.unique(
+        # ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
+        item_code_for_art_older_child = pd.unique(
             consumables.loc[
                 consumables["Items"] == "First line ART regimen: older child",
                 "Item_Code"
             ]
         )[0]
-        pkg_code_for_art_paed = pd.unique(
+        pkg_code_for_art_cotrim_child = pd.unique(
             consumables.loc[
                 consumables["Intervention_Pkg"] == "Cotrimoxazole for children",
                 "Intervention_Pkg_Code",
             ]
         )[0]
         self.footprints_for_consumables_required['First line ART regimen: older child'] = {
-            "Intervention_Package_Code": {pkg_code_for_art_paed: 1},
-            "Item_Code": {item_code_for_art_paed: 1}
+            "Intervention_Package_Code": {pkg_code_for_art_cotrim_child: 1},
+            "Item_Code": {item_code_for_art_older_child: 1}
         }
 
-        # ART for children aged (age < "ART_age_cutoff_younger_child"):
-        item_code_for_art_paed2 = pd.unique(
+        # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
+        item_code_for_art_younger_child = pd.unique(
             consumables.loc[
                 consumables["Items"] == "First line ART regimen: young child",
                 "Item_Code"
             ]
         )[0]
         self.footprints_for_consumables_required['First line ART regimen: young child'] = {
-            "Intervention_Package_Code": {pkg_code_for_art_paed: 1},
-            "Item_Code": {item_code_for_art_paed2: 1}
+            "Intervention_Package_Code": {pkg_code_for_art_cotrim_child: 1},
+            "Item_Code": {item_code_for_art_younger_child: 1}
         }
 
         # Viral Load monitoring
