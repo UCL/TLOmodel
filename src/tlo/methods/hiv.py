@@ -730,14 +730,14 @@ class Hiv(Module):
                 "Item_Code"
             ]
         )[0]
-        pkg_code_for_art_cotrim_child = pd.unique(
+        pkg_code_for_cotrim_child = pd.unique(
             consumables.loc[
                 consumables["Intervention_Pkg"] == "Cotrimoxazole for children",
                 "Intervention_Pkg_Code",
             ]
         )[0]
         self.footprints_for_consumables_required['First line ART regimen: older child'] = {
-            "Intervention_Package_Code": {pkg_code_for_art_cotrim_child: 1},
+            "Intervention_Package_Code": {pkg_code_for_cotrim_child: 1},
             "Item_Code": {item_code_for_art_older_child: 1}
         }
 
@@ -749,7 +749,7 @@ class Hiv(Module):
             ]
         )[0]
         self.footprints_for_consumables_required['First line ART regimen: young child'] = {
-            "Intervention_Package_Code": {pkg_code_for_art_cotrim_child: 1},
+            "Intervention_Package_Code": {pkg_code_for_cotrim_child: 1},
             "Item_Code": {item_code_for_art_younger_child: 1}
         }
 
