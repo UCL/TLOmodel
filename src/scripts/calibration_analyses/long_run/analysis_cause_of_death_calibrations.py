@@ -43,7 +43,7 @@ results_folder = get_scenario_outputs('long_run.py', outputspath)[-1]
 # create_pickles_locally(results_folder)
 
 # Declare path for output graphs from this script
-make_graph_file_name = lambda stub: results_folder / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
+make_graph_file_name = lambda stub: results_folder / f"{stub}.png"
 
 # Define colo(u)rs to use:
 colors = {
@@ -58,6 +58,15 @@ period = '2010-2014'
 
 # %% Load and process the GBD data
 gbd = format_gbd(pd.read_csv(rfp / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'))
+
+# update columns name
+gbd = gbd.rename(columns={
+    'Sex': 'sex',
+    'Age_Grp': 'age_grp',
+    'Period': 'period',
+    'GBD_Est': 'mean',
+    'GBD_Lower': 'lower',
+    'GBD_Upper': 'upper'})
 
 # limit to deaths:
 gbd = gbd.loc[gbd['measure_name'] == 'Deaths']
@@ -77,11 +86,11 @@ results = extract_results(
 # Update index to give results by five-year age-group and five-year calendar period
 agegrps, agegrplookup = make_age_grp_lookup()
 calperiods, calperiodlookup = make_calendar_period_lookup()
-
 results = results.reset_index()
 results['age_grp'] = results['age'].map(agegrplookup).astype(make_age_grp_types())
 results['period'] = results['year'].map(calperiodlookup).astype(make_calendar_period_type())
 results = results.drop(columns=['age', 'year'])
+
 # groupby, sum and divide by five to give the average number of deaths per year within the five year period:
 results = results.groupby(['period', 'sex', 'age_grp', 'label']).sum().div(5.0)
 
@@ -100,7 +109,7 @@ assert not gbd['label'].isna().any()
 deaths_by_age_pt = dict()
 
 # - GBD:
-deaths_by_age_pt['GBD'] = gbd.loc[gbd.Period == period].groupby(
+deaths_by_age_pt['GBD'] = gbd.loc[gbd.period == period].groupby(
     ['sex', 'age_grp', 'label'])[['mean', 'lower', 'upper']].sum().unstack().div(5.0)
 # NB. division by 5.0 to make it the average number of death per year within the five-year period.
 
@@ -230,7 +239,6 @@ for cause in tot_deaths_by_cause.index.levels[1]:
                 xytext=(0, 10),
                 ha='center'
                 )
-
 
 line_x = np.linspace(0, xylim)
 ax.plot(line_x, line_x, 'r')
