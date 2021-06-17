@@ -705,7 +705,7 @@ class Hiv(Module):
             "Item_Code": {item_code_for_prep: 1}
         }
 
-        # First-line ART for adults (age >10)
+        # First-line ART for adults (age > "ART_age_cutoff_older_child")
         item_code_for_art = pd.unique(
             consumables.loc[
                 consumables["Items"] == "First-line ART regimen: adult",
@@ -722,7 +722,7 @@ class Hiv(Module):
             "Item_Code": {item_code_for_art: 1, item_code_for_art2: 1}
         }
 
-        # ART for children aged 1-10:
+        # ART for children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
         item_code_for_art_paed = pd.unique(
             consumables.loc[
                 consumables["Items"] == "First line ART regimen: older child",
@@ -740,7 +740,7 @@ class Hiv(Module):
             "Item_Code": {item_code_for_art_paed: 1}
         }
 
-        # ART for children aged <1:
+        # ART for children aged (age < "ART_age_cutoff_younger_child"):
         item_code_for_art_paed2 = pd.unique(
             consumables.loc[
                 consumables["Items"] == "First line ART regimen: young child",
