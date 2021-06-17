@@ -1,9 +1,3 @@
-"""
-Contraception module covering baseline fertility, contraception methods use, failure (pregnancy),
-Switching contraceptive methods, and discontinuation rates by age
-please see Dropbox/Thanzi la Onse/05 - Resources/Model design/Contraception-Pregnancy.pdf
-for conceptual diagram
-"""
 from pathlib import Path
 
 import pandas as pd
@@ -31,32 +25,31 @@ class Contraception(Module):
         self.resourcefilepath = resourcefilepath
 
     # Declare Metadata
-    METADATA = {Metadata.DISEASE_MODULE,
-                Metadata.USES_HEALTHSYSTEM}
+    METADATA = {Metadata.USES_HEALTHSYSTEM}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age_spec fertility'),
-        'contraception_initiation1': Parameter(Types.DATA_FRAME, 'irate1_'),  # 2011-2016 rate
-        'contraception_initiation2': Parameter(Types.DATA_FRAME, 'irate2_'),  # 2011-2016 rate
-        'contraception_switching': Parameter(Types.DATA_FRAME, 'Switching'),
-        'contraception_switching_matrix': Parameter(Types.DATA_FRAME, 'switching_matrix'),
-        'contraception_discontinuation': Parameter(Types.DATA_FRAME, 'Discontinuation'),
-        'contraception_failure': Parameter(Types.DATA_FRAME, 'Failure'),
+        'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age specific fertility'),
+        'contraception_initiation1': Parameter(Types.DATA_FRAME, 'Monthly probabilities of initiating each method of contraception from not using contraception'),  # 2011-2016 rate
+        'contraception_initiation2': Parameter(Types.DATA_FRAME, 'Monthly probabilities of initiating each method of contraception after pregnancy'),  # 2011-2016 rate
+        'contraception_switching': Parameter(Types.DATA_FRAME, 'Monthly probability of switching contraceptive methpd'),
+        'contraception_switching_matrix': Parameter(Types.DATA_FRAME, 'switching matrix containing probabilities of switching from each method to each other method'),
+        'contraception_discontinuation': Parameter(Types.DATA_FRAME, 'Monthly probabilities of discontinuation of each method of contaception to not using contraception'),
+        'contraception_failure': Parameter(Types.DATA_FRAME, 'Monthly probabilities of failure of each contraception method to pregnancy'),
         # from Fracpoly regression:
-        'r_init1_age': Parameter(Types.REAL, 'proportioniate change in irate1 for each age in years'),
+        'r_init1_age': Parameter(Types.REAL, 'Proportioniate change in probabilities of initiating each method of contraception from not using contraception for each age of the woman in years'),
         # from Fracpoly regression:
-        'r_discont_age': Parameter(Types.REAL, 'proportioniate change in drate for each age in years'),
-        'rr_fail_under25': Parameter(Types.REAL, 'Increase in Failure rate for under-25s'),
+        'r_discont_age': Parameter(Types.REAL, 'Proportioniate change in probabilities of discontinuation of each method of contaception to not using contraception for each age of the woman in years'),
+        'rr_fail_under25': Parameter(Types.REAL, 'Increase in failure rate for under-25s'),
         'r_init_year': Parameter(Types.REAL,
-                                 'proportional change in contraception initiation rates for each year, 2010 to 2100'),
+                                 'proportional change in contraception initiation probabilities for each year, 2010 to 2100'),
         'r_discont_year': Parameter(Types.REAL,
-                                    'proportional change in contraception_discontinuation rate for each year,\
+                                    'proportional change in contraception discontinuation probabilities for each year,\
                                      2010 to 2100'),
         # TODO: add relative fertility rates for HIV+ compared to HIV- by age group from Marston et al 2017
-        'contraception_consumables': Parameter(Types.DATA_FRAME, 'consumables'),
-        'contraception_interventions': Parameter(Types.DATA_FRAME, 'interventions'),
+        'contraception_consumables': Parameter(Types.DATA_FRAME, 'contraception consumables'),
+        'contraception_interventions': Parameter(Types.DATA_FRAME, 'contraception interventions'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -74,10 +67,6 @@ class Contraception(Module):
         #   lactational amenohroea (LAM),
         #   standard days method (SDM),
         #   'other traditional method'
-        # Have replaced Age-spec fertility sheet in ResourceFile_DemographicData.xlsx (in this branch)
-        # with the one in ResourceFile_Contraception.xlsx
-        # (has 11 categories and one row for each age with baseline contraception prevalence for
-        # each of the 11 categories)
         'co_date_of_childbirth': Property(Types.DATE, 'Due date of child for those who become pregnant'),
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
         'date_of_last_pregnancy': Property(Types.DATE,
@@ -284,7 +273,6 @@ class Contraception(Module):
         # call HSI here for init2 (post-birth contraception) as well as init1 & switching below
         # TODO: does this result in repeat costs for the ones still using as well or only for the newly started?
         contraception_event = HSI_Contraception(module=self)
-        # is module=self correct? (self.module) didn't work from here within on_birth
         self.sim.modules['HealthSystem'].schedule_hsi_event(contraception_event,
                                                             priority=1,
                                                             topen=self.sim.date,
@@ -375,7 +363,7 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
                                                                 priority=1,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
-            logger.debug(key='debug', data='The population wide HSI event has been scheduled successfully!')
+            logger.debug(key='message', data='The population wide HSI event has been scheduled successfully!')
 
             for woman in now_using_co:
                 start_contraception_summary = {
@@ -462,6 +450,7 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
             for woman in co_discontinue:
                 stop_contraception_summary = {
                     'woman_index': woman,
+                    'co_from': df.at[woman, 'co_contraception'],
                 }
 
                 logger.info(key='stop_contraception',
@@ -523,7 +512,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
             # outputs some logging if any pregnancy (contraception failure)
             fail_contraception_summary = {
                 'woman_index': woman,
-                'birth_booked': str(df.at[woman, 'co_date_of_childbirth'])
+                'due date': str(df.at[woman, 'co_date_of_childbirth'])
             }
 
             logger.info(key='fail_contraception',
