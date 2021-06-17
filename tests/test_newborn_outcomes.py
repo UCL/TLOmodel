@@ -125,7 +125,7 @@ def test_to_check_babies_delivered_in_facility_receive_post_birth_care():
 
     # check scheduling
     hsi_events = find_and_return_hsi_events_list(sim, child_id)
-    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant in hsi_events
+    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth in hsi_events
 
 
 def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care():
@@ -160,7 +160,7 @@ def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care():
 
     # Check they are not scheduled to receive post birth care
     hsi_events = find_and_return_hsi_events_list(sim, child_id)
-    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant not in hsi_events
+    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth not in hsi_events
 
 
 def test_care_seeking_for_babies_delivered_at_home_who_develop_complications():
@@ -197,7 +197,7 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications():
 
     # Check the event is scheduled
     hsi_events = find_and_return_hsi_events_list(sim, child_id)
-    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant in hsi_events
+    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth in hsi_events
 
 
 def test_twin_and_single_twin_still_birth_logic_for_twins():
@@ -291,8 +291,8 @@ def test_care_seeking_for_twins_delivered_at_home_who_develop_complications():
     hsi_events_child_one = find_and_return_hsi_events_list(sim, child_id_one)
     hsi_events_child_two = find_and_return_hsi_events_list(sim, child_id_two)
 
-    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant in hsi_events_child_one
-    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant in hsi_events_child_two
+    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth in hsi_events_child_one
+    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth in hsi_events_child_two
 
 
 def test_on_birth_applies_risk_of_complications_in_term_newborns_delivered_at_home_correctly():
@@ -434,7 +434,7 @@ def test_newborn_hsi_applies_risk_of_complications_and_delivers_treatment_to_fac
     sim.population.props.at[child_id, 'nb_low_birth_weight_status'] = 'low_birth_weight'
 
     # Run the newborn care event
-    newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
+    newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
         person_id=child_id, module=sim.modules['NewbornOutcomes'], facility_level_of_this_hsi=2)
     newborn_care.apply(person_id=child_id, squeeze_factor=0.0)
 

@@ -162,7 +162,7 @@ def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking():
     events = sim.find_events_for_person(person_id=mother_id)
     events = [e.__class__ for d, e in events]
 
-    assert labour.BirthEvent in events
+    assert labour.BirthAndPostnatalOutcomesEvent in events
     assert labour.LabourDeathAndStillBirthEvent in events
     assert labour.LabourAtHomeEvent in events
 
@@ -175,7 +175,7 @@ def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking():
     sim.date = sim.date + pd.DateOffset(days=5)
     sim.event_queue.queue.clear()
 
-    birth_event = labour.BirthEvent(mother_id=mother_id, module=sim.modules['Labour'])
+    birth_event = labour.BirthAndPostnatalOutcomesEvent(mother_id=mother_id, module=sim.modules['Labour'])
     birth_event.apply(mother_id)
 
     # Ensure that the postpartum home birth event is scheduled correctly
@@ -307,7 +307,7 @@ def test_event_scheduling_for_labour_onset_and_facility_delivery():
     # check birth and death events sheduled
     events = sim.find_events_for_person(person_id=mother_id)
     events = [e.__class__ for d, e in events]
-    assert labour.BirthEvent in events
+    assert labour.BirthAndPostnatalOutcomesEvent in events
     assert labour.LabourDeathAndStillBirthEvent in events
 
     # now check the woman has correctly been scheduled the labour HSI
@@ -326,7 +326,7 @@ def test_event_scheduling_for_labour_onset_and_facility_delivery():
     sim.date = sim.date + pd.DateOffset(days=5)
 
     # define and run birth event
-    birth_event = labour.BirthEvent(mother_id=mother_id, module=sim.modules['Labour'])
+    birth_event = labour.BirthAndPostnatalOutcomesEvent(mother_id=mother_id, module=sim.modules['Labour'])
     birth_event.apply(mother_id)
 
     # Check that following birth she is scheduled to continue receiving care at a facility
@@ -399,7 +399,7 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
 
     # Move date forward and run the birth event
     sim.date = sim.date + pd.DateOffset(days=5)
-    birth_event = labour.BirthEvent(mother_id=mother_id, module=sim.modules['Labour'])
+    birth_event = labour.BirthAndPostnatalOutcomesEvent(mother_id=mother_id, module=sim.modules['Labour'])
     birth_event.apply(mother_id)
 
     # Check the correct post caesarean HSI is scheduled

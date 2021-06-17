@@ -1496,6 +1496,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         params = self.module.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
+
         mother = df.loc[individual_id]
         child_id = int(df.at[individual_id, 'pn_id_most_recent_child'])
         child = df.loc[child_id]
@@ -1706,10 +1707,25 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
             if child_two.is_alive:
                 self.module.apply_risk_of_neonatal_complications_in_week_one(child_id=child_two_id,
                                                                              mother_id=individual_id)
-        # ===================================== CARE SEEKING FOR PNC 1 ==============================================
-        # Women who deliver in facilities are asked to return for a first postnatal check up at day 7 post birth
-        # We assume that women with complications, or the mothers of babies with complications, are more likely to seek
-        # postnatal care- and more quickly
+
+        # ===============================  POSTNATAL CHECK  =========================================================
+        if mother.is_alive and mni[individual_id]['future_pnc_check']:
+            if df.at[individual_id, 'pn_sepsis_late_postpartum'] or \
+                df.at[individual_id, 'pn_postpartum_haem_secondary'] or \
+                (df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclamp') or\
+               (df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia'):
+
+                days = 0
+            else:
+                days = self.module.rng.rand_int(0, 41)
+
+            pnc_one = HSI_PostnatalSupervisor_ReceivesLaterPostnatalCheckMaternal(self.module, person_id=individual_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event\
+                (pnc_one, priority=0,
+                 topen=self.sim.date + pd.DateOffset(days=days), tclose=None)
+
+
+        # todo: effect of complications on coverage...we assume that all women with comps seek care?
 
         mother_has_complications = False
         child_has_complications = False
@@ -1719,87 +1735,109 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
 
         if mother.is_alive:
             # We use a temporary variable to determine if the mother has any complications that may trigger care seeking
-            if ~df.at[individual_id, 'pn_sepsis_late_postpartum'] and \
-                ~df.at[individual_id, 'pn_postpartum_haem_secondary'] and \
-                (df.at[individual_id, 'pn_htn_disorders'] != 'severe_pre_eclamp') and\
-               (df.at[individual_id, 'pn_htn_disorders'] != 'eclampsia'):
-                mother_has_complications = False
-
-            elif df.at[individual_id, 'pn_sepsis_late_postpartum'] or \
+            if df.at[individual_id, 'pn_sepsis_late_postpartum'] or \
                 df.at[individual_id, 'pn_postpartum_haem_secondary'] or \
                 (df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclamp') or (df.at[individual_id,
                                                                                             'pn_htn_disorders'] ==
                                                                                       'eclampsia'):
-
                 mother_has_complications = True
 
         # Repeat that process for the child
         if child.is_alive:
-            if ~df.at[child_id, 'pn_sepsis_early_neonatal']:
-                child_has_complications = False
-            elif df.at[child_id, 'pn_sepsis_early_neonatal']:
+            if df.at[child_id, 'pn_sepsis_early_neonatal']:
                 child_has_complications = True
 
         if df.at[child_id, 'nb_is_twin']:
-            if df.at[child_two_id, 'is_alive']:
-                if ~df.at[child_two_id, 'pn_sepsis_early_neonatal']:
-                    child_two_has_complications = False
-                elif df.at[child_two_id, 'pn_sepsis_early_neonatal']:
+            if df.at[child_two_id, 'is_alive'] and df.at[child_two_id, 'pn_sepsis_early_neonatal']:
                     child_two_has_complications = True
 
-        # If neither the mother or the child are experiencing any complications in the first week after birth,
-        # we determine if they will present for the scheduled PNC check up at day 7
+        if (mother_has_complications or child_has_complications or child_two_has_complications) and \
+            mni[individual_id]['future_pnc_check']:
+              # TODO: what if child has comps but isnt suppose to have PNC
+            pnc_one = HSI_PostnatalSupervisor_ReceivesLaterPostnatalCheck(self.module, person_id=individual_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(pnc_one, priority=0, topen=self.sim.date, tclose=None)
 
-        mode_of_delivery = pd.Series(mni[individual_id]['mode_of_delivery'], index=df.loc[[individual_id]].index)
-        delivery_setting = pd.Series(mni[individual_id]['delivery_setting'], index=df.loc[[individual_id]].index)
-
-        if not child_has_complications and not mother_has_complications and not child_two_has_complications:
-            prob_will_seek_care = self.module.pn_linear_models['care_seeking_for_first_pnc_visit'].predict(
-                df.loc[[individual_id]],
-                mode_of_delivery=mode_of_delivery,
-                delivery_setting=delivery_setting)[individual_id]
-
-            if self.module.rng.random_sample() < prob_will_seek_care:
-                days_until_day_7 = self.sim.date - mother.la_date_most_recent_delivery
-                days_until_day_7_int = int(days_until_day_7 / np.timedelta64(1, 'D'))
-
-                pnc_one = HSI_PostnatalSupervisor_PostnatalCareContactOne(
-                        self.module, person_id=individual_id)
+        else:
+            if mni[individual_id]['future_pnc_check']:  # TODO: what if child has comps but isnt suppose to have PNC
+                pnc_one = HSI_PostnatalSupervisor_ReceivesLaterPostnatalCheck(
+                    self.module, person_id=individual_id)
+                timing = self.module.rng.rand_int(7, 41)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(pnc_one,
                                                                     priority=0,
-                                                                    topen=self.sim.date +
-                                                                    DateOffset(days=days_until_day_7_int),
+                                                                    topen=self.sim.date + DateOffset(days=timing),
                                                                     tclose=None)
 
-        # For women where either they or their baby has developed a complication during this time we assume likelihood
-        # of care seeking for postnatal check up is higher
 
-        elif mother_has_complications or child_has_complications or child_two_has_complications:
+class HSI_PostnatalSupervisor_ReceivesLaterPostnatalCheckMaternal(HSI_Event, IndividualScopeEventMixin):
+    """ """
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, PostnatalSupervisor)
 
-            prob_care_seeking = params['prob_care_seeking_postnatal_emergency']
+        self.TREATMENT_ID = 'HPostnatalSupervisor_ReceivesLaterPostnatalCheckMaternal'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
 
-            # todo: or should they just go to hospital?
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-            if prob_care_seeking > self.module.rng.random_sample():
-                # And we assume they will present earlier than day 7
-                admission_event = HSI_PostnatalSupervisor_PostnatalCareContactOne(
-                        self.module, person_id=individual_id)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(admission_event,
-                                                                    priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=None)
+        logger.info(key='postnatal_check', data={'person_id': person_id,
+                                                 'mother_or_newborn': 'mother',
+                                                 'delivery_setting': mni[person_id]['delivery_setting'],
+                                                 'timing': '>48'})
 
-            # For 'non-care seekers' risk of death is applied immediately
-            else:
-                if mother_has_complications:
-                    self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother',
-                                                                                   individual_id=individual_id)
-                if child_has_complications:
-                    self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child',
-                                                                                   individual_id=child_id)
-                if child_two_has_complications:
-                    self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child',
-                                                                                   individual_id=child_two_id)
+        assert df.at[person_id, 'la_is_postpartum']
+
+        if df.at[person_id, 'is_alive']:
+            df.at[person_id, 'pn_pnc_visits_maternal'] += 1
+            self.module.assessment_for_maternal_complication_during_pnc(person_id, self)
+            # todo, other PNC bits
+            # todo: schedule another return visit??
+
+    def did_not_run(self):
+        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalCareContactOne: did not run')
+
+    def not_available(self):
+        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalCareContactOne: cannot not run with '
+                                          'this configuration')
+
+
+class HSI_PostnatalSupervisor_ReceivesLaterPostnatalCheckNeonatal(HSI_Event, IndividualScopeEventMixin):
+    """ """
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, PostnatalSupervisor)
+
+        self.TREATMENT_ID = 'PostnatalSupervor_ReceivesLaterPostnatalCheckNeonatal'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        mother_id = df.at[person_id, 'mother_id']
+
+        logger.info(key='postnatal_check', data={'person_id': person_id,
+                                                 'mother_or_newborn': 'newborn',
+                                                 'delivery_setting': mni[mother_id]['delivery_setting'],
+                                                 'timing': '>48'})
+
+        if df.at[person_id, 'is_alive']:
+            df.at[person_id, 'pn_pnc_visits_neonatal'] += 1
+            self.module.assessment_for_neonatal_complications_during_pnc(person_id, self, pnc_visit='pnc1')
+
+            # todo, other PNC bits
+            # todo: schedule another return visit??
+
+    def did_not_run(self):
+        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalCareContactOne: did not run')
+
+    def not_available(self):
+        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalCareContactOne: cannot not run with '
+                                         'this configuration')
 
 
 class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScopeEventMixin):

@@ -444,6 +444,34 @@ def predict_probability_delivery_at_home(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
+def predict_postnatal_check(self, df, rng=None, **externals):
+    """individual level"""
+    person = df.iloc[0]
+    params = self.parameters
+    result = params['odds_will_attend_pnc']
+
+    if 29 < person['age_years'] < 36:
+        result *= params['or_pnc_age_30_35']
+    if person['age_years'] >= 36:
+        result *= params['or_pnc_age_>35']
+    if not person['li_urban']:
+        result *= params['or_pnc_rural']
+
+    if person['li_wealth'] == 1:
+        result *= params['or_pnc_wealth_level_1']
+
+    if person['la_parity'] > 4:
+        result *= params['or_pnc_parity_>4']
+
+    if externals['mode_of_delivery'] == 'caesarean_section':
+        result *= params['or_pnc_caesarean_delivery']
+    if externals['delivery_setting'] == 'home_birth':
+        result *= params['or_pnc_facility_delivery']
+
+    result = result / (1 + result)
+    return pd.Series(data=[result], index=df.index)
+
+
 def predict_care_seeking_for_complication(self, df, rng=None, **externals):
     """individual level"""
     #  person = df.iloc[0]
