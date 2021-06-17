@@ -708,7 +708,7 @@ class Hiv(Module):
         # First-line ART for adults (age >10)
         item_code_for_art = pd.unique(
             consumables.loc[
-                consumables["Items"] == "First-line ART regimen: adults",
+                consumables["Items"] == "First-line ART regimen: adult",
                 "Item_Code"
             ]
         )[0]
@@ -717,7 +717,7 @@ class Hiv(Module):
                 consumables["Items"] == "Cotrimoxizole, 960mg pppy", "Item_Code"
             ]
         )[0]  # NB spelling error in consumables file "Cotrimoxizole"
-        self.footprints_for_consumables_required['art_adult'] = {
+        self.footprints_for_consumables_required['First-line ART regimen: adult'] = {
             "Intervention_Package_Code": {},
             "Item_Code": {item_code_for_art: 1, item_code_for_art2: 1}
         }
@@ -725,7 +725,7 @@ class Hiv(Module):
         # ART for children aged 1-10:
         item_code_for_art_paed = pd.unique(
             consumables.loc[
-                consumables["Items"] == "First line ART regimen: children age 1-10",
+                consumables["Items"] == "First line ART regimen: older child",
                 "Item_Code"
             ]
         )[0]
@@ -735,7 +735,7 @@ class Hiv(Module):
                 "Intervention_Pkg_Code",
             ]
         )[0]
-        self.footprints_for_consumables_required['art_child'] = {
+        self.footprints_for_consumables_required['First line ART regimen: older child'] = {
             "Intervention_Package_Code": {pkg_code_for_art_paed: 1},
             "Item_Code": {item_code_for_art_paed: 1}
         }
@@ -743,11 +743,11 @@ class Hiv(Module):
         # ART for children aged <1:
         item_code_for_art_paed2 = pd.unique(
             consumables.loc[
-                consumables["Items"] == "First line ART regimen: children age 1",
+                consumables["Items"] == "First line ART regimen: young child",
                 "Item_Code"
             ]
         )[0]
-        self.footprints_for_consumables_required['art_young_child'] = {
+        self.footprints_for_consumables_required['First line ART regimen: young child'] = {
             "Intervention_Package_Code": {pkg_code_for_art_paed: 1},
             "Item_Code": {item_code_for_art_paed2: 1}
         }
@@ -1657,18 +1657,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for children
             drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['First line ART regimen: children age 1'])
-
-        # todo does this include all ages 1-10?
-        elif age_of_person.between(p["ART_age_cutoff_young_child"], p["ART_age_cutoff_older_child"]):
+                footprint=self.module.footprints_for_consumables_required['First line ART regimen: young child'])
+        elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for children
             drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['First line ART regimen: children age 1-10'])
-
+                footprint=self.module.footprints_for_consumables_required['First line ART regimen: older child'])
         else:
             # Formulation for adults
             drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['First-line ART regimen: adults'])
+                footprint=self.module.footprints_for_consumables_required['First-line ART regimen: adult'])
 
         return drugs_available
 
