@@ -742,26 +742,16 @@ class Tb(Module):
         # 4) -------- Define the treatment options --------
 
         # adult treatment - primary
-        # pkg_code1 = pd.unique(
-        #     consumables.loc[
-        #         consumables['Intervention_Pkg']
-        #         == 'First line treatment for new TB cases for adults',
-        #         'Intervention_Pkg_Code',
-        #     ]
-        # )[0]
-        # self.footprints_for_consumables_required['tb_tx_adult'] = {
-        #     "Intervention_Package_Code": {pkg_code1: 1},
-        #     "Item_Code": {}
-        # }
-        item_code1 = pd.unique(
+        pkg_code1 = pd.unique(
             consumables.loc[
-                consumables['Items'] == 'Cat. I & III Patient Kit A',
-                'Item_Code',
+                consumables['Intervention_Pkg']
+                == 'First line treatment for new TB cases for adults',
+                'Intervention_Pkg_Code',
             ]
         )[0]
         self.footprints_for_consumables_required['tb_tx_adult'] = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code1: 1}
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {}
         }
 
         # child treatment - primary
@@ -1235,6 +1225,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         end_tx_indx = end_tx_indx.union(end_mdr_tx_idx)
 
         # change individual properties to off treatment
+        df.loc[end_tx_indx, 'tb_diagnosed'] = False
         df.loc[end_tx_indx, 'tb_on_treatment'] = False
         df.loc[end_tx_indx, 'tb_treated_mdr'] = False
         # this will indicate that this person has had one complete course of tb treatment
@@ -1418,8 +1409,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # If the person has previously been diagnosed do nothing do not occupy any resources
-        if df.at[person_id, 'tb_diagnosed']:
+        # If the person is already on treatment do nothing do not occupy any resources
+        if df.at[person_id, 'tb_on_treatment']:
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         test_result = None

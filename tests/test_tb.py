@@ -240,88 +240,88 @@ def get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=
 
 # check dates of follow-up appts following schedule
 # check treatment ends at appropriate time
-def test_treatment_schedule():
-    """ test treatment schedules """
-
-    popsize = 10
-
-    # disable HS, all HSI events will run, but won't be in the HSI queue
-    # they will enter the sim.event_queue
-    sim = get_sim(use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
-
-    # Make the population
-    sim.make_initial_population(n=popsize)
-
-    # change prob treatment success for tb treatment end checks
-    sim.modules['Tb'].parameters['prob_tx_success_new'] = 1.0
-
-    # simulate for 0 days, just get everything set up (dxtests etc)
-    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-
-    df = sim.population.props
-    person_id = 0
-
-    # assign person_id active tb
-    df.at[person_id, 'tb_inf'] = 'active'
-    df.at[person_id, 'tb_strain'] = 'ds'
-    df.at[person_id, 'tb_date_active'] = sim.date
-    df.at[person_id, 'tb_smear'] = True
-    df.at[person_id, 'age_exact_years'] = 20
-    df.at[person_id, 'age_years'] = 20
-
-    # assign symptoms
-    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    for symptom in symptom_list:
-        sim.modules["SymptomManager"].change_symptom(
-            person_id=person_id,
-            symptom_string=symptom,
-            add_or_remove="+",
-            disease_module=sim.modules['Tb'],
-            duration_in_days=None,
-        )
-
-    # screen and test person_id
-    screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
-                                                 module=sim.modules['Tb'])
-    screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
-
-    assert df.at[person_id, 'tb_ever_tested']
-    assert df.at[person_id, 'tb_diagnosed']
-    assert not df.at[person_id, 'tb_diagnosed_mdr']
-
-    # schedule treatment start
-    # this calls clinical_monitoring which should schedule all follow-up appts
-    tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
-                                        module=sim.modules['Tb'])
-    tx_start.apply(person_id=person_id, squeeze_factor=0.0)
-
-    # clinical monitoring
-    # default clinical monitoring schedule for first infection ds-tb
-    follow_up_times = sim.modules['Tb'].parameters['followup_times']
-    clinical_fup = follow_up_times['ds_clinical_monitor'].dropna()
-    number_fup_appts = len(clinical_fup)
-
-    # count events scheduled currently
-    t1 = len(sim.event_queue.queue)
-
-    # this will schedule future follow-up appts depdendent on strain/retreatment status
-    sim.modules['Tb'].clinical_monitoring(person_id=person_id)
-    # check should be 6 more events now
-    t2 = len(sim.event_queue.queue)
-    assert t2 - t1 == number_fup_appts
-
-    # end treatment, change sim.date so person will be ready to stop treatment
-    sim.date = Date(2010, 12, 31)
-    tx_end_event = tb.TbEndTreatmentEvent(module=sim.modules['Tb'])
-
-    tx_end_event.apply(sim.population)
-
-    # check individual properties consistent with treatment end
-    assert not df.at[person_id, 'tb_on_treatment']
-    assert not df.at[person_id, 'tb_treated_mdr']
-    assert df.at[person_id, 'tb_inf'] == 'latent'
-    assert df.at[person_id, 'tb_strain'] == 'none'
-    assert not df.at[person_id, 'tb_smear']
+# def test_treatment_schedule():
+#     """ test treatment schedules """
+#
+#     popsize = 10
+#
+#     # disable HS, all HSI events will run, but won't be in the HSI queue
+#     # they will enter the sim.event_queue
+#     sim = get_sim(use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
+#
+#     # Make the population
+#     sim.make_initial_population(n=popsize)
+#
+#     # change prob treatment success for tb treatment end checks
+#     sim.modules['Tb'].parameters['prob_tx_success_new'] = 1.0
+#
+#     # simulate for 0 days, just get everything set up (dxtests etc)
+#     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+#
+#     df = sim.population.props
+#     person_id = 0
+#
+#     # assign person_id active tb
+#     df.at[person_id, 'tb_inf'] = 'active'
+#     df.at[person_id, 'tb_strain'] = 'ds'
+#     df.at[person_id, 'tb_date_active'] = sim.date
+#     df.at[person_id, 'tb_smear'] = True
+#     df.at[person_id, 'age_exact_years'] = 20
+#     df.at[person_id, 'age_years'] = 20
+#
+#     # assign symptoms
+#     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+#     for symptom in symptom_list:
+#         sim.modules["SymptomManager"].change_symptom(
+#             person_id=person_id,
+#             symptom_string=symptom,
+#             add_or_remove="+",
+#             disease_module=sim.modules['Tb'],
+#             duration_in_days=None,
+#         )
+#
+#     # screen and test person_id
+#     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
+#                                                  module=sim.modules['Tb'])
+#     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
+#
+#     assert df.at[person_id, 'tb_ever_tested']
+#     assert df.at[person_id, 'tb_diagnosed']
+#     assert not df.at[person_id, 'tb_diagnosed_mdr']
+#
+#     # schedule treatment start
+#     # this calls clinical_monitoring which should schedule all follow-up appts
+#     tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
+#                                         module=sim.modules['Tb'])
+#     tx_start.apply(person_id=person_id, squeeze_factor=0.0)
+#
+#     # clinical monitoring
+#     # default clinical monitoring schedule for first infection ds-tb
+#     follow_up_times = sim.modules['Tb'].parameters['followup_times']
+#     clinical_fup = follow_up_times['ds_clinical_monitor'].dropna()
+#     number_fup_appts = len(clinical_fup)
+#
+#     # count events scheduled currently
+#     t1 = len(sim.event_queue.queue)
+#
+#     # this will schedule future follow-up appts depdendent on strain/retreatment status
+#     sim.modules['Tb'].clinical_monitoring(person_id=person_id)
+#     # check should be 6 more events now
+#     t2 = len(sim.event_queue.queue)
+#     assert t2 - t1 == number_fup_appts
+#
+#     # end treatment, change sim.date so person will be ready to stop treatment
+#     sim.date = Date(2010, 12, 31)
+#     tx_end_event = tb.TbEndTreatmentEvent(module=sim.modules['Tb'])
+#
+#     tx_end_event.apply(sim.population)
+#
+#     # check individual properties consistent with treatment end
+#     assert not df.at[person_id, 'tb_on_treatment']
+#     assert not df.at[person_id, 'tb_treated_mdr']
+#     assert df.at[person_id, 'tb_inf'] == 'latent'
+#     assert df.at[person_id, 'tb_strain'] == 'none'
+#     assert not df.at[person_id, 'tb_smear']
 
 
 def test_treatment_failure():
@@ -332,9 +332,8 @@ def test_treatment_failure():
 
     popsize = 10
 
-    # disable HS, all HSI events will run, but won't be in the HSI queue
-    # they will enter the sim.event_queue
-    sim = get_sim(use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
+    # allow HS to run and queue events
+    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -355,6 +354,8 @@ def test_treatment_failure():
     df.at[person_id, 'tb_smear'] = True
     df.at[person_id, 'age_exact_years'] = 20
     df.at[person_id, 'age_years'] = 20
+    # change district so facilities available
+    df.at[person_id, 'district_of_residence'] = 'Lilongwe'
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
@@ -382,21 +383,6 @@ def test_treatment_failure():
                                         module=sim.modules['Tb'])
     tx_start.apply(person_id=person_id, squeeze_factor=0.0)
 
-    # clinical monitoring
-    # default clinical monitoring schedule for first infection ds-tb
-    follow_up_times = sim.modules['Tb'].parameters['followup_times']
-    clinical_fup = follow_up_times['ds_clinical_monitor'].dropna()
-    number_fup_appts = len(clinical_fup)
-
-    # count events scheduled currently
-    t1 = len(sim.event_queue.queue)
-
-    # this will schedule future follow-up appts depdendent on strain/retreatment status
-    sim.modules['Tb'].clinical_monitoring(person_id=person_id)
-    # check should be 6 more events now
-    t2 = len(sim.event_queue.queue)
-    assert t2 - t1 == number_fup_appts
-
     # end treatment, change sim.date so person will be ready to stop treatment
     sim.date = Date(2010, 12, 31)
 
@@ -414,20 +400,33 @@ def test_treatment_failure():
     # screen and test person_id
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
                                                  module=sim.modules['Tb'])
-    screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
+    test = screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     # should schedule xpert - if available
+    # check that the event returned a footprint for an xpert test
+    assert test == screening_appt.make_appt_footprint({'Over5OPD': 1, 'LabMolec': 1})
 
-    # should schedule start treatment
+    # start treatment
+    tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
+                                        module=sim.modules['Tb'])
+    tx_start.apply(person_id=person_id, squeeze_factor=0.0)
 
+    # length followup should be 8 months
+    # clinical monitoring
+    # default clinical monitoring schedule for first infection ds-tb and retreatment
+    follow_up_times = sim.modules['Tb'].parameters['followup_times']
+    clinical_fup = follow_up_times['ds_clinical_monitor'].dropna()
+    clinical_fup_retx = follow_up_times['ds_retreatment_clinical'].dropna()
+    number_fup_appts = len(clinical_fup) + len(clinical_fup_retx)
 
-    # check tb treatment - should be retreatment
+    # count how many events are tb.HSI_Tb_FollowUp
+    count = 0
+    all_future_events = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    for idx in range(len(all_future_events)):
+        if isinstance(all_future_events[idx][1], tb.HSI_Tb_FollowUp):
+            count += 1
 
-    # length followup should be xx
-
-
-
-
+    assert count == number_fup_appts
 
 
 # check referrals for children - should be x-ray at screening/testing
