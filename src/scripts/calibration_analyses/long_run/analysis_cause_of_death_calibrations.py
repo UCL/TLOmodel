@@ -5,6 +5,7 @@ This uses the results of the Scenario defined in: src/scripts/long_run/long_run.
 """
 
 # todo - do all the same for DALYS
+# todo - change the demography analysis to avoid the issue of summarizeing and then doing groupby and leading to lower --> 0's
 
 from datetime import datetime
 from pathlib import Path
@@ -27,6 +28,7 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     summarize,
     format_gbd,
+    create_pickles_locally
 )
 
 # %% Declare usual paths:
@@ -60,38 +62,64 @@ gbd = format_gbd(pd.read_csv(rfp / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD201
 gbd = gbd.loc[gbd['measure_name'] == 'Deaths']
 
 # %% Load modelling results:
-
+# todo - also sum by five year; OR don't call summarize yet
 # Extract results, summing by year
-deaths = summarize(extract_results(
+results = extract_results(
     results_folder,
     module="tlo.methods.demography",
     key="death",
     custom_generate_series="assign(year = lambda x: x['date'].dt.year)"
-                           ".groupby(['sex', 'date', 'age', 'cause'])['person_id'].count()",
+                           ".groupby(['sex', 'year', 'age', 'label'])['person_id'].count()",
     do_scaling=True
-),
-    collapse_columns=True
-).reset_index()
+)
 
-# Sum by year/sex/age-group
+# Update index to show five-year age-group and calendar period
 agegrps, agegrplookup = make_age_grp_lookup()
-deaths['year'] = deaths['date'].dt.year
-deaths['age_grp'] = deaths['age'].map(agegrplookup)
-deaths['age_grp'] = deaths['age_grp'].astype(make_age_grp_types())
-deaths_model = deaths.drop(columns=['age']).groupby(by=['sex', 'age_grp', 'cause', 'year']).sum().reset_index()
+calperiods, calperiodlookup = make_calendar_period_lookup()
+
+results = results.reset_index()
+results['age_grp'] = results['age'].map(agegrplookup).astype(make_age_grp_types())
+results['period'] = results['year'].map(calperiodlookup).astype(make_calendar_period_type())
+results = results.drop(columns=['age', 'year'])
+results = results.groupby(['period', 'sex', 'age_grp', 'label']).sum().div(5.0)  # divide by five to give the average number of deaths per year within the five year period
+
+
+results = results.set_index()
+
+# # Summarize:
+# deaths = summarize(results, collapse_columns=True).reset_index()
+
+
+# deaths = summarize(extract_results(
+#     results_folder,
+#     module="tlo.methods.demography",
+#     key="death",
+#     custom_generate_series="assign(year = lambda x: x['date'].dt.year)"
+#                            ".groupby(['sex', 'year', 'age', 'label'])['person_id'].count()",
+#     do_scaling=True
+# ),
+#     collapse_columns=True
+# ).reset_index()
+#
+# # Sum by year/sex/age-group
+# agegrps, agegrplookup = make_age_grp_lookup()
+# deaths['year'] = deaths['date'].dt.year
+# deaths['age_grp'] = deaths['age'].map(agegrplookup)
+# deaths['age_grp'] = deaths['age_grp'].astype(make_age_grp_types())
+# deaths_model = deaths.drop(columns=['age']).groupby(by=['sex', 'age_grp', 'cause', 'year']).sum().reset_index()
 
 # Define period:
-calperiods, calperiodlookup = make_calendar_period_lookup()
-deaths_model['period'] = deaths_model['year'].map(calperiodlookup).astype(make_calendar_period_type())
+# calperiods, calperiodlookup = make_calendar_period_lookup()
+# deaths_model['period'] = deaths_model['year'].map(calperiodlookup).astype(make_calendar_period_type())
 
 # %% Load the cause-of-deaths mappers and use them to populate the 'label' for model and gbd outputs
 
 demoglog = load_pickled_dataframes(results_folder)['tlo.methods.demography']
-mapper_from_tlo_causes = pd.Series(demoglog['mapper_from_tlo_cause_to_common_label'].drop(columns={'date'}).loc[0]).to_dict()
+# mapper_from_tlo_causes = pd.Series(demoglog['mapper_from_tlo_cause_to_common_label'].drop(columns={'date'}).loc[0]).to_dict()
 mapper_from_gbd_causes = pd.Series(demoglog['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]).to_dict()
 
-deaths_model['label'] = deaths_model['cause'].map(mapper_from_tlo_causes)
-assert not deaths_model['label'].isna().any()
+# deaths_model['label'] = deaths_model['cause'].map(mapper_from_tlo_causes)
+# assert not deaths_model['label'].isna().any()
 
 gbd['label'] = gbd['cause_name'].map(mapper_from_gbd_causes)
 assert not gbd['label'].isna().any()
@@ -122,6 +150,9 @@ deaths_pt['Model'] = deaths_model.loc[(deaths_model.period == period)].groupby(
 
 # %% Make figures of overall summaries of deaths by cause
 # todo - improve formatting
+
+# summarize results, summing across ages:
+x = summarize(results.groupby(['period', 'sex', 'label']).sum(), collapse_columns=True).reset_index()
 
 dats = ['GBD', 'Model']
 sexes = ['F', 'M']
@@ -200,7 +231,7 @@ plt.savefig(make_graph_file_name(f"Deaths_Scatter_Plot_{period}"))
 plt.show()
 
 
-# %% Plots of deaths patten for each cause:
+# %% Plots of age-breakdown deaths patten for each cause:
 
 sexes = ['F', 'M']
 dats = ['GBD', 'Model']

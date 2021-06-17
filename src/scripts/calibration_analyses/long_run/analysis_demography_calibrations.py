@@ -29,7 +29,8 @@ from tlo.analysis.utils import (
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize
+    summarize,
+    create_pickles_locally
 )
 
 from tlo.methods import demography
@@ -42,6 +43,9 @@ rfp = Path('./resources')
 
 # ** Declare the results folder ***
 results_folder = get_scenario_outputs('long_run.py', outputspath)[-1]
+
+# If needed -- in the case that pickles were not created locally
+# create_pickles_locally(results_folder)
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: outputspath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
@@ -370,7 +374,7 @@ deaths_model['Variant'] = 'Model_' + deaths_model['Variant']
 wpp_deaths = pd.read_csv(Path(rfp) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")
 
 # Load GBD
-gbd = format_gbd(pd.read_csv(rfp / "gbd" / "ResourceFile_TotalDeaths_GBD.csv"))
+gbd = format_gbd(pd.read_csv(rfp / "gbd" / "ResourceFile_TotalDeaths_GBD2019.csv"))
 
 # Compute sums by period
 gbd = pd.DataFrame(gbd.drop(columns=['Year']).groupby(by=['Period', 'Sex', 'Age_Grp', 'Variant']).sum()).reset_index()

@@ -480,8 +480,8 @@ def format_gbd(gbd_df: pd.DataFrame):
 
 
 def create_pickles_locally(scenario_output_dir):
-    """For a run from the Batch system that has not resulted in the creation of the pickles, locally parse the logfile
-    and create the set of pickles."""
+    """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
+     locally."""
     def turn_log_into_pickles(logfile):
         outputs = parse_log_file(logfile)
         for key, output in outputs.items():
@@ -494,4 +494,4 @@ def create_pickles_locally(scenario_output_dir):
         run_folders = [f for f in os.scandir(draw_folder) if f.is_dir()]
         for run_folder in run_folders:
             logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
-            turn_log_into_pickles(logfile)
+            turn_log_into_pickles(Path(run_folder) / logfile)
