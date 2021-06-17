@@ -82,13 +82,12 @@ class LongRun(BaseScenario):
             dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=self.resources),
 
             # - Contraception, Pregnancy and Labour
-            # contraception.Contraception(resourcefilepath=self.resources),
-            # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
-            # care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
-            # labour.Labour(resourcefilepath=self.resources),
-            # newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
-            # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
-            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),    # Use Simplified Births for speed
+            contraception.Contraception(resourcefilepath=self.resources),
+            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
+            labour.Labour(resourcefilepath=self.resources),
+            newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
+            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
 
             # - Conditions of Early Childhood
             diarrhoea.Diarrhoea(resourcefilepath=self.resources),
