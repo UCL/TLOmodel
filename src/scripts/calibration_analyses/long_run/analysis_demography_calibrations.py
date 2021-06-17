@@ -48,7 +48,7 @@ results_folder = get_scenario_outputs('long_run.py', outputspath)[-1]
 # create_pickles_locally(results_folder)
 
 # Declare path for output graphs from this script
-make_graph_file_name = lambda stub: outputspath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
+make_graph_file_name = lambda stub: results_folder / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
 
 # Define colo(u)rs to use:
 colors = {
@@ -256,7 +256,7 @@ for year in [2018, 2030]:
 
 
 # %% Births: Number over time
-
+# todo - fix this -- do summarize only when done on groupbys
 # Births over time (Model)
 births_by_year = summarize(extract_results(
     results_folder,
@@ -343,7 +343,7 @@ for tp in time_period:
     plt.show()
 
 # %% All-Cause Deaths
-
+# todo - fix this ;only do summarize after the groupbys
 # Get Model ouput (aggregating by year before doing the summarize)
 deaths_by_age_and_year = summarize(extract_results(
     results_folder,

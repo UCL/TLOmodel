@@ -476,6 +476,14 @@ def format_gbd(gbd_df: pd.DataFrame):
     calperiods, calperiodlookup = make_calendar_period_lookup()
     gbd_df['Period']  = gbd_df['Year'].map(calperiodlookup).astype(make_calendar_period_type())
 
+    # Unify labelling of this file:
+    gbd_df = gbd_df.rename(columns={
+        'Sex': 'sex',
+        'Age_Grp': 'age_grp',
+        'GBD_Est': 'mean',
+        'GBD_Lower': 'lower',
+        'GBD_Upper': 'upper'})
+
     return gbd_df
 
 
