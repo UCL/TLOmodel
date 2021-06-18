@@ -503,7 +503,6 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
     output = parse_log_file(logfile)
 
     # 1) Get model outputs:
-
     # - get scaling factor if it has been computed:
     if 'scaling_factor' in output['tlo.methods.demography']:
         sf = output['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
@@ -515,7 +514,7 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
         year = lambda x: x['date'].dt.year
     ).groupby(
         ['sex', 'year', 'age', 'label']
-    )['person_id'].count()
+    )['person_id'].count().mul(sf)
 
     # - format categories:
     agegrps, agegrplookup = make_age_grp_lookup()
@@ -527,10 +526,9 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
 
     # - sum over period and divide by five to give yearly averages
     model = model.groupby(['period', 'sex', 'age_grp', 'label']).sum().div(5.0).rename(
-        columns={'person_id': 'model'})
+        columns={'person_id': 'model'}).replace({0: np.nan})
 
     # 2) Load comparator GBD datasets
-
     # - Load data, format and limit to deaths only:
     gbd_dat = format_gbd(pd.read_csv(resourcefilepath / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'))
     gbd_dat = gbd_dat.loc[gbd_dat['measure_name'] == 'Deaths']

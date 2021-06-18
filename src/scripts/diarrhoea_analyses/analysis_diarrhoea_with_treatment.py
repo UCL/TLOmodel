@@ -11,7 +11,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import parse_log_file, compare_number_of_deaths
 from tlo.methods import (
     contraception,
     demography,
@@ -23,6 +23,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 
@@ -36,7 +37,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
+end_date = Date(2020, 1, 1)
 popsize = 20_000
 
 log_config = {
@@ -49,20 +50,18 @@ log_config = {
 }
 
 # add file handler for the purpose of logging
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             contraception.Contraception(resourcefilepath=resourcefilepath),
+             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             labour.Labour(resourcefilepath=resourcefilepath),
-             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
              diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
              )
 
 sim.make_initial_population(n=popsize)
@@ -265,32 +264,16 @@ plt.show()
 
 
 # %% Plot total numbers of death against comparable estimate from GBD
-from scripts.utils.helper_funcs_for_processing_data_files import load_gbd_deaths_and_dalys_data
 
-scaling_factor = demography.get_scaling_factor(output, resourcefilepath)
+# Get comparison
+comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
 
-gbd = load_gbd_deaths_and_dalys_data(output)
-
-diarrhoea_deaths_gbd = (gbd.loc[
-    (gbd.measure_name == 'Deaths') &
-    (gbd.unified_cause == 'Childhood Diarrhoea') &
-    (gbd.age_range == '0-4') &
-    gbd.year.isin([2010, 2011, 2012, 2013, 2014, 2015, 2016])
-    ]).groupby(by='year')[['val', 'upper', 'lower']].sum()
-
-deaths_under_5s_scaled = deaths.sum(axis=1) * scaling_factor
-
-fig, ax = plt.subplots()
-ax.plot(deaths_under_5s_scaled.index, deaths_under_5s_scaled.values, 'r--', label='Model: With Treatment')
-ax.plot(diarrhoea_deaths_gbd.index, diarrhoea_deaths_gbd.val, 'b', label='GBD Diarrhoea deaths <5s')
-ax.fill_between(
-    diarrhoea_deaths_gbd.index,
-    diarrhoea_deaths_gbd.lower,
-    diarrhoea_deaths_gbd.upper, color='b', alpha=0.5)
-ax.legend()
-ax.set_ylabel('Number of deaths')
-ax.set_title('Comparison Between Model and GBD')
+# Make a simple bar chart
+comparison.loc[('2015-2019', slice(None), '0-4', 'Childhood Diarrhoea')].sum().plot.bar()
+plt.xlabel('Deaths per year in the 2015-2019')
+plt.tight_layout()
 plt.show()
+
 
 #%% Look at Case Fatality Rate
 cfr = dict()
