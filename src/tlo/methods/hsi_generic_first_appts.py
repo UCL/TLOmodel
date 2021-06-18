@@ -20,7 +20,7 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import (
     HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour,
-    HSI_Labour_ReceivesEarlyPostnatalCheck,
+    HSI_Labour_ReceivesPostnatalCheck,
 )
 from tlo.methods.malaria import (
     HSI_Malaria_complicated_treatment_adult,
@@ -457,7 +457,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             # -----  COMPLICATION AFTER BIRTH  -----
                 if df.at[person_id, 'la_currently_in_labour'] and (mni[person_id]['sought_care_for_complication']) \
                         and (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
-                    event = HSI_Labour_ReceivesEarlyPostnatalCheck(
+                    event = HSI_Labour_ReceivesPostnatalCheck(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
                     health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)

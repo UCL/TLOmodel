@@ -10,8 +10,6 @@ from tlo.methods import Metadata, demography, newborn_outcomes_lm
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
-from tlo.methods.postnatal_supervisor import HSI_PostnatalSupervisor_NeonatalWardInpatientCare, \
-    HSI_PostnatalSupervisor_ReceivesLaterPostnatalCheckNeonatal
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -653,32 +651,37 @@ class NewbornOutcomes(Module):
 
         causes = list()
 
-        if child.nb_early_onset_neonatal_sepsis:
+        if child.nb_early_onset_neonatal_sepsis or child.pn_sepsis_early_neonatal:
             causes.append('early_onset_neonatal_sepsis')
 
-        if child.nb_encephalopathy == 'mild_enceph' or child.nb_encephalopathy == 'moderate_enceph' or \
-            child.nb_encephalopathy == 'severe_enceph':
-            causes.append('encephalopathy')
+        if child.pn_sepsis_late_neonatal:
+            causes.append('late_onset_neonatal_sepsis')
 
-        if child.nb_early_preterm or child.nb_late_preterm:
-            causes.append('preterm_other')
-        if child.nb_preterm_respiratory_distress:
-            causes.append('respiratory_distress_syndrome')
+        if not nci[child]['passed_through_week_one']:
 
-        if child.nb_not_breathing_at_birth and (child.nb_encephalopathy == 'none') and \
-            (~child.nb_preterm_respiratory_distress):
-            causes.append('neonatal_respiratory_depression')
+            if child.nb_encephalopathy == 'mild_enceph' or child.nb_encephalopathy == 'moderate_enceph' or \
+               child.nb_encephalopathy == 'severe_enceph':
+                causes.append('encephalopathy')
 
-        if self.congeintal_anomalies.has_all(individual_id, 'heart'):
-            causes.append('congenital_heart_anomaly')
-        if self.congeintal_anomalies.has_all(individual_id, 'limb_musc_skeletal'):
-            causes.append('limb_or_musculoskeletal_anomaly')
-        if self.congeintal_anomalies.has_all(individual_id, 'urogenital'):
-            causes.append('urogenital_anomaly')
-        if self.congeintal_anomalies.has_all(individual_id, 'digestive'):
-            causes.append('digestive_anomaly')
-        if self.congeintal_anomalies.has_all(individual_id, 'other'):
-            causes.append('other_anomaly')
+            if child.nb_not_breathing_at_birth and (child.nb_encephalopathy == 'none') and \
+               (~child.nb_preterm_respiratory_distress):
+                causes.append('neonatal_respiratory_depression')
+
+                if child.nb_early_preterm or child.nb_late_preterm:
+                    causes.append('preterm_other')
+                if child.nb_preterm_respiratory_distress:
+                    causes.append('respiratory_distress_syndrome')
+
+                if self.congeintal_anomalies.has_all(individual_id, 'heart'):
+                    causes.append('congenital_heart_anomaly')
+                if self.congeintal_anomalies.has_all(individual_id, 'limb_musc_skeletal'):
+                    causes.append('limb_or_musculoskeletal_anomaly')
+                if self.congeintal_anomalies.has_all(individual_id, 'urogenital'):
+                    causes.append('urogenital_anomaly')
+                if self.congeintal_anomalies.has_all(individual_id, 'digestive'):
+                    causes.append('digestive_anomaly')
+                if self.congeintal_anomalies.has_all(individual_id, 'other'):
+                    causes.append('other_anomaly')
 
         if causes:
             risks = dict()
@@ -727,6 +730,11 @@ class NewbornOutcomes(Module):
                 self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
                                                                       cause=f'{cause_of_death}'), death_date)
 
+            # Reset variables
+            df.at[individual_id, 'nb_early_onset_neonatal_sepsis'] = False
+            df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
+            df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
+
             # We now delete the MNI dictionary for mothers who have died in labour but their children have survived,
             # this is done here as we use variables from the mni as predictors in some of the above equations
             mother_id = df.loc[individual_id, 'mother_id']
@@ -735,6 +743,7 @@ class NewbornOutcomes(Module):
                                                                   (mni[mother_id]['twin_count'] == 2)):
                     if mother_id in mni:
                         del mni[mother_id]
+
 
     def set_disability_status(self, individual_id):
         """
@@ -946,13 +955,17 @@ class NewbornOutcomes(Module):
 
         if 'Hiv' in self.sim.modules:
             if ~df.at[child_id, 'hv_diagnosed']:  # and df.at[mother_id, 'hv_diagnosed']:
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
-                    topen=self.sim.date,
-                    tclose=None,
-                    priority=0
-                )
-                logger.debug(key='message', data=f'Neonate {child_id} is receiving HIV screening after birth')
+
+                if df.at[child_id, 'nb_pnc_check'] == 1:
+                    logger.debug(key='message', data=f'Neonate {child_id} is receiving HIV screening after birth')
+                    for days in 0, 41:
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
+                            topen=self.sim.date + pd.DateOffset(days=days),
+                            tclose=None,
+                            priority=0
+                        )
+
 
     def assessment_and_initiation_of_neonatal_resus(self, hsi_event, facility_type):
         """
@@ -1015,7 +1028,8 @@ class NewbornOutcomes(Module):
 
             # Use the dx_manager to determine if staff will correctly identify this neonate will treatment for sepsis
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                 dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event):
+                 dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event) or \
+                df.at[person_id, 'pn_sepsis_late_neonatal'] or df.at[person_id, 'pn_sepsis_early_neonatal']:
 
                 # Then, if the consumables are available, treatment for sepsis is delivered
                 if all_available:
@@ -1040,7 +1054,8 @@ class NewbornOutcomes(Module):
                 hsi_event=hsi_event, cons_req_as_footprint=consumables_inj_abx_sepsis)
 
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-               dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event):
+               dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event) or \
+                df.at[person_id, 'pn_sepsis_late_neonatal'] or df.at[person_id, 'pn_sepsis_early_neonatal']:
 
                 if (outcome_of_request_for_consumables['Item_Code'][item_code_iv_penicillin]) and \
                    (outcome_of_request_for_consumables['Item_Code'][item_code_iv_gentamicin]):
@@ -1099,7 +1114,7 @@ class NewbornOutcomes(Module):
             df.at[child_id, 'nb_is_twin'] = True
             m['twin_count'] = 1
 
-        elif df.at[mother_id, 'ps_multiple_pregnancy'] and m['twin_count'] == 1:
+        elif df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
             df.at[child_id, 'nb_is_twin'] = True
             m['twin_count'] = 2
 
@@ -1174,7 +1189,8 @@ class NewbornOutcomes(Module):
                              'delivery_setting': mni[mother_id]['delivery_setting'],
                              'sought_care_for_complication': False,
                              'cause_of_death_after_birth': [],
-                             'sepsis_postnatal': False}
+                             'sepsis_postnatal': False,
+                             'passed_through_week_one': False}
 
             if mni[mother_id]['clean_birth_practices']:
                 df.at[child_id, 'nb_clean_birth'] = True
@@ -1243,15 +1259,16 @@ class NewbornOutcomes(Module):
             # ========================================== POSTNATAL CHECK  =============================================
             # Finally we determine if this neonate will receive a full postnatal check following their birth and how
             # promptly
+
             if (self.rng.random_sample() < params['prob_pnc_check_newborn']) or (m['pnc_twin_one'] != 'none'):
 
                 timing = self.rng.choice(['<48', '>48'], p=params['prob_timings_pnc_newborns'])
 
-                if timing == '<48':
+                if timing == '<48' or (m['pnc_twin_one'] == 'early'):
                     if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
                         m['pnc_twin_one'] = 'early'
 
-                    early_event = HSI_NewbornOutcomes_ReceivesEarlyPostnatalCheck(
+                    early_event = HSI_NewbornOutcomes_ReceivesPostnatalCheck(
                         module=self, person_id=child_id, facility_level_of_this_hsi=1)
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1260,15 +1277,7 @@ class NewbornOutcomes(Module):
                         tclose=self.sim.date + DateOffset(days=2))
 
                 else:
-                    later_event = HSI_PostnatalSupervisor_ReceivesLaterPostnatalCheckNeonatal(
-                        module=self, person_id=child_id)
-
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        later_event,
-                        priority=0,
-                        topen=self.sim.date + DateOffset(days=7),
-                        tclose=self.sim.date + DateOffset(days=8))
-
+                    nci[child_id]['future_pnc_check'] = True
                     if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
                         m['pnc_twin_one'] = 'late'
 
@@ -1278,11 +1287,11 @@ class NewbornOutcomes(Module):
             # todo mother could have come to facility for pn care
             # todo: if comps then PNC much more likely to be sought
 
-            if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
+        if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
                                                               (m['twin_count'] == 2)):
-                self.sim.modules['PregnancySupervisor'].further_on_birth_pregnancy_supervisor(mother_id)
-                self.sim.modules['PostnatalSupervisor'].further_on_birth_postnatal_supervisor(mother_id, child_id)
-                self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)
+            self.sim.modules['PregnancySupervisor'].further_on_birth_pregnancy_supervisor(mother_id)
+            self.sim.modules['PostnatalSupervisor'].further_on_birth_postnatal_supervisor(mother_id, child_id)
+            self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)
 
                 # todo: enceph for the not breating baby?
 
@@ -1349,6 +1358,7 @@ class EarlyNewbornDeathEvent(Event, IndividualScopeEventMixin):
         logger.debug(key='msg', data='Newborn death event running')
 
         # Todo: this could be population level but would need to run daily
+        # todo: possible a newborn could return for PNC1 before this happened?
 
         self.module.set_death_status(individual_id)
 
@@ -1407,7 +1417,7 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, I
         return False
 
 
-class HSI_NewbornOutcomes_ReceivesEarlyPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
+class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
     """
     This is HSI_NewbornOutcomes_ReceivesEarlyPostnatalCheck. This event is scheduled on_birth for all neonates who are
     predicted to receive a full postnatal checkup within the first 2 days of life following either home birth or
@@ -1433,8 +1443,10 @@ class HSI_NewbornOutcomes_ReceivesEarlyPostnatalCheck(HSI_Event, IndividualScope
         # Log the PNC check
         logger.info(key='postnatal_check', data={'person_id': person_id,
                                                  'mother_or_newborn': 'newborn',
-                                                 'delivery_setting': nci[person_id]['delivery_setting'],
-                                                 'timing': '<48'})
+                                                 'delivery_setting': nci[person_id]['delivery_setting']})
+                                                 #'timing': '<48'})
+
+        df.at[person_id, 'nb_pnc_check'] += 1
 
         # This HSI contains the interventions delivered as part of a full postnatal check of the newborn after birth -
         # this include newborns who delivered at home or in facility
@@ -1453,23 +1465,27 @@ class HSI_NewbornOutcomes_ReceivesEarlyPostnatalCheck(HSI_Event, IndividualScope
             self.module.assessment_and_treatment_newborn_sepsis(self, facility_type_code)
 
         # Next, interventions pertaining to essential newborn care
-        if squeeze_factor < params['squeeze_threshold_essential_newborn_care']:
-            self.module.essential_newborn_care(self)
+        if df.at[person_id, 'nb_pnc_check'] == 1:
+            if squeeze_factor < params['squeeze_threshold_essential_newborn_care']:
+                self.module.essential_newborn_care(self)
 
-        # ...and invitation of kangaroo mother care for small infants
-        if squeeze_factor < params['squeeze_threshold_kmc']:
-            self.module.kangaroo_mother_care(self, facility_type_code)
+            # ...and invitation of kangaroo mother care for small infants
+            if squeeze_factor < params['squeeze_threshold_kmc']:
+                self.module.kangaroo_mother_care(self, facility_type_code)
 
-        # Finally these newborns will receive immunisation and HIV screening if at risk
-        self.module.immunisations(person_id)
-        self.module.hiv_screening_for_at_risk_newborns(person_id)
+            # Finally these newborns will receive immunisation and HIV screening if at risk
+                self.module.immunisations(person_id)
+                self.module.hiv_screening_for_at_risk_newborns(person_id)
+
+            if nci[person_id]['passed_through_week_one']:
+                self.module.set_death_status(person_id)
 
         # Surviving neonates with complications on day 1 are admitted to the inpatient event which lives in the
         # Postnatal Supervisor module
         if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or (df.at[person_id, 'nb_encephalopathy'] != 'none')\
             or df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm']:
 
-            event = HSI_PostnatalSupervisor_NeonatalWardInpatientCare(
+            event = HSI_NewbornOutcomes_NeonatalWardInpatientCare(
                     self.sim.modules['PostnatalSupervisor'], person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=self.sim.date, tclose=None)
 
@@ -1484,6 +1500,38 @@ class HSI_NewbornOutcomes_ReceivesEarlyPostnatalCheck(HSI_Event, IndividualScope
         person_id = self.target
         logger.debug(key='message', data=f'Neonate {person_id} did not receive care after birth as this HSI is not '
                                          f'allowed in current configuration')
+        return False
+
+
+class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
+    """This is HSI_PostnatalSupervisor_NeonatalWardInpatientCare. It is scheduled by any of the PNC HSIs for neonates
+    who are require inpatient care due to a complication of the postnatal period. Treatment is delivered in this
+    event"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, NewbornOutcomes)
+
+        self.TREATMENT_ID = 'NewbornOutcomes_NeonatalWardInpatientCare'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5}) # todo
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        child = df.loc[person_id]
+
+        # todo: just count days?
+
+    def did_not_run(self):
+        logger.debug(key='message', data='HSI_PostnatalSupervisor_NeonatalWardInpatientCare: did not run')
+        return False
+
+    def not_available(self):
+        logger.debug(key='message', data='HSI_PostnatalSupervisor_NeonatalWardInpatientCare: cannot not run with '
+                                         'this configuration')
         return False
 
 

@@ -976,10 +976,12 @@ class PostnatalSupervisor(Module):
         # Reset this property to stop repeat care seeking
         df.loc[care_seeking.index, 'pn_emergency_event_mother'] = False
 
+        # TODO: should these women go through a&e?
+
         # Schedule the HSI event
         for person in care_seeking.loc[care_seeking].index:
-            admission_event = HSI_PostnatalSupervisor_PostnatalWardInpatientCare(
-                self, person_id=person)
+            from tlo.methods.labour import HSI_Labour_ReceivesPostnatalCheck
+            admission_event = HSI_Labour_ReceivesPostnatalCheck (self, person_id=person)
             self.sim.modules['HealthSystem'].schedule_hsi_event(admission_event,
                                                                 priority=0,
                                                                 topen=self.sim.date,
@@ -1067,7 +1069,7 @@ class PostnatalSupervisor(Module):
 
         # We schedule the HSI according
         for person in care_seeking.loc[care_seeking].index:
-            admission_event = HSI_PostnatalSupervisor_NeonatalWardInpatientCare(
+            admission_event = HSI_NewbornOutcomes_ReceivesPostnatalCheck(
                 self, person_id=person)
             self.sim.modules['HealthSystem'].schedule_hsi_event(admission_event,
                                                                 priority=0,
@@ -1077,182 +1079,6 @@ class PostnatalSupervisor(Module):
         # And apply risk of death for newborns for which care is not sought
         for person in care_seeking.loc[~care_seeking].index:
             self.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child', individual_id=person)
-
-    def assessment_for_maternal_complication_during_pnc(self, individual_id, hsi_event):
-        """
-        This function is called by each of the postnatal care visit HSIs and represents assessment of mothers for
-        sepsis, postnatal bleeding, hypertension and anaemia. If these conditions are detected during PNC then women
-        are admitted for treatment
-        :param individual_id: individual_id (mother)
-        :param hsi_event: HSI event in which this function is called
-        """
-        params = self.current_parameters
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        df = self.sim.population.props
-
-        # We create a variable that will be set to true if a health work detects a complication and chooses to admit
-        # (in case of multiple complications requiring admission)
-        needs_admission = False
-
-        # similarly for detection of these conditions
-        hypertension_diagnosed = False
-        proteinuria_diagnosed = False
-
-        # Each woman is screened for postnatal depression
-        if 'Depression' in self.sim.modules.keys():
-            if self.rng.random_sample() < params['prob_intervention_delivered_depression_screen_pnc']:
-                logger.debug(key='msg', data=f'Mother {individual_id} will now be receive screening for depression'
-                                             f' during PNC and commence treatment as appropriate')
-                if not df.at[individual_id, 'de_ever_diagnosed_depression']:
-                    self.sim.modules['Depression'].do_when_suspected_depression(individual_id, hsi_event)
-
-        # Define the consumables
-        item_code_urine_dipstick = pd.unique(
-            consumables.loc[consumables['Items'] == 'Test strips, urine analysis', 'Item_Code'])[0]
-
-        consumables_dipstick = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_urine_dipstick: 1}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_dipstick)
-
-        if outcome_of_request_for_consumables['Item_Code'][item_code_urine_dipstick] and (self.rng.random_sample()
-                                                                                          < params['prob_intervention'
-                                                                                                   '_delivered_urine_'
-                                                                                                   'ds_pnc']):
-
-            # If the consumables are available the test is ran. Urine testing in ANC is predominantly used to detected
-            # protein in the urine (proteinuria) which is indicative of pre-eclampsia
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='urine_dipstick_protein_pn',
-                                                                       hsi_event=hsi_event):
-                # We use a temporary variable to store if proteinuria is detected (only sever diseases or new diagnosis
-                # lead to admission)
-                if (df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclampsia') or\
-                    (df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia') or not df.at[individual_id,
-                                                                                           'pn_gest_htn_on_treatment']:
-                    proteinuria_diagnosed = True
-
-        else:
-            logger.debug(key='msg', data='Urine dipstick testing was not completed in this PNC visit due to '
-                                         'unavailable consumables')
-
-        # The process is repeated for blood pressure monitoring- although not conditioned on consumables
-        if self.rng.random_sample() < params['prob_intervention_delivered_bp_pnc']:
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_pressure_measurement_pn',
-                                                                       hsi_event=hsi_event):
-
-                if (df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclampsia') or \
-                    (df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia') or not df.at[individual_id,
-                                                                                           'pn_gest_htn_on_treatment']:
-                    hypertension_diagnosed = True
-
-                if not df.at[individual_id, 'pn_gest_htn_on_treatment']:
-                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'hypertension_onset')
-
-        if hypertension_diagnosed or proteinuria_diagnosed:
-            needs_admission = True
-
-        # SEPSIS
-        # Women are assessed for key complications after child birth
-        if self.rng.random_sample() < params['prob_intervention_delivered_sep_assessment_pnc']:
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='assessment_for_postnatal_'
-                                                                                       'sepsis',
-                                                                       hsi_event=hsi_event):
-                logger.debug(key='message', data=f'Mother {individual_id} has been assessed and diagnosed with '
-                                                 f'postpartum sepsis, she will be admitted for treatment')
-
-                needs_admission = True
-
-        # HAEMORRHAGE
-        if self.rng.random_sample() < params['prob_intervention_delivered_pph_assessment_pnc']:
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='assessment_for_secondary_pph',
-                                                                       hsi_event=hsi_event):
-                logger.debug(key='message', data=f'Mother {individual_id} has been assessed and diagnosed with'
-                                                 f' secondary postpartum haemorrhage hypertension, she will be '
-                                                 f'admitted for treatment')
-                needs_admission = True
-
-        if self.rng.random_sample() < params['prob_intervention_poct_pnc']:
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='point_of_care_hb_test_pn',
-                                                                       hsi_event=hsi_event):
-                logger.debug(key='message',
-                             data=f'Mother {individual_id} has been assessed and diagnosed with postpartum '
-                             f'anaemia, she will be admitted for treatment')
-                needs_admission = True
-
-        # If any of the above complications have been detected then the woman is admitted from PNC visit to the
-        # Postnatal ward for further care
-        if needs_admission:
-            admission_event = HSI_PostnatalSupervisor_PostnatalWardInpatientCare(
-                self, person_id=individual_id)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(admission_event,
-                                                                priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
-
-    def assessment_for_neonatal_complications_during_pnc(self, individual_id, hsi_event, pnc_visit):
-        """
-        This function is called by each of the postnatal care visit HSI and represents assessment of neonates for
-        sepsis. If sepsis is detected during PNC then the neonate is  admitted for treatment.
-        :param individual_id: individual_id (child)
-        :param hsi_event: HSI event in which this function is called
-        """
-        params = self.current_parameters
-        df = self.sim.population.props
-        mother_id = df.at[individual_id, 'mother_id']
-
-        # As with assessment_for_maternal_complication_during_pnc neonates are assessed for complications and admitted
-        # as required (we specify which PNC visit this is occurring in due to a different property being used for the
-        # type of sepsis)
-
-        hsi_event.target = int(individual_id)
-
-        # SEPSIS
-        if (pnc_visit == 'pnc1') and (self.rng.random_sample() < params['prob_intervention_neonatal_sepsis_pnc']):
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-              dx_tests_to_run='assessment_for_early_onset_neonatal_sepsis', hsi_event=hsi_event):
-                logger.debug(key='message', data=f'Neonate {individual_id} has been assessed and diagnosed with early '
-                                                 f'onset neonatal sepsis, they will be admitted for treatment')
-
-                sepsis_treatment = HSI_PostnatalSupervisor_NeonatalWardInpatientCare(
-                    self, person_id=individual_id)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(sepsis_treatment,
-                                                                    priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=1))
-
-        elif (pnc_visit == 'pnc2') and (self.rng.random_sample() < params['prob_intervention_neonatal_sepsis_pnc']):
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='assessment_for_late_onset_'
-                                                                                       'neonatal_sepsis',
-                                                                       hsi_event=hsi_event):
-                logger.debug(key='message', data=f'Neonate {individual_id} has been assessed and diagnosed with late '
-                                                 f'onset neonatal sepsis, they will be admitted for treatment')
-
-                sepsis_treatment = HSI_PostnatalSupervisor_NeonatalWardInpatientCare(
-                    self, person_id=individual_id)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(sepsis_treatment,
-                                                                    priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=1))
-
-        if pnc_visit == 'pnc2' and (self.rng.random_sample() < params['prob_intervention_delivered_hiv_test_pnc']):
-            if 'Hiv' in self.sim.modules.keys():
-                if ~df.at[individual_id, 'hv_diagnosed'] and df.at[mother_id, 'hv_diagnosed']:
-
-                    logger.debug(key='message', data='Neonate of a HIV +ve mother has been referred for '
-                                                     'HIV testing during PNC at 6 weeks')
-
-                    individual_id = int(individual_id)
-
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        HSI_Hiv_TestAndRefer(person_id=individual_id, module=self.sim.modules['Hiv']),
-                        topen=self.sim.date,
-                        tclose=None,
-                        priority=0)
-
-        hsi_event.target = mother_id
 
     def apply_risk_of_maternal_or_neonatal_death_postnatal(self, mother_or_child, individual_id):
         """
@@ -1265,7 +1091,6 @@ class PostnatalSupervisor(Module):
         :param individual_id: individual_id
         """
         df = self.sim.population.props
-        params = self.current_parameters
 
         # Select the individuals row in the data frame to prevent repeated at based indexing
         if mother_or_child == 'mother':
@@ -1349,33 +1174,6 @@ class PostnatalSupervisor(Module):
                 else:
                     df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
                     df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
-
-    def maternal_postnatal_care_care_seeking(self, individual_id, recommended_day_next_pnc, next_pnc_visit,
-                                             maternal_pnc):
-        """
-        This function is called by HSI_PostnatalSupervisor_PostnatalCareContact. It determines if a mother
-        will return to attend her next PNC visit in the schedule
-        :param individual_id: individual_id
-        :param recommended_day_next_pnc: int signifying number of days post birth the next visit should occur
-        :param next_pnc_visit: string signifying next visit in schedule i.e. 'pnc2'
-        :param maternal_pnc: HSI to be scheduled
-        """
-        df = self.sim.population.props
-        params = self.current_parameters
-
-        # Calculate how many days since this woman has given birth
-        ppp_in_days = self.sim.date - df.at[individual_id, 'la_date_most_recent_delivery']
-
-        # Calculate home many days until the next visit should be scheduled
-        days_calc = pd.to_timedelta(recommended_day_next_pnc, unit='D') - ppp_in_days
-        date_next_pnc = self.sim.date + days_calc
-
-        # Apply a probability that she will chose to return for the next visit
-        if self.rng.random_sample() < params[f'prob_attend_{next_pnc_visit}']:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(maternal_pnc,
-                                                                priority=0,
-                                                                topen=date_next_pnc,
-                                                                tclose=date_next_pnc + DateOffset(days=3))
 
 
 class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1495,6 +1293,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        nci = self.sim.modules['NewbornOutcomes'].newborn_care_info
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
         mother = df.loc[individual_id]
@@ -1529,6 +1328,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         # We determine if the mother will develop postnatal sepsis
         if mother.is_alive:
             logger.debug(key='message', data=f'Mother {individual_id} has arrived at PostnatalWeekOneEvent')
+            mni[individual_id]['passed_through_week_one'] = True
 
             # define external variable for linear model
             mode_of_delivery = pd.Series(mni[individual_id]['mode_of_delivery'], index=df.loc[[individual_id]].index)
@@ -1700,533 +1500,75 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
         # Newborns may develop early onset sepsis in the first week of life, we apply that risk here
 
         if child.is_alive:
+            nci[individual_id]['passed_through_week_one'] = True
             self.module.apply_risk_of_neonatal_complications_in_week_one(child_id=child_id, mother_id=individual_id)
 
         # If this event is looking at a twin pair we apply risk to the second twin here
         if child.nb_is_twin:
             if child_two.is_alive:
+                nci[individual_id]['passed_through_week_one'] = True
                 self.module.apply_risk_of_neonatal_complications_in_week_one(child_id=child_two_id,
                                                                              mother_id=individual_id)
 
         # ===============================  POSTNATAL CHECK  =========================================================
-        if mother.is_alive and mni[individual_id]['future_pnc_check']:
+        # Likelihood of undergoing a postnatal check up is determined following birth in the labour module for all
+        # women. At this stage some women will have received a check, some will be scheduled for a check and others are
+        # not scheduled for check up
+        from tlo.methods.labour import HSI_Labour_ReceivesPostnatalCheck
+        from tlo.methods.newborn_outcomes import HSI_NewbornOutcomes_ReceivesPostnatalCheck
+
+        # todo: set facility levels
+        # todo: what if they've already had their check up? assume they would go back...
+
+        pnc_one_maternal = HSI_Labour_ReceivesPostnatalCheck(
+            self.module, person_id=individual_id, facility_level_of_this_hsi=1)
+
+        # If a mother has developed complications in the first week after birth and has been predicted to attend PNC
+        # anyway she will attend now. If she was not predicted to attend but now develops complications she may choose
+        # to seek care
+        if mother.is_alive:
             if df.at[individual_id, 'pn_sepsis_late_postpartum'] or \
                 df.at[individual_id, 'pn_postpartum_haem_secondary'] or \
-                (df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclamp') or\
+                (df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclamp') or \
                (df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia'):
 
-                days = 0
+                if (mni[individual_id]['future_pnc_check']) or (self.module.rng.random_sample() <
+                                                                params['prob_care_seeking_postnatal_emergency']):
+
+                    self.sim.modules['HealthSystem'].schedule_hsi_event\
+                        (pnc_one_maternal, priority=0,
+                         topen=self.sim.date, tclose=None)
+
             else:
-                days = self.module.rng.rand_int(0, 41)
+                # Women without complications in week one are scheduled to attend PNC in the future
+                if mni[individual_id]['future_pnc_check']:
+                    self.sim.modules['HealthSystem'].schedule_hsi_event \
+                        (pnc_one_maternal, priority=0,
+                         topen=self.sim.date + pd.DateOffset(self.module.rng.rand_int(0, 41)), tclose=None)
 
-            pnc_one = HSI_PostnatalSupervisor_ReceivesLaterPostnatalCheckMaternal(self.module, person_id=individual_id)
-            self.sim.modules['HealthSystem'].schedule_hsi_event\
-                (pnc_one, priority=0,
-                 topen=self.sim.date + pd.DateOffset(days=days), tclose=None)
-
-
-        # todo: effect of complications on coverage...we assume that all women with comps seek care?
-
-        mother_has_complications = False
-        child_has_complications = False
-        child_two_has_complications = False
-
-        # (we check is_alive as this event can run if either the mother or child is dead (not both)
-
-        if mother.is_alive:
-            # We use a temporary variable to determine if the mother has any complications that may trigger care seeking
-            if df.at[individual_id, 'pn_sepsis_late_postpartum'] or \
-                df.at[individual_id, 'pn_postpartum_haem_secondary'] or \
-                (df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclamp') or (df.at[individual_id,
-                                                                                            'pn_htn_disorders'] ==
-                                                                                      'eclampsia'):
-                mother_has_complications = True
-
-        # Repeat that process for the child
+        # This process is then repeated for any children the mother may have
         if child.is_alive:
             if df.at[child_id, 'pn_sepsis_early_neonatal']:
-                child_has_complications = True
+                if (nci[child_id]['future_pnc_check']) or (self.module.rng.random_sample() <
+                                                           params['prob_care_seeking_postnatal_emergency_neonate']):
+
+                    pnc_one_neonatal = HSI_NewbornOutcomes_ReceivesPostnatalCheck(
+                        self.module, person_id=child_id, facility_level_of_this_hsi=1)
+
+                    self.sim.modules['HealthSystem'].schedule_hsi_event\
+                        (pnc_one_neonatal, priority=0,
+                         topen=self.sim.date, tclose=None)
 
         if df.at[child_id, 'nb_is_twin']:
             if df.at[child_two_id, 'is_alive'] and df.at[child_two_id, 'pn_sepsis_early_neonatal']:
-                    child_two_has_complications = True
-
-        if (mother_has_complications or child_has_complications or child_two_has_complications) and \
-            mni[individual_id]['future_pnc_check']:
-              # TODO: what if child has comps but isnt suppose to have PNC
-            pnc_one = HSI_PostnatalSupervisor_ReceivesLaterPostnatalCheck(self.module, person_id=individual_id)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(pnc_one, priority=0, topen=self.sim.date, tclose=None)
-
-        else:
-            if mni[individual_id]['future_pnc_check']:  # TODO: what if child has comps but isnt suppose to have PNC
-                pnc_one = HSI_PostnatalSupervisor_ReceivesLaterPostnatalCheck(
-                    self.module, person_id=individual_id)
-                timing = self.module.rng.rand_int(7, 41)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(pnc_one,
-                                                                    priority=0,
-                                                                    topen=self.sim.date + DateOffset(days=timing),
-                                                                    tclose=None)
-
-
-class HSI_PostnatalSupervisor_ReceivesLaterPostnatalCheckMaternal(HSI_Event, IndividualScopeEventMixin):
-    """ """
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, PostnatalSupervisor)
-
-        self.TREATMENT_ID = 'HPostnatalSupervisor_ReceivesLaterPostnatalCheckMaternal'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        logger.info(key='postnatal_check', data={'person_id': person_id,
-                                                 'mother_or_newborn': 'mother',
-                                                 'delivery_setting': mni[person_id]['delivery_setting'],
-                                                 'timing': '>48'})
-
-        assert df.at[person_id, 'la_is_postpartum']
-
-        if df.at[person_id, 'is_alive']:
-            df.at[person_id, 'pn_pnc_visits_maternal'] += 1
-            self.module.assessment_for_maternal_complication_during_pnc(person_id, self)
-            # todo, other PNC bits
-            # todo: schedule another return visit??
-
-    def did_not_run(self):
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalCareContactOne: did not run')
-
-    def not_available(self):
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalCareContactOne: cannot not run with '
-                                          'this configuration')
-
-
-class HSI_PostnatalSupervisor_ReceivesLaterPostnatalCheckNeonatal(HSI_Event, IndividualScopeEventMixin):
-    """ """
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, PostnatalSupervisor)
-
-        self.TREATMENT_ID = 'PostnatalSupervor_ReceivesLaterPostnatalCheckNeonatal'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        mother_id = df.at[person_id, 'mother_id']
-
-        logger.info(key='postnatal_check', data={'person_id': person_id,
-                                                 'mother_or_newborn': 'newborn',
-                                                 'delivery_setting': mni[mother_id]['delivery_setting'],
-                                                 'timing': '>48'})
-
-        if df.at[person_id, 'is_alive']:
-            df.at[person_id, 'pn_pnc_visits_neonatal'] += 1
-            self.module.assessment_for_neonatal_complications_during_pnc(person_id, self, pnc_visit='pnc1')
-
-            # todo, other PNC bits
-            # todo: schedule another return visit??
-
-    def did_not_run(self):
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalCareContactOne: did not run')
-
-    def not_available(self):
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalCareContactOne: cannot not run with '
-                                         'this configuration')
-
-
-class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScopeEventMixin):
-    """This is HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal. It is scheduled by
-    PostnatalWeekOneEvent for women who decide to seek care for a postnatal checkup. This event is the first PNC visit
-     women are recommended to attend after discharge, occurring on day 7 post birth. """
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, PostnatalSupervisor)
-
-        self.TREATMENT_ID = 'PostnatalSupervisor_PostnatalCareContactOne'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        child_id = int(df.at[person_id, 'pn_id_most_recent_child'])
-
-        # We run checks to make sure only the correct people are passed to the event
-        assert df.at[person_id, 'la_is_postpartum']
-        assert df.at[person_id, 'pn_pnc_visits_maternal'] == 0
-
-        # Update the properties of the child
-        if ~df.at[child_id, 'nb_is_twin']:
-            assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 0
-
-            # If both mother and child have died the event doesnt run
-            if ~df.at[person_id, 'is_alive'] and ~df.at[child_id, 'is_alive']:
-                return
-
-        # If the child is part of a twin pair
-        elif df.at[child_id, 'nb_is_twin']:
-
-            # Check this is both of their first visits
-            child_two_id = df.at[child_id, 'nb_twin_sibling_id']
-            assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 0
-            assert df.at[child_two_id, 'pn_pnc_visits_neonatal'] == 0
-
-            # If neither of the twins or the mother is alive, the event doesnt run
-            if ~df.at[person_id, 'is_alive'] and ~df.at[child_id, 'is_alive'] and ~df.at[child_two_id, 'is_alive']:
-                return
-
-        logger.debug(key='message', data=f'Mother {person_id} or child {child_id} have arrived for PNC1 on date'
-                                         f' {self.sim.date}')
-
-        # If the mother is alive she is assessed for complications
-        if df.at[person_id, 'is_alive']:
-            df.at[person_id, 'pn_pnc_visits_maternal'] += 1
-
-            self.module.assessment_for_maternal_complication_during_pnc(person_id, self)
-
-        # If the child/children is/are alive they are assessed for complications
-        if df.at[child_id, 'is_alive']:
-            df.at[child_id, 'pn_pnc_visits_neonatal'] += 1
-
-            self.module.assessment_for_neonatal_complications_during_pnc(child_id, self, pnc_visit='pnc1')
-
-        # If twins, the second child is also assessed
-        if df.at[child_id, 'nb_is_twin']:
-            if df.at[child_two_id, 'is_alive']:
-                df.at[child_two_id, 'pn_pnc_visits_neonatal'] += 1
-                self.module.assessment_for_neonatal_complications_during_pnc(child_two_id, self, pnc_visit='pnc1')
-
-        # If either remain alive we determine if they will return for visit two
-        # TODO: just realised im scheduling this event always using the mother id- even though its possible they could
-        #  be dead (does that mater as long as it runs for the child?)
-        pnc2 = HSI_PostnatalSupervisor_PostnatalCareContactTwo(self.module, person_id=person_id)
-        self.module.maternal_postnatal_care_care_seeking(person_id, 42, 'pnc2', pnc2)
-
-    def did_not_run(self):
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalCareContactOne: did not run')
-
-    def not_available(self):
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalCareContactOne: cannot not run with '
-                                         'this configuration')
-
-
-class HSI_PostnatalSupervisor_PostnatalCareContactTwo(HSI_Event, IndividualScopeEventMixin):
-    """ This is HSI_PostnatalSupervisor_PostnatalCareContactTwoMaternal. It is scheduled by
-    HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal This event is the second PNC visit women
-    are recommended to undertake at 6 weeks postnatal. """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, PostnatalSupervisor)
-
-        self.TREATMENT_ID = 'PostnatalSupervisor_PostnatalCareContactTwoMaternal'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        child_id = int(df.at[person_id, 'pn_id_most_recent_child'])
-
-        # We run checks to make sure only the correct people are passed to the event
-        if df.at[person_id, 'is_alive']:
-            assert df.at[person_id, 'la_is_postpartum']
-            assert df.at[person_id, 'pn_pnc_visits_maternal'] == 1
-
-        if ~df.at[child_id, 'nb_is_twin']:
-            if df.at[child_id, 'is_alive']:
-                assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 1
-            if ~df.at[person_id, 'is_alive'] and ~df.at[child_id, 'is_alive']:
-                return
-
-        elif df.at[child_id, 'nb_is_twin']:
-            child_two_id = df.at[child_id, 'nb_twin_sibling_id']
-            if df.at[child_id, 'is_alive']:
-                assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 1
-            if df.at[child_two_id, 'is_alive']:
-                assert df.at[child_two_id, 'pn_pnc_visits_neonatal'] == 1
-
-            if ~df.at[person_id, 'is_alive'] and ~df.at[child_id, 'is_alive'] and ~df.at[child_two_id, 'is_alive']:
-                return
-
-        logger.debug(key='message', data=f'Mother {person_id} or child {child_id} have arrived for PNC2 on date'
-                                         f' {self.sim.date}')
-
-        # If the mother is alive she is assessed for complications
-        if df.at[person_id, 'is_alive']:
-            df.at[person_id, 'pn_pnc_visits_maternal'] += 1
-            self.module.assessment_for_maternal_complication_during_pnc(person_id, self)
-
-        # If the child/children is/are alive they are assessed for complications
-        if df.at[child_id, 'is_alive']:
-            df.at[child_id, 'pn_pnc_visits_neonatal'] += 1
-            self.module.assessment_for_neonatal_complications_during_pnc(child_id, self, pnc_visit='pnc2')
-
-        if df.at[child_id, 'nb_is_twin']:
-            if df.at[child_two_id, 'is_alive']:
-                df.at[child_two_id, 'pn_pnc_visits_neonatal'] += 1
-                self.module.assessment_for_neonatal_complications_during_pnc(child_two_id, self, pnc_visit='pnc2')
-
-    def did_not_run(self):
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalCareContactTwo: did not run')
-
-    def not_available(self):
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalCareContactTwo: cannot not run with '
-                                         'this configuration')
-
-
-class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
-    """This is HSI_PostnatalSupervisor_PostnatalWardInpatientCare. It is scheduled by the PostnatalSupervisorEvent for
-    women who develop complications during the postnatal period and decide to seek care or by either of the PNC HSIs for
-     women assessed as requiring further care due to complications detected. Treatment delivered in this event includes
-     management of hypertensive disorders, maternal sepsis, anaemia and secondary postpartum haemorrhage"""
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, PostnatalSupervisor)
-
-        self.TREATMENT_ID = 'PostnatalSupervisor_PostnatalWardInpatientCare'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        mother = df.loc[person_id]
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        params = self.module.current_parameters
-
-        assert df.at[person_id, 'la_is_postpartum']
-
-        if not mother.is_alive:
-            return
-
-        logger.debug(key='msg', data=f'Mother {person_id} has been admitted to the postnatal ward')
-
-        # These event cycles through each of the key maternal complications that a mother could be admitted due to and
-        # delivers treatment accordingly
-        approx_days_of_pn_period = (6 - df.at[person_id, 'pn_postnatal_period_in_weeks']) * 7
-
-        # --------------------------------------- SEPSIS TREATMENT ---------------------------------------------------
-        if mother.pn_sepsis_late_postpartum:
-            # First check the availability of consumables for treatment
-            pkg_code_sepsis = pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Maternal sepsis case management',
-                                'Intervention_Pkg_Code'])[0]
-
-            all_available = self.get_all_consumables(
-                pkg_codes=[pkg_code_sepsis])
-
-            # If available then treatment is delivered
-            if all_available:
-                logger.debug(key='message',
-                             data=f'mother {person_id} has received treatment for sepsis as an inpatient')
-
-                df.at[person_id, 'pn_sepsis_late_postpartum_treatment'] = True
-            else:
-                logger.debug(key='message',
-                             data=f'mother {person_id} was unable to receive treatment for sepsis due to '
-                             f'limited resources')
-
-        # ------------------------------------- SECONDARY PPH TREATMENT -----------------------------------------------
-        if mother.pn_postpartum_haem_secondary:
-            # First check the availability of consumables for treatment
-            pkg_code_pph = pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of postpartum hemorrhage',
-                                'Intervention_Pkg_Code'])[0]
-
-            all_available = self.get_all_consumables(
-                pkg_codes=[pkg_code_pph])
-
-            # If available then treatment is delivered
-            if all_available:
-                logger.debug(key='message', data=f'mother {person_id} has received treatment for secondary postpartum '
-                                                 f'haemorrhage as an inpatient')
-                df.at[person_id, 'pn_postpartum_haem_secondary_treatment'] = True
-
-            else:
-                logger.debug(key='message',
-                             data=f'mother {person_id} was unable to receive treatment for secondary pph due '
-                             f'to limited resources')
-
-        # ------------------------------------- HYPERTENSION TREATMENT -----------------------------------------------
-        # Treatment for complications of hypertension include two interventions, anti hypertensive therapy and
-        # magnesium
-        if mother.pn_htn_disorders == 'gest_htn' or mother.pn_htn_disorders == 'mild_pre_eclamp':
-
-            # Define the consumables and check their availability
-            item_code_methyldopa = pd.unique(
-                consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
-
-            consumables_gest_htn_treatment = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {item_code_methyldopa: 4 * approx_days_of_pn_period}}
-
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_gest_htn_treatment)
-
-            # If they are available then the woman is started on treatment
-            if outcome_of_request_for_consumables['Item_Code'][item_code_methyldopa]:
-                df.at[person_id, 'pn_gest_htn_on_treatment'] = True
-                logger.debug(key='msg', data=f'Mother {person_id} has been started on regular antihypertensives due to '
-                                             f'her HDP')
-
-        if mother.pn_htn_disorders == 'severe_pre_eclamp' or \
-            mother.pn_htn_disorders == 'eclampsia' or\
-           mother.pn_htn_disorders == 'severe_gest_htn':
-
-            # Define required consumables
-            item_code_hydralazine = pd.unique(
-                consumables.loc[consumables['Items'] == 'Hydralazine, powder for injection, 20 mg ampoule',
-                                'Item_Code'])[0]
-            item_code_wfi = pd.unique(
-                consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
-            item_code_needle = pd.unique(
-                consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-            item_code_gloves = pd.unique(
-                consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-            item_code_methyldopa = pd.unique(
-                consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
-
-            # As we need multiple of one consumable we use the old method to check availablity
-            consumables_gest_htn_treatment = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {item_code_hydralazine: 1, item_code_wfi: 1, item_code_needle: 1,
-                              item_code_gloves: 1, item_code_methyldopa: 4}}
-
-            # Then query if these consumables are available during this HSI
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_gest_htn_treatment)
-
-            # If they are available then the woman is started on treatment
-            if (outcome_of_request_for_consumables['Item_Code'][item_code_hydralazine]) and\
-               (outcome_of_request_for_consumables['Item_Code'][item_code_methyldopa]):
-                df.at[person_id, 'pn_iv_anti_htn_treatment'] = True
-
-                if df.at[person_id, 'pn_htn_disorders'] == 'severe_gest_htn':
-                    df.at[person_id, 'pn_htn_disorders'] = 'gest_htn'
-
-            if mother.pn_htn_disorders == 'severe_pre_eclamp' or mother.pn_htn_disorders == 'eclampsia':
-                pkg_code_severe_pre_eclampsia = pd.unique(
-                    consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
-                                    'Intervention_Pkg_Code'])[0]
-
-                all_available = self.get_all_consumables(
-                    pkg_codes=[pkg_code_severe_pre_eclampsia])
-
-                if all_available:
-                    df.at[person_id, 'pn_mag_sulph_treatment'] = True
-                    # TODO: reduce risk of progression from spe to ec when progression function when neater
-
-        # ------------------------------------- ANAEMIA TREATMENT -----------------------------------------------
-        if mother.pn_anaemia_following_pregnancy != 'none':
-            if mother.ps_anaemia_in_pregnancy != 'none':
-
-                item_code_hb_test = pd.unique(
-                    consumables.loc[consumables['Items'] == 'Complete blood count', 'Item_Code'])[0]
-                item_code_blood_tube = pd.unique(
-                    consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-                item_code_needle = pd.unique(
-                    consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-                item_code_gloves = pd.unique(
-                    consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-
-                consumables_hb_test = {
-                    'Intervention_Package_Code': {},
-                    'Item_Code': {item_code_hb_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
-                                  item_code_gloves: 1}}
-
-                # Confirm their availability
-                outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=self,
-                    cons_req_as_footprint=consumables_hb_test)
-
-                # Check consumables
-                if outcome_of_request_for_consumables['Item_Code'][item_code_hb_test]:
-                    test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                        dx_tests_to_run='full_blood_count_hb_pn', hsi_event=self)
-
-                    if test_result:
-                        if ~mother.la_iron_folic_acid_postnatal:
-                            item_code_iron_folic_acid = pd.unique(
-                                consumables.loc[
-                                    consumables['Items'] ==
-                                    'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
-
-                            consumables_ifa = {
-                                'Intervention_Package_Code': {},
-                                'Item_Code': {item_code_iron_folic_acid: approx_days_of_pn_period}}
-
-                            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                                hsi_event=self,
-                                cons_req_as_footprint=consumables_ifa)
-
-                            # Start iron and folic acid treatment
-                            if outcome_of_request_for_consumables['Item_Code'][item_code_iron_folic_acid]:
-                                df.at[person_id, 'la_iron_folic_acid_postnatal'] = True
-
-                                if self.module.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
-                                    # Store date of resolution for daly calculations
-                                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(
-                                        person_id, f'{df.at[person_id, "pn_anaemia_following_pregnancy"]}_anaemia_'
-                                                   f'resolution')
-
-                                    df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'
-
-                        if mother.pn_anaemia_following_pregnancy == 'severe':
-
-                            item_code_blood = pd.unique(
-                                consumables.loc[consumables['Items'] == 'Blood, one unit',  'Item_Code'])[0]
-                            item_code_giving_set = pd.unique(
-                                consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
-                                                'Item_Code'])[0]
-
-                            consumables_needed_bt = {'Intervention_Package_Code': {},
-                                                     'Item_Code': {item_code_blood: 2, item_code_giving_set: 2}}
-
-                            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                                hsi_event=self, cons_req_as_footprint=consumables_needed_bt)
-
-                            # If the blood is available we assume the intervention can be delivered
-                            if outcome_of_request_for_consumables['Item_Code'][item_code_blood]:
-                                if params['treatment_effect_blood_transfusion_anaemia'] > self.module.rng.random_sample():
-                                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(
-                                        person_id, 'severe_anaemia_resolution')
-                                    df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'
-
-                # todo: follow up??
-
-        # Following treatment we use this function to determine if this woman will survive
-        self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother',
-                                                                       individual_id=person_id)
-
-    def did_not_run(self):
-        person_id = self.target
-
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalWardInpatientCare: did not run')
-
-        # If they event can't run we use the death function to determine if the mother has died without care
-        self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother',
-                                                                       individual_id=person_id)
-        return False
-
-    def not_available(self):
-        person_id = self.target
-
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_PostnatalWardInpatientCare: cannot not run with '
-                                         'this configuration')
-
-        # If they event can't run we use the death function to determine if the mother has died without care
-        self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother',
-                                                                       individual_id=person_id)
+                if (nci[child_id]['future_pnc_check']) or (self.module.rng.random_sample() <
+                                                            params['prob_care_seeking_postnatal_emergency_neonate']):
+                    pnc_one_neonatal = HSI_NewbornOutcomes_ReceivesPostnatalCheck(
+                            self.module, person_id=child_id, facility_level_of_this_hsi=1)
+
+                    self.sim.modules['HealthSystem'].schedule_hsi_event \
+                            (pnc_one_neonatal, priority=0,
+                             topen=self.sim.date, tclose=None)
 
 
 class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, IndividualScopeEventMixin):
@@ -2258,68 +1600,6 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
 
         df.at[person_id, 'pn_obstetric_fistula'] = 'none'
         logger.debug(key='msg', data=f'Mother {person_id} has undergone surgical correction of her obstetric fistula')
-
-
-class HSI_PostnatalSupervisor_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
-    """This is HSI_PostnatalSupervisor_NeonatalWardInpatientCare. It is scheduled by any of the PNC HSIs for neonates
-    who are require inpatient care due to a complication of the postnatal period. Treatment is delivered in this
-    event"""
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, PostnatalSupervisor)
-
-        self.TREATMENT_ID = 'PostnatalSupervisor_NeonatalWardInpatientCare'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        child = df.loc[person_id]
-
-        if not child.is_alive:
-            return
-
-        # Here we deliver treatment to any neonates who have been admitted to either early or late onset sepsis
-        if child.pn_sepsis_early_neonatal or child.pn_sepsis_late_neonatal:
-            pkg_code_sep = pd.unique(consumables.loc[
-                                         consumables['Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
-                                         'Intervention_Pkg_Code'])[0]
-
-            all_available = self.get_all_consumables(
-                pkg_codes=[pkg_code_sep])
-
-            if all_available:
-                df.at[person_id, 'pn_sepsis_neonatal_full_supp_care'] = True
-            else:
-                logger.debug(key='message', data=f'neonate {person_id} was unable to receive treatment for sepsis '
-                                                 f'due to limited resources')
-
-            self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child',
-                                                                           individual_id=person_id)
-
-    def did_not_run(self):
-        person_id = self.target
-
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_NeonatalWardInpatientCare: did not run')
-
-        # If they event can't run we use the death function to determine if the neonate has died without care
-        self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child',
-                                                                       individual_id=person_id)
-
-        # In order to make sure all women have risk of death applied we dont allow this event to run again
-        return False
-
-    def not_available(self):
-        person_id = self.target
-
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_NeonatalWardInpatientCare: cannot not run with '
-                                         'this configuration')
-        self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child',
-                                                                       individual_id=person_id)
 
 
 class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
