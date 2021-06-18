@@ -10,8 +10,6 @@ or locally using:
 
 """
 
-import numpy as np
-
 from tlo import Date, logging
 from tlo.methods import (
     bladder_cancer,
@@ -33,15 +31,12 @@ from tlo.methods import (
     hiv,
     labour,
     malaria,
-    mockitis,
     newborn_outcomes,
     oesophagealcancer,
     other_adult_cancers,
     postnatal_supervisor,
-    postnatal_supervisor_lm,
     pregnancy_supervisor,
     prostate_cancer,
-    simplified_births,
     symptommanager,
 )
 from tlo.scenario import BaseScenario
@@ -53,14 +48,14 @@ class LongRun(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2029, 12, 31)
-        self.pop_size = 20_000              # <- recommened population size for the runs
-        self.number_of_draws = 1            # <- one scenario
-        self.runs_per_draw = 10             # <- repeated this many times
+        self.pop_size = 20_000  # <- recommened population size for the runs
+        self.number_of_draws = 1  # <- one scenario
+        self.runs_per_draw = 10  # <- repeated this many times
 
     def log_configuration(self):
         return {
-            'filename': 'long_run',     # <- (specified only for local running)
-            'directory': './outputs',   # <- (specified only for local running)
+            'filename': 'long_run',  # <- (specified only for local running)
+            'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.INFO,
             }
@@ -113,7 +108,6 @@ class LongRun(BaseScenario):
             depression.Depression(resourcefilepath=self.resources),
             epilepsy.Epilepsy(resourcefilepath=self.resources),
         ]
-
 
     def draw_parameters(self, draw_number, rng):
         # Using default parameters in all cases
