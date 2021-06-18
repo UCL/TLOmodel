@@ -369,8 +369,6 @@ def extract_results(results_folder: Path,
             df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
             results_index = df[index]
 
-
-
         results = pd.DataFrame(columns=cols)
         for draw in range(info['number_of_draws']):
             for run in range(info['runs_per_draw']):
@@ -483,9 +481,11 @@ def create_pickles_locally(scenario_output_dir):
     """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
      locally."""
     def turn_log_into_pickles(logfile):
+        print(f"Opening {logfile}")
         outputs = parse_log_file(logfile)
         for key, output in outputs.items():
             if key.startswith("tlo."):
+                print(f" - Writing {key}.pickle")
                 with open(logfile.parent / f"{key}.pickle", "wb") as f:
                     pickle.dump(output, f)
 
@@ -495,3 +495,69 @@ def create_pickles_locally(scenario_output_dir):
         for run_folder in run_folders:
             logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
             turn_log_into_pickles(Path(run_folder) / logfile)
+
+
+def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
+    """Helper function to produce tables summarising deaths in the model run (given be a logfile) and the corresponding
+    number of deaths in the GBD dataset."""
+    output = parse_log_file(logfile)
+
+    # 1) Get model outputs:
+
+    # - get scaling factor if it has been computed:
+    if 'scaling_factor' in output['tlo.methods.demography']:
+        sf = output['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
+    else:
+        sf = 1.0
+
+    # - extract number of death by period/sex/age-group
+    model = output['tlo.methods.demography']['death'].assign(
+        year = lambda x: x['date'].dt.year
+    ).groupby(
+        ['sex', 'year', 'age', 'label']
+    )['person_id'].count()
+
+    # - format categories:
+    agegrps, agegrplookup = make_age_grp_lookup()
+    calperiods, calperiodlookup = make_calendar_period_lookup()
+    model = model.reset_index()
+    model['age_grp'] = model['age'].map(agegrplookup).astype(make_age_grp_types())
+    model['period'] = model['year'].map(calperiodlookup).astype(make_calendar_period_type())
+    model = model.drop(columns=['age', 'year'])
+
+    # - sum over period and divide by five to give yearly averages
+    model = model.groupby(['period', 'sex', 'age_grp', 'label']).sum().div(5.0).rename(
+        columns={'person_id': 'model'})
+
+    # 2) Load comparator GBD datasets
+
+    # - Load data, format and limit to deaths only:
+    gbd_dat = format_gbd(pd.read_csv(resourcefilepath / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'))
+    gbd_dat = gbd_dat.loc[gbd_all['measure_name'] == 'Deaths']
+    gbd_dat = gbd_dat.rename(columns={
+        'Sex': 'sex',
+        'Age_Grp': 'age_grp',
+        'Period': 'period',
+        'GBD_Est': 'mean',
+        'GBD_Lower': 'lower',
+        'GBD_Upper': 'upper'})
+
+    # - Label GBD causes of death by 'label' defined in the simulation
+    mapper_from_gbd_causes = pd.Series(
+        output['tlo.methods.demography']['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]
+    ).to_dict()
+    gbd_dat['label'] = gbd_dat['cause_name'].map(mapper_from_gbd_causes)
+    assert not gbd_dat['label'].isna().any()
+
+    # - Create comparable data structure:
+    gbd = gbd_dat.groupby(['period', 'sex', 'age_grp', 'label'])[['mean', 'lower', 'upper']].sum().div(5.0)
+    gbd = gbd.add_prefix('GBD_')
+
+    # 3) Return summary
+    merged = gbd.merge(model, left_index=True, right_index=True, how='left')
+
+    # Check the number of deaths in model represented in right
+    assert (merged['model'].sum()*5.0 - len(output['tlo.methods.demography']['death'])) < 1e-6
+
+    return merged
+

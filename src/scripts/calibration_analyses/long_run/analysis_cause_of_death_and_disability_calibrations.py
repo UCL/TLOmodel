@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from tlo.analysis.utils import (
+    create_pickles_locally,
     make_age_grp_types,
     make_age_grp_lookup,
     make_calendar_period_lookup,
@@ -31,11 +32,11 @@ scenario_filename = 'long_run.py'  # <-- update this to look at other results
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
 rfp = Path('./resources')
 
-# ** Declare the results folder ***
+# Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
-# If needed -- in the case that pickles were not created locally
-# create_pickles_locally(results_folder)
+# If needed -- in the case that pickles were not created remotely during batch
+create_pickles_locally(results_folder)
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"

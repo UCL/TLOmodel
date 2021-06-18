@@ -8,7 +8,7 @@ import pytest
 from pytest import approx
 
 from tlo import Date, Module, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import parse_log_file, compare_number_of_deaths
 from tlo.core import Cause
 from tlo.methods import (
     Metadata,
@@ -135,8 +135,9 @@ def test_calc_of_scaling_factor(tmpdir):
 
 
 def test_cause_of_death_being_registered(tmpdir):
-    """Test that the modules can declare causes of death, and that the mappers between tlo causes of death and gbd
-    causes of death can be created correctly."""
+    """Test that the modules can declare causes of death, that the mappers between tlo causes of death and gbd
+    causes of death can be created correctly and that the analysis helper scripts can be used to produce comparisons
+    between model outputs and GBD data."""
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
@@ -168,8 +169,8 @@ def test_cause_of_death_being_registered(tmpdir):
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
     )
-    sim.make_initial_population(n=20)
-    sim.simulate(end_date=Date(2010, 1, 2))
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=Date(2010, 5, 31))
     test_dtypes(sim)
 
     mapper_from_tlo_causes, mapper_from_gbd_causes = \
@@ -201,6 +202,8 @@ def test_cause_of_death_being_registered(tmpdir):
     log_odp = pd.concat(dict_of_ser, axis=1).set_index(['Sex', 'Age_Grp'])['0']
     assert (log_odp < 1.0).all()
 
+    # Run the analysis file:
+    assert compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=rfp)
 
 def test_py_calc(simulation):
     # make population of one person:

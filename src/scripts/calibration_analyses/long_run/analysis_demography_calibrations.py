@@ -13,6 +13,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from tlo.analysis.utils import (
+    create_pickles_locally,
     extract_params,
     extract_results,
     format_gbd,
@@ -28,14 +29,17 @@ from tlo.analysis.utils import (
     make_calendar_period_type,
 )
 
-# Declare usual paths:
+# %% Declare the name of the file that specified the scenarios used in this run.
+scenario_filename = 'long_run.py'  # <-- update this to look at other results
+
+# %% Declare usual paths:
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
 rfp = Path('./resources')
 
-# ** Declare the results folder ***
-results_folder = get_scenario_outputs('long_run.py', outputspath)[-1]
+# Find results folder (most recent run generated using that scenario_filename)
+results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
-# If needed -- in the case that pickles were not created locally
+# If needed -- in the case that pickles were not created remotely during batch
 # create_pickles_locally(results_folder)
 
 # Declare path for output graphs from this script
