@@ -44,7 +44,7 @@ def test_beddays_in_isolation():
         }
     )
 
-    # Create a ten day simulation
+    # Create a 21 day simulation
     days_sim = bd.parameters['days_until_last_day_of_bed_tracker']
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
@@ -458,6 +458,7 @@ def test_bed_days_released_on_death(tmpdir):
     # compute beds occupied
     beds_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
 
+    print(f'the beds occupied are {beds_occupied}')
     expected_beds_occupied = pd.Series(
         index=pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1), freq='D'), data=0
     ).add(
@@ -468,4 +469,4 @@ def test_bed_days_released_on_death(tmpdir):
         pd.Series(index=pd.date_range(Date(2010, 1, 6), Date(2010, 1, 12)), data=-1), fill_value=0
         )
 
-    assert beds_occupied.equals(expected_beds_occupied.astype(int))
+    assert beds_occupied.astype(int).equals(expected_beds_occupied.astype(int))
