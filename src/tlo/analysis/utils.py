@@ -499,7 +499,11 @@ def create_pickles_locally(scenario_output_dir):
 
 def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
     """Helper function to produce tables summarising deaths in the model run (given be a logfile) and the corresponding
-    number of deaths in the GBD dataset."""
+    number of deaths in the GBD dataset.
+    NB.
+    * Requires output from the module `tlo.methods.demography`
+    * Will do scaling automatically if the scaling-factor has been computed in the simulation (but not otherwise).
+    """
     output = parse_log_file(logfile)
 
     # 1) Get model outputs:

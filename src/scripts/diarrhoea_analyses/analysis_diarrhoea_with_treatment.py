@@ -270,7 +270,7 @@ comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath
 
 # Make a simple bar chart
 comparison.loc[('2015-2019', slice(None), '0-4', 'Childhood Diarrhoea')].sum().plot.bar()
-plt.xlabel('Deaths per year in the 2015-2019')
+plt.title('Deaths per year due to Childhood Diarrhoea, 2015-2019')
 plt.tight_layout()
 plt.show()
 
