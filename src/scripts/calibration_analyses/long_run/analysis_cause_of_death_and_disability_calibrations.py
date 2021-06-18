@@ -5,7 +5,6 @@ This uses the results of the Scenario defined in: src/scripts/long_run/long_run.
 results (change 'scenario_filename').
 """
 
-# todo - do all the same for DALYS
 # todo - use GBD all ages numbers for some outputs (correct uncertainity bounds)
 
 from pathlib import Path
