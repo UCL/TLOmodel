@@ -533,7 +533,7 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
 
     # - Load data, format and limit to deaths only:
     gbd_dat = format_gbd(pd.read_csv(resourcefilepath / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'))
-    gbd_dat = gbd_dat.loc[gbd_all['measure_name'] == 'Deaths']
+    gbd_dat = gbd_dat.loc[gbd_dat['measure_name'] == 'Deaths']
     gbd_dat = gbd_dat.rename(columns={
         'Sex': 'sex',
         'Age_Grp': 'age_grp',
@@ -554,10 +554,4 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
     gbd = gbd.add_prefix('GBD_')
 
     # 3) Return summary
-    merged = gbd.merge(model, left_index=True, right_index=True, how='left')
-
-    # Check the number of deaths in model represented in right
-    assert (merged['model'].sum()*5.0 - len(output['tlo.methods.demography']['death'])) < 1e-6
-
-    return merged
-
+    return gbd.merge(model, left_index=True, right_index=True, how='left')

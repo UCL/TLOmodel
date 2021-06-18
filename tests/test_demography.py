@@ -203,7 +203,10 @@ def test_cause_of_death_being_registered(tmpdir):
     assert (log_odp < 1.0).all()
 
     # Run the analysis file:
-    assert compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=rfp)
+    results = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=rfp)
+    # Check the number of deaths in model represented in right
+    assert (results['model'].sum() * 5.0) == approx(len(output['tlo.methods.demography']['death']))
+
 
 def test_py_calc(simulation):
     # make population of one person:
