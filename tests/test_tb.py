@@ -1,14 +1,11 @@
 """ Tests for for the TB Module """
 
-import datetime
-import pickle
 from pathlib import Path
 import os
 
 import pandas as pd
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import Date, Simulation
 from tlo.methods import (
     care_of_women_during_pregnancy,
     demography,
@@ -27,7 +24,6 @@ from tlo.methods import (
     hiv,
     tb
 )
-from tlo.methods.healthsystem import HSI_Event
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
