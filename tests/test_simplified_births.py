@@ -21,6 +21,7 @@ from tlo.methods import (
     oesophagealcancer,
     simplified_births,
     symptommanager,
+    epi,
     tb,
 )
 
@@ -270,6 +271,7 @@ def test_other_modules_running_with_simplified_births_module():
                  epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
                  tb.Tb(resourcefilepath=resourcefilepath)
                  )
 

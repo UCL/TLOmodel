@@ -33,8 +33,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 1000
+end_date = Date(2020, 1, 1)
+popsize = 100000
 
 # set up the log config
 log_config = {
@@ -53,7 +53,10 @@ sim = Simulation(start_date=start_date, seed=100, log_config=log_config)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+             healthsystem.HealthSystem(
+                 resourcefilepath=resourcefilepath,
+                 disable=True,
+             ignore_cons_constraints=True),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),

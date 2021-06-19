@@ -1221,9 +1221,10 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, "hv_art"] == "on_VL_suppressed":
             return
 
-        # Cause the death to happen immediately, cause defined by TB status
-        if df.at[person_id, 'tb_inf'] == "active":
-            demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS_TB").apply(person_id)
+        if 'Tb' in self.sim.modules:
+            # Cause the death to happen immediately, cause defined by TB status
+            if df.at[person_id, 'tb_inf'] == "active":
+                demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS_TB").apply(person_id)
 
         else:
             demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS_non_TB").apply(person_id)
