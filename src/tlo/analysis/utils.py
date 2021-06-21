@@ -325,7 +325,7 @@ def extract_results(results_folder: Path,
                     key: str,
                     column: str = None,
                     index: str = None,
-                    custom_generate_series: str = None,
+                    custom_generate_series = None,
                     do_scaling: bool = False,
                     ) -> pd.DataFrame:
     """Utility function to unpack results
@@ -333,7 +333,7 @@ def extract_results(results_folder: Path,
     Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an 'index'
     component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
     index is the same in each run).
-    Optionally, instead of a series that exists in the dataframe already, a command can be provided that, when applied
+    Optionally, instead of a series that exists in the dataframe already, a function can be provided that, when applied
     to the dataframe indicated, yields a new pd.Series.
     Optionally, with `do_scaling`, each element is multiplied by the the scaling_factor recorded in the simulation
     (if available)
@@ -401,7 +401,7 @@ def extract_results(results_folder: Path,
         for draw in range(info['number_of_draws']):
             for run in range(info['runs_per_draw']):
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                output_from_eval = eval(f"df.{custom_generate_series}")
+                output_from_eval = custom_generate_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
                 res[f"{draw}_{run}"] = output_from_eval * get_multiplier(draw, run)
         results = pd.concat(res.values(), axis=1).fillna(0)

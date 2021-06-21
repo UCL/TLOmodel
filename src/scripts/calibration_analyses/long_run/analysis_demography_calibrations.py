@@ -197,9 +197,10 @@ def get_mean_pop_by_age_for_sex_and_year(sex, year):
         extract_results(results_folder,
                         module="tlo.methods.demography",
                         key=key,
-                        custom_generate_series="loc[lambda x: pd.to_datetime(x.date).dt.year == 2010]"
-                                                ".drop(columns=['date']).melt(var_name='age_grp')"
-                                                ".set_index('age_grp')['value']",
+                        custom_generate_series=(
+                            lambda df: df.loc[pd.to_datetime(df.date).dt.year == 2010]
+                                .drop(columns=['date']).melt(var_name='age_grp').set_index('age_grp')['value']
+                        ),
                         do_scaling=True
                         ),
         collapse_columns=True,
@@ -254,8 +255,9 @@ births_results = extract_results(
     results_folder,
     module="tlo.methods.demography",
     key="on_birth",
-    custom_generate_series="assign(year = lambda x: x['date'].dt.year)"
-                           ".groupby(['year'])['year'].count()",
+    custom_generate_series=(
+        lambda df: df.assign(year = df['date'].dt.year).groupby(['year'])['year'].count()
+    ),
     do_scaling=True
 )
 
@@ -344,8 +346,9 @@ results_deaths = extract_results(
     results_folder,
     module="tlo.methods.demography",
     key="death",
-    custom_generate_series="assign(year = lambda x: x['date'].dt.year)"
-                           ".groupby(['sex', 'year', 'age'])['person_id'].count()",
+    custom_generate_series=(
+        lambda df: df.assign(year = df['date'].dt.year).groupby(['sex', 'year', 'age'])['person_id'].count()
+    ),
     do_scaling=True
 )
 

@@ -83,8 +83,10 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
         results_folder,
         module="tlo.methods.demography",
         key="death",
-        custom_generate_series="assign(year = lambda x: x['date'].dt.year)"
-                               ".groupby(['sex', 'year', 'age', 'label'])['person_id'].count()",
+        custom_generate_series=(
+            lambda df: df.assign(year = df['date'].dt.year)
+                .groupby(['sex', 'year', 'age', 'label'])['person_id'].count()
+        ),
         do_scaling=True
     )
     else:
@@ -92,8 +94,11 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
             results_folder,
             module="tlo.methods.healthburden",
             key="dalys",
-            custom_generate_series="drop(columns='date').rename(columns={'age_range': 'age_grp'})"
-                                   ".groupby(['sex', 'year', 'age_grp']).sum().stack()",
+            custom_generate_series=(
+                lambda df: df.drop(columns='date')
+                    .rename(columns={'age_range': 'age_grp'})
+                    .groupby(['sex', 'year', 'age_grp']).sum().stack()
+            ),
             do_scaling=True
         )
         results.index = results.index.set_names('label', level=3)
