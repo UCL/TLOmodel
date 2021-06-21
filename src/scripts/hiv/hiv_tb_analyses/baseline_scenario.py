@@ -47,7 +47,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'test_scenario',
+            'filename': 'baseline_scenario',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.INFO,
