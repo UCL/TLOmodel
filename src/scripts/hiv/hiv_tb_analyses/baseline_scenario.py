@@ -1,8 +1,8 @@
 
 """
-This file defines a batch run through which the Mockitis module is run across a sweep of a single parameter.
+This file defines a batch run through which the hiv and tb modules are run across a grid of parameter values
 Run on the batch system using:
-```tlo batch-submit  src/scripts/hiv/hiv_tb_analyses/baseline_scenario.py tlo.conf```
+```tlo batch-submit  src/scripts/hiv/hiv_tb_analyses/baseline_scenario.py```
 """
 
 
@@ -32,18 +32,23 @@ from tlo.methods import (
 
 from tlo.scenario import BaseScenario
 
+# define size of parameter lists
+hiv_param_length = 10
+tb_param_length = 10
+number_of_draws = hiv_param_length * tb_param_length
+
 
 class TestScenario(BaseScenario):
     # this imports the resource filepath automatically
 
     def __init__(self):
         super().__init__()
-        self.seed = 12
+        self.seed = 32
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2014, 12, 31)
-        self.pop_size = 1000
-        self.number_of_draws = 4
-        self.runs_per_draw = 3
+        self.end_date = Date(2019, 12, 31)
+        self.pop_size = 150000
+        self.number_of_draws = number_of_draws
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
@@ -78,8 +83,8 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         grid = self.make_grid(
             {
-                'beta': np.linspace(start=0.02, stop=0.06, num=2),
-                'transmission_rate': np.linspace(start=0.005, stop=0.2, num=2),
+                'beta': np.linspace(start=0.02, stop=0.06, num=hiv_param_length),
+                'transmission_rate': np.linspace(start=0.005, stop=0.2, num=tb_param_length),
             }
         )
 

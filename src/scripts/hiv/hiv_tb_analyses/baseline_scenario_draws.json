@@ -20,7 +20,7 @@
       "draw_seed": 1916507803,
       "parameters": {
         "Hiv": {
-          "beta": 0.039999999999999994
+          "beta": 0.06
         },
         "Tb": {
           "transmission_rate": 0.005
@@ -32,76 +32,16 @@
       "draw_seed": 1031005574,
       "parameters": {
         "Hiv": {
-          "beta": 0.06
+          "beta": 0.02
         },
         "Tb": {
-          "transmission_rate": 0.005
+          "transmission_rate": 0.2
         }
       }
     },
     {
       "draw_number": 3,
       "draw_seed": 1603685629,
-      "parameters": {
-        "Hiv": {
-          "beta": 0.02
-        },
-        "Tb": {
-          "transmission_rate": 0.10250000000000001
-        }
-      }
-    },
-    {
-      "draw_number": 4,
-      "draw_seed": 1130929393,
-      "parameters": {
-        "Hiv": {
-          "beta": 0.039999999999999994
-        },
-        "Tb": {
-          "transmission_rate": 0.10250000000000001
-        }
-      }
-    },
-    {
-      "draw_number": 5,
-      "draw_seed": 371232386,
-      "parameters": {
-        "Hiv": {
-          "beta": 0.06
-        },
-        "Tb": {
-          "transmission_rate": 0.10250000000000001
-        }
-      }
-    },
-    {
-      "draw_number": 6,
-      "draw_seed": 144909571,
-      "parameters": {
-        "Hiv": {
-          "beta": 0.02
-        },
-        "Tb": {
-          "transmission_rate": 0.2
-        }
-      }
-    },
-    {
-      "draw_number": 7,
-      "draw_seed": 960362435,
-      "parameters": {
-        "Hiv": {
-          "beta": 0.039999999999999994
-        },
-        "Tb": {
-          "transmission_rate": 0.2
-        }
-      }
-    },
-    {
-      "draw_number": 8,
-      "draw_seed": 62598988,
       "parameters": {
         "Hiv": {
           "beta": 0.06
@@ -112,6 +52,6 @@
       }
     }
   ],
-  "commit": "09dd869d0518c2475435eee13c0e8d701e0b938d",
-  "github": "https://github.com/UCL/TLOmodel/blob/09dd869d0518c2475435eee13c0e8d701e0b938d/src/scripts/hiv/hiv_tb_analyses/baseline_scenario.py"
+  "commit": "53954b841c54b645b1fdd619293ef9ad75e065f2",
+  "github": "https://github.com/UCL/TLOmodel/blob/53954b841c54b645b1fdd619293ef9ad75e065f2/src/scripts/hiv/hiv_tb_analyses/baseline_scenario.py"
 }

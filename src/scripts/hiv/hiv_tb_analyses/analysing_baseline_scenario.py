@@ -21,7 +21,7 @@ outputspath = Path('./outputs/t.mangal@imperial.ac.uk')
 # %% Analyse results of runs when doing a sweep of a single parameter:
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs('baseline_scenario.py', outputspath)
+results_folder = get_scenario_outputs('baseline_scenario.py', outputspath)[-1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -42,9 +42,17 @@ extracted = extract_results(results_folder,
 # 3) Get summary of the results for that log-element
 prevalence = summarize(extracted)
 
-# get the mean and 95% interval
-prevalence_means = summarize(extracted, only_mean=False)
+# plot the output values for 2019 (last year for which data are available)
+# grid plot with hiv and tb transmission rates with (i) hiv prevalence and (ii) tb prevalence
+
+# grid plot with hiv and tb transmission rates with (i) hiv incidence and (ii) tb incidence
 
 
+# for best-fitting parameter set:
+# HIV
+# prevalence in adults over time 2010-2030
 
+# incidence in adults
+
+# ART coverage
 
