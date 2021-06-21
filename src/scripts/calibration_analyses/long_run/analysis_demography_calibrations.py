@@ -4,8 +4,6 @@ Plot to demonstrate correspondence between model and data outputs wrt births, po
 This uses the results of the Scenario defined in: src/scripts/long_run/long_run.py
 """
 
-# TODO -- Coding -- ordering of each element on the plot to get the consistent pattern of overlay;
-
 from pathlib import Path
 
 import numpy as np
@@ -186,6 +184,8 @@ plt.show()
 
 calperiods, calperiodlookup = make_calendar_period_lookup()
 
+df = log['tlo.methods.demography']['age_range_f']
+y= df.loc[lambda x: pd.to_datetime(x.date).dt.year == 2010].drop(columns=['date']).melt(var_name='age_grp').set_index('age_grp')['value']
 
 def get_mean_pop_by_age_for_sex_and_year(sex, year):
     if sex == 'F':
@@ -193,23 +193,22 @@ def get_mean_pop_by_age_for_sex_and_year(sex, year):
     else:
         key = "age_range_f"
 
-    agegroups = list(make_age_grp_types().categories)
-    output = dict()
-    for agegroup in agegroups:
-        num = summarize(extract_results(results_folder,
-                                        module="tlo.methods.demography",
-                                        key=key,
-                                        column=agegroup,
-                                        index="date",
-                                        do_scaling=True),
-                        collapse_columns=True,
-                        only_mean=True
-                        )
-        output[agegroup] = num.loc[num.index.year == year].values.mean()
-    return pd.Series(output)
+    num_by_age = summarize(
+        extract_results(results_folder,
+                        module="tlo.methods.demography",
+                        key=key,
+                        custom_generate_series="loc[lambda x: pd.to_datetime(x.date).dt.year == 2010]"
+                                                ".drop(columns=['date']).melt(var_name='age_grp')"
+                                                ".set_index('age_grp')['value']",
+                        do_scaling=True
+                        ),
+        collapse_columns=True,
+        only_mean=True
+    )
+    return num_by_age
 
 
-for year in [2018, 2030]:
+for year in [2018, 2029]:
 
     # Get WPP data:
     wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
