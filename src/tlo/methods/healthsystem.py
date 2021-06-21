@@ -22,6 +22,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.dxmanager import DxManager
+from tlo.methods.bed_days import BedDays
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -72,6 +73,9 @@ class HealthSystem(Module):
     PROPERTIES = {
         'hs_dist_to_facility': Property(
             Types.REAL, 'The distance for each person to their nearest clinic (of any type)'
+        ),
+        'hs_is_inpatient': Property(
+            Types.BOOL, 'Whether or not the person is currently an in-patient at any medical facility'
         ),
     }
 
@@ -135,6 +139,9 @@ class HealthSystem(Module):
 
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
         self.dx_manager = DxManager(self)
+
+        # create an instance of bed days
+        self.bed_days = BedDays(self)
 
     def read_parameters(self, data_folder):
 
@@ -268,16 +275,22 @@ class HealthSystem(Module):
             raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
         )
 
+    def pre_initialise_population(self):
+        self.bed_days.pre_initialise_population()
+
     def initialise_population(self, population):
         df = population.props
-
         # Assign hs_dist_to_facility'
         # (For now, let this be a random number, but in future it may be properly informed based on \
         #  population density distribitions)
         # Note that this characteritic is inherited from mother to child.
         df.loc[df.is_alive, 'hs_dist_to_facility'] = self.rng.uniform(0.01, 5.00, df.is_alive.sum())
+        self.bed_days.initialise_population(df)
 
     def initialise_simulation(self, sim):
+
+        # Set the tracker in preparation for the simulation
+        self.bed_days.initialise_beddays_tracker()
 
         # Capture list of disease modules:
         self.recognised_modules_names = [
@@ -307,10 +320,10 @@ class HealthSystem(Module):
         self.set_service_availability()
 
         # Get pointer to the BedDays module (or None if not registered)
-        if 'BedDays' in self.sim.modules:
-            self.beddays = self.sim.modules['BedDays']
-        else:
-            self.beddays = None
+        # if 'BedDays' in self.sim.modules:
+        #     self.beddays = self.sim.modules['BedDays']
+        # else:
+        #     self.beddays = None
 
     def set_service_availability(self):
         """Set service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
@@ -335,6 +348,7 @@ class HealthSystem(Module):
         # New child inherits the hs_dist_to_facility of the mother
         df = self.sim.population.props
         df.at[child_id, 'hs_dist_to_facility'] = df.at[mother_id, 'hs_dist_to_facility']
+        self.bed_days.on_birth(df, mother_id, child_id)
 
     def register_disease_module(self, new_disease_module):
         """
@@ -1088,8 +1102,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # 0) Refesh information ready for new day:
         # - Update Bed Days trackers:
-        if 'BedDays' in self.sim.modules:
-            self.sim.modules['BedDays'].processing_at_start_of_new_day()
+        self.module.bed_days.processing_at_start_of_new_day()
+
+        # Refresh the bd_in_patient status. This event runs every day
+        self.module.bed_days.refresh_in_patient_status()
 
         # - Determine the availability of consumables today based on their probabilities
         self.module.determine_availability_of_consumables_today()

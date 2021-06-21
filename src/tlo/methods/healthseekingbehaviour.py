@@ -269,7 +269,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 prob_hsb = odds / (1 + odds)
 
                 # if person is an in-patient, there will definitely be an HSI:
-                is_inpatient = df.loc[person_id, 'bd_is_inpatient']
+                is_inpatient = df.loc[person_id, 'hs_is_inpatient']
                 if (
                     (m.rng.rand() < prob_hsb) or
                     m.force_any_symptom_to_lead_to_healthcareseeking or
