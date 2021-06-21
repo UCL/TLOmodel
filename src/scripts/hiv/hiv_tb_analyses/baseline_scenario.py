@@ -2,7 +2,7 @@
 """
 This file defines a batch run through which the Mockitis module is run across a sweep of a single parameter.
 Run on the batch system using:
-```tlo batch-submit  src/scripts/dev/th_testing/mockitis_single_sweep.py tlo.conf```
+```tlo batch-submit  src/scripts/hiv/hiv_tb_analyses/baseline_scenario.py tlo.conf```
 """
 
 
@@ -41,7 +41,7 @@ class TestScenario(BaseScenario):
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2014, 12, 31)
-        self.pop_size = 100
+        self.pop_size = 1000
         self.number_of_draws = 9
         self.runs_per_draw = 3
 
