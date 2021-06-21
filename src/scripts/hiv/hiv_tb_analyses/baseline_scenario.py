@@ -42,7 +42,7 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2014, 12, 31)
         self.pop_size = 1000
-        self.number_of_draws = 9
+        self.number_of_draws = 4
         self.runs_per_draw = 3
 
     def log_configuration(self):
@@ -50,7 +50,10 @@ class TestScenario(BaseScenario):
             'filename': 'baseline_scenario',
             'directory': './outputs',
             'custom_levels': {
-                '*': logging.INFO,
+                '*': logging.WARNING,
+                'tlo.methods.hiv': logging.INFO,
+                'tlo.methods.tb': logging.INFO,
+                'tlo.methods.demography': logging.INFO
             }
         }
 
@@ -75,8 +78,8 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         grid = self.make_grid(
             {
-                'beta': np.linspace(start=0.02, stop=0.06, num=3),
-                'transmission_rate': np.linspace(start=0.005, stop=0.2, num=3),
+                'beta': np.linspace(start=0.02, stop=0.06, num=2),
+                'transmission_rate': np.linspace(start=0.005, stop=0.2, num=2),
             }
         )
 
