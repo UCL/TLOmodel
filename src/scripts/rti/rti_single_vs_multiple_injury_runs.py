@@ -1,3 +1,5 @@
+import numpy as np
+
 from tlo import Date, logging
 from tlo.methods import (
     demography,
@@ -17,7 +19,7 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 12
+        self.seed = int(np.random.uniform(1, 100))
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 200000

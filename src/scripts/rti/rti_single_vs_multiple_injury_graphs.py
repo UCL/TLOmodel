@@ -1,11 +1,18 @@
 """This file uses the results of the batch file to make some summary statistics.
 The results of the bachrun were put into the 'outputs' results_folder
 """
+import os
+import pickle
 from pathlib import Path
 
 import numpy as np
 from matplotlib import pyplot as plt
 
+from src.scripts.rti.rti_create_graphs import (
+    create_rti_data,
+    create_rti_graphs,
+    rti_format_data_from_azure_runs,
+)
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
@@ -15,16 +22,20 @@ from tlo.analysis.utils import (
     summarize,
 )
 
+# outputspath = Path('./outputs/rmjlra2@ucl.ac.uk')
 outputspath = Path('./outputs')
-
 # %% Analyse results of runs when doing a sweep of a single parameter:
+results_folder = get_scenario_outputs('rti_single_vs_mutliple_injury-2021-06-15T144108Z', outputspath)[-1]
 
-# 0) Find results_folder associated with a given batch_file and get most recent
-results_folder = get_scenario_outputs('rti_single_vs_mutliple_injury.py', outputspath)[-1]
-
+data = rti_format_data_from_azure_runs('rti_single_vs_mutliple_injury-2021-06-15T144108Z', '', 'test')
+create_rti_graphs('', 'C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Scenarios/SingleVsMultiple',
+                  'azure_single_vs_multiple', azure_run=True, data=data['0'])
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
-
+results_as_dict = rti_format_data_from_azure_runs(log, results_folder)
+rti_keys = [key for key in results_as_dict.keys() if '.rti.' in key]
+for result in rti_keys:
+    results_as_dict[result]
 # get basic information about the results
 info = get_scenario_info(results_folder)
 # get the time the simulation ran from some of the logging output
@@ -76,6 +87,7 @@ plt.bar(n + 0.4, multiple_injury_data, width=0.4, color='lightsalmon',
 
 xlabels = ['Incidence of people \n with RTIs', 'Incidence of RTI death', 'Incidence of RTIs']
 plt.xticks(n + 0.2, xlabels)
+plt.legend()
 plt.ylabel('Incidence per 100,000 person years')
 plt.title(f"Incidence of people having road traffic injuries, \nRTI death and incidence of injuries for simulations \n"
           f"ran with single and multiple injuries, years ran: {sim_run_time_years}, \n"
@@ -93,6 +105,7 @@ plt.clf()
 plt.bar(np.arange(2), [mean_dalys_single, mean_dalys_multiple], color='lightsteelblue')
 plt.xticks(np.arange(2), ['Single injuries', 'Muliple injuries'])
 plt.ylabel('DALYS')
+plt.legend()
 plt.title(f"DALYS produced by the model when ran with single \n"
           f"and multiple injuries, years ran: {sim_run_time_years}, \n"
           f"population size: {pop_size}, runs per scenario: {info['runs_per_draw']}")

@@ -3477,6 +3477,8 @@ class RTI(Module):
             MAIS.append(max(item) + 1)
         # Store the predicted Military AIS scores
         injurydescription['MAIS_M'] = MAIS
+        # store the number of injuries this person received
+        injurydescription['ninj'] = number_of_injuries
         # Fill dataframe entries where a person has not had an injury assigned with 'none'
         injurydescription = injurydescription.fillna("none")
         # Get injury information in an easily interpreted form to be logged.
@@ -3511,7 +3513,7 @@ class RTI(Module):
         inc_minor = minorinjurycounts / ((n_alive - minorinjurycounts) * 1 / 12) * 100000
         inc_other = other_counts / ((n_alive - other_counts) * 1 / 12) * 100000
         tot_inc_all_inj = inc_amputations + inc_burns + inc_fractures + inc_tbi + inc_sci + inc_minor + inc_other
-        number_of_injuries = len(flattened_injury_category)
+        number_of_injuries = injurydescription['ninj'].tolist()
         dict_to_output = {'inc_amputations': inc_amputations,
                           'inc_burns': inc_burns,
                           'inc_fractures': inc_fractures,
