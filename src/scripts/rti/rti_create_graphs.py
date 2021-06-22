@@ -1845,7 +1845,7 @@ def rti_format_data_from_azure_runs(stub, loc_in_outputs, results_folder):
         # get the average number of prehospital deaths in 2010 for the variation
         var_number_of_prehospital_deaths_2010 = np.mean(var_number_of_prehospital_deaths_2010)
         # get the average percentage of healthseeking in the variation
-        var_percent_sought_healthcare = np.mean([np.mean(l) for l in var_percent_sought_healthcare])
+        var_percent_sought_healthcare = np.mean([np.mean(perc) for perc in var_percent_sought_healthcare])
         # get the average percentage of those admitted to ICU in the variation
         var_percent_admitted_to_icu_or_hdu = np.mean(var_percent_admitted_to_icu_or_hdu)
         # store the injury information for the ICU patients

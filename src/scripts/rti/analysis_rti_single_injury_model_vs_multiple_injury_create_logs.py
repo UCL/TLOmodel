@@ -324,4 +324,3 @@ plt.title(f"The effect of allowing multiple injuries\n in the model on populatio
 plt.savefig(save_file_path + f"Single_vs_multiple_injury_model_comp_DALYs_imm_death_{imm_death}.png",
             bbox_inches='tight')
 plt.clf()
-

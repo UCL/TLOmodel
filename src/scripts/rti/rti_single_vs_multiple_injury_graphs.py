@@ -1,18 +1,12 @@
 """This file uses the results of the batch file to make some summary statistics.
 The results of the bachrun were put into the 'outputs' results_folder
 """
-import os
-import pickle
 from pathlib import Path
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-from src.scripts.rti.rti_create_graphs import (
-    create_rti_data,
-    create_rti_graphs,
-    rti_format_data_from_azure_runs,
-)
+from src.scripts.rti.rti_create_graphs import create_rti_graphs, rti_format_data_from_azure_runs
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
