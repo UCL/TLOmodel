@@ -45,9 +45,8 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
     collected_causes = dict()
     for m in all_modules:
         if Metadata.DISEASE_MODULE in m.METADATA:
-            assert collect in dir(m), \
-                f'Disease module {m.name} must declare {collect} (even if none)'
-            declaration_in_module = m.__getattribute__(collect)
+            assert hasattr(m, collect), f'Disease module {m.name} must declare {collect} (even if empty)'
+            declaration_in_module = getattr(m, collect)
             assert type(declaration_in_module) is dict
 
             for tlo_cause, cause in declaration_in_module.items():
