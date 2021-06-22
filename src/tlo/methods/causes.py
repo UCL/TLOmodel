@@ -9,18 +9,21 @@ import pandas as pd
 from tlo.methods import Metadata
 
 
-class Cause():
-    """Data structrue to store information about a Cause (of Death or Disability) used in the model
-    'gbd_causes': set of strings for causess in the GBD datasets to which this cause is equivalent.
+class Cause:
+    """Data structure to store information about a Cause (of Death or Disability) used in the model
+    'gbd_causes': set of strings for causes in the GBD datasets to which this cause is equivalent.
     'cause_of_death': the (single) category to which this cause belongs and should be labelled in output statistics.
     """
-    def __init__(self, label: str, gbd_causes: set = {}):
+    def __init__(self, label: str, gbd_causes: set = None):
         """Do basic type checking."""
         assert (type(label) is str) and (label != '')
         self.label = label
 
+        if gbd_causes is None:
+            gbd_causes = set()
+
         if gbd_causes:
-            gbd_causes = set(gbd_causes) if type(gbd_causes) in (list, set) else set([gbd_causes])
+            gbd_causes = set(gbd_causes) if type(gbd_causes) in (list, set) else {gbd_causes}
             assert all([(type(c) is str) and (c != '') for c in gbd_causes])
         self.gbd_causes = gbd_causes
 
@@ -33,14 +36,14 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
     acceptable causes.
      """
 
-    def check_cause(cause: Cause, acceptable_causes: set):
+    def check_cause(_cause: Cause, _acceptable_causes: set):
         """Helper function to check that a 'Cause' has been defined in a way that is acceptable."""
         # 0) Check type
-        assert isinstance(cause, Cause)
+        assert isinstance(_cause, Cause)
 
         # 1) Check that the declared gbd_cause is among the acceptable causes.
-        for c in cause.gbd_causes:
-            assert c in acceptable_causes, f'The declared gbd_cause {c} is not among the acceptable causes.'
+        for _c in _cause.gbd_causes:
+            assert _c in _acceptable_causes, f'The declared gbd_cause {_c} is not among the acceptable causes.'
 
     collected_causes = dict()
     for m in all_modules:
@@ -51,7 +54,7 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
 
             for tlo_cause, cause in declaration_in_module.items():
                 if (acceptable_causes is not None) and cause.gbd_causes:
-                    check_cause(cause=cause, acceptable_causes=acceptable_causes)
+                    check_cause(_cause=cause, _acceptable_causes=acceptable_causes)
 
                 # Prevent over-writing of causes: throw error if the name is already in use but the new Cause is not
                 # the same as that already registered.
