@@ -217,7 +217,7 @@ class Demography(Module):
         init_pop = self.parameters['pop_2010']
         init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
 
-        # randomly pick from the init_pop sheet, to allocate charatceristic to each person in the df
+        # randomly pick from the init_pop sheet, to allocate characteristic to each person in the df
         demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
                                                              size=len(df),
                                                              replace=True,
@@ -444,7 +444,7 @@ class Demography(Module):
         df2.columns = df2.columns.droplevel(0)
         df2.index.rename('age_years', inplace=True)
 
-        # add the two time spents together
+        # add the two time spent together
         py = pd.DataFrame(
             index=pd.Index(data=list(self.AGE_RANGE_LOOKUP.keys()), name='age_years'),
             columns=['M', 'F'],
@@ -458,7 +458,7 @@ class Demography(Module):
         """
         Compute the scaling factor, if it is possible to do so.
 
-        The scaling factor is the ratio of {Real Population} to {Model Pop Size}. It is used to mulitply model ouputs
+        The scaling factor is the ratio of {Real Population} to {Model Pop Size}. It is used to multiply model outputs
         in order to produce statistics that will be of the same scale as the real population.
 
         It is estimated by comparing the population size with the national census in the year that the census was
@@ -508,7 +508,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
     """
     This event causes deaths to persons from cause that are _not_ being modelled explicitly by a disease module.
     It does this by computing the GBD death rates that are implied by all the causes of death other than those that are
-    represented in the disease module registerd in this simulation.
+    represented in the disease module registered in this simulation.
     """
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
@@ -519,8 +519,8 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         """Compute the death-rates to use (i.e., those from causes of death defined in `self.causes_to_represent`).
         Adjust the rates of death so that it is a risk of death per person per occurrence of the polling event.
         """
-        # todo - this is pending a further PR that brings in newest GBD data. For now, just retrn the mortality
-        #  schedule from WPP
+        # TODO - this is pending a further PR that brings in newest GBD data. For now, just return the mortality
+        #        schedule from WPP
 
         # Work out probability of dying in the time before the next occurrence of this poll
         dur_in_years_between_polls = np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y')
@@ -535,7 +535,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # Get shortcut to main dataframe
         df = population.props
 
-        # Cause the death immidiately for anyone that is older than the maximum age
+        # Cause the death immediately for anyone that is older than the maximum age
         over_max_age = df.index[df.is_alive & (df.age_years > MAX_AGE)]
         for individual_id in over_max_age:
             self.module.do_death(individual_id=individual_id, cause='Other', originating_module=self.module)
@@ -552,7 +552,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # get the population
         alive = df.loc[df.is_alive & (df.age_years <= MAX_AGE), ['sex', 'age_years']].copy()
 
-        # merge the popualtion dataframe with the parameter dataframe to pick-up the death_rate for each person
+        # merge the population dataframe with the parameter dataframe to pick-up the death_rate for each person
         length_before_merge = len(alive)
         alive = alive.reset_index().merge(mort_risk,
                                           left_on=['age_years', 'sex'],
@@ -626,7 +626,7 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='age_range_f', data=f_age_counts.to_dict())
 
         # Output by single year of age for under-fives
-        # (need to gurantee output always is for each of the years - even if size() is 0)
+        # (need to guarantee output always is for each of the years - even if size() is 0)
         num_children = pd.Series(index=range(5), data=0).add(
             df[df.is_alive & (df.age_years < 5)].groupby('age_years').size(),
             fill_value=0
@@ -687,7 +687,7 @@ def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False
     o['tlo.methods.demography']['age_range_m'].iloc[:, 1:] *= ratio_data_to_model
     o['tlo.methods.demography']['age_range_f'].iloc[:, 1:] *= ratio_data_to_model
 
-    # For individual-level reporting, construct groupby's and then multipy by ratio
+    # For individual-level reporting, construct groupby's and then multiply by ratio
     # 1) Counts of numbers of death by year/age/cause
     deaths = o['tlo.methods.demography']['death']
     deaths.index = pd.to_datetime(deaths['date'])
