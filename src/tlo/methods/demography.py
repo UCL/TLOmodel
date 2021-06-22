@@ -236,14 +236,14 @@ class Demography(Module):
 
         # Assign the characteristics
         df.is_alive.values[:] = True
-        df['date_of_birth'] = demog_char_to_assign['date_of_birth']
-        df['date_of_death'] = pd.NaT
-        df['cause_of_death'].values[:] = np.nan
-        df['sex'].values[:] = demog_char_to_assign['Sex']
+        df.loc[df.is_alive, 'date_of_birth'] = demog_char_to_assign['date_of_birth']
+        df.loc[df.is_alive, 'date_of_death'] = pd.NaT
+        df.loc[df.is_alive, 'cause_of_death'] = np.nan
+        df.loc[df.is_alive, 'sex'] = demog_char_to_assign['Sex']
         df.loc[df.is_alive, 'mother_id'] = -1
-        df['district_num_of_residence'].values[:] = demog_char_to_assign['District_Num'].values[:]
-        df['district_of_residence'].values[:] = demog_char_to_assign['District'].values[:]
-        df['region_of_residence'].values[:] = demog_char_to_assign['Region'].values[:]
+        df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
+        df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
+        df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
 
         df.loc[df.is_alive, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
