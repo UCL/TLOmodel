@@ -29,6 +29,7 @@ from tlo.methods.hiv import (
     HivAidsOnsetEvent,
     HSI_Hiv_StartOrContinueTreatment,
     HSI_Hiv_TestAndRefer,
+    HSI_Hiv_StartOrContinuePregnantWomenOnPrep,
 )
 
 try:
@@ -734,6 +735,84 @@ def test_hsi_testandrefer_and_prep():
         (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP) & (ev[0] > date_decision_event))
     ])
 
+def test_hsi_testandrefer_and_prepforpregnantwomen():
+    """Test that the HSI for testing and referral of pregnant women to PrEP works as intended"""
+    sim = get_sim()
+    sim = start_sim_and_clear_event_queues(sim)
+    sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
+
+    # Make the chance of being referred 100%
+    sim.modules['Hiv'].lm['lm_prep_preg'] = LinearModel.multiplicative()
+
+    df = sim.population.props
+
+    # Get target person and make them HIV-negative pregnant woman and not on prep currently
+    person_id = 0
+    df.at[person_id, "sex"] = "F"
+    df.at[person_id, "hv_inf"] = False
+    df.at[person_id, "hv_diagnosed"] = False
+    df.at[person_id, "hv_number_tests"] = 0
+    df.at[person_id, "is_pregnant"] = True
+    df.at[person_id, "hv_is_on_prep"] = False
+
+    # change PrEP start date so will occur from 01-01-2010
+    sim.modules['Hiv'].parameters["prep_start_year_preg"] = 2010
+
+    # Run the TestAndRefer event
+    #t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
+    #t.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Run the HSI Start Pregnant Women in PrEP event
+    t = HSI_Hiv_StartOrContinuePregnantWomenOnPrep(module=sim.modules['Hiv'], person_id=person_id)
+    t.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check that there is an PrEP event scheduled
+    date_hsi_event, hsi_event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], hiv.HSI_Hiv_StartOrContinuePregnantWomenOnPrep)
+    ][0]
+
+    # Run the event:
+    hsi_event.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check that the person is now on PrEP
+    assert df.at[person_id, "hv_is_on_prep_preg"]
+    assert df.at[person_id, "hv_number_tests"] > 0
+
+    # Check that there is a 'decision' event scheduled
+    date_decision_event, decision_event = [
+        ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.Hiv_DecisionToContinuePregnantWomenOnPrEP)
+    ][0]
+
+    assert date_decision_event == date_event + pd.DateOffset(months=3)
+
+    # Advance simulation date to when the decision_event would run
+    sim.date = date_decision_event
+
+    # Run the decision event when probability of continuation is 1.0, and check for a further HSI
+    sim.modules["Hiv"].parameters["probability_of_pregnant_woman_being_retained_on_prep_every_3_months"] = 1.0
+    decision_event.apply(person_id)
+    assert df.at[person_id, "hv_is_on_prep_preg"]
+    date_next_hsi_event, next_hsi_event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinuePregnantWomenOnPrep) & (ev[0] >= date_decision_event))
+    ][0]
+
+    # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI or
+    # "decision" events
+    # - First, clear the queue to avoid being confused by results of the check done just above.
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+    sim.modules["Hiv"].parameters["probability_of_pregnant_woman_being_retained_on_prep_every_3_months"] = 0.0
+    decision_event.apply(person_id)
+    assert not df.at[person_id, "hv_is_on_prep_preg"]
+    assert 0 == len([
+        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        (isinstance(ev[1], hiv.Hiv_StartOrContinuePregnantWomenOnPrep) & (ev[0] >= date_decision_event))
+    ])
+    assert 0 == len([
+        ev[0] for ev in sim.find_events_for_person(person_id) if
+        (isinstance(ev[1], hiv.Hiv_DecisionToContinuePregnantWomenOnPrEP) & (ev[0] > date_decision_event))
+    ])
 
 def test_hsi_testandrefer_and_art():
     """Test that the HSI for testing and referral to ART works as intended

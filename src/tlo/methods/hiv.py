@@ -221,6 +221,9 @@ class Hiv(Module):
         "probability_of_being_retained_on_prep_every_3_months": Parameter(
             Types.REAL, "Probability that someone who has initiated on prep will attend an appointment and be on prep "
                         "for the next 3 months, until the next appointment."),
+        "probability_of_pregnant_woman_being_retained_on_prep_every_3_months": Parameter(
+            Types.REAL, "Probability that a pregnant woman who has initiated on prep will attend an appointment and be on "
+                        "prep for the next 3 months, until the next appointment."),
         "probability_of_being_retained_on_art_every_6_months": Parameter(
             Types.REAL, "Probability that someone who has initiated on treatment will attend an appointment and be on "
                         "treatment for next 6 months, until the next appointment."),
@@ -377,7 +380,6 @@ class Hiv(Module):
             LinearModelType.MULTIPLICATIVE,
             p["prob_prep_for_preg_after_hiv_test"],
             Predictor('hv_inf').when(False, 1.0).otherwise(0.0),
-            Predictor('sex').when('F', 1.0).otherwise(0.0),
             Predictor('is_pregnant').when(True, 1.0).otherwise(0.0)
         )
 
@@ -386,7 +388,7 @@ class Hiv(Module):
             LinearModelType.MULTIPLICATIVE,
             p["prob_circ_after_hiv_test"],
             Predictor('hv_inf').when(False, 1.0).otherwise(0.0),
-            Predictor('sex').when('M', 1.0).otherwise(0.0),
+            Predictor('sex').when('M', 1.0).otherwise(0.0)
         )
 
     def initialise_population(self, population):
@@ -585,6 +587,7 @@ class Hiv(Module):
 
         # 1) Schedule the Main HIV Regular Polling Event
         sim.schedule_event(HivRegularPollingEvent(self), sim.date)
+        sim.schedule_event(HivRegularPollingEventPrEP(self), sim.date) #change date
 
         # 2) Schedule the Logging Event
         sim.schedule_event(HivLoggingEvent(self), sim.date)
@@ -1118,6 +1121,28 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 tclose=self.sim.date + pd.DateOffset(months=self.frequency.months)  # (to occur before next polling)
             )
 
+class HivRegularPollingEventPrEP(RegularEvent, PopulationScopeEventMixin):
+    " This event occurs regularly at 1 month intervals and assigns pregnant women to PrEP"
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+
+    def apply(self, population):
+
+        df = population.props
+
+    # 1. Get and hold index of currently pregnant women
+        preg_idx = df.index[df.is_alive & df.is_pregnant]
+
+        #df.loc[preg_idx, 'date_of_last_pregnancy'] = self.sim.date #take out pregnancy date, date of birth
+
+    # 2. Schedule eligible individuals to PrEP
+        for person_id in preg_idx:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Hiv_StartOrContinuePregnantWomenOnPrep(person_id=person_id, module=self.module),
+                priority = 0,
+                topen = self.sim.date)
+
 
 # ---------------------------------------------------------------------------
 #   Natural History Events
@@ -1269,7 +1294,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
 
 class Hiv_DecisionToContinuePregnantWomenOnPrEP(Event, IndividualScopeEventMixin):
     """Helper event that is used to 'decide' if a pregnant woman on PrEP should continue on PrEP.
-    This event is scheduled by 'HSI_Hiv_StartPregnantWomenOnPrep' 3 months after it is run.
+    This event is scheduled by 'HSI_Hiv_StartOrContinuePregnantWomenOnPrep' 3 months after it is run.
     """
 
     def __init__(self, module, person_id):
@@ -1280,19 +1305,19 @@ class Hiv_DecisionToContinuePregnantWomenOnPrEP(Event, IndividualScopeEventMixin
         person = df.loc[person_id]
         m = self.module
 
-        # If the person is no longer alive, no longer pregnant and not diagnosed, they will not continue on PrEP
-        if (not person["is_alive"]) or (not person["is_pregnant"]) or (person["hv_diagnosed"]):
+        # If the person is no longer alive, no longer pregnant or infected, they will not continue on PrEP
+        if (not person["is_alive"]) or (not person["is_pregnant"]) or (person["hv_inf"]):
             return
 
-        # Check that there are on PrEP currently:
-        if not person["hv_is_on_prep_preg"]:
-            logger.warning('This event should not be running')
+        # Check that they are on PrEP currently:
+        #if not person["hv_is_on_prep_preg"]:
+        #    logger.warning('This event should not be running')
 
         # Determine if this appointment is actually attended by the person who has already started on PrEP
-        if m.rng.random_sample() < m.parameters['probability_of_being_retained_on_prep_every_3_months']:
+        if m.rng.random_sample() < m.parameters['probability_of_pregnant_woman_being_retained_on_prep_every_3_months']:
             # Continue on PrEP - and schedule an HSI for a refill appointment today
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Hiv_StartPregnantWomenOnPrep(person_id=person_id, module=m),
+                HSI_Hiv_StartOrContinuePregnantWomenOnPrep(person_id=person_id, module=m),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=7),
                 priority=0
@@ -1459,11 +1484,12 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     if(
                         (person['is_pregnant']) &
                         ~person['hv_is_on_prep_preg'] &
+                        ~person['hv_is_on_prep'] &
                         (self.sim.date.year >= self.module.parameters['prep_start_year_preg'])
                     ):
                         if self.module.lm['lm_prep_preg'].predict(df.loc[[person_id]], self.module.rng):
                             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                HSI_Hiv_StartPregnantWomenOnPrep(person_id=person_id, module=self.module),
+                                Hiv_StartOrContinuePregnantWomenOnPrep(person_id=person_id, module=self.module),
                                 topen=self.sim.date,
                                 tclose=None,
                                 priority=0
@@ -1564,12 +1590,12 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         Default the person to being off PrEP"""
         self.sim.population.props.at[self.target, "hv_is_on_prep"] = False
 
-class HSI_Hiv_StartPregnantWomenOnPrep(HSI_Event, IndividualScopeEventMixin):
+class HSI_Hiv_StartOrContinuePregnantWomenOnPrep(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
-        self.TREATMENT_ID = "Hiv_StartPregnantWomenOnPrep"
+        self.TREATMENT_ID = "Hiv_StartOrContinuePregnantWomenOnPrep"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1580,8 +1606,10 @@ class HSI_Hiv_StartPregnantWomenOnPrep(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        # Do not run if the person is not alive, or is not currently pregnant, or is diagnosed
-        if (not person["is_alive"]) or (not person["is_pregnant"]) or (person["hv_diagnosed"]):
+        # Do not run if the person is not alive, or is not currently pregnant,
+        # or if date is before prep start year
+        if (not person["is_alive"]) or (not person["is_pregnant"]) or (person["hv_inf"]) or\
+            (self.sim.date.year < self.module.parameters['prep_start_year_preg']):
             return
 
         # Run an HIV test
@@ -1603,8 +1631,11 @@ class HSI_Hiv_StartPregnantWomenOnPrep(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
         # Check that PrEP is available and if it is, initiate or continue  PrEP:
-        if self.get_all_consumables(footprint=self.module.footprints_for_consumables_required['prep']):
-            df.at[person_id, "hv_is_on_prep_preg"] = True
+        if ((person['is_pregnant']) & (~person['hv_inf']) &
+            (self.sim.date.year >= self.module.parameters['prep_start_year_preg'])):
+            if self.get_all_consumables(footprint=self.module.footprints_for_consumables_required['prep']):
+                if self.module.lm['lm_prep_preg'].predict(df.loc[[person_id]], self.module.rng):
+                    df.at[person_id, "hv_is_on_prep_preg"] = True
 
             # Schedule 'decision about whether to continue on PrEP' for 3 months time
             self.sim.schedule_event(
@@ -1899,6 +1930,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_preg = len(df.loc[
                         df.is_alive &
                         df.is_pregnant
+                         # (df.date_of_last_pregnancy
+                         #> (now - DateOffset(months=self.repeat))
                         ])
         prev_hiv_preg = 0 if n_preg == 0 else \
             len(df.loc[
@@ -1984,8 +2017,9 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15) & df.hv_is_on_prep]
         ) / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
 
-        # ------------------------------------ PREP AMONG PREGNANT WOMEN -----------------------------
-        prop_preg_on_prep =  0 if n_preg == 0 else len(
+        # ------------------------------------ PREP AMONG PREGNANT WOMEN -------------------------
+
+        prop_preg_on_prep = 0 if n_preg == 0 else len(
             df[df.is_alive & df.is_pregnant & df.hv_is_on_prep_preg]
         ) / len(df[df.is_alive & df.is_pregnant])
 
