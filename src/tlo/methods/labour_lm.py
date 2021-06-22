@@ -115,8 +115,8 @@ def predict_sepsis_death(self, df, rng=None, **externals):
     result = params['cfr_sepsis']
 
     # todo: wont this give a treatment effect to postpartum women who develop a different kind of sepsis
-
-    if person['la_sepsis_treatment'] or person['ac_received_abx_for_chorioamnionitis']:
+    if ((externals['chorio_lab'] or person['ps_chorioamnionitis']) and person['ac_received_abx_for_chorioamnionitis'])\
+       or person['la_sepsis_treatment']:
         result *= params['sepsis_treatment_effect_md']
 
     return pd.Series(data=[result], index=df.index)
@@ -130,8 +130,6 @@ def predict_eclampsia_death(self, df, rng=None, **externals):
 
     if person['la_eclampsia_treatment']:
         result *= params['eclampsia_treatment_effect_md']
-    # Both these predictors represent intravenous antihypertensives- both will not be true for the same
-    # woman
     if person['la_maternal_hypertension_treatment'] or person['ac_iv_anti_htn_treatment']:
         result *= params['anti_htns_treatment_effect_md']
 
@@ -145,9 +143,7 @@ def predict_severe_pre_eclamp_death(self, df, rng=None, **externals):
     params = self.parameters
     result = params['cfr_severe_pre_eclamp']
 
-    if person['la_maternal_hypertension_treatment']:
-        result *= params['anti_htns_treatment_effect_md']
-    if person['ac_iv_anti_htn_treatment']:
+    if person['la_maternal_hypertension_treatment'] or person['ac_iv_anti_htn_treatment']:
         result *= params['anti_htns_treatment_effect_md']
 
     # caller expects a series to be returned

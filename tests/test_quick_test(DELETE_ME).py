@@ -25,7 +25,7 @@ from tlo.methods import (
     ncds, joes_fake_props_module
 )
 
-seed = 222
+seed = 8246
 
 # The resource files
 try:
@@ -108,7 +108,7 @@ def register_all_modules():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*']),
                  #ncds.Ncds(resourcefilepath=resourcefilepath),
@@ -137,7 +137,7 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     sim = register_all_modules()
     sim.make_initial_population(n=10000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    sim.simulate(end_date=Date(2012, 1, 1))
+    sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
 
 
@@ -146,10 +146,10 @@ def test_run_all_labour():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=1000)
+    sim.make_initial_population(n=500)
     set_all_women_to_go_into_labour(sim)
-    sim.simulate(end_date=Date(2010, 1, 15))
+    sim.simulate(end_date=Date(2010, 4, 1))
     check_dtypes(sim)
 
-# test_run_core_modules_normal_allocation_of_pregnancy()
-test_run_all_labour()
+test_run_core_modules_normal_allocation_of_pregnancy()
+#test_run_all_labour()

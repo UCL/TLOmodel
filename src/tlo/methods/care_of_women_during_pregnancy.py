@@ -575,6 +575,20 @@ class CareOfWomenDuringPregnancy(Module):
     # are called from within the ANC HSIs. Which interventions are called depends on the mothers gestation and the
     # number of visits she has attended at the time each HSI runs (see ANC HSIs)
 
+    def check_intervention_should_run_and_update_mni(self, person_id, int_1, int2):
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+        if int_1 not in mni[person_id]['anc_ints']:
+            mni[person_id]['anc_ints'].append(int_1)
+            return True
+
+        elif int2 not in mni[person_id]['anc_ints']:
+            mni[person_id]['anc_ints'].append(int2)
+            return True
+
+        elif int_1 and int2 in mni[person_id]['anc_ints']:
+            return False
+
     def screening_interventions_delivered_at_every_contact(self, hsi_event):
         """
         This function contains the screening interventions which are delivered at every ANC contact regardless of the
@@ -695,7 +709,8 @@ class CareOfWomenDuringPregnancy(Module):
             if self.rng.random_sample() > params['prob_adherent_ifa']:
                 df.at[person_id, 'ac_receiving_iron_folic_acid'] = True
 
-        if outcome_of_request_for_consumables['Item_Code'][item_code_diet_supps]:
+        if (outcome_of_request_for_consumables['Item_Code'][item_code_diet_supps]) and \
+            (df.at[person_id, 'li_bmi'] < 19):
             df.at[person_id, 'ac_receiving_bep_supplements'] = True
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'b_e_p'})
 
@@ -750,6 +765,9 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.current_parameters
 
+        if not self.check_intervention_should_run_and_update_mni(person_id, 'tt_1', 'tt_2'):
+            return
+
         # Define required consumables
         pkg_code_tet = pd.unique(
             consumables.loc[consumables["Intervention_Pkg"] == "Tetanus toxoid (pregnant women)",
@@ -773,6 +791,7 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
+        # TODO: why is this applied at each visit with other daily supplements (iron, bep etc) are only applied once???
         # todo: check these are the right risk factors
 
         if ~df.at[person_id, 'ac_receiving_calcium_supplements'] and ((df.at[person_id, 'la_parity'] == 0) or
@@ -809,6 +828,9 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.current_parameters
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        if not self.check_intervention_should_run_and_update_mni(person_id, 'hb_1', 'hb_2'):
+            return
 
         # Define the required consumables
         item_code_hb_test = pd.unique(
@@ -853,25 +875,31 @@ class CareOfWomenDuringPregnancy(Module):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.current_parameters
         person_id = hsi_event.target
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        # We run this function to store the associated consumables with albendazole administration. This intervention
-        # has no effect in the model due to limited evidence
-        item_code_albendazole = pd.unique(
-            consumables.loc[consumables['Items'] == 'Albendazole 200mg_1000_CMST', 'Item_Code'])[0]
+        if 'albend' in mni[person_id]['anc_ints']:
+            return
+        else:
+            mni[person_id]['anc_ints'].append('albend')
 
-        consumables_albendazole = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_albendazole: 2}}
+            # We run this function to store the associated consumables with albendazole administration. This
+            # intervention has no effect in the model due to limited evidence
+            item_code_albendazole = pd.unique(
+                consumables.loc[consumables['Items'] == 'Albendazole 200mg_1000_CMST', 'Item_Code'])[0]
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_albendazole)
+            consumables_albendazole = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_albendazole: 2}}
 
-        # If the consumables are available and the HCW will provide the tablets, the intervention is given
-        if outcome_of_request_for_consumables['Item_Code'][item_code_albendazole] and (self.rng.random_sample() <
-                                                                                       params['prob_intervention_'
-                                                                                              'delivered_bp']):
-            logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'albendazole'})
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_albendazole)
+
+            # If the consumables are available and the HCW will provide the tablets, the intervention is given
+            if outcome_of_request_for_consumables['Item_Code'][item_code_albendazole] and (self.rng.random_sample() <
+                                                                                           params['prob_intervention_'
+                                                                                                  'delivered_bp']):
+                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'albendazole'})
 
     def hep_b_testing(self, hsi_event):
         """
@@ -880,30 +908,32 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        params = self.current_parameters
         person_id = hsi_event.target
 
-        # This intervention is a place holder prior to the Hepatitis B module being coded
-        # Define the consumables
-        item_code_hep_test = pd.unique(
-            consumables.loc[consumables['Items'] == 'Hepatitis B test kit-Dertemine_100 tests_CMST', 'Item_Code'])[0]
-        item_code_needle = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item_code_gloves = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        if not self.check_intervention_should_run_and_update_mni(person_id, 'hep_b_1', 'hep_b_2'):
+            return
+        else:
+            # This intervention is a place holder prior to the Hepatitis B module being coded
+            # Define the consumables
+            item_code_hep_test = pd.unique(
+                consumables.loc[consumables['Items'] == 'Hepatitis B test kit-Dertemine_100 tests_CMST', 'Item_Code'])[0]
+            item_code_needle = pd.unique(
+                consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+            item_code_gloves = pd.unique(
+                consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
 
-        consumables_hep_b_test = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_hep_test: 1, item_code_needle: 1, item_code_gloves: 1}}
+            consumables_hep_b_test = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_hep_test: 1, item_code_needle: 1, item_code_gloves: 1}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_hep_b_test)
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_hep_b_test)
 
-        # We log all the consumables required above but we only condition the event test happening on the availability
-        # of the test itself
-        if outcome_of_request_for_consumables['Item_Code'][item_code_hep_test]:
-            logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hep_b'})
+            # We log all the consumables required above but we only condition the event test happening on the availability
+            # of the test itself
+            if outcome_of_request_for_consumables['Item_Code'][item_code_hep_test]:
+                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hep_b'})
 
     def syphilis_screening_and_treatment(self, hsi_event):
         """
@@ -916,53 +946,57 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         df = self.sim.population.props
 
-        # Define the consumables for testing and for treatment
-        item_code_syphilis_test = pd.unique(
-            consumables.loc[consumables['Items'] == 'Test, Rapid plasma reagin (RPR)', 'Item_Code'])[0]
-        item_code_blood_tube = pd.unique(
-            consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-        item_code_needle = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item_code_gloves = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        if not self.check_intervention_should_run_and_update_mni(person_id, 'syph_1', 'syph_2'):
+            return
+        else:
+            # Define the consumables for testing and for treatment
+            item_code_syphilis_test = pd.unique(
+                consumables.loc[consumables['Items'] == 'Test, Rapid plasma reagin (RPR)', 'Item_Code'])[0]
+            item_code_blood_tube = pd.unique(
+                consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+            item_code_needle = pd.unique(
+                consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+            item_code_gloves = pd.unique(
+                consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
 
-        item_code_benpen = pd.unique(
-            consumables.loc[
-                consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
-                'Item_Code'])[0]
+            item_code_benpen = pd.unique(
+                consumables.loc[
+                    consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
+                    'Item_Code'])[0]
 
-        consumables_syphilis_testing = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_syphilis_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
-                          item_code_gloves: 1}}
+            consumables_syphilis_testing = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_syphilis_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
+                              item_code_gloves: 1}}
 
-        consumables_syphilis_treatment = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_benpen: 3}}
+            consumables_syphilis_treatment = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_benpen: 3}}
 
-        outcome_of_request_for_consumables_testing = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_syphilis_testing)
+            outcome_of_request_for_consumables_testing = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_syphilis_testing)
 
-        # We log all the consumables required above but we only condition the event test happening on the availability
-        # of the test itself
-        if (outcome_of_request_for_consumables_testing['Item_Code'][item_code_syphilis_test]) and (
-          self.rng.random_sample() < params['prob_intervention_delivered_syph_test']):
+            # We log all the consumables required above but we only condition the event test happening on the
+            # availability of the test itself
+            if (outcome_of_request_for_consumables_testing['Item_Code'][item_code_syphilis_test]) and (
+              self.rng.random_sample() < params['prob_intervention_delivered_syph_test']):
 
-            logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_test'})
+                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_test'})
 
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_syphilis',
-                                                                       hsi_event=hsi_event):
+                if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_syphilis',
+                                                                           hsi_event=hsi_event):
 
-                # If the test detects that the mother has syphilis treatment is admistered and we assume her infection
-                # is treated
-                outcome_of_request_for_consumables_treatment = self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=hsi_event,
-                    cons_req_as_footprint=consumables_syphilis_treatment)
+                    # If the test detects that the mother has syphilis treatment is admistered and we assume her
+                    # infection is treated
+                    outcome_of_request_for_consumables_treatment = self.sim.modules['HealthSystem'].request_consumables(
+                        hsi_event=hsi_event,
+                        cons_req_as_footprint=consumables_syphilis_treatment)
 
-                if outcome_of_request_for_consumables_treatment['Item_Code'][item_code_benpen]:
-                    df.at[person_id, 'ps_syphilis'] = False
-                    logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_treat'})
+                    if outcome_of_request_for_consumables_treatment['Item_Code'][item_code_benpen]:
+                        df.at[person_id, 'ps_syphilis'] = False
+                        logger.info(key='anc_interventions', data={'mother': person_id,
+                                                                   'intervention': 'syphilis_treat'})
 
     def hiv_testing(self, hsi_event):
         """
@@ -970,18 +1004,23 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        params = self.current_parameters
         person_id = hsi_event.target
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        if 'Hiv' in self.sim.modules:
-            if ~df.at[person_id, 'hv_diagnosed']:
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                   HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
-                   topen=self.sim.date,
-                   tclose=None,
-                   priority=0)
+        if 'hiv' in mni[person_id]['anc_ints']:
+            return
+        else:
+            mni[person_id]['anc_ints'].append('hiv')
 
-            logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hiv_screen'})
+            if 'Hiv' in self.sim.modules:
+                if ~df.at[person_id, 'hv_diagnosed']:
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                       HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
+                       topen=self.sim.date,
+                       tclose=None,
+                       priority=0)
+
+                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hiv_screen'})
 
     def iptp_administration(self, hsi_event):
         """
@@ -1025,56 +1064,63 @@ class CareOfWomenDuringPregnancy(Module):
         params = self.current_parameters
         person_id = hsi_event.target
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # todo: it might actually be more realistic to test urine before doing fasting OGGT, cant see if they use finger
         #  prick
+        if 'gdm_screen' in mni[person_id]['anc_ints']:
+            return
+        else:
+            mni[person_id]['anc_ints'].append('gdm_screen')
 
-        # We check if this women has any of the key risk factors, if so they are sent for additional blood tests
-        if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
-                                                                                             'ps_prev_stillbirth']:
+            # We check if this women has any of the key risk factors, if so they are sent for additional blood tests
+            if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
+                                                                                                 'ps_prev_stillbirth']:
 
-            # We define the required consumables for testing
-            item_code_glucose_test = pd.unique(
-                consumables.loc[consumables['Items'] == 'Blood glucose level test', 'Item_Code'])[0]
-            item_code_blood_tube = pd.unique(
-                consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-            item_code_needle = pd.unique(
-                consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-            item_code_gloves = pd.unique(
-                consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+                # We define the required consumables for testing
+                item_code_glucose_test = pd.unique(
+                    consumables.loc[consumables['Items'] == 'Blood glucose level test', 'Item_Code'])[0]
+                item_code_blood_tube = pd.unique(
+                    consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+                item_code_needle = pd.unique(
+                    consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+                item_code_gloves = pd.unique(
+                    consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
 
-            consumables_gdm_testing = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {item_code_glucose_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
-                              item_code_gloves: 1}}
+                consumables_gdm_testing = {
+                    'Intervention_Package_Code': {},
+                    'Item_Code': {item_code_glucose_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
+                                  item_code_gloves: 1}}
 
-            # Then query if these consumables are available during this HSI
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=hsi_event,
-                cons_req_as_footprint=consumables_gdm_testing)
+                # Then query if these consumables are available during this HSI
+                outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=hsi_event,
+                    cons_req_as_footprint=consumables_gdm_testing)
 
-            # We log all the consumables required above but we only condition the event test happening on the
-            # availability of the test itself
-            if outcome_of_request_for_consumables['Item_Code'][item_code_glucose_test] and \
-                (self.rng.random_sample() < params['prob_intervention_delivered_gdm_test']):
+                # We log all the consumables required above but we only condition the event test happening on the
+                # availability of the test itself
+                if outcome_of_request_for_consumables['Item_Code'][item_code_glucose_test] and \
+                    (self.rng.random_sample() < params['prob_intervention_delivered_gdm_test']):
 
-                # If the test accurately detects a woman has gestational diabetes the consumables are recorded and she
-                # is referred for treatment
-                if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_glucose',
-                                                                           hsi_event=hsi_event):
+                    # If the test accurately detects a woman has gestational diabetes the consumables are recorded and
+                    # she
+                    # is referred for treatment
+                    if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_glucose',
+                                                                               hsi_event=hsi_event):
 
-                    logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'gdm_screen'})
+                        logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'gdm_screen'})
 
-                    # We assume women with a positive GDM screen will be admitted (if they are not already receiving
-                    # outpatient care)
-                    if df.at[person_id, 'ac_gest_diab_on_treatment'] == 'none':
+                        # We assume women with a positive GDM screen will be admitted (if they are not already receiving
+                        # outpatient care)
+                        if df.at[person_id, 'ac_gest_diab_on_treatment'] == 'none':
 
-                        # Store onset after diagnosis as daly weight is tied to diagnosis
-                        self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(person_id, 'gest_diab_onset')
+                            # Store onset after diagnosis as daly weight is tied to diagnosis
+                            self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(person_id, 'gest_diab_onset')
 
-                        df.at[person_id, 'ac_to_be_admitted'] = True
+                            df.at[person_id, 'ac_to_be_admitted'] = True
 
-                        logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'admission'})
+                            logger.info(key='anc_interventions', data={'mother': person_id,
+                                                                       'intervention': 'admission'})
 
     def anc_catch_up_interventions(self, hsi_event):
         """This function contains a collection of interventions that are delivered to women who present to ANC at later
@@ -1743,8 +1789,9 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             # event
             assert mother.ac_total_anc_visits_current_pregnancy == 0
 
-            anc_1_mni_row = {'ga_anc_one': df.at[person_id, 'ps_gestational_age_in_weeks']}
-            self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id].update(anc_1_mni_row)
+            anc_rows = {'ga_anc_one': df.at[person_id, 'ps_gestational_age_in_weeks'],
+                        'anc_ints': []}
+            self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id].update(anc_rows)
 
             logger.info(key='anc1', data={'mother': person_id,
                                           'gestation': df.at[person_id, 'ps_gestational_age_in_weeks']})
@@ -1847,6 +1894,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -1859,7 +1907,6 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                                                                gest_age_next_contact=gest_age_next_contact)
 
         if can_anc_run:
-
             logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
             logger.debug(key='msg', data=f'mother {person_id}presented for ANC 2 at a '
                                          f'{df.at[person_id, "ac_facility_type"]} at gestation '
@@ -1884,6 +1931,8 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
                                                      recommended_gestation_next_anc=gest_age_next_contact,
                                                      facility_level=self.ACCEPTED_FACILITY_LEVEL)
+
+            # todo: were providing the interventions again to people who have been caught up
 
             # Then we administer interventions that are due to be delivered at this womans gestational age, which may be
             # in addition to intervention delivered in ANC2
@@ -2030,11 +2079,7 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FourthAntenatalCareContact'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
@@ -2206,11 +2251,7 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SixthAntenatalCareContact'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
@@ -2365,11 +2406,7 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_EighthAntenatalCareContact'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
@@ -2432,11 +2469,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -2470,11 +2503,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_MaternalEmergencyAssessment'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -2802,11 +2831,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -2867,11 +2892,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_AntenatalOutpatientFollowUp'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 

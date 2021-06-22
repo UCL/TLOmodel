@@ -100,6 +100,8 @@ class NewbornOutcomes(Module):
             Types.LIST, 'relative risk of EONS in preterm newborns'),
         'cfr_neonatal_sepsis': Parameter(
             Types.LIST, 'case fatality rate for a neonate due to neonatal sepsis'),
+        'cfr_late_onset_neonatal_sepsis': Parameter(
+            Types.LIST, 'case fatality rate for a neonate due to neonatal sepsis'),
 
         # NOT BREATHING AT BIRTH....
         'prob_failure_to_transition': Parameter(
@@ -303,6 +305,7 @@ class NewbornOutcomes(Module):
         'nb_clean_birth': Property(Types.BOOL, 'whether this neonate received clean birth practices at delivery'),
         'nb_received_cord_care': Property(Types.BOOL, 'whether this neonate received chlorhexidine cord care'),
         'nb_death_after_birth': Property(Types.BOOL, 'whether this child has died following complications after birth'),
+        'nb_pnc_check': Property(Types.INT, 'Number of postnatal checks received in the postnatal period'),
     }
 
     def read_parameters(self, data_folder):
@@ -367,6 +370,7 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_clean_birth'] = False
         df.loc[df.is_alive, 'nb_received_cord_care'] = False
         df.loc[df.is_alive, 'nb_death_after_birth'] = False
+        df.loc[df.is_alive, 'nb_pnc_check'] = 0
 
         # We store congenital anomalies as bitset
         self.congeintal_anomalies = BitsetHandler(self.sim.population, 'nb_congenital_anomaly',
@@ -649,6 +653,8 @@ class NewbornOutcomes(Module):
         params = self.current_parameters
         child = df.loc[individual_id]
 
+        logger.debug(key='msg', data=f'set_death_status for newborn {individual_id}')
+
         causes = list()
 
         if child.nb_early_onset_neonatal_sepsis or child.pn_sepsis_early_neonatal:
@@ -657,7 +663,7 @@ class NewbornOutcomes(Module):
         if child.pn_sepsis_late_neonatal:
             causes.append('late_onset_neonatal_sepsis')
 
-        if not nci[child]['passed_through_week_one']:
+        if not nci[individual_id]['passed_through_week_one']:
 
             if child.nb_encephalopathy == 'mild_enceph' or child.nb_encephalopathy == 'moderate_enceph' or \
                child.nb_encephalopathy == 'severe_enceph':
@@ -719,13 +725,16 @@ class NewbornOutcomes(Module):
 
                 if cause_of_death == 'preterm_other':
                     # todo: should death from congential anomalies be scattered over the first few years of life?
+                    # todo: baby could die of another cause before this event runs...(might be better to instantly do
+                    #  the death but instead set a date of death...?
                     # If the death is associated with prematurity we scatter those deaths across the first 2 weeks
                     random_draw = self.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
                                                   p=params['prob_preterm_death_by_day'])
                     death_date = self.sim.date + DateOffset(days=int(random_draw))
                 else:
                     death_date = self.sim.date
-
+                print('nci deleted', individual_id)
+                # todo:
                 del nci[individual_id]
                 self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
                                                                       cause=f'{cause_of_death}'), death_date)
@@ -966,7 +975,6 @@ class NewbornOutcomes(Module):
                             priority=0
                         )
 
-
     def assessment_and_initiation_of_neonatal_resus(self, hsi_event, facility_type):
         """
         This function manages the diagnosis of failure to transition/encephalopathy and the administration of neonatal
@@ -1146,14 +1154,16 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_encephalopathy'] = 'none'
         df.at[child_id, 'nb_encephalopathy_disab'] = 'none'
         df.at[child_id, 'nb_retinopathy_prem'] = 'none'
-        df.at[child_id, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
-        df.at[child_id, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
+        df.at[child_id, 'nb_low_birth_weight_status'] = mni[mother_id]['birth_weight']
+        df.at[child_id, 'nb_size_for_gestational_age'] = mni[mother_id]['birth_size']
         df.at[child_id, 'nb_early_init_breastfeeding'] = False
         df.at[child_id, 'nb_breastfeeding_status'] = 'none'
         df.at[child_id, 'nb_kangaroo_mother_care'] = False
         df.at[child_id, 'nb_clean_birth'] = False
         df.at[child_id, 'nb_received_cord_care'] = False
         df.at[child_id, 'nb_death_after_birth'] = False
+        df.at[child_id, 'nb_pnc_check'] = 0
+
 
         child = df.loc[child_id]
 
@@ -1190,22 +1200,14 @@ class NewbornOutcomes(Module):
                              'sought_care_for_complication': False,
                              'cause_of_death_after_birth': [],
                              'sepsis_postnatal': False,
-                             'passed_through_week_one': False}
+                             'passed_through_week_one': False,
+                             'will_receive_pnc': 'none'}
 
             if mni[mother_id]['clean_birth_practices']:
                 df.at[child_id, 'nb_clean_birth'] = True
 
             # Check these variables are not unassigned
             assert nci[child_id]['delivery_setting'] != 'none'
-
-            # --------------------------------------- Birth weight  -------------------------------------------------
-            # We store a child's birth weight and size as properties of the individual, weight and side are calculated
-            # as when labour onsets
-            df.at[child_id, 'nb_low_birth_weight_status'] = mni[mother_id]['birth_weight']
-            df.at[child_id, 'nb_size_for_gestational_age'] = mni[mother_id]['birth_size']
-            logger.debug(key='msg', data=f'Child {child_id} has been born'
-                                         f'{df.at[child_id, "nb_low_birth_weight_status"]} and '
-                                         f'{df.at[child_id, "nb_size_for_gestational_age"]}')
 
             # --------------------------------------- Breastfeeding -------------------------------------------------
             # Check see if this newborn will start breastfeeding
@@ -1259,12 +1261,13 @@ class NewbornOutcomes(Module):
             # ========================================== POSTNATAL CHECK  =============================================
             # Finally we determine if this neonate will receive a full postnatal check following their birth and how
             # promptly
-
             if (self.rng.random_sample() < params['prob_pnc_check_newborn']) or (m['pnc_twin_one'] != 'none'):
 
                 timing = self.rng.choice(['<48', '>48'], p=params['prob_timings_pnc_newborns'])
 
-                if timing == '<48' or (m['pnc_twin_one'] == 'early'):
+                if (timing == '<48') or (m['pnc_twin_one'] == 'early'):
+                    nci[child_id]['will_receive_pnc'] = 'early'
+
                     if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
                         m['pnc_twin_one'] = 'early'
 
@@ -1273,16 +1276,19 @@ class NewbornOutcomes(Module):
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         early_event, priority=0,
-                        topen=self.sim.date + DateOffset(days=1),
-                        tclose=self.sim.date + DateOffset(days=2))
+                        topen=self.sim.date,
+                        tclose=None)
 
                 else:
-                    nci[child_id]['future_pnc_check'] = True
+                    nci[child_id]['will_receive_pnc'] = 'late'
                     if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
                         m['pnc_twin_one'] = 'late'
 
-            self.sim.schedule_event(EarlyNewbornDeathEvent(self, child_id), self.sim.date +
-                                    DateOffset(days=3))
+                assert nci[child_id]['will_receive_pnc'] != 'none'
+
+            else:
+                if nci[child_id]['delivery_setting'] == 'home_birth':
+                    self.set_death_status(child_id)
 
             # todo mother could have come to facility for pn care
             # todo: if comps then PNC much more likely to be sought
@@ -1345,24 +1351,6 @@ class NewbornOutcomes(Module):
         return health_values_df
 
 
-class EarlyNewbornDeathEvent(Event, IndividualScopeEventMixin):
-    """
-    This is EarlyNewbornDeathEvent. This event applies the set_death_status function to all newborns after they have
-    been delivered and have/have not received any treatments/interventions
-    """
-
-    def __init__(self, module, individual_id):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        logger.debug(key='msg', data='Newborn death event running')
-
-        # Todo: this could be population level but would need to run daily
-        # todo: possible a newborn could return for PNC1 before this happened?
-
-        self.module.set_death_status(individual_id)
-
-
 class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, IndividualScopeEventMixin):
     """
     This is HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth. It is scheduled by on_birth for any newborns
@@ -1386,7 +1374,9 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, I
         df = self.sim.population.props
         params = self.module.current_parameters
 
-        # Check that only facility deliveries receive SBA
+        # Run some checks on the individual
+        assert self.sim.date == df.at[person_id, 'date_of_birth']
+        assert not df.at[person_id, 'nb_death_after_birth']
         assert nci[person_id]['delivery_setting'] != 'home_birth'
 
         if not df.at[person_id, 'is_alive']:
@@ -1402,6 +1392,9 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, I
 
         if squeeze_factor < params['squeeze_threshold_neonatal_resus']:
             self.module.assessment_and_initiation_of_neonatal_resus(self, facility_type_code)
+
+        if not nci[person_id]['will_receive_pnc'] == 'early':
+            self.module.set_death_status(person_id)
 
     def did_not_run(self):
         person_id = self.target
@@ -1440,11 +1433,22 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         df = self.sim.population.props
         params = self.module.current_parameters
 
+        if not df.at[person_id, 'is_alive'] or df.at[person_id, 'nb_death_after_birth'] or (person_id not in nci):
+            return
+
+        if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
+            assert self.sim.date == df.at[person_id, 'date_of_birth']
+            assert df.at[person_id, 'nb_pnc_check'] == 0
+
+        elif nci[person_id]['will_receive_pnc'] == 'late' and not nci[person_id]['passed_through_week_one']:
+            assert self.sim.date >= (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2))
+            assert df.at[person_id, 'nb_pnc_check'] == 0
+
         # Log the PNC check
         logger.info(key='postnatal_check', data={'person_id': person_id,
-                                                 'mother_or_newborn': 'newborn',
-                                                 'delivery_setting': nci[person_id]['delivery_setting']})
-                                                 #'timing': '<48'})
+                                                 'delivery_setting': nci[person_id]['delivery_setting'],
+                                                 'visit_number': df.at[person_id, 'nb_pnc_check'],
+                                                 'timing': nci[person_id]['will_receive_pnc']})
 
         df.at[person_id, 'nb_pnc_check'] += 1
 
@@ -1477,8 +1481,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
                 self.module.immunisations(person_id)
                 self.module.hiv_screening_for_at_risk_newborns(person_id)
 
-            if nci[person_id]['passed_through_week_one']:
-                self.module.set_death_status(person_id)
+        self.module.set_death_status(person_id)
 
         # Surviving neonates with complications on day 1 are admitted to the inpatient event which lives in the
         # Postnatal Supervisor module
@@ -1486,7 +1489,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             or df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm']:
 
             event = HSI_NewbornOutcomes_NeonatalWardInpatientCare(
-                    self.sim.modules['PostnatalSupervisor'], person_id=person_id)
+                    self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=self.sim.date, tclose=None)
 
     def did_not_run(self):

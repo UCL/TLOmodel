@@ -52,15 +52,6 @@ def predict_secondary_postpartum_haem(self, df, rng=None, **externals):
     return result
 
 
-def predict_secondary_postpartum_haem_death(self, df, rng=None, **externals):
-    """population level"""
-    params = self.parameters
-    result = pd.Series(data=params['cfr_secondary_postpartum_haemorrhage_pn'], index=df.index)
-    result[df.pn_postpartum_haem_secondary_treatment] *= params['treatment_effect_bemonc_care_pph']
-
-    return result
-
-
 def predict_sepsis_endometritis_late_postpartum(self, df, rng=None, **externals):
     """population level"""
     params = self.parameters
@@ -84,15 +75,6 @@ def predict_sepsis_sst_late_postpartum(self, df, rng=None, **externals):
     return result
 
 
-def predict_postnatal_sepsis_death(self, df, rng=None, **externals):
-    """population level"""
-    params = self.parameters
-    result = pd.Series(data=params['cfr_postpartum_sepsis_pn'], index=df.index)
-    result[df.pn_sepsis_late_postpartum_treatment] *= params['treatment_effect_parenteral_antibiotics']
-
-    return result
-
-
 def predict_gest_htn_pn(self, df, rng=None, **externals):
     """population level"""
     params = self.parameters
@@ -111,16 +93,6 @@ def predict_pre_eclampsia_pn(self, df, rng=None, **externals):
     result[df.li_bmi == 5] *= params['rr_gest_htn_obesity']
     result[df.nc_hypertension] *= params['rr_gest_htn_obesity']
     result[df.nc_diabetes] *= params['rr_gest_htn_obesity']
-
-    return result
-
-
-def predict_eclampsia_death_pn(self, df, rng=None, **externals):
-    """population level"""
-    params = self.parameters
-    result = pd.Series(data=params['cfr_eclampsia_pn'], index=df.index)
-    result[df.pn_iv_anti_htn_treatment] *= params['treatment_effect_anti_htns']
-    result[df.pn_mag_sulph_treatment] *= params['treatment_effect_mag_sulph']
 
     return result
 
@@ -176,29 +148,11 @@ def predict_early_onset_neonatal_sepsis_week_1(self, df, rng=None, **externals):
     return result
 
 
-def predict_early_onset_neonatal_sepsis_week_1_death(self, df, rng=None, **externals):
-    """population level"""
-    params = self.parameters
-    result = pd.Series(data=params['cfr_early_onset_neonatal_sepsis'], index=df.index)
-    result[df.pn_sepsis_neonatal_inj_abx] *= params['treatment_effect_inj_abx_sep']
-    result[df.pn_sepsis_neonatal_full_supp_care] *= params['treatment_effect_supp_care_sep']
-    return result
-
-
 def predict_late_onset_neonatal_sepsis(self, df, rng=None, **externals):
     """population level"""
     params = self.parameters
     result = pd.Series(data=params['prob_late_onset_neonatal_sepsis'], index=df.index)
     result[df.nb_early_init_breastfeeding] *= params['treatment_effect_early_init_bf']
-    return result
-
-
-def predict_late_neonatal_sepsis_death(self, df, rng=None, **externals):
-    """population level"""
-    params = self.parameters
-    result = pd.Series(data=params['cfr_late_neonatal_sepsis'], index=df.index)
-    result[df.pn_sepsis_neonatal_inj_abx] *= params['treatment_effect_inj_abx_sep']
-    result[df.pn_sepsis_neonatal_full_supp_care] *= params['treatment_effect_supp_care_sep']
     return result
 
 
