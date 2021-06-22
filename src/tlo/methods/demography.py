@@ -74,6 +74,25 @@ class Demography(Module):
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
         'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident'),
 
+        # the categories of these properties are set in `pre_initialise_population`
+        'cause_of_death': Property(
+            Types.CATEGORICAL,
+            'The cause of death of this individual (the tlo_cause defined by the module)',
+            categories=['SET_AT_RUNTIME']
+        ),
+
+        'district_of_residence': Property(
+            Types.CATEGORICAL,
+            'The district (name) of residence (mapped from district_num_of_residence).',
+            categories=['SET_AT_RUNTIME']
+        ),
+
+        'region_of_residence': Property(
+            Types.CATEGORICAL,
+            'The region of residence (mapped from district_num_of_residence).',
+            categories=['SET_AT_RUNTIME']
+        ),
+
         # Age calculation is handled by demography module
         'age_exact_years': Property(Types.REAL, 'The age of the individual in exact years'),
         'age_years': Property(Types.INT, 'The age of the individual in years'),
@@ -135,7 +154,7 @@ class Demography(Module):
         # 1) Process the declarations of causes of death made by the disease modules
         self.process_causes_of_death()
 
-        # 2) Define categorical properties for 'cause_of_death', 'region_of_residence' and 'district_of_residence'
+        # 2) Update the properties for 'cause_of_death', 'region_of_residence' and 'district_of_residence'
         # Nb. This couldn't be done before categories for each of these has been determined following read-in of data
         # and initialising of other modules.
         self.PROPERTIES['cause_of_death'] = Property(
@@ -631,7 +650,7 @@ def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False
 
     NB. This file gives precedence to the Malawi Population Census
 
-    :param parsed_outoput: The outputs from parse_output
+    :param parsed_output: The outputs from parse_output
     :param resourcefilepath: The resourcefilepath
     :return: a new version of parsed_output that includes certain variables scaled
     """
