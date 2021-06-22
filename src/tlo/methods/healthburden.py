@@ -187,7 +187,7 @@ class HealthBurden(Module):
 
         return yld.add(yll, fill_value=0)
 
-    def get_daly_weight(self, sequela_code):
+    def get_daly_weight(self, sequlae_code):
         """
         This can be used to look up the DALY weight for a particular condition identified by the 'sequela code'
         Sequela code for particular conditions can be looked-up in ResourceFile_DALY_Weights.csv
@@ -195,7 +195,7 @@ class HealthBurden(Module):
         :return: the daly weight associated with that sequela code
         """
         w = self.parameters['DALY_Weight_Database']
-        daly_wt = w.loc[w['TLO_Sequela_Code'] == sequela_code, 'disability weight'].values[0]
+        daly_wt = w.loc[w['TLO_Sequela_Code'] == sequlae_code, 'disability weight'].values[0]
 
         # Check that the sequela code was found
         assert (not pd.isnull(daly_wt))
