@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from tlo.analysis.utils import get_scenario_outputs, parse_log_file
+from tlo.analysis.utils import parse_log_file
 from tlo.methods.rti import RTI
 
 
@@ -1923,6 +1923,7 @@ def rti_format_data_from_azure_runs(stub, loc_in_outputs, results_folder):
                             'total_in_rti': total,
                             'percent_attributable_to_alcohol': mean_variation_percent_attributable_to_alc,
                             'number_perm_disabled': variation_n_permanently_disabled,
+                            'mean_n_perm_disabled': mean_variation_n_permanently_disabled,
                             'number_of_deaths_pre_hospital': variation_n_imm_death,
                             'number_of_deaths_in_hospital': variation_n_death_post_med,
                             'number_of_deaths_no_med': variation_n_death_without_med,
