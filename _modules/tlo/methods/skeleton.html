@@ -175,6 +175,7 @@
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
@@ -208,6 +209,20 @@
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_SYMPTOMMANAGER</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHSYSTEM</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHBURDEN</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Death</span>
+    <span class="n">CAUSES_OF_DEATH</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;tlo_name_of_a_cause_of_death_in_this_module&#39;</span><span class="p">:</span>
+            <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;set_of_strings_of_gbd_causes_to_which_this_cause_corresponds&#39;</span><span class="p">},</span>
+                  <span class="n">label</span><span class="o">=</span><span class="s1">&#39;the_category_of_which_this_cause_is_a_part&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Disability</span>
+    <span class="n">CAUSES_OF_DISABILITY</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;tlo_name_of_a_cause_of_disability_in_this_module&#39;</span><span class="p">:</span>
+            <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;set_of_strings_of_gbd_causes_to_which_this_cause_corresponds&#39;</span><span class="p">},</span>
+                  <span class="n">label</span><span class="o">=</span><span class="s1">&#39;the_category_of_which_this_cause_is_a_part&#39;</span><span class="p">)</span>
     <span class="p">}</span>
 
     <span class="c1"># Here we declare parameters for this module. Each parameter has a name, data type,</span>
@@ -279,8 +294,9 @@
 <div class="viewcode-block" id="Skeleton.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been</span>
         <span class="c1"># experienced by persons in the previous month. Only rows for alive-persons must be returned.</span>
-        <span class="c1"># The names of the series of columns is taken to be the label of the cause of this disability.</span>
-        <span class="c1"># It will be recorded by the healthburden module as &lt;ModuleName&gt;_&lt;Cause&gt;.</span>
+        <span class="c1"># If multiple causes in CAUSES_OF_DISABILITY are defined, a pd.DataFrame must be returned with a column</span>
+        <span class="c1"># corresponding to each cause (but if only one cause in CAUSES_OF_DISABILITY is defined, the pd.Series does not</span>
+        <span class="c1"># need to be given a specific name).</span>
 
         <span class="c1"># To return a value of 0.0 (fully health) for everyone, use:</span>
         <span class="c1"># df = self.sim.popultion.props</span>
@@ -437,7 +453,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

@@ -85,6 +85,8 @@ tlo.methods.healthseekingbehaviour module
 
      .. automethod:: on_birth
 
+     .. automethod:: define_linear_models
+
 
 
 

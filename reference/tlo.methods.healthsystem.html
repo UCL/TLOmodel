@@ -515,25 +515,32 @@ Daily_Capabilities.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_squeeze_factors">
-<span class="sig-name descname"><span class="pre">get_squeeze_factors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_calls_today</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_capabilities</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_squeeze_factors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_squeeze_factors" title="Permalink to this definition">¶</a></dt>
-<dd><p>This will compute the squeeze factors for each HSI event from the dataframe that lists all the calls on health
-system resources for the day.
-The squeeze factor is defined as (call/available - 1). ie. the highest fractional over-demand among any type of
-officer that is called-for in the appt_footprint of an HSI event.
-A value of 0.0 signifies that there is no squeezeing (sufficient resources for the EXPECTED_APPT_FOOTPRINT).
-A value of 99.99 signifies that the call is for an officer_type in a health-facility that is not available.</p>
+<span class="sig-name descname"><span class="pre">get_squeeze_factors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">footprints_per_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_footprint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_capabilities</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_squeeze_factors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_squeeze_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>This will compute the squeeze factors for each HSI event from the list of all
+the calls on health system resources for the day.
+The squeeze factor is defined as (call/available - 1). ie. the highest
+fractional over-demand among any type of officer that is called-for in the
+appt_footprint of an HSI event.
+A value of 0.0 signifies that there is no squeezing (sufficient resources for
+the EXPECTED_APPT_FOOTPRINT).
+A value of 99.99 signifies that the call is for an officer_type in a
+health-facility that is not available.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>all_calls_today</strong> – Dataframe, one column per HSI event, containing the minutes required from each health
-officer in each health facility (using the standard index)</p></li>
-<li><p><strong>current_capabilities</strong> – Dataframe giving the amount of time available from each health officer in each
-health facility (using the standard index)</p></li>
+<li><p><strong>footprints_per_event</strong> – List, one entry per HSI event, containing the
+minutes required from each health officer in each health facility as a
+Counter (using the standard index)</p></li>
+<li><p><strong>total_footprint</strong> – Counter, containing the total minutes required from
+each health officer in each health facility when non-zero, (using the
+standard index)</p></li>
+<li><p><strong>current_capabilities</strong> – Dataframe giving the amount of time available from
+each health officer in each health facility (using the standard index)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>squeeze_factors: a list of the squeeze factors for each HSI event
-(position in list matches column number in the all_call_today dataframe).</p>
+<dd class="field-even"><p>squeeze_factors: an array of the squeeze factors for each HSI event
+(position in array matches that in the all_call_today list).</p>
 </dd>
 </dl>
 </dd></dl>
@@ -607,11 +614,11 @@ If this is an individual-level HSI event, it will also record the actual appoint
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.log_current_capabilities">
-<span class="sig-name descname"><span class="pre">log_current_capabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_capabilities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_calls_today</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.log_current_capabilities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.log_current_capabilities" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">log_current_capabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_capabilities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_footprint</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.log_current_capabilities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.log_current_capabilities" title="Permalink to this definition">¶</a></dt>
 <dd><p>This will log the percentage of the current capabilities that is used at each Facility Type
 NB. To get this per Officer_Type_Code, it would be possible to simply log the entire current_capabilities df.
 :param current_capabilities: the current_capabilities of the health system.
-:param all_calls_today: dataframe of all the HSI events that ran</p>
+:param total_footprint: Per-officer totals of footprints of all the HSI events that ran</p>
 </dd></dl>
 
 <dl class="py method">
@@ -797,7 +804,7 @@ The overall Prioritation algorithm is:</p>
 <p>Concrete subclasses should also inherit from one of the EventMixin classes
 defined below, and implement at least an <cite>apply</cite> and <cite>did_not_run</cite> method.</p>
 <p><strong>Class attributes:</strong></p>
-<p>bed_days_allocated_to_this_event : &lt;property object at 0x7fb4fbcc0d60&gt;</p>
+<p>bed_days_allocated_to_this_event : &lt;property object at 0x7fc30053eea0&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.__init__">
@@ -933,7 +940,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

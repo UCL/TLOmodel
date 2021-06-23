@@ -294,7 +294,13 @@
         <span class="c1"># add an event to log to screen</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">EpiLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="c1"># HPV vaccine given from 2018 onwards</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">HpvScheduleEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="s2">&quot;2018/01/01&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;%Y/%m/</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">))</span></div>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">HpvScheduleEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="s2">&quot;2018/01/01&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;%Y/%m/</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">))</span>
+
+        <span class="c1"># Update paramerer &quot;district_vaccine_coverage&quot; to use district_num rather than the name of the district;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;district_vaccine_coverage&quot;</span><span class="p">][</span><span class="s2">&quot;District&quot;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;district_vaccine_coverage&quot;</span><span class="p">][</span><span class="s2">&quot;District&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+                <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;district_num_to_district_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Epi.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.Epi.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual</span>
@@ -322,7 +328,7 @@
 
         <span class="c1"># look up coverage of every vaccine</span>
         <span class="c1"># anything delivered after 12months needs the estimate from the following year</span>
-        <span class="n">district</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;district_of_residence&#39;</span><span class="p">]</span>
+        <span class="n">district</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">]</span>
 
         <span class="c1"># Initialise all the properties that this module looks after:</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;va_bcg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
@@ -899,7 +905,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

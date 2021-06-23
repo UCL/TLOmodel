@@ -340,6 +340,10 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
+     CAUSES_OF_DEATH : {'maternal': <tlo.methods.causes.Cause object at 0x7fc302062820>}
+
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7fc3020628b0>}
+
      METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      **Functions (defined or overridden in class PregnancySupervisor):**

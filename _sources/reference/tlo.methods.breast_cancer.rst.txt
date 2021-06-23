@@ -133,7 +133,11 @@ tlo.methods.breast_cancer module
 
      **Class attributes:**
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+     CAUSES_OF_DEATH : {'BreastCancer': <tlo.methods.causes.Cause object at 0x7fc3005f24f0>}
+
+     CAUSES_OF_DISABILITY : {'BreastCancer': <tlo.methods.causes.Cause object at 0x7fc3005f2580>}
+
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      **Functions (defined or overridden in class BreastCancer):**
 

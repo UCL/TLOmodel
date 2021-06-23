@@ -287,8 +287,7 @@ generator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.read_parameters">
 <span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.read_parameters" title="Permalink to this definition">¶</a></dt>
-<dd><p>Construct the LinearModel for healthcare seeking of the ‘average symptom’.
-This is from the Ng’ambia et al.</p>
+<dd><p>Read in ResourceFile</p>
 </dd></dl>
 
 <dl class="py method">
@@ -301,6 +300,7 @@ This is from the Ng’ambia et al.</p>
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_simulation">
 <span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_simulation" title="Permalink to this definition">¶</a></dt>
 <dd><ul class="simple">
+<li><p>define the linear models that govern healthcare seeking</p></li>
 <li><p>set the first occurrence of the repeating HealthSeekingBehaviourPoll</p></li>
 <li><p>assemble the health-care seeking information from the symptoms that have been registered</p></li>
 </ul>
@@ -310,6 +310,13 @@ This is from the Ng’ambia et al.</p>
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.on_birth">
 <span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.on_birth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Nothing to handle on_birth</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.define_linear_models">
+<span class="sig-name descname"><span class="pre">define_linear_models</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour.define_linear_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.define_linear_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct the LinearModel for healthcare seeking of the ‘average symptom’.
+This is from the Ng’ambia et al. papers</p>
 </dd></dl>
 
 </dd></dl>
@@ -357,7 +364,7 @@ This is from the Ng’ambia et al.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

@@ -289,6 +289,26 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_adults</span> <span class="o">=</span> <span class="n">odds_ratio_health_seeking_in_adults</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span> <span class="o">=</span> <span class="n">odds_ratio_health_seeking_in_children</span>
 
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Define the basis upon which tests of equivalence are made for Symptom objects.</span>
+<span class="sd">        NB. This seems neccessary to enable to checking of equivalency between symptoms registered in different</span>
+<span class="sd">        places. Without this two instance of the object with the same properties are not recognised as being the &#39;same&#39;.</span>
+<span class="sd">        This is done in conjunction with over-riding the hash property.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Symptom</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">==</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;no_healthcareseeking_in_children&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;no_healthcareseeking_in_adults&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;emergency_in_adults&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;emergency_in_children&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;odds_ratio_health_seeking_in_adults&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;odds_ratio_health_seeking_in_children&#39;</span><span class="p">]</span>
+             <span class="p">])</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Override the hash function to force set to rely on __eq__.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
 
 <span class="k">class</span> <span class="nc">DuplicateSymptomWithNonIdenticalPropertiesError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -749,8 +769,7 @@
             <span class="s1">&#39;adults&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">15</span><span class="p">)]</span><span class="o">.</span><span class="n">index</span>
         <span class="p">}</span>
 
-        <span class="c1"># For each generic symptom, impose it on a random sample of persons who do not have that symptom caused by</span>
-        <span class="c1"># SymptomManager currently:</span>
+        <span class="c1"># For each generic symptom, impose it on a random sample of persons who do not have that symptom currently:</span>
         <span class="k">for</span> <span class="n">symp</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">generic_symptoms</span><span class="p">):</span>
             <span class="n">does_not_have_symptom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">who_not_have</span><span class="p">(</span><span class="n">symptom_string</span><span class="o">=</span><span class="n">symp</span><span class="p">)</span>
 
@@ -826,7 +845,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

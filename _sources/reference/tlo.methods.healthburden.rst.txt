@@ -24,6 +24,9 @@ tlo.methods.healthburden module
         * - Age_Limit_For_YLL
           - REAL
           - The age up to which deaths are recorded as having induced a lost of life years
+        * - gbd_causes_of_disability
+          - LIST
+          - List of the strings of causes of disability defined in the GBD data
 
 
 
@@ -41,15 +44,23 @@ tlo.methods.healthburden module
 
      .. automethod:: initialise_simulation
 
+     .. automethod:: process_causes_of_disability
+
      .. automethod:: on_birth
 
      .. automethod:: on_simulation_end
+
+     .. automethod:: compute_dalys
 
      .. automethod:: get_daly_weight
 
      .. automethod:: report_live_years_lost
 
      .. automethod:: decompose_yll_by_age_and_time
+
+     .. automethod:: get_gbd_causes_of_disability_not_represented_in_disease_modules
+
+     .. automethod:: create_mappers_from_causes_of_death_to_label
 
 
 

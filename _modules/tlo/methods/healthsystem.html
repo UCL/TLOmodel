@@ -680,9 +680,8 @@
             <span class="c1"># (ie. Check that this does not demand officers that are never available at a particular facility)</span>
             <span class="n">caps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Daily_Capabilities&#39;</span><span class="p">]</span>
             <span class="n">footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_appt_footprint_as_time_request</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
-
             <span class="n">footprint_is_possible</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">footprint</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span>
-                <span class="n">caps</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">caps</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">footprint</span><span class="o">.</span><span class="n">index</span><span class="p">),</span> <span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+                <span class="n">caps</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">footprint</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">footprint_is_possible</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
                                <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;The expected footprint is not possible with the configuration of officers: &quot;</span>
@@ -785,9 +784,6 @@
 
         <span class="c1"># Get the capabilities data as they are imported</span>
         <span class="n">capabilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Daily_Capabilities&#39;</span><span class="p">]</span>
-
-        <span class="c1"># apply the capabilities_coefficient</span>
-        <span class="n">capabilities</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">capabilities</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_coefficient</span>
 
         <span class="c1"># Create dataframe containing background information about facility and officer types</span>
         <span class="n">facility_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Master_Facilities_List&#39;</span><span class="p">][</span><span class="s1">&#39;Facility_ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
@@ -957,48 +953,53 @@
                     <span class="sa">f</span><span class="s2">&quot;FacilityID_</span><span class="si">{</span><span class="n">the_facility</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">_Officer_</span><span class="si">{</span><span class="n">appt_info</span><span class="o">.</span><span class="n">officer_type</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">]</span> <span class="o">+=</span> <span class="n">appt_info</span><span class="o">.</span><span class="n">time_taken</span>
 
-        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">appt_footprint_times</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">appt_footprint_times</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_squeeze_factors"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_squeeze_factors">[docs]</a>    <span class="k">def</span> <span class="nf">get_squeeze_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_calls_today</span><span class="p">,</span> <span class="n">current_capabilities</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSystem.get_squeeze_factors"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_squeeze_factors">[docs]</a>    <span class="k">def</span> <span class="nf">get_squeeze_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">footprints_per_event</span><span class="p">,</span> <span class="n">total_footprint</span><span class="p">,</span> <span class="n">current_capabilities</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This will compute the squeeze factors for each HSI event from the dataframe that lists all the calls on health</span>
-<span class="sd">        system resources for the day.</span>
-<span class="sd">        The squeeze factor is defined as (call/available - 1). ie. the highest fractional over-demand among any type of</span>
-<span class="sd">        officer that is called-for in the appt_footprint of an HSI event.</span>
-<span class="sd">        A value of 0.0 signifies that there is no squeezeing (sufficient resources for the EXPECTED_APPT_FOOTPRINT).</span>
-<span class="sd">        A value of 99.99 signifies that the call is for an officer_type in a health-facility that is not available.</span>
+<span class="sd">        This will compute the squeeze factors for each HSI event from the list of all</span>
+<span class="sd">        the calls on health system resources for the day.</span>
+<span class="sd">        The squeeze factor is defined as (call/available - 1). ie. the highest</span>
+<span class="sd">        fractional over-demand among any type of officer that is called-for in the</span>
+<span class="sd">        appt_footprint of an HSI event.</span>
+<span class="sd">        A value of 0.0 signifies that there is no squeezing (sufficient resources for</span>
+<span class="sd">        the EXPECTED_APPT_FOOTPRINT).</span>
+<span class="sd">        A value of 99.99 signifies that the call is for an officer_type in a</span>
+<span class="sd">        health-facility that is not available.</span>
 
-<span class="sd">        :param all_calls_today: Dataframe, one column per HSI event, containing the minutes required from each health</span>
-<span class="sd">            officer in each health facility (using the standard index)</span>
-<span class="sd">        :param current_capabilities: Dataframe giving the amount of time available from each health officer in each</span>
-<span class="sd">            health facility (using the standard index)</span>
+<span class="sd">        :param footprints_per_event: List, one entry per HSI event, containing the</span>
+<span class="sd">            minutes required from each health officer in each health facility as a</span>
+<span class="sd">            Counter (using the standard index)</span>
+<span class="sd">        :param total_footprint: Counter, containing the total minutes required from</span>
+<span class="sd">            each health officer in each health facility when non-zero, (using the</span>
+<span class="sd">            standard index)</span>
+<span class="sd">        :param current_capabilities: Dataframe giving the amount of time available from</span>
+<span class="sd">            each health officer in each health facility (using the standard index)</span>
 
-<span class="sd">        :return: squeeze_factors: a list of the squeeze factors for each HSI event</span>
-<span class="sd">            (position in list matches column number in the all_call_today dataframe).</span>
+<span class="sd">        :return: squeeze_factors: an array of the squeeze factors for each HSI event</span>
+<span class="sd">            (position in array matches that in the all_call_today list).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># 1) Compute the load factors</span>
-        <span class="n">total_call</span> <span class="o">=</span> <span class="n">all_calls_today</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># 1) Compute the load factors for each officer type at each facility that is called-upon in this list of HSIs</span>
         <span class="n">total_available</span> <span class="o">=</span> <span class="n">current_capabilities</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span>
+        <span class="n">load_factor</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">officer</span><span class="p">,</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">total_footprint</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">availability</span> <span class="o">=</span> <span class="n">total_available</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">officer</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">availability</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">load_factor</span><span class="p">[</span><span class="n">officer</span><span class="p">]</span> <span class="o">=</span> <span class="mf">99.99</span>
+            <span class="k">elif</span> <span class="n">availability</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">load_factor</span><span class="p">[</span><span class="n">officer</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">load_factor</span><span class="p">[</span><span class="n">officer</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">call</span> <span class="o">/</span> <span class="n">availability</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
-        <span class="n">load_factor</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_call</span> <span class="o">/</span> <span class="n">total_available</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-        <span class="n">load_factor</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">load_factor</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">99.99</span>
-        <span class="n">load_factor</span> <span class="o">=</span> <span class="n">load_factor</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">load_factor</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># 5) Convert these load-factors into an overall &#39;squeeze&#39; signal for eachHSI, based on the highest load-factor</span>
+        <span class="c1"># of any officer required</span>
+        <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="nb">max</span><span class="p">(</span><span class="n">load_factor</span><span class="p">[</span><span class="n">officer</span><span class="p">]</span> <span class="k">for</span> <span class="n">officer</span> <span class="ow">in</span> <span class="n">footprint</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">footprint</span> <span class="ow">in</span> <span class="n">footprints_per_event</span>
+        <span class="p">])</span>
 
-        <span class="c1"># 5) Convert these load-factors into an overall &#39;squeeze&#39; signal for each appointment_type requested</span>
-        <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>  <span class="c1"># The &quot;squeeze factor&quot; for each HSI event</span>
-        <span class="c1"># [based on the highest load-factor of any officer required]</span>
-
-        <span class="k">for</span> <span class="n">col_num</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_calls_today</span><span class="o">.</span><span class="n">columns</span><span class="p">)):</span>
-            <span class="n">load_factor_per_officer_needed</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-            <span class="n">officers_needed</span> <span class="o">=</span> <span class="n">all_calls_today</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">all_calls_today</span><span class="p">[</span><span class="n">col_num</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">col_num</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">officers_needed</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">officer</span> <span class="ow">in</span> <span class="n">officers_needed</span><span class="p">:</span>
-                <span class="n">load_factor_per_officer_needed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">load_factor</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">officer</span><span class="p">])</span>
-            <span class="n">squeeze_factor_per_hsi_event</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">load_factor_per_officer_needed</span><span class="p">))</span>
-
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">squeeze_factor_per_hsi_event</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_calls_today</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">squeeze_factor_per_hsi_event</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">squeeze_factor_per_hsi_event</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">squeeze_factor_per_hsi_event</span></div>
 
@@ -1222,22 +1223,24 @@
             <span class="n">log_info</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">store_of_hsi_events_that_have_run</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log_info</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.log_current_capabilities"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_current_capabilities">[docs]</a>    <span class="k">def</span> <span class="nf">log_current_capabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_capabilities</span><span class="p">,</span> <span class="n">all_calls_today</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSystem.log_current_capabilities"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_current_capabilities">[docs]</a>    <span class="k">def</span> <span class="nf">log_current_capabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_capabilities</span><span class="p">,</span> <span class="n">total_footprint</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This will log the percentage of the current capabilities that is used at each Facility Type</span>
 <span class="sd">        NB. To get this per Officer_Type_Code, it would be possible to simply log the entire current_capabilities df.</span>
 <span class="sd">        :param current_capabilities: the current_capabilities of the health system.</span>
-<span class="sd">        :param all_calls_today: dataframe of all the HSI events that ran</span>
+<span class="sd">        :param total_footprint: Per-officer totals of footprints of all the HSI events that ran</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># Combine the current_capabiliites and the sum-across-columns of all_calls_today</span>
-        <span class="n">comparison</span> <span class="o">=</span> <span class="n">current_capabilities</span><span class="p">[[</span><span class="s1">&#39;Facility_ID&#39;</span><span class="p">,</span> <span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
-            <span class="n">all_calls_today</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span>
-        <span class="p">)</span>
-        <span class="n">comparison</span> <span class="o">=</span> <span class="n">comparison</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;Minutes_Used&#39;</span><span class="p">})</span>
+        <span class="c1"># Combine the current_capabiliites and total_footprint per-officer totals</span>
+        <span class="n">total_calls_per_officer</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">total_footprint</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span>
+        <span class="n">comparison</span> <span class="o">=</span> <span class="n">current_capabilities</span><span class="p">[[</span><span class="s1">&#39;Facility_ID&#39;</span><span class="p">,</span> <span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">comparison</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_calls_per_officer</span>
+        <span class="n">comparison</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">total_calls</span> <span class="o">=</span> <span class="n">total_calls_per_officer</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">comparison</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_capabilities</span><span class="p">)</span>
         <span class="k">assert</span> <span class="p">(</span>
-            <span class="nb">abs</span><span class="p">(</span><span class="n">comparison</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="n">all_calls_today</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">&lt;=</span> <span class="mf">0.0001</span> <span class="o">*</span> <span class="n">all_calls_today</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="nb">abs</span><span class="p">(</span><span class="n">comparison</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="n">total_calls</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">0.0001</span> <span class="o">*</span> <span class="n">total_calls</span>
         <span class="p">)</span>
 
         <span class="c1"># Sum within each Facility_ID using groupby (Index of &#39;summary&#39; is Facility_ID)</span>
@@ -1559,39 +1562,37 @@
         <span class="n">current_capabilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_capabilities_today</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">list_of_individual_hsi_event_tuples_due_today</span><span class="p">:</span>
-            <span class="c1"># empty dataframe for logging</span>
-            <span class="n">df_footprints_of_all_individual_level_hsi_event</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">current_capabilities</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="c1"># Empty counter for log_current_capabilities call below</span>
+            <span class="n">total_footprint</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># 4) Examine total call on health officers time from the HSI events that are due today</span>
 
             <span class="c1"># For all events in &#39;list_of_individual_hsi_event_tuples_due_today&#39;,</span>
-            <span class="c1"># expand the appt-footprint of the event into give the demands on</span>
-            <span class="c1"># each officer-type in each facility_id. [Name of columns is the position in the list of event_due_today)</span>
+            <span class="c1"># expand the appt-footprint of the event to give the demands on</span>
+            <span class="c1"># each officer-type in each facility_id.</span>
 
-            <span class="n">footprints_of_all_individual_level_hsi_event</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">event_number</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_appt_footprint_as_time_request</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="p">(</span><span class="n">event_tuple</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
-                <span class="k">for</span> <span class="n">event_number</span><span class="p">,</span> <span class="n">event_tuple</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">list_of_individual_hsi_event_tuples_due_today</span><span class="p">)</span>
-            <span class="p">}</span>
+            <span class="n">footprints_of_all_individual_level_hsi_event</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_appt_footprint_as_time_request</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="p">(</span><span class="n">event_tuple</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
+                <span class="k">for</span> <span class="n">event_tuple</span> <span class="ow">in</span> <span class="n">list_of_individual_hsi_event_tuples_due_today</span>
+            <span class="p">]</span>
 
-            <span class="c1"># dataframe to store all the calls to the healthsystem today</span>
-            <span class="n">df_footprints_of_all_individual_level_hsi_event</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-                <span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">current_capabilities</span><span class="o">.</span><span class="n">index</span>
-            <span class="p">)</span>
-            <span class="n">df_footprints_of_all_individual_level_hsi_event</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_footprints_of_all_individual_level_hsi_event</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span>
-                <span class="n">list_of_individual_hsi_event_tuples_due_today</span>
-            <span class="p">)</span>
-            <span class="k">assert</span> <span class="n">df_footprints_of_all_individual_level_hsi_event</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">current_capabilities</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="c1"># Compute total appointment footprint across all events</span>
+            <span class="c1"># Summing manually in loop seems to be ~3 time quicker than</span>
+            <span class="c1"># sum(footprints_of_all_individual_level_hsi_event, Counter())</span>
+            <span class="n">total_footprint</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">footprint</span> <span class="ow">in</span> <span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">:</span>
+                <span class="n">total_footprint</span> <span class="o">+=</span> <span class="n">footprint</span>
 
             <span class="c1"># 5) Estimate Squeeze-Factors for today</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="c1"># For Mode 0 (no Constraints), the squeeze factors are all zero.</span>
-                <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_footprints_of_all_individual_level_hsi_event</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+                <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># For Other Modes, the squeeze factors must be computed</span>
                 <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_squeeze_factors</span><span class="p">(</span>
-                    <span class="n">all_calls_today</span><span class="o">=</span><span class="n">df_footprints_of_all_individual_level_hsi_event</span><span class="p">,</span>
+                    <span class="n">footprints_per_event</span><span class="o">=</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">,</span>
+                    <span class="n">total_footprint</span><span class="o">=</span><span class="n">total_footprint</span><span class="p">,</span>
                     <span class="n">current_capabilities</span><span class="o">=</span><span class="n">current_capabilities</span><span class="p">,</span>
                 <span class="p">)</span>
 
@@ -1630,10 +1631,15 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">check_appt_footprint_format</span><span class="p">(</span><span class="n">actual_appt_footprint</span><span class="p">)</span>
 
                         <span class="c1"># Update load factors:</span>
-                        <span class="n">updated_call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_appt_footprint_as_time_request</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">actual_appt_footprint</span><span class="p">)</span>
-                        <span class="n">df_footprints_of_all_individual_level_hsi_event</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">updated_call</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">ev_num</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_call</span>
+                        <span class="n">updated_call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_appt_footprint_as_time_request</span><span class="p">(</span>
+                            <span class="n">event</span><span class="p">,</span> <span class="n">actual_appt_footprint</span><span class="p">)</span>
+                        <span class="n">original_call</span> <span class="o">=</span> <span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span>
+                        <span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_call</span>
+                        <span class="n">total_footprint</span> <span class="o">-=</span> <span class="n">original_call</span>
+                        <span class="n">total_footprint</span> <span class="o">+=</span> <span class="n">updated_call</span>
                         <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_squeeze_factors</span><span class="p">(</span>
-                            <span class="n">all_calls_today</span><span class="o">=</span><span class="n">df_footprints_of_all_individual_level_hsi_event</span><span class="p">,</span>
+                            <span class="n">footprints_per_event</span><span class="o">=</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">,</span>
+                            <span class="n">total_footprint</span><span class="o">=</span><span class="n">total_footprint</span><span class="p">,</span>
                             <span class="n">current_capabilities</span><span class="o">=</span><span class="n">current_capabilities</span><span class="p">,</span>
                         <span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
@@ -1676,7 +1682,8 @@
 
         <span class="c1"># 8) After completing routine for the day, log total usage of the facilities</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">log_current_capabilities</span><span class="p">(</span>
-            <span class="n">current_capabilities</span><span class="o">=</span><span class="n">current_capabilities</span><span class="p">,</span> <span class="n">all_calls_today</span><span class="o">=</span><span class="n">df_footprints_of_all_individual_level_hsi_event</span>
+            <span class="n">current_capabilities</span><span class="o">=</span><span class="n">current_capabilities</span><span class="p">,</span>
+            <span class="n">total_footprint</span><span class="o">=</span><span class="n">total_footprint</span>
         <span class="p">)</span></div></div>
 
 
@@ -1873,7 +1880,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

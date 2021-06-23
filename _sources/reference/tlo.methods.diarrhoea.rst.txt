@@ -400,7 +400,11 @@ tlo.methods.diarrhoea module
 
      **Class attributes:**
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+     CAUSES_OF_DEATH : {'Diarrhoea_rotavirus': <tlo.methods.causes.Cause object at 0x7fc30074ca00>, 'Diarrhoea_shigella': <tlo.methods.causes.Cause object at 0x7fc30074ca60>, 'Diarrhoea_adenovirus': <tlo.methods.causes.Cause object at 0x7fc30074cac0>, 'Diarrhoea_cryptosporidium': <tlo.methods.causes.Cause object at 0x7fc30074cb20>, 'Diarrhoea_campylobacter': <tlo.methods.causes.Cause object at 0x7fc30074cb80>, 'Diarrhoea_ST-ETEC': <tlo.methods.causes.Cause object at 0x7fc30074cbe0>, 'Diarrhoea_sapovirus': <tlo.methods.causes.Cause object at 0x7fc30074cc40>, 'Diarrhoea_norovirus': <tlo.methods.causes.Cause object at 0x7fc30074cca0>, 'Diarrhoea_astrovirus': <tlo.methods.causes.Cause object at 0x7fc30074cd00>, 'Diarrhoea_tEPEC': <tlo.methods.causes.Cause object at 0x7fc30074cd60>}
+
+     CAUSES_OF_DISABILITY : {'Diarrhoea_rotavirus': <tlo.methods.causes.Cause object at 0x7fc30074cdc0>, 'Diarrhoea_shigella': <tlo.methods.causes.Cause object at 0x7fc30074ce20>, 'Diarrhoea_adenovirus': <tlo.methods.causes.Cause object at 0x7fc30074ce80>, 'Diarrhoea_cryptosporidium': <tlo.methods.causes.Cause object at 0x7fc30074cee0>, 'Diarrhoea_campylobacter': <tlo.methods.causes.Cause object at 0x7fc30074cf40>, 'Diarrhoea_ST-ETEC': <tlo.methods.causes.Cause object at 0x7fc30074cfa0>, 'Diarrhoea_sapovirus': <tlo.methods.causes.Cause object at 0x7fc300756040>, 'Diarrhoea_norovirus': <tlo.methods.causes.Cause object at 0x7fc3007560a0>, 'Diarrhoea_astrovirus': <tlo.methods.causes.Cause object at 0x7fc300756100>, 'Diarrhoea_tEPEC': <tlo.methods.causes.Cause object at 0x7fc300756160>}
+
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      pathogens : ['rotavirus', 'shigella', 'adenovirus', 'cryptosporidium', 'campylobacter', 'ST-ETEC', 'sapovirus', 'norovirus', 'astrovirus', 'tEPEC']
 

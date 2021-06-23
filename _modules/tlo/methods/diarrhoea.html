@@ -199,6 +199,7 @@
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span><span class="p">,</span> <span class="n">demography</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
 
@@ -231,6 +232,18 @@
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_SYMPTOMMANAGER</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHSYSTEM</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHBURDEN</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Death</span>
+    <span class="n">CAUSES_OF_DEATH</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="sa">f</span><span class="s1">&#39;Diarrhoea_</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;Diarrheal diseases&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Childhood Diarrhoea&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">pathogens</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Death and Disability</span>
+    <span class="n">CAUSES_OF_DISABILITY</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="sa">f</span><span class="s1">&#39;Diarrhoea_</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;Diarrheal diseases&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Childhood Diarrhoea&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">pathogens</span>
     <span class="p">}</span>
 
     <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
@@ -762,8 +775,8 @@
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">DiarrhoeaLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
         <span class="c1"># Get DALY weights</span>
-        <span class="n">get_daly_weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_daly_weight</span>
         <span class="k">if</span> <span class="s1">&#39;HealthBurden&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">get_daly_weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_daly_weight</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;mild_diarrhoea&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_daly_weight</span><span class="p">(</span><span class="n">sequlae_code</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;moderate_diarrhoea&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_daly_weight</span><span class="p">(</span><span class="n">sequlae_code</span><span class="o">=</span><span class="mi">35</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;severe_diarrhoea&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_daly_weight</span><span class="p">(</span><span class="n">sequlae_code</span><span class="o">=</span><span class="mi">34</span><span class="p">)</span>
@@ -799,10 +812,12 @@
             <span class="n">unscaled_lm</span> <span class="o">=</span> <span class="n">make_linear_model</span><span class="p">(</span><span class="n">patho</span><span class="p">)</span>
             <span class="n">target_mean</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;base_inc_rate_diarrhoea_by_</span><span class="si">{</span><span class="n">patho</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">actual_mean</span> <span class="o">=</span> <span class="n">unscaled_lm</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)])</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-            <span class="n">scaled_intercept</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">target_mean</span> <span class="o">/</span> <span class="n">actual_mean</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">target_mean</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">actual_mean</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="mf">1.0</span>
+            <span class="n">scaled_intercept</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">target_mean</span> <span class="o">/</span> <span class="n">actual_mean</span><span class="p">)</span> \
+                <span class="k">if</span> <span class="p">(</span><span class="n">target_mean</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">actual_mean</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">actual_mean</span><span class="p">))</span> <span class="k">else</span> <span class="mf">1.0</span>
             <span class="n">scaled_lm</span> <span class="o">=</span> <span class="n">make_linear_model</span><span class="p">(</span><span class="n">patho</span><span class="p">,</span> <span class="n">intercept</span><span class="o">=</span><span class="n">scaled_intercept</span><span class="p">)</span>
             <span class="c1"># check by applying the model to mean incidence of 0-year-olds</span>
-            <span class="k">assert</span> <span class="p">(</span><span class="n">target_mean</span> <span class="o">-</span> <span class="n">scaled_lm</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)])</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mf">1e-10</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="p">(</span><span class="n">target_mean</span> <span class="o">-</span> <span class="n">scaled_lm</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)])</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mf">1e-10</span>
             <span class="k">return</span> <span class="n">scaled_lm</span>
 
         <span class="k">for</span> <span class="n">pathogen</span> <span class="ow">in</span> <span class="n">Diarrhoea</span><span class="o">.</span><span class="n">pathogens</span><span class="p">:</span>
@@ -955,7 +970,8 @@
                                               <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s1">&#39;not_applicable&#39;</span><span class="p">)</span>
         <span class="n">daly_values_by_pathogen</span> <span class="o">=</span> <span class="n">dummies_for_pathogen</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">total_daly_values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">daly_values_by_pathogen</span></div>
+        <span class="c1"># return with columns labelled to match the declare CAUSES_OF_DISABILITY</span>
+        <span class="k">return</span> <span class="n">daly_values_by_pathogen</span><span class="o">.</span><span class="n">add_prefix</span><span class="p">(</span><span class="s1">&#39;Diarrhoea_&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Diarrhoea.look_up_consumables"><a class="viewcode-back" href="../../../reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.look_up_consumables">[docs]</a>    <span class="k">def</span> <span class="nf">look_up_consumables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Look up and store the consumables used in each of the HSI.&quot;&quot;&quot;</span>
@@ -1013,10 +1029,12 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">person</span><span class="o">.</span><span class="n">is_alive</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="c1"># Do nothing if the diarrhoea has not been caused by a pathogen</span>
+        <span class="c1"># Do nothing if the diarrhoea has not been caused by a pathogen or has otherwise resolved already</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
             <span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">gi_last_diarrhoea_pathogen</span> <span class="o">!=</span> <span class="s1">&#39;not_applicable&#39;</span><span class="p">)</span> <span class="o">&amp;</span>
             <span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">gi_last_diarrhoea_date_of_onset</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">&lt;=</span> <span class="n">person</span><span class="o">.</span><span class="n">gi_end_of_last_episode</span><span class="p">)</span>
+        <span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+            <span class="s1">&#39;Diarrhoea&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">causes_of</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;diarrhoea&#39;</span><span class="p">)</span>
         <span class="p">):</span>
             <span class="k">return</span>
 
@@ -1070,11 +1088,12 @@
         <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span>
 
         <span class="c1"># Those susceptible are children that do not currently have an episode (never had an episode or last episode</span>
-        <span class="c1"># resolved)</span>
+        <span class="c1"># resolved) and who do not have diarrhoea as a &#39;spurious symptom&#39; of diarrhoea already.</span>
         <span class="n">mask_could_get_new_diarrhoea_episode</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span>
-                <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">gi_end_of_last_episode</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">gi_end_of_last_episode</span><span class="p">)</span>
-            <span class="p">)</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="p">((</span><span class="n">df</span><span class="o">.</span><span class="n">gi_end_of_last_episode</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">gi_end_of_last_episode</span><span class="p">))</span> <span class="o">&amp;</span>
+            <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">who_has</span><span class="p">(</span><span class="s1">&#39;diarrhoea&#39;</span><span class="p">))</span>
         <span class="p">)</span>
 
         <span class="c1"># Compute the incidence rate for each person getting diarrhoea</span>
@@ -1374,21 +1393,18 @@
             <span class="k">return</span>
 
         <span class="c1"># Confirm that this is event is occurring during a current episode of diarrhoea</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">gi_last_diarrhoea_date_of_onset</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">&lt;=</span> <span class="n">person</span><span class="o">.</span><span class="n">gi_end_of_last_episode</span><span class="p">):</span>
+        <span class="k">if</span> <span class="o">~</span><span class="p">(</span>
+            <span class="n">person</span><span class="o">.</span><span class="n">gi_last_diarrhoea_date_of_onset</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">&lt;=</span> <span class="n">person</span><span class="o">.</span><span class="n">gi_end_of_last_episode</span>
+        <span class="p">)</span>\
+            <span class="ow">or</span> <span class="p">(</span>
+            <span class="s1">&#39;Diarrhoea&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">causes_of</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;diarrhoea&#39;</span><span class="p">)</span>
+        <span class="p">):</span>
             <span class="c1"># If not, then the event has been caused by another cause of diarrhoea (which may has resolved by now)</span>
             <span class="k">return</span>
 
         <span class="c1"># Cure should not happen if the person has already recovered</span>
         <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">gi_last_diarrhoea_recovered_date</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">:</span>
             <span class="k">return</span>
-
-        <span class="c1"># If cure should go ahead, check that it is after when the person has received a treatment during this episode</span>
-        <span class="k">assert</span> <span class="p">(</span>
-            <span class="n">person</span><span class="o">.</span><span class="n">gi_last_diarrhoea_date_of_onset</span> <span class="o">&lt;=</span>
-            <span class="n">person</span><span class="o">.</span><span class="n">gi_last_diarrhoea_treatment_date</span> <span class="o">&lt;=</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">&lt;=</span>
-            <span class="n">person</span><span class="o">.</span><span class="n">gi_end_of_last_episode</span>
-        <span class="p">)</span>
 
         <span class="c1"># Stop the person from dying of Diarrhoea (if they were going to die) and record date of recovery</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;gi_last_diarrhoea_recovered_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
@@ -1732,7 +1748,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

@@ -184,6 +184,7 @@
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.demography</span> <span class="kn">import</span> <span class="n">InstantaneousDeath</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
@@ -209,6 +210,16 @@
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_SYMPTOMMANAGER</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHSYSTEM</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHBURDEN</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Death</span>
+    <span class="n">CAUSES_OF_DEATH</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;BladderCancer&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;Bladder cancer&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Cancer&#39;</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Disability</span>
+    <span class="n">CAUSES_OF_DISABILITY</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;BladderCancer&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;Bladder cancer&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Cancer&#39;</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
@@ -922,6 +933,7 @@
 
         <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
         <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s1">&#39;MajorSurg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
 
         <span class="c1"># Define the necessary information for an HSI</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BladderCancer_StartTreatment&quot;</span>
@@ -1137,7 +1149,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

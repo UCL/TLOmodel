@@ -183,6 +183,7 @@
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.demography</span> <span class="kn">import</span> <span class="n">InstantaneousDeath</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
@@ -193,7 +194,7 @@
 
 
 <div class="viewcode-block" id="OtherAdultCancer"><a class="viewcode-back" href="../../../reference/tlo.methods.other_adult_cancers.html#tlo.methods.other_adult_cancers.OtherAdultCancer">[docs]</a><span class="k">class</span> <span class="nc">OtherAdultCancer</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Other_adult Cancer Disease Module&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Other Adult Cancers Disease Module&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="OtherAdultCancer.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.other_adult_cancers.html#tlo.methods.other_adult_cancers.OtherAdultCancer.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
@@ -209,9 +210,45 @@
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHBURDEN</span>
     <span class="p">}</span>
 
+    <span class="n">gbd_causes_of_cancer_represented_in_this_module</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;Other malignant neoplasms&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Nasopharynx cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Other pharynx cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Gallbladder and biliary tract cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Pancreatic cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Malignant skin melanoma&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Non-melanoma skin cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Ovarian cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Testicular cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Kidney cancer&#39;</span><span class="p">,</span>
+        <span class="c1"># &#39;Brain and central nervous system cancer&#39;,</span>
+        <span class="s1">&#39;Thyroid cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Mesothelioma&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Hodgkin lymphoma&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Non-Hodgkin lymphoma&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Multiple myeloma&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Leukemia&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Other neoplasms&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Cervical cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Uterine cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Colon and rectum cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Lip and oral cavity cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Stomach cancer&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Liver cancer&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Declare Causes of Death</span>
+    <span class="n">CAUSES_OF_DEATH</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;OtherAdultCancer&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="n">gbd_causes_of_cancer_represented_in_this_module</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Cancer&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Disability</span>
+    <span class="n">CAUSES_OF_DISABILITY</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;OtherAdultCancer&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="n">gbd_causes_of_cancer_represented_in_this_module</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Cancer&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+
     <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s2">&quot;initial proportions of those with other adult cancer categories that have other_&quot;</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s2">&quot;initial proportions of those with other adult cancer categories that have other &quot;</span>
                         <span class="s2">&quot;adult_ca_symptom&quot;</span>
         <span class="p">),</span>
         <span class="s2">&quot;in_prop_other_adult_cancer_stage&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
@@ -804,7 +841,7 @@
         <span class="c1"># Define the necessary information for an HSI</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;OtherAdultCancer_StartTreatment&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">the_appt_footprint</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">3</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_OtherAdultCancer_StartTreatment.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.other_adult_cancers.html#tlo.methods.other_adult_cancers.HSI_OtherAdultCancer_StartTreatment.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -1056,7 +1093,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

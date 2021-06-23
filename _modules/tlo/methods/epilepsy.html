@@ -175,10 +175,12 @@
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.demography</span> <span class="kn">import</span> <span class="n">InstantaneousDeath</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
 
-<span class="c1"># todo: code specific clinic visits</span>
+<span class="c1"># todo: note this code is becoming very depracated and does not include health interactions</span>
+
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -195,6 +197,16 @@
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_SYMPTOMMANAGER</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHSYSTEM</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHBURDEN</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Death</span>
+    <span class="n">CAUSES_OF_DEATH</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;Epilepsy&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;Other neurological disorders&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Epilepsy&#39;</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Disability</span>
+    <span class="n">CAUSES_OF_DISABILITY</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;Epilepsy&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;Other neurological disorders&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Epilepsy&#39;</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="c1"># Module parameters</span>
@@ -646,9 +658,53 @@
 
 <div class="viewcode-block" id="HSI_Epilepsy_Start_Anti_Epilpetic.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Start_Anti_Epilpetic.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-
-        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span></div></div>
+        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># Define the consumables</span>
+        <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># first choice is phenobarbitone</span>
+        <span class="n">item_code_phenobarbitone</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Phenobarbitone  30mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">consumables_phenobarbitone</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_phenobarbitone</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
+            <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_phenobarbitone</span><span class="p">,</span>
+            <span class="n">to_log</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_phenobarbitone</span><span class="p">]:</span>
+            <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">item_code_carbamazepine</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Carbamazepine 200mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">consumables_carbamazepine</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
+                <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_carbamazepine</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
+                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_carbamazepine</span><span class="p">,</span>
+                <span class="n">to_log</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_carbamazepine</span><span class="p">]:</span>
+                <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">item_code_phenytoin</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+                    <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Phenytoin sodium 100mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">consumables_phenytoin</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_phenytoin</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+                <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
+                    <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                    <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_phenytoin</span><span class="p">,</span>
+                    <span class="n">to_log</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_phenytoin</span><span class="p">]:</span>
+                    <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">anti_epileptics_available</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div></div>
 </pre></div>
 
            </div>
@@ -661,7 +717,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

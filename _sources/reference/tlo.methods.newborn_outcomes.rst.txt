@@ -286,7 +286,11 @@ tlo.methods.newborn_outcomes module
 
      **Class attributes:**
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     CAUSES_OF_DEATH : {'intrapartum stillbirth': <tlo.methods.causes.Cause object at 0x7fc3020e6670>, 'neonatal': <tlo.methods.causes.Cause object at 0x7fc3020e6730>}
+
+     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x7fc302113100>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x7fc303cac730>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x7fc303cacf40>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x7fc303cc98e0>}
+
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      **Functions (defined or overridden in class NewbornOutcomes):**
 

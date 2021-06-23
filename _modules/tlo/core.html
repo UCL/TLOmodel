@@ -354,6 +354,14 @@
     <span class="c1"># See tlo.methods.Metadata class</span>
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{}</span>
 
+    <span class="c1"># Subclasses can override this set to declare the causes death that this module contributes to</span>
+    <span class="c1"># This is a dict of the form {&lt;name_used_by_the_module : Cause()}: see core.Cause</span>
+    <span class="n">CAUSES_OF_DEATH</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="c1"># Subclasses can override this set to declare the causes disability that this module contributes to</span>
+    <span class="c1"># This is a dict of the form {&lt;name_used_by_the_module : Cause()}: see core.Cause</span>
+    <span class="n">CAUSES_OF_DISABILITY</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
     <span class="c1"># Subclasses may declare this dictionary to specify module-level parameters.</span>
     <span class="c1"># We give an empty definition here as default.</span>
     <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{}</span>
@@ -493,6 +501,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
+<div class="viewcode-block" id="Module.on_simulation_end"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.on_simulation_end">[docs]</a>    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This is called after the simulation has ended.</span>
+<span class="sd">        Modules do not need to declare this.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
     <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Look up a module parameter as though it is an object property.</span>
 
@@ -529,7 +542,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

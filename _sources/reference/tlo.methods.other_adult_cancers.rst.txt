@@ -20,7 +20,7 @@ tlo.methods.other_adult_cancers module
           - Description
         * - init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage
           - LIST
-          - initial proportions of those with other adult cancer categories that have other_adult_ca_symptom
+          - initial proportions of those with other adult cancer categories that have other adult_ca_symptom
         * - in_prop_other_adult_cancer_stage
           - LIST
           - initial proportions in other adult cancer stages for person aged 15-29
@@ -121,7 +121,13 @@ tlo.methods.other_adult_cancers module
 
      **Class attributes:**
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+     CAUSES_OF_DEATH : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x7fc3006df670>}
+
+     CAUSES_OF_DISABILITY : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x7fc3006df700>}
+
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+
+     gbd_causes_of_cancer_represented_in_this_module : ['Other malignant neoplasms', 'Nasopharynx cancer', 'Other pharynx cancer', 'Gallbladder and biliary tract cancer', 'Pancreatic cancer', 'Malignant skin melanoma', 'Non-melanoma skin cancer', 'Ovarian cancer', 'Testicular cancer', 'Kidney cancer', 'Thyroid cancer', 'Mesothelioma', 'Hodgkin lymphoma', 'Non-Hodgkin lymphoma', 'Multiple myeloma', 'Leukemia', 'Other neoplasms', 'Cervical cancer', 'Uterine cancer', 'Colon and rectum cancer', 'Lip and oral cavity cancer', 'Stomach cancer', 'Liver cancer']
 
      **Functions (defined or overridden in class OtherAdultCancer):**
 

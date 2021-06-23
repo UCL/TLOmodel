@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>tlo.methods.ncds &mdash; TLOmodel 0.1.0 documentation</title>
+  <title>tlo.methods.cardio_metabolic_disorders &mdash; TLOmodel 0.1.0 documentation</title>
   
 
   
@@ -152,7 +152,7 @@
         
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
         
-      <li>tlo.methods.ncds</li>
+      <li>tlo.methods.cardio_metabolic_disorders</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -167,9 +167,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for tlo.methods.ncds</h1><div class="highlight"><pre>
+  <h1>Source code for tlo.methods.cardio_metabolic_disorders</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">The joint NCDs model by Tim Hallett and Britta Jewell, October 2020</span>
+<span class="sd">The joint Cardio-Metabolic Disorders model by Tim Hallett and Britta Jewell, October 2020</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">math</span>
@@ -184,6 +184,7 @@
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">demography</span> <span class="k">as</span> <span class="n">de</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.demography</span> <span class="kn">import</span> <span class="n">InstantaneousDeath</span>
 
 <span class="c1"># from tlo.methods.healthsystem import HSI_Event</span>
@@ -197,10 +198,11 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Ncds"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds">[docs]</a><span class="k">class</span> <span class="nc">Ncds</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders">[docs]</a><span class="k">class</span> <span class="nc">CardioMetabolicDisorders</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    NCDs module covers a subset of NCD conditions and events. Conditions are binary, and individuals experience a risk</span>
-<span class="sd">    of acquiring or losing a condition based on annual probability and demographic/lifestyle risk factors.</span>
+<span class="sd">    CardioMetabolicDisorders module covers a subset of cardio-metabolic conditions and events. Conditions are binary</span>
+<span class="sd">    and individuals experience a risk of acquiring or losing a condition based on annual probability and</span>
+<span class="sd">    demographic/lifestyle risk factors.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># save a master list of the events that are covered in this module</span>
@@ -220,6 +222,33 @@
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_SYMPTOMMANAGER</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHSYSTEM</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHBURDEN</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Death</span>
+    <span class="n">CAUSES_OF_DEATH</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;diabetes&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span>
+            <span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;Diabetes mellitus&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Diabetes&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;chronic_ischemic_hd&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span>
+            <span class="n">gbd_causes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Ischemic heart disease&#39;</span><span class="p">,</span> <span class="s1">&#39;Hypertensive heart disease&#39;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Heart Disease&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;heart_attack&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span>
+            <span class="n">gbd_causes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Ischemic heart disease&#39;</span><span class="p">,</span> <span class="s1">&#39;Hypertensive heart disease&#39;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Heart Disease&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;stroke&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span>
+            <span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;Stroke&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Stroke&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;chronic_kidney_disease&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span>
+            <span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;Chronic kidney disease&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Kidney Disease&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Disability #todo - to be updated when DALYS calc are completed</span>
+    <span class="n">CAUSES_OF_DISABILITY</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;any_ncd&#39;</span><span class="p">:</span>
+            <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="p">[</span>
+                <span class="s1">&#39;Diabetes mellitus&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Ischemic heart disease&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Hypertensive heart disease&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Stroke&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Chronic kidney disease&#39;</span>
+            <span class="p">],</span>
+                  <span class="n">label</span><span class="o">=</span><span class="s1">&#39;NCD&#39;</span><span class="p">)</span>
     <span class="p">}</span>
 
     <span class="c1"># create separate dicts for params for conditions and events</span>
@@ -266,46 +295,46 @@
         <span class="o">**</span><span class="n">condition_list</span><span class="p">,</span>
         <span class="o">**</span><span class="n">event_list</span><span class="p">,</span>
         <span class="c1"># &#39;nc_cancers&#39;: Property(Types.BOOL, &#39;whether or not the person currently has any form of cancer&#39;),</span>
-        <span class="s1">&#39;nc_n_conditions&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;how many NCD conditions the person currently has&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;nc_n_conditions&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;how many cardio-metabolic conditions the person currently has&#39;</span><span class="p">),</span>
         <span class="s1">&#39;nc_condition_combos&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;whether or not the person currently has a combination of conds&#39;</span><span class="p">)</span>
     <span class="p">}</span>
 
     <span class="c1"># TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank</span>
     <span class="n">SYMPTOMS</span> <span class="o">=</span> <span class="p">{}</span>
 
-<div class="viewcode-block" id="Ncds.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="c1"># NB. Parameters passed to the module can be inserted in the __init__ definition.</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">conditions</span> <span class="o">=</span> <span class="n">Ncds</span><span class="o">.</span><span class="n">conditions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">events</span> <span class="o">=</span> <span class="n">Ncds</span><span class="o">.</span><span class="n">events</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conditions</span> <span class="o">=</span> <span class="n">CardioMetabolicDisorders</span><span class="o">.</span><span class="n">conditions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events</span> <span class="o">=</span> <span class="n">CardioMetabolicDisorders</span><span class="o">.</span><span class="n">events</span>
 
         <span class="c1"># create list that includes conditions modelled by other modules</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">condition_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nc_&#39;</span> <span class="o">+</span> <span class="n">cond</span> <span class="k">for</span> <span class="n">cond</span> <span class="ow">in</span> <span class="n">Ncds</span><span class="o">.</span><span class="n">conditions</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;de_depr&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">condition_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nc_&#39;</span> <span class="o">+</span> <span class="n">cond</span> <span class="k">for</span> <span class="n">cond</span> <span class="ow">in</span> <span class="n">CardioMetabolicDisorders</span><span class="o">.</span><span class="n">conditions</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;de_depr&#39;</span><span class="p">]</span>
 
         <span class="c1"># retrieve age range categories from Demography module</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">age_index</span> <span class="o">=</span> <span class="kc">None</span></div>
 
-<div class="viewcode-block" id="Ncds.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read parameter values from files for condition onset, removal, deaths, and initial prevalence.</span>
 
-<span class="sd">        ResourceFile_NCDs_condition_onset.xlsx = parameters for onset of conditions</span>
-<span class="sd">        ResourceFile_NCDs_condition_removal.xlsx  = parameters for removal of conditions</span>
-<span class="sd">        ResourceFile_NCDs_condition_death.xlsx  = parameters for death rate from conditions</span>
-<span class="sd">        ResourceFile_NCDs_condition_prevalence.xlsx  = initial and target prevalence for conditions</span>
-<span class="sd">        ResourceFile_NCDs_events.xlsx  = parameters for occurrence of events</span>
-<span class="sd">        ResourceFile_NCDs_events_death.xlsx  = parameters for death rate from events</span>
+<span class="sd">        ResourceFile_cmd_condition_onset.xlsx = parameters for onset of conditions</span>
+<span class="sd">        ResourceFile_cmd_condition_removal.xlsx  = parameters for removal of conditions</span>
+<span class="sd">        ResourceFile_cmd_condition_death.xlsx  = parameters for death rate from conditions</span>
+<span class="sd">        ResourceFile_cmd_condition_prevalence.xlsx  = initial and target prevalence for conditions</span>
+<span class="sd">        ResourceFile_cmd_events.xlsx  = parameters for occurrence of events</span>
+<span class="sd">        ResourceFile_cmd_events_death.xlsx  = parameters for death rate from events</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">ncds_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;ncds&quot;</span>
-        <span class="n">cond_onset</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">ncds_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_NCDs_condition_onset.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="n">cond_removal</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">ncds_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_NCDs_condition_removal.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="n">cond_death</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">ncds_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_NCDs_condition_death.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="n">cond_prevalence</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">ncds_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_NCDs_condition_prevalence.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="n">events_onset</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">ncds_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_NCDs_events.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="n">events_death</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">ncds_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_NCDs_events_death.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">cmd_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;cmd&quot;</span>
+        <span class="n">cond_onset</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">cmd_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_cmd_condition_onset.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">cond_removal</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">cmd_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_cmd_condition_removal.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">cond_death</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">cmd_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_cmd_condition_death.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">cond_prevalence</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">cmd_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_cmd_condition_prevalence.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">events_onset</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">cmd_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_cmd_events.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">events_death</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">cmd_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_cmd_events_death.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">get_values</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;replaces nans in the &#39;value&#39; key with specified value&quot;&quot;&quot;</span>
@@ -332,7 +361,7 @@
         <span class="k">for</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETERS</span><span class="p">:</span>
             <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Parameter &quot;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s1">&quot; has not been set.&#39;</span></div>
 
-<div class="viewcode-block" id="Ncds.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Set our property values for the initial population.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">age_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_CATEGORIES</span>
@@ -368,14 +397,15 @@
                     <span class="n">age_min</span> <span class="o">=</span> <span class="n">age_min</span> <span class="o">+</span> <span class="mi">5</span>
                     <span class="n">age_max</span> <span class="o">=</span> <span class="n">age_max</span> <span class="o">+</span> <span class="mi">20</span></div>
 
-<div class="viewcode-block" id="Ncds.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Schedule:</span>
 <span class="sd">        * Main Polling Event</span>
 <span class="sd">        * Main Logging Event</span>
 <span class="sd">        * Build the LinearModels for the onset/removal of each condition:</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">Ncds_MainPollingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">]),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">Ncds_LoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">CardioMetabolicDisorders_MainPollingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">]),</span>
+                           <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">CardioMetabolicDisorders_LoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
         <span class="c1"># dict to hold counters for the number of episodes by condition-type and age-group</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">df_incidence_tracker_zeros</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">age_index</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conditions</span><span class="p">)</span>
@@ -411,7 +441,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">lms_event_death</span><span class="p">[</span><span class="n">event</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_linear_model</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">],</span>
                                                                   <span class="n">lm_type</span><span class="o">=</span><span class="s1">&#39;death&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Ncds.build_linear_model"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.build_linear_model">[docs]</a>    <span class="k">def</span> <span class="nf">build_linear_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">interval_between_polls</span><span class="p">,</span> <span class="n">lm_type</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders.build_linear_model"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.build_linear_model">[docs]</a>    <span class="k">def</span> <span class="nf">build_linear_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">interval_between_polls</span><span class="p">,</span> <span class="n">lm_type</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Build a linear model for the risk of onset, removal, or death from a condition, or occurrence or death from</span>
 <span class="sd">        an event.</span>
@@ -496,7 +526,7 @@
 
         <span class="k">return</span> <span class="n">lms_dict</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="Ncds.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
 
 <span class="sd">        :param mother_id: the mother for this child</span>
@@ -512,7 +542,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;nc_n_conditions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;nc_condition_combos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="Ncds.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Report DALY values to the HealthBurden module&quot;&quot;&quot;</span>
         <span class="c1"># This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been</span>
         <span class="c1"># experienced by persons in the previous month. Only rows for alive-persons must be returned.</span>
@@ -530,7 +560,7 @@
 
         <span class="k">return</span> <span class="n">any_condition</span> <span class="o">*</span> <span class="mf">0.0</span></div>
 
-<div class="viewcode-block" id="Ncds.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is called whenever there is an HSI event commissioned by one of the other disease modules.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -542,25 +572,25 @@
 <span class="c1">#</span>
 <span class="c1">#   The regular event that actually changes individuals&#39; condition or event status, occurring every 3 months</span>
 <span class="c1">#   and synchronously for all persons.</span>
-<span class="c1">#   Individual level events (HSI, death or NCD events) may occur at other times.</span>
+<span class="c1">#   Individual level events (HSI, death or cardio-metabolic events) may occur at other times.</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="Ncds_MainPollingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds_MainPollingEvent">[docs]</a><span class="k">class</span> <span class="nc">Ncds_MainPollingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders_MainPollingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_MainPollingEvent">[docs]</a><span class="k">class</span> <span class="nc">CardioMetabolicDisorders_MainPollingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;The Main Polling Event.</span>
 <span class="sd">    * Establishes onset of each condition</span>
 <span class="sd">    * Establishes removal of each condition</span>
 <span class="sd">    * Schedules events that arise, according the condition.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Ncds_MainPollingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds_MainPollingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">interval_between_polls</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The Main Polling Event of the NCDs Module</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders_MainPollingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_MainPollingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">interval_between_polls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The Main Polling Event of the CardioMetabolicDisorders Module</span>
 
 <span class="sd">        :param module: the module that created this event</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="n">interval_between_polls</span><span class="p">))</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Ncds</span><span class="p">)</span></div>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">CardioMetabolicDisorders</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Ncds_MainPollingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds_MainPollingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders_MainPollingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_MainPollingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Apply this event to the population.</span>
 
 <span class="sd">        :param population: the current population</span>
@@ -608,13 +638,19 @@
             <span class="n">idx_loses_condition</span> <span class="o">=</span> <span class="n">loses_condition</span><span class="p">[</span><span class="n">loses_condition</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx_loses_condition</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
-            <span class="c1"># -------------------- DEATH FROM NCD CONDITION ---------------------------------------</span>
-            <span class="c1"># There is a risk of death for those who have an NCD condition. Death is assumed to happen instantly.</span>
+            <span class="c1"># -------------------- DEATH FROM CARDIO-METABOLIC CONDITION ---------------------------------------</span>
+            <span class="c1"># There is a risk of death for those who have a cardio-metabolic condition.</span>
+            <span class="c1"># Death is assumed to happen instantly.</span>
 
             <span class="n">eligible_population</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
             <span class="n">selected_to_die</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_death</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">],</span> <span class="n">rng</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">selected_to_die</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>  <span class="c1"># catch in case no one dies</span>
-                <span class="n">idx_selected_to_die</span> <span class="o">=</span> <span class="n">selected_to_die</span><span class="p">[</span><span class="n">selected_to_die</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+                <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">eligible_population</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">idx_selected_to_die</span> <span class="o">=</span> <span class="n">selected_to_die</span><span class="p">[</span><span class="n">selected_to_die</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># if there is only one eligible person, the predict method of linear model will return just a bool</span>
+                    <span class="c1">#  instead of a pd.Series. Handle this special case:</span>
+                    <span class="n">idx_selected_to_die</span> <span class="o">=</span> <span class="n">eligible_population</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
 
                 <span class="k">for</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">idx_selected_to_die</span><span class="p">:</span>
                     <span class="n">schedule_death_to_occur_before_next_poll</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span>
@@ -635,11 +671,12 @@
                     <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
                     <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="n">m</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">],</span> <span class="n">days</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
                     <span class="n">ndays</span> <span class="o">=</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">days</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">NcdEvent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">event</span><span class="p">),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">CardioMetabolicDisordersEvent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">event</span><span class="p">),</span>
                                             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">ndays</span><span class="p">)))</span>
 
-            <span class="c1"># -------------------- DEATH FROM NCD EVENT ---------------------------------------</span>
-            <span class="c1"># There is a risk of death for those who have had an NCD event. Death is assumed to happen instantly.</span>
+            <span class="c1"># -------------------- DEATH FROM CARDIO-METABOLIC EVENT ---------------------------------------</span>
+            <span class="c1"># There is a risk of death for those who have had an CardioMetabolicDisorders event.</span>
+            <span class="c1"># Death is assumed to happen instantly.</span>
 
             <span class="n">eligible_population</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
             <span class="n">selected_to_die</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_event_death</span><span class="p">[</span><span class="n">event</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">],</span> <span class="n">rng</span><span class="p">)</span>
@@ -651,16 +688,17 @@
                                                              <span class="n">m</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interval_between_polls&#39;</span><span class="p">])</span></div></div>
 
 
-<div class="viewcode-block" id="NcdEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.NcdEvent">[docs]</a><span class="k">class</span> <span class="nc">NcdEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisordersEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersEvent">[docs]</a><span class="k">class</span> <span class="nc">CardioMetabolicDisordersEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is an NCD event. It has been scheduled to occur by the Ncds_MainPollingEvent.</span>
+<span class="sd">    This is an Cardio Metabolic Disorders event. It has been scheduled to occur by the</span>
+<span class="sd">    CardioMetabolicDisorders_MainPollingEvent.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="NcdEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.NcdEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisordersEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">event</span> <span class="o">=</span> <span class="n">event</span></div>
 
-<div class="viewcode-block" id="NcdEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.NcdEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisordersEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span>
 
@@ -685,8 +723,8 @@
 <span class="c1">#   population. There may also be a loggig event that is driven by particular events.</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="Ncds_LoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds_LoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">Ncds_LoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="Ncds_LoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds_LoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders_LoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">CardioMetabolicDisorders_LoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders_LoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Produce a summary of the numbers of people with respect to the action of this module.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -694,9 +732,9 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">date_last_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Ncds</span><span class="p">)</span></div>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">CardioMetabolicDisorders</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Ncds_LoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.ncds.html#tlo.methods.ncds.Ncds_LoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+<div class="viewcode-block" id="CardioMetabolicDisorders_LoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 
         <span class="c1"># Convert incidence tracker to dict to pass through logger</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;incidence_count_by_condition&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">df_incidence_tracker</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
@@ -830,7 +868,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

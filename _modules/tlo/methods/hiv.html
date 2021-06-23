@@ -203,6 +203,7 @@
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span><span class="p">,</span> <span class="n">demography</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
@@ -235,6 +236,16 @@
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_SYMPTOMMANAGER</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHSYSTEM</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHBURDEN</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Death</span>
+    <span class="n">CAUSES_OF_DEATH</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;AIDS&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;HIV/AIDS&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;AIDS&#39;</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Declare Causes of Disability</span>
+    <span class="n">CAUSES_OF_DISABILITY</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;AIDS&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;HIV/AIDS&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;AIDS&#39;</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
@@ -985,7 +996,6 @@
         <span class="c1"># Overwrite the value for those that currently have symptoms of AIDS with the &#39;AIDS&#39; daly_wt:</span>
         <span class="n">dalys</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">who_has</span><span class="p">(</span><span class="s1">&#39;aids_symptoms&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;aids&#39;</span><span class="p">]</span>
 
-        <span class="n">dalys</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;hiv&#39;</span>
         <span class="k">return</span> <span class="n">dalys</span></div>
 
 <div class="viewcode-block" id="Hiv.mtct_during_breastfeeding"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.mtct_during_breastfeeding">[docs]</a>    <span class="k">def</span> <span class="nf">mtct_during_breastfeeding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
@@ -1381,7 +1391,11 @@
             <span class="k">return</span>
 
         <span class="c1"># Cause the death to happen immediately</span>
-        <span class="n">demography</span><span class="o">.</span><span class="n">InstantaneousDeath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">individual_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="s2">&quot;AIDS&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_death</span><span class="p">(</span>
+            <span class="n">individual_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+            <span class="n">cause</span><span class="o">=</span><span class="s2">&quot;AIDS&quot;</span><span class="p">,</span>
+            <span class="n">originating_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span>
+        <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="Hiv_DecisionToContinueOnPrEP"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv_DecisionToContinueOnPrEP">[docs]</a><span class="k">class</span> <span class="nc">Hiv_DecisionToContinueOnPrEP</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -1639,7 +1653,7 @@
 
         <span class="c1"># If test is positive, flag as diagnosed and refer to ART</span>
         <span class="k">if</span> <span class="n">test_result</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="c1"># label as diagnosed</span>
+            <span class="c1"># cause_of_death as diagnosed</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;hv_diagnosed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="c1"># Do actions for when a person has been diagnosed with HIV</span>
@@ -2099,7 +2113,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>

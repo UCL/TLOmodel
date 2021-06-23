@@ -9,7 +9,9 @@ Submodules
 
    tlo.methods.bladder_cancer
    tlo.methods.breast_cancer
+   tlo.methods.cardio_metabolic_disorders
    tlo.methods.care_of_women_during_pregnancy
+   tlo.methods.causes
    tlo.methods.chronicsyndrome
    tlo.methods.contraception
    tlo.methods.demography
@@ -30,7 +32,6 @@ Submodules
    tlo.methods.labour_lm
    tlo.methods.malaria
    tlo.methods.mockitis
-   tlo.methods.ncds
    tlo.methods.newborn_outcomes
    tlo.methods.newborn_outcomes_lm
    tlo.methods.oesophagealcancer

@@ -253,7 +253,11 @@ tlo.methods.hiv module
 
      **Class attributes:**
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+     CAUSES_OF_DEATH : {'AIDS': <tlo.methods.causes.Cause object at 0x7fc300639190>}
+
+     CAUSES_OF_DISABILITY : {'AIDS': <tlo.methods.causes.Cause object at 0x7fc300639220>}
+
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      **Functions (defined or overridden in class Hiv):**
 

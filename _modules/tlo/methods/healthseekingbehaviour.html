@@ -270,14 +270,58 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">force_any_symptom_to_lead_to_healthcareseeking</span> <span class="o">=</span> <span class="n">force_any_symptom_to_lead_to_healthcareseeking</span></div>
 
 <div class="viewcode-block" id="HealthSeekingBehaviour.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Construct the LinearModel for healthcare seeking of the &#39;average symptom&#39;.</span>
-<span class="sd">        This is from the Ng&#39;ambia et al.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
+        <span class="sd">&quot;&quot;&quot;Read in ResourceFile&quot;&quot;&quot;</span>
         <span class="c1"># Load parameters from resource file:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span>
             <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_HealthSeekingBehaviour.csv&#39;</span><span class="p">))</span>
-        <span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="HealthSeekingBehaviour.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Nothing to initialise in the population</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="HealthSeekingBehaviour.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        * define the linear models that govern healthcare seeking</span>
+<span class="sd">        * set the first occurrence of the repeating HealthSeekingBehaviourPoll</span>
+<span class="sd">        * assemble the health-care seeking information from the symptoms that have been registered</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Define the linear models that govern healthcare seeking</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">define_linear_models</span><span class="p">()</span>
+
+        <span class="c1"># Schedule the HealthSeekingBehaviourPoll</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theHealthSeekingBehaviourPoll</span> <span class="o">=</span> <span class="n">HealthSeekingBehaviourPoll</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theHealthSeekingBehaviourPoll</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+
+        <span class="c1"># Assemble the health-care seeking information from the symptoms that have been registered</span>
+        <span class="k">for</span> <span class="n">symptom</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">all_registered_symptoms</span><span class="p">:</span>
+            <span class="c1"># Children:</span>
+            <span class="k">if</span> <span class="n">symptom</span><span class="o">.</span><span class="n">no_healthcareseeking_in_children</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">no_healthcareseeking_in_children</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">symptom</span><span class="o">.</span><span class="n">emergency_in_children</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">emergency_in_children</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span><span class="p">[</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">symptom</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span>
+
+            <span class="c1"># Adults:</span>
+            <span class="k">if</span> <span class="n">symptom</span><span class="o">.</span><span class="n">no_healthcareseeking_in_adults</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">no_healthcareseeking_in_adults</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">symptom</span><span class="o">.</span><span class="n">emergency_in_adults</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">emergency_in_adults</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_adults</span><span class="p">[</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">symptom</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_adults</span></div>
+
+<div class="viewcode-block" id="HealthSeekingBehaviour.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Nothing to handle on_birth</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="HealthSeekingBehaviour.define_linear_models"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.define_linear_models">[docs]</a>    <span class="k">def</span> <span class="nf">define_linear_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct the LinearModel for healthcare seeking of the &#39;average symptom&#39;.</span>
+<span class="sd">        This is from the Ng&#39;ambia et al. papers</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Define the LinearModel for health seeking behaviour for the &#39;average symptom&#39;</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
@@ -305,50 +349,13 @@
                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;Southern&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;odds_ratio_adults_region_Southern&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_wealth&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;odds_ratio_adults_wealth_higher&#39;</span><span class="p">])</span>
                                   <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;odds_ratio_adults_wealth_higher&#39;</span><span class="p">])</span>
-        <span class="p">)</span></div>
-
-<div class="viewcode-block" id="HealthSeekingBehaviour.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Nothing to initialise in the population</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span></div>
-
-<div class="viewcode-block" id="HealthSeekingBehaviour.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        * set the first occurrence of the repeating HealthSeekingBehaviourPoll</span>
-<span class="sd">        * assemble the health-care seeking information from the symptoms that have been registered</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># Schedule the HealthSeekingBehaviourPoll</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">theHealthSeekingBehaviourPoll</span> <span class="o">=</span> <span class="n">HealthSeekingBehaviourPoll</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theHealthSeekingBehaviourPoll</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
-
-        <span class="c1"># Assemble the health-care seeking information from the symptoms that have been registered</span>
-        <span class="k">for</span> <span class="n">symptom</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">all_registered_symptoms</span><span class="p">:</span>
-            <span class="c1"># Children:</span>
-            <span class="k">if</span> <span class="n">symptom</span><span class="o">.</span><span class="n">no_healthcareseeking_in_children</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">no_healthcareseeking_in_children</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">symptom</span><span class="o">.</span><span class="n">emergency_in_children</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">emergency_in_children</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span><span class="p">[</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">symptom</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span>
-
-            <span class="c1"># Adults:</span>
-            <span class="k">if</span> <span class="n">symptom</span><span class="o">.</span><span class="n">no_healthcareseeking_in_adults</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">no_healthcareseeking_in_adults</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">symptom</span><span class="o">.</span><span class="n">emergency_in_adults</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">emergency_in_adults</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_adults</span><span class="p">[</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">symptom</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_adults</span></div>
-
-<div class="viewcode-block" id="HealthSeekingBehaviour.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Nothing to handle on_birth</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span></div></div>
+        <span class="p">)</span></div></div>
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <span class="c1">#   REGULAR POLLING EVENT</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
+
 
 <div class="viewcode-block" id="HealthSeekingBehaviourPoll"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll">[docs]</a><span class="k">class</span> <span class="nc">HealthSeekingBehaviourPoll</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;This event occurs every day and determines if persons with newly onset symptoms will seek care.</span>
@@ -471,7 +478,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 08, 2021.
+        Last updated on Jun 23, 2021.
       </span>
 
     </p>
