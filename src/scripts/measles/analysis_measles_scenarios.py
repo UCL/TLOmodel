@@ -2,10 +2,11 @@ import datetime
 from pathlib import Path
 
 import pandas as pd
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     dx_algorithm_child,
@@ -72,7 +73,7 @@ sim.register(
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
     labour.Labour(resourcefilepath=resources),
     newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
-    antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resources),
+    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
     epi.Epi(resourcefilepath=resources),
     measles.Measles(resourcefilepath=resources),
