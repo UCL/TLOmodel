@@ -14,6 +14,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods import demography as de
+from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 
 # from tlo.methods.healthsystem import HSI_Event
@@ -51,6 +52,33 @@ class CardioMetabolicDisorders(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'diabetes': Cause(
+            gbd_causes='Diabetes mellitus', label='Diabetes'),
+        'chronic_ischemic_hd': Cause(
+            gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
+        'heart_attack': Cause(
+            gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
+        'stroke': Cause(
+            gbd_causes='Stroke', label='Stroke'),
+        'chronic_kidney_disease': Cause(
+            gbd_causes='Chronic kidney disease', label='Kidney Disease')
+    }
+
+    # Declare Causes of Disability #todo - to be updated when DALYS calc are completed
+    CAUSES_OF_DISABILITY = {
+        'any_ncd':
+            Cause(gbd_causes=[
+                'Diabetes mellitus',
+                'Ischemic heart disease',
+                'Hypertensive heart disease',
+                'Stroke',
+                'Chronic kidney disease'
+            ],
+                  label='NCD')
     }
 
     # create separate dicts for params for conditions and events
