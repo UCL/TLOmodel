@@ -100,14 +100,58 @@ class HealthSeekingBehaviour(Module):
         self.force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
 
     def read_parameters(self, data_folder):
-        """Construct the LinearModel for healthcare seeking of the 'average symptom'.
-        This is from the Ng'ambia et al.
-        """
-
+        """Read in ResourceFile"""
         # Load parameters from resource file:
         self.load_parameters_from_dataframe(
             pd.DataFrame(pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv'))
         )
+
+    def initialise_population(self, population):
+        """Nothing to initialise in the population
+        """
+        pass
+
+    def initialise_simulation(self, sim):
+        """
+        * define the linear models that govern healthcare seeking
+        * set the first occurrence of the repeating HealthSeekingBehaviourPoll
+        * assemble the health-care seeking information from the symptoms that have been registered
+        """
+
+        # Define the linear models that govern healthcare seeking
+        self.define_linear_models()
+
+        # Schedule the HealthSeekingBehaviourPoll
+        self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
+        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
+
+        # Assemble the health-care seeking information from the symptoms that have been registered
+        for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
+            # Children:
+            if symptom.no_healthcareseeking_in_children:
+                self.no_healthcareseeking_in_children.add(symptom.name)
+            elif symptom.emergency_in_children:
+                self.emergency_in_children.add(symptom.name)
+            else:
+                self.odds_ratio_health_seeking_in_children[symptom.name] = symptom.odds_ratio_health_seeking_in_children
+
+            # Adults:
+            if symptom.no_healthcareseeking_in_adults:
+                self.no_healthcareseeking_in_adults.add(symptom.name)
+            elif symptom.emergency_in_adults:
+                self.emergency_in_adults.add(symptom.name)
+            else:
+                self.odds_ratio_health_seeking_in_adults[symptom.name] = symptom.odds_ratio_health_seeking_in_adults
+
+    def on_birth(self, mother_id, child_id):
+        """Nothing to handle on_birth
+        """
+        pass
+
+    def define_linear_models(self):
+        """Construct the LinearModel for healthcare seeking of the 'average symptom'.
+        This is from the Ng'ambia et al. papers
+        """
 
         # Define the LinearModel for health seeking behaviour for the 'average symptom'
         p = self.parameters
@@ -137,48 +181,11 @@ class HealthSeekingBehaviour(Module):
                                   .when(5, p['odds_ratio_adults_wealth_higher'])
         )
 
-    def initialise_population(self, population):
-        """Nothing to initialise in the population
-        """
-        pass
-
-    def initialise_simulation(self, sim):
-        """
-        * set the first occurrence of the repeating HealthSeekingBehaviourPoll
-        * assemble the health-care seeking information from the symptoms that have been registered
-        """
-
-        # Schedule the HealthSeekingBehaviourPoll
-        self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
-        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
-
-        # Assemble the health-care seeking information from the symptoms that have been registered
-        for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
-            # Children:
-            if symptom.no_healthcareseeking_in_children:
-                self.no_healthcareseeking_in_children.add(symptom.name)
-            elif symptom.emergency_in_children:
-                self.emergency_in_children.add(symptom.name)
-            else:
-                self.odds_ratio_health_seeking_in_children[symptom.name] = symptom.odds_ratio_health_seeking_in_children
-
-            # Adults:
-            if symptom.no_healthcareseeking_in_adults:
-                self.no_healthcareseeking_in_adults.add(symptom.name)
-            elif symptom.emergency_in_adults:
-                self.emergency_in_adults.add(symptom.name)
-            else:
-                self.odds_ratio_health_seeking_in_adults[symptom.name] = symptom.odds_ratio_health_seeking_in_adults
-
-    def on_birth(self, mother_id, child_id):
-        """Nothing to handle on_birth
-        """
-        pass
-
 
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT
 # ---------------------------------------------------------------------------------------------------------
+
 
 class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
     """This event occurs every day and determines if persons with newly onset symptoms will seek care.

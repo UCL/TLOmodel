@@ -7,6 +7,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, postnatal_supervisor_lm
+from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -49,6 +50,18 @@ class PostnatalSupervisor(Module):
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHSYSTEM,
                 Metadata.USES_HEALTHBURDEN}  # declare that this is a disease module (leave as empty set otherwise)
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal disorders'),
+        'neonatal': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders')
+    }
+
+    # Declare Causes of Disability
+    # todo - distinguish the dalys bewteen maternal and neonatal (here, lumping all under maternal)
+    CAUSES_OF_DISABILITY = {
+        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal disorders')
+    }
 
     PARAMETERS = {
 

@@ -13,6 +13,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
+from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
@@ -23,7 +24,7 @@ logger.setLevel(logging.INFO)
 
 
 class OtherAdultCancer(Module):
-    """Other_adult Cancer Disease Module"""
+    """Other Adult Cancers Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -39,9 +40,45 @@ class OtherAdultCancer(Module):
         Metadata.USES_HEALTHBURDEN
     }
 
+    gbd_causes_of_cancer_represented_in_this_module = [
+        'Other malignant neoplasms',
+        'Nasopharynx cancer',
+        'Other pharynx cancer',
+        'Gallbladder and biliary tract cancer',
+        'Pancreatic cancer',
+        'Malignant skin melanoma',
+        'Non-melanoma skin cancer',
+        'Ovarian cancer',
+        'Testicular cancer',
+        'Kidney cancer',
+        # 'Brain and central nervous system cancer',
+        'Thyroid cancer',
+        'Mesothelioma',
+        'Hodgkin lymphoma',
+        'Non-Hodgkin lymphoma',
+        'Multiple myeloma',
+        'Leukemia',
+        'Other neoplasms',
+        'Cervical cancer',
+        'Uterine cancer',
+        'Colon and rectum cancer',
+        'Lip and oral cavity cancer',
+        'Stomach cancer',
+        'Liver cancer']
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer')
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer')
+    }
+
     PARAMETERS = {
         "init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of those with other adult cancer categories that have other_"
+            Types.LIST, "initial proportions of those with other adult cancer categories that have other "
                         "adult_ca_symptom"
         ),
         "in_prop_other_adult_cancer_stage": Parameter(
@@ -634,7 +671,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OtherAdultCancer_StartTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
