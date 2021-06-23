@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
-from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
@@ -42,6 +42,20 @@ class Measles(Module):
         Metadata.USES_HEALTHBURDEN,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_SYMPTOMMANAGER
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        "Measles":
+            Cause(gbd_causes={'Measles'},
+                  label='Measles')
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        "Measles":
+            Cause(gbd_causes={'Measles'},
+                  label='Measles')
     }
 
     PARAMETERS = {
@@ -167,20 +181,14 @@ class Measles(Module):
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        logger.debug(key="report_daly_values",
-                     data="This is measles reporting my health values")
-
         df = self.sim.population.props
-
-        health_values_df = pd.DataFrame(index=df.index[df.is_alive])
+        health_values = pd.Series(index=df.index[df.is_alive], data=0.0)
 
         for symptom, daly_wt in self.parameters["daly_wts"].items():
-            health_values_df.loc[
-                self.sim.modules["SymptomManager"].who_has(symptom), symptom] = daly_wt
+            health_values.loc[
+                self.sim.modules["SymptomManager"].who_has(symptom)] += daly_wt
 
-        health_values_df.fillna(0, inplace=True)
-
-        return health_values_df
+        return health_values
 
 
 class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
@@ -295,8 +303,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
                          data=f"This is MeaslesOnsetEvent, scheduling measles death for {person_id}")
 
             # make that death event
-            death_event = MeaslesDeathEvent(
-                self.module, person_id=person_id, cause="measles")
+            death_event = MeaslesDeathEvent(self.module, person_id=person_id)
 
             # schedule the death
             self.sim.schedule_event(
@@ -335,9 +342,8 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
     Performs the Death operation on an individual and logs it.
     """
 
-    def __init__(self, module, person_id, cause):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        self.cause = cause
 
     def apply(self, person_id):
         df = self.sim.population.props
@@ -356,17 +362,17 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
                     logger.debug(key="MeaslesDeathEvent",
                                  data=f"MeaslesDeathEvent: scheduling death for treated {person_id} on {self.sim.date}")
 
-                    self.sim.schedule_event(
-                        InstantaneousDeath(
-                            self.module, person_id, cause=self.cause), self.sim.date)
+                    self.sim.modules['Demography'].do_death(individual_id=person_id,
+                                                            cause="Measles",
+                                                            originating_module=self.module)
 
             else:
                 logger.debug(key="MeaslesDeathEvent",
                              data=f"MeaslesDeathEvent: scheduling death for untreated {person_id} on {self.sim.date}")
 
-                self.sim.schedule_event(
-                    InstantaneousDeath(
-                        self.module, person_id, cause=self.cause), self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=person_id,
+                                                        cause="Measles",
+                                                        originating_module=self.module)
 
 
 # ---------------------------------------------------------------------------------

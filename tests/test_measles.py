@@ -152,7 +152,7 @@ def test_measles_cases_and_hsi_occurring():
         assert set(current_measles_tx) <= set(has_rash)
 
     # check if any measles deaths occurred
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('measles').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('Measles').any()
 
 
 def test_measles_zero_death_rate():
