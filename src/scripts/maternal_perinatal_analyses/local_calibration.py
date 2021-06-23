@@ -202,12 +202,17 @@ def do_normal_run_all_pregnant(config_name, start_date, end_date, seed, populati
 
 # Get the log
 
-seeds = [84]
-for seed in seeds:
-    #do_normal_run_all_pregnant(config_name='anc_check_new_10', start_date=Date(2010, 1, 1),
-    #                           end_date=Date(2010, 10, 1), seed=seed, population=10000, parameters=2010)
-    do_normal_run_all_pregnant(config_name='anc_check_new_15', start_date=Date(2015, 1, 1),
-                               end_date=Date(2015, 10, 1), seed=seed, population=20000, parameters=2015)
+
+do_run_pregnancy_only(config_name='cov_anc_ints_test_new', start_date=Date(2010, 1, 1), end_date=Date(2010, 10, 1),
+                      seed=101, population=5000, parameters=2010)
+
+#seeds = [94]
+#for seed in seeds:
+#    do_labour_run_only(config_name='neonatal_check', start_date=Date(2010, 1, 1),
+#                       end_date=Date(2010, 4, 1), seed=seed, population=2500, parameters=2010)
+    #do_labour_run_only(config_name='pnc_check_15_new', start_date=Date(2015, 1, 1),
+    #                   end_date=Date(2015, 4, 1), seed=seed, population=2500, parameters=2015)
+
 #seeds = [77]
 #for seed in seeds:
 #    do_normal_run_all_pregnant(config_name='anc_calib_age_corr_15', start_date=Date(2010, 1, 1),

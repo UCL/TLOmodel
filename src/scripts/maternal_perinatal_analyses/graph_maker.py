@@ -30,13 +30,10 @@ def get_prop_unintended_preg(logs_dict, dict):
             dict.update(new_row)
 
 
-def get_total_births(logs_dict):
-    births = 0
-    for file in logs_dict:
-        if 'on_birth' in logs_dict[file]['tlo.methods.demography']:
-            births_df = logs_dict[file]['tlo.methods.demography']['on_birth']
-            births += len(births_df)
-    return births
+def get_total_births(logs_dict_file):
+    if 'on_birth' in logs_dict_file['tlo.methods.demography']:
+        births_df = logs_dict_file['tlo.methods.demography']['on_birth']
+        return len(births_df)
 
 
 def get_death_from_a_comp(logs_dict, cause):
@@ -164,7 +161,7 @@ def get_anc_coverage_graph(logs_dict_file, year):
     plt.show()
 
 
-def get_coverage_of_anc_interventions(logs_dict):
+def get_coverage_of_anc_interventions(logs_dict_file):
 
     interventions = ['dipstick', 'bp_measurement', 'admission', 'depression_screen', 'iron_folic_acid', 'b_e_p',
                      'LLITN', 'tt', 'calcium', 'hb_screen', 'albendazole', 'hep_b', 'syphilis_test', 'syphilis_treat',
@@ -179,28 +176,20 @@ def get_coverage_of_anc_interventions(logs_dict):
     # todo: this might not be the right denominator, as women arent able to receive all inteventions (wouldnt be that
     #  hard to do it by visit number i.e. of women who attended 3 visits did they have all the visit three info)
 
-    for file in logs_dict:
-        if 'anc1' in logs_dict[file]['tlo.methods.care_of_women_during_pregnancy']:
-            total_anc = logs_dict[file][f'tlo.methods.care_of_women_during_pregnancy']['anc1']
+    if 'anc1' in logs_dict_file['tlo.methods.care_of_women_during_pregnancy']:
+        total_anc = logs_dict_file[f'tlo.methods.care_of_women_during_pregnancy']['anc1']
+        total_women_anc = len(total_anc)
 
-            date_corrected = total_anc.loc[total_anc['date'] < Date(2010, 10, 1)]
-            total_women_anc += len(date_corrected)
+    if 'anc_interventions' in logs_dict_file['tlo.methods.care_of_women_during_pregnancy']:
+        ints_orig = logs_dict_file[f'tlo.methods.care_of_women_during_pregnancy']['anc_interventions']
+        ints_no_date = ints_orig.drop(['date'], axis=1)
+        duplicates = ints_no_date.duplicated(subset=None, keep='first')
+        final_ints = ints_no_date.drop(index=duplicates.loc[duplicates].index)
 
-    for file in logs_dict:
-        if 'anc_interventions' in logs_dict[file]['tlo.methods.care_of_women_during_pregnancy']:
-            ints_orig = logs_dict[file][f'tlo.methods.care_of_women_during_pregnancy']['anc_interventions']
-            ints = ints_orig.loc[ints_orig['date'] < Date(2010, 10, 1)]
-            ints.drop(['date'], axis=1)
-            duplicates = ints.duplicated(subset=None, keep='first')
-            ints.drop(index=duplicates.index)
+        for intervention in coverage:
+            total_intervention = len(final_ints.loc[(final_ints['intervention'] == intervention)])
+            coverage[intervention] = (total_intervention / total_women_anc) * 100
 
-            for intervention in coverage:
-                total_intervention = len(ints.loc[(ints['intervention'] == intervention)])
-                cover = (total_intervention / total_women_anc) * 100
-                coverage[intervention] += cover
-
-    for intervention in coverage:
-        coverage[intervention] = coverage[intervention] / len(logs_dict.keys())
 
     labels = ['DS', 'BP', 'ADM.', 'DSc', 'IFA', 'BEP', 'ITN', 'TT', 'CA', 'Hb', 'AL', 'HEP', 'S.Te', 'S.Tr',
               'HIV', 'IPTP', 'GDM']
@@ -252,4 +241,84 @@ def get_facility_delivery_graph(logs_dict_file, total_births, year):
     plt.title(f'Facility and Home Delivery Rates in {year}')
     plt.xticks(ind + width / 2, ('FDR', 'Ho.FDR', 'Hc.FDR', 'HBR'))
     plt.legend(loc='best')
+    plt.show()
+
+
+def get_pnc_coverage(logs_dict_file, total_births, year):
+
+    if 'postnatal_check' in logs_dict_file['tlo.methods.labour']:
+        maternal_pnc = logs_dict_file['tlo.methods.labour']['postnatal_check']
+        maternal_pnc.drop(['date'], axis=1)
+        duplicates = maternal_pnc.duplicated(subset=None, keep='first')
+        maternal_pnc.drop(index=duplicates.index)
+        early_pnc_mother = len(maternal_pnc.loc[maternal_pnc['timing'] == 'early'])
+
+    if 'postnatal_check' in logs_dict_file['tlo.methods.newborn_outcomes']:
+        neonatal_pnc = logs_dict_file['tlo.methods.newborn_outcomes']['postnatal_check']
+        neonatal_pnc.drop(['date'], axis=1)
+        duplicates = neonatal_pnc.duplicated(subset=None, keep='first')
+        neonatal_pnc.drop(index=duplicates.index)
+        early_neonatal_pnc = len(neonatal_pnc.loc[neonatal_pnc['timing'] == 'early'])
+
+    if 'total_mat_pnc_visits' in logs_dict_file['tlo.methods.postnatal_supervisor']:
+        total_visits = logs_dict_file['tlo.methods.postnatal_supervisor']['total_mat_pnc_visits']
+        more_than_zero= len(total_visits.loc[total_visits['visits'] > 0])
+        one_visit = len(total_visits.loc[total_visits['visits'] == 1])
+        two_visit = len(total_visits.loc[total_visits['visits'] == 2])
+        two_plus_visit = len(total_visits.loc[total_visits['visits'] > 2])
+
+    if 'total_neo_pnc_visits' in logs_dict_file['tlo.methods.postnatal_supervisor']:
+        total_visits_n = logs_dict_file['tlo.methods.postnatal_supervisor']['total_neo_pnc_visits']
+        more_than_zero_n= len(total_visits_n.loc[total_visits_n['visits'] > 0])
+        one_visit_n = len(total_visits_n.loc[total_visits_n['visits'] == 1])
+        two_visit_n = len(total_visits_n.loc[total_visits_n['visits'] == 2])
+        two_plus_visit_n = len(total_visits_n.loc[total_visits_n['visits'] > 2])
+
+    maternal_pnc_coverage = (len(maternal_pnc) / total_births) * 100
+    neonatal_pnc_coverage = (len(neonatal_pnc) / total_births) * 100
+
+    early_pnc_mother = (early_pnc_mother / total_births) * 100
+    early_neonatal_pnc = (early_neonatal_pnc / total_births) * 100
+
+    N = 4
+    model_rates = (maternal_pnc_coverage, early_pnc_mother, neonatal_pnc_coverage, early_neonatal_pnc)
+    if year == 2010:
+        target_rates = (50, 43, 60, 60)
+        colours = ['midnightblue', 'lavender']
+    else:
+        target_rates = (48, 42, 60, 60)
+        colours = ['goldenrod', 'cornsilk']
+
+    ind = np.arange(N)
+    width = 0.35
+    plt.bar(ind, model_rates, width, label='Model', color=colours[0])
+    plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
+    plt.ylabel('Proportion of women and newborns recently born attending PNC')
+    plt.title(f'Postnatal care coverage rates in {year}')
+    plt.xticks(ind + width / 2, ('mPNC', 'emPNC', 'nPNC', 'enPNC'))
+    plt.legend(loc='best')
+    plt.show()
+
+    one_visit_rate = (one_visit / more_than_zero) * 100
+    two_visit_rate = (two_visit / more_than_zero) * 100
+    two_plus_visit_rate = (two_plus_visit / more_than_zero) * 100
+
+    objects = ('PNC1', 'PNC2', 'PNC2+')
+    y_pos = np.arange(len(objects))
+    plt.bar(y_pos, [one_visit_rate, two_visit_rate, two_plus_visit_rate], align='center', alpha=0.5, color='grey')
+    plt.xticks(y_pos, objects)
+    plt.ylabel('PNC visits/Total women with 1 or more visit')
+    plt.title('Distribution of maternal PNC visits')
+    plt.show()
+
+    one_visit_rate_n = (one_visit_n / more_than_zero_n) * 100
+    two_visit_rate_n = (two_visit_n / more_than_zero_n) * 100
+    two_plus_visit_rate_n = (two_plus_visit_n / more_than_zero_n) * 100
+
+    objects = ('PNC1', 'PNC2', 'PNC2+')
+    y_pos = np.arange(len(objects))
+    plt.bar(y_pos, [one_visit_rate_n, two_visit_rate_n, two_plus_visit_rate_n], align='center', alpha=0.5, color='pink')
+    plt.xticks(y_pos, objects)
+    plt.ylabel('PNC visits/Total neonates with 1 or more visit')
+    plt.title('Distribution of neonatal PNC visits')
     plt.show()

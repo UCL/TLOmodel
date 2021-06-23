@@ -33,7 +33,7 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 
 logs_dict = dict()
 
-files = ['anc_check_new_15_calibration_84__2021-06-16T164826']
+files = ['cov_anc_ints_test_new_calibration_101__2021-06-22T171454']
 
 for file in files:
     new_parse_log = {file: parse_log_file(filepath=f"./outputs/calibration_files/{file}.log")}
@@ -55,23 +55,27 @@ for complication in antenatal_comps:
 for complication in intrapartum_comps:
     graph_maker.get_incidence(logs_dict, 'labour', complication, master_dict_la)
 
-total_births = graph_maker.get_total_births(logs_dict)
+graph_maker.get_coverage_of_anc_interventions(logs_dict['cov_anc_ints_test_new_calibration_101__2021-06-22T171454'])
 
 #total_births_2010 = len(logs_dict['fd_2010_age_corr_calibration_67__2021-06-15T155327'][
 #                         'tlo.methods.labour']['delivery_setting'])
 #total_births_2015 = len(logs_dict['fd_2015_age_corr_calibration_73__2021-06-15T170334'][
 #                         'tlo.methods.labour']['delivery_setting'])
 
-
-
 # graph_maker.get_htn_disorders_graph(master_dict_an=master_dict_an, master_dict_la=master_dict_la)
 # graph_maker.get_anc_coverage_graph(logs_dict)
 #graph_maker.get_facility_delivery_graph(logs_dict['fd_2010_age_corr_calibration_67__2021-06-15T155327'],
 #                                        total_births_2010, 2010)
 #graph_maker.get_anc_coverage_graph(logs_dict['anc_check_new_10_calibration_83__2021-06-16T155440'], 2010)
-graph_maker.get_anc_coverage_graph(logs_dict['anc_check_new_15_calibration_84__2021-06-16T164826'], 2015)
 
 # graph_maker.get_anc_coverage_graph(logs_dict['fd_2015_age_corr_calibration_71__2021-06-15T163959'],
 #                                         total_births_2010, 2010)
 # graph_maker.get_anc_coverage_graph(logs_dict['fd_2015_age_corr_calibration_71__2021-06-15T163959'],
 #                                         total_births_2015, 2015)
+#total_births_2010 = graph_maker.get_total_births(logs_dict['neonatal_check_calibration_94__2021-06-22T145220'])
+#total_births_2015 = graph_maker.get_total_births(logs_dict['pnc_check_15_new_calibration_93__2021-06-22T114404'])
+
+#graph_maker.get_pnc_coverage(logs_dict['neonatal_check_calibration_94__2021-06-22T145220'],
+#                             total_births_2010, 2010)
+#graph_maker.get_pnc_coverage(logs_dict['pnc_check_15_new_calibration_93__2021-06-22T114404'],
+#                             total_births_2015, 2015)

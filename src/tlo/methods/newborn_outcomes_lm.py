@@ -39,8 +39,8 @@ def predict_early_onset_neonatal_sepsis(self, df, rng=None, **externals):
 
     if person['nb_clean_birth']:
         result *= params['treatment_effect_clean_birth']
-    if person['nb_received_cord_care']:
-        result *= params['treatment_effect_cord_care']
+    #if person['nb_received_cord_care']:   # TODO: currently this only effects later risk of sepsis
+    #    result *= params['treatment_effect_cord_care']
     if person['nb_early_init_breastfeeding']:
         result *= params['treatment_effect_early_init_bf']
     if externals['received_abx_for_prom']:
@@ -165,15 +165,6 @@ def predict_neonatal_sepsis_death(self, df, rng=None, **externals):
         result *= params['treatment_effect_inj_abx_sep']
     if person['nb_supp_care_neonatal_sepsis']:
         result *= params['treatment_effect_supp_care_sep']
-
-    return pd.Series(data=[result], index=df.index)
-
-
-def predict_congenital_anomaly_death(self, df, rng=None, **externals):
-    """individual level"""
-    # person = df.iloc[0]
-    params = self.parameters
-    result = params['cfr_congenital_anomaly']
 
     return pd.Series(data=[result], index=df.index)
 
