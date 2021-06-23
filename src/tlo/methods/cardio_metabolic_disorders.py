@@ -1,5 +1,5 @@
 """
-The joint NCDs model by Tim Hallett and Britta Jewell, October 2020
+The joint Cardio-Metabolic Disorders model by Tim Hallett and Britta Jewell, October 2020
 
 """
 import math
@@ -27,10 +27,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Ncds(Module):
+class CardioMetabolicDisorders(Module):
     """
-    NCDs module covers a subset of NCD conditions and events. Conditions are binary, and individuals experience a risk
-    of acquiring or losing a condition based on annual probability and demographic/lifestyle risk factors.
+    CardioMetabolicDisorders module covers a subset of cardio-metabolic conditions and events. Conditions are binary
+    and individuals experience a risk of acquiring or losing a condition based on annual probability and
+    demographic/lifestyle risk factors.
 
     """
     # save a master list of the events that are covered in this module
@@ -96,7 +97,7 @@ class Ncds(Module):
         **condition_list,
         **event_list,
         # 'nc_cancers': Property(Types.BOOL, 'whether or not the person currently has any form of cancer'),
-        'nc_n_conditions': Property(Types.INT, 'how many NCD conditions the person currently has'),
+        'nc_n_conditions': Property(Types.INT, 'how many cardio-metabolic conditions the person currently has'),
         'nc_condition_combos': Property(Types.BOOL, 'whether or not the person currently has a combination of conds')
     }
 
@@ -109,11 +110,11 @@ class Ncds(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        self.conditions = Ncds.conditions
-        self.events = Ncds.events
+        self.conditions = CardioMetabolicDisorders.conditions
+        self.events = CardioMetabolicDisorders.events
 
         # create list that includes conditions modelled by other modules
-        self.condition_list = ['nc_' + cond for cond in Ncds.conditions] + ['de_depr']
+        self.condition_list = ['nc_' + cond for cond in CardioMetabolicDisorders.conditions] + ['de_depr']
 
         # retrieve age range categories from Demography module
         self.age_index = None
@@ -121,21 +122,21 @@ class Ncds(Module):
     def read_parameters(self, data_folder):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
 
-        ResourceFile_NCDs_condition_onset.xlsx = parameters for onset of conditions
-        ResourceFile_NCDs_condition_removal.xlsx  = parameters for removal of conditions
-        ResourceFile_NCDs_condition_death.xlsx  = parameters for death rate from conditions
-        ResourceFile_NCDs_condition_prevalence.xlsx  = initial and target prevalence for conditions
-        ResourceFile_NCDs_events.xlsx  = parameters for occurrence of events
-        ResourceFile_NCDs_events_death.xlsx  = parameters for death rate from events
+        ResourceFile_cmd_condition_onset.xlsx = parameters for onset of conditions
+        ResourceFile_cmd_condition_removal.xlsx  = parameters for removal of conditions
+        ResourceFile_cmd_condition_death.xlsx  = parameters for death rate from conditions
+        ResourceFile_cmd_condition_prevalence.xlsx  = initial and target prevalence for conditions
+        ResourceFile_cmd_events.xlsx  = parameters for occurrence of events
+        ResourceFile_cmd_events_death.xlsx  = parameters for death rate from events
 
         """
-        ncds_path = Path(self.resourcefilepath) / "ncds"
-        cond_onset = pd.read_excel(ncds_path / "ResourceFile_NCDs_condition_onset.xlsx", sheet_name=None)
-        cond_removal = pd.read_excel(ncds_path / "ResourceFile_NCDs_condition_removal.xlsx", sheet_name=None)
-        cond_death = pd.read_excel(ncds_path / "ResourceFile_NCDs_condition_death.xlsx", sheet_name=None)
-        cond_prevalence = pd.read_excel(ncds_path / "ResourceFile_NCDs_condition_prevalence.xlsx", sheet_name=None)
-        events_onset = pd.read_excel(ncds_path / "ResourceFile_NCDs_events.xlsx", sheet_name=None)
-        events_death = pd.read_excel(ncds_path / "ResourceFile_NCDs_events_death.xlsx", sheet_name=None)
+        cmd_path = Path(self.resourcefilepath) / "cmd"
+        cond_onset = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_onset.xlsx", sheet_name=None)
+        cond_removal = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_removal.xlsx", sheet_name=None)
+        cond_death = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_death.xlsx", sheet_name=None)
+        cond_prevalence = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_prevalence.xlsx", sheet_name=None)
+        events_onset = pd.read_excel(cmd_path / "ResourceFile_cmd_events.xlsx", sheet_name=None)
+        events_death = pd.read_excel(cmd_path / "ResourceFile_cmd_events_death.xlsx", sheet_name=None)
 
         def get_values(params, value):
             """replaces nans in the 'value' key with specified value"""
@@ -204,8 +205,9 @@ class Ncds(Module):
         * Main Logging Event
         * Build the LinearModels for the onset/removal of each condition:
         """
-        sim.schedule_event(Ncds_MainPollingEvent(self, self.parameters['interval_between_polls']), sim.date)
-        sim.schedule_event(Ncds_LoggingEvent(self), sim.date)
+        sim.schedule_event(CardioMetabolicDisorders_MainPollingEvent(self, self.parameters['interval_between_polls']),
+                           sim.date)
+        sim.schedule_event(CardioMetabolicDisorders_LoggingEvent(self), sim.date)
 
         # dict to hold counters for the number of episodes by condition-type and age-group
         self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_index, columns=self.conditions)
@@ -372,10 +374,10 @@ class Ncds(Module):
 #
 #   The regular event that actually changes individuals' condition or event status, occurring every 3 months
 #   and synchronously for all persons.
-#   Individual level events (HSI, death or NCD events) may occur at other times.
+#   Individual level events (HSI, death or cardio-metabolic events) may occur at other times.
 # ---------------------------------------------------------------------------------------------------------
 
-class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
+class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """The Main Polling Event.
     * Establishes onset of each condition
     * Establishes removal of each condition
@@ -383,12 +385,12 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module, interval_between_polls):
-        """The Main Polling Event of the NCDs Module
+        """The Main Polling Event of the CardioMetabolicDisorders Module
 
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=interval_between_polls))
-        assert isinstance(module, Ncds)
+        assert isinstance(module, CardioMetabolicDisorders)
 
     def apply(self, population):
         """Apply this event to the population.
@@ -438,13 +440,19 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             idx_loses_condition = loses_condition[loses_condition].index
             df.loc[idx_loses_condition, f'nc_{condition}'] = False
 
-            # -------------------- DEATH FROM NCD CONDITION ---------------------------------------
-            # There is a risk of death for those who have an NCD condition. Death is assumed to happen instantly.
+            # -------------------- DEATH FROM CARDIO-METABOLIC CONDITION ---------------------------------------
+            # There is a risk of death for those who have a cardio-metabolic condition.
+            # Death is assumed to happen instantly.
 
             eligible_population = df.is_alive & df[f'nc_{condition}']
             selected_to_die = self.module.lms_death[condition].predict(df.loc[eligible_population], rng)
             if selected_to_die.any():  # catch in case no one dies
-                idx_selected_to_die = selected_to_die[selected_to_die].index
+                if sum(eligible_population) > 1:
+                    idx_selected_to_die = selected_to_die[selected_to_die].index
+                else:
+                    # if there is only one eligible person, the predict method of linear model will return just a bool
+                    #  instead of a pd.Series. Handle this special case:
+                    idx_selected_to_die = eligible_population[eligible_population].index
 
                 for person_id in idx_selected_to_die:
                     schedule_death_to_occur_before_next_poll(person_id, condition,
@@ -465,11 +473,12 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     start = self.sim.date
                     end = self.sim.date + DateOffset(months=m.parameters['interval_between_polls'], days=-1)
                     ndays = (end - start).days
-                    self.sim.schedule_event(NcdEvent(self.module, person_id, event),
+                    self.sim.schedule_event(CardioMetabolicDisordersEvent(self.module, person_id, event),
                                             self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
 
-            # -------------------- DEATH FROM NCD EVENT ---------------------------------------
-            # There is a risk of death for those who have had an NCD event. Death is assumed to happen instantly.
+            # -------------------- DEATH FROM CARDIO-METABOLIC EVENT ---------------------------------------
+            # There is a risk of death for those who have had an CardioMetabolicDisorders event.
+            # Death is assumed to happen instantly.
 
             eligible_population = df.is_alive & df[f'nc_{event}']
             selected_to_die = self.module.lms_event_death[event].predict(df.loc[eligible_population], rng)
@@ -481,9 +490,10 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                                                              m.parameters['interval_between_polls'])
 
 
-class NcdEvent(Event, IndividualScopeEventMixin):
+class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
     """
-    This is an NCD event. It has been scheduled to occur by the Ncds_MainPollingEvent.
+    This is an Cardio Metabolic Disorders event. It has been scheduled to occur by the
+    CardioMetabolicDisorders_MainPollingEvent.
     """
 
     def __init__(self, module, person_id, event):
@@ -515,7 +525,7 @@ class NcdEvent(Event, IndividualScopeEventMixin):
 #   population. There may also be a loggig event that is driven by particular events.
 # ---------------------------------------------------------------------------------------------------------
 
-class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summary of the numbers of people with respect to the action of this module.
         """
@@ -524,7 +534,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         self.date_last_run = self.sim.date
         self.AGE_RANGE_LOOKUP = self.sim.modules['Demography'].AGE_RANGE_LOOKUP
-        assert isinstance(module, Ncds)
+        assert isinstance(module, CardioMetabolicDisorders)
 
     def apply(self, population):
 
