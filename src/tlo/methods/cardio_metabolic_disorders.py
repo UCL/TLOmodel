@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import Cause
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -377,7 +376,7 @@ class CardioMetabolicDisorders(Module):
         """Report DALY values to the HealthBurden module"""
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the cause_of_death of the cause of this disability.
+        # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
         # To return a value of 0.0 (fully health) for everyone, use:
@@ -511,14 +510,13 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
             eligible_population = df.is_alive & df[f'nc_{event}']
             selected_to_die = self.module.lms_event_death[event].predict(df.loc[eligible_population], rng)
-
             if selected_to_die.any():  # catch in case no one dies
                 if len(eligible_population) > 1:
                     idx_selected_to_die = selected_to_die[selected_to_die].index
                 else:
                     # if there is only one eligible person, the predict method of linear model will return just a bool
                     #  instead of a pd.Series. Handle this special case:
-                    idx_selected_to_die = eligible_population.index.to_list()
+                    idx_selected_to_die = eligible_population.index
 
                 for person_id in idx_selected_to_die:
                     schedule_death_to_occur_before_next_poll(person_id, event.replace('ever_', ''),
