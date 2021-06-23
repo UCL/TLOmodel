@@ -1009,7 +1009,6 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
               ) / tmp['is_alive']
 
         foi = foi.fillna(0)  # fill any missing values with 0
-        assert foi.isna().sum() == 0  # check there is a foi for every district
 
         # create a dict, uses district name as keys
         foi_dict = foi.to_dict()
@@ -1017,10 +1016,6 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # look up value for each row in df
         foi_for_individual = df['district_of_residence'].map(foi_dict)
         foi_for_individual = foi_for_individual.fillna(0)  # newly added rows to df will have nan entries
-
-        assert (
-            foi_for_individual.isna().sum() == 0
-        )  # check there is a district-level foi for every person
 
         # -------------- national-level transmission -------------- #
 
@@ -1046,11 +1041,12 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------- individual risk of acquisition -------------- #
 
         # adjust individual risk by bcg status
-        risk_tb = pd.Series(foi_for_individual, index=df.index)
+        risk_tb = pd.Series(0, index=df.index)
+        risk_tb.loc[df.is_alive] = foi_for_individual  # individual risk
         risk_tb.loc[df.is_alive] += foi_national  # add in background risk (national)
-        risk_tb.loc[~df.is_alive] *= 0  # to ensure no risk if dead
-        risk_tb.loc[df.va_bcg & df.age_years < 10] *= p['rr_bcg_inf']
-        del foi_for_individual
+        risk_tb.loc[df.is_alive & df.va_bcg & df.age_years < 10] *= p['rr_bcg_inf']
+
+        assert not risk_tb.loc[~df.is_alive].any() > 0
 
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = rng.random_sample(size=len(df))
