@@ -38,8 +38,8 @@ class Demography(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.causes_of_death = dict()  # will store all the causes of death that are possible in the simulation
         self.popsize_by_year = dict()  # will store total population size each year
+        self.causes_of_death = dict()  # will store all the causes of death that are possible in the simulation
         self.gbd_causes_of_death = set()  # will store all the causes of death defined in the GBD data
         self.gbd_causes_of_death_not_represented_in_disease_modules = set()  # will store causes of death in GBD not
                                                                              # represented in the simulation
@@ -143,8 +143,6 @@ class Demography(Module):
             Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDeath_GBD2019.csv'
         ).set_index(['Sex', 'Age_Grp'])
 
-
-
     def pre_initialise_population(self):
         """
         1) Store all the cause of death represented in the imported GBD data
@@ -175,108 +173,6 @@ class Demography(Module):
             Types.CATEGORICAL,
             'The region of residence (mapped from district_num_of_residence).',
             categories=self.parameters['pop_2010']['Region'].unique().tolist()
-        )
-
-    def process_causes_of_death(self):
-        """
-        1) Register all causes of deaths defined by Module
-        2) Define the "Other" causes of death (that is managed in this module by the OtherDeathPoll)
-        3) Output to the log mappers for causes of death (tlo_cause --> label; gbd_cause --> label).
-        """
-        # 1) Register all the causes of death from the disease modules: gives dict(<tlo_cause>: <Cause instance>)
-        self.causes_of_death = collect_causes_from_disease_modules(
-            all_modules=self.sim.modules.values(),
-            collect='CAUSES_OF_DEATH',
-            acceptable_causes=self.gbd_causes_of_death
-        )
-
-        # 2) Define the "Other" tlo_cause of death (that is managed in this module by the OtherDeathPoll)
-        self.gbd_causes_of_death_not_represented_in_disease_modules = \
-            self.get_gbd_causes_of_death_not_represented_in_disease_modules(self.causes_of_death)
-        self.causes_of_death['Other'] = Cause(
-            label='Other',
-            gbd_causes=self.gbd_causes_of_death_not_represented_in_disease_modules
-        )
-
-        # 3) Output to the log mappers for causes of death
-        mapper_from_tlo_causes, mapper_from_gbd_causes = self.create_mappers_from_causes_of_death_to_label()
-        logger.info(
-            key='mapper_from_tlo_cause_to_common_label',
-            data=mapper_from_tlo_causes
-        )
-        logger.info(
-            key='mapper_from_gbd_cause_to_common_label',
-            data=mapper_from_gbd_causes
-        )
-
-        # GBD causes of death
-        self.parameters['gbd_causes_of_death'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv'
-        )['cause_name'].unique().tolist()
-
-        # GBD causes of death
-        self.parameters['gbd_data'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv'
-        )
-
-    def pre_initialise_population(self):
-        """
-        1) Process the declarations of causes of death made by the disease modules
-        3) Define categorical properties for 'cause_of_death', 'region_of_residence' and 'district_of_residence'
-        """
-
-        # 1) Process the declarations of causes of death made by the disease modules
-        self.process_causes_of_death()
-
-        # 2) Update the properties for 'cause_of_death', 'region_of_residence' and 'district_of_residence'
-        # Nb. This couldn't be done before categories for each of these has been determined following read-in of data
-        # and initialising of other modules.
-        self.PROPERTIES['cause_of_death'] = Property(
-            Types.CATEGORICAL,
-            'The cause of death of this individual (the tlo_cause defined by the module)',
-            categories=list(self.causes_of_death.keys())
-        )
-        self.PROPERTIES['district_of_residence'] = Property(
-            Types.CATEGORICAL,
-            'The district (name) of residence (mapped from district_num_of_residence).',
-            categories=self.parameters['pop_2010']['District'].unique().tolist()
-        )
-        self.PROPERTIES['region_of_residence'] = Property(
-            Types.CATEGORICAL,
-            'The region of residence (mapped from district_num_of_residence).',
-            categories=self.parameters['pop_2010']['Region'].unique().tolist()
-        )
-
-    def process_causes_of_death(self):
-        """
-        1) Register all causes of deaths defined by Module
-        2) Define the "Other" causes of death (that is managed in this module by the OtherDeathPoll)
-        3) Output to the log mappers for causes of death (tlo_cause --> label; gbd_cause --> label).
-        """
-        # 1) Register all the causes of death from the disease modules: gives dict(<tlo_cause>: <Cause instance>)
-        self.causes_of_death = collect_causes_from_disease_modules(
-            all_modules=self.sim.modules.values(),
-            collect='CAUSES_OF_DEATH',
-            acceptable_causes=set(self.gbd_causes_of_death)
-        )
-
-        # 2) Define the "Other" tlo_cause of death (that is managed in this module by the OtherDeathPoll)
-        self.gbd_causes_of_death_not_represented_in_disease_modules = \
-            self.get_gbd_causes_of_death_not_represented_in_disease_modules(self.causes_of_death)
-        self.causes_of_death['Other'] = Cause(
-            label='Other',
-            gbd_causes=self.gbd_causes_of_death_not_represented_in_disease_modules
-        )
-
-        # 3) Output to the log mappers for causes of death
-        mapper_from_tlo_causes, mapper_from_gbd_causes = self.create_mappers_from_causes_of_death_to_label()
-        logger.info(
-            key='mapper_from_tlo_cause_to_common_label',
-            data=mapper_from_tlo_causes
-        )
-        logger.info(
-            key='mapper_from_gbd_cause_to_common_label',
-            data=mapper_from_gbd_causes
         )
 
     def initialise_population(self, population):
@@ -393,6 +289,38 @@ class Demography(Module):
                 description='The scaling factor (if can be computed)'
             )
 
+    def process_causes_of_death(self):
+        """
+        1) Register all causes of deaths defined by Module
+        2) Define the "Other" causes of death (that is managed in this module by the OtherDeathPoll)
+        3) Output to the log mappers for causes of death (tlo_cause --> label; gbd_cause --> label).
+        """
+        # 1) Register all the causes of death from the disease modules: gives dict(<tlo_cause>: <Cause instance>)
+        self.causes_of_death = collect_causes_from_disease_modules(
+            all_modules=self.sim.modules.values(),
+            collect='CAUSES_OF_DEATH',
+            acceptable_causes=self.gbd_causes_of_death
+        )
+
+        # 2) Define the "Other" tlo_cause of death (that is managed in this module by the OtherDeathPoll)
+        self.gbd_causes_of_death_not_represented_in_disease_modules = \
+            self.get_gbd_causes_of_death_not_represented_in_disease_modules(self.causes_of_death)
+        self.causes_of_death['Other'] = Cause(
+            label='Other',
+            gbd_causes=self.gbd_causes_of_death_not_represented_in_disease_modules
+        )
+
+        # 3) Output to the log mappers for causes of death
+        mapper_from_tlo_causes, mapper_from_gbd_causes = self.create_mappers_from_causes_of_death_to_label()
+        logger.info(
+            key='mapper_from_tlo_cause_to_common_label',
+            data=mapper_from_tlo_causes
+        )
+        logger.info(
+            key='mapper_from_gbd_cause_to_common_label',
+            data=mapper_from_gbd_causes
+        )
+
     def do_death(self, individual_id: int, cause: str, originating_module: Module):
         """Register and log the death of an individual from a specific cause.
         * 'individual_id' is the index in the population.props dataframe to the (one) person.
@@ -450,25 +378,6 @@ class Demography(Module):
         # Release any beds-days that would be used by this person:
         if 'HealthSystem' in self.sim.modules:
             self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
-
-    def get_gbd_causes_of_death_not_represented_in_disease_modules(self, causes_of_death):
-        """
-        Find the causes of death in the GBD datasets that are not represented within the causes of death defined in the
-        modules registered in this simulation.
-        :return: set of gbd_causes of death that are not represented in disease modules
-        """
-        all_gbd_causes_in_sim = set()
-        for c in causes_of_death.values():
-            all_gbd_causes_in_sim.update(c.gbd_causes)
-
-        return set(self.gbd_causes_of_death) - all_gbd_causes_in_sim
-
-    def create_mappers_from_causes_of_death_to_label(self):
-        """Use a helper function to create mappers for causes of death to label."""
-        return create_mappers_from_causes_to_label(
-            causes=self.causes_of_death,
-            all_gbd_causes=set(self.gbd_causes_of_death)
-        )
 
     def get_gbd_causes_of_death_not_represented_in_disease_modules(self, causes_of_death):
         """
@@ -547,35 +456,6 @@ class Demography(Module):
         py = py.add(df1, fill_value=0).add(df2, fill_value=0)
 
         return py
-
-    def compute_scaling_factor(self):
-        """
-        Compute the scaling factor, if it is possible to do so.
-
-        The scaling factor is the ratio of {Real Population} to {Model Pop Size}. It is used to multiply model outputs
-        in order to produce statistics that will be of the same scale as the real population.
-
-        It is estimated by comparing the population size with the national census in the year that the census was
-        conducted.
-
-        If the simulation does not include that year, the scaling factor cannot be computed (in which case, np.nan is
-        returned).
-
-        :return: floating point number that is the scaling factor, or np.nan if it cannot be computed.
-        """
-
-        # Get Census data
-        # todo - move this to parameters, and update filename later (when other changes in different branch merged in)
-        year_of_census = 2018
-        census_popsize = \
-            pd.read_csv(Path(self.resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
-
-        # Get model total population size in that same year
-        if year_of_census not in self.popsize_by_year:
-            return np.nan
-        else:
-            model_popsize_in_year_of_census = self.popsize_by_year[year_of_census]
-            return census_popsize / model_popsize_in_year_of_census
 
     def compute_scaling_factor(self):
         """
@@ -667,7 +547,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         return mort_risk[['fallbackyear', 'sex', 'age_years', 'prob_of_dying_before_next_poll']]
 
     def get_all_cause_mort_risk_per_poll(self):
-        """Compute the all-cause risk of death to apply between each run of the OtherDeathPoll event"""
+        """Compute the all-cause risk of death per poll"""
         # Get time elasped between each poll:
         dur_in_years_between_polls = np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y')
 

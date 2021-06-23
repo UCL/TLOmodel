@@ -8,7 +8,7 @@ import pytest
 from pytest import approx
 
 from tlo import Date, Module, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import parse_log_file, compare_number_of_deaths
 from tlo.methods import (
     Metadata,
     bladder_cancer,
@@ -111,133 +111,6 @@ def test_storage_of_cause_of_death():
     test_dtypes(sim)
 
 
-def test_calc_of_scaling_factor(tmpdir):
-    """Test that the scaling factor is computed and put out to the log"""
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-    popsize = 10_000
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
-        'filename': 'temp',
-        'directory': tmpdir,
-        'custom_levels': {
-            "*": logging.INFO,
-        }
-    })
-    sim.register(
-        demography.Demography(resourcefilepath=rfp),
-    )
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=Date(2019, 12, 31))
-
-    # Check that the scaling factor is calculated in the log correctly:
-    output = parse_log_file(sim.log_filepath)
-    sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
-    assert sf == approx(18.6e6 / popsize, rel=0.05)
-
-
-def test_cause_of_death_being_registered():
-    """Test that the modules can declare causes of death, and that the mappers between tlo causes of death and gbd
-    causes of death can be created correctly."""
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
-    sim.register(
-        demography.Demography(resourcefilepath=rfp),
-        symptommanager.SymptomManager(resourcefilepath=rfp),
-        breast_cancer.BreastCancer(resourcefilepath=rfp),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
-        healthsystem.HealthSystem(resourcefilepath=rfp, disable_and_reject_all=True),
-        bladder_cancer.BladderCancer(resourcefilepath=rfp),
-        prostate_cancer.ProstateCancer(resourcefilepath=rfp),
-        depression.Depression(resourcefilepath=rfp),
-        diarrhoea.Diarrhoea(resourcefilepath=rfp),
-        hiv.Hiv(resourcefilepath=rfp),
-        malaria.Malaria(resourcefilepath=rfp),
-        cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=rfp),
-        oesophagealcancer.OesophagealCancer(resourcefilepath=rfp),
-        contraception.Contraception(resourcefilepath=rfp),
-        labour.Labour(resourcefilepath=rfp),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=rfp),
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
-    )
-    sim.make_initial_population(n=20)
-    sim.simulate(end_date=Date(2010, 1, 2))
-    test_dtypes(sim)
-
-    mapper_from_tlo_causes, mapper_from_gbd_causes = \
-        sim.modules['Demography'].create_mappers_from_causes_of_death_to_label()
-
-    assert set(mapper_from_tlo_causes.keys()) == set(sim.modules['Demography'].causes_of_death)
-    assert set(mapper_from_gbd_causes.keys()) == set(sim.modules['Demography'].parameters['gbd_causes_of_death'])
-    assert set(mapper_from_gbd_causes.values()) == set(mapper_from_tlo_causes.values())
-
-
-def test_storage_of_cause_of_death():
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-
-    class DummyModule(Module):
-        METADATA = {Metadata.DISEASE_MODULE}
-        CAUSES_OF_DEATH = {'a_cause': Cause(label='a_cause')}
-
-        def read_parameters(self, data_folder):
-            pass
-
-        def initialise_population(self, population):
-            pass
-
-        def initialise_simulation(self, sim):
-            pass
-
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
-    sim.register(
-        demography.Demography(resourcefilepath=rfp),
-        DummyModule()
-    )
-    sim.make_initial_population(n=20)
-    df = sim.population.props
-    orig = df.dtypes
-    assert type(orig['cause_of_death']) == pd.CategoricalDtype
-    assert set(['Other', 'a_cause']) == set(df['cause_of_death'].cat.categories)
-
-    # Cause a person to die by the DummyModule
-    person_id = 0
-    sim.modules['Demography'].do_death(
-        individual_id=person_id,
-        originating_module=sim.modules['DummyModule'],
-        cause='a_cause'
-    )
-
-    person = df.loc[person_id]
-    assert not person.is_alive
-    assert person.cause_of_death == 'a_cause'
-    assert (df.dtypes == orig).all()
-    test_dtypes(sim)
-
-
-def test_calc_of_scaling_factor(tmpdir):
-    """Test that the scaling factor is computed and put out to the log"""
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-    popsize = 10_000
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
-        'filename': 'temp',
-        'directory': tmpdir,
-        'custom_levels': {
-            "*": logging.INFO,
-        }
-    })
-    sim.register(
-        demography.Demography(resourcefilepath=rfp),
-    )
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=Date(2019, 12, 31))
-
-    # Check that the scaling factor is calculated in the log correctly:
-    output = parse_log_file(sim.log_filepath)
-    sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
-    assert sf == approx(18.6e6 / popsize, rel=0.05)
-
-
 def test_cause_of_death_being_registered(tmpdir):
     """Test that the modules can declare causes of death, that the mappers between tlo causes of death and gbd
     causes of death can be created correctly and that the analysis helper scripts can be used to produce comparisons
@@ -310,6 +183,29 @@ def test_cause_of_death_being_registered(tmpdir):
     results = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=rfp)
     # Check the number of deaths in model represented in right
     assert (results['model'].sum() * 5.0) == approx(len(output['tlo.methods.demography']['death']))
+
+
+def test_calc_of_scaling_factor(tmpdir):
+    """Test that the scaling factor is computed and put out to the log"""
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+    popsize = 10_000
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "*": logging.INFO,
+        }
+    })
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+    )
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2019, 12, 31))
+
+    # Check that the scaling factor is calculated in the log correctly:
+    output = parse_log_file(sim.log_filepath)
+    sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
+    assert sf == approx(19e6 / popsize, rel=0.10)
 
 
 def test_py_calc(simulation):
