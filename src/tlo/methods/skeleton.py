@@ -3,7 +3,6 @@ A skeleton template for disease methods.
 
 """
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import Cause
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -87,7 +86,7 @@ class Skeleton(Module):
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-        To access files use: Path(self.path_for_saved_files) / file_name
+        To access files use: Path(self.resourcefilepath) / file_name
         """
         pass
 

@@ -70,7 +70,7 @@ class SimplifiedBirths(Module):
         """Load parameters for probability of pregnancy/birth and breastfeeding status for newborns"""
 
         self.parameters['age_specific_fertility_rates'] = \
-            pd.read_csv(self.resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+            pd.read_csv(self.resourcefilepath / 'ResourceFile_ASFR_WPP.csv')
 
         self.parameters['months_between_pregnancy_and_delivery'] = 9
 
