@@ -5,7 +5,6 @@ from datetime import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 # Define paths and filenames
@@ -14,10 +13,8 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 results_filename = outputpath / '2020_11_23_health_system_systematic_run.pickle'
 make_file_name = lambda stub: outputpath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
 
-
 with open(results_filename, 'rb') as f:
     results = pickle.load(f)['results']
-
 
 # %% Make summary plots:
 # Get total deaths in the duration of each simulation:

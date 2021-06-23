@@ -41,8 +41,8 @@ class Demography(Module):
         self.popsize_by_year = dict()  # will store total population size each year
         self.causes_of_death = dict()  # will store all the causes of death that are possible in the simulation
         self.gbd_causes_of_death = set()  # will store all the causes of death defined in the GBD data
-        self.gbd_causes_of_death_not_represented_in_disease_modules = set()  # will store causes of death in GBD not
-                                                                             # represented in the simulation
+        self.gbd_causes_of_death_not_represented_in_disease_modules = set()
+        #  will store causes of death in GBD not represented in the simulation
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
@@ -62,8 +62,8 @@ class Demography(Module):
         'all_cause_mortality_schedule': Parameter(Types.DATA_FRAME, 'All-cause age-specific mortality rates from WPP'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
         'gbd_causes_of_death_data': Parameter(Types.DATA_FRAME,
-                              'Proportion of deaths in each age/sex group attributable to each possible cause of death '
-                              'in the GBD dataset.'),
+                                              'Proportion of deaths in each age/sex group attributable to each possible'
+                                              ' cause of death in the GBD dataset.'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -539,7 +539,9 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # Mulitiply probabilities by the proportion of deaths that are to be represented by OtherDeathPollEvent
         all_cause_mort_risk['age_group'] = all_cause_mort_risk['age_years'].map(self.module.AGE_RANGE_LOOKUP)
         mort_risk = all_cause_mort_risk.merge(prop_of_deaths_to_represent.reset_index(name='prop'),
-                                  left_on=['sex', 'age_group'], right_on=['Sex', 'Age_Grp'], how='left')
+                                              left_on=['sex', 'age_group'],
+                                              right_on=['Sex', 'Age_Grp'],
+                                              how='left')
         mort_risk['prop'] = mort_risk['prop'].fillna(method='ffill')
         mort_risk['prob_of_dying_before_next_poll'] *= mort_risk['prop']
         assert not mort_risk['prob_of_dying_before_next_poll'].isna().any()

@@ -7,9 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-
 from tlo.methods.demography import get_scaling_factor
 
 # Define paths and filenames
@@ -49,9 +47,9 @@ hsi["Module"] = hsi["TREATMENT_ID"].str.split('_').apply(lambda x: x[0])
 
 # Plot the HSI that are taking place, by month, in a a particular year
 year = 2012
-evs = hsi.loc[hsi.date.dt.year == year]\
-    .groupby(by=['month', 'Module'])\
-    .size().reset_index().rename(columns={0: 'count'})\
+evs = hsi.loc[hsi.date.dt.year == year] \
+    .groupby(by=['month', 'Module']) \
+    .size().reset_index().rename(columns={0: 'count'}) \
     .pivot_table(index='month', columns='Module', values='count', fill_value=0)
 evs *= scaling_factor
 
@@ -62,13 +60,12 @@ plt.savefig(make_file_name('HSI_per_module_per_month'))
 plt.show()
 
 # Plot the breakdown of all HSI, over all the years
-evs = hsi.groupby(by=['Module'])\
-    .size().rename(columns={0: 'count'}) * scaling_factor
+evs = hsi.groupby(by=['Module']) \
+          .size().rename(columns={0: 'count'}) * scaling_factor
 evs.plot.pie()
-plt.title(f"HSI by Module")
+plt.title("HSI by Module")
 plt.savefig(make_file_name('HSI_per_module'))
 plt.show()
-
 
 # %% todo - plot these breakdown by individual HSI
 

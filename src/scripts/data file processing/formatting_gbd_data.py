@@ -22,7 +22,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 from tlo.analysis.utils import (
     make_age_grp_lookup,
     make_age_grp_types,

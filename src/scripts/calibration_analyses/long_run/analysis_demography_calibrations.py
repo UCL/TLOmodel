@@ -11,20 +11,17 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from tlo.analysis.utils import (
-    create_pickles_locally,
     extract_params,
     extract_results,
     format_gbd,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize
-)
-from tlo.analysis.utils import (
-    make_age_grp_types,
     make_age_grp_lookup,
+    make_age_grp_types,
     make_calendar_period_lookup,
     make_calendar_period_type,
+    summarize,
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
@@ -185,7 +182,9 @@ plt.show()
 calperiods, calperiodlookup = make_calendar_period_lookup()
 
 df = log['tlo.methods.demography']['age_range_f']
-y= df.loc[lambda x: pd.to_datetime(x.date).dt.year == 2010].drop(columns=['date']).melt(var_name='age_grp').set_index('age_grp')['value']
+y = df.loc[lambda x: pd.to_datetime(x.date).dt.year == 2010].drop(columns=['date']).melt(var_name='age_grp').set_index(
+    'age_grp')['value']
+
 
 def get_mean_pop_by_age_for_sex_and_year(sex, year):
     if sex == 'F':
@@ -199,7 +198,8 @@ def get_mean_pop_by_age_for_sex_and_year(sex, year):
                         key=key,
                         custom_generate_series=(
                             lambda df: df.loc[pd.to_datetime(df.date).dt.year == 2010]
-                                .drop(columns=['date']).melt(var_name='age_grp').set_index('age_grp')['value']
+                                .drop(columns=['date']).melt(var_name='age_grp')
+                                .set_index('age_grp')['value']
                         ),
                         do_scaling=True
                         ),
@@ -256,7 +256,7 @@ births_results = extract_results(
     module="tlo.methods.demography",
     key="on_birth",
     custom_generate_series=(
-        lambda df: df.assign(year = df['date'].dt.year).groupby(['year'])['year'].count()
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
     ),
     do_scaling=True
 )
@@ -347,7 +347,7 @@ results_deaths = extract_results(
     module="tlo.methods.demography",
     key="death",
     custom_generate_series=(
-        lambda df: df.assign(year = df['date'].dt.year).groupby(['sex', 'year', 'age'])['person_id'].count()
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['sex', 'year', 'age'])['person_id'].count()
     ),
     do_scaling=True
 )

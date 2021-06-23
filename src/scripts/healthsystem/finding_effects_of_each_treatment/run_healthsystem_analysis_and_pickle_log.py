@@ -7,7 +7,6 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -56,6 +55,7 @@ log_config = {
     }
 }
 
+
 def run_sim(service_availability):
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -89,6 +89,7 @@ def run_sim(service_availability):
 
     # Return the parsed log-file
     return parse_log_file(sim.log_filepath)
+
 
 # %% Define scenarios for the parameter 'service_availability'
 
@@ -169,9 +170,6 @@ results = dict()
 for name, serv_av in scenarios.items():
     results[name] = run_sim(service_availability=serv_av)
 
-
 # %% Pickle the results dict
 with open(results_filename, 'wb') as f:
     pickle.dump({'results': results}, f, pickle.HIGHEST_PROTOCOL)
-
-

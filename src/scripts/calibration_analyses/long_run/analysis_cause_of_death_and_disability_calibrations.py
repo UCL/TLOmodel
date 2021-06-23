@@ -13,16 +13,15 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from tlo.analysis.utils import (
-    create_pickles_locally,
-    make_age_grp_types,
-    make_age_grp_lookup,
-    make_calendar_period_lookup,
-    make_calendar_period_type,
     extract_results,
+    format_gbd,
     get_scenario_outputs,
     load_pickled_dataframes,
+    make_age_grp_lookup,
+    make_age_grp_types,
+    make_calendar_period_lookup,
+    make_calendar_period_type,
     summarize,
-    format_gbd
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
@@ -64,9 +63,9 @@ gbd_all = gbd_all.rename(columns={
 # update name of DALYS in the gbd dataset:
 gbd_all['measure_name'] = gbd_all['measure_name'].replace({'DALYs (Disability-Adjusted Life Years)': 'DALYs'})
 
+
 # %% Define the function that make the standard Graphs for both 'Deaths' and 'DALYS'
 def make_std_graphs(what='Deaths', period='2010-2014'):
-
     assert type(what) is str
     assert what in ('Deaths', 'DALYs')
     assert type(period) is str
@@ -80,15 +79,15 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
     # Extract results, summing by sex, year, age & label
     if what == 'Deaths':
         results = extract_results(
-        results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=(
-            lambda df: df.assign(year = df['date'].dt.year)
-                .groupby(['sex', 'year', 'age', 'label'])['person_id'].count()
-        ),
-        do_scaling=True
-    )
+            results_folder,
+            module="tlo.methods.demography",
+            key="death",
+            custom_generate_series=(
+                lambda df: df.assign(year=df['date'].dt.year)
+                    .groupby(['sex', 'year', 'age', 'label'])['person_id'].count()
+            ),
+            do_scaling=True
+        )
     else:
         results = extract_results(
             results_folder,
@@ -120,8 +119,9 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
     # %% Load the cause-of-deaths mappers and use them to populate the 'label' for gbd outputs
     if what == 'Deaths':
         demoglog = load_pickled_dataframes(results_folder)['tlo.methods.demography']
-        mapper_from_gbd_causes = pd.Series(demoglog['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]
-                                           ).to_dict()
+        mapper_from_gbd_causes = pd.Series(
+            demoglog['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]
+            ).to_dict()
     else:
         hblog = load_pickled_dataframes(results_folder)['tlo.methods.healthburden']
         mapper_from_gbd_causes = pd.Series(hblog['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]
@@ -130,8 +130,8 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
     assert not gbd['label'].isna().any()
 
     # %% Make comparable pivot-tables of the GBD and Model Outputs:
-    # Summarize results for average number of outcomes (per unified cause) per year within five-year periods and five-year
-    # age-groups. (index=sex/age, columns=unified_cause). (Fr the particular period specified.)
+    # Summarize results for average number of outcomes (per unified cause) per year within five-year periods and
+    # five-year age-groups. (index=sex/age, columns=unified_cause). (Fr the particular period specified.)
 
     outcome_by_age_pt = dict()
 
@@ -142,9 +142,9 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
 
     # - TLO Model:
     outcome_by_age_pt['Model'] = \
-    summarize(results, collapse_columns=True).reset_index().loc[lambda x: (x.period == period)].groupby(
-        by=['sex', 'age_grp', 'label']
-    )[['mean', 'lower', 'upper']].sum().unstack(fill_value=0.0)
+        summarize(results, collapse_columns=True).reset_index().loc[lambda x: (x.period == period)].groupby(
+            by=['sex', 'age_grp', 'label']
+        )[['mean', 'lower', 'upper']].sum().unstack(fill_value=0.0)
 
     # %% Make figures of overall summaries of outcomes by cause
     # todo - improve formatting of this one
@@ -238,10 +238,10 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
     select_labels = ['AIDS', 'Childhood Diarrhoea', 'Other']
 
     fig, ax = plt.subplots()
-    xylim = tot_outcomes_by_cause.loc[('mean', slice(None))].max().max()/1e3
+    xylim = tot_outcomes_by_cause.loc[('mean', slice(None))].max().max() / 1e3
     for cause in tot_outcomes_by_cause.index.levels[1]:
 
-        vals = tot_outcomes_by_cause.loc[(slice(None), cause),] / 1e3
+        vals = tot_outcomes_by_cause.loc[(slice(None), cause), ] / 1e3
 
         x = vals.at[('mean', cause), 'GBD']
         xerr = np.array([
@@ -275,7 +275,7 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
     plt.show()
 
 
-#%% Make graphs for each of Deaths and DALYS for a specific period
+# %% Make graphs for each of Deaths and DALYS for a specific period
 period = '2010-2014'
 make_std_graphs(what='Deaths', period=period)
 make_std_graphs(what='DALYs', period=period)

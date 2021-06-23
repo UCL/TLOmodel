@@ -221,6 +221,7 @@ def make_calendar_period_lookup():
 
     return ranges, lookup
 
+
 def make_calendar_period_type():
     """
     Make an ordered categorical type for calendar periods
@@ -325,7 +326,7 @@ def extract_results(results_folder: Path,
                     key: str,
                     column: str = None,
                     index: str = None,
-                    custom_generate_series = None,
+                    custom_generate_series=None,
                     do_scaling: bool = False,
                     ) -> pd.DataFrame:
     """Utility function to unpack results
@@ -464,6 +465,7 @@ def get_grid(params: pd.DataFrame, res: pd.Series):
 
     return grid
 
+
 def format_gbd(gbd_df: pd.DataFrame):
     """Format GBD data to give standarize categories for age_group and period"""
 
@@ -472,7 +474,7 @@ def format_gbd(gbd_df: pd.DataFrame):
 
     # label periods:
     calperiods, calperiodlookup = make_calendar_period_lookup()
-    gbd_df['Period']  = gbd_df['Year'].map(calperiodlookup).astype(make_calendar_period_type())
+    gbd_df['Period'] = gbd_df['Year'].map(calperiodlookup).astype(make_calendar_period_type())
 
     return gbd_df
 
@@ -515,7 +517,7 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
 
     # - extract number of death by period/sex/age-group
     model = output['tlo.methods.demography']['death'].assign(
-        year = lambda x: x['date'].dt.year
+        year=lambda x: x['date'].dt.year
     ).groupby(
         ['sex', 'year', 'age', 'label']
     )['person_id'].count().mul(sf)

@@ -9,11 +9,9 @@ from pathlib import Path
 
 import pandas as pd
 from matplotlib import pyplot as plt
-
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file, compare_number_of_deaths
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
-    contraception,
     demography,
     diarrhoea,
     dx_algorithm_child,
@@ -21,8 +19,6 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    pregnancy_supervisor,
     simplified_births,
     symptommanager,
 )
@@ -69,7 +65,6 @@ sim.simulate(end_date=end_date)
 
 # Get the output from the logfile
 output = parse_log_file(sim.log_filepath)
-
 
 # %% ----------------------------  INCIDENCE RATE OF DIARRHOEA BY PATHOGEN  ----------------------------
 
@@ -215,7 +210,6 @@ plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_2-4_year_olds" + dates
 plt.tight_layout()
 plt.show()
 
-
 # %% ----------------------------  MEAN DEATH RATE BY PATHOGEN  ----------------------------
 # Load the death data to which we calibrate:
 # IHME (www.healthdata.org) / GBD project --> total deaths due to diarrhoea in Malawi,
@@ -223,8 +217,8 @@ plt.show()
 # http://ghdx.healthdata.org/gbd-results-tool?params=gbd-api-2017-permalink/9dd202e225b13cc2df7557a5759a0aca
 
 calibration_death_rate_per_year_under_5s = {
-    '2010': 148 / 100000,   # CI: 111-190
-    '2017': 93 / 100000     # CI: 61-135
+    '2010': 148 / 100000,  # CI: 111-190
+    '2017': 93 / 100000  # CI: 61-135
 }
 
 all_deaths = output['tlo.methods.demography']['death']
@@ -262,7 +256,6 @@ plt.title('Death Rate to Diarrhoea in Under 5s')
 plt.savefig(outputpath / ("Diarrhoea_death_rate_0-5_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
-
 # %% Plot total numbers of death against comparable estimate from GBD
 
 # Get comparison
@@ -274,8 +267,7 @@ plt.title('Deaths per year due to Childhood Diarrhoea, 2015-2019')
 plt.tight_layout()
 plt.show()
 
-
-#%% Look at Case Fatality Rate
+# %% Look at Case Fatality Rate
 cfr = dict()
 for age_grp in ['0y', '1y', '2-4y']:
     cfr[age_grp] = deaths[age_grp] / counts[age_grp].apply(pd.Series).sum(axis=1)

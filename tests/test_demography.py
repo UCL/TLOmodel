@@ -8,7 +8,7 @@ import pytest
 from pytest import approx
 
 from tlo import Date, Module, Simulation, logging
-from tlo.analysis.utils import parse_log_file, compare_number_of_deaths
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
     Metadata,
     bladder_cancer,

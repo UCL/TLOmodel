@@ -39,7 +39,7 @@ causes = ['HIV/AIDS',
           'Road injuries',
           'Other conditions - Modelled',
           'Other - Not Yet Modelled'
-]
+          ]
 
 # recode the name to distinguish between those causes in the TLO model currently
 gbd['cause'] = 'Other - Not Yet Modelled'
@@ -91,7 +91,6 @@ plt.ylabel('Number of deaths')
 handles, labels = plt.gca().get_legend_handles_labels()
 plt.legend(reversed(handles), reversed(labels), loc='upper right', ncol=2)
 plt.show()
-
 
 # percent of deaths due to HIV, NCD (stroke, heart disease, diabetes) and childhood (pneumon, diarrhoa, neonatal)
 gbd.sum()[[
