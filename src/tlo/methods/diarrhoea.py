@@ -49,7 +49,7 @@ class Diarrhoea(Module):
         'adenovirus',
         'cryptosporidium',
         'campylobacter',
-        'ST-ETEC',
+        'ETEC',
         'sapovirus',
         'norovirus',
         'astrovirus',
@@ -90,10 +90,10 @@ class Diarrhoea(Module):
                       'incidence rate (per person-year) '
                       'of diarrhoea caused by campylobacter spp in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_inc_rate_diarrhoea_by_ST-ETEC':
+        'base_inc_rate_diarrhoea_by_ETEC':
             Parameter(Types.LIST,
                       'incidence rate (per person-year) '
-                      'of diarrhoea caused by ST-ETEC in age groups 0-11, 12-23, 24-59 months'
+                      'of diarrhoea caused by ETEC in age groups 0-11, 12-23, 24-59 months'
                       ),
         'base_inc_rate_diarrhoea_by_sapovirus':
             Parameter(Types.LIST,
@@ -154,8 +154,8 @@ class Diarrhoea(Module):
         'proportion_AWD_in_campylobacter':
             Parameter(Types.REAL, 'acute diarrhoea type caused in campylobacter-attributed diarrhoea'
                       ),
-        'proportion_AWD_in_ST-ETEC':
-            Parameter(Types.REAL, 'acute diarrhoea type caused in ST-ETEC-attributed diarrhoea'
+        'proportion_AWD_in_ETEC':
+            Parameter(Types.REAL, 'acute diarrhoea type caused in ETEC-attributed diarrhoea'
                       ),
         'proportion_AWD_in_sapovirus':
             Parameter(Types.REAL, 'acute diarrhoea type caused in sapovirus-attributed diarrhoea'
@@ -184,8 +184,8 @@ class Diarrhoea(Module):
         'prob_fever_by_campylobacter':
             Parameter(Types.REAL, 'probability of fever caused by campylobacter'
                       ),
-        'prob_fever_by_ST-ETEC':
-            Parameter(Types.REAL, 'probability of fever caused by ST-ETEC'
+        'prob_fever_by_ETEC':
+            Parameter(Types.REAL, 'probability of fever caused by ETEC'
                       ),
         'prob_fever_by_sapovirus':
             Parameter(Types.REAL, 'probability of fever caused by sapovirus'
@@ -214,8 +214,8 @@ class Diarrhoea(Module):
         'prob_vomiting_by_campylobacter':
             Parameter(Types.REAL, 'probability of vomiting caused by campylobacter'
                       ),
-        'prob_vomiting_by_ST-ETEC':
-            Parameter(Types.REAL, 'probability of vomiting caused by ST-ETEC'
+        'prob_vomiting_by_ETEC':
+            Parameter(Types.REAL, 'probability of vomiting caused by ETEC'
                       ),
         'prob_vomiting_by_sapovirus':
             Parameter(Types.REAL, 'probability of vomiting caused by sapovirus'
@@ -244,8 +244,8 @@ class Diarrhoea(Module):
         'prob_dehydration_by_campylobacter':
             Parameter(Types.REAL, 'probability of any dehydration caused by campylobacter'
                       ),
-        'prob_dehydration_by_ST-ETEC':
-            Parameter(Types.REAL, 'probability of any dehydration caused by ST-ETEC'
+        'prob_dehydration_by_ETEC':
+            Parameter(Types.REAL, 'probability of any dehydration caused by ETEC'
                       ),
         'prob_dehydration_by_sapovirus':
             Parameter(Types.REAL, 'probability of any dehydration caused by sapovirus'
@@ -274,8 +274,8 @@ class Diarrhoea(Module):
         'prob_prolonged_diarr_campylobacter':
             Parameter(Types.REAL, 'probability of prolonged episode by campylobacter-attributed diarrhoea'
                       ),
-        'prob_prolonged_diarr_ST-ETEC':
-            Parameter(Types.REAL, 'probability of prolonged episode by ST-ETEC-attributed diarrhoea'
+        'prob_prolonged_diarr_ETEC':
+            Parameter(Types.REAL, 'probability of prolonged episode by ETEC-attributed diarrhoea'
                       ),
         'prob_prolonged_diarr_sapovirus':
             Parameter(Types.REAL, 'probability of prolonged episode by sapovirus-attributed diarrhoea'
@@ -377,8 +377,8 @@ class Diarrhoea(Module):
                       ),
         'mean_days_duration_with_campylobacter':
             Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by campylobacter'),
-        'mean_days_duration_with_ST-ETEC':
-            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by ST-ETEC'),
+        'mean_days_duration_with_ETEC':
+            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by ETEC'),
         'mean_days_duration_with_sapovirus':
             Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by sapovirus'),
         'mean_days_duration_with_norovirus':
@@ -461,6 +461,12 @@ class Diarrhoea(Module):
                                                        'watery',
                                                        'bloody']),
 
+        # ---- Classification of the duration type of diarrhoea  ----
+        'gi_last_diarrhoea_duration_type': Property(Types.CATEGORICAL, 'Duration of diarrhoea in category ',
+                                                    categories=['acute',  # (acute if <7 days)
+                                                                'prolonged',  # (prolonged if 7-13 days days)
+                                                                'persistent']),  # (persistent if >14 days)
+
         # ---- Classification of severity of the dehydration caused ----
         'gi_last_diarrhoea_dehydration': Property(Types.CATEGORICAL,
                                                   'Severity of dehydration of last episode of diarrhoea.'
@@ -540,7 +546,8 @@ class Diarrhoea(Module):
 
         self.risk_of_death_diarrhoea = None
         self.mean_duration_in_days_of_diarrhoea_lookup = None
-        self.prob_diarrhoea_is_watery = None
+        self.prob_diarrhoea_is_prolonged = None
+        self.prob_diarrhoea_is_persistent = None
 
         # Store the symptoms that this module will use:
         self.symptoms = {
@@ -715,7 +722,7 @@ class Diarrhoea(Module):
             'adenovirus': p['mean_days_duration_with_adenovirus'],
             'cryptosporidium': p['mean_days_duration_with_cryptosporidium'],
             'campylobacter': p['mean_days_duration_with_campylobacter'],
-            'ST-ETEC': p['mean_days_duration_with_ST-ETEC'],
+            'ETEC': p['mean_days_duration_with_ETEC'],
             'sapovirus': p['mean_days_duration_with_sapovirus'],
             'norovirus': p['mean_days_duration_with_norovirus'],
             'astrovirus': p['mean_days_duration_with_astrovirus'],
@@ -723,20 +730,35 @@ class Diarrhoea(Module):
         }
 
         # --------------------------------------------------------------------------------------------
-        # Create the linear model for the probability that the diarrhoea is 'watery' (rather than 'bloody')
-        self.prob_diarrhoea_is_watery = LinearModel(
+        # Create the linear model for the probability that the diarrhoea is 'prolonged'
+        self.prob_diarrhoea_is_prolonged = LinearModel(
             LinearModelType.ADDITIVE,
             0.0,
-            Predictor('gi_last_diarrhoea_pathogen').when('rotavirus', p['proportion_AWD_in_rotavirus'])
-                                                   .when('shigella', p['proportion_AWD_in_shigella'])
-                                                   .when('adenovirus', p['proportion_AWD_in_adenovirus'])
-                                                   .when('cryptosporidium', p['proportion_AWD_in_cryptosporidium'])
-                                                   .when('campylobacter', p['proportion_AWD_in_campylobacter'])
-                                                   .when('ST-ETEC', p['proportion_AWD_in_ST-ETEC'])
-                                                   .when('sapovirus', p['proportion_AWD_in_sapovirus'])
-                                                   .when('norovirus', p['proportion_AWD_in_norovirus'])
-                                                   .when('astrovirus', p['proportion_AWD_in_astrovirus'])
-                                                   .when('tEPEC', p['proportion_AWD_in_tEPEC'])
+            Predictor('gi_last_diarrhoea_pathogen').when('rotavirus', p['prob_prolonged_diarr_rotavirus'])
+                                                   .when('shigella', p['prob_prolonged_diarr_shigella'])
+                                                   .when('adenovirus', p['prob_prolonged_diarr_adenovirus'])
+                                                   .when('cryptosporidium', p['prob_prolonged_diarr_cryptosporidium'])
+                                                   .when('campylobacter', p['prob_prolonged_diarr_campylobacter'])
+                                                   .when('ETEC', p['prob_prolonged_diarr_ETEC'])
+                                                   .when('sapovirus', p['prob_prolonged_diarr_sapovirus'])
+                                                   .when('norovirus', p['prob_prolonged_diarr_norovirus'])
+                                                   .when('astrovirus', p['prob_prolonged_diarr_astrovirus'])
+                                                   .when('tEPEC', p['prob_prolonged_diarr_tEPEC'])
+        )
+
+        # Create the linear model for the probability that the diarrhoea is 'persistent'
+        self.prob_diarrhoea_is_persistent = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1.0,
+            Predictor('gi_last_diarrhoea_duration_type').when('prolonged', p['prob_prolonged_to_persistent_diarr'])
+                                                        .otherwise(0.0),  # or use odds = 0.4017
+            Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_bec_persistent_age12to23'])
+                                        .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo']),
+            # Predictor('un_HAZ_category').when('!=HAZ>=-2', p['rr_bec_persistent_stunted'])
+            # Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_bec_persistent_SAM'])
+            #                                            .when('MAM', p['rr_bec_persistent_SAM']),
+            # Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_bec_persistent_HIV']),
+            # todo: add exclusive breastfeeding
         )
 
         # --------------------------------------------------------------------------------------------
@@ -974,12 +996,26 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             pathogen = rng.choice(probs_of_aquiring_pathogen.columns,
                                   p=normalised_p_by_pathogen)
 
-            # Allocate a date of onset diarrhoea
+            # Allocate a date of onset diarrhoea ----------------------------
             date_onset = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
 
+            # Determine if the episode will be ProD (7-13 days) ----------------------------
+            prolonged_episode = m.prob_diarrhoea_is_prolonged[self.pathogen].predict(df.loc[[person_id]]).values[0]
+            if rng.random_sample() < prolonged_episode:
+                duration = 'prolonged'
+            else:
+                duration = 'acute'
+
+            # Determine if the episode will be PD (>=14 days days) ----------------------------
+            persistent_episode = m.prob_diarrhoea_is_persistent.predict(df.loc[[person_id]]).values[0]
+            if rng.random_sample() < persistent_episode:
+                duration = 'persistent'
+
+            # ----------------------------------------------------------------------------------------------
             # Create the event for the onset of infection
             self.sim.schedule_event(
-                event=DiarrhoeaIncidentCase(module=self.module, person_id=person_id, pathogen=pathogen),
+                event=DiarrhoeaIncidentCase(module=self.module, person_id=person_id, pathogen=pathogen,
+                                            duration=duration),
                 date=date_onset
             )
 
@@ -995,9 +1031,10 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
     """
     AGE_GROUPS = {0: '0y', 1: '1y', 2: '2-4y', 3: '2-4y', 4: '2-4y'}
 
-    def __init__(self, module, person_id, pathogen):
+    def __init__(self, module, person_id, pathogen, duration):
         super().__init__(module, person_id=person_id)
         self.pathogen = pathogen
+        self.duration = duration
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -1011,6 +1048,19 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         if not person.is_alive:
             return
 
+        # Collect the updated properties of this person
+        props_new = {
+            'gi_ever_had_diarrhoea': True,
+            'gi_last_diarrhoea_pathogen': self.pathogen,
+            'gi_last_diarrhoea_date_of_onset': self.sim.date,
+            'gi_last_diarrhoea_treatment_date': pd.NaT,
+            'gi_last_diarrhoea_type': 'watery',
+            'gi_last_diarrhoea_dehydration': 'none',
+            'gi_last_diarrhoea_recovered_date': pd.NaT,
+            'gi_last_diarrhoea_death_date': pd.NaT,
+            'gi_last_diarrhoea_duration_type': self.duration
+        }
+
         # ----------------------- Determine duration for this episode ----------------------
         mean_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][0]
         std_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][1]
@@ -1023,18 +1073,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
 
         date_of_outcome = self.sim.date + DateOffset(days=duration_in_days_of_episode)
 
-        # Collect the updated properties of this person
-        props_new = {
-            'gi_ever_had_diarrhoea': True,
-            'gi_last_diarrhoea_pathogen': self.pathogen,
-            'gi_last_diarrhoea_date_of_onset': self.sim.date,
-            'gi_last_diarrhoea_duration': duration_in_days_of_episode,
-            'gi_last_diarrhoea_treatment_date': pd.NaT,
-            'gi_last_diarrhoea_type': 'watery',
-            'gi_last_diarrhoea_dehydration': 'none',
-            'gi_last_diarrhoea_recovered_date': pd.NaT,
-            'gi_last_diarrhoea_death_date': pd.NaT
-        }
+        props_new['gi_last_diarrhoea_duration'] = duration_in_days_of_episode
 
         # ----------------------- Determine symptoms for this episode ----------------------
         possible_symptoms_for_this_pathogen = m.prob_symptoms[self.pathogen]
@@ -1051,20 +1090,11 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                 elif symptom == 'dehydration':
                     props_new['gi_last_diarrhoea_dehydration'] = 'some'
 
-        # ----------------------- Determine the progress to severe dehydration for this episode ----------------------
-        # Progress to severe dehydration may or may not happen. If it does, it occurs some number of days before
-        # the resolution of the episode. It does not affect the risk of death or anything else in the natural history -
-        # - it can just be considered to be a marker of the how close the individual is to the episode ending (which may
-        # or may not result in death).
+        # Determine the progress to severe dehydration for this episode ----------------------
         if props_new['gi_last_diarrhoea_dehydration'] == 'some':
             if rng.random_sample() < p['probability_of_severe_dehydration_if_some_dehydration']:
-                # schedule the onset of severe dehydration:
-                days = rng.randint(0, p['max_number_of_days_for_onset_of_severe_dehydration_before_end_of_episode'])
-                date_of_onset_severe_dehydration = max(self.sim.date, date_of_outcome - DateOffset(days=days))
-                self.sim.schedule_event(
-                    event=DiarrhoeaSevereDehydrationEvent(m, person_id),
-                    date=date_of_onset_severe_dehydration,
-                )
+                # Change the status:
+                df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'severe'
 
         # ----------------------- Determine outcome (recovery or death) of this episode ----------------------
         # Determine if episode will result in death
@@ -1127,37 +1157,37 @@ class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
                                                           disease_module=self.sim.modules['Diarrhoea'])
 
 
-class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
-    """
-    #This is the Severe Dehydration. It is part of the natural history and represents a change in the status of the
-    person's level of dehydration.
-    It does the following:
-        * changes the property 'gi_last_diarrhoea_dehydration' to severe
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-    def apply(self, person_id):
-        df = self.sim.population.props
-
-        # The event should not run if the person is not currently alive
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        # Confirm that this is event is occurring during a current episode of diarrhoea
-        assert (
-            (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
-            self.sim.date <=
-            (df.at[person_id, 'gi_end_of_last_episode'])
-        )
-
-        # Do nothing if the person has recovered already (after having been cured)
-        if df.at[person_id, 'gi_last_diarrhoea_recovered_date'] <= self.sim.date:
-            return
-
-        # Change the status:
-        df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'severe'
+# class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
+#     """
+#     #This is the Severe Dehydration. It is part of the natural history and represents a change in the status of the
+#     person's level of dehydration.
+#     It does the following:
+#         * changes the property 'gi_last_diarrhoea_dehydration' to severe
+#     """
+#
+#     def __init__(self, module, person_id):
+#         super().__init__(module, person_id=person_id)
+#
+#     def apply(self, person_id):
+#         df = self.sim.population.props
+#
+#         # The event should not run if the person is not currently alive
+#         if not df.at[person_id, 'is_alive']:
+#             return
+#
+#         # Confirm that this is event is occurring during a current episode of diarrhoea
+#         assert (
+#             (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
+#             self.sim.date <=
+#             (df.at[person_id, 'gi_end_of_last_episode'])
+#         )
+#
+#         # Do nothing if the person has recovered already (after having been cured)
+#         if df.at[person_id, 'gi_last_diarrhoea_recovered_date'] <= self.sim.date:
+#             return
+#
+#         # Change the status:
+#         df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'severe'
 
 
 class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
@@ -1466,9 +1496,6 @@ class HSI_PersistentDiarrhoea_PlanA(HSI_Event, IndividualScopeEventMixin):
         # give multivitamins for 14 days
         # give zinc for 10 days
         # follow up in 5 days
-
-        cons_footprint = self.module.consumables_used_in_hsi['Persistent_Diarrhoea']
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanA'])
 
         rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
         cons_available = all(
