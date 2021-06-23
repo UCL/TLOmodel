@@ -20,6 +20,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 
 try:

@@ -15,6 +15,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods import demography as de
+from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 
 # from tlo.methods.healthsystem import HSI_Event

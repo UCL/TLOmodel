@@ -7,9 +7,13 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Types, logging
-from tlo.core import Cause, collect_causes_from_disease_modules, create_mappers_from_causes_to_label
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
+from tlo.methods.causes import (
+    Cause,
+    collect_causes_from_disease_modules,
+    create_mappers_from_causes_to_label,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -40,7 +44,7 @@ class HealthBurden(Module):
         'Age_Limit_For_YLL': Parameter(
             Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
         'gbd_causes_of_disability': Parameter(
-            Types.LIST, 'Set of the strings of causes of disability defined in the GBD data')
+            Types.LIST, 'List of the strings of causes of disability defined in the GBD data')
     }
 
     PROPERTIES = {}
@@ -58,7 +62,7 @@ class HealthBurden(Module):
     def initialise_simulation(self, sim):
         """Do before simulation starts:
         1) Prepare data storage structures
-        2) Collect the module that will use this HealthBuren module
+        2) Collect the module that will use this HealthBurden module
         3) Process the declarations of causes of disability made by the disease modules
         4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
         """
@@ -75,7 +79,7 @@ class HealthBurden(Module):
         self.YearsLifeLost = pd.DataFrame(index=multi_index)
         self.YearsLivedWithDisability = pd.DataFrame(index=multi_index)
 
-        # 2) Collect the module that will use this HealthBuren module
+        # 2) Collect the module that will use this HealthBurden module
         self.recognised_modules_names = [
             m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHBURDEN in m.METADATA
         ]
@@ -83,9 +87,9 @@ class HealthBurden(Module):
         # Check that all registered disease modules have the report_daly_values() function
         for module_name in self.recognised_modules_names:
             assert getattr(self.sim.modules[module_name], 'report_daly_values', None) and \
-                   callable(self.sim.modules[module_name].report_daly_values), 'A modules that decalre use of ' \
+                   callable(self.sim.modules[module_name].report_daly_values), 'A module that declares use of ' \
                                                                                'HealthBurden module must have a ' \
-                                                                               'callable function "report_daly_valyes"'
+                                                                               'callable function "report_daly_values"'
 
         # 3) Process the declarations of causes of disability made by the disease modules
         self.process_causes_of_disability()
@@ -96,7 +100,7 @@ class HealthBurden(Module):
     def process_causes_of_disability(self):
         """
         1) Collect causes of disability that are reported by each disease module
-        2) Define the "Other" tlo_cause of disabilty (corresponding to those gbd_causes that are not represented by
+        2) Define the "Other" tlo_cause of disability (corresponding to those gbd_causes that are not represented by
         the disease modules in this sim.)
         3) Output to the log mappers for causes of disability to the label
         """
@@ -107,7 +111,7 @@ class HealthBurden(Module):
             acceptable_causes=set(self.parameters['gbd_causes_of_disability'])
         )
 
-        # 2) Define the "Other" tlo_cause of disabilty
+        # 2) Define the "Other" tlo_cause of disability
         self.causes_of_disability['Other'] = Cause(
             label='Other',
             gbd_causes=self.get_gbd_causes_of_disability_not_represented_in_disease_modules(self.causes_of_disability)
@@ -129,8 +133,8 @@ class HealthBurden(Module):
 
     def on_simulation_end(self):
         """Log records of:
-        1) The Years Lived With Disability (YLD) (by the 'causes of disability' delcared by the disease modules)
-        2) The Years Life Lost (YLL) (by the 'causes of death' delcared by the disease module)
+        1) The Years Lived With Disability (YLD) (by the 'causes of disability' declared by the disease modules)
+        2) The Years Life Lost (YLL) (by the 'causes of death' declared by the disease module)
         3) The total DALYS recorded (YLD + YLL) (by the labels that are declared for 'causes of death' and 'causes of
         disability').
         """
@@ -139,7 +143,7 @@ class HealthBurden(Module):
         assert self.YearsLifeLost.index.equals(self.multi_index)
         assert self.YearsLivedWithDisability.index.equals(self.multi_index)
 
-        # 1) Log the Years Lived With Disability (YLD) (by the 'causes of disability' delcared by disease modules).
+        # 1) Log the Years Lived With Disability (YLD) (by the 'causes of disability' declared by disease modules).
         for index, row in self.YearsLivedWithDisability.reset_index().iterrows():
             logger.info(
                 key='yld_by_causes_of_disability',
@@ -148,7 +152,7 @@ class HealthBurden(Module):
                             'broken down by year, sex, age-group'
             )
 
-        # 2) Log the Years of Live Lost (YLL) (by the 'causes of death' delcared by disease modules).
+        # 2) Log the Years of Live Lost (YLL) (by the 'causes of death' declared by disease modules).
         for index, row in self.YearsLifeLost.reset_index().iterrows():
             logger.info(
                 key='yll_by_causes_of_death',
@@ -184,15 +188,15 @@ class HealthBurden(Module):
 
     def get_daly_weight(self, sequlae_code):
         """
-        This can be used to look up the DALY weight for a particular condition identified by the 'sequalue code'
-        Sequalae code for particular conditions can be looked-up in ResourceFile_DALY_Weights.csv
-        :param sequlae_code:
-        :return: the daly weight associated with that sequalae code
+        This can be used to look up the DALY weight for a particular condition identified by the 'sequela code'
+        Sequela code for particular conditions can be looked-up in ResourceFile_DALY_Weights.csv
+        :param sequela_code:
+        :return: the daly weight associated with that sequela code
         """
         w = self.parameters['DALY_Weight_Database']
         daly_wt = w.loc[w['TLO_Sequela_Code'] == sequlae_code, 'disability weight'].values[0]
 
-        # Check that the sequalae code was found
+        # Check that the sequela code was found
         assert (not pd.isnull(daly_wt))
 
         # Check that the value is within bounds [0,1]
@@ -299,7 +303,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # Running the DALY Logger
 
-        # Do nothing if no disease modules are regsisterd or no causes of disability are registerd
+        # Do nothing if no disease modules are registered or no causes of disability are registered
         if (not self.module.recognised_modules_names) or (not self.module.causes_of_disability):
             return
 
@@ -374,7 +378,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         disability_monthly_summary.set_index('year', append=True, inplace=True)
         disability_monthly_summary = disability_monthly_summary.reorder_levels(['sex', 'age_range', 'year'])
 
-        # 5) Add the monthly summary to the overall datafrom for YearsLivedWithDisability
+        # 5) Add the monthly summary to the overall dataframe for YearsLivedWithDisability
         dalys_to_add = disability_monthly_summary.sum().sum()     # for checking
         dalys_current = self.module.YearsLivedWithDisability.sum().sum()  # for checking
 

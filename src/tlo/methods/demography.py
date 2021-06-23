@@ -12,8 +12,12 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import Cause, collect_causes_from_disease_modules, create_mappers_from_causes_to_label
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods.causes import (
+    Cause,
+    collect_causes_from_disease_modules,
+    create_mappers_from_causes_to_label,
+)
 from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
@@ -73,6 +77,25 @@ class Demography(Module):
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
         'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident'),
 
+        # the categories of these properties are set in `pre_initialise_population`
+        'cause_of_death': Property(
+            Types.CATEGORICAL,
+            'The cause of death of this individual (the tlo_cause defined by the module)',
+            categories=['SET_AT_RUNTIME']
+        ),
+
+        'district_of_residence': Property(
+            Types.CATEGORICAL,
+            'The district (name) of residence (mapped from district_num_of_residence).',
+            categories=['SET_AT_RUNTIME']
+        ),
+
+        'region_of_residence': Property(
+            Types.CATEGORICAL,
+            'The region of residence (mapped from district_num_of_residence).',
+            categories=['SET_AT_RUNTIME']
+        ),
+
         # Age calculation is handled by demography module
         'age_exact_years': Property(Types.REAL, 'The age of the individual in exact years'),
         'age_years': Property(Types.INT, 'The age of the individual in years'),
@@ -93,6 +116,17 @@ class Demography(Module):
         self.parameters['pop_2010'] = pd.read_csv(
             Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Population_2010.csv'
         )
+
+        # Lookup dicts to map from district_num_of_residence (in the df) and District name and Region name
+        self.parameters['district_num_to_district_name'] = \
+            self.parameters['pop_2010'][['District_Num', 'District']].drop_duplicates()\
+                                                                     .set_index('District_Num')['District']\
+                                                                     .to_dict()
+
+        self.parameters['district_num_to_region_name'] = \
+            self.parameters['pop_2010'][['District_Num', 'Region']].drop_duplicates()\
+                                                                   .set_index('District_Num')['Region']\
+                                                                   .to_dict()
 
         # Fraction of babies that are male
         self.parameters['fraction_of_births_male'] = pd.read_csv(
@@ -184,6 +218,76 @@ class Demography(Module):
             data=mapper_from_gbd_causes
         )
 
+        # GBD causes of death
+        self.parameters['gbd_causes_of_death'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv'
+        )['cause_name'].unique().tolist()
+
+        # GBD causes of death
+        self.parameters['gbd_data'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv'
+        )
+
+    def pre_initialise_population(self):
+        """
+        1) Process the declarations of causes of death made by the disease modules
+        3) Define categorical properties for 'cause_of_death', 'region_of_residence' and 'district_of_residence'
+        """
+
+        # 1) Process the declarations of causes of death made by the disease modules
+        self.process_causes_of_death()
+
+        # 2) Update the properties for 'cause_of_death', 'region_of_residence' and 'district_of_residence'
+        # Nb. This couldn't be done before categories for each of these has been determined following read-in of data
+        # and initialising of other modules.
+        self.PROPERTIES['cause_of_death'] = Property(
+            Types.CATEGORICAL,
+            'The cause of death of this individual (the tlo_cause defined by the module)',
+            categories=list(self.causes_of_death.keys())
+        )
+        self.PROPERTIES['district_of_residence'] = Property(
+            Types.CATEGORICAL,
+            'The district (name) of residence (mapped from district_num_of_residence).',
+            categories=self.parameters['pop_2010']['District'].unique().tolist()
+        )
+        self.PROPERTIES['region_of_residence'] = Property(
+            Types.CATEGORICAL,
+            'The region of residence (mapped from district_num_of_residence).',
+            categories=self.parameters['pop_2010']['Region'].unique().tolist()
+        )
+
+    def process_causes_of_death(self):
+        """
+        1) Register all causes of deaths defined by Module
+        2) Define the "Other" causes of death (that is managed in this module by the OtherDeathPoll)
+        3) Output to the log mappers for causes of death (tlo_cause --> label; gbd_cause --> label).
+        """
+        # 1) Register all the causes of death from the disease modules: gives dict(<tlo_cause>: <Cause instance>)
+        self.causes_of_death = collect_causes_from_disease_modules(
+            all_modules=self.sim.modules.values(),
+            collect='CAUSES_OF_DEATH',
+            acceptable_causes=set(self.parameters['gbd_causes_of_death'])
+        )
+
+        # 2) Define the "Other" tlo_cause of death (that is managed in this module by the OtherDeathPoll)
+        self.gbd_causes_of_death_not_represented_in_disease_modules = \
+            self.get_gbd_causes_of_death_not_represented_in_disease_modules(self.causes_of_death)
+        self.causes_of_death['Other'] = Cause(
+            label='Other',
+            gbd_causes=self.gbd_causes_of_death_not_represented_in_disease_modules
+        )
+
+        # 3) Output to the log mappers for causes of death
+        mapper_from_tlo_causes, mapper_from_gbd_causes = self.create_mappers_from_causes_of_death_to_label()
+        logger.info(
+            key='mapper_from_tlo_cause_to_common_label',
+            data=mapper_from_tlo_causes
+        )
+        logger.info(
+            key='mapper_from_gbd_cause_to_common_label',
+            data=mapper_from_gbd_causes
+        )
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         This method is called by the simulation when creating the initial population, and is
@@ -196,7 +300,7 @@ class Demography(Module):
         init_pop = self.parameters['pop_2010']
         init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
 
-        # randomly pick from the init_pop sheet, to allocate charatceristic to each person in the df
+        # randomly pick from the init_pop sheet, to allocate characteristic to each person in the df
         demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
                                                              size=len(df),
                                                              replace=True,
@@ -215,14 +319,14 @@ class Demography(Module):
 
         # Assign the characteristics
         df.is_alive.values[:] = True
-        df['date_of_birth'] = demog_char_to_assign['date_of_birth']
-        df['date_of_death'] = pd.NaT
-        df['cause_of_death'].values[:] = np.nan
-        df['sex'].values[:] = demog_char_to_assign['Sex']
+        df.loc[df.is_alive, 'date_of_birth'] = demog_char_to_assign['date_of_birth']
+        df.loc[df.is_alive, 'date_of_death'] = pd.NaT
+        df.loc[df.is_alive, 'cause_of_death'] = np.nan
+        df.loc[df.is_alive, 'sex'] = demog_char_to_assign['Sex']
         df.loc[df.is_alive, 'mother_id'] = -1
-        df['district_num_of_residence'].values[:] = demog_char_to_assign['District_Num'].values[:]
-        df['district_of_residence'].values[:] = demog_char_to_assign['District'].values[:]
-        df['region_of_residence'].values[:] = demog_char_to_assign['Region'].values[:]
+        df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
+        df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
+        df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
 
         df.loc[df.is_alive, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
@@ -366,6 +470,30 @@ class Demography(Module):
         for c in causes_of_death.values():
             all_gbd_causes_in_sim.update(c.gbd_causes)
 
+        return set(self.parameters['gbd_causes_of_death']) - all_gbd_causes_in_sim
+
+    def create_mappers_from_causes_of_death_to_label(self):
+        """Use a helper function to create mappers for causes of death to label."""
+        return create_mappers_from_causes_to_label(
+            causes=self.causes_of_death,
+            all_gbd_causes=set(self.parameters['gbd_causes_of_death'])
+        )
+                                                                    cause_of_death=cause)
+
+        # Release any beds-days that would be used by this person:
+        if 'HealthSystem' in self.sim.modules:
+            self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
+
+    def get_gbd_causes_of_death_not_represented_in_disease_modules(self, causes_of_death):
+        """
+        Find the causes of death in the GBD datasets that are not represented within the causes of death defined in the
+        modules registered in this simulation.
+        :return: set of gbd_causes of death that are not represented in disease modules
+        """
+        all_gbd_causes_in_sim = set()
+        for c in causes_of_death.values():
+            all_gbd_causes_in_sim.update(c.gbd_causes)
+
         return self.gbd_causes_of_death - all_gbd_causes_in_sim
 
     def create_mappers_from_causes_of_death_to_label(self):
@@ -424,7 +552,7 @@ class Demography(Module):
         df2.columns = df2.columns.droplevel(0)
         df2.index.rename('age_years', inplace=True)
 
-        # add the two time spents together
+        # add the two time spent together
         py = pd.DataFrame(
             index=pd.Index(data=list(self.AGE_RANGE_LOOKUP.keys()), name='age_years'),
             columns=['M', 'F'],
@@ -433,6 +561,35 @@ class Demography(Module):
         py = py.add(df1, fill_value=0).add(df2, fill_value=0)
 
         return py
+
+    def compute_scaling_factor(self):
+        """
+        Compute the scaling factor, if it is possible to do so.
+
+        The scaling factor is the ratio of {Real Population} to {Model Pop Size}. It is used to multiply model outputs
+        in order to produce statistics that will be of the same scale as the real population.
+
+        It is estimated by comparing the population size with the national census in the year that the census was
+        conducted.
+
+        If the simulation does not include that year, the scaling factor cannot be computed (in which case, np.nan is
+        returned).
+
+        :return: floating point number that is the scaling factor, or np.nan if it cannot be computed.
+        """
+
+        # Get Census data
+        # todo - move this to parameters, and update filename later (when other changes in different branch merged in)
+        year_of_census = 2018
+        census_popsize = \
+            pd.read_csv(Path(self.resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
+
+        # Get model total population size in that same year
+        if year_of_census not in self.popsize_by_year:
+            return np.nan
+        else:
+            model_popsize_in_year_of_census = self.popsize_by_year[year_of_census]
+            return census_popsize / model_popsize_in_year_of_census
 
     def compute_scaling_factor(self):
         """
@@ -487,11 +644,27 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
     """
     This event causes deaths to persons from cause that are _not_ being modelled explicitly by a disease module.
-    It does this by computing the death rates that are implied by all the causes of death other than those that are
-    represented in the disease module registerd in this simulation.
+    It does this by computing the GBD death rates that are implied by all the causes of death other than those that are
+    represented in the disease module registered in this simulation.
     """
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
+        self.causes_to_represent = self.module.gbd_causes_of_death_not_represented_in_disease_modules
+        self.mort_risk_per_poll = self.get_mort_risk_per_poll()
+
+    def get_mort_risk_per_poll(self):
+        """Compute the death-rates to use (i.e., those from causes of death defined in `self.causes_to_represent`).
+        Adjust the rates of death so that it is a risk of death per person per occurrence of the polling event.
+        """
+        # TODO - this is pending a further PR that brings in newest GBD data. For now, just return the mortality
+        #        schedule from WPP
+
+        # Work out probability of dying in the time before the next occurrence of this poll
+        dur_in_years_between_polls = np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y')
+
+        return self.module.parameters['mortality_schedule'].assign(
+            prob_of_dying_before_next_poll=lambda x: (1.0 - np.exp(-x.death_rate * dur_in_years_between_polls))
+        ).drop(columns={'death_rate'})
         self.causes_to_represent = self.module.gbd_causes_of_death_not_represented_in_disease_modules
         self.mort_risk_per_poll = self.get_mort_risk_per_poll()
 
@@ -547,7 +720,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # Get shortcut to main dataframe
         df = population.props
 
-        # Cause the death immidiately for anyone that is older than the maximum age
+        # Cause the death immediately for anyone that is older than the maximum age
         over_max_age = df.index[df.is_alive & (df.age_years > MAX_AGE)]
         for individual_id in over_max_age:
             self.module.do_death(individual_id=individual_id, cause='Other', originating_module=self.module)
@@ -564,7 +737,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # get the population
         alive = df.loc[df.is_alive & (df.age_years <= MAX_AGE), ['sex', 'age_years']].copy()
 
-        # merge the popualtion dataframe with the parameter dataframe to pick-up the death_rate for each person
+        # merge the population dataframe with the parameter dataframe to pick-up the death_rate for each person
         length_before_merge = len(alive)
         alive = alive.reset_index().merge(mort_risk,
                                           left_on=['age_years', 'sex'],
@@ -638,7 +811,7 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='age_range_f', data=f_age_counts.to_dict())
 
         # Output by single year of age for under-fives
-        # (need to gurantee output always is for each of the years - even if size() is 0)
+        # (need to guarantee output always is for each of the years - even if size() is 0)
         num_children = pd.Series(index=range(5), data=0).add(
             df[df.is_alive & (df.age_years < 5)].groupby('age_years').size(),
             fill_value=0
@@ -662,7 +835,7 @@ def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False
 
     NB. This file gives precedence to the Malawi Population Census
 
-    :param parsed_outoput: The outputs from parse_output
+    :param parsed_output: The outputs from parse_output
     :param resourcefilepath: The resourcefilepath
     :return: a new version of parsed_output that includes certain variables scaled
     """
@@ -699,7 +872,7 @@ def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False
     o['tlo.methods.demography']['age_range_m'].iloc[:, 1:] *= ratio_data_to_model
     o['tlo.methods.demography']['age_range_f'].iloc[:, 1:] *= ratio_data_to_model
 
-    # For individual-level reporting, construct groupby's and then multipy by ratio
+    # For individual-level reporting, construct groupby's and then multiply by ratio
     # 1) Counts of numbers of death by year/age/cause
     deaths = o['tlo.methods.demography']['death']
     deaths.index = pd.to_datetime(deaths['date'])

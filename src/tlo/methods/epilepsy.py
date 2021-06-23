@@ -6,6 +6,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.core import Cause
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
+from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
 
@@ -488,6 +489,50 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-
-        df.at[person_id, 'ep_antiep'] = True
-        logger.debug('@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # Define the consumables
+        anti_epileptics_available = False
+        # first choice is phenobarbitone
+        item_code_phenobarbitone = pd.unique(
+            consumables.loc[consumables['Items'] == 'Phenobarbitone  30mg_1000_CMST', 'Item_Code'])[0]
+        consumables_phenobarbitone = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_phenobarbitone: 1}}
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_phenobarbitone,
+            to_log=True
+        )
+        if outcome_of_request_for_consumables['Item_Code'][item_code_phenobarbitone]:
+            anti_epileptics_available = True
+            logger.debug(key='message', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+        else:
+            item_code_carbamazepine = pd.unique(
+                consumables.loc[consumables['Items'] == 'Carbamazepine 200mg_1000_CMST', 'Item_Code'])[0]
+            consumables_carbamazepine = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_carbamazepine: 1}}
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint=consumables_carbamazepine,
+                to_log=True
+            )
+            if outcome_of_request_for_consumables['Item_Code'][item_code_carbamazepine]:
+                anti_epileptics_available = True
+                logger.debug(key='message', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+            else:
+                item_code_phenytoin = pd.unique(
+                    consumables.loc[consumables['Items'] == 'Phenytoin sodium 100mg_1000_CMST', 'Item_Code'])[0]
+                consumables_phenytoin = {
+                    'Intervention_Package_Code': {},
+                    'Item_Code': {item_code_phenytoin: 1}}
+                outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=self,
+                    cons_req_as_footprint=consumables_phenytoin,
+                    to_log=True
+                )
+                if outcome_of_request_for_consumables['Item_Code'][item_code_phenytoin]:
+                    anti_epileptics_available = True
+                    logger.debug(key='message', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+        if anti_epileptics_available:
+            df.at[person_id, 'ep_antiep'] = True
