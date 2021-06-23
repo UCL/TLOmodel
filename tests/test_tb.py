@@ -113,14 +113,15 @@ def test_basic_run():
     prev_latent = num_latent / len(df[df.is_alive])
     assert prev_latent > 0
 
-    assert not pd.isnull(df.loc[~df.date_of_birth.isna(), [
+    # todo check this works
+    assert not pd.isnull(df.loc[~df.date_of_birth.isna() & df.is_alive, [
         'tb_inf',
         'tb_strain',
         'tb_date_latent']
                          ]).all().all()
 
     # no-one should be on tb treatment yet
-    assert not df.tb_on_treatment.all()
+    assert not df.tb_on_treatment.any()
     assert pd.isnull(df.tb_date_treated).all()
 
     # run the simulation
@@ -130,7 +131,7 @@ def test_basic_run():
     df = sim.population.props  # updated dataframe
 
     # some should have treatment dates
-    assert not pd.isnull(df.loc[~df.date_of_birth.isna(), [
+    assert not pd.isnull(df.loc[~df.date_of_birth.isna() & df.is_alive, [
         'tb_on_treatment',
         'tb_date_treated',
         'tb_ever_treated',
@@ -193,9 +194,7 @@ def test_natural_history():
 
     # check symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-
-    for symptom in symptom_list:
-        assert symptom in sim.modules['SymptomManager'].has_what(person_id)
+    assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
 
     # run HSI_Tb_ScreeningAndRefer and check outcomes
     # this schedules the event
@@ -407,7 +406,6 @@ def test_treatment_failure():
                                         module=sim.modules['Tb'])
     tx_start.apply(person_id=person_id, squeeze_factor=0.0)
 
-    # length followup should be 8 months
     # clinical monitoring
     # default clinical monitoring schedule for first infection ds-tb and retreatment
     follow_up_times = sim.modules['Tb'].parameters['followup_times']
@@ -423,6 +421,13 @@ def test_treatment_failure():
             count += 1
 
     assert count == number_fup_appts
+    # check final scheduled event is at least 8 months after sim.date (might be 8 months + 1day)
+    last_event_date, last_event_obj = all_future_events[-1]
+    assert last_event_date >= (sim.date + pd.DateOffset(months=8))
+
+
+
+
 
 # def test_children_referrals():
 #     """
@@ -462,4 +467,6 @@ def test_treatment_failure():
 #     """
 #     check ipt administered and ended correctly
 #     in HIV+ and paediatric contacts of cases
+#       also the effect of ipt? i.e. if perfect - no disease;
+#       if 0% efficacy and high risk of disease, then everyone gets disease?
 #     """

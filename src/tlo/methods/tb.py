@@ -1,7 +1,8 @@
-'''
-The TB Module is under development. Here the contents of the module are commented out whilst work proceeds. It is
-included because this version should replace what is currently in Master.
-'''
+"""
+    This module schedules TB infection and natural history
+    It schedules TB treatment and follow-up appointments along with preventive therapy
+    for eligible people (HIV+ and paediatric contacts of active TB cases
+"""
 
 import os
 
@@ -35,6 +36,13 @@ class Tb(Module):
         self.lm = dict()
         self.footprints_for_consumables_required = dict()
         self.symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+        self.district_list = pd.read_csv(
+            os.path.join(self.resourcefilepath,  'ResourceFile_District_Population_Data.csv')
+        ).District
+
+        workbook = pd.read_excel(
+            os.path.join(self.resourcefilepath, 'ResourceFile_TB.xlsx'), sheet_name=None
+        )
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -45,11 +53,11 @@ class Tb(Module):
 
     # Declare Causes of Death
     # CAUSES_OF_DEATH = {
-    #     'TB': Cause(gbd_causes='Tuberculosis', label='TB'),
+    #     'TB': Cause(gbd_causes='Tuberculosis', label='non_AIDS_TB'),
     # }
     #
     # CAUSES_OF_DISABILITY = {
-    #     'TB': Cause(gbd_causes='Tuberculosis', label='TB'),
+    #     'TB': Cause(gbd_causes='Tuberculosis', label='non_AIDS_TB'),
     # }
 
     PROPERTIES = {
@@ -86,7 +94,7 @@ class Tb(Module):
 
         # ------------------ treatment status ------------------ #
         'tb_on_treatment': Property(Types.BOOL, 'on tb treatment regimen'),
-        'tb_date_treated': Property(Types.DATE, 'date tb treatment started'),
+        'tb_date_treated': Property(Types.DATE, 'date most recent tb treatment started'),
         'tb_ever_treated': Property(Types.BOOL, 'if ever treated for active tb'),
         'tb_treatment_failure': Property(Types.BOOL, 'failed first line tb treatment'),
         'tb_treated_mdr': Property(Types.BOOL, 'on tb treatment MDR regimen'),
@@ -126,7 +134,9 @@ class Tb(Module):
         'prob_latent_tb_15plus': Parameter(Types.REAL, 'probability of latent infection in ages 15+'),
         'transmission_rate': Parameter(Types.REAL, 'TB transmission rate, calibrated'),
         'mixing_parameter': Parameter(Types.REAL,
-                                      'mixing parameter adjusts transmission rate for force of infection between districts'),
+                                      'mixing parameter adjusts transmission rate for force of infection '
+                                      'between districts, value 1=completely random mixing across districts, '
+                                      'value=0 no between-district transmission'),
         'rel_inf_smear_ng': Parameter(
             Types.REAL, 'relative infectiousness of tb in hiv+ compared with hiv-'
         ),
@@ -359,7 +369,6 @@ class Tb(Module):
         * 1) Reads the ResourceFiles
         * 2) Declares the DALY weights
         * 3) Declares the Symptoms
-        * 4) Defines the linear models
         """
 
         # 1) Read the ResourceFiles
@@ -400,7 +409,12 @@ class Tb(Module):
             Symptom(name='night_sweats')
         )
 
-        # 4) Define the linear models
+    def pre_initialise_population(self):
+        """
+        * Establish the Linear Models
+        """
+        p = self.parameters
+
         # linear model for risk of latent tb in baseline population 2010
         # assume latent tb risk not affected by bcg
         # intercept=1
@@ -505,14 +519,13 @@ class Tb(Module):
         df.loc[idx_new_latent, 'tb_date_latent'] = now
 
         # allocate some latent infections as mdr-tb
-        if len(df[df.is_alive & (df.tb_inf == 'latent')]) > 10:
-            idx_new_latent_mdr = (
-                df[df.is_alive & (df.tb_inf == 'latent')]
-                    .sample(frac=p['prop_mdr2010'])
-                    .index
-            )
+        idx_new_latent_mdr = (
+            df[df.is_alive & (df.tb_inf == 'latent')]
+                .sample(frac=p['prop_mdr2010'])
+                .index
+        )
 
-            df.loc[idx_new_latent_mdr, 'tb_strain'] = 'mdr'
+        df.loc[idx_new_latent_mdr, 'tb_strain'] = 'mdr'
 
     def progression_to_active(self, population):
         # from the new latent infections, select and schedule progression to active disease
@@ -552,7 +565,7 @@ class Tb(Module):
         eligible_adults = df.loc[(df.tb_date_latent == now) &
                                  df.is_alive &
                                  (df.age_years >= 15)].index
-        eligible_adults = eligible_adults[~np.isin(eligible_adults, fast)]
+        eligible_adults = eligible_adults[~eligible_adults.isin(fast)]
 
         # check no fast progressors included in the slow progressors risk
         assert not any(elem in fast for elem in eligible_adults)
@@ -858,10 +871,6 @@ class Tb(Module):
                 tclose=now + DateOffset(days=28),
             )
 
-    def on_hsi_alert(self, person_id, treatment_id):
-        # This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        raise NotImplementedError
-
     def report_daly_values(self):
         """
         This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -893,15 +902,34 @@ class Tb(Module):
 
         return health_values.loc[df.is_alive]
 
+    def consider_ipt_for_those_initiating_art(self, person_id):
+        """
+        this is called by HIV when person is initiating ART
+        checks whether person is eligible for IPT
+        """
+        df = self.sim.population.props
+
+        high_risk_districts = self.parameters["tb_high_risk_distr"]
+        district = df.at[person_id, "district_of_residence"]
+        eligible = df.at[person_id, "tb_inf"] != "active"
+
+        if (
+            (district in high_risk_districts.values)
+            & (self.sim.date.year > 2017)
+            & eligible
+        ):
+            # Schedule the TB treatment event:
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Tb_Start_or_Continue_Ipt(self, person_id=person_id),
+                priority=1,
+                topen=self.sim.date,
+                tclose=None
+            )
+
 
 # # ---------------------------------------------------------------------------
 # #   TB infection event
 # # ---------------------------------------------------------------------------
-# # TODO should transmission be limited within each district?
-# # TODO add relative infectiousness for those on poor tx [prop tx failure]
-# # TODO rel inf for smear negative - weight inf by prop smear negative
-# # TODO age/sex distribution for new cases?
-
 
 class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """ The Tb Regular Polling Events
@@ -930,59 +958,57 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         self.send_for_screening(population)
 
     def latent_transmission(self, strain):
-        # assume while on treatment, not infectious
-        # consider relative infectivity of smear positive/negative and pulmonary / extrapulmonary
+        """
+        assume while on treatment, not infectious
+        consider relative infectivity of smear positive/negative and pulmonary / extrapulmonary
 
-        # apply a force of infection to produce new latent cases
-        # no age distribution for FOI but the relative risks would affect distribution of active infections
-        # this comprises both new infections and reinfections
+        apply a force of infection to produce new latent cases
+        no age distribution for FOI but the relative risks would affect distribution of active infections
+        this comprises both new infections and reinfections
+        """
 
         df = self.sim.population.props
         p = self.module.parameters
         rng = self.module.rng
         now = self.sim.date
-        districts = df['district_of_residence'].unique()
+        districts = self.module.district_list
 
         # -------------- district-level transmission -------------- #
+        # get population alive by district
+        pop = df.loc[
+            df.is_alive
+            ].groupby(['district_of_residence'])['is_alive'].sum()
+        tmp = pd.DataFrame(pop, index=districts)
 
         # smear-positive cases by district
-        df['tmp'] = pd.Series(0, index=df.index)
-        df.loc[
+        smear_pos = df.loc[
             df.is_alive & (df.tb_inf == 'active') &
             (df.tb_strain == strain) &
             df.tb_smear &
-            ~df.tb_on_treatment, 'tmp'
-        ] = 1
-        smear_pos = df.groupby(['district_of_residence'])[['tmp']].sum()
-        smear_pos = smear_pos.iloc[:, 0]  # convert to series
+            ~df.tb_on_treatment
+            ].groupby(['district_of_residence'])['is_alive'].sum()
+
+        tmp['smear_pos'] = pd.Series(smear_pos, index=districts)
 
         # smear-negative cases by district
-        df['tmp2'] = pd.Series(0, index=df.index)
-        df.loc[
+        smear_neg = df.loc[
             df.is_alive & (df.tb_inf == 'active') &
             (df.tb_strain == strain) &
             ~df.tb_smear &
-            ~df.tb_on_treatment,
-            'tmp2',
-        ] = 1
-        smear_neg = df.groupby(['district_of_residence'])[['tmp2']].sum()
-        smear_neg = smear_neg.iloc[:, 0]  # convert to series
+            ~df.tb_on_treatment
+            ].groupby(['district_of_residence'])['is_alive'].sum()
+        tmp['smear_neg'] = pd.Series(smear_neg, index=districts)
 
-        # population by district
-        df['tmp3'] = pd.Series(0, index=df.index)
-        df.loc[df.is_alive, 'tmp3'] = 1
-        pop = df.groupby(['district_of_residence'])[['tmp3']].sum()
-        pop = pop.iloc[:, 0]  # convert to series
-
-        del df['tmp'], df['tmp2'], df['tmp3']
+        tmp = tmp.fillna(0)  # fill any missing values with 0
 
         # calculate foi by district
         foi = pd.Series(0, index=districts)
         foi = (
                   p['transmission_rate']
-                  * (smear_pos + (smear_neg * p['rel_inf_smear_ng']))
-              ) / pop
+                  * (tmp['smear_pos'] + (tmp['smear_neg'] * p['rel_inf_smear_ng']))
+              ) / tmp['is_alive']
 
+        foi = foi.fillna(0)  # fill any missing values with 0
         assert foi.isna().sum() == 0  # check there is a foi for every district
 
         # create a dict, uses district name as keys

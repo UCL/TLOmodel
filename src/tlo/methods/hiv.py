@@ -70,12 +70,12 @@ class Hiv(Module):
 
     # Declare Causes of Death
     # CAUSES_OF_DEATH = {
-    #     'AIDS_non_TB': Cause(gbd_causes='HIV/AIDS', label='AIDS_non_TB'),
-    #     'AIDS_TB': Cause(gbd_causes='HIV/AIDS', label='AIDS_TB'),
+    #     'AIDS_non_TB': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
+    #     'AIDS_TB': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
     # }
     #
     # CAUSES_OF_DISABILITY = {
-    #     'HIV': Cause(gbd_causes='HIV/AIDS', label='HIV/AIDS'),
+    #     'HIV': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
     # }
 
     PROPERTIES = {
@@ -1663,24 +1663,9 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         """
         Consider whether IPT is needed at this time. This is run only when treatment is initiated.
         """
-        df = self.sim.population.props
 
         if 'Tb' in self.sim.modules:
-            high_risk_districts = self.sim.modules["Tb"].parameters["tb_high_risk_distr"]
-            district = df.at[person_id, "district_of_residence"]
-            eligible = df.at[person_id, "tb_inf"] != "active"
-            if (
-                (district in high_risk_districts.values)
-                & (self.sim.date.year > 2017)
-                & eligible
-            ):
-                # Schedule the TB treatment event:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    tb.HSI_Tb_Start_or_Continue_Ipt(self.sim.modules['Tb'], person_id=person_id),
-                    priority=1,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+            self.sim.modules['Tb'].consider_ipt_for_those_initiating_art(person_id=person_id)
 
     def never_ran(self):
         """This is called if this HSI was never run.
