@@ -31,7 +31,6 @@ Outstanding issues
 # 'number_died': df.loc[df.is_alive, 'ri_ALRI_death_counter'].sum()
 
 
-import copy
 from pathlib import Path
 
 import numpy as np
@@ -42,7 +41,6 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
 from tlo.methods.symptommanager import Symptom
-from tlo.methods.healthsystem import HSI_Event
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -64,7 +62,7 @@ class Alri(Module):
         Metadata.USES_HEALTHBURDEN
     }
 
-    # Declare the pathogen types + pathogens:
+    # Declare the pathogen types and specific pathogens:
     viral_patho = {'RSV',
                    'Rhinovirus',
                    'HMPV',
@@ -81,8 +79,8 @@ class Alri(Module):
                        'Hib',
                        'H.influenzae_non_type_b',
                        'Staph_aureus',
-                       'Enterobacteriaceae',        # includes E. coli, Enterobacter species, and Klebsiella species
-                       'other_Strepto_Enterococci', # includes Streptococcus pyogenes and Enterococcus faecium
+                       'Enterobacteriaceae',  # includes E. coli, Enterobacter species, and Klebsiella species
+                       'other_Strepto_Enterococci',  # includes Streptococcus pyogenes and Enterococcus faecium
                        'other_bacterial_pathogens'
                        # <-- includes Bordetella pertussis, Chlamydophila pneumoniae,
                        # Legionella species, Mycoplasma pneumoniae, Moraxella catarrhalis, Non-fermenting gram-negative
@@ -123,7 +121,6 @@ class Alri(Module):
                      'meningitis',
                      'respiratory_failure'
                      }
-
 
     PARAMETERS = {
         # Incidence rate by pathogens  -----
@@ -285,7 +282,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of respiratory failure when peripheral oxygen level is lower than 93%'
                       ),
-
 
         'prob_respiratory_failure_to_multiorgan_dysfunction':
             Parameter(Types.REAL,
@@ -635,8 +631,8 @@ class Alri(Module):
         # todo- @ines: i saw you using a property like this but it wasn't defined, so have defined it here.
         'ri_ALRI_treatment':
             Property(Types.BOOL,
-                    'Whether this person is currentlt receiving treatment for a current episode of ALRI'
-                    ),
+                     'Whether this person is currentlt receiving treatment for a current episode of ALRI'
+                     ),
         # ---- The pathogen which is the attributed cause of Alri ----
         'ri_primary_ALRI_pathogen':
             Property(Types.CATEGORICAL,
@@ -646,8 +642,8 @@ class Alri(Module):
         # ---- The bacterial pathogen which is the attributed co-/secondary infection ----
         'ri_secondary_bacterial_pathogen':
             Property(Types.CATEGORICAL,
-                     'Secondary bacterial pathogen for the current Alri event',
-                     categories=list(bacterial_patho) + ['none'] + ['not_applicable']
+                     'Secondary bacterial pathogen for the current Alri event (np.nan if none or not applicable)',
+                     categories=list(bacterial_patho)
                      ),
         # ---- The underlying Alri condition ----
         'ri_ALRI_disease_type':
@@ -656,19 +652,12 @@ class Alri(Module):
                                  'bronchiolitis'] + ['not_applicable']
                      ),
         # ---- Complications associated with Alri ----
-        'ri_ALRI_complications':
-            Property(Types.INT,
-                     'bitset column, stores complications that arose from the Alri event'
-                     ),
         'ri_peripheral_oxygen_saturation':
             Property(Types.CATEGORICAL,
                      'Level of peripheral oxygen saturation to be read by a pulse oximetry',
                      categories=['SpO2<93%', 'SpO2_93-100%']),
-        # ---- Symptoms associated with Alri ----
-        'ri_current_ALRI_symptoms':
-            Property(Types.INT,
-                     'bitset column, stores symptoms of current Alri event'
-                     ),
+
+        # < --- other properties of the form 'ri_complication_{complication-name}' are added later -->
 
         # ---- Internal variables to schedule onset and deaths due to Alri ----
         'ri_ALRI_event_date_of_onset': Property(Types.DATE, 'date of onset of current Alri event'),
@@ -757,6 +746,7 @@ class Alri(Module):
             'cyanosis', 'respiratory_distress', 'danger_signs'
         }
 
+
     def read_parameters(self, data_folder):
         """ Setup parameters values used by the module
         """
@@ -783,6 +773,18 @@ class Alri(Module):
                               param_type.python_type), f'Parameter "{param_name}" ' \
                                                        f'is not read in correctly from the resourcefile.'
 
+    def pre_initialise_population(self):
+        """Define columns for complications at run-time"""
+        Alri.PROPERTIES.update({
+            f"ri_complication_{complication}": Property(Types.BOOL,
+                                                        f"Whether this person has complication {complication}")
+            for complication in self.complications
+        })
+
+        # for complication in self.complications:
+        #     Alri.PROPERTIES[f"ri_complication_{complication}"] = \
+        #         Property(Types.BOOL, f"Whether this person has complication {complication}")
+
     def initialise_population(self, population):
         """
         Sets that there is no one with Alri at initiation.
@@ -792,10 +794,11 @@ class Alri(Module):
         # ---- Key Current Status Classification Properties ----
         df.loc[df.is_alive, 'ri_current_ALRI_status'] = False
         df.loc[df.is_alive, 'ri_primary_ALRI_pathogen'].values[:] = 'not_applicable'
-        df.loc[df.is_alive, 'ri_current_ALRI_symptoms'] = 0
-        df.loc[df.is_alive, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
+        df.loc[df.is_alive, 'ri_secondary_bacterial_pathogen'] = np.nan
         df.loc[df.is_alive, 'ri_ALRI_disease_type'] = 'not_applicable'
-        df.loc[df.is_alive, 'ri_ALRI_complications'] = 0
+        df.loc[df.is_alive, [
+            f"ri_complication_{complication}" for complication in self.complications]
+        ] = False
 
         # ---- Internal values ----
         df.loc[df.is_alive, 'ri_ALRI_event_date_of_onset'] = pd.NaT
@@ -822,15 +825,15 @@ class Alri(Module):
 
         # This biset property stores set of symptoms that can occur
         # todo - @ines - this seems to be replicating what the SymptomManager does?
-        self.ALRI_symptoms = BitsetHandler(self.sim.population, 'ri_current_ALRI_symptoms',
-                                           ['fever', 'cough', 'difficult_breathing', 'fast_breathing', 'headache',
-                                            'chest_indrawing', 'chest_pain', 'cyanosis', 'respiratory_distress',
-                                            'danger_signs'])
-
-        # This biset property stores set of complications that can occur
-        self.ALRI_complications = BitsetHandler(self.sim.population, 'ri_ALRI_complications',
-                                                ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess',
-                                                 'sepsis', 'meningitis', 'respiratory_failure'])
+        # self.ALRI_symptoms = BitsetHandler(self.sim.population, 'ri_current_ALRI_symptoms',
+        #                                    ['fever', 'cough', 'difficult_breathing', 'fast_breathing', 'headache',
+        #                                     'chest_indrawing', 'chest_pain', 'cyanosis', 'respiratory_distress',
+        #                                     'danger_signs'])
+        # todo - @ines - for efficiency, I've just put these as normal properties of type bool.
+        # # This biset property stores set of complications that can occur
+        # self.ALRI_complications = BitsetHandler(self.sim.population, 'ri_ALRI_complications',
+        #                                         ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess',
+        #                                          'sepsis', 'meningitis', 'respiratory_failure'])
 
     def initialise_simulation(self, sim):
         """
@@ -855,7 +858,6 @@ class Alri(Module):
             # Schedule the event that does checking every day:
             sim.schedule_event(AlriCheckPropertiesEvent(self), sim.date)
 
-
         # Get DALY weights
         # get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
         if 'HealthBurden' in self.sim.modules.keys():
@@ -879,10 +881,9 @@ class Alri(Module):
         # ---- Key Current Status Classification Properties ----
         df.at[child_id, 'ri_current_ALRI_status'] = False
         df.at[child_id, 'ri_primary_ALRI_pathogen'] = 'not_applicable'
-        df.at[child_id, 'ri_current_ALRI_symptoms'] = 0
         df.at[child_id, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
         df.at[child_id, 'ri_ALRI_disease_type'] = 'not_applicable'
-        df.at[child_id, 'ri_ALRI_complications'] = 0
+        df.at[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
 
         # ---- Internal values ----
         df.at[child_id, 'ri_ALRI_event_date_of_onset'] = pd.NaT
@@ -1184,10 +1185,10 @@ class Alri(Module):
                 'bacterial_pneumonia': 0,
                 'viral_pneumonia': 1,
                 'bronchiolitis': 2,
-                'fungal_pneumonia': 1       # <-- same as probabilities for viral pneumonia
+                'fungal_pneumonia': 1  # <-- same as probabilities for viral pneumonia
             }[disease_type]
 
-            prob_symptoms = {
+            return {
                 'fever': p['prob_fever_uncomplicated_ALRI_by_disease_type'][index],
                 'cough': p['prob_cough_uncomplicated_ALRI_by_disease_type'][index],
                 'difficult_breathing': p['prob_difficult_breathing_uncomplicated_ALRI_by_disease_type'][index],
@@ -1195,7 +1196,6 @@ class Alri(Module):
                 'chest_indrawing': p['prob_chest_indrawing_uncomplicated_ALRI_by_disease_type'][index],
                 'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][index],
             }
-            return
 
         for disease in self.disease_type:
             self.prob_symptoms_uncomplicated_ALRI[disease] = make_symptom_probs(disease)
@@ -1252,7 +1252,6 @@ class Alri(Module):
         for complication in self.complications:
             self.prob_extra_symptoms_complications[complication] = add_complication_symptom_probs(complication)
 
-
         # =====================================================================================================
         # APPLY A LINEAR MODEL FOR THE RISK OF DEATH DUE TO Alri
         # -----------------------------------------------------------------------------------------------------
@@ -1264,14 +1263,15 @@ class Alri(Module):
                 Predictor('tmp_hv_inf').when(True, p['rr_death_ALRI_HIV']),
                 Predictor('tmp_malnutrition').when(True, p['rr_death_ALRI_SAM']),
                 Predictor('tmp_low_birth_weight').when(True, p['rr_death_ALRI_low_birth_weight']),
-                Predictor('age_years')  .when('.between(1,1)', p['rr_death_ALRI_age12to23mo'])
-                                        .when('.between(2,4)', p['rr_death_ALRI_age24to59mo']),
+                Predictor('age_years').when('.between(1,1)', p['rr_death_ALRI_age12to23mo'])
+                    .when('.between(2,4)', p['rr_death_ALRI_age24to59mo']),
                 Predictor('ri_ALRI_complications').when('sepsis', p['rr_death_ALRI_sepsis']),
                 Predictor('ri_ALRI_complications').when('respiratory_failure', p['rr_death_ALRI_respiratory_failure']),
                 Predictor('ri_ALRI_complications').when('meningitis', p['rr_death_ALRI_meningitis']),
                 # Predictor('ri_oxygen_therapy_given').when(True, p['oxygen_therapy_effectiveness_ALRI']),
                 # Predictor('ri_antibiotic_administered').when(True, p['antibiotic_therapy_effectiveness_ALRI']),
             )
+
         # TODO: can I do a scaled linear model for death at the individual level? - calibrations
         # todo - @ines: would you really want to? What data do you have?
         # todo - @ines: why something commented-out?
@@ -1293,13 +1293,14 @@ class Alri(Module):
 
         elif pathogen in self.viral_patho:
             if age < 2:
-                disease_type =  'viral_pneumonia' if (self.rng.rand() < p[f'proportion_viral_pneumonia_by_{patho}']) \
-                    else 'bronchiolitis'
+                disease_type = 'viral_pneumonia' if (
+                    self.rng.rand() < p[f'proportion_viral_pneumonia_by_{pathogen}']
+                ) else 'bronchiolitis'
             else:
-                disease_type =  'viral_pneumonia'
+                disease_type = 'viral_pneumonia'
 
         elif pathogen in self.fungal_patho:
-            disease_type =  'fungal_pneumonia'
+            disease_type = 'fungal_pneumonia'
 
         else:
             raise ValueError
@@ -1307,37 +1308,25 @@ class Alri(Module):
         assert disease_type in self.disease_type
         return disease_type
 
-    def uncomplicated_alri_symptoms(self, disease, person_id, duration_in_days):
+    def impose_symptoms_for_uncomplicated_disease(self, person_id, disease):
         """
-        Assigns clinical symptoms to uncomplicated Alri.
-        It schedules the initial symptoms of the disease and schedules resolution
-        :param disease:
-        :param person_id:
-        :param duration_in_days:
-        :return:
+        Assigns clinical symptoms to uncomplicated Alri. The probabilities of different symptoms are specific to the
+        type of Alri disease.
         """
         rng = self.rng
 
         # ----------------------- Allocate symptoms to onset of Alri ----------------------
         prob_symptoms_uncomplicated_alri = self.prob_symptoms_uncomplicated_ALRI[disease]
 
-        symptoms_for_this_person = list()
         for symptom, prob in prob_symptoms_uncomplicated_alri.items():
             if rng.rand() < prob:
-                symptoms_for_this_person.append(symptom)
-                self.ALRI_symptoms.set([person_id], f'{symptom}')
+                self.sim.modules['SymptomManager'].change_symptom(
+                    person_id=person_id,
+                    symptom_string=symptom,
+                    add_or_remove='+',
+                    disease_module=self,
+                )
 
-        # Onset symptoms:
-        for symptom in symptoms_for_this_person:
-            self.sim.modules['SymptomManager'].change_symptom(
-                person_id=person_id,
-                symptom_string=symptom,
-                add_or_remove='+',
-                disease_module=self,
-                duration_in_days=duration_in_days
-            )
-
-        return symptoms_for_this_person
 
     def alri_with_complications_symptoms(self, complication, person_id, duration_in_days):
         """
@@ -1457,9 +1446,10 @@ class Alri(Module):
         # check that no one is on treatment if they do not have a current infection
         assert df.loc[df.is_alive & df.ri_ALRI_treatment, 'ri_current_ALRI_status'].all()
 
-
-
-
+        # check if that primary pathogen is bacterial then there is np.nan for secondary_bacterial_pathogrn
+        assert df.loc[
+            df.is_alive & df['ri_primary_ALRI_pathogen'].isin(self.bacterial_patho), 'ri_secondary_bacterial_pathogen'
+        ].isna().all()
 
 
     # def do_when_not_improving(self, person_id):
@@ -1495,40 +1485,13 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         model slightly under-represents incidence among younger age-groups and over-represents incidence among older
         age-groups. This is a small effect when the frequency of the polling event is high.
     """
-
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=2))
         self.fraction_of_a_year_until_next_polling_event = self.compute_fraction_of_year_between_polling_event()
 
     def compute_fraction_of_year_between_polling_event(self):
-        """compute fraction of a year that elapses between polling event. This is used to adjust the risk of infection"""
+        """Compute fraction of a year that elapses between polling event. This is used to adjust the risk of infection"""
         return (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'Y')
-
-    def random_date(start, end):
-        """Generate a random datetime between `start` and `end`"""
-        return start + datetime.timedelta(
-            # Get a random amount of seconds between `start` and `end`
-            seconds=random.randint(0, int((end - start).total_seconds())),
-        )
-
-    def sample_outcome(self, df):
-        """Helper function to randoly sample outcomes from a set of probabilities.
-        Each row in the df is a person and each column is an event that may happen to the person.
-        The probabilities of each event are assumed to be independent but mutually exlusive."""
-
-        # todo - this needs checking
-        assert (df.sum(axis=1) <= 1.0).all(), "Probabilities across columns cannot sum to more than 1.0"
-
-        # Compare uniform deviate to cumulative sum across columns, after including a "null" column (for no event).
-        df['_'] = 1.0 - df.sum(axis=1)  # add implied "none of these events" category
-        cumsum = df.cumsum(axis=1)
-        draws = pd.Series(self.module.rng.rand(len(cumsum)), index=cumsum.index)
-        y = cumsum.gt(draws, axis=0)
-        outcome = y.idxmax(axis=1)
-
-        # return as a dict only in those cases where the outcome is one of the events.
-        return outcome.loc[~(outcome=='_')].to_dict()
-
 
     def apply(self, population):
         """Determine who will become infected and schedule for them an AlriOnsetEvent
@@ -1561,7 +1524,8 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         outcome = self.sample_outcome(probs_of_acquiring_pathogen)
 
         # For persons that will become infected with a particular pathogen:
-        for person_id, pathogen in outcome:
+        # todo - vecotorize this.
+        for person_id, pathogen in outcome.items():
             #  Create the event for the onset of infection:
             self.sim.schedule_event(
                 event=AlriIncidentCase(
@@ -1571,6 +1535,28 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 ),
                 date=self.random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1))
             )
+
+    def random_date(self, start, end):
+        """Generate a random date between `start` and `end` - sampling with precision of the day."""
+        return start + DateOffset(days=self.module.rng.randint(0, (end - start).days))
+
+    def sample_outcome(self, df):
+        """Helper function to randoly sample outcomes from a set of probabilities.
+        Each row in the df is a person and each column is an event that may happen to the person.
+        The probabilities of each event are assumed to be independent but mutually exlusive."""
+
+        # todo - this needs checking
+        assert (df.sum(axis=1) <= 1.0).all(), "Probabilities across columns cannot sum to more than 1.0"
+
+        # Compare uniform deviate to cumulative sum across columns, after including a "null" column (for no event).
+        df['_'] = 1.0 - df.sum(axis=1)  # add implied "none of these events" category
+        cumsum = df.cumsum(axis=1)
+        draws = pd.Series(self.module.rng.rand(len(cumsum)), index=cumsum.index)
+        y = cumsum.gt(draws, axis=0)
+        outcome = y.idxmax(axis=1)
+
+        # return as a dict only in those cases where the outcome is one of the events.
+        return outcome.loc[~(outcome == '_')].to_dict()
 
 
 class AlriIncidentCase(Event, IndividualScopeEventMixin):
@@ -1584,99 +1570,98 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         """
-        * Determines the diseae and complications associated with this case
+        * Determines the disease and complications associated with this case
         * Updates all the properties so that they pertain to this current episode of Alri
         * Imposes the symptoms
         * Schedules relevant natural history event {(AlriWithPulmonaryComplicationsEvent) and
         (AlriWithSevereComplicationsEvent) (either AlriNaturalRecoveryEvent or AlriDeathEvent)}
         * Updates the counters in the log accordingly.
         """
-
         df = self.sim.population.props  # shortcut to the dataframe
-        person = df.loc[person]
+        person = df.loc[person_id]
         m = self.module
         rng = self.module.rng
+        p = m.parameters
 
-
-        # Stuff to do - not done at onset
-        # # ----------------- Determine the Alri disease type for this case -----------------
-        # age = df.at[person_id, 'age_years']
-        # alri_disease_type_for_this_person = m.determine_disease_type(age=age, pathogen=pathogen)
-        #
-        # # ------- Allocate a secondary bacterial pathogen in co-infection with primary viral pneumonia -------
-        # bacterial_patho_in_ALRI_coinfection = 'not_applicable'
-        # if pathogen in self.module.viral_patho:
-        #     prob_bacterial_infection = m.prob_secondary_bacterial_infection.predict(df.loc[[person_id]]).values[0]
-        #     if rng.rand() < prob_bacterial_infection:
-        #         bacterial_coinfection_pathogen = rng.choice(list(self.module.bacterial_patho),
-        #                                                     p=p['proportion_bacterial_coinfection_pathogen'])
-        #         bacterial_patho_in_ALRI_coinfection = bacterial_coinfection_pathogen
-        #         # update to co-infection property
-        #         alri_disease_type_for_this_person = 'bacterial_pneumonia'
-        #     else:
-        #         bacterial_patho_in_ALRI_coinfection = 'none'
-        # if pathogen in self.module.bacterial_patho:
-        #     bacterial_patho_in_ALRI_coinfection = 'not_applicable'
-        #     assert bacterial_patho_in_ALRI_coinfection == 'not_applicable'
-        #
-        # if pathogen in self.module.fungal_patho:
-        #     bacterial_patho_in_ALRI_coinfection = 'none'
-        #
-        # # ----------------------- Duration of the Alri event -----------------------
-        # duration_in_days_of_alri = max(7, int(
-        #     14 + (-2 + 4 * rng.rand())))  # assumes uniform interval around mean duration with range 4 days
-        # # TODO: find natural course of disease duration estimates
-
-
-
-
-
-        # The event should not run if the person is not currently alive
-        if not df.at[person_id, 'is_alive']:
+        # The event should not run if the person is not currently alive:
+        if not person['is_alive']:
             return
 
-        # Update the properties in the dataframe:
-        df.at[person_id, 'ri_current_ALRI_status'] = True
-        df.at[person_id, 'ri_primary_ALRI_pathogen'] = self.pathogen
-        if self.bacterial_pathogen != 'not_applicable':
-            df.at[person_id, 'ri_secondary_bacterial_pathogen'] = self.bacterial_pathogen
-        df.at[person_id, 'ri_ALRI_disease_type'] = self.disease
-        df.at[person_id, 'ri_ALRI_event_date_of_onset'] = self.sim.date
-        df.at[person_id, 'ri_ALRI_complications'] = 0  # all disease start as non-severe
-        df.at[person_id, 'ri_ALRI_cases_counter'] += 1
+        # 0) Add this case to the counter:
+        self.module.logging_event.new_case(age=person['age_years'], pathogen=self.pathogen)
 
-        if df.at[person_id, 'ri_primary_ALRI_pathogen'] == any(self.module.bacterial_patho):
-            assert df.at[person_id, 'ri_secondary_bacterial_pathogen'] == 'not_applicable'
+        # 1) Determines the disease and complications associated with this case
+
+        # ----------------- Determine the Alri disease type for this case -----------------
+        disease = m.determine_disease_type(age=person['age_years'], pathogen=self.pathogen)
+
+        # ----------------- Determine if there is a secondary bacterial infection  -----------------
+        if self.pathogen in self.module.bacterial_patho:
+            bacterial_coinfection = np.nan
+
+        elif self.pathogen in self.module.fungal_patho:
+            bacterial_coinfection = np.nan
+
+        else:
+            # pathogen is viral: determine if there is bacterial co-infection
+            if m.prob_secondary_bacterial_infection.predict(df.loc[[person_id]], m.rng):
+                bacterial_coinfection = \
+                    rng.choice(list(m.bacterial_patho), p=p['proportion_bacterial_coinfection_pathogen'])
+                # update to co-infection property:
+                alri_disease_type_for_this_person = 'bacterial_pneumonia'
+            else:
+                bacterial_coinfection = np.nan
+
+        # 2) Update the properties in the dataframe:
+        df.loc[person_id,
+               (
+                   'ri_current_ALRI_status',
+                   'ri_primary_ALRI_pathogen',
+                   'ri_secondary_bacterial_pathogen',
+                   'ri_ALRI_disease_type',
+                   'ri_ALRI_event_date_of_onset',
+                   'ri_ALRI_complications'
+               )
+        ] = (
+            True,
+            self.pathogen,
+            bacterial_coinfection,
+            disease,
+            self.sim.date,
+            0
+        )
+
+        # ----------------------- Duration of the Alri event -----------------------
+        duration_in_days_of_alri = rng.randint(1, 8)  # assumes uniform interval around mean duration with range 4 days
+        # TODO: find natural course of disease duration estimates
 
         # ----------------------------------- clinical symptoms -----------------------------------
-        # update clinical symptoms for new uncomplicated Alri
-        uncomplicated_symptoms_for_this_person = self.module.uncomplicated_alri_symptoms(
-            disease=self.disease, person_id=person_id,
-            duration_in_days=self.duration_in_days)
+        # impose clinical symptoms for new uncomplicated Alri
+        m.impose_symptoms_for_uncomplicated_disease(person_id=person_id, disease=disease)
 
-        # date for recovery with uncomplicated Alri
-        date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
 
         # COMPLICATIONS -----------------------------------------------------------------------------------------
+
         # here, assign the probability of hypoxia
-        prob_developing_hypoxia = m.risk_of_decreased_peripheral_oxygen_level.predict(
-            df.loc[[person_id]]).values[0]
-        if rng.rand() < prob_developing_hypoxia:
+        if m.risk_of_decreased_peripheral_oxygen_level.predict(df.loc[[person_id]], rng):
             df.at[person_id, 'ri_peripheral_oxygen_saturation'] = 'SpO2<93%'
+            # todo - do this in the above section
 
         # here, assign the probability of each complication and schedule the event onset
         complications_for_this_person = list()
-        for complication in self.module.complications:
+        for complication in m.complications:
             prob_developing_each_complication = m.risk_of_developing_ALRI_complications[complication].predict(
                 df.loc[[person_id]]).values[0]
             if rng.rand() < prob_developing_each_complication:
                 complications_for_this_person.append(complication)
-        if 'pleural_effusion' in complications_for_this_person:
-            if self.disease == 'bacterial_pneumonia':
-                prob_developing_empyema = m.risk_of_developing_ALRI_complications['empyema'].predict(
-                    df.loc[[person_id]]).values[0]
-                if rng.rand() < prob_developing_empyema:
-                    complications_for_this_person.append('empyema')
+
+        # if 'pleural_effusion' in complications_for_this_person:
+        #     if self.disease == 'bacterial_pneumonia':
+        #         prob_developing_empyema = m.risk_of_developing_ALRI_complications['empyema'].predict(
+        #             df.loc[[person_id]]).values[0]
+        #         if rng.rand() < prob_developing_empyema:
+        #             complications_for_this_person.append('empyema')
+        # todo - this can be incorporated into the linear model
 
         # if at least one complication developed in the Alri event, schedule the event
         if len(complications_for_this_person) != 0:
@@ -1701,6 +1686,15 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                                     date_of_outcome)
             df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
 
+
+
+
+
+        # date for recovery with uncomplicated Alri
+        date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
+
+
+
         # Record 'episode end' data. This the date when this episode ends. It is the last possible data that any HSI
         # could affect this episode.
         df.at[person_id, 'ri_end_of_last_alri_episode'] = date_of_outcome + DateOffset(
@@ -1717,16 +1711,15 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                 self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id),
                                         date_of_outcome)
 
-        # Add this incident case to the tracker
-        self.module.logging_event.new_case(age=df.at[person_id, 'age_years'], pathogen=self.pathogen)
+
+
 
 class AlriOnsetEvent(Event, IndividualScopeEventMixin):
     """
-           This Event is for the onset of complications from Alri. For some untreated children,
-           this occurs a set number of days after onset of disease.
-           It sets the property 'ri_ALRI_complications' to each initial complication
-           and schedules further severe complications.
-       """
+    This Event is for the onset of complications from Alri. For some untreated childrenthis occurs a set number of days
+    after onset of disease. It sets the property 'ri_ALRI_complications' to each initial complication and schedules
+    further severe complications.
+    """
 
     def __init__(self, module, person_id, duration_in_days, symptoms, complication):
         super().__init__(module, person_id=person_id)
@@ -1782,6 +1775,7 @@ class AlriOnsetEvent(Event, IndividualScopeEventMixin):
                 # df.at[person_id, 'ri_ALRI_event_recovered_date'] = date_of_recovery
                 self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_recovery)
 
+
 class AlriSystemicComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
     """
         This Event is for the onset of severe complications from Alri. For some untreated children,
@@ -1815,6 +1809,7 @@ class AlriSystemicComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
             person_id=person_id,
             complication=self.complication,
             duration_in_days=self.duration_in_days)
+
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
     """
@@ -1855,7 +1850,6 @@ class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'ri_primary_ALRI_pathogen'] = 'not_applicable'
         df.at[person_id, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
         df.at[person_id, 'ri_ALRI_disease_type'] = 'not_applicable'
-        df.at[person_id, 'ri_current_ALRI_symptoms'] = 0
         df.at[person_id, 'ri_ALRI_complications'] = 0
         df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
 
@@ -1867,6 +1861,7 @@ class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['Alri'])
+
 
 class AlriCureEvent(Event, IndividualScopeEventMixin):
     """
@@ -1924,7 +1919,6 @@ class AlriCureEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'ri_primary_ALRI_pathogen'] = 'not_applicable'
         df.at[person_id, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
         df.at[person_id, 'ri_ALRI_disease_type'] = 'not_applicable'
-        df.at[person_id, 'ri_current_ALRI_symptoms'] = 0
         df.at[person_id, 'ri_ALRI_complications'] = 0
 
         # clear the treatment prperties
@@ -1935,6 +1929,7 @@ class AlriCureEvent(Event, IndividualScopeEventMixin):
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['Alri'])
+
 
 class AlriDeathEvent(Event, IndividualScopeEventMixin):
     """
@@ -1990,7 +1985,7 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
         # initialise trakcers of incident cases, new recoveries, new treatments and deaths due to ALRI
-        age_grps= {**{0: "0", 1: "1", 2: "2-4", 3: "2-4", 4: "2-4"}, **{x: "5+" for x in range(5, 100)}}
+        age_grps = {**{0: "0", 1: "1", 2: "2-4", 3: "2-4", 4: "2-4"}, **{x: "5+" for x in range(5, 100)}}
 
         self.trackers = dict()
         self.trackers['incident_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.pathogens)
@@ -2026,7 +2021,7 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 2) Total number of cases, recovery, treatments and deaths since the last logging event
         logger.info(
-            key='counters',
+            key='event_counts',
             data={k: v.report_current_total() for k, v in self.trackers.items()},
             description='Counts of cases, recovery, treatment and death in the last year'
         )
@@ -2074,10 +2069,26 @@ class Tracker():
         return self.tracker.sum()
 
 
+# ---------------------------------------------------------------------------------------------------------
+#   DEBUGGING EVENTS
+# ---------------------------------------------------------------------------------------------------------
+
+class AlriCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
+    """This event runs daily and checks properties are in the right configuration. Only use whilst debugging!
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(days=1))
+
+    def apply(self, population):
+        self.module.check_properties()
+
+
 class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This Event logs the daily occurrence to a single individual child.
     """
+
     def __init__(self, module):
         # This logging event to occur every day
         self.repeat = 1
@@ -2094,25 +2105,9 @@ class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df = self.sim.population.props
             logger.info(
                 key='log_individual',
-                data= df.loc[self.person_id, self.module.PROPERTIES.keys()].to_dict(),
+                data=df.loc[self.person_id, self.module.PROPERTIES.keys()].to_dict(),
                 description='print of properties each day for one person (the first under-five-year-old in the dataframe)'
             )
-
-
-# ---------------------------------------------------------------------------------------------------------
-#   DEBUGGING EVENTS
-# ---------------------------------------------------------------------------------------------------------
-
-
-class AlriCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
-    """This event runs daily and checks properties are in the right configuration. Only use whilst debugging!
-    """
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(day=1))
-
-    def apply(self, population):
-        self.module.check_properties()
 
 
 """

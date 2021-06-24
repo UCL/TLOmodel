@@ -33,7 +33,7 @@ def get_sim(tmpdir, popsize=100, dur=pd.DateOffset(months=3)):
     start_date = Date(2010, 1, 1)
     end_date = start_date + dur
 
-    sim = Simulation(start_date=start_date, log_config={
+    sim = Simulation(start_date=start_date, seed=0, show_progress_bar=True, log_config={
         'filename': 'tmp',
         'directory': tmpdir,
         'custom_levels': {
@@ -72,35 +72,38 @@ def test_basic_run(tmpdir):
     check_dtypes(sim)
 
 
-def test_logging(tmpdir):
-    """Check logging results when forcing the occurrence of incidence, recovery, treatment and death"""
-    dur = pd.DateOffset(years=2)
-    popsize = 100
-    sim = get_sim(tmpdir, popsize=popsize, dur=dur)
 
-    # Read the log for the population counts of incidence:
-    # todo - check that the counts come out OK:
+def test_nat_hist_progression(tempdir):
+    """Cause infection --> ALRI onset --> complication --> death and check it is logged correctly"""
+    pass
 
-    # Read the log for the one individual being tracked:
-    log = parse_log_file(sim.log_filepath)['tlo.methods.alri']['log_individual']
-    log['date'] = pd.to_datetime(log['date'])
-    log = log.set_index('date')
-    assert log.index.equals(pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1)))
-    assert set(log.columns) == set(sim.modules['Alri'].PROPERTIES.keys())
+
 
 
 def test_basic_run_lasting_two_years(tmpdir):
-    """Check logging results in a run of the model for two years"""
+    """Check logging results in a run of the model for two years, with daily property config checking"""
     dur = pd.DateOffset(years=2)
     popsize = 100
     sim = get_sim(tmpdir, popsize=popsize, dur=dur)
 
     # Read the log for the population counts of incidence:
-    # todo - check that properties have the right configuration at all times!
+    log_counts = parse_log_file(sim.log_filepath)['tlo.methods.alri']['event_counts']
+    log_path_breakdown = parse_log_file(sim.log_filepath)['tlo.methods.alri']['incidence_count_by_age_and_pathogen']
+
+    # Read the log for the one individual being tracked:
+    log_one_person = parse_log_file(sim.log_filepath)['tlo.methods.alri']['log_individual']
+    log_one_person['date'] = pd.to_datetime(log_one_person['date'])
+    log_one_person = log_one_person.set_index('date')
+    assert log_one_person.index.equals(pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1)))
+    assert set(log_one_person.columns) == set(sim.modules['Alri'].PROPERTIES.keys())
+
+
 
 
 
 # todo - Need some kind of test bed so that Ines can see the effects of the linear models she is programming.
+
+
 
 # TODO -- @ines: We need some tests here to make sure everything is working, like in the diarrhoea code.
 #  I have done some basic one above to check on the mechanics of the logging etc. But we need more for the 'biology:
