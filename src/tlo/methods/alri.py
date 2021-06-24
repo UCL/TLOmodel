@@ -54,28 +54,7 @@ logger.setLevel(logging.INFO)
 # ---------------------------------------------------------------------------------------------------------
 
 class Alri(Module):
-    # Declare the pathogens that this module will simulate:
-    pathogens = {
-        'RSV',
-        'Rhinovirus',
-        'HMPV',
-        'Parainfluenza',
-        'Strep_pneumoniae_PCV13',
-        'Strep_pneumoniae_non_PCV13',
-        'Hib',
-        'H.influenzae_non_type_b',
-        'Staph_aureus',
-        'Enterobacteriaceae',           # includes E. coli, Enterobacter species, and Klebsiella species,
-        'other_Strepto_Enterococci',    # includes Streptococcus pyogenes and Enterococcus faecium
-        'Influenza',
-        'P.jirovecii',
-        'Bocavirus',
-        'Adenovirus',
-        'other_viral_pathogens',  # Coronaviruses NL63, 229E OC43 and HKU1, Cytomegalovirus, Parechovirus/Enterovirus
-        'other_bacterial_pathogens'  # includes Bordetella pertussis, Chlamydophila pneumoniae, Legionella species,
-        # Mycoplasma pneumoniae, Moraxella catarrhalis,
-        # Non-fermenting gram-negative rods (Acinetobacter species and Pseudomonas species), Neisseria meningitidis
-    }
+    """This is the disease module for Acute Lower Respiritory Infections."""
 
     # Declare Metadata
     METADATA = {
@@ -84,6 +63,36 @@ class Alri(Module):
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
     }
+
+    # Declare the pathogen types + pathogens:
+    viral_patho = {'RSV',
+                   'Rhinovirus',
+                   'HMPV',
+                   'Parainfluenza',
+                   'Influenza',
+                   'Adenovirus',
+                   'Bocavirus',
+                   'other_viral_pathogens'  # Coronaviruses NL63, 229E OC43 and HKU1, Cytomegalovirus,
+                                            # Parechovirus/Enterovirus
+                   }
+
+    bacterial_patho = {'Strep_pneumoniae_PCV13',
+                       'Strep_pneumoniae_non_PCV13',
+                       'Hib',
+                       'H.influenzae_non_type_b',
+                       'Staph_aureus',
+                       'Enterobacteriaceae',        # includes E. coli, Enterobacter species, and Klebsiella species
+                       'other_Strepto_Enterococci', # includes Streptococcus pyogenes and Enterococcus faecium
+                       'other_bacterial_pathogens'
+                       # includes Bordetella pertussis, Chlamydophila pneumoniae,
+                       # Legionella species, Mycoplasma pneumoniae, Moraxella catarrhalis, Non-fermenting gram-negative
+                       # rods (Acinetobacter species and Pseudomonas species), Neisseria meningitidis
+                       }
+
+    fungal_patho = {'P.jirovecii'}
+
+    # Make set of all pathogens combined:
+    pathogens = viral_patho | bacterial_patho | fungal_patho
 
     # todo: @ines -- is the definition of causes of death and disability suitable? Please look into this.
     # Declare Causes of Death
@@ -100,28 +109,20 @@ class Alri(Module):
         for path in pathogens
     }
 
-    # Declare the Alri complications:
-    complications = {'pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess',
-                     'sepsis', 'meningitis', 'respiratory_failure'}
-
-    # Declare the pathogen types + pathogens:
-    viral_patho = {'RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', 'Bocavirus',
-                   'other_viral_pathogens'}
-
-    bacterial_patho = {'Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', 'Hib', 'H.influenzae_non_type_b',
-                       'Staph_aureus', 'Enterobacteriaceae', 'other_Strepto_Enterococci', 'other_bacterial_pathogens'}
-
-    fungal_patho = {'P.jirovecii'}
-
     # Declare the disease types:
     disease_type = {
         'bacterial_pneumonia', 'viral_pneumonia', 'fungal_pneumonia', 'bronchiolitis'
     }
 
-    # declare a set of cases, recovery, treatment, and death - for counter
-    outcome = {
-        'cases', 'recovered', 'treated', 'died'
-    }
+    # Declare the Alri complications:
+    complications = {'pneumothorax',
+                     'pleural_effusion',
+                     'empyema',
+                     'lung_abscess',
+                     'sepsis',
+                     'meningitis',
+                     'respiratory_failure'}
+
 
     PARAMETERS = {
         # Incidence rate by pathogens  -----
@@ -857,77 +858,115 @@ class Alri(Module):
             self.daly_wts['daly_very_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
             # todo @ines - 'daly_very_severe_ALRI' is never used: is that right?
 
+        # Make the linear models:
+        self.make_linear_models()
+
+    def on_birth(self, mother_id, child_id):
+        """Initialise properties for a newborn individual.
+        This is called by the simulation whenever a new person is born.
+        :param mother_id: the mother for this child
+        :param child_id: the new child
+        """
+
+        df = self.sim.population.props
+
+        # ---- Key Current Status Classification Properties ----
+        df.at[child_id, 'ri_current_ALRI_status'] = False
+        df.at[child_id, 'ri_primary_ALRI_pathogen'] = 'not_applicable'
+        df.at[child_id, 'ri_current_ALRI_symptoms'] = 0
+        df.at[child_id, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
+        df.at[child_id, 'ri_ALRI_disease_type'] = 'not_applicable'
+        df.at[child_id, 'ri_ALRI_complications'] = 0
+
+        # ---- Internal values ----
+        df.at[child_id, 'ri_ALRI_event_date_of_onset'] = pd.NaT
+        df.at[child_id, 'ri_ALRI_event_recovered_date'] = pd.NaT
+        df.at[child_id, 'ri_ALRI_event_death_date'] = pd.NaT
+        df.at[child_id, 'ri_end_of_last_alri_episode'] = pd.NaT
+
+        # ---- Temporary values ----
+        df.at[child_id, 'tmp_malnutrition'] = False
+        df.at[child_id, 'tmp_hv_inf'] = False
+        df.at[child_id, 'tmp_low_birth_weight'] = False
+        df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
+        df.at[child_id, 'tmp_continued_breastfeeding'] = False
+
+    def report_daly_values(self):
+        """Report DALY incurred in the population in the last month due to ALRI"""
+
+        df = self.sim.population.props
+
+        total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
+
+        total_daly_values.loc[
+            self.sim.modules['SymptomManager'].who_has('fast_breathing')] = self.daly_wts['daly_ALRI']
+
+        total_daly_values.loc[
+            self.sim.modules['SymptomManager'].who_has('danger_signs')] = self.daly_wts['daly_severe_ALRI']
+
+        # Split out by pathogen that causes the Alri
+        dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
+                                                     'ri_primary_ALRI_pathogen'],
+                                              dtype='float').drop(columns='not_applicable')
+        daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
+
+        # add prefix to label according to the name of the causes of disability declared
+        daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
+        return daly_values_by_pathogen
+
+    def make_linear_models(self):
+        """Make all the linear models used in the simulation"""
+        p = self.parameters
+        df = self.sim.population.props
+
         # =====================================================================================================
         # APPLY A LINEAR MODEL FOR THE ACQUISITION OF A PRIMARY PATHOGEN FOR Alri
         # --------------------------------------------------------------------------------------------
         # Make a dict to hold the equations that govern the probability that a person acquires Alri
         # that is caused (primarily) by a pathogen
-        p = self.parameters
-        df = self.sim.population.props
 
-        def make_scaled_linear_model(patho):
+        def make_scaled_linear_model_for_incidence(patho):
             """Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
             0-year-olds and then creates a new linear model with adjusted intercept so incidents in 0-year-olds
             matches the specified value in the model when averaged across the population
             """
 
-            def make_linear_model(patho, intercept=1.0):
+            def make_naive_linear_model(patho, intercept=1.0):
+                """Make the linear model based exactly on the parameters specified"""
+                # todo - @ines - 'va_pneumo' is not defined?
+
                 base_inc_rate = f'base_inc_rate_ALRI_by_{patho}'
                 return LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
-                    Predictor('age_years')  .when('.between(0,0)', p[base_inc_rate][0])
-                                            .when('.between(1,1)', p[base_inc_rate][1])
-                                            .when('.between(2,4)', p[base_inc_rate][2])
-                                            .otherwise(0.0),
+                    Predictor('age_years').when('.between(0,0)', p[base_inc_rate][0])
+                        .when('.between(1,1)', p[base_inc_rate][1])
+                        .when('.between(2,4)', p[base_inc_rate][2])
+                        .otherwise(0.0),
                     Predictor('li_no_access_handwashing').when(False, p['rr_ALRI_HHhandwashing']),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor('tmp_hv_inf').when(True, p['rr_ALRI_HIV_untreated']),
                     # Predictor().when(
                     #     "va_pneumo == '>1' & "
-                    #     "(ri_primary_ALRI_pathogen | ri_secondary_bacterial_pathogen == 'streptococcus'",
+                    #     "((ri_primary_ALRI_pathogen == 'streptococcus') | "
+                    #     "(ri_secondary_bacterial_pathogen == 'streptococcus'))",
                     #     p['rr_ALRI_PCV13']),
                     Predictor('tmp_malnutrition').when(True, p['rr_ALRI_underweight']),
                     Predictor('tmp_exclusive_breastfeeding').when(False, p['rr_ALRI_not_excl_breastfeeding'])
                 )
 
-            unscaled_lm = make_linear_model(patho)
+            unscaled_lm = make_naive_linear_model(patho)
             target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][0]
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
             scaled_intercept = 1.0 * (target_mean / actual_mean)
-            scaled_lm = make_linear_model(patho, intercept=scaled_intercept)
+            scaled_lm = make_naive_linear_model(patho, intercept=scaled_intercept)
 
             # check by applying the model to mean incidence of 0-year-olds
             assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
             return scaled_lm
 
-        for patho in Alri.pathogens:
-            self.incidence_equations_by_pathogen[patho] = make_scaled_linear_model(patho)
-
-        # check that equations have been declared for each pathogens
-        assert self.pathogens == set(list(self.incidence_equations_by_pathogen.keys()))
-
-        # --------------------------------------------------------------------------------------------
-        # Linear models for determining the underlying condition as viral or bacterial pneumonia, and bronchiolitis
-        # caused by each primary pathogen
-        def determine_ALRI_type(patho):
-            if patho in Alri.bacterial_patho:
-                return 'bacterial_pneumonia'
-            if patho in Alri.viral_patho:
-                under_2_yo = df['is_alive'] & (df['age_years'] < 2)
-                for child in under_2_yo:  # bronchiolitis only for those under 2
-                    return 'viral_pneumonia' if self.rng.rand() < p[f'proportion_viral_pneumonia_by_{patho}'] \
-                        else 'bronchiolitis'
-                else:
-                    return 'viral_pneumonia'
-            if patho in Alri.fungal_patho:
-                return 'fungal_pneumonia'
-
-        for pathogen in Alri.pathogens:
-            self.proportions_of_ALRI_disease_types_by_pathogen[pathogen] = determine_ALRI_type(pathogen)
-
-        # check that equations have been declared for each pathogens
-        assert self.pathogens == set(list(self.proportions_of_ALRI_disease_types_by_pathogen.keys()))
+        for patho in self.pathogens:
+            self.incidence_equations_by_pathogen[patho] = make_scaled_linear_model_for_incidence(patho)
 
         # =====================================================================================================
         # APPLY PROBABILITY OF CO- / SECONDARY BACTERIAL INFECTION
@@ -1246,71 +1285,32 @@ class Alri(Module):
             self.mortality_equations_by_disease[disease] = linear_model_for_death(disease)
         # -----------------------------------------------------------------------------------------------------
 
-    def on_birth(self, mother_id, child_id):
-        """Initialise properties for a newborn individual.
-        This is called by the simulation whenever a new person is born.
-        :param mother_id: the mother for this child
-        :param child_id: the new child
-        """
+    def determine_disease_type(self, pathogen, age):
+        """Determine the disease that is caused by infection with this pathogen for a particular person at a particular
+        time: from among self.disease_type"""
+        # todo - @Ines -- I don't think the original version was doing what you thought it was. Can we discuss what is
+        #  needed here? I have made a guess at what is useful but please check.
 
-        df = self.sim.population.props
+        p = self.parameters
 
-        # ---- Key Current Status Classification Properties ----
-        df.at[child_id, 'ri_current_ALRI_status'] = False
-        df.at[child_id, 'ri_primary_ALRI_pathogen'] = 'not_applicable'
-        df.at[child_id, 'ri_current_ALRI_symptoms'] = 0
-        df.at[child_id, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
-        df.at[child_id, 'ri_ALRI_disease_type'] = 'not_applicable'
-        df.at[child_id, 'ri_ALRI_complications'] = 0
+        if patho in self.bacterial_patho:
+            disease_type = 'bacterial_pneumonia'
 
-        # ---- Internal values ----
-        df.at[child_id, 'ri_ALRI_event_date_of_onset'] = pd.NaT
-        df.at[child_id, 'ri_ALRI_event_recovered_date'] = pd.NaT
-        df.at[child_id, 'ri_ALRI_event_death_date'] = pd.NaT
-        df.at[child_id, 'ri_end_of_last_alri_episode'] = pd.NaT
+        elif patho in self.viral_patho:
+            if age < 2:
+                disease_type =  'viral_pneumonia' if (self.rng.rand() < p[f'proportion_viral_pneumonia_by_{patho}']) \
+                    else 'bronchiolitis'
+            else:
+                disease_type =  'viral_pneumonia'
 
-        # ---- Temporary values ----
-        df.at[child_id, 'tmp_malnutrition'] = False
-        df.at[child_id, 'tmp_hv_inf'] = False
-        df.at[child_id, 'tmp_low_birth_weight'] = False
-        df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
-        df.at[child_id, 'tmp_continued_breastfeeding'] = False
+        elif patho in self.fungal_patho:
+            disease_type =  'fungal_pneumonia'
 
-    def report_daly_values(self):
-        """Report DALY incurred in the population in the last month due to ALRI"""
+        else:
+            raise ValueError
 
-        df = self.sim.population.props
-
-        total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
-
-        total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('fast_breathing')] = self.daly_wts['daly_ALRI']
-
-        total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('danger_signs')] = self.daly_wts['daly_severe_ALRI']
-
-        # Split out by pathogen that causes the Alri
-        dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
-                                                     'ri_primary_ALRI_pathogen'],
-                                              dtype='float').drop(columns='not_applicable')
-        daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
-
-        # add prefix to label according to the name of the causes of disability declared
-        daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
-        return daly_values_by_pathogen
-
-    def reset_counters(self):
-        """Helper function that reset counters of numbers of events:"""
-
-        # 1) Reset counter of incidence cases (by age and pathogen)
-        self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
-
-        # 2) Reset counters in the dataframe (number of events per person)
-        df = self.sim.population.props
-        df.loc[df.is_alive, 'ri_ALRI_cases_counter'] = 0
-        df.loc[df.is_alive, 'ri_ALRI_recovery_counter'] = 0
-        df.loc[df.is_alive, 'ri_ALRI_treatment_counter'] = 0
-        df.loc[df.is_alive, 'ri_ALRI_death_counter'] = 0
+        assert disease_type in self.disease_type
+        return disease_type
 
     def uncomplicated_alri_symptoms(self, disease, person_id, duration_in_days):
         """
