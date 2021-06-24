@@ -49,7 +49,7 @@ def get_sim(tmpdir, popsize=100, dur=pd.DateOffset(months=3)):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
         dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-        alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=True)
+        alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=True, do_checks=True)
     )
 
     sim.make_initial_population(n=popsize)
@@ -96,10 +96,6 @@ def test_properties_in_two_year_run(tmpdir):
 
     # Read the log for the population counts of incidence:
     # todo - check that properties have the right configuration at all times!
-
-
-
-
 
 
 

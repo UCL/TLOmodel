@@ -24,7 +24,7 @@ Outstanding issues
 
 """
 
-# #todo - properties: rename "
+# #todo - consider properties: remove/rename "
 # 'number_cases': df.loc[df.is_alive, 'ri_ALRI_cases_counter'].sum(),
 # 'number_recovered': df.loc[df.is_alive, 'ri_ALRI_recovery_counter'].sum(),
 # 'number_treated': df.loc[df.is_alive, 'ri_ALRI_treatment_counter'].sum(),
@@ -72,8 +72,8 @@ class Alri(Module):
                    'Influenza',
                    'Adenovirus',
                    'Bocavirus',
-                   'other_viral_pathogens'  # Coronaviruses NL63, 229E OC43 and HKU1, Cytomegalovirus,
-                                            # Parechovirus/Enterovirus
+                   'other_viral_pathogens'
+                   # <-- Coronaviruses NL63, 229E OC43 and HKU1, Cytomegalovirus, Parechovirus/Enterovirus
                    }
 
     bacterial_patho = {'Strep_pneumoniae_PCV13',
@@ -84,7 +84,7 @@ class Alri(Module):
                        'Enterobacteriaceae',        # includes E. coli, Enterobacter species, and Klebsiella species
                        'other_Strepto_Enterococci', # includes Streptococcus pyogenes and Enterococcus faecium
                        'other_bacterial_pathogens'
-                       # includes Bordetella pertussis, Chlamydophila pneumoniae,
+                       # <-- includes Bordetella pertussis, Chlamydophila pneumoniae,
                        # Legionella species, Mycoplasma pneumoniae, Moraxella catarrhalis, Non-fermenting gram-negative
                        # rods (Acinetobacter species and Pseudomonas species), Neisseria meningitidis
                        }
@@ -121,7 +121,8 @@ class Alri(Module):
                      'lung_abscess',
                      'sepsis',
                      'meningitis',
-                     'respiratory_failure'}
+                     'respiratory_failure'
+                     }
 
 
     PARAMETERS = {
@@ -712,12 +713,13 @@ class Alri(Module):
 
     }
 
-    def __init__(self, name=None, resourcefilepath=None, log_indivdual=False):
+    def __init__(self, name=None, resourcefilepath=None, log_indivdual=False, do_checks=False):
         super().__init__(name)
 
         # Store arguments provided
         self.resourcefilepath = resourcefilepath
         self.log_individual = log_indivdual
+        self.do_checks = do_checks
 
         # equations for the incidence of Alri by pathogen:
         self.incidence_equations_by_pathogen = dict()
@@ -850,6 +852,11 @@ class Alri(Module):
             # Schedule the individual check logging event (to first occur immediately, and to occur every day)
             sim.schedule_event(AlriIindividualCheckLoggingEvent(self), sim.date)
 
+        if self.do_checks:
+            # Schedule the event that does checking every day:
+            sim.schedule_event(AlriCheckPropertiesEvent(self), sim.date)
+
+
         # Get DALY weights
         # get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
         if 'HealthBurden' in self.sim.modules.keys():
@@ -972,6 +979,8 @@ class Alri(Module):
         # APPLY PROBABILITY OF CO- / SECONDARY BACTERIAL INFECTION
         # -----------------------------------------------------------------------------------------------------
         # Create a linear model equation for the probability of a secondary bacterial superinfection
+        # todo @ines - is this checking to see if the pathgen is a viral pathogen. We could have a property to say
+        #  'primary_ALRI_pathogen_type' to make this simpler?
         self.prob_secondary_bacterial_infection = \
             LinearModel(LinearModelType.ADDITIVE,
                         0.0,
@@ -994,6 +1003,7 @@ class Alri(Module):
         # =====================================================================================================
         # APPLY LINEAR MODEL TO DETERMINE PROBABILITY OF COMPLICATIONS
         # -----------------------------------------------------------------------------------------------------
+        # todo - @ines as above: would it makes sense to have a property for type of ALRI?
         # Create a linear model for the risk of hypoxia - decrease in peripheral oxygen level
         self.risk_of_decreased_peripheral_oxygen_level = \
             LinearModel(LinearModelType.ADDITIVE,
@@ -1019,6 +1029,8 @@ class Alri(Module):
                         )
 
         # Create linear models for the risk of acquiring complications from uncomplicated Alri
+        # todo - @ines -- I don't think this linear model is doing what you think it is: The 'or' statement won't be
+        #  working. Can we discuss what you would like this to do?
         self.risk_of_developing_ALRI_complications.update({
             'pneumothorax':
                 LinearModel(LinearModelType.ADDITIVE,
@@ -1135,6 +1147,8 @@ class Alri(Module):
         assert self.complications == set(list(self.risk_of_developing_ALRI_complications.keys()))
 
         # Create linear models for the risk of developing severe complications
+        # todo - @ines - as above, I don't think this is doing what you think it's doing. I'm not sure exactly what you
+        #  want to happen though.
         self.risk_of_progressing_to_severe_complications.update({
             'respiratory_failure':
                 LinearModel(LinearModelType.MULTIPLICATIVE,
@@ -1159,51 +1173,33 @@ class Alri(Module):
         # =====================================================================================================
         # APPLY PROBABILITY OF SYMPTOMS TO EACH Alri DISEASE TYPE (UNCOMPLICATED AND WITH COMPLICATIONS)
         # -----------------------------------------------------------------------------------------------------
+        # todo - combine these into a single function that is called to work out what symptoms someone will have, given
+        #  a 'disease' and a 'complication'...?
         # Make a dict containing the probability of symptoms given acquisition of (uncomplicated) Alri,
         # by disease type
         def make_symptom_probs(disease_type):
-            if disease_type == 'bacterial_pneumonia':
-                return {
-                    'fever': p['prob_fever_uncomplicated_ALRI_by_disease_type'][0],
-                    'cough': p['prob_cough_uncomplicated_ALRI_by_disease_type'][0],
-                    'difficult_breathing': p['prob_difficult_breathing_uncomplicated_ALRI_by_disease_type'][0],
-                    'fast_breathing': p['prob_fast_breathing_uncomplicated_ALRI_by_disease_type'][0],
-                    'chest_indrawing': p['prob_chest_indrawing_uncomplicated_ALRI_by_disease_type'][0],
-                    'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][0],
-                }
-            if disease_type == 'viral_pneumonia':
-                return {
-                    'fever': p['prob_fever_uncomplicated_ALRI_by_disease_type'][1],
-                    'cough': p['prob_cough_uncomplicated_ALRI_by_disease_type'][1],
-                    'difficult_breathing': p['prob_difficult_breathing_uncomplicated_ALRI_by_disease_type'][1],
-                    'fast_breathing': p['prob_fast_breathing_uncomplicated_ALRI_by_disease_type'][1],
-                    'chest_indrawing': p['prob_chest_indrawing_uncomplicated_ALRI_by_disease_type'][1],
-                    'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][1],
-                }
-            if disease_type == 'bronchiolitis':
-                return {
-                    'fever': p['prob_fever_uncomplicated_ALRI_by_disease_type'][2],
-                    'cough': p['prob_cough_uncomplicated_ALRI_by_disease_type'][2],
-                    'difficult_breathing': p['prob_difficult_breathing_uncomplicated_ALRI_by_disease_type'][2],
-                    'fast_breathing': p['prob_fast_breathing_uncomplicated_ALRI_by_disease_type'][2],
-                    'chest_indrawing': p['prob_chest_indrawing_uncomplicated_ALRI_by_disease_type'][2],
-                    'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][2],
-                }
-            if disease_type == 'fungal_pneumonia':  # same as probabilities for viral pneumonia
-                return {
-                    'fever': p['prob_fever_uncomplicated_ALRI_by_disease_type'][1],
-                    'cough': p['prob_cough_uncomplicated_ALRI_by_disease_type'][1],
-                    'difficult_breathing': p['prob_difficult_breathing_uncomplicated_ALRI_by_disease_type'][1],
-                    'fast_breathing': p['prob_fast_breathing_uncomplicated_ALRI_by_disease_type'][1],
-                    'chest_indrawing': p['prob_chest_indrawing_uncomplicated_ALRI_by_disease_type'][1],
-                    'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][1],
-                }
+            """helper function to make the probabilities of each symptom for each type of disease"""
 
-        for disease in Alri.disease_type:
+            assert disease_type in self.disease_type
+            index = {
+                'bacterial_pneumonia': 0,
+                'viral_pneumonia': 1,
+                'bronchiolitis': 2,
+                'fungal_pneumonia': 1       # <-- same as probabilities for viral pneumonia
+            }[disease_type]
+
+            prob_symptoms = {
+                'fever': p['prob_fever_uncomplicated_ALRI_by_disease_type'][index],
+                'cough': p['prob_cough_uncomplicated_ALRI_by_disease_type'][index],
+                'difficult_breathing': p['prob_difficult_breathing_uncomplicated_ALRI_by_disease_type'][index],
+                'fast_breathing': p['prob_fast_breathing_uncomplicated_ALRI_by_disease_type'][index],
+                'chest_indrawing': p['prob_chest_indrawing_uncomplicated_ALRI_by_disease_type'][index],
+                'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][index],
+            }
+            return
+
+        for disease in self.disease_type:
             self.prob_symptoms_uncomplicated_ALRI[disease] = make_symptom_probs(disease)
-
-        # Check that each Alri type has a risk of developing each symptom
-        assert self.disease_type == set(list(self.prob_symptoms_uncomplicated_ALRI.keys()))
 
         # -----------------------------------------------------------------------------------------------------
         # Make a dict containing the probability of additional symptoms given acquisition of complications
@@ -1254,11 +1250,9 @@ class Alri(Module):
                     'danger_signs': p[f'prob_danger_signs_adding_from_{complicat}'],
                 }
 
-        for complication in Alri.complications:
+        for complication in self.complications:
             self.prob_extra_symptoms_complications[complication] = add_complication_symptom_probs(complication)
 
-        # Check that each complication has a risk of developing each symptom
-        assert self.complications == set(list(self.prob_extra_symptoms_complications.keys()))
 
         # =====================================================================================================
         # APPLY A LINEAR MODEL FOR THE RISK OF DEATH DUE TO Alri
@@ -1280,6 +1274,8 @@ class Alri(Module):
                 # Predictor('ri_antibiotic_administered').when(True, p['antibiotic_therapy_effectiveness_ALRI']),
             )
         # TODO: can I do a scaled linear model for death at the individual level? - calibrations
+        # todo - @ines: would you really want to? What data do you have?
+        # todo - @ines: why something commented-out?
 
         for disease in Alri.disease_type:
             self.mortality_equations_by_disease[disease] = linear_model_for_death(disease)
@@ -1446,6 +1442,31 @@ class Alri(Module):
         # currently simplified to cancel the occurrence of complication if treatment was given before scheduled onset
         self.ALRI_complications.unset([person_id], f'{complication}')
 
+    def check_properties(self):
+        """This is used in debugging to make sure that the configuration of properties is correct"""
+        # todo: @ines: we can fill this in. It's used to check that the properties all make sense. I've put in a few
+        #  examples to get us started.
+
+        df = self.sim.population.props
+
+        # check data-types are as expected (includes check that categories are working as defined)
+        assert (df.dtypes == sim.population.new_row.dtypes).all()
+
+        # check that is no current infection there is no 'primary ALRI pathogen'
+        assert (df.loc[df.is_alive & ~df.ri_current_ALRI_status, 'ri_primary_ALRI_pathogen'] == 'not_applicable').all()
+
+        # check that no one is on treatment if they do not have a current infection
+        assert df.loc[df.is_alive & df.ri_ALRI_treatment, 'ri_current_ALRI_status'].all()
+
+
+
+
+
+
+
+
+
+
     # def do_when_not_improving(self, person_id):
     #     """
     #     Prolongs the signs and symptoms of disease
@@ -1479,7 +1500,6 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         model slightly under-represents incidence among younger age-groups and over-represents incidence among older
         age-groups. This is a small effect when the frequency of the polling event is high.
     """
-    # TODO: how to fix this
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=2))
@@ -1572,7 +1592,6 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 ),
                 date=date_onset
             )
-
 
 class AlriIncidentCase(Event, IndividualScopeEventMixin):
     """
@@ -1749,7 +1768,6 @@ class AlriOnsetEvent(Event, IndividualScopeEventMixin):
                 # df.at[person_id, 'ri_ALRI_event_recovered_date'] = date_of_recovery
                 self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_recovery)
 
-
 class AlriSystemicComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
     """
         This Event is for the onset of severe complications from Alri. For some untreated children,
@@ -1783,7 +1801,6 @@ class AlriSystemicComplicationsOnsetEvent(Event, IndividualScopeEventMixin):
             person_id=person_id,
             complication=self.complication,
             duration_in_days=self.duration_in_days)
-
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
     """
@@ -1836,7 +1853,6 @@ class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['Alri'])
-
 
 class AlriCureEvent(Event, IndividualScopeEventMixin):
     """
@@ -1905,7 +1921,6 @@ class AlriCureEvent(Event, IndividualScopeEventMixin):
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['Alri'])
-
 
 class AlriDeathEvent(Event, IndividualScopeEventMixin):
     """
@@ -2068,6 +2083,24 @@ class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 data= df.loc[self.person_id, self.module.PROPERTIES.keys()].to_dict(),
                 description='print of properties each day for one person (the first under-five-year-old in the dataframe)'
             )
+
+
+# ---------------------------------------------------------------------------------------------------------
+#   DEBUGGING EVENTS
+# ---------------------------------------------------------------------------------------------------------
+
+
+class AlriCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
+    """This event runs daily and checks properties are in the right configuration. Only use whilst debugging!
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(day=1))
+
+    def apply(self, population):
+        self.module.check_properties()
+
+
 
 """
 ### Not looking at anything to do with HSI ###
