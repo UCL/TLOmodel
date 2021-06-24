@@ -57,8 +57,8 @@ class Alri(Module):
         'Hib',
         'H.influenzae_non_type_b',
         'Staph_aureus',
-        'Enterobacteriaceae',  # includes E. coli, Enterobacter species, and Klebsiella species,
-        'other_Strepto_Enterococci',  # includes Streptococcus pyogenes and Enterococcus faecium
+        'Enterobacteriaceae',           # includes E. coli, Enterobacter species, and Klebsiella species,
+        'other_Strepto_Enterococci',    # includes Streptococcus pyogenes and Enterococcus faecium
         'Influenza',
         'P.jirovecii',
         'Bocavirus',
@@ -703,10 +703,11 @@ class Alri(Module):
 
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, log_indivdual=False):
         super().__init__(name)
 
         self.resourcefilepath = resourcefilepath
+        self.log_individual = log_indivdual
 
         # equations for the incidence of Alri by pathogen:
         self.incidence_equations_by_pathogen = dict()
@@ -755,7 +756,7 @@ class Alri(Module):
             '5+y': copy.deepcopy(zeros_counter)
         }
 
-        # Store the symptoms that this module will use:
+        # Define the symptoms that this module will use:
         self.symptoms = {
             'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain',
             'cyanosis', 'respiratory_distress', 'danger_signs'
@@ -768,7 +769,17 @@ class Alri(Module):
             pd.read_excel(
                 Path(self.resourcefilepath) / 'ResourceFile_Alri.xlsx', sheet_name='Parameter_values'))
 
-        # Check that every value has been read-in successfully
+        self.check_params_read_in_ok()
+
+        # Declare symptoms that this modules will cause and which are not included in the generic symptoms:
+        for symptom_name in self.symptoms:
+            if symptom_name not in self.sim.modules['SymptomManager'].generic_symptoms:
+                self.sim.modules['SymptomManager'].register_symptom(
+                    Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
+                )
+
+    def check_params_read_in_ok(self):
+        """Check that every value has been read-in successfully"""
         for param_name, param_type in self.PARAMETERS.items():
             assert param_name in self.parameters, f'Parameter "{param_name}" ' \
                                                   f'is not read in correctly from the resourcefile.'
@@ -777,21 +788,8 @@ class Alri(Module):
                               param_type.python_type), f'Parameter "{param_name}" ' \
                                                        f'is not read in correctly from the resourcefile.'
 
-        # Declare symptoms that this modules will cause and which are not included in the generic symptoms:
-        generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
-        for symptom_name in self.symptoms:
-            if symptom_name not in generic_symptoms:
-                self.sim.modules['SymptomManager'].register_symptom(
-                    Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
-                )
-
     def initialise_population(self, population):
-        """Set our property values for the initial population.
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-        :param population: the population of individuals
-
+        """
         Sets that there is no one with Alri at initiation.
         """
         df = population.props  # a shortcut to the data-frame storing data for individuals
@@ -828,6 +826,7 @@ class Alri(Module):
         df.loc[df.is_alive, 'ri_ALRI_death_counter'] = 0
 
         # This biset property stores set of symptoms that can occur
+        # todo - @ines - this seems to be replicating what the SymptomManager does?
         self.ALRI_symptoms = BitsetHandler(self.sim.population, 'ri_current_ALRI_symptoms',
                                            ['fever', 'cough', 'difficult_breathing', 'fast_breathing', 'headache',
                                             'chest_indrawing', 'chest_pain', 'cyanosis', 'respiratory_distress',
@@ -840,11 +839,6 @@ class Alri(Module):
 
     def initialise_simulation(self, sim):
         """
-        Get ready for simulation start.
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
-
         Prepares for simulation:
         * Schedules the main polling event
         * Schedules the main logging event
@@ -852,19 +846,17 @@ class Alri(Module):
         """
 
         # Schedule the main polling event (to first occur immediately)
-        sim.schedule_event(AlriPollingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(AlriPollingEvent(self), sim.date)
 
         # Schedule the main logging event (to first occur in one year)
         sim.schedule_event(PathogenIncidentCountLoggingEvent(self), sim.date + DateOffset(years=1))
 
-        # Schedule the the reset of the counter properties, yearly event
-        sim.schedule_event(AlriResetCounterEvent(self), sim.date + DateOffset(years=1))
-
         # Schedule the counter logging event (to first occur in one year)
         sim.schedule_event(AlriLoggingEvent(self), sim.date + DateOffset(years=1))
 
-        # Schedule the individual check logging event (to first occur immediately, and to occur every day)
-        # sim.schedule_event(AlriIindividualCheckLoggingEvent(self), sim.date + DateOffset(days=0))
+        if self.log_individual:
+            # Schedule the individual check logging event (to first occur immediately, and to occur every day)
+            sim.schedule_event(AlriIindividualCheckLoggingEvent(self), sim.date)
 
         # Get DALY weights
         # get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
@@ -1292,18 +1284,8 @@ class Alri(Module):
         df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
         df.at[child_id, 'tmp_continued_breastfeeding'] = False
 
-    def on_hsi_alert(self, person_id, treatment_id):
-        """
-        This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        """
-        pass
-
     def report_daly_values(self):
-        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
-        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the label of the cause of this disability.
-        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
-        pass
+        """Report DALY incurred in the population in the last month due to ALRI"""
 
         df = self.sim.population.props
 
@@ -1324,6 +1306,14 @@ class Alri(Module):
         # add prefix to label according to the name of the causes of disability declared
         daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
         return daly_values_by_pathogen
+
+    def reset_counters(self):
+        """Helper function that reset counters of numbers of events:"""
+        df = self.sim.population.props
+        df['ri_ALRI_cases_counter'] = 0
+        df['ri_ALRI_recovery_counter'] = 0
+        df['ri_ALRI_treatment_counter'] = 0
+        df['ri_ALRI_death_counter'] = 0
 
     def uncomplicated_alri_symptoms(self, disease, person_id, duration_in_days):
         """
@@ -1965,6 +1955,7 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
+# todo - @ines - do you need both types of logging event? Looks like 'PathogenIncidentCountLoggingEvent' is does all?
 
 class PathogenIncidentCountLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -2033,59 +2024,23 @@ class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This Event logs the daily occurrence to a single individual child.
     """
-
     def __init__(self, module):
         # This logging event to occur every day
         self.repeat = 1
         super().__init__(module, frequency=DateOffset(days=self.repeat))
-        self.date_last_run = self.sim.date
+
+        # Find the person to log: the first under-five-year-old in the dataframe
+        df = self.sim.population.props
+        self.person_id = df.loc[df.is_alive & (df['age_years'] < 5) ].index[0]
 
     def apply(self, population):
+        """Log all properties for this module"""
         df = self.sim.population.props
-
-        # get single row of dataframe (but not a series) ----------------
-        # index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_current_ALRI_status]
-        index_children = df.index[df.age_exact_years < 5]
-        # individual_child = df.loc[[index_children_with_alri[0]]]
-
-        # dict_to_output = df.loc[index_children[0], [
-        #     'age_exact_years',
-        #     'ri_current_ALRI_status',
-        #     'ri_primary_ALRI_pathogen',
-        #     'ri_secondary_bacterial_pathogen',
-        #     'ri_ALRI_disease_type',
-        #     'ri_ALRI_complications',
-        #     'ri_current_ALRI_symptoms',
-        #     'ri_ALRI_event_date_of_onset',
-        #     'ri_ALRI_event_recovered_date',
-        #     'ri_ALRI_tx_start_date',
-        #     'ri_ALRI_event_death_date',
-        #     'ri_end_of_last_alri_episode']].to_dict()
-        #
-        # logger.info(
-        #     key='person_one',
-        #     data=dict_to_output,
-        #     description='one person journey'
-        # )
-
-        logger.info('%s|person_one|%s',
-                    self.sim.date,
-                    df.loc[index_children[0], [
-                        'age_exact_years',
-                        'ri_current_ALRI_status',
-                        'ri_primary_ALRI_pathogen',
-                        'ri_secondary_bacterial_pathogen',
-                        'ri_ALRI_disease_type',
-                        'ri_ALRI_complications',
-                        'ri_current_ALRI_symptoms',
-                        'ri_ALRI_event_date_of_onset',
-                        'ri_ALRI_event_recovered_date',
-                        'ri_ALRI_tx_start_date',
-                        'ri_ALRI_event_death_date',
-                        'ri_end_of_last_alri_episode',
-                        # 'ri_IMCI_classification_as_gold',
-                        # 'ri_health_worker_IMCI_classification'
-                    ]].to_dict())
+        logger.info(
+            key='log_individual',
+            data= df.loc[self.person_id, self.module.PROPERTIES.keys()].to_dict(),
+            description='print of properties each day for one person (the first under-five-year-old in the dataframe)'
+        )
 
 
 class AlriResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
