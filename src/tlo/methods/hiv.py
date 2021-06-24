@@ -33,6 +33,7 @@ from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, lo
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
+from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
@@ -65,6 +66,16 @@ class Hiv(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
     }
 
     PROPERTIES = {
@@ -835,7 +846,6 @@ class Hiv(Module):
         # Overwrite the value for those that currently have symptoms of AIDS with the 'AIDS' daly_wt:
         dalys.loc[self.sim.modules['SymptomManager'].who_has('aids_symptoms')] = self.daly_wts['aids']
 
-        dalys.name = 'hiv'
         return dalys
 
     def mtct_during_breastfeeding(self, mother_id, child_id):
@@ -1231,7 +1241,11 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
             return
 
         # Cause the death to happen immediately
-        demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS").apply(person_id)
+        self.sim.modules['Demography'].do_death(
+            individual_id=person_id,
+            cause="AIDS",
+            originating_module=self.module
+        )
 
 
 class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
@@ -1489,7 +1503,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
         # If test is positive, flag as diagnosed and refer to ART
         if test_result is True:
-            # label as diagnosed
+            # cause_of_death as diagnosed
             df.at[person_id, 'hv_diagnosed'] = True
 
             # Do actions for when a person has been diagnosed with HIV

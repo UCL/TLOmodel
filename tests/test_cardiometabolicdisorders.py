@@ -6,13 +6,13 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    cardio_metabolic_disorders,
     demography,
     depression,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    ncds,
     simplified_births,
     symptommanager,
 )
@@ -51,16 +51,16 @@ def routine_checks(sim):
     assert df.nc_ever_heart_attack.any()
 
     # check that someone dies of each condition that has a death rate associated with it
-
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('diabetes').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_ischemic_hd').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_kidney_disease').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('stroke').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('heart_attack').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'diabetes').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'chronic_ischemic_hd').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'chronic_kidney_disease').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'stroke').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'heart_attack').any()
 
     # check that no one dies of each condition that has a death rate of zero
-    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_lower_back_pain').any()
-    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('hypertension').any()
+    # todo - NB. the below are not causes of death so this test isn't really checking anything
+    assert not (df.cause_of_death.loc[~df.is_alive] == 'chronic_lower_back_pain').any()
+    assert not (df.cause_of_death.loc[~df.is_alive] == 'hypertension').any()
 
 
 def test_basic_run():
@@ -77,12 +77,12 @@ def test_basic_run():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
-                 ncds.Ncds(resourcefilepath=resourcefilepath)
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
                  )
 
     # Set incidence/death rates of conditions to high values to decrease run time
 
-    p = sim.modules['Ncds'].parameters
+    p = sim.modules['CardioMetabolicDisorders'].parameters
 
     p['diabetes_onset']["baseline_annual_probability"] = 0.75
     p['hypertension_onset']["baseline_annual_probability"] = 0.75
@@ -102,7 +102,7 @@ def test_basic_run():
 
 
 def test_basic_run_with_high_incidence_hypertension():
-    """This sim makes one ncd very common and the others non-existent to check basic functions for prevalence and
+    """This sim makes one condition very common and the others non-existent to check basic functions for prevalence and
     death"""
 
     # Create and run a short but big population simulation for use in the tests
@@ -117,13 +117,13 @@ def test_basic_run_with_high_incidence_hypertension():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
-                 ncds.Ncds(resourcefilepath=resourcefilepath)
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
                  )
 
     # Set incidence of hypertension very high and incidence of all other conditions to 0, set initial prevalence of
     # other conditions to 0
 
-    p = sim.modules['Ncds'].parameters
+    p = sim.modules['CardioMetabolicDisorders'].parameters
 
     p['hypertension_onset']["baseline_annual_probability"] = 10000
     p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = 10
@@ -148,11 +148,8 @@ def test_basic_run_with_high_incidence_hypertension():
     assert ~df.nc_chronic_kidney_disease.all()
 
     # check that no one has died from conditions that were set to zero incidence
-    assert not df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'].str.startswith('diabetes').any()
-    assert not df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'].str.startswith(
-        'chronic_lower_back_pain').any()
-    assert not df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'].str.startswith(
-        'chronic_kidney_disease').any()
+    assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == 'diabetes').any()
+    assert not (df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'] == 'chronic_kidney_disease').any()
 
     # restrict population to individuals aged >=20 at beginning of sim
     start_date = pd.Timestamp(year=2010, month=1, day=1)
