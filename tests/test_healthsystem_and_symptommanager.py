@@ -19,6 +19,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 
 try:
@@ -172,6 +173,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -182,7 +184,6 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  )
 
     # Set the availability of consumables to 50% for everything
@@ -196,14 +197,19 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     # read the results
     output = parse_log_file(sim.log_filepath)
 
-    # Do the checks for health system apppts
+    # Do the checks for health system appts
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
     # Check that at least some consumables requests fail due to lack of availability
-    assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_NotAvailable'] if v != '{}'])
-    assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Package_NotAvailable'] if v != '{}'])
+    items_not_available = [
+        v for v in output['tlo.methods.healthsystem']['Consumables']['Item_NotAvailable'] if v != '{}'
+    ]
+    pkgs_not_available = [
+        v for v in output['tlo.methods.healthsystem']['Consumables']['Package_NotAvailable'] if v != '{}'
+    ]
+    assert 0 < len(items_not_available + pkgs_not_available)
 
     # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
@@ -263,6 +269,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -272,8 +279,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome(),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 chronicsyndrome.ChronicSyndrome()
                  )
 
     # Run the simulation
@@ -305,6 +311,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -314,8 +321,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome(),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 chronicsyndrome.ChronicSyndrome()
                  )
 
     # Run the simulation
@@ -349,6 +355,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -358,8 +365,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome(),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 chronicsyndrome.ChronicSyndrome()
                  )
 
     # Run the simulation
@@ -393,6 +399,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -402,8 +409,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome(),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 chronicsyndrome.ChronicSyndrome()
                  )
 
     # Run the simulation, manually setting smaller values to decrease runtime (logfile size)
@@ -438,6 +444,7 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -448,8 +455,7 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome(),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 chronicsyndrome.ChronicSyndrome()
                  )
 
     # Run the simulation
@@ -482,6 +488,7 @@ def test_run_in_with_hs_disabled(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -492,8 +499,7 @@ def test_run_in_with_hs_disabled(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome(),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 chronicsyndrome.ChronicSyndrome()
                  )
 
     # Run the simulation
@@ -528,6 +534,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -537,8 +544,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome(),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 chronicsyndrome.ChronicSyndrome()
                  )
 
     # Run the simulation
@@ -1036,7 +1042,14 @@ def check_bed_days_released_on_death(hs_disable):
     """Check that bed-days scheduled to be occupied are released upon the death of the person"""
 
     class DummyModule(Module):
-        METADATA = {Metadata.USES_HEALTHSYSTEM}
+        METADATA = {
+            Metadata.DISEASE_MODULE,
+            Metadata.USES_HEALTHSYSTEM
+        }
+
+        CAUSES_OF_DEATH = {
+            'death_from_dummy_module': Cause(label='DummyModule'),
+        }
 
         def read_parameters(self, data_folder):
             pass
@@ -1071,7 +1084,7 @@ def check_bed_days_released_on_death(hs_disable):
 
             # Schedule person_id=0 to die on day 5
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.sim.modules['Demography'], 0, ''),
+                demography.InstantaneousDeath(self.sim.modules['Demography'], 0, 'death_from_dummy_module'),
                 self.sim.date + pd.DateOffset(days=5)
             )
 

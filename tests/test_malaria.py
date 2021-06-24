@@ -21,8 +21,8 @@ from tlo.methods import (
 from tlo.methods.healthsystem import HSI_Event
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 1000
+end_date = Date(2012, 1, 1)
+popsize = 500
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
@@ -38,10 +38,8 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-# @pytest.fixture(scope='module')
-def test_sims(tmpdir):
+def register_sim():
     service_availability = list(["*"])
-    malaria_testing = 0.35  # adjust this to match rdt/tx levels
 
     sim = Simulation(start_date=start_date, seed=0)
 
@@ -64,18 +62,24 @@ def test_sims(tmpdir):
         dx_algorithm_adult.DxAlgorithmAdult(),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
+        malaria.Malaria(resourcefilepath=resourcefilepath)
     )
+    return sim
+
+
+# @pytest.fixture(scope='module')
+def test_sims(tmpdir):
+
+    sim = register_sim()
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
+    check_dtypes(sim)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # IRS rates should be 0 or 0.8
     assert (sim.modules['Malaria'].itn_irs.irs_rate.isin([0, 0.8])).all()
-
-    # assert (sim.modules['Malaria'].irs_curr.irs_rates == 0) | (sim.modules['Malaria'].irs_curr == 0.8)
 
     # check malaria deaths only being scheduled due to severe malaria (not clinical or asym)
     df = sim.population.props
@@ -112,8 +116,10 @@ def test_sims(tmpdir):
 # remove scheduled rdt testing and disable health system, should be no rdts and no treatment
 # increase cfr for severe cases (all severe cases will die)
 def test_remove_malaria_test(tmpdir):
-    malaria_testing = 0
 
+    service_availability = list([" "])  # no treatments available
+
+    end_date = Date(2011, 1, 1)
     sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
@@ -121,27 +127,35 @@ def test_remove_malaria_test(tmpdir):
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
-            disable_and_reject_all=True
+            service_availability=service_availability,
+            mode_appt_constraints=0,
+            ignore_cons_constraints=True,
+            ignore_priority=True,
+            capabilities_coefficient=0.0,
+            disable=False,  # disables the health system constraints so all HSI events run
         ),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         dx_algorithm_child.DxAlgorithmChild(),
         dx_algorithm_adult.DxAlgorithmAdult(),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
+        malaria.Malaria(resourcefilepath=resourcefilepath)
     )
-
     # Run the simulation and flush the logger
-    sim.make_initial_population(n=popsize)
+    sim.make_initial_population(n=2000)
+
+    # set testing adjustment to 0
+    sim.modules['Malaria'].parameters['testing_adj'] = 0
+
+    # increase death rate due to severe malaria
+    sim.modules['Malaria'].parameters['cfr'] = 1.0
+
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     df = sim.population.props
-
-    # increase death rate due to severe malaria
-    sim.modules['Malaria'].parameters['cfr'] = 1.0
 
     # check no-one on malaria treatment
     assert not (df.ma_date_tx == pd.NaT).all()
@@ -157,54 +171,33 @@ def test_remove_malaria_test(tmpdir):
         assert not pd.isnull(df.at[person, "ma_date_death"])
 
     # Check deaths are occurring
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('severe_malaria').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()].isin({'severe_malaria', 'Malaria'})).any()
 
     # Check that those with a scheduled malaria death in the past, are now dead with a cause of death severe_malaria
-    dead_due_to_malaria = ~df.is_alive & df.cause_of_death.str.startswith('severe_malaria')
+    dead_due_to_malaria = ~df.is_alive & ~df.date_of_birth.isna() & df.cause_of_death.isin(
+        {'severe_malaria', 'Malaria'})
     malaria_death_date_in_past = ~pd.isnull(df.ma_date_death) & (df.ma_date_death <= sim.date)
     assert (dead_due_to_malaria == malaria_death_date_in_past).all()
 
 
 # test everyone regularly and check no treatment without positive rdt
 def test_schedule_rdt_for_all(tmpdir):
-    malaria_testing = 1
-    service_availability = list(["*"])
-
-    sim = Simulation(start_date=start_date, seed=0)
-
-    # Register the appropriate modules
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            service_availability=service_availability,
-            mode_appt_constraints=0,
-            ignore_cons_constraints=True,
-            ignore_priority=True,
-            capabilities_coefficient=1.0,
-            disable=True,  # disables the health system constraints so all HSI events run
-            ),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        dx_algorithm_child.DxAlgorithmChild(),
-        dx_algorithm_adult.DxAlgorithmAdult(),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
-    )
+    sim = register_sim()
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
+    sim.modules['Malaria'].parameters['testing_adj'] = 10
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     df = sim.population.props
 
-    # check no treatment unless positive rdt (ma_is_infected == True)
+    # check no treatment unless infected
     for person in df.index[df.ma_tx]:
         assert not pd.isnull(df.at[person, "ma_date_infected"])
-        assert not df.at[person, "ma_inf_type"] == "none"
+
+    # check clinical counter is working
+    assert sum(df["ma_clinical_counter"]) > 0
 
 
 def test_dx_algorithm_for_malaria_outcomes():
@@ -213,34 +206,7 @@ def test_dx_algorithm_for_malaria_outcomes():
     def make_blank_simulation():
         popsize = 200  # smallest population size that works
 
-        sim = Simulation(start_date=start_date, seed=0)
-
-        malaria_testing = 0.35  # adjust this to match rdt/tx levels
-
-        # Register the appropriate modules
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(
-                         resourcefilepath=resourcefilepath,
-                         service_availability=["*"],
-                         mode_appt_constraints=0,
-                         ignore_cons_constraints=True,
-                         ignore_priority=True,
-                         capabilities_coefficient=1.0,
-                         disable=True,  # disables the health system constraints so all HSI events run
-                     ),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                     healthseekingbehaviour.HealthSeekingBehaviour(
-                         resourcefilepath=resourcefilepath,
-                         force_any_symptom_to_lead_to_healthcareseeking=True
-                         # every symptom leads to health-care seeking
-                     ),
-                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                     dx_algorithm_adult.DxAlgorithmAdult(),
-                     malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing)
-                     )
+        sim = register_sim()
 
         sim.make_initial_population(n=popsize)
         sim.simulate(end_date=start_date)
@@ -339,9 +305,6 @@ def test_dx_algorithm_for_non_malaria_outcomes():
         popsize = 200  # smallest population size that works
 
         sim = Simulation(start_date=start_date, seed=0)
-
-        # adjust this to match rdt/tx levels
-        # malaria_testing = 0.35
 
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),

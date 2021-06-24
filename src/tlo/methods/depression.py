@@ -1,6 +1,5 @@
 """
-This is the Depression Module. Documentation at:
-https://www.dropbox.com/s/8q9etj23owwlubx/Depression%20and%20Antidepressants%20-%20Description%20-%20Feb%2020.docx?dl=0
+This is the Depression Module.
 """
 from pathlib import Path
 
@@ -11,7 +10,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
-from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
@@ -35,6 +34,16 @@ class Depression(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'Suicide': Cause(gbd_causes='Self-harm', label='Depression / Self-harm'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'SevereDepression': Cause(gbd_causes='Self-harm', label='Depression / Self-harm')
     }
 
     # Module parameters
@@ -645,7 +654,10 @@ class DepressionSuicideEvent(Event, IndividualScopeEventMixin):
             return
 
         self.module.eventsTracker['SuicideEvents'] += 1
-        self.sim.schedule_event(InstantaneousDeath(self.module, person_id, 'Suicide'), self.sim.date)
+        self.sim.modules['Demography'].do_death(
+            individual_id=person_id,
+            cause='Suicide',
+            originating_module=self.module)
 
 
 # ---------------------------------------------------------------------------------------------------------

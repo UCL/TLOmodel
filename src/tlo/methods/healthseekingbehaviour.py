@@ -100,14 +100,58 @@ class HealthSeekingBehaviour(Module):
         self.force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
 
     def read_parameters(self, data_folder):
-        """Construct the LinearModel for healthcare seeking of the 'average symptom'.
-        This is from the Ng'ambia et al.
-        """
-
+        """Read in ResourceFile"""
         # Load parameters from resource file:
         self.load_parameters_from_dataframe(
             pd.DataFrame(pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv'))
         )
+
+    def initialise_population(self, population):
+        """Nothing to initialise in the population
+        """
+        pass
+
+    def initialise_simulation(self, sim):
+        """
+        * define the linear models that govern healthcare seeking
+        * set the first occurrence of the repeating HealthSeekingBehaviourPoll
+        * assemble the health-care seeking information from the symptoms that have been registered
+        """
+
+        # Define the linear models that govern healthcare seeking
+        self.define_linear_models()
+
+        # Schedule the HealthSeekingBehaviourPoll
+        self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
+        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
+
+        # Assemble the health-care seeking information from the symptoms that have been registered
+        for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
+            # Children:
+            if symptom.no_healthcareseeking_in_children:
+                self.no_healthcareseeking_in_children.add(symptom.name)
+            elif symptom.emergency_in_children:
+                self.emergency_in_children.add(symptom.name)
+            else:
+                self.odds_ratio_health_seeking_in_children[symptom.name] = symptom.odds_ratio_health_seeking_in_children
+
+            # Adults:
+            if symptom.no_healthcareseeking_in_adults:
+                self.no_healthcareseeking_in_adults.add(symptom.name)
+            elif symptom.emergency_in_adults:
+                self.emergency_in_adults.add(symptom.name)
+            else:
+                self.odds_ratio_health_seeking_in_adults[symptom.name] = symptom.odds_ratio_health_seeking_in_adults
+
+    def on_birth(self, mother_id, child_id):
+        """Nothing to handle on_birth
+        """
+        pass
+
+    def define_linear_models(self):
+        """Construct the LinearModel for healthcare seeking of the 'average symptom'.
+        This is from the Ng'ambia et al. papers
+        """
 
         # Define the LinearModel for health seeking behaviour for the 'average symptom'
         p = self.parameters
@@ -137,48 +181,11 @@ class HealthSeekingBehaviour(Module):
                                   .when(5, p['odds_ratio_adults_wealth_higher'])
         )
 
-    def initialise_population(self, population):
-        """Nothing to initialise in the population
-        """
-        pass
-
-    def initialise_simulation(self, sim):
-        """
-        * set the first occurrence of the repeating HealthSeekingBehaviourPoll
-        * assemble the health-care seeking information from the symptoms that have been registered
-        """
-
-        # Schedule the HealthSeekingBehaviourPoll
-        self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
-        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
-
-        # Assemble the health-care seeking information from the symptoms that have been registered
-        for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
-            # Children:
-            if symptom.no_healthcareseeking_in_children:
-                self.no_healthcareseeking_in_children.add(symptom.name)
-            elif symptom.emergency_in_children:
-                self.emergency_in_children.add(symptom.name)
-            else:
-                self.odds_ratio_health_seeking_in_children[symptom.name] = symptom.odds_ratio_health_seeking_in_children
-
-            # Adults:
-            if symptom.no_healthcareseeking_in_adults:
-                self.no_healthcareseeking_in_adults.add(symptom.name)
-            elif symptom.emergency_in_adults:
-                self.emergency_in_adults.add(symptom.name)
-            else:
-                self.odds_ratio_health_seeking_in_adults[symptom.name] = symptom.odds_ratio_health_seeking_in_adults
-
-    def on_birth(self, mother_id, child_id):
-        """Nothing to handle on_birth
-        """
-        pass
-
 
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT
 # ---------------------------------------------------------------------------------------------------------
+
 
 class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
     """This event occurs every day and determines if persons with newly onset symptoms will seek care.
@@ -201,11 +208,12 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         health_system = self.sim.modules["HealthSystem"]
 
         # get rows of alive persons with new symptoms
-        alive_with_symptoms = df.loc[sorted(symptom_manager.persons_with_newly_onset_symptoms), 'is_alive']
+        has_newly_onset_symtoms = symptom_manager.get_persons_with_newly_onset_symptoms()
+        alive_with_symptoms = df.loc[sorted(has_newly_onset_symtoms), 'is_alive']
         selected_persons = df.loc[alive_with_symptoms[alive_with_symptoms].index]
 
         # clear the list of persons with newly onset symptoms
-        symptom_manager.persons_with_newly_onset_symptoms.clear()
+        symptom_manager.reset_persons_with_newly_onset_symptoms()
 
         # calculate the baseline probability for adults and children to seek care & put them in single series
         # (index remains the person_id)
@@ -213,12 +221,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         baseline_prob_adult = m.hsb['adults'].predict(selected_persons[selected_persons.age_years >= 15])
         baseline_prob = baseline_prob_child.append(baseline_prob_adult, verify_integrity=True).rename('baseline_prob')
 
-        # this replaces calls to `symptom_manager.has_what(person_id)` inside the loop. get all the symptoms for
-        # all persons and skip the checks/options in the `has_what()` method
-        # todo: move this to symptom manager i.e. have_what(person_ids) (but better name)
-        persons_symptoms = selected_persons.apply(
-            lambda p: [s for s in symptom_manager.symptom_names if p[f'sy_{s}'] > 0], axis=1, result_type='reduce'
-        ).rename('symptoms')
+        # Get the symptoms that each person (who has newly onset symptoms) has currently.
+        persons_symptoms = symptom_manager.have_what(selected_persons.index)
 
         # make dataframe for processing below:
         # person_id (index), baseline_prob, age_years < 15 (i.e. is child), symptoms (list object)
