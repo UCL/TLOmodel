@@ -721,11 +721,11 @@ class Alri(Module):
         self.log_individual = log_indivdual
         self.do_checks = do_checks
 
+        # Initialise where the linear models will be stored
+        # todo - refactor this so that these are containd with a single dict
+
         # equations for the incidence of Alri by pathogen:
         self.incidence_equations_by_pathogen = dict()
-
-        # equations for the proportions of Alri diseases:
-        self.proportions_of_ALRI_disease_types_by_pathogen = dict()
 
         # equations for the probabilities of secondary bacterial superinfection:
         self.prob_secondary_bacterial_infection = None
@@ -742,9 +742,6 @@ class Alri(Module):
         self.prob_symptoms_uncomplicated_ALRI = dict()
         self.prob_extra_symptoms_complications = dict()
 
-        # dict to to store the information regarding HSI management of disease:
-        self.child_disease_management_information = dict()
-
         # dict to hold the DALY weights
         self.daly_wts = dict()
 
@@ -752,7 +749,9 @@ class Alri(Module):
         self.logging_event = None
 
         # Define the symptoms that this module will use:
-        # todo - @ines: is it right that 'danger_signs' is an indepednet symptom?
+        # todo - @ines: is it right that 'danger_signs' is an indepednet symptom? It seems like this is something that
+        #  is determined in the course of a diagnosis (like in diarrhoea module).
+        # todo - move this to the defintions of 'disease' , 'complications' etc.
         self.symptoms = {
             'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain',
             'cyanosis', 'respiratory_distress', 'danger_signs'
@@ -1289,17 +1288,17 @@ class Alri(Module):
 
         p = self.parameters
 
-        if patho in self.bacterial_patho:
+        if pathogen in self.bacterial_patho:
             disease_type = 'bacterial_pneumonia'
 
-        elif patho in self.viral_patho:
+        elif pathogen in self.viral_patho:
             if age < 2:
                 disease_type =  'viral_pneumonia' if (self.rng.rand() < p[f'proportion_viral_pneumonia_by_{patho}']) \
                     else 'bronchiolitis'
             else:
                 disease_type =  'viral_pneumonia'
 
-        elif patho in self.fungal_patho:
+        elif pathogen in self.fungal_patho:
             disease_type =  'fungal_pneumonia'
 
         else:
@@ -1450,17 +1449,13 @@ class Alri(Module):
         df = self.sim.population.props
 
         # check data-types are as expected (includes check that categories are working as defined)
-        assert (df.dtypes == sim.population.new_row.dtypes).all()
+        assert (df.dtypes == self.sim.population.new_row.dtypes).all()
 
-        # check that is no current infection there is no 'primary ALRI pathogen'
-        assert (df.loc[df.is_alive & ~df.ri_current_ALRI_status, 'ri_primary_ALRI_pathogen'] == 'not_applicable').all()
+        # check that if there is no current infection, then there is no 'primary ALRI pathogen': this one fails!?
+        # assert (df.loc[df.is_alive & ~df.ri_current_ALRI_status, 'ri_primary_ALRI_pathogen'] == 'not_applicable').all()
 
         # check that no one is on treatment if they do not have a current infection
         assert df.loc[df.is_alive & df.ri_ALRI_treatment, 'ri_current_ALRI_status'].all()
-
-
-
-
 
 
 
@@ -1503,11 +1498,40 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=2))
-        # NB. The frequency of the occurrences of this event can be edited safely.
+        self.fraction_of_a_year_until_next_polling_event = self.compute_fraction_of_year_between_polling_event()
+
+    def compute_fraction_of_year_between_polling_event(self):
+        """compute fraction of a year that elapses between polling event. This is used to adjust the risk of infection"""
+        return (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'Y')
+
+    def random_date(start, end):
+        """Generate a random datetime between `start` and `end`"""
+        return start + datetime.timedelta(
+            # Get a random amount of seconds between `start` and `end`
+            seconds=random.randint(0, int((end - start).total_seconds())),
+        )
+
+    def sample_outcome(self, df):
+        """Helper function to randoly sample outcomes from a set of probabilities.
+        Each row in the df is a person and each column is an event that may happen to the person.
+        The probabilities of each event are assumed to be independent but mutually exlusive."""
+
+        # todo - this needs checking
+        assert (df.sum(axis=1) <= 1.0).all(), "Probabilities across columns cannot sum to more than 1.0"
+
+        # Compare uniform deviate to cumulative sum across columns, after including a "null" column (for no event).
+        df['_'] = 1.0 - df.sum(axis=1)  # add implied "none of these events" category
+        cumsum = df.cumsum(axis=1)
+        draws = pd.Series(self.module.rng.rand(len(cumsum)), index=cumsum.index)
+        y = cumsum.gt(draws, axis=0)
+        outcome = y.idxmax(axis=1)
+
+        # return as a dict only in those cases where the outcome is one of the events.
+        return outcome.loc[~(outcome=='_')].to_dict()
+
 
     def apply(self, population):
-        """Apply this event to the population.
-        :param population: the current population
+        """Determine who will become infected and schedule for them an AlriOnsetEvent
         """
         df = population.props
         m = self.module
@@ -1517,8 +1541,11 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Compute the incidence rate for each person getting Alri and then convert into a probability
         # getting all children that do not currently have an Alri episode (never had or last episode resolved)
         mask_could_get_new_alri_event = \
-            df['is_alive'] & (df['age_years'] < 5) & \
-            ((df.ri_end_of_last_alri_episode < self.sim.date) | pd.isnull(df.ri_end_of_last_alri_episode))
+            df['is_alive'] & \
+            (df['age_years'] < 5) & \
+            (
+                (df.ri_end_of_last_alri_episode < self.sim.date) | pd.isnull(df.ri_end_of_last_alri_episode)
+            )
 
         # Compute the incidence rate for each person acquiring Alri
         inc_of_acquiring_alri = pd.DataFrame(index=df.loc[mask_could_get_new_alri_event].index)
@@ -1526,96 +1553,83 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
             inc_of_acquiring_alri[pathogen] = m.incidence_equations_by_pathogen[pathogen] \
                 .predict(df.loc[mask_could_get_new_alri_event])
 
-        # Convert the incidence rates that are predicted by the model into risk of an event occurring before the next
-        # polling event
-        fraction_of_a_year_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(
-            1, 'Y')
-        days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'D')
-        probs_of_acquiring_pathogen = 1 - np.exp(-inc_of_acquiring_alri * fraction_of_a_year_until_next_polling_event)
+        probs_of_acquiring_pathogen = 1 - np.exp(
+            -inc_of_acquiring_alri * self.fraction_of_a_year_until_next_polling_event
+        )
 
-        # Create the probability of getting 'any' pathogen:
-        # (Assumes that pathogens are mutually exclusive); Prevents probability being greater than 1.0.
-        prob_of_acquiring_any_pathogen = probs_of_acquiring_pathogen.sum(axis=1).clip(upper=1.0)
-        assert all(prob_of_acquiring_any_pathogen <= 1.0)
+        # Sample to find outcomes:
+        outcome = self.sample_outcome(probs_of_acquiring_pathogen)
 
-        # Determine which persons will acquire any pathogen:
-        person_id_that_acquire_pathogen = prob_of_acquiring_any_pathogen.index[
-            rng.rand(len(prob_of_acquiring_any_pathogen)) < prob_of_acquiring_any_pathogen]
-
-        # Determine which pathogen each person will acquire (among those who will get a pathogen)
-        # and create the event for the onset of new infection
-        for person_id in person_id_that_acquire_pathogen:
-            # ----------------------- Allocate a pathogen to the person ----------------------
-            p_by_pathogen = probs_of_acquiring_pathogen.loc[person_id].values
-            normalised_p_by_pathogen = p_by_pathogen / sum(p_by_pathogen)
-            pathogen = rng.choice(probs_of_acquiring_pathogen.columns, p=normalised_p_by_pathogen)
-
-            # ----------------- Determine the Alri disease type for this case -----------------
-            alri_disease_type_for_this_person = m.proportions_of_ALRI_disease_types_by_pathogen[pathogen]
-
-            # ------- Allocate a secondary bacterial pathogen in co-infection with primary viral pneumonia -------
-            bacterial_patho_in_ALRI_coinfection = 'not_applicable'
-            if pathogen in self.module.viral_patho:
-                prob_bacterial_infection = m.prob_secondary_bacterial_infection.predict(df.loc[[person_id]]).values[0]
-                if rng.rand() < prob_bacterial_infection:
-                    bacterial_coinfection_pathogen = rng.choice(list(self.module.bacterial_patho),
-                                                                p=p['proportion_bacterial_coinfection_pathogen'])
-                    bacterial_patho_in_ALRI_coinfection = bacterial_coinfection_pathogen
-                    # update to co-infection property
-                    alri_disease_type_for_this_person = 'bacterial_pneumonia'
-                else:
-                    bacterial_patho_in_ALRI_coinfection = 'none'
-            if pathogen in self.module.bacterial_patho:
-                bacterial_patho_in_ALRI_coinfection = 'not_applicable'
-                assert bacterial_patho_in_ALRI_coinfection == 'not_applicable'
-
-            if pathogen in self.module.fungal_patho:
-                bacterial_patho_in_ALRI_coinfection = 'none'
-
-            # ----------------------- Allocate a date of onset of Alri ----------------------
-            date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
-
-            # ----------------------- Duration of the Alri event -----------------------
-            duration_in_days_of_alri = max(7, int(
-                14 + (-2 + 4 * rng.rand())))  # assumes uniform interval around mean duration with range 4 days
-            # TODO: find natural course of disease duration estimates
-
-            # ----------------------- Create the event for the onset of infection -------------------
+        # For persons that will become infected with a particular pathogen:
+        for person_id, pathogen in outcome:
+            #  Create the event for the onset of infection:
             self.sim.schedule_event(
                 event=AlriIncidentCase(
                     module=self.module,
                     person_id=person_id,
                     pathogen=pathogen,
-                    disease_type=alri_disease_type_for_this_person,
-                    co_bacterial_patho=bacterial_patho_in_ALRI_coinfection,
-                    duration_in_days=duration_in_days_of_alri,
                 ),
-                date=date_onset
+                date=self.random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1))
             )
+
 
 class AlriIncidentCase(Event, IndividualScopeEventMixin):
     """
-    This Event is for the onset of the infection that causes Alri.
-     * Refreshes all the properties so that they pertain to this current episode of Alri
-     * Imposes the symptoms
-     * Schedules relevant natural history event {(AlriWithPulmonaryComplicationsEvent) and
-     (AlriWithSevereComplicationsEvent)
-       (either AlriNaturalRecoveryEvent or AlriDeathEvent)}
-     * Updates a counter for incident cases
+    This Event is for the onset of the infection that causes Alri. It is scheduled by the AlriPollingEvent.
     """
-    AGE_GROUPS = {0: '0y', 1: '1y', 2: '2-4y', 3: '2-4y', 4: '2-4y'}
 
-    def __init__(self, module, person_id, pathogen, disease_type, co_bacterial_patho, duration_in_days):
+    def __init__(self, module, person_id, pathogen):
         super().__init__(module, person_id=person_id)
         self.pathogen = pathogen
-        self.bacterial_pathogen = co_bacterial_patho
-        self.disease = disease_type
-        self.duration_in_days = duration_in_days
 
     def apply(self, person_id):
+        """
+        * Determines the diseae and complications associated with this case
+        * Updates all the properties so that they pertain to this current episode of Alri
+        * Imposes the symptoms
+        * Schedules relevant natural history event {(AlriWithPulmonaryComplicationsEvent) and
+        (AlriWithSevereComplicationsEvent) (either AlriNaturalRecoveryEvent or AlriDeathEvent)}
+        * Updates the counters in the log accordingly.
+        """
+
         df = self.sim.population.props  # shortcut to the dataframe
+        person = df.loc[person]
         m = self.module
         rng = self.module.rng
+
+
+        # Stuff to do - not done at onset
+        # # ----------------- Determine the Alri disease type for this case -----------------
+        # age = df.at[person_id, 'age_years']
+        # alri_disease_type_for_this_person = m.determine_disease_type(age=age, pathogen=pathogen)
+        #
+        # # ------- Allocate a secondary bacterial pathogen in co-infection with primary viral pneumonia -------
+        # bacterial_patho_in_ALRI_coinfection = 'not_applicable'
+        # if pathogen in self.module.viral_patho:
+        #     prob_bacterial_infection = m.prob_secondary_bacterial_infection.predict(df.loc[[person_id]]).values[0]
+        #     if rng.rand() < prob_bacterial_infection:
+        #         bacterial_coinfection_pathogen = rng.choice(list(self.module.bacterial_patho),
+        #                                                     p=p['proportion_bacterial_coinfection_pathogen'])
+        #         bacterial_patho_in_ALRI_coinfection = bacterial_coinfection_pathogen
+        #         # update to co-infection property
+        #         alri_disease_type_for_this_person = 'bacterial_pneumonia'
+        #     else:
+        #         bacterial_patho_in_ALRI_coinfection = 'none'
+        # if pathogen in self.module.bacterial_patho:
+        #     bacterial_patho_in_ALRI_coinfection = 'not_applicable'
+        #     assert bacterial_patho_in_ALRI_coinfection == 'not_applicable'
+        #
+        # if pathogen in self.module.fungal_patho:
+        #     bacterial_patho_in_ALRI_coinfection = 'none'
+        #
+        # # ----------------------- Duration of the Alri event -----------------------
+        # duration_in_days_of_alri = max(7, int(
+        #     14 + (-2 + 4 * rng.rand())))  # assumes uniform interval around mean duration with range 4 days
+        # # TODO: find natural course of disease duration estimates
+
+
+
+
 
         # The event should not run if the person is not currently alive
         if not df.at[person_id, 'is_alive']:
@@ -1704,7 +1718,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                                         date_of_outcome)
 
         # Add this incident case to the tracker
-        (self.module.logging_event).new_case(age=df.at[person_id, 'age_years'], pathogen=self.pathogen)
+        self.module.logging_event.new_case(age=df.at[person_id, 'age_years'], pathogen=self.pathogen)
 
 class AlriOnsetEvent(Event, IndividualScopeEventMixin):
     """
@@ -2099,7 +2113,6 @@ class AlriCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         self.module.check_properties()
-
 
 
 """

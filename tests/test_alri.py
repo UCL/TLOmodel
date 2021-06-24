@@ -63,12 +63,23 @@ def check_dtypes(sim):
     orig = sim.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
+
 def test_basic_run(tmpdir):
     """Short run of the module using default parameters with check on dtypes"""
-    dur = pd.DateOffset(months=3)
+    dur = pd.DateOffset(months=1)
     popsize = 100
     sim = get_sim(tmpdir, popsize=popsize, dur=dur)
     check_dtypes(sim)
+
+
+def test_logging(tmpdir):
+    """Check logging results when forcing the occurrence of incidence, recovery, treatment and death"""
+    dur = pd.DateOffset(years=2)
+    popsize = 100
+    sim = get_sim(tmpdir, popsize=popsize, dur=dur)
+
+    # Read the log for the population counts of incidence:
+    # todo - check that the counts come out OK:
 
     # Read the log for the one individual being tracked:
     log = parse_log_file(sim.log_filepath)['tlo.methods.alri']['log_individual']
@@ -78,17 +89,7 @@ def test_basic_run(tmpdir):
     assert set(log.columns) == set(sim.modules['Alri'].PROPERTIES.keys())
 
 
-def test_logging(tmpdir):
-    """Check logging results when forcing the occurence of incidence, recovery, treatment and death"""
-    dur = pd.DateOffset(years=2)
-    popsize = 100
-    sim = get_sim(tmpdir, popsize=popsize, dur=dur)
-
-    # Read the log for the population counts of incidence:
-    # todo - check that the counts come out OK:
-
-
-def test_properties_in_two_year_run(tmpdir):
+def test_basic_run_lasting_two_years(tmpdir):
     """Check logging results in a run of the model for two years"""
     dur = pd.DateOffset(years=2)
     popsize = 100
@@ -98,6 +99,8 @@ def test_properties_in_two_year_run(tmpdir):
     # todo - check that properties have the right configuration at all times!
 
 
+
+# todo - Need some kind of test bed so that Ines can see the effects of the linear models she is programming.
 
 # TODO -- @ines: We need some tests here to make sure everything is working, like in the diarrhoea code.
 #  I have done some basic one above to check on the mechanics of the logging etc. But we need more for the 'biology:
