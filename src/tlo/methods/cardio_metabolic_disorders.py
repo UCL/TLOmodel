@@ -20,7 +20,6 @@ from tlo.methods.symptommanager import Symptom
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -370,7 +369,7 @@ class CardioMetabolicDisorders(Module):
             assess_diabetes=DxTest(
                 property='nc_diabetes',
                 cons_req_as_footprint={'Intervention_Package_Code': {},
-                                        'Item_Code': {blood_glucose_test: 1, blood_tube: 1}}
+                                       'Item_Code': {blood_glucose_test: 1, blood_tube: 1}}
             )
         )
         # Create the diagnostic representing the assessment for whether a person is diagnosed with hypertension:
@@ -398,7 +397,7 @@ class CardioMetabolicDisorders(Module):
             assess_chronic_ischemic_hd=DxTest(
                 property='nc_chronic_ischemic_hd',
                 cons_req_as_footprint={'Intervention_Package_Code': {},
-                                        'Item_Code': {ecg_electrodes: 1, ecg_paper: 1, ecg_paper_roll: 1}}
+                                       'Item_Code': {ecg_electrodes: 1, ecg_paper: 1, ecg_paper_roll: 1}}
             )
         )
 
@@ -429,49 +428,49 @@ class CardioMetabolicDisorders(Module):
             baseline_annual_probability,
             Predictor('sex').when('M', p['rr_male']),
             Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
-            .when('.between(5, 9)', p['rr_5_9'])
-            .when('.between(10, 14)', p['rr_10_14'])
-            .when('.between(15, 19)', p['rr_15_19'])
-            .when('.between(20, 24)', p['rr_20_24'])
-            .when('.between(25, 29)', p['rr_25_29'])
-            .when('.between(30, 34)', p['rr_30_34'])
-            .when('.between(35, 39)', p['rr_35_39'])
-            .when('.between(40, 44)', p['rr_40_44'])
-            .when('.between(45, 49)', p['rr_45_49'])
-            .when('.between(50, 54)', p['rr_50_54'])
-            .when('.between(55, 59)', p['rr_55_59'])
-            .when('.between(60, 64)', p['rr_60_64'])
-            .when('.between(65, 69)', p['rr_65_69'])
-            .when('.between(70, 74)', p['rr_70_74'])
-            .when('.between(75, 79)', p['rr_75_79'])
-            .when('.between(80, 84)', p['rr_80_84'])
-            .when('.between(85, 89)', p['rr_85_89'])
-            .when('.between(90, 94)', p['rr_90_94'])
-            .when('.between(95, 99)', p['rr_95_99'])
-            .otherwise(p['rr_100']),
+                .when('.between(5, 9)', p['rr_5_9'])
+                .when('.between(10, 14)', p['rr_10_14'])
+                .when('.between(15, 19)', p['rr_15_19'])
+                .when('.between(20, 24)', p['rr_20_24'])
+                .when('.between(25, 29)', p['rr_25_29'])
+                .when('.between(30, 34)', p['rr_30_34'])
+                .when('.between(35, 39)', p['rr_35_39'])
+                .when('.between(40, 44)', p['rr_40_44'])
+                .when('.between(45, 49)', p['rr_45_49'])
+                .when('.between(50, 54)', p['rr_50_54'])
+                .when('.between(55, 59)', p['rr_55_59'])
+                .when('.between(60, 64)', p['rr_60_64'])
+                .when('.between(65, 69)', p['rr_65_69'])
+                .when('.between(70, 74)', p['rr_70_74'])
+                .when('.between(75, 79)', p['rr_75_79'])
+                .when('.between(80, 84)', p['rr_80_84'])
+                .when('.between(85, 89)', p['rr_85_89'])
+                .when('.between(90, 94)', p['rr_90_94'])
+                .when('.between(95, 99)', p['rr_95_99'])
+                .otherwise(p['rr_100']),
             Predictor('li_urban').when(True, p['rr_urban']),
             Predictor('li_wealth').when('1', p['rr_wealth_1'])
-            .when('2', p['rr_wealth_2'])
-            .when('3', p['rr_wealth_3'])
-            .when('4', p['rr_wealth_4'])
-            .when('5', p['rr_wealth_5']),
+                .when('2', p['rr_wealth_2'])
+                .when('3', p['rr_wealth_3'])
+                .when('4', p['rr_wealth_4'])
+                .when('5', p['rr_wealth_5']),
             Predictor('li_bmi').when('1', p['rr_bmi_1'])
-            .when('2', p['rr_bmi_2'])
-            .when('3', p['rr_bmi_3'])
-            .when('4', p['rr_bmi_4'])
-            .when('5', p['rr_bmi_5']),
+                .when('2', p['rr_bmi_2'])
+                .when('3', p['rr_bmi_3'])
+                .when('4', p['rr_bmi_4'])
+                .when('5', p['rr_bmi_5']),
             Predictor('li_low_ex').when(True, p['rr_low_exercise']),
             Predictor('li_high_salt').when(True, p['rr_high_salt']),
             Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
             Predictor('li_tob').when(True, p['rr_tobacco']),
             Predictor('li_ex_alc').when(True, p['rr_alcohol']),
             Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
-            .when('2', p['rr_marital_status_2'])
-            .when('3', p['rr_marital_status_3']),
+                .when('2', p['rr_marital_status_2'])
+                .when('3', p['rr_marital_status_3']),
             Predictor('li_in_ed').when(True, p['rr_in_education']),
             Predictor('li_ed_lev').when('1', p['rr_current_education_level_1'])
-            .when('2', p['rr_current_education_level_2'])
-            .when('3', p['rr_current_education_level_3']),
+                .when('2', p['rr_current_education_level_2'])
+                .when('3', p['rr_current_education_level_3']),
             Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
             Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
             Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
@@ -812,9 +811,9 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
 
         for i in range(0, len(condition_combos)):
             df.loc[df.is_alive, 'nc_condition_combos'] = np.where(
-                 df.loc[df.is_alive, f'{condition_combos[i][0]}'] &
-                 df.loc[df.is_alive, f'{condition_combos[i][1]}'],
-                 True, False)
+                df.loc[df.is_alive, f'{condition_combos[i][0]}'] &
+                df.loc[df.is_alive, f'{condition_combos[i][1]}'],
+                True, False)
             col = df.loc[df.is_alive].groupby(['age_range'])['nc_condition_combos'].count()
             n_combos.reset_index()
             n_combos.loc[:, (f'{condition_combos[i][0]}' + '_' + f'{condition_combos[i][1]}')] = col.values
@@ -833,6 +832,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # df = population.props
         # df.to_csv('df_for_regression.csv')
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
@@ -843,6 +843,7 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
     This event begins the investigation that may result in diagnosis and the scheduling of treatment.
     It is for people with the condition-relevant symptom (e.g. diabetes_symptoms).
     """
+
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
         # Define the necessary information for an HSI
@@ -851,6 +852,7 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
+
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
@@ -883,13 +885,17 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
                 topen=self.sim.date,
                 tclose=None
             )
+
     def did_not_run(self):
         pass
+
+
 class HSI_CardioMetabolicDisorders_StartWeightLoss(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event in which a person receives a recommendation of weight loss.
     This results in an individual having a probability of reducing their BMI by one category by the 6-month check.
     """
+
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
         # Define the necessary information for an HSI
@@ -898,6 +904,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLoss(HSI_Event, IndividualScopeEve
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
+
     def apply(self, person_id, squeeze_factor):
         self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
         # Schedule a post-treatment check for 12 months:
@@ -917,12 +924,15 @@ class HSI_CardioMetabolicDisorders_StartWeightLoss(HSI_Event, IndividualScopeEve
             if self.module.rng.rand() < p_bmi_reduction:
                 df.at[person_id, 'li_bmi'] = df.at[person_id, 'li_bmi'] - 1
                 self.sim.population.props.at[person_id, 'nc_weight_loss_worked'] = True
+
+
 class HSI_CardioMetabolicDisorders_PostWeightLossCheck(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event in which a person receives a check-up following a recommendation of weight
     loss.
     This results in an individual having a probability of reducing their BMI by one category by the 6-month check.
     """
+
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
         # Define the necessary information for an HSI
@@ -931,6 +941,7 @@ class HSI_CardioMetabolicDisorders_PostWeightLossCheck(HSI_Event, IndividualScop
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
+
     def apply(self, person_id, squeeze_factor):
         if self.sim.population.props.at[person_id, 'nc_weight_loss_worked']:
             # weight loss worked so don't put the individual on medication and don't use up resources
@@ -938,16 +949,20 @@ class HSI_CardioMetabolicDisorders_PostWeightLossCheck(HSI_Event, IndividualScop
         else:
             # Schedule their next HSI to start medication
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_Start_Medication(person_id=person_id, module=self.module, condition=self.condition),
+                hsi_event=HSI_CardioMetabolicDisorders_Start_Medication(person_id=person_id, module=self.module,
+                                                                        condition=self.condition),
                 priority=1,
                 topen=self.sim.date,
                 tclose=None
             )
+
+
 class HSI_CardioMetabolicDisorders_Start_Medication(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event in which a person is started on treatment.
     The facility_level is modified as a input parameter.
     """
+
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
         # Define the necessary information for an HSI
@@ -956,6 +971,7 @@ class HSI_CardioMetabolicDisorders_Start_Medication(HSI_Event, IndividualScopeEv
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
+
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         # If person is already on medication, do not do anything
@@ -965,9 +981,7 @@ class HSI_CardioMetabolicDisorders_Start_Medication(HSI_Event, IndividualScopeEv
             person_id, f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
                                                                "receiving an HSI. "
         # Check availability of medication for condition
-        item_code = self.module.parameters[f'{self.condition}_hsi'].set_index('parameter_name').T.to_dict('records')[
-            0].get(
-            'medication_item_code')
+        item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
         result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
@@ -977,11 +991,14 @@ class HSI_CardioMetabolicDisorders_Start_Medication(HSI_Event, IndividualScopeEv
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
             # Schedule their next HSI for a refill of medication in one month
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module, condition=self.condition),
+                hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module,
+                                                                         condition=self.condition),
                 priority=1,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
             )
+
+
 class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event in which a person seeks a refill prescription of medication.
@@ -989,6 +1006,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
     If the person is flagged as not being on medication, then the event does nothing and returns a blank footprint.
     If it does not run, then person ceases to be on medication and no further refill HSI are scheduled.
     """
+
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
         # Define the necessary information for an HSI
@@ -997,6 +1015,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
+
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         assert df.at[
@@ -1008,9 +1027,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             # Return the blank_appt_footprint() so that this HSI does not occupy any time resources
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         # Check availability of medication for condition
-        item_code = self.module.parameters[f'{self.condition}_hsi'].set_index('parameter_name').T.to_dict('records')[
-            0].get(
-            'medication_item_code')
+        item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
         result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
@@ -1018,7 +1035,8 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         if result_of_cons_request:
             # Schedule their next HSI for a refill of medication, one month from now
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module, condition=self.condition),
+                hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module,
+                                                                         condition=self.condition),
                 priority=1,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
@@ -1026,10 +1044,12 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         else:
             # If medication was not available, the person ceases to be taking medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = False
+
     def did_not_run(self):
         # If this HSI event did not run, then the persons ceases to be taking medication
         person_id = self.target
         self.sim.population.props.at[person_id, f'nc_{self.condition}_on_medication'] = False
+
 
 class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1037,6 +1057,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
     It is the event when a person with the severe symptoms of chronic syndrome presents for emergency care
     and is immediately provided with treatment.
     """
+
     def __init__(self, module, person_id, ev):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CardioMetabolicDisorders)
@@ -1046,6 +1067,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
         self.event = ev
+
     def apply(self, person_id, squeeze_factor):
         logger.debug(
             key='debug',
@@ -1061,7 +1083,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             # If squeeze factor is not too large:
             logger.debug(key='debug', data='Treatment will be provided.')
             df = self.sim.population.props
-            treatmentworks = self.module.rng.rand() < 0.2 # made up number for now
+            treatmentworks = self.module.rng.rand() < 0.2  # made up number for now
             if treatmentworks:
                 # (in this we nullify the death event that has been scheduled.)
                 # df.at[person_id, 'nc_scheduled_date_death'] = pd.NaT
@@ -1072,6 +1094,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         else:
             # Squeeze factor is too large
             logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
+
     def did_not_run(self):
         logger.debug(key='debug', data='HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: did not run')
         pass
