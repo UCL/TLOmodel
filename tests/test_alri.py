@@ -38,7 +38,7 @@ def check_dtypes(sim):
 
 def test_basic_run():
     start_date = Date(2010, 1, 1)
-    end_date = Date(2013, 1, 1)
+    end_date = Date(2010, 3, 31)
     pop_size = 100
 
     sim = Simulation(start_date=start_date)
@@ -49,9 +49,9 @@ def test_basic_run():
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
         dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         alri.Alri(resourcefilepath=resourcefilepath)
     )
 
@@ -61,6 +61,15 @@ def test_basic_run():
     check_dtypes(sim)
 
 
-# TODO -- @ines: We need some tests here to make sure everything is working, like in the diarrhoea code.
+
+# TODO -- @ines: We need some tests here to make sure everything is working, like in the diarrhoea code. Examples below:
+
+# 1) The progression of natural history for one person
+
+# 2) Show that treatment, when provided and has 100% effectiveness, prevents deaths
+
+# 3) Show that if treatment not provided, and CFR is 100%, every case results in a death
+
+
 
 

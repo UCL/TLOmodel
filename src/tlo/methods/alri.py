@@ -32,6 +32,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
+from tlo.methods.causes import Cause
 from tlo.methods.symptommanager import Symptom
 from tlo.methods.healthsystem import HSI_Event
 from tlo.util import BitsetHandler
@@ -70,10 +71,25 @@ class Alri(Module):
 
     # Declare Metadata
     METADATA = {
-        Metadata.DISEASE_MODULE,  # Disease modules: Any disease module should carry this label.
-        Metadata.USES_SYMPTOMMANAGER,  # The 'Symptom Manager' recognises modules with this label.
-        Metadata.USES_HEALTHSYSTEM,  # The 'HealthSystem' recognises modules with this label.
-        Metadata.USES_HEALTHBURDEN  # The 'HealthBurden' module recognises modules with this label.
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
+
+    # todo: @ines -- is the definition of causes of death and disability suitable? Please look into this.
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        f"ALRI_{path}":
+            Cause(gbd_causes={'Lower respiratory infections'}, label='Lower Lower respiratory infections')
+        for path in pathogens
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        f"ALRI_{path}":
+            Cause(gbd_causes={'Lower respiratory infections'}, label='Lower Lower respiratory infections')
+        for path in pathogens
     }
 
     # Declare the Alri complications:
@@ -598,12 +614,19 @@ class Alri(Module):
 
     }
 
+    # todo; @Ines -- some of the labelling of the properties is confusing -- is for currrent or last episode?
     PROPERTIES = {
         # ---- Alri status ----
         'ri_current_ALRI_status':
             Property(Types.BOOL,
                      'Alri status (current or last episode)'
                      ),
+        # ---- Treatment Status ----
+        # todo- @ines: i saw you using a property like this but it wasn't defined, so have defined it here.
+        'ri_ALRI_treatment':
+            Property(Types.BOOL,
+                    'Whether this person is currentlt receiving treatment for a current episode of ALRI'
+                    ),
         # ---- The pathogen which is the attributed cause of Alri ----
         'ri_primary_ALRI_pathogen':
             Property(Types.CATEGORICAL,
@@ -755,7 +778,7 @@ class Alri(Module):
                                                        f'is not read in correctly from the resourcefile.'
 
         # Declare symptoms that this modules will cause and which are not included in the generic symptoms:
-        generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
+        generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
         for symptom_name in self.symptoms:
             if symptom_name not in generic_symptoms:
                 self.sim.modules['SymptomManager'].register_symptom(
@@ -774,7 +797,7 @@ class Alri(Module):
         df = population.props  # a shortcut to the data-frame storing data for individuals
 
         # ---- Key Current Status Classification Properties ----
-        df.loc[df.is_alive, 'ri_ALRI_status'] = False
+        df.loc[df.is_alive, 'ri_current_ALRI_status'] = False
         df.loc[df.is_alive, 'ri_primary_ALRI_pathogen'].values[:] = 'not_applicable'
         df.loc[df.is_alive, 'ri_current_ALRI_symptoms'] = 0
         df.loc[df.is_alive, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
@@ -1249,7 +1272,7 @@ class Alri(Module):
         df = self.sim.population.props
 
         # ---- Key Current Status Classification Properties ----
-        df.at[child_id, 'ri_ALRI_status'] = False
+        df.at[child_id, 'ri_current_ALRI_status'] = False
         df.at[child_id, 'ri_primary_ALRI_pathogen'] = 'not_applicable'
         df.at[child_id, 'ri_current_ALRI_symptoms'] = 0
         df.at[child_id, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
@@ -1298,6 +1321,8 @@ class Alri(Module):
                                               dtype='float').drop(columns='not_applicable')
         daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
 
+        # add prefix to label according to the name of the causes of disability declared
+        daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
         return daly_values_by_pathogen
 
     def uncomplicated_alri_symptoms(self, disease, person_id, duration_in_days):
