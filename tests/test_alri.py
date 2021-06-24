@@ -28,21 +28,10 @@ except NameError:
     resourcefilepath = Path('./resources')
 
 
-# %% Run the Simulation
-
-def check_dtypes(sim):
-    # Check types of columns
-    df = sim.population.props
-    orig = sim.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
-
-
-def test_basic_run(tmpdir):
-    """Short run of the module using default parameters with check on dtypes"""
+def get_sim(tmpdir, popsize=100, dur=pd.DateOffset(months=3)):
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2010, 4, 1)
-    pop_size = 100
+    end_date = start_date + dur
 
     sim = Simulation(start_date=start_date, log_config={
         'filename': 'tmp',
@@ -63,8 +52,22 @@ def test_basic_run(tmpdir):
         alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=True)
     )
 
-    sim.make_initial_population(n=pop_size)
+    sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
+
+    return sim
+
+def check_dtypes(sim):
+    # Check types of columns
+    df = sim.population.props
+    orig = sim.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
+
+def test_basic_run(tmpdir):
+    """Short run of the module using default parameters with check on dtypes"""
+    dur = pd.DateOffset(months=3)
+    popsize = 100
+    sim = get_sim(tmpdir, popsize=popsize, dur=dur)
     check_dtypes(sim)
 
     # Read the log for the one individual being tracked:
@@ -73,6 +76,29 @@ def test_basic_run(tmpdir):
     log = log.set_index('date')
     assert log.index.equals(pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1)))
     assert set(log.columns) == set(sim.modules['Alri'].PROPERTIES.keys())
+
+
+def test_logging(tmpdir):
+    """Check logging results when forcing the occurence of incidence, recovery, treatment and death"""
+    dur = pd.DateOffset(years=2)
+    popsize = 100
+    sim = get_sim(tmpdir, popsize=popsize, dur=dur)
+
+    # Read the log for the population counts of incidence:
+    # todo - check that the counts come out OK:
+
+
+def test_properties_in_two_year_run(tmpdir):
+    """Check logging results in a run of the model for two years"""
+    dur = pd.DateOffset(years=2)
+    popsize = 100
+    sim = get_sim(tmpdir, popsize=popsize, dur=dur)
+
+    # Read the log for the population counts of incidence:
+    # todo - check that properties have the right configuration at all times!
+
+
+
 
 
 

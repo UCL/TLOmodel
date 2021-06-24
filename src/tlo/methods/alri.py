@@ -23,6 +23,14 @@ Outstanding issues
 * Double check parameters and consumables codes for the HSI events.
 
 """
+
+# #todo - properties: rename "
+# 'number_cases': df.loc[df.is_alive, 'ri_ALRI_cases_counter'].sum(),
+# 'number_recovered': df.loc[df.is_alive, 'ri_ALRI_recovery_counter'].sum(),
+# 'number_treated': df.loc[df.is_alive, 'ri_ALRI_treatment_counter'].sum(),
+# 'number_died': df.loc[df.is_alive, 'ri_ALRI_death_counter'].sum()
+
+
 import copy
 from pathlib import Path
 
@@ -706,6 +714,7 @@ class Alri(Module):
     def __init__(self, name=None, resourcefilepath=None, log_indivdual=False):
         super().__init__(name)
 
+        # Store arguments provided
         self.resourcefilepath = resourcefilepath
         self.log_individual = log_indivdual
 
@@ -736,27 +745,11 @@ class Alri(Module):
         # dict to hold the DALY weights
         self.daly_wts = dict()
 
-        # dict to hold counters for the number of Alri events by pathogen and age-group
-        # (0yrs, 1yrs, 2-4yrs)
-        blank_counter = dict(zip(self.pathogens, [list() for _ in self.pathogens]))
-
-        self.incident_case_tracker_blank = {
-            '0y': copy.deepcopy(blank_counter),
-            '1y': copy.deepcopy(blank_counter),
-            '2-4y': copy.deepcopy(blank_counter),
-            '5+y': copy.deepcopy(blank_counter)
-        }
-        self.incident_case_tracker = copy.deepcopy(self.incident_case_tracker_blank)
-
-        zeros_counter = dict(zip(self.pathogens, [0] * len(self.pathogens)))
-        self.incident_case_tracker_zeros = {
-            '0y': copy.deepcopy(zeros_counter),
-            '1y': copy.deepcopy(zeros_counter),
-            '2-4y': copy.deepcopy(zeros_counter),
-            '5+y': copy.deepcopy(zeros_counter)
-        }
+        # will store the logging event used by this module
+        self.logging_event = None
 
         # Define the symptoms that this module will use:
+        # todo - @ines: is it right that 'danger_signs' is an indepednet symptom?
         self.symptoms = {
             'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain',
             'cyanosis', 'respiratory_distress', 'danger_signs'
@@ -849,10 +842,8 @@ class Alri(Module):
         sim.schedule_event(AlriPollingEvent(self), sim.date)
 
         # Schedule the main logging event (to first occur in one year)
-        sim.schedule_event(PathogenIncidentCountLoggingEvent(self), sim.date + DateOffset(years=1))
-
-        # Schedule the counter logging event (to first occur in one year)
-        sim.schedule_event(AlriLoggingEvent(self), sim.date + DateOffset(years=1))
+        self.logging_event = AlriLoggingEvent(self)
+        sim.schedule_event(self.logging_event, sim.date + DateOffset(years=1))
 
         if self.log_individual:
             # Schedule the individual check logging event (to first occur immediately, and to occur every day)
@@ -864,6 +855,7 @@ class Alri(Module):
             self.daly_wts['daly_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
             self.daly_wts['daly_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
             self.daly_wts['daly_very_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
+            # todo @ines - 'daly_very_severe_ALRI' is never used: is that right?
 
         # =====================================================================================================
         # APPLY A LINEAR MODEL FOR THE ACQUISITION OF A PRIMARY PATHOGEN FOR Alri
@@ -1309,11 +1301,16 @@ class Alri(Module):
 
     def reset_counters(self):
         """Helper function that reset counters of numbers of events:"""
+
+        # 1) Reset counter of incidence cases (by age and pathogen)
+        self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
+
+        # 2) Reset counters in the dataframe (number of events per person)
         df = self.sim.population.props
-        df['ri_ALRI_cases_counter'] = 0
-        df['ri_ALRI_recovery_counter'] = 0
-        df['ri_ALRI_treatment_counter'] = 0
-        df['ri_ALRI_death_counter'] = 0
+        df.loc[df.is_alive, 'ri_ALRI_cases_counter'] = 0
+        df.loc[df.is_alive, 'ri_ALRI_recovery_counter'] = 0
+        df.loc[df.is_alive, 'ri_ALRI_treatment_counter'] = 0
+        df.loc[df.is_alive, 'ri_ALRI_death_counter'] = 0
 
     def uncomplicated_alri_symptoms(self, disease, person_id, duration_in_days):
         """
@@ -1688,13 +1685,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                                         date_of_outcome)
 
         # Add this incident case to the tracker
-        age = df.loc[person_id, ['age_years']]
-        if age.values[0] < 5:
-            age_grp = age.map({0: '0y', 1: '1y', 2: '2-4y', 3: '2-4y', 4: '2-4y'}).values[0]
-        else:
-            age_grp = '5+y'
-        self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
-
+        (self.module.logging_event).new_case(age=df.at[person_id, 'age_years'], pathogen=self.pathogen)
 
 class AlriOnsetEvent(Event, IndividualScopeEventMixin):
     """
@@ -1949,15 +1940,16 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
                                                                   cause='ALRI_' + df.at[
                                                                       person_id, 'ri_primary_ALRI_pathogen']
                                                                   ), self.sim.date)
-            df.at[person_id, 'ri_ALRI_death_counter'] += 1
+
+            # todo - ensure that pathogen is reported here
+            self.module.logging_event.new_death()
 
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
-# todo - @ines - do you need both types of logging event? Looks like 'PathogenIncidentCountLoggingEvent' is does all?
 
-class PathogenIncidentCountLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This Event logs the number of incident cases that have occurred since the previous logging event.
     Analysis scripts expect that the frequency of this logging event is once per year.
@@ -1967,57 +1959,90 @@ class PathogenIncidentCountLoggingEvent(RegularEvent, PopulationScopeEventMixin)
         # This event to occur every year
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
-        self.date_last_run = self.sim.date
+
+        # initialise trakcers of incident cases, new recoveries, new treatments and deaths due to ALRI
+        age_grps= {**{0: "0", 1: "1", 2: "2-4", 3: "2-4", 4: "2-4"}, **{x: "5+" for x in range(5, 100)}}
+
+        self.trackers = dict()
+        self.trackers['incident_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.pathogens)
+        self.trackers['recovered_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.pathogens)
+        self.trackers['treated_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.pathogens)
+        self.trackers['deaths'] = Tracker(age_grps=age_grps, pathogens=self.module.pathogens)
+
+    def new_case(self, age, pathogen):
+        self.trackers['incident_cases'].add(age=age, pathogen=pathogen)
+
+    def new_recovered_case(self, age, pathogen):
+        self.trackers['recovered_cases'].add(age=age, pathogen=pathogen)
+
+    def new_treated_case(self, age, pathogen):
+        self.trackers['treated_cases'].add(age=age, pathogen=pathogen)
+
+    def new_death(self):
+        self.trackers['deaths'].add(age=age, pathogen=pathogen)
 
     def apply(self, population):
-        # Convert the list of timestamps into a number of timestamps
-        # and check that all the dates have occurred since self.date_last_run
-        counts = copy.deepcopy(self.module.incident_case_tracker_zeros)
+        """
+        Log:
+        1) Number of new cases, by age-group and by pathogen since the last logging event
+        2) Total number of cases, recovery, treatments and deaths since the last logging event
+        """
 
-        for age_grp in self.module.incident_case_tracker.keys():
-            for pathogen in self.module.pathogens:
-                list_of_times = self.module.incident_case_tracker[age_grp][pathogen]
-                counts[age_grp][pathogen] = len(list_of_times)
-                for t in list_of_times:
-                    assert self.date_last_run <= t <= self.sim.date
+        # 1) Number of new cases, by age-group and by pathogen, since the last logging event
+        logger.info(
+            key='incidence_count_by_age_and_pathogen',
+            data=self.trackers['incident_cases'].report_current_counts(),
+            description='pathogens incident case counts in the last year'
+        )
 
-        logger.info(key='incidence_count_by_pathogen', data=counts, description='pathogens incident case counts')
+        # 2) Total number of cases, recovery, treatments and deaths since the last logging event
+        logger.info(
+            key='counters',
+            data={k: v.report_current_total() for k, v in self.trackers.items()},
+            description='Counts of cases, recovery, treatment and death in the last year'
+        )
 
-        # Reset the counters and the date_last_run --------------------
-        self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
-        self.date_last_run = self.sim.date
+        # 3) Reset the trackers
+        for trakcer in self.trackers:
+            tracker.reset()
 
 
-class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    Count the number of Alri cases, number of recovered, treated and died every year
-    """
-    def __init__(self, module):
-        # This event to occur every year
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
+class Tracker():
+    """Helper class to be a counter for number of events occuring by age-group and by pathogen."""
 
-    def apply(self, population):
-        df = self.sim.population.props
+    def __init__(self, age_grps: dict, pathogens: list):
+        """Create and initalise tracker"""
 
-        # sum all the counters for previous year
-        cases_count = df['ri_ALRI_cases_counter'].sum()
-        recovery_count = df['ri_ALRI_recovery_counter'].sum()
-        tx_count = df['ri_ALRI_treatment_counter'].sum()
-        death_count = df['ri_ALRI_death_counter'].sum()
+        # Check and store parameters
+        self.pathogens = pathogens
+        self.age_grps_lookup = age_grps
+        self.unique_age_grps = list(set(self.age_grps_lookup.values()))
+        self.unique_age_grps.sort()
 
-        counter = {
-            'number_cases': cases_count,
-            'number_recovered': recovery_count,
-            'number_treated': tx_count,
-            'number_died': death_count
+        # Initialise Tracker
+        self.tracker = None
+        self.reset()
+
+    def reset(self):
+        """Produce a dict of the form: { <Age-Grp>: {<Pathogen>: <Count>} }"""
+        self.tracker = {
+            age: dict(zip(self.pathogens, [0] * len(self.pathogens))) for age in self.unique_age_grps
         }
 
-        logger.info(
-            key='counter_episodes',
-            data=counter,
-            description='Counts of cases, recovery, treatment and death'
-        )
+    def add(self, age, pathogen):
+        """Increment counter by one for a specific age and pathogen"""
+        assert age in self.age_grps_lookup, 'Age not recognised'
+        assert pathogen in self.pathogens, 'Pathogen no recognised'
+
+        # increment by one:
+        age_grp = self.age_grps_lookup[age]
+        self.tracker[age_grp][pathogen] += 1
+
+    def report_current_counts(self):
+        return self.tracker
+
+    def report_current_total(self):
+        return self.tracker.sum()
 
 
 class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -2031,35 +2056,18 @@ class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Find the person to log: the first under-five-year-old in the dataframe
         df = self.sim.population.props
-        self.person_id = df.loc[df.is_alive & (df['age_years'] < 5) ].index[0]
+        under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+        self.person_id = under5s.index[0] if len(under5s) else None
 
     def apply(self, population):
         """Log all properties for this module"""
-        df = self.sim.population.props
-        logger.info(
-            key='log_individual',
-            data= df.loc[self.person_id, self.module.PROPERTIES.keys()].to_dict(),
-            description='print of properties each day for one person (the first under-five-year-old in the dataframe)'
-        )
-
-
-class AlriResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    This regular event resets the counts Alri episodes, recovery, treatment and death
-    """
-    def __init__(self, module):
-        # This event to occur every year
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-
-    def apply(self, population):
-        df = self.sim.population.props
-
-        df['ri_ALRI_cases_counter'] = 0
-        df['ri_ALRI_recovery_counter'] = 0
-        df['ri_ALRI_treatment_counter'] = 0
-        df['ri_ALRI_death_counter'] = 0
-
+        if self.person_id:
+            df = self.sim.population.props
+            logger.info(
+                key='log_individual',
+                data= df.loc[self.person_id, self.module.PROPERTIES.keys()].to_dict(),
+                description='print of properties each day for one person (the first under-five-year-old in the dataframe)'
+            )
 
 """
 ### Not looking at anything to do with HSI ###
