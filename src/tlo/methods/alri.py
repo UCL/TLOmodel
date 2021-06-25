@@ -649,7 +649,7 @@ class Alri(Module):
         'ri_ALRI_disease_type':
             Property(Types.CATEGORICAL, 'underlying Alri condition',
                      categories=['viral_pneumonia', 'bacterial_pneumonia', 'fungal_pneumonia',
-                                 'bronchiolitis'] + ['not_applicable']
+                                 'bronchiolitis']
                      ),
         # ---- Complications associated with Alri ----
         'ri_peripheral_oxygen_saturation':
@@ -682,23 +682,23 @@ class Alri(Module):
         # ---- Health System interventions / Treatment properties ----
         'ri_ALRI_tx_start_date': Property(Types.DATE, 'start date of Alri treatment for current event'),
 
-        # ---- Counter properties (for Logging use) ----
-        'ri_ALRI_cases_counter':
-            Property(Types.INT,
-                     'annual counter for Alri cases'
-                     ),
-        'ri_ALRI_recovery_counter':
-            Property(Types.INT,
-                     'annual counter for Alri recovery episodes'
-                     ),
-        'ri_ALRI_treatment_counter':
-            Property(Types.INT,
-                     'annual counter for Alri treatment episodes'
-                     ),
-        'ri_ALRI_death_counter':
-            Property(Types.INT,
-                     'annual counter for Alri death episodes'
-                     ),
+        # # ---- Counter properties (for Logging use) ----
+        # 'ri_ALRI_cases_counter':
+        #     Property(Types.INT,
+        #              'annual counter for Alri cases'
+        #              ),
+        # 'ri_ALRI_recovery_counter':
+        #     Property(Types.INT,
+        #              'annual counter for Alri recovery episodes'
+        #              ),
+        # 'ri_ALRI_treatment_counter':
+        #     Property(Types.INT,
+        #              'annual counter for Alri treatment episodes'
+        #              ),
+        # 'ri_ALRI_death_counter':
+        #     Property(Types.INT,
+        #              'annual counter for Alri death episodes'
+        #              ),
 
     }
 
@@ -1257,6 +1257,7 @@ class Alri(Module):
         # APPLY A LINEAR MODEL FOR THE RISK OF DEATH DUE TO Alri
         # -----------------------------------------------------------------------------------------------------
         def linear_model_for_death(disease_type):
+            # todo- this needs to be done: function of disease of specific complications ***
             return LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 1.0,
@@ -1711,6 +1712,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         # todo @ines - the complications don't seem to do anything (don't affect risk of death etc?)
         for disease in m.disease_type:
             #todo @ines - this construction is wrong; there is one disease_type for this ALRI case, right?
+            #todo @ines -- this is occuring before complication are onset.
             prob_death_from_ALRI = m.mortality_equations_by_disease[disease].predict(df.loc[[person_id]]).values[0]
             if rng.rand() < prob_death_from_ALRI:
                 self.sim.schedule_event(AlriDeathEvent(self.module, person_id),
