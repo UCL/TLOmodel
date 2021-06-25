@@ -616,4 +616,3 @@ dhs_u5 = dhs_u5.reset_index(drop=True)
 dhs_u5 = dhs_u5[dhs_u5.columns[[3, 0, 1, 2]]]
 dhs_u5[dhs_u5.columns[1:]] = dhs_u5[dhs_u5.columns[1:]] / 1000  # to make it mortality risk per person
 dhs_u5.to_csv(path_for_saved_files / 'ResourceFile_Under_Five_Mortality_DHS.csv', index=False)
-

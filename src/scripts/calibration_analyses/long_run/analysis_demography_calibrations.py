@@ -38,7 +38,7 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 # create_pickles_locally(results_folder)
 
 # Declare path for output graphs from this script
-make_graph_file_name = lambda stub: results_folder / f"{stub}.png"
+make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
 # Define colo(u)rs to use:
 colors = {
@@ -49,7 +49,7 @@ colors = {
 }
 
 # Define how to call the sexes:
-sexname = lambda x: 'Females' if x == 'F' else 'Males'
+sexname = lambda x: 'Females' if x == 'F' else 'Males'  # noqa: E731
 
 # %% Examine the results folder:
 
@@ -197,9 +197,11 @@ def get_mean_pop_by_age_for_sex_and_year(sex, year):
                         module="tlo.methods.demography",
                         key=key,
                         custom_generate_series=(
-                            lambda df: df.loc[pd.to_datetime(df.date).dt.year == 2010]
-                                .drop(columns=['date']).melt(var_name='age_grp')
-                                .set_index('age_grp')['value']
+                            lambda df_: df_.loc[pd.to_datetime(df_.date).dt.year == 2010].drop(
+                                columns=['date']
+                            ).melt(
+                                var_name='age_grp'
+                            ).set_index('age_grp')['value']
                         ),
                         do_scaling=True
                         ),

@@ -38,7 +38,7 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 # create_pickles_locally(results_folder)
 
 # Declare path for output graphs from this script
-make_graph_file_name = lambda stub: results_folder / f"{stub}.png"
+make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
 # Define colours to use:
 colors = {
@@ -83,8 +83,9 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
             module="tlo.methods.demography",
             key="death",
             custom_generate_series=(
-                lambda df: df.assign(year=df['date'].dt.year)
-                    .groupby(['sex', 'year', 'age', 'label'])['person_id'].count()
+                lambda df_: df_.assign(
+                    year=df_['date'].dt.year
+                ).groupby(['sex', 'year', 'age', 'label'])['person_id'].count()
             ),
             do_scaling=True
         )
@@ -94,9 +95,11 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
             module="tlo.methods.healthburden",
             key="dalys",
             custom_generate_series=(
-                lambda df: df.drop(columns='date')
-                    .rename(columns={'age_range': 'age_grp'})
-                    .groupby(['sex', 'year', 'age_grp']).sum().stack()
+                lambda df_: df_.drop(
+                    columns='date'
+                ).rename(
+                    columns={'age_range': 'age_grp'}
+                ).groupby(['sex', 'year', 'age_grp']).sum().stack()
             ),
             do_scaling=True
         )
@@ -151,7 +154,7 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
 
     dats = ['GBD', 'Model']
     sexes = ['F', 'M']
-    sexname = lambda x: 'Females' if x == 'F' else 'Males'
+    sexname = lambda x: 'Females' if x == 'F' else 'Males'  # noqa: E731
 
     fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True, sharex=True, figsize=(40, 40))
 
@@ -184,7 +187,7 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
     dats = ['GBD', 'Model']
 
     all_causes = list(results.index.levels[3])
-    reformat_cause = lambda x: x.replace(' / ', '_')
+    reformat_cause = lambda x: x.replace(' / ', '_')  # noqa: E731
 
     for cause in all_causes:
         try:

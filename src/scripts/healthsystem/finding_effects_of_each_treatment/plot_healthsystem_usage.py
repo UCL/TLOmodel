@@ -14,7 +14,7 @@ from tlo.methods.demography import get_scaling_factor
 rfp = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 results_filename = outputpath / '2020_11_23_health_system_systematic_run.pickle'
-make_file_name = lambda stub: outputpath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
+make_file_name = lambda stub: outputpath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"  # noqa: E731
 
 with open(results_filename, 'rb') as f:
     output = pickle.load(f)['results']['Everything']
