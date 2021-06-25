@@ -72,12 +72,9 @@ def test_basic_run(tmpdir):
     check_dtypes(sim)
 
 
-
 def test_nat_hist_progression(tempdir):
     """Cause infection --> ALRI onset --> complication --> death and check it is logged correctly"""
     pass
-
-
 
 
 def test_basic_run_lasting_two_years(tmpdir):
@@ -96,9 +93,6 @@ def test_basic_run_lasting_two_years(tmpdir):
     log_one_person = log_one_person.set_index('date')
     assert log_one_person.index.equals(pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1)))
     assert set(log_one_person.columns) == set(sim.modules['Alri'].PROPERTIES.keys())
-
-
-
 
 
 # todo - Need some kind of test bed so that Ines can see the effects of the linear models she is programming.

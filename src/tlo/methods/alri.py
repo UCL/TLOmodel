@@ -1479,6 +1479,11 @@ class Alri(Module):
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
+
+# todo @ines; i think this could be done efficiently as a population level event, with all the outcomes determined at
+#  the point of infection with the pathogen... but I don't yet understand all the logic of the model design.
+
+
 class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the main event that runs the acquisition of pathogens that cause Alri.
         It determines who is infected and when and schedules individual IncidentCase events to represent onset.
@@ -1640,7 +1645,6 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         duration_in_days_of_alri = rng.randint(1, 8)  # assumes uniform interval around mean duration with range 4 days
         # date for recovery with uncomplicated Alri
         date_of_outcome = self.module.sim.date + DateOffset(days=duration_in_days_of_alri)
-
         # TODO: find natural course of disease duration estimates
 
         # ----------------------------------- clinical symptoms -----------------------------------
@@ -1706,6 +1710,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         # todo @ines - why is death not linked to the complications that are experienced?
         # todo @ines - the complications don't seem to do anything (don't affect risk of death etc?)
         for disease in m.disease_type:
+            #todo @ines - this construction is wrong; there is one disease_type for this ALRI case, right?
             prob_death_from_ALRI = m.mortality_equations_by_disease[disease].predict(df.loc[[person_id]]).values[0]
             if rng.rand() < prob_death_from_ALRI:
                 self.sim.schedule_event(AlriDeathEvent(self.module, person_id),
@@ -1713,8 +1718,6 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             else:
                 self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id),
                                         date_of_outcome)
-
-
 
 
 class AlriComplicationOnsetEvent(Event, IndividualScopeEventMixin):
