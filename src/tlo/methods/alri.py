@@ -1,3 +1,8 @@
+# todo - finish going through logic (got to IncidentCase) simplifying and tidying
+# todo - keep structure overall but use complciations as a set of bool properties
+# todo - update linear models accordingly
+# todo - consider reducing number of indepedent events (eg. onset comlications instantanesouly with infection)
+
 """
 Childhood Acute Lower Respiratory Infection Module
 
