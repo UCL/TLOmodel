@@ -461,7 +461,7 @@ class Demography(Module):
         """
         Compute the scaling factor, if it is possible to do so.
 
-        The scaling factor is the ratio of {Real Population} to {Model Pop Size}. It is used to mulitply model ouputs
+        The scaling factor is the ratio of {Real Population} to {Model Pop Size}. It is used to multiply model outputs
         in order to produce statistics that will be of the same scale as the real population.
 
         It is estimated by comparing the population size with the national census in the year that the census was
@@ -550,7 +550,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
     def get_all_cause_mort_risk_per_poll(self):
         """Compute the all-cause risk of death per poll"""
-        # Get time elasped between each poll:
+        # Get time elapsed between each poll:
         dur_in_years_between_polls = np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y')
 
         # Compute all-cause mortality risk per poll
