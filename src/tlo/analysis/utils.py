@@ -5,6 +5,7 @@ import os
 import pickle
 from ast import literal_eval
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -250,7 +251,8 @@ def make_age_grp_types():
 def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
     """Returns paths of folders associated with a batch_file, in chronological order."""
     stub = scenario_filename.rstrip('.py')
-    folders = [Path(f) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
+    f: os.DirEntry
+    folders = [Path(f.path) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
     folders.sort()
     return folders
 
@@ -261,6 +263,7 @@ def get_scenario_info(scenario_output_dir: Path) -> dict:
     TODO: read the JSON file to get further information
     """
     info = dict()
+    f: os.DirEntry
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
 
     info['number_of_draws'] = len(draw_folders)
@@ -274,6 +277,7 @@ def get_scenario_info(scenario_output_dir: Path) -> dict:
 def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> dict:
     """Utility function to create a dict contaning all the logs from the specified run within a batch set"""
     folder = results_folder / str(draw) / str(run)
+    p: os.DirEntry
     pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
     if name is not None:
         pickles = [p for p in pickles if p.name in f"{name}.pickle"]
@@ -287,7 +291,7 @@ def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> d
     return output
 
 
-def extract_params(results_folder: Path) -> pd.DataFrame:
+def extract_params(results_folder: Path) -> Optional[pd.DataFrame]:
     """Utility function to get overridden parameters from scenario runs
 
     Returns dateframe summarizing parameters that change across the draws. It produces a dataframe with index of draw
@@ -296,6 +300,7 @@ def extract_params(results_folder: Path) -> pd.DataFrame:
     """
 
     try:
+        f: os.DirEntry
         # Get the paths for the draws
         draws = [f for f in os.scandir(results_folder) if f.is_dir()]
 
@@ -348,13 +353,13 @@ def extract_results(results_folder: Path,
         names=["draw", "run"]
     )
 
-    def get_multiplier(draw, run):
+    def get_multiplier(_draw, _run):
         """Helper function to get the multiplier from the simulation, if it's specified and do_scaling=True"""
         if not do_scaling:
             return 1.0
         else:
             try:
-                return load_pickled_dataframes(results_folder, draw, run, 'tlo.methods.demography'
+                return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.demography'
                                                )['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
             except KeyError:
                 return 1.0
@@ -433,7 +438,7 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
 
     if only_mean and (not collapse_columns):
         # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
-        om = summary.loc[:, (slice(None), "mean")]
+        om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
         om.columns = [c[0] for c in om.columns.to_flat_index()]
         return om
 
@@ -491,6 +496,7 @@ def create_pickles_locally(scenario_output_dir):
                 with open(logfile.parent / f"{key}.pickle", "wb") as f:
                     pickle.dump(output, f)
 
+    f: os.DirEntry
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
     for draw_folder in draw_folders:
         run_folders = [f for f in os.scandir(draw_folder) if f.is_dir()]
