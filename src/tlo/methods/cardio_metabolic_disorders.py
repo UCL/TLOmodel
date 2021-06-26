@@ -155,7 +155,7 @@ class CardioMetabolicDisorders(Module):
         # Store the symptoms that this module will use (for conditions only):
         self.symptoms = {
             'diabetes_symptoms',
-            'chronic_lower_bp_symptoms',
+            'chronic_lower_back_pain_symptoms',
             'chronic_ischemic_hd_symptoms',
             'chronic_kidney_disease_symptoms'  # was vomiting for CKD
         }

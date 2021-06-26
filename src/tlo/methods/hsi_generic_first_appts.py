@@ -344,7 +344,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     cmd = self.sim.modules['CardioMetabolicDisorders']
                     if ~df.at[person_id, 'nc_hypertension_ever_diagnosed']:
                         if df.at[person_id, 'age_years'] >= 50 or self.module.rng.rand() < cmd.parameters[
-                            'hypertension_hsi'].get('pr_assessed_other_symptoms'):
+                                'hypertension_hsi'].get('pr_assessed_other_symptoms'):
                             hsi_event = HSI_CardioMetabolicDisorders_BloodPressureMeasurement(
                                 module=cmd,
                                 person_id=person_id,
@@ -359,7 +359,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     # If the symptoms include those for an CMD condition, then begin investigation for other
                     # conditions:
                     for condition in cmd.conditions:
-                        if f'{condition}_symptoms' in symptoms:
+                        if ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in symptoms:
                             hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
                                 module=cmd,
                                 person_id=person_id,
