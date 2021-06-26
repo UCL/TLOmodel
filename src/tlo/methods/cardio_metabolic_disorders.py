@@ -836,6 +836,52 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
+class HSI_CardioMetabolicDisorders_BloodPressureMeasurement(HSI_Event, IndividualScopeEventMixin):
+    """
+    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with any symptoms.
+    This event results in a blood pressure measurement being taken that may result in diagnosis and the scheduling of
+    treatment for hypertension.
+    """
+
+    def __init__(self, module, person_id, condition):
+        super().__init__(module, person_id=person_id)
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "CardioMetabolicDisorders_Blood_Pressure_Measurement"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+        # Ignore this event if the person is no longer alive:
+        if not df.at[person_id, 'is_alive']:
+            return hs.get_blank_appt_footprint()
+        # Run a test to diagnose whether the person has condition:
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='assess_hypertension',
+            hsi_event=self
+        )
+        if dx_result:
+            # record date of diagnosis:
+            df.at[person_id, 'nc_hypertension_date_diagnosis'] = self.sim.date
+            df.at[person_id, 'nc_hypertension_ever_diagnosed'] = True
+            # start weight loss recommendation:
+            hs.schedule_hsi_event(
+                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLoss(
+                    module=self.module,
+                    person_id=person_id,
+                    condition='hypertension'
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
+
+    def did_not_run(self):
+        pass
+
+
 class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom

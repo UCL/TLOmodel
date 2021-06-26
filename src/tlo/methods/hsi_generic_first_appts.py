@@ -12,6 +12,7 @@ from tlo.methods.breast_cancer import (
     HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
 from tlo.methods.cardio_metabolic_disorders import (
+    HSI_CardioMetabolicDisorders_BloodPressureMeasurement,
     HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
     HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment)
 from tlo.methods.care_of_women_during_pregnancy import (
@@ -44,6 +45,7 @@ from tlo.methods.prostate_cancer import (
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #
@@ -80,7 +82,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         if is_child:
             the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
         else:
-            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # Adult out-patient appointment
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel1'
@@ -253,8 +255,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                             topen=self.sim.date,
                             tclose=None
                         )
-                    # If the symptoms include pelvic_pain, then begin investigation for Prostate Cancer
-                    # (as well as bladder cancer):
+                        # If the symptoms include pelvic_pain, then begin investigation for Prostate Cancer
+                        # (as well as bladder cancer):
                         if 'pelvic_pain' in symptoms:
                             hsi_event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
                                 module=self.sim.modules['ProstateCancer'],
@@ -337,24 +339,29 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
                 # ---- ASSESSEMENT FOR CARDIO-METABOLIC DISORDERS ----
                 if 'CardioMetabolicDisorders' in self.sim.modules:
-                    # take a blood pressure measurement for everyone
-                    hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
-                        module=self.sim.modules['CardioMetabolicDisorders'],
-                        person_id=person_id,
-                        condition='hypertension'
-                    )
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event,
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
+                    # take a blood pressure measurement for proportion of individuals who have not been diagnosed and
+                    # are either over 50 or younger than 50 but are selected to get tested
+                    cmd = self.sim.modules['CardioMetabolicDisorders']
+                    if ~df.at[person_id, 'nc_hypertension_ever_diagnosed']:
+                        if df.at[person_id, 'age_years'] >= 50 or self.module.rng.rand() < cmd.parameters[
+                            'hypertension_hsi'].get('pr_assessed_other_symptoms'):
+                            hsi_event = HSI_CardioMetabolicDisorders_BloodPressureMeasurement(
+                                module=cmd,
+                                person_id=person_id,
+                                condition='hypertension'
+                            )
+                            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                hsi_event,
+                                priority=0,
+                                topen=self.sim.date,
+                                tclose=None
+                            )
                     # If the symptoms include those for an CMD condition, then begin investigation for other
                     # conditions:
-                    for condition in self.sim.modules['CardioMetabolicDisorders'].conditions:
+                    for condition in cmd.conditions:
                         if f'{condition}_symptoms' in symptoms:
                             hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
-                                module=self.sim.modules['CardioMetabolicDisorders'],
+                                module=cmd,
                                 person_id=person_id,
                                 condition=f'{condition}'
                             )
@@ -368,6 +375,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
     def did_not_run(self):
         logger.debug(key='message',
                      data='HSI_GenericFirstApptAtFacilityLevel1: did not run')
+
 
 # ---------------------------------------------------------------------------------------------------------
 #    HSI_GenericFirstApptAtFacilityLevel0
@@ -405,6 +413,7 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         logger.debug(key='message',
                      data='HSI_GenericFirstApptAtFacilityLevel0: did not run')
 
+
 # ---------------------------------------------------------------------------------------------------------
 #
 #    ** EMERGENCY APPOINTMENTS **
@@ -441,7 +450,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         if is_child:
             the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
         else:
-            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # Adult out-patient appointment
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
@@ -481,15 +490,15 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             # -----  COMPLICATION DURING BIRTH  -----
             if person_id in labour_list:
                 if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                        & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
+                    & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
                     event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
                     health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
-            # -----  COMPLICATION AFTER BIRTH  -----
+                # -----  COMPLICATION AFTER BIRTH  -----
                 if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                        & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
+                    & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
                     event = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
@@ -550,7 +559,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                         topen=self.sim.date,
                     )
         # else:
-            # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
+        # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
 
         # ------ CARDIO-METABOLIC DISORDERS ------
         if 'CardioMetabolicDisorders' in self.sim.modules:
