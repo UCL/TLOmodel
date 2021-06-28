@@ -498,7 +498,7 @@ class HealthSystem(Module):
                 'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
 
             # 5) Check that the event does not request an appointment at a facility level which is not possible
-            appt_type_to_check_list = [k for k, v in hsi_event.EXPECTED_APPT_FOOTPRINT.items() if v > 0]
+            appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
             assert all([self.parameters['ApptType_By_FacLevel'].loc[
                             self.parameters['ApptType_By_FacLevel']['Appt_Type_Code'] == appt_type_to_check,
                             self.parameters['ApptType_By_FacLevel'].columns.str.contains(
