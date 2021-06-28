@@ -495,7 +495,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanA)
 
-    # ---- PERSON WITH NON-SEVERE DEHYRATION AND NON-BLOODY DIARRHOEA: ---> PLAN B ----
+    # ---- PERSON WITH NON-SEVERE DEHYDRATION AND NON-BLOODY DIARRHOEA: ---> PLAN B ----
     # Set up the simulation:
     sim, hsi_event = make_blank_simulation()
 
