@@ -1159,7 +1159,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If the woman is an inpatient when ANC1 is scheduled, she will try and return at the next appropriate
         # gestational age
-        elif df.at[individual_id, 'bd_is_inpatient']:
+        elif df.at[individual_id, 'hs_is_inpatient']:
             # We assume that she will return for her first appointment at the next gestation in the schedule
             logger.debug(key='msg', data=f'mother {individual_id} is scheduled to attend ANC today but is currently an '
                                          f'inpatient- she will be scheduled to arrive at her next visit instead and'
@@ -1218,7 +1218,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If the woman is currently an inpatient then she will return at the next point in the contact schedule but
         # receive the care she has missed in this visit
-        elif df.at[individual_id, 'bd_is_inpatient']:
+        elif df.at[individual_id, 'hs_is_inpatient']:
             logger.debug(key='msg', data=f'Mother {individual_id} was due to receive ANC today but she is an inpatient'
                                          f'- we will now determine if she will return for this visit in the future')
             self.antenatal_care_scheduler(individual_id, visit_to_be_scheduled=this_visit_number,
@@ -2468,7 +2468,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
 
         # If the woman is no longer alive, pregnant is in labour or is an inpatient already then the event doesnt run
         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant'] or \
-           not df.at[person_id, 'la_currently_in_labour'] or not df.at[person_id, 'bd_is_inpatient']:
+           not df.at[person_id, 'la_currently_in_labour'] or not df.at[person_id, 'hs_is_inpatient']:
             return
 
         # We set this admission property to show shes being admitted for induction of labour and hand her over to the
@@ -2509,7 +2509,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant']:
             return
 
-        if ~df.at[person_id, 'bd_is_inpatient'] and ~df.at[person_id, 'la_currently_in_labour']:
+        if ~df.at[person_id, 'hs_is_inpatient'] and ~df.at[person_id, 'la_currently_in_labour']:
             logger.debug(key='msg', data=f'Mother {person_id} has presented at HSI_CareOfWomenDuringPregnancy_Maternal'
                                          f'EmergencyAssessment to seek care for a complication ')
 
@@ -2565,7 +2565,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         if not mother.is_alive:
             return
 
-        if mother.is_pregnant and ~mother.la_currently_in_labour and ~mother.bd_is_inpatient:
+        if mother.is_pregnant and ~mother.la_currently_in_labour and ~mother.hs_is_inpatient:
 
             logger.debug(key='message', data=f'Mother {person_id} has been admitted for treatment of a complication of '
                                              f'her pregnancy ')
@@ -2842,7 +2842,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
             return
 
         # We only run the event if the woman is not already in labour or already admitted due to something else
-        if ~mother.la_currently_in_labour and ~mother.bd_is_inpatient:
+        if ~mother.la_currently_in_labour and ~mother.hs_is_inpatient:
 
             # Health care worker performs a full blood count
             fbc_result = self.module.full_blood_count_testing(self)
@@ -2909,7 +2909,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
         if not mother.is_alive or not mother.is_pregnant:
             return
 
-        if ~mother.la_currently_in_labour and ~mother.bd_is_inpatient and mother.ps_gest_diab != 'none' \
+        if ~mother.la_currently_in_labour and ~mother.hs_is_inpatient and mother.ps_gest_diab != 'none' \
                 and (mother.ac_gest_diab_on_treatment != 'none') and (mother.ps_gestational_age_in_weeks > 21):
             logger.debug(key='msg', data=f'Mother {person_id} has presented for review of her GDM')
 

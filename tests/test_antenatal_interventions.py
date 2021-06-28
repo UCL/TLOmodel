@@ -466,7 +466,7 @@ def test_anc_contacts_that_should_not_run_wont_run():
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact in hsi_events
 
     # Finally set woman as inpatient when she is due for her first ANC appointment
-    df.at[mother_id, 'bd_is_inpatient'] = True
+    df.at[mother_id, 'hs_is_inpatient'] = True
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
 
     # Check that ANC hasnt ran BUT woman has correctly been scheduled to return for ANC 1 at the next gestational age
@@ -490,7 +490,7 @@ def test_anc_contacts_that_should_not_run_wont_run():
 
     # Set this woman to be an inpatient
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 20
-    df.at[mother_id, 'bd_is_inpatient'] = True
+    df.at[mother_id, 'hs_is_inpatient'] = True
 
     # Run the event and check its hasnt ran as expected
     second_anc.apply(person_id=updated_mother_id, squeeze_factor=0)
