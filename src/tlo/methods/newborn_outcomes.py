@@ -7,6 +7,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, demography, newborn_outcomes_lm
+from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -82,6 +83,24 @@ class NewbornOutcomes(Module):
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'intrapartum stillbirth': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'neonatal': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'Retinopathy of Prematurity':
+            Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'Neonatal Encephalopathy':
+            Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'Neonatal Sepsis Long term Disability':
+            Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'Preterm Birth Disability':
+            Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders')
     }
 
     PARAMETERS = {
@@ -1129,7 +1148,7 @@ class NewbornOutcomes(Module):
             # If the mother has lost a baby who was part of a twin pair during labour, we schedule the death here (
             # to monitor stillbirths)
             if m['single_twin_still_birth']:
-                self.sim.modules['Demography'].do_death(individual_id=child_id, cause='intrapartum stillbirth ',
+                self.sim.modules['Demography'].do_death(individual_id=child_id, cause='intrapartum stillbirth',
                                                         originating_module=self.sim.modules['NewbornOutcomes'])
                 self.sim.modules['PregnancySupervisor'].further_on_birth_pregnancy_supervisor(mother_id)
                 self.sim.modules['PostnatalSupervisor'].further_on_birth_postnatal_supervisor(mother_id, child_id)

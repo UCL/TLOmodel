@@ -186,6 +186,14 @@ class Module:
     # See tlo.methods.Metadata class
     METADATA = {}
 
+    # Subclasses can override this set to declare the causes death that this module contributes to
+    # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
+    CAUSES_OF_DEATH = dict()
+
+    # Subclasses can override this set to declare the causes disability that this module contributes to
+    # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
+    CAUSES_OF_DISABILITY = dict()
+
     # Subclasses may declare this dictionary to specify module-level parameters.
     # We give an empty definition here as default.
     PARAMETERS = {}
@@ -324,6 +332,11 @@ class Module:
         :param child: the new child
         """
         raise NotImplementedError
+
+    def on_simulation_end(self):
+        """This is called after the simulation has ended.
+        Modules do not need to declare this."""
+        pass
 
     def __getattr__(self, name):
         """Look up a module parameter as though it is an object property.

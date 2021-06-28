@@ -126,6 +126,12 @@ class Epi(Module):
         # HPV vaccine given from 2018 onwards
         sim.schedule_event(HpvScheduleEvent(self), pd.to_datetime("2018/01/01", format="%Y/%m/%d"))
 
+        # Update paramerer "district_vaccine_coverage" to use district_num rather than the name of the district;
+        self.parameters["district_vaccine_coverage"]["District"] = \
+            self.parameters["district_vaccine_coverage"]["District"].map(
+                {v: k for k, v in self.sim.modules['Demography'].parameters['district_num_to_district_name'].items()}
+            )
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
 
@@ -152,7 +158,7 @@ class Epi(Module):
 
         # look up coverage of every vaccine
         # anything delivered after 12months needs the estimate from the following year
-        district = df.at[child_id, 'district_of_residence']
+        district = df.at[child_id, 'district_num_of_residence']
 
         # Initialise all the properties that this module looks after:
         df.at[child_id, "va_bcg"] = False
