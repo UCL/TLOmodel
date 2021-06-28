@@ -576,6 +576,11 @@ class CareOfWomenDuringPregnancy(Module):
     # number of visits she has attended at the time each HSI runs (see ANC HSIs)
 
     def check_intervention_should_run_and_update_mni(self, person_id, int_1, int2):
+        """
+        This function is called to check if specific interventions within the ANC matrix should run for an individual.
+        If the individual has received the intervention the appropriate amount of times per pregnancy then the
+        intervention wont run again
+        """
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         if int_1 not in mni[person_id]['anc_ints']:
@@ -710,7 +715,7 @@ class CareOfWomenDuringPregnancy(Module):
                 df.at[person_id, 'ac_receiving_iron_folic_acid'] = True
 
         if (outcome_of_request_for_consumables['Item_Code'][item_code_diet_supps]) and \
-            (df.at[person_id, 'li_bmi'] < 19):
+           (df.at[person_id, 'li_bmi'] == 1):
             df.at[person_id, 'ac_receiving_bep_supplements'] = True
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'b_e_p'})
 
@@ -787,15 +792,11 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        params = self.current_parameters
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        # TODO: why is this applied at each visit with other daily supplements (iron, bep etc) are only applied once???
-        # todo: check these are the right risk factors
-
-        if ~df.at[person_id, 'ac_receiving_calcium_supplements'] and ((df.at[person_id, 'la_parity'] == 0) or
-                                                                      ((df.at[person_id, 'la_parity'] > 4))):
+        if not df.at[person_id, 'ac_receiving_calcium_supplements'] and \
+            ((df.at[person_id, 'la_parity'] == 0) or (df.at[person_id, 'la_parity'] > 4)):
 
             # Define consumables
             item_code_calcium_supp = pd.unique(
@@ -1931,8 +1932,6 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
                                                      recommended_gestation_next_anc=gest_age_next_contact,
                                                      facility_level=self.ACCEPTED_FACILITY_LEVEL)
-
-            # todo: were providing the interventions again to people who have been caught up
 
             # Then we administer interventions that are due to be delivered at this womans gestational age, which may be
             # in addition to intervention delivered in ANC2

@@ -65,6 +65,15 @@ def set_pregnant_pop(sim, start_date):
         sim.modules['Labour'].set_date_of_labour(person)
 
 
+def set_pregnant_pop_age_correct(sim):
+    df = sim.population.props
+
+    all = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years >14) & (df.age_years < 49)]
+    df.loc[all.index, 'is_pregnant'] = True
+    df.loc[all.index, 'date_of_last_pregnancy'] = sim.start_date
+    for person in all.index:
+        sim.modules['Labour'].set_date_of_labour(person)
+
 def set_labour_pop(sim, start_date):
     df = sim.population.props
 
@@ -99,7 +108,7 @@ def set_labour_pop_age_correct(sim):
                                                                                   'la_due_date_current_pregnancy'])
 
 
-def do_run_pregnancy_only(config_name, start_date, end_date, seed, population, parameters):
+def do_run_pregnancy_only(config_name, start_date, end_date, seed, population, parameters, age_correct):
     log_config = {
         "filename": f"{config_name}_calibration_{seed}",  # The name of the output file (a timestamp will be appended).
         "directory": "./outputs/calibration_files",
@@ -110,7 +119,10 @@ def do_run_pregnancy_only(config_name, start_date, end_date, seed, population, p
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
     register_modules(sim)
     sim.make_initial_population(n=population)
-    set_pregnant_pop(sim, start_date)
+    if not age_correct:
+        set_pregnant_pop(sim, start_date)
+    else:
+        set_pregnant_pop_age_correct(sim)
 
     if parameters == 2015:
         def switch_parameters(master_params, current_params):
@@ -202,24 +214,11 @@ def do_normal_run_all_pregnant(config_name, start_date, end_date, seed, populati
 
 # Get the log
 
-
-do_run_pregnancy_only(config_name='cov_anc_ints_test_new', start_date=Date(2010, 1, 1), end_date=Date(2010, 10, 1),
-                      seed=101, population=5000, parameters=2010)
-
-#seeds = [94]
-#for seed in seeds:
-#    do_labour_run_only(config_name='neonatal_check', start_date=Date(2010, 1, 1),
-#                       end_date=Date(2010, 4, 1), seed=seed, population=2500, parameters=2010)
-    #do_labour_run_only(config_name='pnc_check_15_new', start_date=Date(2015, 1, 1),
-    #                   end_date=Date(2015, 4, 1), seed=seed, population=2500, parameters=2015)
-
-#seeds = [77]
-#for seed in seeds:
-#    do_normal_run_all_pregnant(config_name='anc_calib_age_corr_15', start_date=Date(2010, 1, 1),
-#                               end_date=Date(2010, 10, 1), seed=seed, population=10000, parameters=2015)
-
-"""seeds = [77, 78]
-do_labour_run_only(config_name='pnc_test', start_date=Date(2010, 1, 1),
-                   end_date=Date(2010, 3, 1), seed=seeds[0], population=5000, parameters=2010)
-do_labour_run_only(config_name='pnc_test', start_date=Date(2010, 1, 1),
-                   end_date=Date(2010, 3, 1), seed=seeds[1], population=5000, parameters=2015)"""
+seeds = [110]
+for seed in seeds:
+    do_run_pregnancy_only(config_name='death_test_2010_more_births', start_date=Date(2010, 1, 1),
+                          end_date=Date(2012, 1, 1),
+                          seed=seed, population=10000, parameters=2010, age_correct=True)
+    do_run_pregnancy_only(config_name='death_test_2015_more_births', start_date=Date(2015, 1, 1),
+                          end_date=Date(2017, 1, 1),
+                          seed=seed, population=10000, parameters=2015, age_correct=True)

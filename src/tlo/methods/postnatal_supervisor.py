@@ -22,12 +22,8 @@ class PostnatalSupervisor(Module):
     For mothers: This module applies risk of complications across the postnatal period, which is  defined as birth
     until day 42 post-delivery. PostnatalWeekOne Event represents the first week post birth where risk of complications
     remains high. The primary mortality causing complications here are infection/sepsis, secondary postpartum
-    haemorrhage and hypertension. Women with or without complications may/may not seek Postnatal Care at day 7 post
-    birth (we assume women who seek care will also bring their newborns with them to the HSI where they will also be
-    assessed). This HSI assesses mothers and newborns and schedules admissions if complications are found. The
-    PostnatalSupervisor Event applies risk of complications weekly from week 2-6 (ending on day 42). This event also
-    determines additional care seeking for mothers who are unwell during this time period. All maternal variables are
-    reset on day 42.
+    haemorrhage and hypertension. Women with or without complications may/may not seek Postnatal Care within the Labour
+    module for assessment and treatment of any complications assigned in this module.
 
     For neonates: This module applies risk of complications during the neonatal period, from birth until day 28. The
     PostnatalWeekOne Event applies risk of early onset neonatal sepsis (sepsis onsetting prior to day 7 of life). Care
@@ -48,7 +44,17 @@ class PostnatalSupervisor(Module):
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHSYSTEM,
                 Metadata.USES_HEALTHBURDEN}  # declare that this is a disease module (leave as empty set otherwise)
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal disorders'),
+        'neonatal': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders')
+    }
 
+    # Declare Causes of Disability
+    # todo - distinguish the dalys bewteen maternal and neonatal (here, lumping all under maternal)
+    CAUSES_OF_DISABILITY = {
+        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal disorders')
+    }
     PARAMETERS = {
         # OBSTETRIC FISTULA
         'prob_obstetric_fistula': Parameter(

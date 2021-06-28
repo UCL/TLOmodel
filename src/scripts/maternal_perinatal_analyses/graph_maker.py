@@ -9,17 +9,11 @@ import statistics as st
 import pandas as pd
 
 
-def get_incidence(logs_dict, module, complication, dictionary):
-    incidence = dict()
-    for file in logs_dict:
-        if f'tlo.methods.{module}' in logs_dict[file]:
-            if 'maternal_complication' in logs_dict[file][f'tlo.methods.{module}']:
-                comps = logs_dict[file][f'tlo.methods.{module}']['maternal_complication']
-                data = {file: len(comps.loc[(comps['type'] == f'{complication}')])}
-
-                incidence.update(data)
-
-    dictionary[complication] = incidence
+def get_incidence(logs_dict_file, module, complication, dictionary):
+    if f'tlo.methods.{module}' in logs_dict_file:
+        if 'maternal_complication' in logs_dict_file[f'tlo.methods.{module}']:
+            comps = logs_dict_file[f'tlo.methods.{module}']['maternal_complication']
+            dictionary[complication] = len(comps.loc[(comps['type'] == f'{complication}')])
 
 
 def get_prop_unintended_preg(logs_dict, dict):
@@ -68,16 +62,14 @@ def get_ip_stillbirths(logs_dict):
     return ip_stillbirths
 
 
-def get_htn_disorders_graph(master_dict_an, master_dict_la):
+def get_htn_disorders_graph(master_dict_an, master_dict_la, master_dict_pn, denominator):
 
-    gh_rate = (sum(master_dict_an['mild_gest_htn'].values()) / 10000) * 1000
-    sgh_rate = ((sum(master_dict_an['severe_gest_htn'].values()) +
-                 sum(master_dict_la['severe_gest_htn'].values())) / 10000) * 1000
-    mpe_rate = (sum(master_dict_an['mild_pre_eclamp'].values()) / 10000) * 1000
-    spe_rate = ((sum(master_dict_an['severe_pre_eclamp'].values()) +
-                 sum(master_dict_la['severe_pre_eclamp'].values())) / 10000) * 1000
-    ec_rate = ((sum(master_dict_an['eclampsia'].values()) +
-                sum(master_dict_la['eclampsia'].values())) / 10000) * 1000
+    """gh_rate = (master_dict_an['mild_gest_htn'] / denominator) * 1000
+    sgh_rate = ((master_dict_an['severe_gest_htn'] +
+                 master_dict_la['severe_gest_htn']) / denominator) * 1000
+    mpe_rate = (master_dict_an['mild_pre_eclamp'] / denominator) * 1000
+    spe_rate = ((master_dict_an['severe_pre_eclamp'] + master_dict_la['severe_pre_eclamp']) / denominator) * 1000
+    ec_rate = ((master_dict_an['eclampsia'] + master_dict_la['eclampsia']) / denominator) * 1000
 
     N = 5
     model_rates = (gh_rate, sgh_rate, mpe_rate, spe_rate, ec_rate)
@@ -91,19 +83,120 @@ def get_htn_disorders_graph(master_dict_an, master_dict_la):
     plt.title('Rates of hypertensive disorders (antenatal + intrapartum)')
     plt.xticks(ind + width / 2, ('GH', 'SGH', 'MPE', 'SPE', 'EC'))
     plt.legend(loc='best')
+    plt.show()"""
+
+    an_mpe_rate = (master_dict_an['mild_pre_eclamp'] / denominator) * 1000
+    pn_mpe_rate = (master_dict_pn['mild_pre_eclamp'] / denominator) * 1000
+
+    an_spe_rate = (master_dict_an['severe_pre_eclamp'] / denominator) * 1000
+    la_spe_rate = (master_dict_la['severe_pre_eclamp'] / denominator) * 1000
+    pn_spe_rate = (master_dict_pn['severe_pre_eclamp'] / denominator) * 1000
+
+    an_ec_rate = (master_dict_an['eclampsia'] / denominator) * 1000
+    la_ec_rate = (master_dict_la['eclampsia'] / denominator) * 1000
+    pn_ec_rate = (master_dict_pn['eclampsia'] / denominator) * 1000
+
+    an_gh_rate = (master_dict_an['mild_gest_htn'] / denominator) * 1000
+    pn_gh_rate = (master_dict_pn['mild_gest_htn'] / denominator) * 1000
+
+    an_sgh_rate = (master_dict_an['severe_gest_htn'] / denominator) * 1000
+    la_sgh_rate = (master_dict_la['severe_gest_htn'] / denominator) * 1000
+    pn_sgh_rate = (master_dict_pn['severe_gest_htn'] / denominator) * 1000
+
+    labels = ['PE', 'SPE', 'EC', 'GH', 'SGH']
+    an_rates = [an_mpe_rate, an_spe_rate, an_ec_rate, an_gh_rate, an_sgh_rate]
+    la_rates =[0, la_spe_rate, la_ec_rate, 0, la_sgh_rate]
+    pn_rates =[pn_mpe_rate, pn_spe_rate, pn_ec_rate, pn_gh_rate, pn_sgh_rate]
+
+    width = 0.35
+    fig, ax = plt.subplots()
+    ax.bar(labels, an_rates, width, label='Antenatal Rate', color='lightcoral')
+    ax.bar(labels, la_rates, width, label='Intrapartum Rate', color='mistyrose')
+    ax.bar(labels, pn_rates, width, bottom=pn_rates, label='Postnatal Rate', color='firebrick')
+
+    ax.set_ylabel('Rate per 1000 pregnancies')
+    ax.set_title('Hypertensive disorders of pregnancy')
+    ax.legend()
     plt.show()
 
-def get_generic_incidence_graph(master_dict, complication, target):
 
+def get_generic_incidence_graph(complication, dict_2010, dict_2015, denominator, target_2010, target_2015, colours):
 
-    rate = (sum(master_dict[f'{complication}'].values()) / 10000) * 1000
-    objects = ('Total FDR', 'Hospital DR', 'Health Centre DR', 'Calibration')
-    y_pos = np.arange(len(objects))
-    plt.bar(y_pos, [fd_rate_2010, hpd_rate_2010, hcd_rate_2010, 73], align='center', alpha=0.5)
-    plt.xticks(y_pos, objects)
-    plt.ylabel('Facility Deliveries/ Total births')
-    plt.title('Facility Delivery Rate 2010')
+    rate_2010 = (dict_2010[complication] / denominator) * 1000
+    print(f'{complication} rate 2010 {rate_2010}')
+    rate_2015 = (dict_2015[complication] / denominator) * 1000
+    print(f'{complication} rate 2015 {rate_2015}')
+
+    N = 2
+    model_rates = (rate_2010, rate_2015)
+    target_rates = (target_2010, target_2015)
+
+    ind = np.arange(N)
+    width = 0.35
+    plt.bar(ind, model_rates, width, label='Model', color=colours[0])
+    plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
+    plt.ylabel(f'Rate per 000 pregnancies')
+    plt.title(f'Modelled incidence of {complication}')
+    plt.xticks(ind + width / 2, ('2010', '2015'))
+    plt.legend(loc='best')
     plt.show()
+
+
+def get_incidence_graph_from_an_and_la(complication, dict_an_2010, dict_la_2010, dict_an_2015, dict_la_2015,
+                                       denom_10, denom15, target_2010, target_2015, colours):
+
+    total_comps_10 = dict_an_2010[complication] + dict_la_2010[complication]
+    total_comps_15 = dict_an_2015[complication] + dict_la_2015[complication]
+
+    rate_2010 = (total_comps_10 / denom_10) * 1000
+    print(f'{complication} rate 2010 {rate_2010}')
+    rate_2015 = (total_comps_15 / denom15) * 1000
+    print(f'{complication} rate 2015 {rate_2015}')
+
+    N = 2
+    model_rates = (rate_2010, rate_2015)
+    target_rates = (target_2010, target_2015)
+
+    ind = np.arange(N)
+    width = 0.35
+    plt.bar(ind, model_rates, width, label='Model', color=colours[0])
+    plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
+    plt.ylabel(f'Rate per 000 facility deliveries')
+    plt.title(f'Modelled incidence of {complication}')
+    plt.xticks(ind + width / 2, ('2010', '2015'))
+    plt.legend(loc='best')
+    plt.show()
+
+def get_preterm_birth_graph(dict_2010, dict_2015, total_births_2010, total_births_2015, colours):
+
+    early_rate_2010 = (dict_2010['early_preterm_labour'] / total_births_2010) * 100
+    print(f'eptl rate 2010 {early_rate_2010}')
+    late_rate_2010 = (dict_2010['late_preterm_labour'] / total_births_2010) * 100
+    print(f'lptl rate 2010 {late_rate_2010}')
+    total_preterm_rate_2010 = early_rate_2010 + late_rate_2010
+
+    early_rate_2015 = (dict_2015['early_preterm_labour'] / total_births_2015) * 100
+    print(f'eptl rate 2015 {early_rate_2015}')
+    late_rate_2015 = (dict_2015['late_preterm_labour'] / total_births_2015) * 100
+    print(f'lptl rate 2015 {late_rate_2015}')
+    total_preterm_rate_2015 = early_rate_2015 + late_rate_2015
+
+    N = 6
+    model_rates = (total_preterm_rate_2010, late_rate_2010, early_rate_2010, total_preterm_rate_2015, early_rate_2015,
+                   late_rate_2015)
+    target_rates = (19.3, 14.5, 4.7, 19.3, 14.5, 4.7)
+
+    ind = np.arange(N)
+    width = 0.35
+    plt.bar(ind, model_rates, width, label='Model', color=colours[0])
+    plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
+    plt.ylabel(f'Rate per 00 births')
+    plt.title(f'Modelled incidence of Preterm Birth')
+    plt.xticks(ind + width / 2, ('Rate 10', 'Late 10', 'Early 10', 'Total 15', 'Late 15', 'Early 15', ))
+    plt.legend(loc='best')
+    plt.show()
+
+
 
 
 def get_anc_coverage_graph(logs_dict_file, year):
@@ -204,6 +297,14 @@ def get_coverage_of_anc_interventions(logs_dict_file):
     plt.legend(loc='best')
     plt.show()
 
+
+def get_total_facility_deliveries(logs_dict_file):
+    if 'delivery_setting' in logs_dict_file['tlo.methods.labour']:
+        fd_df = logs_dict_file[f'tlo.methods.labour']['delivery_setting']
+        facility_deliveries = len(fd_df.loc[fd_df['facility_type'] == 'hospital']) + \
+                               len(fd_df.loc[fd_df['facility_type'] == 'health_centre'])
+
+        return facility_deliveries
 
 def get_facility_delivery_graph(logs_dict_file, total_births, year):
     hospital_deliveries = 0
@@ -321,4 +422,57 @@ def get_pnc_coverage(logs_dict_file, total_births, year):
     plt.xticks(y_pos, objects)
     plt.ylabel('PNC visits/Total neonates with 1 or more visit')
     plt.title('Distribution of neonatal PNC visits')
+    plt.show()
+
+def get_mmr(logs_dict_file, list, live_births, year):
+    total_direct_death = 0
+    total_indirect_death = 0
+
+    if 'death' in logs_dict_file['tlo.methods.demography']:
+        total_deaths = logs_dict_file['tlo.methods.demography']['death']
+        for cause in list:
+            number_of_deaths = len(total_deaths.loc[(total_deaths['cause'] == f'{cause}')])
+
+            total_direct_death += number_of_deaths
+
+        deaths = total_deaths.loc[
+            total_deaths['pregnancy'] & (total_deaths['cause'].str.contains('AIDS|severe_malaria|Suicide|diabetes|'
+                                                                            'chronic_kidney_disease|'
+                                                                            'chronic_ischemic_hd'))]
+        indirect_deaths_preg_2011 = len(deaths)
+
+        indirect_deaths_postnatal_2011 = len(
+            total_deaths.loc[total_deaths['postnatal'] &
+                             (total_deaths['cause'].str.contains('AIDS|severe_malaria|Suicide|diabetes|'
+                                                                 'chronic_kidney_disease|chronic_ischemic_hd'))])
+
+        total_indirect_death += indirect_deaths_preg_2011
+        total_indirect_death += indirect_deaths_postnatal_2011
+
+    maternal_deaths = total_direct_death + total_indirect_death
+    total_mmr = (maternal_deaths / live_births) * 100000
+
+    prop_indirect_deaths = (total_indirect_death / maternal_deaths) * 100
+    indirect_mmr = (total_indirect_death / live_births) * 100000
+    direct_mmr = (total_direct_death / live_births) * 100000
+
+    # PLOT ...
+    labels = [f'{year}', 'Calib. Target']
+
+    if year == 2010:
+        direct_deaths = [direct_mmr, 540]
+        indirect_deaths = [indirect_mmr, 135]
+    else:
+        direct_deaths = [direct_mmr, 307]
+        indirect_deaths = [indirect_mmr, 132]
+
+    width = 0.35
+    fig, ax = plt.subplots()
+    ax.bar(labels, direct_deaths, width, label='Direct Deaths')
+    ax.bar(labels, indirect_deaths, width, bottom=direct_deaths,
+           label='Indirect Deaths')
+
+    ax.set_ylabel('Maternal Deaths per 100,000 live births')
+    ax.set_title(f'Maternal Mortality Ratio Calibration {year}')
+    ax.legend()
     plt.show()
