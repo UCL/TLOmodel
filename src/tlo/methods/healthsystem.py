@@ -48,6 +48,7 @@ class HealthSystem(Module):
     """
 
     PARAMETERS = {
+        'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
         'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
         'Daily_Capabilities': Parameter(
             Types.DATA_FRAME, 'The capabilities by facility and officer type available each day'
@@ -233,6 +234,10 @@ class HealthSystem(Module):
 
         # Set default parameter for Service Availablity (everthing available)
         self.parameters['Service_Availability'] = ['*']
+
+        # Data on the number of beds available of each type by facility_id
+        self.parameters['BedCapacity'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Bed_Capacity.csv')
 
     def process_consumables_file(self):
         """Helper function for processing the consumables data (stored as self.parameters['Consumables'])
@@ -1103,9 +1108,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # 0) Refesh information ready for new day:
         # - Update Bed Days trackers:
         self.module.bed_days.processing_at_start_of_new_day()
-
-        # Refresh the bd_in_patient status. This event runs every day
-        self.module.bed_days.refresh_in_patient_status()
 
         # - Determine the availability of consumables today based on their probabilities
         self.module.determine_availability_of_consumables_today()
