@@ -22,7 +22,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     pregnancy_supervisor,
-    symptommanager,
+    symptommanager, simplified_births
 )
 
 # %%
@@ -45,7 +45,7 @@ output_files = dict()
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 2)
-popsize = 5000
+popsize = 10000
 
 for label, service_avail in scenarios.items():
     log_config = {'filename': 'LogFile'}
@@ -54,14 +54,15 @@ for label, service_avail in scenarios.items():
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_avail),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )

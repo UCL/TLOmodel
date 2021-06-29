@@ -22,12 +22,18 @@ from tlo.methods import (
     hiv
 )
 from tlo.methods.diarrhoea import (
-    HSI_Diarrhoea_Dysentery,
-    HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea,
-    HSI_Diarrhoea_Severe_Persistent_Diarrhoea,
-    HSI_Diarrhoea_Treatment_PlanA,
-    HSI_Diarrhoea_Treatment_PlanB,
-    HSI_Diarrhoea_Treatment_PlanC,
+    HSI_AcuteDiarrhoea_PlanA,
+    HSI_AcuteDiarrhoea_PlanB,
+    HSI_AcuteDiarrhoea_PlanC,
+    HSI_PersistentDiarrhoea_PlanA,
+    HSI_PersistentDiarrhoea_PlanB,
+    HSI_PersistentDiarrhoea_PlanC,
+    HSI_AcuteDiarrhoea_Dysentery_PlanA,
+    HSI_AcuteDiarrhoea_Dysentery_PlanB,
+    HSI_AcuteDiarrhoea_Dysentery_PlanC,
+    HSI_PersistentDiarrhoea_Dysentery_PlanA,
+    HSI_PersistentDiarrhoea_Dysentery_PlanB,
+    HSI_PersistentDiarrhoea_Dysentery_PlanC,
 )
 from tlo.methods.healthsystem import HSI_Event
 
@@ -499,7 +505,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     )
 
     assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
-    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanA)
+    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_AcuteDiarrhoea_PlanA)
 
     # ---- PERSON WITH NON-SEVERE DEHYRATION AND NON-BLOODY DIARRHOEA: ---> PLAN B ----
     # Set up the simulation:
@@ -539,7 +545,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     )
 
     assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
-    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanB)
+    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_AcuteDiarrhoea_PlanB)
 
     # %% ---- PERSON WITH SEVERE DEHYRATION and BLOODY DIARRHOEA: --> PLAN C PLUS DYSSENTRY HSI ----
 
@@ -586,8 +592,8 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     )
 
     assert 2 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
-    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanC)
-    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_Diarrhoea_Dysentery)
+    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_AcuteDiarrhoea_PlanC)
+    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_AcuteDiarrhoea_Dysentery_PlanA)
 
     # %% ---- PERSON WITH NO DEHYDRATION and NON-BLOODY DIARRHOEA BUT LONG-LASTING : --> PLAN A PLUS NON-SEVERE ----
 
@@ -628,8 +634,8 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     )
 
     assert 2 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
-    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanA)
-    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea)
+    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_AcuteDiarrhoea_PlanA)
+    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_PersistentDiarrhoea_PlanA)
 
     # %% ---- PERSON WITH SOME DEHYDRATION and NON-BLOODY DIARRHOEA BUT LONG-LASTING : --> PLAN B PLUS SEVERE ----
 
@@ -670,8 +676,8 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     )
 
     assert 2 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
-    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Severe_Persistent_Diarrhoea)
-    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_Diarrhoea_Treatment_PlanB)
+    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_PersistentDiarrhoea_PlanB)
+    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_AcuteDiarrhoea_PlanB)
 
 
 def test_run_each_of_the_HSI():
@@ -707,12 +713,18 @@ def test_run_each_of_the_HSI():
         sim.modules['HealthSystem'].prob_item_codes_available > 0.0
 
     list_of_hsi = [
-        'HSI_Diarrhoea_Treatment_PlanA',
-        'HSI_Diarrhoea_Treatment_PlanB',
-        'HSI_Diarrhoea_Treatment_PlanC',
-        'HSI_Diarrhoea_Severe_Persistent_Diarrhoea',
-        'HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea',
-        'HSI_Diarrhoea_Dysentery'
+        'HSI_AcuteDiarrhoea_PlanA',
+        'HSI_AcuteDiarrhoea_PlanB',
+        'HSI_AcuteDiarrhoea_PlanC',
+        'HSI_PersistentDiarrhoea_PlanA',
+        'HSI_PersistentDiarrhoea_PlanB',
+        'HSI_PersistentDiarrhoea_PlanC',
+        'HSI_AcuteDiarrhoea_Dysentery_PlanA',
+        'HSI_AcuteDiarrhoea_Dysentery_PlanB',
+        'HSI_AcuteDiarrhoea_Dysentery_PlanC',
+        'HSI_PersistentDiarrhoea_Dysentery_PlanA',
+        'HSI_PersistentDiarrhoea_Dysentery_PlanB',
+        'HSI_PersistentDiarrhoea_Dysentery_PlanC',
     ]
 
     for name_of_hsi in list_of_hsi:

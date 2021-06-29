@@ -15,12 +15,18 @@ import numpy as np
 from tlo import Module, logging
 from tlo.methods import Metadata
 from tlo.methods.diarrhoea import (
-    HSI_Diarrhoea_Dysentery,
-    HSI_Diarrhoea_Persistent_Diarrhoea,
-    HSI_Diarrhoea_Severe_Persistent_Diarrhoea,
-    HSI_Diarrhoea_Treatment_PlanA,
-    HSI_Diarrhoea_Treatment_PlanB,
-    HSI_Diarrhoea_Treatment_PlanC,
+    HSI_AcuteDiarrhoea_PlanA,
+    HSI_AcuteDiarrhoea_PlanB,
+    HSI_AcuteDiarrhoea_PlanC,
+    HSI_PersistentDiarrhoea_PlanA,
+    HSI_PersistentDiarrhoea_PlanB,
+    HSI_PersistentDiarrhoea_PlanC,
+    HSI_AcuteDiarrhoea_Dysentery_PlanA,
+    HSI_AcuteDiarrhoea_Dysentery_PlanB,
+    HSI_AcuteDiarrhoea_Dysentery_PlanC,
+    HSI_PersistentDiarrhoea_Dysentery_PlanA,
+    HSI_PersistentDiarrhoea_Dysentery_PlanB,
+    HSI_PersistentDiarrhoea_Dysentery_PlanC,
 )
 from tlo.methods.dxmanager import DxTest
 
@@ -116,7 +122,7 @@ class DxAlgorithmChild(Module):
             # Those who do NOT have DEHYDRATION
 
             # Treatment Plan A for uncomplicated diarrhoea (no dehydration and no danger signs)
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanA(person_id=person_id,
+            schedule_hsi(hsi_event=HSI_AcuteDiarrhoea_PlanA(person_id=person_id,
                                                                  module=self.sim.modules['Diarrhoea']),
                          priority=0,
                          topen=self.sim.date,
@@ -125,7 +131,7 @@ class DxAlgorithmChild(Module):
 
             if duration_in_days >= 14:
                 # 'Non_Severe_Persistent_Diarrhoea'
-                schedule_hsi(hsi_event=HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(person_id=person_id,
+                schedule_hsi(hsi_event=HSI_PersistentDiarrhoea_PlanA(person_id=person_id,
                                                                                      module=self.sim.modules[
                                                                                          'Diarrhoea']),
                              priority=0,
@@ -139,7 +145,7 @@ class DxAlgorithmChild(Module):
             # Given that there is dehydration - schedule an HSI if the duration of diarrhoea has been long
             if duration_in_days >= 14:
                 # 'Severe_Persistent_Diarrhoea'
-                schedule_hsi(hsi_event=HSI_Diarrhoea_Severe_Persistent_Diarrhoea(person_id=person_id,
+                schedule_hsi(hsi_event=HSI_PersistentDiarrhoea_PlanB(person_id=person_id,
                                                                                  module=self.sim.modules['Diarrhoea']),
                              priority=0,
                              topen=self.sim.date,
@@ -149,7 +155,7 @@ class DxAlgorithmChild(Module):
             if not danger_signs:
                 # Treatment Plan B for some dehydration diarrhoea but not danger signs
                 # TODO:add "...and not other severe classification from other disease modules (measles, pneumonia, etc)"
-                schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanB(person_id=person_id,
+                schedule_hsi(hsi_event=HSI_AcuteDiarrhoea_PlanB(person_id=person_id,
                                                                      module=self.sim.modules['Diarrhoea']),
                              priority=0,
                              topen=self.sim.date,
@@ -157,7 +163,7 @@ class DxAlgorithmChild(Module):
                              )
             else:
                 # Danger sign for 'Severe_Dehydration'
-                schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanC(person_id=person_id,
+                schedule_hsi(hsi_event=HSI_AcuteDiarrhoea_PlanC(person_id=person_id,
                                                                      module=self.sim.modules['Diarrhoea']),
                              priority=0,
                              topen=self.sim.date,
@@ -169,7 +175,7 @@ class DxAlgorithmChild(Module):
         #  and so this HSI returns prematurely.
         if blood_in_stool:
             # 'Dysentery'
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Dysentery(person_id=person_id, module=self.sim.modules['Diarrhoea']),
+            schedule_hsi(hsi_event=HSI_AcuteDiarrhoea_Dysentery_PlanA(person_id=person_id, module=self.sim.modules['Diarrhoea']),
                          priority=0,
                          topen=self.sim.date,
                          tclose=None

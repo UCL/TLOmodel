@@ -999,23 +999,10 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # Allocate a date of onset diarrhoea ----------------------------
             date_onset = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
 
-            # Determine if the episode will be ProD (7-13 days) ----------------------------
-            prolonged_episode = m.prob_diarrhoea_is_prolonged[self.pathogen].predict(df.loc[[person_id]]).values[0]
-            if rng.random_sample() < prolonged_episode:
-                duration = 'prolonged'
-            else:
-                duration = 'acute'
-
-            # Determine if the episode will be PD (>=14 days days) ----------------------------
-            persistent_episode = m.prob_diarrhoea_is_persistent.predict(df.loc[[person_id]]).values[0]
-            if rng.random_sample() < persistent_episode:
-                duration = 'persistent'
-
             # ----------------------------------------------------------------------------------------------
             # Create the event for the onset of infection
             self.sim.schedule_event(
-                event=DiarrhoeaIncidentCase(module=self.module, person_id=person_id, pathogen=pathogen,
-                                            duration=duration),
+                event=DiarrhoeaIncidentCase(module=self.module, person_id=person_id, pathogen=pathogen),
                 date=date_onset
             )
 
@@ -1031,10 +1018,9 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
     """
     AGE_GROUPS = {0: '0y', 1: '1y', 2: '2-4y', 3: '2-4y', 4: '2-4y'}
 
-    def __init__(self, module, person_id, pathogen, duration):
+    def __init__(self, module, person_id, pathogen):
         super().__init__(module, person_id=person_id)
         self.pathogen = pathogen
-        self.duration = duration
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -1058,22 +1044,46 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             'gi_last_diarrhoea_dehydration': 'none',
             'gi_last_diarrhoea_recovered_date': pd.NaT,
             'gi_last_diarrhoea_death_date': pd.NaT,
-            'gi_last_diarrhoea_duration_type': self.duration
+
         }
+        # Update the entry in the population dataframe
+        df.loc[person_id, props_new.keys()] = props_new.values()
 
-        # ----------------------- Determine duration for this episode ----------------------
-        mean_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][0]
-        std_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][1]
-        min_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][2]
-        max_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][3]
+        # # ----------------------- Determine duration for this episode ----------------------
+        # mean_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][0]
+        # std_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][1]
+        # min_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][2]
+        # max_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][3]
+        #
+        # #TODOD: do mean days for suration of acute, proD and PERSISTENT
+        #
+        # duration_in_days_of_episode = \
+        #     m.truncated_normal(left_bound=min_duration, right_bound=max_duration,
+        #                        normal_mean=mean_duration, normal_std=std_duration).rvs(random_state=rng)
+        #
+        # date_of_outcome = self.sim.date + DateOffset(days=duration_in_days_of_episode)
+        #
+        # props_new['gi_last_diarrhoea_duration'] = duration_in_days_of_episode
 
-        duration_in_days_of_episode = \
-            m.truncated_normal(left_bound=min_duration, right_bound=max_duration,
-                               normal_mean=mean_duration, normal_std=std_duration).rvs(random_state=rng)
+        # Determine if the episode will be Acute (<7 days) or ProD (7-13 days) ----------------------------
+        duration = int()
 
-        date_of_outcome = self.sim.date + DateOffset(days=duration_in_days_of_episode)
+        prolonged_episode = m.prob_diarrhoea_is_prolonged.predict(df.loc[[person_id]]).values[0]
+        if rng.random_sample() < prolonged_episode:
+            props_new['gi_last_diarrhoea_duration_type'] = 'prolonged'
+            duration = 10
+        else:
+            props_new['gi_last_diarrhoea_duration_type'] = 'acute'
+            duration = 4
 
-        props_new['gi_last_diarrhoea_duration'] = duration_in_days_of_episode
+        # Determine if the episode will be PD (>=14 days days) ----------------------------
+        persistent_episode = m.prob_diarrhoea_is_persistent.predict(df.loc[[person_id]]).values[0]
+        if rng.random_sample() < persistent_episode:
+            props_new['gi_last_diarrhoea_duration_type'] = 'persistent'
+            duration = 21
+
+        date_of_outcome = self.sim.date + DateOffset(days=duration)
+        props_new['gi_last_diarrhoea_duration'] = duration
 
         # ----------------------- Determine symptoms for this episode ----------------------
         possible_symptoms_for_this_pathogen = m.prob_symptoms[self.pathogen]

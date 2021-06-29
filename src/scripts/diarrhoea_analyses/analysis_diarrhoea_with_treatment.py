@@ -23,7 +23,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     pregnancy_supervisor,
-    symptommanager,
+    symptommanager, simplified_births
 )
 
 # %%
@@ -36,7 +36,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 20000
 
 log_config = {
@@ -53,14 +53,15 @@ sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             contraception.Contraception(resourcefilepath=resourcefilepath),
+             # contraception.Contraception(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             labour.Labour(resourcefilepath=resourcefilepath),
-             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+             # labour.Labour(resourcefilepath=resourcefilepath),
+             # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
              diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
              dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
              )
@@ -125,7 +126,7 @@ calibration_incidence_rate_0_year_olds = {
     'adenovirus': 5.866180 / 100.0,
     'cryptosporidium': 3.0886699 / 100.0,
     'campylobacter': 9.8663257 / 100.0,
-    'ST-ETEC': 27.925146 / 100.0,
+    'ETEC': 27.925146 / 100.0,
     'sapovirus': 10.0972179 / 100.0,
     'norovirus': 20.4864004 / 100.0,
     'astrovirus': 5.4208352 / 100.0,
@@ -138,7 +139,7 @@ calibration_incidence_rate_1_year_olds = {
     'adenovirus': 5.8661803 / 100.0,
     'cryptosporidium': 1.1792363 / 100.0,
     'campylobacter': 2.7915478 / 100.0,
-    'ST-ETEC': 17.0477152 / 100.0,
+    'ETEC': 17.0477152 / 100.0,
     'sapovirus': 13.2603114 / 100.0,
     'norovirus': 6.6146727 / 100.0,
     'astrovirus': 3.5974076 / 100.0,
@@ -151,7 +152,7 @@ calibration_incidence_rate_2_to_4_year_olds = {
     'adenovirus': 0.6438 / 100.0,
     'cryptosporidium': 0.4662 / 100.0,
     'campylobacter': 0.4884 / 100.0,
-    'ST-ETEC': 1.9758 / 100.0,
+    'ETEC': 1.9758 / 100.0,
     'sapovirus': 0.555 / 100.0,
     'norovirus': 0.0888 / 100.0,
     'astrovirus': 0.1332 / 100.0,
