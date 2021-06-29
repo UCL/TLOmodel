@@ -494,9 +494,9 @@ class HealthSystem(Module):
         if type(hsi_event.target) is not tlo.population.Population:
 
             # 4) Check that at least one type of appointment is required
-            assert any(value > 0 for value in hsi_event.EXPECTED_APPT_FOOTPRINT.values()), \
+            assert len(hsi_event.EXPECTED_APPT_FOOTPRINT) > 0, (
                 'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
-
+            )
             # 5) Check that the event does not request an appointment at a facility level which is not possible
             appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
             assert all([self.parameters['ApptType_By_FacLevel'].loc[
@@ -512,8 +512,7 @@ class HealthSystem(Module):
             # (ie. Check that this does not demand officers that are never available at a particular facility)
             caps = self.parameters['Daily_Capabilities']
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
-            footprint_is_possible = (len(footprint) > 0) & (
-                caps.loc[footprint.keys(), 'Total_Minutes_Per_Day'] > 0).all()
+            footprint_is_possible = (caps.loc[footprint, 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
                 logger.warning(key="message",
                                data=f"The expected footprint is not possible with the configuration of officers: "
@@ -1017,13 +1016,10 @@ class HealthSystem(Module):
             assert actual_appt_footprint is not None
             assert squeeze_factor is not None
 
-            appts = actual_appt_footprint
             log_info = dict()
             log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
             # key appointment types that are non-zero
-            log_info['Number_By_Appt_Type_Code'] = {
-                key: val for key, val in appts.items() if val
-            }
+            log_info['Number_By_Appt_Type_Code'] = actual_appt_footprint
             log_info['Person_ID'] = hsi_event.target
 
             if squeeze_factor == np.inf:
