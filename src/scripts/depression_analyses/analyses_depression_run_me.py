@@ -1,6 +1,7 @@
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     depression,
@@ -9,6 +10,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -48,6 +51,7 @@ def run():
     # Register the appropriate modules
 
     sim.register(
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
         demography.Demography(resourcefilepath=resources),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
         healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
@@ -56,7 +60,9 @@ def run():
         healthburden.HealthBurden(resourcefilepath=resources),
         contraception.Contraception(resourcefilepath=resources),
         labour.Labour(resourcefilepath=resources),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
         depression.Depression(resourcefilepath=resources),
     )
 

@@ -11,9 +11,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
-    contraception,
     demography,
     diarrhoea,
     dx_algorithm_child,
@@ -21,8 +20,7 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 
@@ -36,8 +34,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
-popsize = 20000
+end_date = Date(2020, 1, 1)
+popsize = 20_000
 
 log_config = {
     'filename': 'LogFile',
@@ -49,20 +47,18 @@ log_config = {
 }
 
 # add file handler for the purpose of logging
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             contraception.Contraception(resourcefilepath=resourcefilepath),
+             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             labour.Labour(resourcefilepath=resourcefilepath),
-             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
              diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
              )
 
 sim.make_initial_population(n=popsize)
@@ -70,7 +66,6 @@ sim.simulate(end_date=end_date)
 
 # Get the output from the logfile
 output = parse_log_file(sim.log_filepath)
-
 
 # %% ----------------------------  INCIDENCE RATE OF DIARRHOEA BY PATHOGEN  ----------------------------
 
@@ -216,17 +211,15 @@ plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_2-4_year_olds" + dates
 plt.tight_layout()
 plt.show()
 
-
 # %% ----------------------------  MEAN DEATH RATE BY PATHOGEN  ----------------------------
-# # TODO: this set of graphs
 # Load the death data to which we calibrate:
 # IHME (www.healthdata.org) / GBD project --> total deaths due to diarrhoea in Malawi,
 # per 100,000 child-years (under 5's) https://vizhub.healthdata.org/gbd-compare/
 # http://ghdx.healthdata.org/gbd-results-tool?params=gbd-api-2017-permalink/9dd202e225b13cc2df7557a5759a0aca
 
 calibration_death_rate_per_year_under_5s = {
-    '2010': 148 / 100000,   # CI: 111-190
-    '2017': 93 / 100000     # CI: 61-135
+    '2010': 148 / 100000,  # CI: 111-190
+    '2017': 93 / 100000  # CI: 61-135
 }
 
 all_deaths = output['tlo.methods.demography']['death']
@@ -244,7 +237,7 @@ deaths['cause_simplified'] = [x[0] for x in deaths['cause'].str.split('_')]
 deaths = deaths.drop(deaths.loc[deaths['cause_simplified'] != 'Diarrhoea'].index)
 deaths = deaths.groupby(by=['age_grp', 'year']).size().reset_index()
 deaths.rename(columns={0: 'count'}, inplace=True)
-deaths.drop(deaths.index[deaths['year'] > 2010.0], inplace=True)
+# deaths.drop(deaths.index[deaths['year'] > 2010.0], inplace=True)
 deaths = deaths.pivot(values='count', columns='age_grp', index='year')
 
 # Death Rate = death count (by year, by age-group) / person-years
@@ -253,12 +246,36 @@ death_rate = deaths.div(py)
 # produce plot comparison in 2010 (<5s):
 death_rate_comparison = pd.Series(
     data={
-        'data': calibration_death_rate_per_year_under_5s['2010'],
-        'model': death_rate.loc[2010].sum()
+        'data (2010)': calibration_death_rate_per_year_under_5s['2010'],
+        'data (2017)': calibration_death_rate_per_year_under_5s['2017'],
+        'model': death_rate.loc[2010].mean()
     }
 )
 
 death_rate_comparison.plot.bar()
 plt.title('Death Rate to Diarrhoea in Under 5s')
 plt.savefig(outputpath / ("Diarrhoea_death_rate_0-5_year_olds" + datestamp + ".pdf"), format='pdf')
+plt.show()
+
+# %% Plot total numbers of death against comparable estimate from GBD
+
+# Get comparison
+comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
+
+# Make a simple bar chart
+comparison.loc[('2015-2019', slice(None), '0-4', 'Childhood Diarrhoea')].sum().plot.bar()
+plt.title('Deaths per year due to Childhood Diarrhoea, 2015-2019')
+plt.tight_layout()
+plt.show()
+
+# %% Look at Case Fatality Rate
+cfr = dict()
+for age_grp in ['0y', '1y', '2-4y']:
+    cfr[age_grp] = deaths[age_grp] / counts[age_grp].apply(pd.Series).sum(axis=1)
+cfr = pd.DataFrame(cfr).drop(index=2015).mean() * 100_000
+
+cfr.plot.bar()
+plt.title('Case Fatality Rate for Diarrhoea')
+plt.ylabel('Deaths per 100k Cases')
+plt.xlabel('Age-Group')
 plt.show()

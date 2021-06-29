@@ -60,6 +60,7 @@ def test_make_a_symptom():
 
 def test_register_duplicate_symptoms():
     symp = Symptom(name='symptom')
+    symp_duplicate = Symptom(name='symptom')
     symp_with_different_properties = Symptom(name='symptom', emergency_in_children=True)
     symp_with_different_name = Symptom(name='symptom_a')
 
@@ -70,8 +71,8 @@ def test_register_duplicate_symptoms():
     assert 1 == len(sm.all_registered_symptoms)
     assert 1 == len(sm.symptom_names)
 
-    # register duplicate (same name and same properties): should give no error
-    sm.register_symptom(symp)
+    # register duplicate (same name and same properties but different instance): should give no error
+    sm.register_symptom(symp_duplicate)
     assert 1 == len(sm.all_registered_symptoms)
     assert 1 == len(sm.symptom_names)
 
