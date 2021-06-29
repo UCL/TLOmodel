@@ -2892,13 +2892,14 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
         # If a this woman has experienced a complication the appointment footprint is changed from normal to
         # complicated
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT.copy()
 
         if df.at[person_id, 'la_sepsis'] or (df.at[person_id, 'la_antepartum_haem'] != 'none') or \
             df.at[person_id, 'la_obstructed_labour'] or df.at[person_id, 'la_uterine_rupture'] \
             or df.at[person_id, 'ps_htn_disorders'] == 'eclampsia' \
            or df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp':
-            actual_appt_footprint['NormalDelivery'] = actual_appt_footprint['CompDelivery']  # todo: is this right?
+            actual_appt_footprint.remove("NormalDelivery")
+            actual_appt_footprint.append("CompDelivery")
 
         return actual_appt_footprint
 
