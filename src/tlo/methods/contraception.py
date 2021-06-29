@@ -5,7 +5,6 @@ import pandas as pd
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import transition_states
-from tlo.methods.healthsystem import HSI_Event
 from tlo.methods import Metadata
 
 logger = logging.getLogger(__name__)
@@ -267,15 +266,6 @@ class Contraception(Module):
         # the index of the row is the contraception type
         df.at[mother_id, 'co_contraception'] = chosen_co.index[0]
 
-        # call HSI here for init2 (post-birth contraception) as well as init1 & switching below
-        # TODO: does this result in repeat costs for the ones still using as well or only for the newly started?
-        contraception_event = HSI_Contraception(module=self)
-        self.sim.modules['HealthSystem'].schedule_hsi_event(contraception_event,
-                                                            priority=1,
-                                                            topen=self.sim.date,
-                                                            tclose=self.sim.date + DateOffset(days=1))
-        logger.debug(key='debug', data='The population wide HSI event has been scheduled successfully!')
-
         post_birth_contraception_summary = {
             'woman_index': mother_id,
             'co_contraception': df.at[mother_id, 'co_contraception']
@@ -355,12 +345,6 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
 
             # only update entries for all those now using a contraceptive
             df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
-            contraception_event = HSI_Contraception(self.module)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(contraception_event,
-                                                                priority=1,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
-            logger.debug(key='message', data='The population wide HSI event has been scheduled successfully!')
 
             for woman in now_using_co:
                 start_contraception_summary = {
@@ -396,14 +380,6 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
 
         # select new contraceptive using switching matrix
         new_co = transition_states(df.loc[switch_co, 'co_contraception'], switching_matrix, rng)
-        # call HSI here after switching as well as init1 above
-        # TODO: does this result in repeat costs for the ones still using as well or only for the newly switched?
-        contraception_event = HSI_Contraception(self.module)
-        self.sim.modules['HealthSystem'].schedule_hsi_event(contraception_event,
-                                                            priority=1,
-                                                            topen=self.sim.date,
-                                                            tclose=self.sim.date + DateOffset(days=1))
-        logger.debug(key='debug', data='The population wide HSI event has been scheduled successfully!')
 
         # log old -> new contraception types
         for woman in switch_co:
@@ -721,244 +697,4 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     description='pregnancy')
 
 
-class HSI_Contraception(HSI_Event, PopulationScopeEventMixin):  # whole population at once
-    """"""
-    def __init__(self, module):
-        super().__init__(module)
-        assert isinstance(module, Contraception)
 
-        # Define the necessary information for a Population level HSI
-        self.TREATMENT_ID = 'Contraception'
-        self.ACCEPTED_FACILITY_LEVEL = 1    # need to comment out line 285 in healthsystem.py: assert 'ACCEPTED_FACILITY_LEVEL' not in dir(hsi_event)
-
-    def apply(self, population, squeeze_factor):
-        df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        # multiply each Unit_Cost by Expected_Units_Per_Case so they can be summed for all Items for each contraceptive
-        # package to get cost of each contraceptive user for each contraceptive
-        item_cost = self.sim.modules['HealthSystem'].parameters['Consumables']['Expected_Units_Per_Case']*\
-                    self.sim.modules['HealthSystem'].parameters['Consumables']['Unit_Cost']
-        consumables['item_cost'] = item_cost
-        # TODO: How long are the units of each item supposed to be for though? e.g. male condoms have 120 units.
-
-        # contraception_consumables = self.parameters['contraception_consumables']
-        # contraception_users = df.co_contraception.isin(['pill', 'IUD', 'injections', 'implant', 'male_condom',  \
-        #                                                 'female_sterilization', 'other_modern'])
-        # consumables_pkgs = self.sim.modules['HealthSystem'].parameters['Consumables'].isin(['Pill', 'IUD',  \
-        #                                                                                     'Injectable', 'Implant',  \
-        #                                                                                     'Male condomm',  \
-        #                                                                                     'Female sterilization',  \
-        #                                                                                     'Female Condom'])
-        #
-        # # loop through the following for each contraceptive
-        # for consumables_pkgs in contraception_users:
-        #   TODO: make this loop by mapping the names of the contraception packages in Consumables to the names in contraception as per above
-
-
-        # Each contraceptive done individually now pending mapping / looping as per above
-
-        # Pill
-        pill_users = df.loc[df.co_contraception == 'pill']
-        pkg_code_pill = pd.unique(consumables.loc[
-                                             consumables['Intervention_Pkg']
-                                             == 'Pill',
-                                             'Intervention_Pkg_Code'])[0]
-        cost_pill = pd.Series(consumables.loc[
-                                         consumables['Intervention_Pkg']
-                                         == 'Pill',
-                                         'item_cost']).sum()    # adds all item costs
-
-        consumables_needed = {'Intervention_Package_Code': {pkg_code_pill: 0}, 'Item_Code': {}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_needed)
-
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pill]:
-            df.loc[pill_users.index, 'pill_received'] = True
-            df.loc[pill_users.index, 'pill_costs'] = cost_pill
-
-        pill_counts = df.pill_received.value_counts()
-        pill_costs = df.pill_costs.sum()
-
-
-        # IUD
-        IUD_users = df.loc[df.co_contraception == 'IUD']
-        pkg_code_IUD = pd.unique(consumables.loc[
-                                             consumables['Intervention_Pkg']
-                                             == 'IUD',
-                                             'Intervention_Pkg_Code'])[0]
-        cost_IUD = pd.Series(consumables.loc[
-                                         consumables['Intervention_Pkg']
-                                         == 'IUD',
-                                         'item_cost']).sum()    # adds all item costs
-
-        consumables_needed = {'Intervention_Package_Code': {pkg_code_IUD: 3}, 'Item_Code': {}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_needed)
-
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_IUD]:
-            df.loc[IUD_users.index, 'IUD_received'] = True
-            df.loc[IUD_users.index, 'IUD_costs'] = cost_IUD
-
-        IUD_counts = df.IUD_received.value_counts()
-        IUD_costs = df.IUD_costs.sum()
-
-
-        # injections
-        injections_users = df.loc[df.co_contraception == 'injections']
-        pkg_code_injections = pd.unique(consumables.loc[
-                                             consumables['Intervention_Pkg']
-                                             == 'Injectable',
-                                             'Intervention_Pkg_Code'])[0]
-        cost_injections = pd.Series(consumables.loc[
-                                         consumables['Intervention_Pkg']
-                                         == 'Injectable',
-                                         'item_cost']).sum()    # adds all item costs
-
-        consumables_needed = {'Intervention_Package_Code': {pkg_code_injections: 2}, 'Item_Code': {}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_needed)
-
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_injections]:
-            df.loc[injections_users.index, 'injections_received'] = True
-            df.loc[injections_users.index, 'injections_costs'] = cost_injections
-
-        injections_counts = df.injections_received.value_counts()
-        injections_costs = df.injections_costs.sum()
-
-
-        # Implant
-        implant_users = df.loc[df.co_contraception == 'implant']
-        pkg_code_implant = pd.unique(consumables.loc[
-                                             consumables['Intervention_Pkg']
-                                             == 'Implant',
-                                             'Intervention_Pkg_Code'])[0]
-        cost_implant = pd.Series(consumables.loc[
-                                         consumables['Intervention_Pkg']
-                                         == 'Implant',
-                                         'item_cost']).sum()    # adds all item costs
-
-        consumables_needed = {'Intervention_Package_Code': {pkg_code_implant: 4}, 'Item_Code': {}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_needed)
-
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_implant]:
-            df.loc[implant_users.index, 'implant_received'] = True
-            df.loc[implant_users.index, 'implant_costs'] = cost_implant
-
-        implant_counts = df.implant_received.value_counts()
-        implant_costs = df.implant_costs.sum()
-
-
-        # Male condoms
-        male_condom_users = df.loc[df.co_contraception == 'male_condom']
-        pkg_code_male_condom = pd.unique(consumables.loc[
-                                         consumables['Intervention_Pkg']
-                                         == 'Male condom',
-                                         'Intervention_Pkg_Code'])[0]
-        cost_male_condom = pd.Series(consumables.loc[
-                                         consumables['Intervention_Pkg']
-                                         == 'Male condom',
-                                         'item_cost']).sum()
-
-        consumables_needed = {'Intervention_Package_Code': {pkg_code_male_condom: 1}, 'Item_Code': {}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_needed)
-
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_male_condom]:
-            df.loc[male_condom_users.index, 'male_condom_received'] = True
-            df.loc[male_condom_users.index, 'male_condom_costs'] = cost_male_condom
-
-        male_condom_counts = df.male_condom_received.value_counts()
-        male_condom_costs = df.male_condom_costs.sum()
-
-
-        # Female sterilization
-        female_sterilization_users = df.loc[df.co_contraception == 'female_sterilization']
-        pkg_code_female_sterilization = pd.unique(consumables.loc[
-                                         consumables['Intervention_Pkg']
-                                         == 'Female sterilization',
-                                         'Intervention_Pkg_Code'])[0]
-        cost_female_sterilization = pd.Series(consumables.loc[
-                                         consumables['Intervention_Pkg']
-                                         == 'Female sterilization',
-                                         'item_cost']).sum()    # adds all item costs
-
-        consumables_needed = {'Intervention_Package_Code': {pkg_code_female_sterilization: 5}, 'Item_Code': {}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_needed)
-
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_female_sterilization]:
-            df.loc[female_sterilization_users.index, 'female_sterilization_received'] = True
-            df.loc[female_sterilization_users.index, 'female_sterilization_costs'] = cost_female_sterilization
-
-        female_sterilization_counts = df.female_sterilization_received.value_counts()
-        female_sterilization_costs = df.female_sterilization_costs.sum()
-
-
-        # Other modern (Female condom)
-        other_modern_users = df.loc[df.co_contraception == 'other_modern']
-        pkg_code_other_modern = pd.unique(consumables.loc[
-                                         consumables['Intervention_Pkg']
-                                         == 'Female Condom',
-                                         'Intervention_Pkg_Code'])[0]
-        cost_female_condom = pd.Series(consumables.loc[
-                                         consumables['Intervention_Pkg']
-                                         == 'Female Condom',
-                                         'item_cost']).sum()    # adds all item costs
-
-        consumables_needed = {'Intervention_Package_Code': {pkg_code_other_modern: 7}, 'Item_Code': {}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_needed)
-
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_other_modern]:
-            df.loc[other_modern_users.index, 'female_condom_received'] = True
-            df.loc[other_modern_users.index, 'female_condom_costs'] = cost_female_condom
-
-        female_condom_counts = df.female_condom_received.value_counts()
-        female_condom_costs = df.female_condom_costs.sum()
-
-
-        # Summary and logging
-        contraception_consumables_summary = {
-            # consumables
-            'pills': sum(pill_counts),
-            'IUDs': sum(IUD_counts),
-            'injections': sum(injections_counts),
-            'implants': sum(implant_counts),
-            'male_condoms': sum(male_condom_counts),
-            'female_sterilizations': sum(female_sterilization_counts),
-            'female_condoms': sum(female_condom_counts),
-            # costs
-            'pill_costs': pill_costs,
-            'IUD_costs': IUD_costs,
-            'injections_costs': injections_costs,
-            'implant_costs': implant_costs,
-            'male_condom_costs': male_condom_costs,
-            'female_sterilization_costs': female_sterilization_costs,
-            'female_condom_costs': female_condom_costs,
-        }
-
-        logger.info(key='contraception_consumables_summary',
-                    data=contraception_consumables_summary,
-                    description='contraception_consumables_summary')
-
-
-
-    def did_not_run(self):
-        logger.debug(key='debug', data='HSI__Contraception: did not run')
-        # return False to prevent this event from being rescheduled if it did not run.
-        return False
