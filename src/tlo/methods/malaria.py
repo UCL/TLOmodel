@@ -11,6 +11,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography
+from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
@@ -38,6 +39,16 @@ class Malaria(Module):
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
         Metadata.USES_SYMPTOMMANAGER
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'Malaria': Cause(gbd_causes='Malaria', label='Malaria'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'Malaria': Cause(gbd_causes='Malaria', label='Malaria')
     }
 
     PARAMETERS = {
@@ -188,7 +199,14 @@ class Malaria(Module):
         irs_curr.loc[irs_curr.irs_rate <= p["irs_rates_boundary"], "irs_rate"] = p["irs_rates_lower"]
         irs_curr = irs_curr.set_index(["District", "Year"])
 
-        self.itn_irs = pd.concat([itn_curr, irs_curr], axis=1)
+        itn_irs = pd.concat([itn_curr, irs_curr], axis=1)
+
+        # Subsitute District Num for District Name
+        mapper_district_name_to_num = \
+            {v: k for k, v in self.sim.modules['Demography'].parameters['district_num_to_district_name'].items()}
+        self.itn_irs = itn_irs.reset_index().assign(
+            District_Num=lambda x: x['District'].map(mapper_district_name_to_num)
+        ).drop(columns=['District']).set_index(['District_Num', 'Year'])
 
         # ===============================================================================
         # put the all incidence data into single table with month/admin/llin/irs index
@@ -204,7 +222,12 @@ class Malaria(Module):
 
         all_inc = pd.concat([inf_inc, clin_inc, sev_inc], axis=1)
         # we don't want age to be part of index
-        self.all_inc = all_inc.reset_index().set_index(["month", "admin", "llin", "irs"])
+        all_inc = all_inc.reset_index()
+
+        all_inc['district_num'] = all_inc['admin'].map(mapper_district_name_to_num)
+        assert not all_inc['district_num'].isna().any()
+
+        self.all_inc = all_inc.drop(columns=['admin']).set_index(["month", "district_num", "llin", "irs"])
 
         # get the DALY weight that this module will use from the weight database
         if "HealthBurden" in self.sim.modules:
@@ -233,8 +256,7 @@ class Malaria(Module):
         df.loc[df.is_alive, "ma_tx"] = False
         df.loc[df.is_alive, "ma_date_tx"] = pd.NaT
         df.loc[df.is_alive, "ma_inf_type"] = "none"
-        # df.loc[df.is_alive, "ma_district_edited"] = df["district_of_residence"]
-        df.loc[df.is_alive, "ma_age_edited"] = 0
+        df.loc[df.is_alive, "ma_age_edited"] = 0.0
 
         df.loc[df.is_alive, "ma_clinical_counter"] = 0
         df.loc[df.is_alive, "ma_tx_counter"] = 0
@@ -262,18 +284,19 @@ class Malaria(Module):
         if now.year > p["data_end"]:
             itn_irs_curr['itn_rate'] = self.itn
 
-        month_admin_itn_irs_lookup = [tuple(r) for r in itn_irs_curr.values]  # every row is a key in incidence table
+        month_districtnum_itn_irs_lookup = [
+            tuple(r) for r in itn_irs_curr.values]  # every row is a key in incidence table
 
         # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
         # get all corresponding rows from the incidence table; drop unneeded column; set new index
-        curr_inc = self.all_inc.loc[month_admin_itn_irs_lookup]
-        curr_inc = curr_inc.reset_index().drop(["month", "llin", "irs"], axis=1).set_index(["admin", "age"])
+        curr_inc = self.all_inc.loc[month_districtnum_itn_irs_lookup]
+        curr_inc = curr_inc.reset_index().drop(["month", "llin", "irs"], axis=1).set_index(["district_num", "age"])
 
         # ----------------------------------- DISTRICT NEW INFECTIONS -----------------------------------
         def _draw_incidence_for(_col, _where):
             """a helper function to perform random draw for selected individuals on column of probabilities"""
             # create an index from the individuals to lookup entries in the current incidence table
-            district_age_lookup = df[_where].set_index(["district_of_residence", "ma_age_edited"]).index
+            district_age_lookup = df[_where].set_index(["district_num_of_residence", "ma_age_edited"]).index
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
             # update the index so it"s the same as the original population dataframe for these individuals
@@ -287,9 +310,9 @@ class Malaria(Module):
         alive = df.is_alive & (df.age_years < 80)
 
         alive_over_one = alive & (df.age_exact_years >= 1)
-        df.loc[alive & df.age_exact_years.between(0, 0.5), "ma_age_edited"] = 0
+        df.loc[alive & df.age_exact_years.between(0, 0.5), "ma_age_edited"] = 0.0
         df.loc[alive & df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
-        df.loc[alive_over_one, "ma_age_edited"] = df.loc[alive_over_one, "age_years"]
+        df.loc[alive_over_one, "ma_age_edited"] = df.loc[alive_over_one, "age_years"].astype(float)
 
         alive_uninfected = alive & ~df.ma_is_infected
         now_infected = _draw_incidence_for("monthly_prob_inf", alive_uninfected)
@@ -347,7 +370,7 @@ class Malaria(Module):
             random_days = pd.to_timedelta(random_date, unit="d")
 
             death_event = MalariaDeathEvent(
-                self, individual_id=person, cause="severe_malaria"
+                self, individual_id=person, cause="Malaria"
             )  # make that death event
             self.sim.schedule_event(
                 death_event, self.sim.date + random_days
@@ -399,7 +422,7 @@ class Malaria(Module):
         df.at[child_id, "ma_tx"] = False
         df.at[child_id, "ma_date_tx"] = pd.NaT
         df.at[child_id, "ma_inf_type"] = "none"
-        df.at[child_id, "ma_age_edited"] = 0
+        df.at[child_id, "ma_age_edited"] = 0.0
         df.at[child_id, "ma_clinical_counter"] = 0
         df.at[child_id, "ma_clinical_preg_counter"] = 0
         df.at[child_id, "ma_tx_counter"] = 0
@@ -432,7 +455,7 @@ class Malaria(Module):
                 "severe": p["daly_wt_severe"],
             }
         )
-        health_values.name = "Malaria_Symptoms"  # label the cause of this disability
+        health_values.name = "Malaria"  # label the cause of this disability
 
         return health_values.loc[df.is_alive]  # returns the series
 
@@ -678,10 +701,10 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        district = df.at[person_id, "district_of_residence"]
+        district = df.at[person_id, "district_num_of_residence"]
         logger.debug(key='message',
                      data=f'HSI_Malaria_rdt: rdt test for person {person_id} '
-                          f'in district {district}')
+                          f'in district num {district}')
 
         # call the DxTest RDT to diagnose malaria
         dx_result = hs.dx_manager.run_dx_test(
@@ -1229,7 +1252,6 @@ class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
 # Logging
 # ---------------------------------------------------------------------------------
 
-
 class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         self.repeat = 12
@@ -1375,9 +1397,9 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo this could be PfPR in 2-10 yr olds and clinical incidence too
         # ------------------------------------ PREVALENCE OF INFECTION ------------------------------------
         infected = (
-            df[df.is_alive & df.ma_is_infected].groupby("district_of_residence").size()
+            df[df.is_alive & df.ma_is_infected].groupby("district_num_of_residence").size()
         )
-        pop = df[df.is_alive].groupby("district_of_residence").size()
+        pop = df[df.is_alive].groupby("district_num_of_residence").size()
         prev = infected / pop
         prev_ed = prev.fillna(0)
         assert prev_ed.all() >= 0  # checks

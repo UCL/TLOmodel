@@ -7,6 +7,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
+from tlo.methods.causes import Cause
 from tlo.methods.labour import LabourOnsetEvent
 from tlo.util import BitsetHandler
 
@@ -42,6 +43,16 @@ class PregnancySupervisor(Module):
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHBURDEN}
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal disorders'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal disorders')
+    }
 
     PARAMETERS = {
         'prob_ectopic_pregnancy': Parameter(
