@@ -8,7 +8,7 @@ import pytest
 from pytest import approx
 
 from tlo import Date, Module, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
     Metadata,
     bladder_cancer,
@@ -111,35 +111,20 @@ def test_storage_of_cause_of_death():
     test_dtypes(sim)
 
 
-def test_calc_of_scaling_factor(tmpdir):
-    """Test that the scaling factor is computed and put out to the log"""
+def test_cause_of_death_being_registered(tmpdir):
+    """Test that the modules can declare causes of death, that the mappers between tlo causes of death and gbd
+    causes of death can be created correctly and that the analysis helper scripts can be used to produce comparisons
+    between model outputs and GBD data."""
     rfp = Path(os.path.dirname(__file__)) / '../resources'
-    popsize = 10_000
+
     sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {
-            "*": logging.INFO,
+            "*": logging.WARNING,
+            'tlo.methods.demography': logging.INFO
         }
     })
-    sim.register(
-        demography.Demography(resourcefilepath=rfp),
-    )
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=Date(2019, 12, 31))
-
-    # Check that the scaling factor is calculated in the log correctly:
-    output = parse_log_file(sim.log_filepath)
-    sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
-    assert sf == approx(18.6e6 / popsize, rel=0.05)
-
-
-def test_cause_of_death_being_registered():
-    """Test that the modules can declare causes of death, and that the mappers between tlo causes of death and gbd
-    causes of death can be created correctly."""
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         symptommanager.SymptomManager(resourcefilepath=rfp),
@@ -161,16 +146,66 @@ def test_cause_of_death_being_registered():
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
     )
-    sim.make_initial_population(n=20)
-    sim.simulate(end_date=Date(2010, 1, 2))
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=Date(2010, 5, 31))
     test_dtypes(sim)
 
     mapper_from_tlo_causes, mapper_from_gbd_causes = \
         sim.modules['Demography'].create_mappers_from_causes_of_death_to_label()
 
     assert set(mapper_from_tlo_causes.keys()) == set(sim.modules['Demography'].causes_of_death)
-    assert set(mapper_from_gbd_causes.keys()) == set(sim.modules['Demography'].parameters['gbd_causes_of_death'])
+    assert set(mapper_from_gbd_causes.keys()) == sim.modules['Demography'].gbd_causes_of_death
     assert set(mapper_from_gbd_causes.values()) == set(mapper_from_tlo_causes.values())
+
+    # check that these mappers come out in the log correctly
+    output = parse_log_file(sim.log_filepath)
+    demoglog = output['tlo.methods.demography']
+    assert mapper_from_tlo_causes == \
+           pd.Series(demoglog['mapper_from_tlo_cause_to_common_label'].drop(columns={'date'}).loc[0]).to_dict()
+    assert mapper_from_gbd_causes == \
+           pd.Series(demoglog['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]).to_dict()
+
+    # Check that the mortality risks being used in Other Death Poll have been reduced from the 'all-cause' rates
+    odp = sim.modules['Demography'].other_death_poll
+    all_cause_risk = odp.get_all_cause_mort_risk_per_poll()
+    actual_risk_per_poll = odp.mort_risk_per_poll
+    assert (
+        actual_risk_per_poll['prob_of_dying_before_next_poll'] < all_cause_risk['prob_of_dying_before_next_poll']
+    ).all()
+
+    # check that can recover from the log the proportion of deaths represented by the OtherDeaths
+    logged_prop_of_death_by_odp = demoglog['other_deaths'][['Sex', 'Age_Grp', '0']].to_dict()
+    dict_of_ser = {k: pd.DataFrame(v)[0] for k, v in logged_prop_of_death_by_odp.items()}
+    log_odp = pd.concat(dict_of_ser, axis=1).set_index(['Sex', 'Age_Grp'])['0']
+    assert (log_odp < 1.0).all()
+
+    # Run the analysis file:
+    results = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=rfp)
+    # Check the number of deaths in model represented in right
+    assert (results['model'].sum() * 5.0) == approx(len(output['tlo.methods.demography']['death']))
+
+
+def test_calc_of_scaling_factor(tmpdir):
+    """Test that the scaling factor is computed and put out to the log"""
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+    popsize = 10_000
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "*": logging.INFO,
+        }
+    })
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+    )
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2019, 12, 31))
+
+    # Check that the scaling factor is calculated in the log correctly:
+    output = parse_log_file(sim.log_filepath)
+    sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
+    assert sf == approx(19e6 / popsize, rel=0.10)
 
 
 def test_py_calc(simulation):
