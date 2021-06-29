@@ -64,7 +64,7 @@ class HealthSystem(Module):
             Types.DICT, 'The time taken for each appointment, according to officer and facility type.'
         ),
         'ApptType_By_FacLevel': Parameter(
-            Types.DATA_FRAME, 'Indicates whether an appointment type can occur at a facility level.'
+            Types.LIST, 'Indicates whether an appointment type can occur at a facility level.'
         ),
         'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
         'Facilities_For_Each_District': Parameter(
@@ -207,9 +207,17 @@ class HealthSystem(Module):
         )
         self.parameters['Appt_Time_Table'] = appt_times_per_level_and_type
 
-        self.parameters['ApptType_By_FacLevel'] = pd.read_csv(
+        appt_type_per_level_data = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_ApptType_By_FacLevel.csv'
         )
+        self.parameters['ApptType_By_FacLevel'] = [
+            set(
+                appt_type_per_level_data['Appt_Type_Code'][
+                    appt_type_per_level_data[f'Facility_Level_{i}']
+                ]
+            )
+            for i in facility_levels
+        ]
 
         mfl = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Master_Facilities_List.csv')
         self.parameters['Master_Facilities_List'] = mfl.iloc[:, 1:]  # get rid of extra column
@@ -497,15 +505,11 @@ class HealthSystem(Module):
 
             # 5) Check that the event does not request an appointment at a facility level which is not possible
             appt_type_to_check_list = [k for k, v in hsi_event.EXPECTED_APPT_FOOTPRINT.items() if v > 0]
-            assert all([self.parameters['ApptType_By_FacLevel'].loc[
-                            self.parameters['ApptType_By_FacLevel']['Appt_Type_Code'] == appt_type_to_check,
-                            self.parameters['ApptType_By_FacLevel'].columns.str.contains(
-                                str(hsi_event.ACCEPTED_FACILITY_LEVEL))].all().all()
-                        for appt_type_to_check in appt_type_to_check_list
-                        ]), \
-                "An appointment type has been requested at a facility level for which is it not possibe: " \
-                + hsi_event.TREATMENT_ID
-
+            facility_appt_types = self.parameters['ApptType_By_FacLevel'][hsi_event.ACCEPTED_FACILITY_LEVEL]
+            assert facility_appt_types.issuperset(appt_type_to_check_list), (
+                f"An appointment type has been requested at a facility level for which "
+                f"it is not possible: {hsi_event.TREATMENT_ID}"
+            )
             # 6) Check that event (if individual level) is able to run with this configuration of officers
             # (ie. Check that this does not demand officers that are never available at a particular facility)
             caps = self.parameters['Daily_Capabilities']
