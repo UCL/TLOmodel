@@ -9,8 +9,20 @@ from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager, \
-    healthseekingbehaviour, labour, pregnancy_supervisor
+from tlo.methods import (
+    care_of_women_during_pregnancy,
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    labour,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
+    symptommanager,
+)
 
 # Where will outputs go - by default, wherever this script is run
 outputpath = Path("./outputs")  # folder for convenience of storing outputs

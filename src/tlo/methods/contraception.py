@@ -67,7 +67,7 @@ class Contraception(Module):
         #   lactational amenohroea (LAM),
         #   standard days method (SDM),
         #   'other traditional method'
-        'co_date_of_childbirth': Property(Types.DATE, 'Due date of child for those who become pregnant'),
+        'co_due_date': Property(Types.DATE, 'Due date of child for those who become pregnant'),
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
         'date_of_last_pregnancy': Property(Types.DATE,
                                            'Date of the last pregnancy of this individual'),
@@ -189,7 +189,7 @@ class Contraception(Module):
         df = population.props
 
         df.loc[df.is_alive, 'co_contraception'] = 'not_using'
-        df.loc[df.is_alive, 'co_date_of_childbirth'] = pd.NaT
+        df.loc[df.is_alive, 'co_due_date'] = pd.NaT
         df.loc[df.is_alive, 'is_pregnant'] = False
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'co_unintended_preg'] = False
@@ -244,16 +244,13 @@ class Contraception(Module):
         df = self.sim.population.props
 
         df.at[child_id, 'co_contraception'] = 'not_using'
-        df.at[child_id, 'co_date_of_childbirth'] = pd.NaT
+        df.at[child_id, 'co_due_date'] = pd.NaT
         df.at[child_id, 'is_pregnant'] = False
         df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
         df.at[child_id, 'co_unintended_preg'] = False
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         df.at[mother_id, 'is_pregnant'] = False
-        # TODO- commented out by joe, this way women always keep the date on which they most recently became pregnant,
-        #  it is over written for new pregnancy
-        # df.at[mother_id, 'date_of_last_pregnancy'] = pd.NaT
 
         # Initiation of mother's contraception after birth (was previously Init2 event)
         # Notes: decide what contraceptive method they have (including not_using, according to
@@ -512,7 +509,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
             # outputs some logging if any pregnancy (contraception failure)
             fail_contraception_summary = {
                 'woman_index': woman,
-                'due date': str(df.at[woman, 'co_date_of_childbirth'])
+                'due date': str(df.at[woman, 'co_due_date'])
             }
 
             logger.info(key='fail_contraception',
@@ -611,7 +608,20 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         c_intervention = c_intervention.set_index('contraception').T
         cost_per_year1 = c_intervention.iloc[1]   # cost_per_year_multiplier for increasing r_init1
         cost_per_year2 = c_intervention.iloc[3]   # cost_per_year_multiplier for increasing r_init2 PPFP
-
+        # Costs for each contraceptive (now done without HSI)
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # multiply each Unit_Cost by Expected_Units_Per_Case so they can be summed for all Items for each contraceptive
+        # package to get cost of each contraceptive user for each contraceptive
+        item_cost = self.sim.modules['HealthSystem'].parameters['Consumables']['Expected_Units_Per_Case']*\
+                    self.sim.modules['HealthSystem'].parameters['Consumables']['Unit_Cost']
+        consumables['item_cost'] = item_cost
+        cost_pill = pd.Series(consumables.loc[
+                                         consumables['Intervention_Pkg']
+                                         == 'Pill',
+                                         'item_cost']).sum()    # adds all item costs
+        pill_users = df.loc[df.co_contraception == 'pill']
+        df.loc[pill_users.index, 'pill_costs'] = cost_pill
+        pill_costs = df.pill_costs.sum()
         contraception_count = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].groupby(
             'co_contraception').size()
 
@@ -629,8 +639,10 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'periodic_abstinence': contraception_count['periodic_abstinence'],
             'withdrawal': contraception_count['withdrawal'],
             'other_traditional': contraception_count['other_traditional'],
+            # costs
             'public_health_costs1': sum(cost_per_year1),
             'public_health_costs2': sum(cost_per_year2),
+            'pill_costs': pill_costs,
         }
 
         logger.info(key='contraception',
