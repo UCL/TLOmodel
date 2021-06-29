@@ -608,6 +608,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         c_intervention = c_intervention.set_index('contraception').T
         cost_per_year1 = c_intervention.iloc[1]   # cost_per_year_multiplier for increasing r_init1
         cost_per_year2 = c_intervention.iloc[3]   # cost_per_year_multiplier for increasing r_init2 PPFP
+
         # Costs for each contraceptive (now done without HSI)
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # multiply each Unit_Cost by Expected_Units_Per_Case so they can be summed for all Items for each contraceptive
@@ -615,6 +616,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         item_cost = self.sim.modules['HealthSystem'].parameters['Consumables']['Expected_Units_Per_Case']*\
                     self.sim.modules['HealthSystem'].parameters['Consumables']['Unit_Cost']
         consumables['item_cost'] = item_cost
+        # Pill
         cost_pill = pd.Series(consumables.loc[
                                          consumables['Intervention_Pkg']
                                          == 'Pill',
@@ -622,6 +624,55 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         pill_users = df.loc[df.co_contraception == 'pill']
         df.loc[pill_users.index, 'pill_costs'] = cost_pill
         pill_costs = df.pill_costs.sum()
+        # IUD
+        cost_IUD = pd.Series(consumables.loc[
+                                 consumables['Intervention_Pkg']
+                                 == 'IUD',
+                                 'item_cost']).sum()  # adds all item costs
+        IUD_users = df.loc[df.co_contraception == 'IUD']
+        df.loc[IUD_users.index, 'IUD_costs'] = cost_IUD
+        IUD_costs = df.IUD_costs.sum()
+        # Injections
+        cost_injections = pd.Series(consumables.loc[
+                                         consumables['Intervention_Pkg']
+                                         == 'Injectable',
+                                         'item_cost']).sum()    # adds all item costs
+        injections_users = df.loc[df.co_contraception == 'injections']
+        df.loc[injections_users.index, 'injections_costs'] = cost_injections
+        injections_costs = df.injections_costs.sum()
+        # Implants
+        cost_implant = pd.Series(consumables.loc[
+                                         consumables['Intervention_Pkg']
+                                         == 'Implant',
+                                         'item_cost']).sum()    # adds all item costs
+        implant_users = df.loc[df.co_contraception == 'implant']
+        df.loc[implant_users.index, 'implant_costs'] = cost_implant
+        implant_costs = df.implant_costs.sum()
+        # Male condoms
+        cost_male_condom = pd.Series(consumables.loc[
+                                         consumables['Intervention_Pkg']
+                                         == 'Male condom',
+                                         'item_cost']).sum()
+        male_condom_users = df.loc[df.co_contraception == 'male_condom']
+        df.loc[male_condom_users.index, 'male_condom_costs'] = cost_male_condom
+        male_condom_costs = df.male_condom_costs.sum()
+        # Female Sterilization
+        cost_female_sterilization = pd.Series(consumables.loc[
+                                         consumables['Intervention_Pkg']
+                                         == 'Female sterilization',
+                                         'item_cost']).sum()    # adds all item costs
+        female_sterilization_users = df.loc[df.co_contraception == 'female_sterilization']
+        df.loc[female_sterilization_users.index, 'female_sterilization_costs'] = cost_female_sterilization
+        female_sterilization_costs = df.female_sterilization_costs.sum()
+        # Female condom (other modern)
+        cost_female_condom = pd.Series(consumables.loc[
+                                           consumables['Intervention_Pkg']
+                                           == 'Female Condom',
+                                           'item_cost']).sum()  # adds all item costs
+        other_modern_users = df.loc[df.co_contraception == 'other_modern']
+        df.loc[other_modern_users.index, 'female_condom_costs'] = cost_female_condom
+        female_condom_costs = df.female_condom_costs.sum()
+
         contraception_count = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].groupby(
             'co_contraception').size()
 
@@ -635,7 +686,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'implant': contraception_count['implant'],
             'male_condom': contraception_count['male_condom'],
             'female_sterilization': contraception_count['female_sterilization'],
-            'other_modern': contraception_count['other_modern'],
+            'female_condom': contraception_count['other_modern'],
             'periodic_abstinence': contraception_count['periodic_abstinence'],
             'withdrawal': contraception_count['withdrawal'],
             'other_traditional': contraception_count['other_traditional'],
@@ -643,6 +694,12 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'public_health_costs1': sum(cost_per_year1),
             'public_health_costs2': sum(cost_per_year2),
             'pill_costs': pill_costs,
+            'IUD_costs': IUD_costs,
+            'injections_costs': injections_costs,
+            'implant_costs': implant_costs,
+            'male_condom_costs': male_condom_costs,
+            'female_sterilization_costs': female_sterilization_costs,
+            'female_condom_costs': female_condom_costs,
         }
 
         logger.info(key='contraception_summary',

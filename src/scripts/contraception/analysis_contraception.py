@@ -54,7 +54,7 @@ log_config = {
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2051, 1, 2)
+end_date = Date(2011, 1, 2)
 pop_size = 10000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -98,7 +98,7 @@ months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-co_df = log_df['tlo.methods.contraception']['contraception']
+co_df = log_df['tlo.methods.contraception']['contraception_summary']
 Model_Years = pd.to_datetime(co_df.date)
 Model_total = co_df.total
 Model_not_using = co_df.not_using
@@ -130,7 +130,7 @@ months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-com_df = log_df['tlo.methods.contraception']['contraception']
+com_df = log_df['tlo.methods.contraception']['contraception_summary']
 Model_Years = pd.to_datetime(com_df.date)
 Model_pill = com_df.pill
 Model_IUD = com_df.IUD
@@ -138,7 +138,7 @@ Model_injections = com_df.injections
 Model_implant = com_df.implant
 Model_male_condom = com_df.male_condom
 Model_female_sterilization = com_df.female_sterilization
-Model_other_modern = com_df.other_modern
+Model_female_condom = com_df.female_condom
 Model_periodic_abstinence = com_df.periodic_abstinence
 Model_withdrawal = com_df.withdrawal
 Model_other_traditional = com_df.other_traditional
@@ -150,7 +150,7 @@ ax.plot(np.asarray(Model_Years), Model_injections)
 ax.plot(np.asarray(Model_Years), Model_implant)
 ax.plot(np.asarray(Model_Years), Model_male_condom)
 ax.plot(np.asarray(Model_Years), Model_female_sterilization)
-ax.plot(np.asarray(Model_Years), Model_other_modern)
+ax.plot(np.asarray(Model_Years), Model_female_condom)
 ax.plot(np.asarray(Model_Years), Model_periodic_abstinence)
 ax.plot(np.asarray(Model_Years), Model_withdrawal)
 ax.plot(np.asarray(Model_Years), Model_other_traditional)
@@ -209,13 +209,13 @@ years_fmt = mdates.DateFormatter('%Y')
 # Load Model Results
 com_df = log_df['tlo.methods.contraception']['contraception_summary']
 Model_Years = pd.to_datetime(com_df.date)
-Model_pill = com_df.pills
-Model_IUD = com_df.IUDs
+Model_pill = com_df.pill
+Model_IUD = com_df.IUD
 Model_injections = com_df.injections
-Model_implant = com_df.implants
-Model_male_condom = com_df.male_condoms
-Model_female_sterilization = com_df.female_sterilizations
-Model_female_condom = com_df.female_condoms
+Model_implant = com_df.implant
+Model_male_condom = com_df.male_condom
+Model_female_sterilization = com_df.female_sterilization
+Model_female_condom = com_df.female_condom
 
 fig, ax = plt.subplots()
 ax.plot(np.asarray(Model_Years), Model_pill)
@@ -284,7 +284,7 @@ years = mdates.YearLocator()   # every year
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-com_df = log_df['tlo.methods.contraception']['contraception']
+com_df = log_df['tlo.methods.contraception']['contraception_summary']
 Model_Years = pd.to_datetime(com_df.date)
 Model_public_health_costs1 = com_df.public_health_costs1
 Model_public_health_costs2 = com_df.public_health_costs2
