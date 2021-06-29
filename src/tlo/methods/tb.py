@@ -524,17 +524,20 @@ class Tb(Module):
 
         # ------------------ fast progressors ------------------ #
         # adults only
-        fast = df.loc[(df.tb_date_latent == now) &
+        eligible_for_fast_progression = df.loc[(df.tb_date_latent == now) &
                       df.is_alive &
                       (df.age_years >= 15) &
-                      ~df.hv_inf &
-                      (rng.rand() < p['prop_fast_progressor'])].index
+                      ~df.hv_inf].index
+        will_progress = rng.random_sample(len(eligible_for_fast_progression)) < p['prop_fast_progressor']
+        fast = eligible_for_fast_progression[will_progress]
 
-        fast_hiv = df.loc[(df.tb_date_latent == now) &
-                          df.is_alive &
-                          (df.age_years >= 15) &
-                          df.hv_inf &
-                          (rng.rand() < p['prop_fast_progressor_hiv'])].index
+        # hiv-positive
+        eligible_for_fast_progression_hiv = df.loc[(df.tb_date_latent == now) &
+                      df.is_alive &
+                      (df.age_years >= 15) &
+                      df.hv_inf].index
+        will_progress = rng.random_sample(len(eligible_for_fast_progression)) < p['prop_fast_progressor_hiv']
+        fast_hiv = eligible_for_fast_progression_hiv[will_progress]
 
         fast = fast.union(fast_hiv)  # join indices (checked)
 
