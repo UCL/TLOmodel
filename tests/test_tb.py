@@ -426,9 +426,6 @@ def test_treatment_failure():
     assert last_event_date >= (sim.date + pd.DateOffset(months=8))
 
 
-
-
-
 def test_children_referrals():
     """
     check referrals for children
@@ -501,9 +498,6 @@ def test_children_referrals():
     assert df.at[person_id, 'tb_diagnosed']
 
 
-
-#
-#
 def test_latent_prevalence():
     """
     test overall proportion of new latent cases which progress to active
@@ -592,14 +586,49 @@ def test_latent_prevalence():
 
     prop_fast = count2 / len(df.loc[df.is_alive])
     assert 0.5 <= prop_fast <= 1.0
-#
-#
-# def test_relapse_risk():
-#     """
-#     check risk of relapse
-#     """
-#
-#
+
+
+def test_relapse_risk():
+    """
+    check risk of relapse
+    """
+
+    # apply linear model of relapse risk
+    # set properties to ensure high risk
+    # set up population
+    popsize = 10
+
+    # allow HS to run and queue events
+    sim = get_sim(use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
+    sim.modules['Tb'].parameters['monthly_prob_relapse_tx_incomplete'] = 1.0
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    person_id = 0
+
+    # risk of relapse <2 years after active onset
+    df.at[person_id, 'tb_inf'] = 'latent'
+    df.at[person_id, 'tb_ever_treated'] = True
+    df.at[person_id, 'tb_strain'] = 'ds'
+    df.at[person_id, 'tb_date_treated'] = sim.date + pd.DateOffset(days=30)
+    df.at[person_id, 'tb_treatment_failure'] = True
+    df.at[person_id, 'hv_inf'] = False
+    df.at[person_id, 'age_years'] = 25
+
+    # run relapse event
+    relapse_event = tb.TbRelapseEvent(module=sim.modules['Tb'])
+    relapse_event.apply(population=sim.population)
+
+    # check relapse to active tb is scheduled to occur
+    next_event_for_person0 = sim.find_events_for_person(0)[0][1]
+    assert isinstance(next_event_for_person0, tb.TbActiveEvent)
+
+
 # def test_run_without_hiv():
 #     """
 #     test running without hiv

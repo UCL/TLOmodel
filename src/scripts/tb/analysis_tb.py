@@ -67,6 +67,10 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              )
 
 # Run the simulation and flush the logger
+# todo change
+sim.modules['Tb'].parameters['monthly_prob_relapse_tx_incomplete'] = 1.0
+
+
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
