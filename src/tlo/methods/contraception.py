@@ -645,9 +645,9 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'pill_costs': pill_costs,
         }
 
-        logger.info(key='contraception',
+        logger.info(key='contraception_summary',
                     data=contraception_summary,
-                    description='contraception')
+                    description='contraception_summary')
 
         preg_counts = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].is_pregnant.value_counts()
         is_preg_count = (df.is_alive & df.age_years.between(self.age_low, self.age_high) & df.is_pregnant).sum()

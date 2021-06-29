@@ -73,13 +73,16 @@ service_availability = ["*"]
 sim.register(
     demography.Demography(resourcefilepath=resources),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-    healthsystem.HealthSystem(resourcefilepath=resources, service_availability=service_availability,
-                              ignore_cons_constraints=True),  # ignore constraints allows everyone to get contraception
+    healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
     symptommanager.SymptomManager(resourcefilepath=resources),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+    healthburden.HealthBurden(resourcefilepath=resources),
     contraception.Contraception(resourcefilepath=resources),
-    labour.Labour(resourcefilepath=resources),
+    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+    labour.Labour(resourcefilepath=resources),
+    newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
+    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
 )
 # create and run the simulation
 sim.make_initial_population(n=pop_size)
@@ -204,7 +207,7 @@ months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-com_df = log_df['tlo.methods.contraception']['contraception_consumables_summary']
+com_df = log_df['tlo.methods.contraception']['contraception_summary']
 Model_Years = pd.to_datetime(com_df.date)
 Model_pill = com_df.pills
 Model_IUD = com_df.IUDs
@@ -243,7 +246,7 @@ months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-com_df = log_df['tlo.methods.contraception']['contraception_consumables_summary']
+com_df = log_df['tlo.methods.contraception']['contraception_summary']
 Model_Years = pd.to_datetime(com_df.date)
 Model_pill = com_df.pill_costs
 Model_IUD = com_df.IUD_costs
