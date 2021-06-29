@@ -475,10 +475,6 @@ def test_latent_prevalence():
     assert (count / len(df.loc[df.is_alive])) < 0.1
 
     # how many are progressing fast  (~14% fast)
-    will_test = sim.rng.random_sample(len(prob_spontaneous_test)) < prob_spontaneous_test
-
-
-
     count2 = 0
     for tmp in range(len(test)):
         if test[tmp][0] == sim.date:

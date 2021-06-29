@@ -536,7 +536,7 @@ class Tb(Module):
                       df.is_alive &
                       (df.age_years >= 15) &
                       df.hv_inf].index
-        will_progress = rng.random_sample(len(eligible_for_fast_progression)) < p['prop_fast_progressor_hiv']
+        will_progress = rng.random_sample(len(eligible_for_fast_progression_hiv)) < p['prop_fast_progressor_hiv']
         fast_hiv = eligible_for_fast_progression_hiv[will_progress]
 
         fast = fast.union(fast_hiv)  # join indices (checked)
