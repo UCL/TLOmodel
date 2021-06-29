@@ -13,6 +13,7 @@ from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
     demography,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -22,6 +23,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    hiv,
 )
 
 # Where will outputs go - by default, wherever this script is run
@@ -54,7 +56,7 @@ log_config = {
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 2)
+end_date = Date(2013, 1, 2)
 pop_size = 10000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -83,6 +85,8 @@ sim.register(
     labour.Labour(resourcefilepath=resources),
     newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+    hiv.Hiv(resourcefilepath=resources),
+    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resources),
 )
 # create and run the simulation
 sim.make_initial_population(n=pop_size)

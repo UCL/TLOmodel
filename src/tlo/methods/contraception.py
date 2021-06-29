@@ -5,7 +5,7 @@ import pandas as pd
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import transition_states
-from tlo.methods import Metadata
+from tlo.methods import Metadata, hiv
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -46,7 +46,10 @@ class Contraception(Module):
         'r_discont_year': Parameter(Types.REAL,
                                     'proportional change in contraception discontinuation probabilities for each year,\
                                      2010 to 2100'),
-        # TODO: add relative fertility rates for HIV+ compared to HIV- by age group from Marston et al 2017
+        # From Marston et al 2017, Figure 1, Eastern Africa, closer to rural - effect in younger ages smay be due
+        # to more sex in HIV+ but that is ok as we don't model sexual activity separately)
+        'r_hiv': Parameter(Types.REAL,
+                           'proportional change in fertility rate for HIV+ compared to HIV- by age group'),
         'contraception_consumables': Parameter(Types.DATA_FRAME, 'contraception consumables'),
         'contraception_interventions': Parameter(Types.DATA_FRAME, 'contraception interventions'),
     }
@@ -101,6 +104,8 @@ class Contraception(Module):
         self.parameters['r_init_year'] = workbook['r_init_year'].set_index('year')
 
         self.parameters['r_discont_year'] = workbook['r_discont_year'].set_index('year')
+
+        self.parameters['r_hiv'] = workbook['r_hiv']
 
         self.parameters['contraception_consumables'] = workbook['consumables']
         # this has data on all the contraception consumables used - currently not used as link to main consumables
@@ -518,13 +523,11 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & \
                  (df.co_contraception == 'not_using') & ~df.la_currently_in_labour & ~df.la_has_had_hysterectomy & \
             ~df.la_is_postpartum & (df.ps_ectopic_pregnancy == 'none')
-
-        females = df.loc[subset, ['co_contraception', 'age_years']]
+        #hv_inf = self.sim.modules['hiv'].parameters['hv_inf']
+        females = df.loc[subset, ['co_contraception', 'age_years', 'hv_inf']]  # include hiv status here too
 
         # load the fertility schedule (imported datasheet from excel workbook)
         fertility_schedule = self.module.parameters['fertility_schedule']
-
-        # --------
 
         # get the probability of pregnancy for each woman in the model, through merging with the fert_schedule data
         len_before_merge = len(females)
@@ -538,11 +541,20 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
                                               how='inner').set_index('person')
         assert len(females) == len_before_merge
 
-        # flipping the coin to determine if this woman will become pregnant (basefert_dhs is in the Excel sheet)
-        newly_pregnant = (self.module.rng.random_sample(size=len(females)) < females.basefert_dhs / 12)
+        # adjust for r_hiv relative fertility in HIV+ compared to HIV- by age:
+        frr_hiv = self.module.parameters['r_hiv']
+        females = females.reset_index().merge(frr_hiv,
+                                              left_on=['age_years'],
+                                              right_on=['age_'],
+                                              how='inner').set_index('person')
+        assert len(females) == len_before_merge
 
+        # flipping the coin to determine if this woman will become pregnant (basefert_dhs is in the Excel sheet)
+        newly_pregnant = (self.module.rng.random_sample(size=len(females)) < ((females.basefert_dhs / 12) * \
+                                                                              (females.frr_hiv*females.hv_inf)))
+        # probability adjusted for HIV+ women (assume * females.hv_inf==False means times zero)
         # the imported number is a yearly proportion. So adjust the rate accordingly
-        # to the frequency with which the event is recurring
+        # to the frequency with which the event is recurring (divide by 12)
         # TODO: this should be linked to the self.frequency value
 
         newly_pregnant_ids = females.index[newly_pregnant]
