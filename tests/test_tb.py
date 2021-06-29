@@ -429,11 +429,79 @@ def test_treatment_failure():
 
 
 
-# def test_children_referrals():
-#     """
-#     check referrals for children
-#     should be x-ray at screening/testing
-#     """
+def test_children_referrals():
+    """
+    check referrals for children
+    should be x-ray at screening/testing
+    """
+    popsize = 10
+
+    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    person_id = 0
+
+    # set tb strain to ds
+    df.at[person_id, 'age_years'] = 2
+    df.at[person_id, 'tb_inf'] = 'active'
+    df.at[person_id, 'tb_date_active'] = sim.date
+    df.at[person_id, 'tb_strain'] = 'ds'
+    df.at[person_id, 'tb_smear'] = True
+    df.at[person_id, 'hv_inf'] = False
+
+    # give the symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+    for symptom in symptom_list:
+        sim.modules["SymptomManager"].change_symptom(
+            person_id=person_id,
+            symptom_string=symptom,
+            add_or_remove="+",
+            disease_module=sim.modules['Tb'],
+            duration_in_days=None,
+        )
+
+    assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
+
+    # run HSI_Tb_ScreeningAndRefer and check outcomes
+    sim.modules['HealthSystem'].schedule_hsi_event(
+        tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb']),
+        topen=sim.date,
+        tclose=None,
+        priority=0
+    )
+
+    hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
+    hsi_event.run(squeeze_factor=0)
+
+    # Check person_id has a HSI_Tb_Xray event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_Xray)
+    ][0]
+    assert date_event == sim.date
+
+    # run HSI_Tb_Xray and check outcomes
+    sim.modules['HealthSystem'].schedule_hsi_event(
+        tb.HSI_Tb_Xray(person_id=person_id, module=sim.modules['Tb']),
+        topen=sim.date,
+        tclose=None,
+        priority=0
+    )
+
+    hsi_event = tb.HSI_Tb_Xray(person_id=person_id, module=sim.modules['Tb'])
+    hsi_event.run(squeeze_factor=0)
+
+    # should be diagnosed by x-ray
+    assert df.at[person_id, 'tb_diagnosed']
+
+
+
 #
 #
 def test_latent_prevalence():
