@@ -752,9 +752,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "BladderCancer_StartTreatment"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint(
-            {"Over5OPD": 1, "MajorSurg": 1}
-        )
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD", "MajorSurg")
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
