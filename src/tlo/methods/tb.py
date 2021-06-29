@@ -37,7 +37,7 @@ class Tb(Module):
         self.footprints_for_consumables_required = dict()
         self.symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
         self.district_list = pd.read_csv(
-            os.path.join(self.resourcefilepath,  'ResourceFile_District_Population_Data.csv')
+            os.path.join(self.resourcefilepath, 'ResourceFile_District_Population_Data.csv')
         ).District
 
         workbook = pd.read_excel(
@@ -535,20 +535,34 @@ class Tb(Module):
         rng = self.rng
         now = self.sim.date
 
+        # remove individuals not alive
+        # when HIV not registered, properties of newly appended rows set to nan -> error
+        df_tmp = df.loc[df.is_alive]
+
         # ------------------ fast progressors ------------------ #
         # adults only
-        eligible_for_fast_progression = df.loc[(df.tb_date_latent == now) &
-                      df.is_alive &
-                      (df.age_years >= 15) &
-                      ~df.hv_inf].index
+        # eligible_for_fast_progression = df.loc[(df.tb_date_latent == now) &
+        #                                        df.is_alive &
+        #                                        (df.age_years >= 15) &
+        #                                        ~df.hv_inf].index
+
+        eligible_for_fast_progression = df_tmp.loc[(df_tmp.tb_date_latent == now) &
+                                               df_tmp.is_alive &
+                                               (df_tmp.age_years >= 15) &
+                                               ~df_tmp.hv_inf].index
+
         will_progress = rng.random_sample(len(eligible_for_fast_progression)) < p['prop_fast_progressor']
         fast = eligible_for_fast_progression[will_progress]
 
         # hiv-positive
-        eligible_for_fast_progression_hiv = df.loc[(df.tb_date_latent == now) &
-                      df.is_alive &
-                      (df.age_years >= 15) &
-                      df.hv_inf].index
+        # eligible_for_fast_progression_hiv = df.loc[(df.tb_date_latent == now) &
+        #                                            df.is_alive &
+        #                                            (df.age_years >= 15) &
+        #                                            df.hv_inf].index
+        eligible_for_fast_progression_hiv = df_tmp.loc[(df_tmp.tb_date_latent == now) &
+                                                   df_tmp.is_alive &
+                                                   (df_tmp.age_years >= 15) &
+                                                   df_tmp.hv_inf].index
         will_progress = rng.random_sample(len(eligible_for_fast_progression_hiv)) < p['prop_fast_progressor_hiv']
         fast_hiv = eligible_for_fast_progression_hiv[will_progress]
 
@@ -653,7 +667,12 @@ class Tb(Module):
         # if HIV is not registered, create a dummy property
         if 'Hiv' not in self.sim.modules:
             population.make_test_property('hv_inf', Types.BOOL)
+            population.make_test_property('sy_aids_symptoms', Types.INT)
+            population.make_test_property('hv_art', Types.STRING)
+
             df['hv_inf'] = False
+            df['sy_aids_symptoms'] = 0
+            df['hv_art'] = 'not'
 
         # Set our property values for the initial population
         df['tb_inf'].values[:] = 'uninfected'
@@ -864,6 +883,11 @@ class Tb(Module):
         df.at[child_id, 'tb_on_ipt'] = False
         df.at[child_id, 'tb_date_ipt'] = pd.NaT
 
+        if 'Hiv' not in self.sim.modules:
+            df.at[child_id, 'hv_inf'] = False
+            df.at[child_id, 'sy_aids_symptoms'] = 0
+            df.at[child_id, 'hv_art'] = 'not'
+
         # if mother is diagnosed with TB, give IPT to infant
         if df.at[mother_id, 'tb_diagnosed']:
             event = HSI_Tb_Start_or_Continue_Ipt(self, person_id=child_id)
@@ -883,22 +907,26 @@ class Tb(Module):
         """
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        health_values = pd.Series(0, index=df.index)
+        # health_values = pd.Series(0, index=df.index)
+
+        # to avoid errors when hiv module not running
+        df_tmp = df.loc[df.is_alive]
+        health_values = pd.Series(0, index=df_tmp.index)
 
         # hiv-negative
         health_values.loc[
-            df.is_alive & (df.tb_inf == 'active') & (df.tb_strain == 'ds') & ~df.hv_inf
+            df_tmp.is_alive & (df_tmp.tb_inf == 'active') & (df_tmp.tb_strain == 'ds') & ~df_tmp.hv_inf
             ] = self.daly_wts['daly_tb']
         health_values.loc[
-            df.is_alive & (df.tb_inf == 'active') & (df.tb_strain == 'mdr') & ~df.hv_inf
+            df_tmp.is_alive & (df_tmp.tb_inf == 'active') & (df_tmp.tb_strain == 'mdr') & ~df_tmp.hv_inf
             ] = self.daly_wts['daly_tb']
 
         # hiv-positive
         health_values.loc[
-            df.is_alive & (df.tb_inf == 'active') & (df.tb_strain == 'ds') & df.hv_inf
+            df_tmp.is_alive & (df_tmp.tb_inf == 'active') & (df_tmp.tb_strain == 'ds') & df_tmp.hv_inf
             ] = self.daly_wts['daly_tb_hiv_anaemia']
         health_values.loc[
-            df.is_alive & (df.tb_inf == 'active') & (df.tb_strain == 'mdr') & df.hv_inf
+            df_tmp.is_alive & (df_tmp.tb_inf == 'active') & (df_tmp.tb_strain == 'mdr') & df_tmp.hv_inf
             ] = self.daly_wts['daly_mdr_tb_hiv_anaemia']
 
         health_values.name = 'TB'  # label the cause of this disability
@@ -980,7 +1008,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # get population alive by district
         pop = df.loc[
             df.is_alive
-            ].groupby(['district_of_residence'])['is_alive'].sum()
+        ].groupby(['district_of_residence'])['is_alive'].sum()
         tmp = pd.DataFrame(pop, index=districts)
 
         # smear-positive cases by district
@@ -1658,7 +1686,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             drugs_available = HSI_Event.get_all_consumables(
                 self, footprint=self.module.footprints_for_consumables_required[
-                                                                'tb_mdrtx'])
+                    'tb_mdrtx'])
 
         # -------- First TB infection -------- #
         # could be undiagnosed mdr or ds-tb: treat as ds-tb
@@ -1669,12 +1697,12 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 # treatment for ds-tb: adult
                 drugs_available = HSI_Event.get_all_consumables(
                     self, footprint=self.module.footprints_for_consumables_required[
-                                                                    'tb_tx_adult'])
+                        'tb_tx_adult'])
             else:
                 # treatment for ds-tb: child
                 drugs_available = HSI_Event.get_all_consumables(
                     self, footprint=self.module.footprints_for_consumables_required[
-                                                                    'tb_tx_child'])
+                        'tb_tx_child'])
 
         # -------- Secondary TB infection -------- #
         # person has been treated before
@@ -1685,12 +1713,12 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 # treatment for reinfection ds-tb: adult
                 drugs_available = HSI_Event.get_all_consumables(
                     self, footprint=self.module.footprints_for_consumables_required[
-                                                                    'tb_retx_adult'])
+                        'tb_retx_adult'])
             else:
                 # treatment for reinfection ds-tb: child
                 drugs_available = HSI_Event.get_all_consumables(
                     self, footprint=self.module.footprints_for_consumables_required[
-                                                                    'tb_retx_child'])
+                        'tb_retx_child'])
 
         return drugs_available
 

@@ -629,23 +629,139 @@ def test_relapse_risk():
     assert isinstance(next_event_for_person0, tb.TbActiveEvent)
 
 
-# def test_run_without_hiv():
-#     """
-#     test running without hiv
-#     check smear positive rates in hiv- and hiv+ to confirm process still working with dummy property
-#     """
-#
-#
-# def test_ipt_to_child_of_tb_mother():
-#     """
-#     if child born to mother with diagnosed tb, check give ipt
-#     """
-#
-#
-# def test_ipt():
-#     """
-#     check ipt administered and ended correctly
-#     in HIV+ and paediatric contacts of cases
-#       also the effect of ipt? i.e. if perfect - no disease;
-#       if 0% efficacy and high risk of disease, then everyone gets disease?
-#     """
+def test_run_without_hiv():
+    """
+    test running without hiv
+    check smear positive rates in hiv- and hiv+ to confirm process still working with dummy property
+    """
+    try:
+        resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    except NameError:
+        # running interactively
+        resourcefilepath = 'resources'
+
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2012, 12, 31)
+    popsize = 100
+
+    sim = Simulation(start_date=start_date, seed=30)
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     ignore_cons_constraints=True),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath),
+                 )
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    df = sim.population.props
+
+    # check properties assigned correctly for baseline population
+    # should be some latent infections, no active infections
+    num_latent = len(df[(df.tb_inf == 'latent') & df.is_alive])
+    prev_latent = num_latent / len(df[df.is_alive])
+    assert prev_latent > 0
+
+    assert not pd.isnull(df.loc[~df.date_of_birth.isna() & df.is_alive, [
+        'tb_inf',
+        'tb_strain',
+        'tb_date_latent']
+                         ]).all().all()
+
+    # no-one should be on tb treatment yet
+    assert not df.tb_on_treatment.any()
+    assert pd.isnull(df.tb_date_treated).all()
+
+    assert not df.hv_inf.any()
+    assert (df.sy_aids_symptoms == 0).all()
+    assert (df.hv_art == 'not').all()
+
+    # run the simulation
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    df = sim.population.props  # updated dataframe
+
+    # some should have treatment dates
+    assert not pd.isnull(df.loc[~df.date_of_birth.isna() & df.is_alive, [
+        'tb_on_treatment',
+        'tb_date_treated',
+        'tb_ever_treated',
+        'tb_diagnosed']
+                         ]).all().all()
+
+
+def test_ipt_to_child_of_tb_mother():
+    """
+    if child born to mother with diagnosed tb, check give ipt
+    """
+    popsize = 10
+
+    # allow HS to run and queue events
+    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+
+    # make IPT protection against active disease perfect
+    sim.modules['Tb'].parameters['rr_ipt_child'] = 0.0
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    mother_id = 0
+    child_id = 1
+
+    # give mother active tb
+    df.at[mother_id, 'tb_inf'] = 'active'
+    df.at[mother_id, 'tb_strain'] = 'ds'
+    df.at[mother_id, 'hv_inf'] = False
+    df.at[mother_id, 'age_years'] = 25
+    df.at[mother_id, 'tb_diagnosed'] = True
+
+    # check HSI_Tb_Start_or_Continue_Ipt scheduled for child
+    sim.modules['Tb'].on_birth(mother_id=mother_id, child_id=child_id)
+
+    # check HSI IPT event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(child_id) if
+        isinstance(ev[1], tb.HSI_Tb_Start_or_Continue_Ipt)
+    ][0]
+    assert date_event == sim.date
+
+    # give IPT to child
+    ipt_appt = tb.HSI_Tb_Start_or_Continue_Ipt(person_id=child_id,
+                                                 module=sim.modules['Tb'])
+    ipt_appt.apply(person_id=child_id, squeeze_factor=0.0)
+
+    assert df.at[child_id, 'tb_on_ipt']
+    assert df.at[child_id, 'tb_date_ipt'] == sim.date
+
+    # give child latent tb, ipt should prevent progression to active
+    df.at[child_id, 'tb_inf'] = 'latent'
+    sim.modules['Tb'].progression_to_active(sim.population)
+
+    # child should have Tb_DecisionToContinueIPT scheduled
+    date_event, event = [
+        ev for ev in sim.find_events_for_person(child_id) if
+        isinstance(ev[1], tb.Tb_DecisionToContinueIPT)
+    ][0]
+    assert date_event == sim.date + pd.DateOffset(months=6)
+
+    # child should not have progression scheduled
+    future_events = sim.find_events_for_person(child_id)
+    for tmp in range(len(future_events)):
+        if isinstance(future_events[tmp][1], tb.TbActiveEvent):
+            assert False
+
