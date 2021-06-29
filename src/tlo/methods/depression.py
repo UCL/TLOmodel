@@ -732,7 +732,7 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_TalkingTherapy'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
         self.ACCEPTED_FACILITY_LEVEL = facility_level
         self.ALERT_OTHER_DISEASES = []
 
@@ -741,7 +741,7 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
             self.sim.population.props.at[person_id, 'de_ever_talk_ther'] = True
         else:
             # If squeeze_factor non-zero then do nothing and do not take up any time.
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
 
 class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
@@ -755,7 +755,7 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_Antidepressant_Start'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
         self.ACCEPTED_FACILITY_LEVEL = facility_level
         self.ALERT_OTHER_DISEASES = []
 
@@ -764,7 +764,7 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
 
         # If person is already on anti-depressants, do not do anything
         if df.at[person_id, 'de_on_antidepr']:
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         assert df.at[person_id, 'de_ever_diagnosed_depression'], "The person is not diagnosed and so should not be " \
                                                                  "receiving an HSI. "
@@ -802,7 +802,7 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_Antidepressant_Refill'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -816,7 +816,7 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
         if not df.at[person_id, 'de_on_antidepr']:
             # This person is not on anti-depressants so will not have this HSI
             # Return the blank_appt_footprint() so that this HSI does not occupy any time resources
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         # Check availability of antidepressant medication
         item_code = self.module.parameters['anti_depressant_medication_item_code']

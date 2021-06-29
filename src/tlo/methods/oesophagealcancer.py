@@ -597,7 +597,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         self.TREATMENT_ID = "OesophagealCancer_Investigation_Following_Dysphagia"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -607,14 +607,14 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
 
         # Ignore this event if the person is no longer alive:
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         # Check that this event has been called for someone with the symptom dysphagia
         assert 'dysphagia' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "oc_date_diagnosis"]):
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
         dx_result = hs.dx_manager.run_dx_test(
@@ -670,7 +670,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OesophagealCancer_StartTreatment"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, 'MajorSurg': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD", "MajorSurg")
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
@@ -679,7 +679,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         hs = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         # Check that the person has cancer, not in stage4, has been diagnosed and is not on treatment
         assert not df.at[person_id, "oc_status"] == 'none'
@@ -719,7 +719,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OesophagealCancer_MonitorTreatment"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
         self.ACCEPTED_FACILITY_LEVEL = 2
         self.ALERT_OTHER_DISEASES = []
 
@@ -728,7 +728,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         hs = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         # Check that the person is has cancer and is on treatment
         assert not df.at[person_id, "oc_status"] == 'none'
@@ -779,7 +779,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OesophagealCancer_PalliativeCare"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
         self.ACCEPTED_FACILITY_LEVEL = 2
         self.ALERT_OTHER_DISEASES = []
 
@@ -788,7 +788,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         hs = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         # Check that the person is in stage4
         assert df.at[person_id, "oc_status"] == 'stage4'

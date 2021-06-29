@@ -618,7 +618,7 @@ def test_use_of_helper_function_get_all_consumables():
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
-            self.EXPECTED_APPT_FOOTPRINT = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint()
             self.ACCEPTED_FACILITY_LEVEL = 0
             self.ALERT_OTHER_DISEASES = []
 
@@ -682,7 +682,7 @@ def test_speeding_up_request_consumables():
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint()
             self.ACCEPTED_FACILITY_LEVEL = 0
             self.ALERT_OTHER_DISEASES = []
 
@@ -796,7 +796,7 @@ def check_bed_days_basics(hs_disable):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
             self.ACCEPTED_FACILITY_LEVEL = 1
             self.ALERT_OTHER_DISEASES = []
 
@@ -809,7 +809,7 @@ def check_bed_days_basics(hs_disable):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
             self.ACCEPTED_FACILITY_LEVEL = 2
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
@@ -999,7 +999,7 @@ def check_bed_days_property_is_inpatient(hs_disable):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
             self.ACCEPTED_FACILITY_LEVEL = 2
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
@@ -1093,7 +1093,7 @@ def check_bed_days_released_on_death(hs_disable):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
             self.ACCEPTED_FACILITY_LEVEL = 2
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 10})

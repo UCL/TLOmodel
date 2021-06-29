@@ -215,11 +215,7 @@ def test_dx_algorithm_for_malaria_outcomes():
             def __init__(self, module, person_id):
                 super().__init__(module, person_id=person_id)
                 self.TREATMENT_ID = 'DummyHSIEvent'
-
-                the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-                the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
-
-                self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+                self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Under5OPD")
                 self.ACCEPTED_FACILITY_LEVEL = 1
                 self.ALERT_OTHER_DISEASES = []
 
@@ -338,11 +334,7 @@ def test_dx_algorithm_for_non_malaria_outcomes():
             def __init__(self, module, person_id):
                 super().__init__(module, person_id=person_id)
                 self.TREATMENT_ID = 'DummyHSIEvent'
-
-                the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-                the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
-
-                self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+                self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Under5OPD")
                 self.ACCEPTED_FACILITY_LEVEL = 1
                 self.ALERT_OTHER_DISEASES = []
 

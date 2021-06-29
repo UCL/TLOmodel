@@ -552,11 +552,9 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
 
         self.TREATMENT_ID = "OtherAdultCancer_Investigation_Following_other_adult_ca_symptom"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -566,14 +564,14 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
 
         # Ignore this event if the person is no longer alive:
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         # Check that this event has been called for someone with the symptom other_adult_ca_symptom
         assert 'early_other_adult_ca_symptom' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "oac_date_diagnosis"]):
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         # Use a diagnostic_device to diagnose whether the person has other adult cancer:
         dx_result = hs.dx_manager.run_dx_test(
@@ -628,12 +626,9 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["MajorSurg"] = 1
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OtherAdultCancer_StartTreatment"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("MajorSurg")
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
@@ -642,7 +637,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
         assert not df.at[person_id, "oac_status"] == 'none'
@@ -680,12 +675,9 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OtherAdultCancer_MonitorTreatment"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
@@ -694,7 +686,7 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
         hs = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         # Check that the person is has cancer and is on treatment
         assert not df.at[person_id, "oac_status"] == 'none'
@@ -744,12 +736,9 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OtherAdultCancer_PalliativeCare"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
@@ -758,7 +747,7 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         # Check that the person is in metastatic
         assert df.at[person_id, "oac_status"] == 'metastatic'

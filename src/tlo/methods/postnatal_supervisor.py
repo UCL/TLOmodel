@@ -1742,7 +1742,7 @@ class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScope
         assert isinstance(module, PostnatalSupervisor)
 
         self.TREATMENT_ID = 'PostnatalSupervisor_PostnatalCareContactOne'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("ANCSubsequent")
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -1817,7 +1817,7 @@ class HSI_PostnatalSupervisor_PostnatalCareContactTwo(HSI_Event, IndividualScope
         assert isinstance(module, PostnatalSupervisor)
 
         self.TREATMENT_ID = 'PostnatalSupervisor_PostnatalCareContactTwoMaternal'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("ANCSubsequent")
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -1882,7 +1882,7 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
         assert isinstance(module, PostnatalSupervisor)
 
         self.TREATMENT_ID = 'PostnatalSupervisor_PostnatalWardInpatientCare'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("IPAdmission")
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
@@ -2057,7 +2057,7 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
         assert isinstance(module, PostnatalSupervisor)
 
         self.TREATMENT_ID = 'PostnatalSupervisor_TreatmentForObstetricFistula'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 5})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("InpatientDays")
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
@@ -2088,7 +2088,7 @@ class HSI_PostnatalSupervisor_NeonatalWardInpatientCare(HSI_Event, IndividualSco
         assert isinstance(module, PostnatalSupervisor)
 
         self.TREATMENT_ID = 'PostnatalSupervisor_NeonatalWardInpatientCare'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("IPAdmission")
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})

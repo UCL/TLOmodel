@@ -583,7 +583,7 @@ def test_art_is_initiated_for_infants():
     rtn = event.apply(person_id=child_id, squeeze_factor=0.0)
 
     # check that the event returned a footprint for a VCTPositive
-    assert rtn == event.make_appt_footprint({'VCTPositive': 1.0})
+    assert rtn == event.make_appt_footprint("VCTPositive")
 
     # check that child is now diagnosed
     assert sim.population.props.at[child_id, "hv_diagnosed"]
@@ -764,7 +764,7 @@ def test_hsi_testandrefer_and_art():
     rtn = t.apply(person_id=person_id, squeeze_factor=0.0)
 
     # check that the footprint is updated to be that of a positive person and that the person is diagnosed
-    assert rtn == t.make_appt_footprint({'VCTPositive': 1.0})
+    assert rtn == t.make_appt_footprint("VCTPositive")
     assert df.at[person_id, 'hv_diagnosed']
 
     # Check that there is an ART HSI event scheduled

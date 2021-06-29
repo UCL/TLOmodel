@@ -224,18 +224,12 @@ class ChronicSyndrome(Module):
         )
 
         # To simulate a 'piggy-backing' appointment, whereby additional treatment and test are done
-        # for another disease, schedule another appointment (with smaller resources than a full appointmnet)
-        # and set it to priority 0 (to give it highest possible priority).
+        # for another disease, schedule another appointment and set it to priority 0
+        # (to give it highest possible priority).
 
         if treatment_id == 'Mockitis_TreatmentMonitoring':
             piggy_back_dx_at_appt = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self, person_id)
             piggy_back_dx_at_appt.TREATMENT_ID = 'ChronicSyndrome_PiggybackAppt'
-
-            # Arbitrarily reduce the size of appt footprint to reflect that this is a piggy back appt
-            for key in piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT:
-                piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[
-                                                                         key] * 0.25
-
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 piggy_back_dx_at_appt, priority=0, topen=self.sim.date, tclose=None
             )
@@ -388,7 +382,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
         self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
 
@@ -451,14 +445,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         # Define the necessary information for an HSI
         # (These are blank when created; but these should be filled-in by the module that calls it)
         self.TREATMENT_ID = 'ChronicSyndrome_Outreach_Individual'
-
-        # APPP_FOOTPRINT: outreach event takes small amount of time for DCSA
-        appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        appt_footprint['ConWithDCSA'] = 0.5
-        # Demonstrate the equivalence with:
-        assert appt_footprint == self.make_appt_footprint({'ConWithDCSA': 0.5})
-
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 0.5})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("ConWithDCSA")
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at facility-level 0
         self.ALERT_OTHER_DISEASES = ['*']
 
@@ -517,12 +504,6 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
 
         # Demonstrate equivalence
         assert all_available == all_available_using_helper_function
-
-        # Return the actual appt footprints
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
-        actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
-
-        return actual_appt_footprint
 
     def did_not_run(self):
         logger.debug(key='debug', data='HSI_ChronicSyndrome_Outreach_Individual: did not run')

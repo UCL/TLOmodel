@@ -75,9 +75,9 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         if is_child:
-            the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
+            the_appt_footprint = self.make_appt_footprint("Under5OPD")  # Child out-patient appointment
         else:
-            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+            the_appt_footprint = self.make_appt_footprint("Over5OPD")   # Adult out-patient appointment
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel1'
@@ -360,7 +360,7 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("ConWithDCSA")
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -406,9 +406,9 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         if is_child:
-            the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
+            the_appt_footprint = self.make_appt_footprint("Under5OPD")  # Child out-patient appointment
         else:
-            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+            the_appt_footprint = self.make_appt_footprint("Over5OPD")   # Adult out-patient appointment
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'

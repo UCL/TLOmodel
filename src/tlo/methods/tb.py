@@ -2411,7 +2411,7 @@ class Tb(Module):
 #         assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint[
 #             "Over5OPD"
 #         ] = 0.5  # This requires a few minutes of an outpatient appt
@@ -2510,7 +2510,7 @@ class Tb(Module):
 #         assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint[
 #             "ConWithDCSA"
 #         ] = 1  # This requires one generic outpatient appt
@@ -2719,7 +2719,7 @@ class Tb(Module):
 #         assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this treatment event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint["TBFollowUp"] = 1
 #         the_appt_footprint["LabTBMicro"] = 1
 #
@@ -2999,7 +2999,7 @@ class Tb(Module):
 #         assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint[
 #             "Under5OPD"
 #         ] = 1  # This requires one paediatric outpatient appt
@@ -3157,7 +3157,7 @@ class Tb(Module):
 #         assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this treatment event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint[
 #             "TBNew"
 #         ] = 1  # New tb treatment initiation appt, this include pharmacist time
@@ -3328,7 +3328,7 @@ class Tb(Module):
 #         assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this treatment event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint["TBNew"] = 1  # New tb treatment initiation appt
 #
 #         # Define the necessary information for an HSI
@@ -3497,7 +3497,7 @@ class Tb(Module):
 #         assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this treatment event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint["TBFollowUp"] = 1
 #
 #         # Define the necessary information for an HSI
@@ -3597,7 +3597,7 @@ class Tb(Module):
 #         assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this treatment event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint["TBNew"] = 1  # This requires one out patient appt
 #
 #         # Define the necessary information for an HSI
@@ -3702,7 +3702,7 @@ class Tb(Module):
 #         assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this treatment event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint["TBNew"] = 1  # New tb treatment initiation appt
 #
 #         # Define the necessary information for an HSI
@@ -3810,7 +3810,7 @@ class Tb(Module):
 #         assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this treatment event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint["TBFollowUp"] = 1
 #
 #         # Define the necessary information for an HSI
@@ -3838,7 +3838,7 @@ class Tb(Module):
 #         assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint[
 #             "ConWithDCSA"
 #         ] = 1  # This requires one generic outpatient appt
@@ -4075,7 +4075,7 @@ class Tb(Module):
 #         assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this treatment event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
 #
 #         # Define the necessary information for an HSI
@@ -4131,7 +4131,7 @@ class Tb(Module):
 #         # assert isinstance(module, Tb)
 #
 #         # Get a blank footprint and then edit to define call on resources of this treatment event
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint = self.make_appt_footprint()
 #         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
 #
 #         # Define the necessary information for an HSI

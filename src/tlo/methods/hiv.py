@@ -1319,7 +1319,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Hiv_TestAndRefer"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'VCTNegative': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("VCTNegative")
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -1334,7 +1334,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # If the person has previously been diagnosed do nothing do not occupy any resources
         if person['hv_diagnosed']:
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+            return self.make_appt_footprint()
 
         # Run test
         if person['age_years'] < 1.0:
@@ -1356,7 +1356,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             # Offer services as needed:
             if test_result:
                 # The test_result is HIV positive
-                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'VCTPositive': 1})
+                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint("VCTPositive")
 
                 # Update diagnosis if the person is indeed HIV positive;
                 if person['hv_inf']:
@@ -1365,7 +1365,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             else:
                 # The test_result is HIV negative
-                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'VCTNegative': 1})
+                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint("VCTNegative")
 
                 if not self.do_not_refer_if_neg:
                     # The test was negative: make referrals to other services:
@@ -1402,11 +1402,11 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                             )
         else:
             # Test was not possible, so do nothing:
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'VCTNegative': 1})
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint("VCTNegative")
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
-            return self.make_appt_footprint({})
+            return self.make_appt_footprint()
         else:
             return ACTUAL_APPT_FOOTPRINT
 
@@ -1416,7 +1416,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = "Hiv_Circumcision"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MinorSurg": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("MinorSurg")
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -1445,7 +1445,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Hiv)
 
         self.TREATMENT_ID = "Hiv_StartOrContinueOnPrep"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD")
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -1475,7 +1475,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             # Do actions for when a person has been diagnosed with HIV
             self.module.do_when_hiv_diagnosed(person_id=person_id)
 
-            return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
+            return self.make_appt_footprint("Over5OPD", "VCTPositive")
 
         # Check that PrEP is available and if it is, initiate or continue  PrEP:
         if self.get_all_consumables(footprint=self.module.footprints_for_consumables_required['prep']):
@@ -1503,7 +1503,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Hiv)
 
         self.TREATMENT_ID = "Hiv_Treatment_InitiationOrContinuation"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "NewAdult": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint("Over5OPD", "NewAdult")
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -1532,7 +1532,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'hv_last_test_date'] = self.sim.date
 
             if not test_result:
-                return self.make_appt_footprint({"Over5OPD": 1})
+                return self.make_appt_footprint("Over5OPD")
 
             assert person["hv_inf"]  # after the test results, it can be guaranteed that the person is HIV-pos.
 

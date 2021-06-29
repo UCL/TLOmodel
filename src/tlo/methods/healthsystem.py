@@ -498,7 +498,7 @@ class HealthSystem(Module):
                 'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
             )
             # 5) Check that the event does not request an appointment at a facility level which is not possible
-            appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
+            appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT
             assert all([self.parameters['ApptType_By_FacLevel'].loc[
                             self.parameters['ApptType_By_FacLevel']['Appt_Type_Code'] == appt_type_to_check,
                             self.parameters['ApptType_By_FacLevel'].columns.str.contains(
@@ -569,11 +569,11 @@ class HealthSystem(Module):
         :param appt_footprint: Appointment footprint to check.
         :return: True if valid and False otherwise.
         """
-        # Check that all keys known appointment types and all values non-negative
-        return isinstance(appt_footprint, dict) and all(
-            k in self._appointment_types and v > 0
-            for k, v in appt_footprint.items()
-        )
+        # Check that all codes known appointment types
+        if isinstance(appt_footprint, (list, tuple, set)):
+            return self._appointment_types.issuperset(set(appt_footprint))
+        else:
+            return False
 
     def broadcast_healthsystem_interaction(self, hsi_event):
         """
@@ -682,14 +682,6 @@ class HealthSystem(Module):
         )
 
         return capabilities_today
-
-    def get_blank_appt_footprint(self):
-        """
-        This is a helper function so that disease modules can easily create their appt_footprints.
-        It returns an empty Counter instance.
-
-        """
-        return Counter()
 
     def get_blank_cons_footprint(self):
         """
@@ -1520,7 +1512,7 @@ class HSI_Event:
 
         # Defaults for the HSI information:
         self.TREATMENT_ID = ''
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint()
         self.ACCEPTED_FACILITY_LEVEL = None
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
@@ -1637,20 +1629,19 @@ class HSI_Event:
             [self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT]
         )
 
-    def make_appt_footprint(self, dict_of_appts):
+    def make_appt_footprint(self, *appointment_codes):
         """Helper function to make appointment footprint in format expected downstream.
 
-        Should be passed a dictionary keyed by appointment type codes with non-negative
-        values.
+        Should be passed zero or more strings corresponding to appointment type codes.
         """
         health_system = self.sim.modules['HealthSystem']
-        if health_system.appt_footprint_is_valid(dict_of_appts):
-            return Counter(dict_of_appts)
+        appointment_codes = list(appointment_codes)
+        if health_system.appt_footprint_is_valid(appointment_codes):
+            return appointment_codes
         else:
             raise ValueError(
-                "Argument to make_appt_footprint should be a dictionary keyed by "
-                "appointment type code strings in Appt_Types_Table with non-negative "
-                "values"
+                "Arguments to make_appt_footprint should be zero or more appointment "
+                "type code strings in Appt_Types_Table."
             )
 
 
