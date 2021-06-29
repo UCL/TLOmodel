@@ -3,6 +3,9 @@ This will run the Diarrhoea Module and plot the rate of death for diarrhoea over
 There is treatment.
 """
 
+# todo @ines ----- this is the file that I've edited.
+
+
 # %% Import Statements and initial declarations
 import datetime
 from pathlib import Path
@@ -33,8 +36,9 @@ resourcefilepath = Path("./resources")
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# %% Run the Simulation
 
+# %% Run the Simulation
+# Do not run this cell if you already have a  logfile from a simulation:
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 20000
@@ -69,8 +73,16 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
+# display filenmae
+filenmae = sim.log_filepath
+print(f"filename: {filename}")
+
+# %% Load the logile:
+
 # Get the output from the logfile
-output = parse_log_file(sim.log_filepath)
+filename = Path('')  # <-- insert name of the logfile here if you do not want to run the simulation again,
+                     # e.g. filename = Path("outputs/LogFile__2021-06-29T131200.log")
+output = parse_log_file(filename)
 
 
 # %% ----------------------------  INCIDENCE RATE OF DIARRHOEA BY PATHOGEN  ----------------------------
