@@ -62,14 +62,26 @@ def get_ip_stillbirths(logs_dict):
     return ip_stillbirths
 
 
-def get_htn_disorders_graph(master_dict_an, master_dict_la, master_dict_pn, denominator):
+def get_htn_disorders_graph(master_dict_an, master_dict_la, master_dict_pn, denominator, year):
 
-    """gh_rate = (master_dict_an['mild_gest_htn'] / denominator) * 1000
+    gh_rate = ((master_dict_an['mild_gest_htn'] +
+                 master_dict_pn['mild_gest_htn']) / denominator) * 1000
+
     sgh_rate = ((master_dict_an['severe_gest_htn'] +
-                 master_dict_la['severe_gest_htn']) / denominator) * 1000
-    mpe_rate = (master_dict_an['mild_pre_eclamp'] / denominator) * 1000
-    spe_rate = ((master_dict_an['severe_pre_eclamp'] + master_dict_la['severe_pre_eclamp']) / denominator) * 1000
-    ec_rate = ((master_dict_an['eclampsia'] + master_dict_la['eclampsia']) / denominator) * 1000
+                 master_dict_la['severe_gest_htn'] +
+                 master_dict_pn['severe_gest_htn'] ) / denominator) * 1000
+
+    mpe_rate = ((master_dict_an['mild_pre_eclamp'] +
+                master_dict_pn['mild_pre_eclamp']) / denominator) * 1000
+
+    spe_rate = ((master_dict_an['severe_pre_eclamp'] +
+                 master_dict_la['severe_pre_eclamp'] +
+                 master_dict_pn['severe_pre_eclamp']) / denominator) * 1000
+
+    ec_rate = ((master_dict_an['eclampsia'] +
+                 master_dict_la['eclampsia'] +
+                 master_dict_pn['eclampsia']) / denominator) * 1000
+
 
     N = 5
     model_rates = (gh_rate, sgh_rate, mpe_rate, spe_rate, ec_rate)
@@ -80,11 +92,12 @@ def get_htn_disorders_graph(master_dict_an, master_dict_la, master_dict_pn, deno
     plt.bar(ind + width, target_rates, width,
             label='Target Rate', color='mediumseagreen')
     plt.ylabel('Rate per 1000 pregnancies')
-    plt.title('Rates of hypertensive disorders (antenatal + intrapartum)')
+    plt.title(f'Rates of hypertensive disorders in {year}')
     plt.xticks(ind + width / 2, ('GH', 'SGH', 'MPE', 'SPE', 'EC'))
     plt.legend(loc='best')
-    plt.show()"""
+    plt.show()
 
+    """
     an_mpe_rate = (master_dict_an['mild_pre_eclamp'] / denominator) * 1000
     pn_mpe_rate = (master_dict_pn['mild_pre_eclamp'] / denominator) * 1000
 
@@ -117,7 +130,7 @@ def get_htn_disorders_graph(master_dict_an, master_dict_la, master_dict_pn, deno
     ax.set_ylabel('Rate per 1000 pregnancies')
     ax.set_title('Hypertensive disorders of pregnancy')
     ax.legend()
-    plt.show()
+    plt.show() """
 
 
 def get_generic_incidence_graph(complication, dict_2010, dict_2015, denominator, target_2010, target_2015, colours):
@@ -195,7 +208,6 @@ def get_preterm_birth_graph(dict_2010, dict_2015, total_births_2010, total_birth
     plt.xticks(ind + width / 2, ('Rate 10', 'Late 10', 'Early 10', 'Total 15', 'Late 15', 'Early 15', ))
     plt.legend(loc='best')
     plt.show()
-
 
 
 
@@ -305,6 +317,7 @@ def get_total_facility_deliveries(logs_dict_file):
                                len(fd_df.loc[fd_df['facility_type'] == 'health_centre'])
 
         return facility_deliveries
+
 
 def get_facility_delivery_graph(logs_dict_file, total_births, year):
     hospital_deliveries = 0
@@ -424,6 +437,7 @@ def get_pnc_coverage(logs_dict_file, total_births, year):
     plt.title('Distribution of neonatal PNC visits')
     plt.show()
 
+
 def get_mmr(logs_dict_file, list, live_births, year):
     total_direct_death = 0
     total_indirect_death = 0
@@ -462,9 +476,14 @@ def get_mmr(logs_dict_file, list, live_births, year):
     if year == 2010:
         direct_deaths = [direct_mmr, 540]
         indirect_deaths = [indirect_mmr, 135]
+        print('2010 direct model mmr', direct_mmr, 'direct target mmr', 540)
+        print('2010 indirect model mmr', indirect_mmr, 'direct target mmr', 135)
+
     else:
         direct_deaths = [direct_mmr, 307]
         indirect_deaths = [indirect_mmr, 132]
+        print('2015 direct model mmr', direct_mmr, 'direct target mmr', 307)
+        print('2015 indirect model mmr', indirect_mmr, 'direct target mmr', 132)
 
     width = 0.35
     fig, ax = plt.subplots()

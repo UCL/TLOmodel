@@ -44,41 +44,6 @@ class NewbornOutcomes(Module):
         # the main data frame
         self.newborn_care_info = dict()
 
-    # Declare Causes of Death
-    # CAUSES_OF_DEATH = {
-    #    'early_onset_neonatal_sepsis':
-    #        Cause(gbd_causes={'Neonatal disorders'},
-    #              label=''),
-    #    'mild_en':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal abortion and miscarriage'),
-    #    'induced_abortion':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal abortion and miscarriage'),
-    #    'antepartum_haemorrhage':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal hemorrhage'),
-    #    'severe_gestational_hypertension':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal hypertensive disorders'),
-    #    'severe_pre_eclampsia':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal hypertensive disorders'),
-    #    'eclampsia':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal hypertensive disorders'),
-    #    'antenatal_sepsis':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal sepsis and other maternal infections'),
-    # }
-
-    # Declare Causes of Disability
-    # CAUSES_OF_DISABILITY = {
-    #    'tlo_name_of_a_cause_of_disability_in_this_module':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='the_category_of_which_this_cause_is_a_part')
-    # }
-
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
@@ -87,8 +52,20 @@ class NewbornOutcomes(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
+        'early_onset_neonatal_sepsis': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'late_onset_neonatal_sepsis': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'encephalopathy': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'neonatal_respiratory_depression': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'preterm_other': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'respiratory_distress_syndrome': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'congenital_heart_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'limb_or_musculoskeletal_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'urogenital_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'digestive_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'other_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'intrapartum stillbirth': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
-        'neonatal': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        # todo: shouldnt add to neonatal deaths
+
     }
 
     # Declare Causes of Disability
@@ -563,7 +540,6 @@ class NewbornOutcomes(Module):
         dependent on delivery setting.
         :param child_id: child_id
         """
-        params = self.current_parameters
         df = self.sim.population.props
 
         # The linear model calculates the individuals probability of early_onset_neonatal_sepsis
@@ -752,16 +728,16 @@ class NewbornOutcomes(Module):
                     death_date = self.sim.date + DateOffset(days=int(random_draw))
                 else:
                     death_date = self.sim.date
-                print('nci deleted', individual_id)
-                # todo:
+
                 del nci[individual_id]
                 self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
                                                                       cause=f'{cause_of_death}'), death_date)
 
             # Reset variables
-            df.at[individual_id, 'nb_early_onset_neonatal_sepsis'] = False
-            df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
-            df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
+            else:
+                df.at[individual_id, 'nb_early_onset_neonatal_sepsis'] = False
+                df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
+                df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
 
             # We now delete the MNI dictionary for mothers who have died in labour but their children have survived,
             # this is done here as we use variables from the mni as predictors in some of the above equations
@@ -1183,7 +1159,6 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_death_after_birth'] = False
         df.at[child_id, 'nb_pnc_check'] = 0
 
-
         child = df.loc[child_id]
 
         # 'Category' of prematurity (early/late) is stored as a temporary property of the mother via the MNI dictionary
@@ -1204,7 +1179,7 @@ class NewbornOutcomes(Module):
             assert ~df.at[child_id, 'nb_early_preterm']
             assert ~df.at[child_id, 'nb_late_preterm']
 
-        if child.is_alive:
+        if df.at[child_id, 'is_alive']:
 
             #  Next we populate the newborn info dictionary with relevant parameters
             nci[child_id] = {'ga_at_birth': int(df.at[mother_id, 'ps_gestational_age_in_weeks']),
@@ -1216,7 +1191,6 @@ class NewbornOutcomes(Module):
                              'abx_for_prom_given': mni[mother_id]['abx_for_prom_given'],
                              'corticosteroids_given': mni[mother_id]['corticosteroids_given'],
                              'delivery_setting': mni[mother_id]['delivery_setting'],
-                             'sought_care_for_complication': False,
                              'cause_of_death_after_birth': [],
                              'sepsis_postnatal': False,
                              'passed_through_week_one': False,

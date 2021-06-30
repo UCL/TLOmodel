@@ -74,6 +74,7 @@ def set_pregnant_pop_age_correct(sim):
     for person in all.index:
         sim.modules['Labour'].set_date_of_labour(person)
 
+
 def set_labour_pop(sim, start_date):
     df = sim.population.props
 
@@ -214,11 +215,11 @@ def do_normal_run_all_pregnant(config_name, start_date, end_date, seed, populati
 
 # Get the log
 
-seeds = [110]
+seeds = [111]
 for seed in seeds:
-    do_run_pregnancy_only(config_name='death_test_2010_more_births', start_date=Date(2010, 1, 1),
+    do_run_pregnancy_only(config_name='hpd_test_with_pn_levels_2010', start_date=Date(2010, 1, 1),
                           end_date=Date(2012, 1, 1),
-                          seed=seed, population=10000, parameters=2010, age_correct=True)
-    do_run_pregnancy_only(config_name='death_test_2015_more_births', start_date=Date(2015, 1, 1),
-                          end_date=Date(2017, 1, 1),
-                          seed=seed, population=10000, parameters=2015, age_correct=True)
+                          seed=seed, population=5000, parameters=2010, age_correct=True)
+    do_run_pregnancy_only(config_name='hpd_test_with_pn_levels_2015', start_date=Date(2015, 1, 1),
+                          end_date=Date(2016, 1, 1),
+                          seed=seed, population=5000, parameters=2015, age_correct=True)

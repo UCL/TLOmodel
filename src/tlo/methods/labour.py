@@ -8,6 +8,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour_lm
+from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -51,35 +52,20 @@ class Labour(Module):
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
     }
-
     # Declare Causes of Death
-    # CAUSES_OF_DEATH = {
-    #    'uterine_rupture':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal obstructed labor and uterine rupture'),
-    #    'intrapartum_sepsis':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal sepsis and other maternal infections'),
-    #    'postpartum_sepsis':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal sepsis and other maternal infections'),
-    #    'postpartum_haemorrhage':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal hemorrhage'),
-    #    'severe_pre_eclampsia':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal hypertensive disorders'),
-    #    'eclampsia':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal hypertensive disorders'),
-    # }
+    CAUSES_OF_DEATH = {
+        'uterine_rupture': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'intrapartum_sepsis': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'antepartum_haemorrhage': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'postpartum_sepsis': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'postpartum_haemorrhage': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'severe_pre_eclampsia': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'eclampsia': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders')}
 
     # Declare Causes of Disability
-    # CAUSES_OF_DISABILITY = {
-    #    'tlo_name_of_a_cause_of_disability_in_this_module':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='the_category_of_which_this_cause_is_a_part')
-    # }
+    CAUSES_OF_DISABILITY = {
+        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders')
+    }
 
     PARAMETERS = {
 
@@ -1559,6 +1545,8 @@ class Labour(Module):
         assert df.at[individual_id, 'sex'] == 'F'
         assert df.at[individual_id, 'age_years'] > 14
         assert df.at[individual_id, 'age_years'] < 51
+        if not df.at[individual_id, 'la_is_postpartum']:
+            x = 1
         assert df.at[individual_id, 'la_is_postpartum']
 
     # ============================================== HSI FUNCTIONS ====================================================
@@ -2409,6 +2397,52 @@ class Labour(Module):
 
         # TODO: link up with Tara and EPI module to code postnatal immunisation
 
+    def set_labour_mni_variables(self, individual_id):
+        df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+        # Append labor specific variables to the mni
+        labour_variables = {'labour_state': None,
+                            # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
+                            'birth_weight': 'normal_birth_weight',
+                            'birth_size': 'average_for_gestational_age',
+                            'delivery_setting': None,  # home_birth, health_centre, hospital
+                            'twins': df.at[individual_id, 'ps_multiple_pregnancy'],
+                            'twin_count': 0,
+                            'twin_one_comps': False,
+                            'pnc_twin_one': 'none',
+                            'bf_status_twin_one': 'none',
+                            'eibf_status_twin_one': False,
+                            'an_placental_abruption': df.at[individual_id, 'ps_placental_abruption'],
+                            'corticosteroids_given': False,
+                            'clean_birth_practices': False,
+                            'abx_for_prom_given': False,
+                            'abx_for_pprom_given': False,
+                            'chorio_lab': False,
+                            'endo_pp': False,
+                            'retained_placenta': False,
+                            'uterine_atony': False,
+                            'amtsl_given': False,
+                            'cpd': False,
+                            'mode_of_delivery': 'vaginal_delivery',
+                            # vaginal_delivery, instrumental, caesarean_section
+                            'squeeze_to_high_for_hsi': False,  # True (T) or False (F)
+                            'squeeze_to_high_for_hsi_pp': False,  # True (T) or False (F)
+                            'sought_care_for_complication': False,  # True (T) or False (F)
+                            'sought_care_labour_phase': 'none',
+                            'referred_for_cs': False,  # True (T) or False (F)
+                            'referred_for_blood': False,  # True (T) or False (F)
+                            'received_blood_transfusion': False,  # True (T) or False (F)
+                            'referred_for_surgery': False,  # True (T) or False (F)'
+                            'death_in_labour': False,  # True (T) or False (F)
+                            'cause_of_death_in_labour': [],
+                            'single_twin_still_birth': False,  # True (T) or False (F)
+                            'will_receive_pnc': 'none',
+                            'passed_through_week_one': False
+                            }
+
+        mni[individual_id].update(labour_variables)
+
 
 class LabourOnsetEvent(Event, IndividualScopeEventMixin):
     """
@@ -2440,47 +2474,8 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # We then run the labour_characteristics_checker as a final check that only appropriate women are here
             self.module.labour_characteristics_checker(individual_id)
 
-            # Append labor specific variables to the mni
-            labour_variables = {'labour_state': None,
-                                # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
-                                'birth_weight': 'normal_birth_weight',
-                                'birth_size': 'average_for_gestational_age',
-                                'delivery_setting': None,  # home_birth, health_centre, hospital
-                                'twins': df.at[individual_id, 'ps_multiple_pregnancy'],
-                                'twin_count': 0,
-                                'twin_one_comps': False,
-                                'pnc_twin_one': 'none',
-                                'bf_status_twin_one': 'none',
-                                'eibf_status_twin_one': False,
-                                'an_placental_abruption': df.at[individual_id, 'ps_placental_abruption'],
-                                'corticosteroids_given': False,
-                                'clean_birth_practices': False,
-                                'abx_for_prom_given': False,
-                                'abx_for_pprom_given': False,
-                                'chorio_lab': False,
-                                'endo_pp': False,
-                                'retained_placenta': False,
-                                'uterine_atony': False,
-                                'amtsl_given': False,
-                                'cpd': False,
-                                'mode_of_delivery': 'vaginal_delivery',
-                                # vaginal_delivery, instrumental, caesarean_section
-                                'squeeze_to_high_for_hsi': False,  # True (T) or False (F)
-                                'squeeze_to_high_for_hsi_pp': False,  # True (T) or False (F)
-                                'sought_care_for_complication': False,  # True (T) or False (F)
-                                'sought_care_labour_phase': 'none',
-                                'referred_for_cs': False,  # True (T) or False (F)
-                                'referred_for_blood': False,  # True (T) or False (F)
-                                'received_blood_transfusion': False,  # True (T) or False (F)
-                                'referred_for_surgery': False,  # True (T) or False (F)'
-                                'death_in_labour': False,  # True (T) or False (F)
-                                'cause_of_death_in_labour': [],
-                                'single_twin_still_birth': False,  # True (T) or False (F)
-                                'will_receive_pnc': 'none',
-                                'passed_through_week_one': False
-                                }
-
-            mni[individual_id].update(labour_variables)
+            # Update the mni with new variables
+            self.module.set_labour_mni_variables(individual_id)
 
             # ===================================== LABOUR STATE  =====================================================
             # Next we categories each woman according to her gestation age at delivery. These categories include term
@@ -2819,7 +2814,6 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
 
         # Next we apply the risk of complications following delivery
         if person.is_alive:
-            # We use this variable in the postnatal supervisor module to track postpartum women
             df.at[mother_id, 'la_is_postpartum'] = True
             df.at[mother_id, 'la_date_most_recent_delivery'] = self.sim.date
 

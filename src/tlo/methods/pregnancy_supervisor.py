@@ -7,6 +7,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging, util, D
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
+from tlo.methods.causes import Cause
 from tlo.methods.labour import LabourOnsetEvent
 from tlo.util import BitsetHandler
 
@@ -46,39 +47,20 @@ class PregnancySupervisor(Module):
                 Metadata.USES_HEALTHBURDEN}
 
     # Declare Causes of Death
-    # CAUSES_OF_DEATH = {
-    #    'ectopic_pregnancy':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal abortion and miscarriage'),
-    #    'spontaneous_abortion':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal abortion and miscarriage'),
-    #    'induced_abortion':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal abortion and miscarriage'),
-    #    'antepartum_haemorrhage':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal hemorrhage'),
-    #    'severe_gestational_hypertension':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal hypertensive disorders'),
-    #    'severe_pre_eclampsia':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal hypertensive disorders'),
-    #    'eclampsia':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal hypertensive disorders'),
-    #    'antenatal_sepsis':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='Maternal sepsis and other maternal infections'),
-    # }
+    CAUSES_OF_DEATH = {
+        'ectopic_pregnancy': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'spontaneous_abortion': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'induced_abortion': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'antepartum_haemorrhage': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'severe_gestational_hypertension': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'severe_pre_eclampsia': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'eclampsia': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'antenatal_sepsis': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders')}
 
     # Declare Causes of Disability
-    # CAUSES_OF_DISABILITY = {
-    #    'tlo_name_of_a_cause_of_disability_in_this_module':
-    #        Cause(gbd_causes={'Maternal disorders'},
-    #              label='the_category_of_which_this_cause_is_a_part')
-    # }
+    CAUSES_OF_DISABILITY = {
+        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders')
+    }
 
     PARAMETERS = {
         # ECTOPIC PREGNANCY...

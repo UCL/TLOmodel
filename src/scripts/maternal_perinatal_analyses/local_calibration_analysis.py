@@ -33,8 +33,8 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 
 logs_dict = dict()
 
-files = ['death_test_2010_calibration_110__2021-06-25T130129',
-         'death_test_2015_calibration_110__2021-06-25T132131']
+files = ['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857',
+         'hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104']
 
 for file in files:
     new_parse_log = {file: parse_log_file(filepath=f"./outputs/calibration_files/{file}.log")}
@@ -63,26 +63,29 @@ for complication in postnatal_comps:
     master_dict_pn_2015.update(new_row)
 
 for complication in antenatal_comps:
-    graph_maker.get_incidence(logs_dict['death_test_2010_calibration_110__2021-06-25T130129'],
+    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857'],
                               'pregnancy_supervisor', complication, master_dict_an_2010)
-    graph_maker.get_incidence(logs_dict['death_test_2015_calibration_110__2021-06-25T132131'],
+    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104'],
                               'pregnancy_supervisor', complication, master_dict_an_2015)
 
 for complication in intrapartum_comps:
-    graph_maker.get_incidence(logs_dict['death_test_2010_calibration_110__2021-06-25T130129'],
+    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857'],
                               'labour', complication, master_dict_la_2010)
-    graph_maker.get_incidence(logs_dict['death_test_2015_calibration_110__2021-06-25T132131'],
+    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104'],
                               'labour', complication, master_dict_la_2015)
 
 for complication in postnatal_comps:
-    graph_maker.get_incidence(logs_dict['death_test_2010_calibration_110__2021-06-25T130129'],
+    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857'],
                               'postnatal_supervisor', complication, master_dict_pn_2010)
-    graph_maker.get_incidence(logs_dict['death_test_2015_calibration_110__2021-06-25T132131'],
+    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104'],
                               'labour', complication, master_dict_pn_2015)
 
-total_births_2010 = graph_maker.get_total_births(logs_dict['death_test_2010_calibration_110__2021-06-25T130129'])
-total_births_2015 = graph_maker.get_total_births(logs_dict['death_test_2015_calibration_110__2021-06-25T132131'])
-graph_maker.get_mmr(logs_dict['death_test_2010_calibration_110__2021-06-25T130129'],
-                    direct_causes, total_births_2010, 2010)
-graph_maker.get_mmr(logs_dict['death_test_2015_calibration_110__2021-06-25T132131'],
-                    direct_causes, total_births_2015, 2015)
+total_births_2010 = graph_maker.get_total_births(
+    logs_dict['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857'])
+total_births_2015 = graph_maker.get_total_births(
+    logs_dict['hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104'])
+
+graph_maker.get_htn_disorders_graph(master_dict_an_2010, master_dict_la_2010, master_dict_pn_2010,
+                                    total_births_2010, 2010)
+graph_maker.get_htn_disorders_graph(master_dict_an_2015, master_dict_la_2015, master_dict_pn_2015,
+                                    total_births_2015, 2015)
