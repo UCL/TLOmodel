@@ -1958,3 +1958,24 @@ def unpack_raw_output_dict(raw_dict):
     x.rename(columns={'index': 'age_group', 0: 'value'}, inplace=True)
     x['age_group'] = set_age_group(x['age_group'])
     return x
+
+
+class DummyHIVModule(Module):
+    """Dummy HIV Module - it's only job is to create and maintain the 'hv_inf' property.
+     This can be used in test files."""
+    PROPERTIES = {'hv_inf': Property(Types.BOOL, "DUMMY version of the property for hv_inf")}
+
+    def read_parameters(self, data_folder):
+        self.hiv_prev = 0.1
+        pass
+
+    def initialise_population(self, population):
+        df = population.props
+        df.loc[df.is_alive, 'hv_inf'] = self.rng.rand(sum(df.is_alive)) < self.hiv_prev
+
+    def initialise_simulation(self, sim):
+        pass
+
+    def on_birth(self, mother, child):
+        df = self.sim.population.props
+        df.at[child, 'hv_inf'] = self.rng.rand() < self.hiv_prev

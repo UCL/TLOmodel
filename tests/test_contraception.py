@@ -4,23 +4,20 @@ from pathlib import Path
 
 import pytest
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, Types, Module, Property
 from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
-    healthburden,
-    healthseekingbehaviour,
     healthsystem,
     labour,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
-    symptommanager,
-    hiv,
+    symptommanager
 )
+from tlo.methods.hiv import DummyHIVModule
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
@@ -30,25 +27,26 @@ popsize = 200
 @pytest.fixture(scope='module')
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    service_availability = ['*']
 
     sim = Simulation(start_date=start_date)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
-    sim.seed_rngs(0)
+    sim.register(
+        # - core modules:
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False),
+
+        # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+
+        # - Dummy HIV module (as contraception requires the property hv_inf)
+        DummyHIVModule()
+    )
     return sim
 
 
@@ -60,7 +58,7 @@ def __check_properties(df):
 
 def test_make_initial_population(simulation):
     simulation.make_initial_population(n=popsize)
-
+    simulation.population.make_test_property('hv_inf', Types.BOOL)
 
 def test_initial_population(simulation):
     __check_properties(simulation.population.props)
