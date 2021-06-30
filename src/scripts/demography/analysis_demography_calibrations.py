@@ -21,6 +21,7 @@ from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
     demography,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -30,6 +31,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    hiv,
 )
 from tlo.util import create_age_range_lookup
 
@@ -78,6 +80,8 @@ def run():
         labour.Labour(resourcefilepath=resources),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+        hiv.Hiv(resourcefilepath=resources),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resources),
     )
 
     sim.make_initial_population(n=pop_size)

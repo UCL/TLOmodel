@@ -56,7 +56,7 @@ log_config = {
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 2)
+end_date = Date(2011, 1, 2)
 pop_size = 10000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and

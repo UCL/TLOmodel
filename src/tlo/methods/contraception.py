@@ -46,7 +46,7 @@ class Contraception(Module):
         'r_discont_year': Parameter(Types.REAL,
                                     'proportional change in contraception discontinuation probabilities for each year,\
                                      2010 to 2100'),
-        # From Marston et al 2017, Figure 1, Eastern Africa, closer to rural - effect in younger ages smay be due
+        # From Marston et al 2017, Figure 1, Eastern Africa, closer to rural - effect in younger ages may be due
         # to more sex in HIV+ but that is ok as we don't model sexual activity separately)
         'r_hiv': Parameter(Types.REAL,
                            'proportional change in fertility rate for HIV+ compared to HIV- by age group'),
