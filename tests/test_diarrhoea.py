@@ -342,8 +342,8 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                     [4.0 * v for v in sim.modules['Diarrhoea'].parameters[param_name]]
 
             # Increase symptoms so that everyone gets symptoms:
-            if param_name.startswith('proportion_AWD_by_'):
-                sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+            # if param_name.startswith('proportion_AWD_by_'):
+            #     sim.modules['Diarrhoea'].parameters[param_name] = 1.0
             if param_name.startswith('fever_by_'):
                 sim.modules['Diarrhoea'].parameters[param_name] = 1.0
             if param_name.startswith('vomiting_by_'):
@@ -356,26 +356,25 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         sim.modules['Diarrhoea'].parameters['case_fatality_rate_dysentery'] = 0.5
 
         # Apply perfect efficacy for treatments:
-        sim.modules['Diarrhoea'].parameters['days_onset_severe_dehydration_before_death'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_Treatment_PlanA'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_Treatment_PlanB'] = 1.0
+        # sim.modules['Diarrhoea'].parameters['days_onset_severe_dehydration_before_death'] = 1.0
+        sim.modules['Diarrhoea'].parameters['ors_effectiveness_on_diarrhoea_mortality'] = 1.0
         sim.modules['Diarrhoea'].parameters['prob_of_cure_given_Treatment_PlanC'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_Diarrhoea_Dysentery'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanA'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanB'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanC'] = 1.0
+        sim.modules['Diarrhoea'].parameters['antibiotic_effectiveness_for_dysentery'] = 1.0
 
         # Make long duration so as to allow time for healthcare seeking
-        sim.modules['Diarrhoea'].parameters['min_days_duration_of_episode'] = 3
-        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_rotavirus'] = 12
-        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_shigella'] = 12
-        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_adenovirus'] = 12
-        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_cryptosporidium'] = 12
-        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_campylobacter'] = 12
-        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_ST-ETEC'] = 12
-        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_sapovirus'] = 12
-        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_norovirus'] = 12
-        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_astrovirus'] = 12
-        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_tEPEC'] = 12
+        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_rotavirus'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_shigella'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_adenovirus'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_cryptosporidium'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_campylobacter'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_ST-ETEC'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_sapovirus'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_norovirus'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_astrovirus'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_tEPEC'] = 1.0
 
         sim.make_initial_population(n=popsize)
         check_configuration_of_properties(sim)

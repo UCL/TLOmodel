@@ -121,7 +121,7 @@ class DxAlgorithmChild(Module):
 
                 # Treatment Plan A for uncomplicated diarrhoea (no dehydration and no danger signs)
                 schedule_hsi(
-                    HSI_Diarrhoea_Treatment_PlanA(
+                    HSI_AcuteDiarrhoea_PlanA(
                         person_id=person_id,
                         module=self.sim.modules['Diarrhoea']),
                     priority=0,
@@ -131,7 +131,7 @@ class DxAlgorithmChild(Module):
                 if duration_in_days >= 14:
                     # 'Non_Severe_Persistent_Diarrhoea'
                     schedule_hsi(
-                        HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(
+                        HSI_PersistentDiarrhoea_PlanA(
                             person_id=person_id,
                             module=self.sim.modules['Diarrhoea']),
                         priority=0,
@@ -145,7 +145,7 @@ class DxAlgorithmChild(Module):
                 if duration_in_days >= 14:
                     # 'Severe_Persistent_Diarrhoea'
                     schedule_hsi(
-                        HSI_Diarrhoea_Severe_Persistent_Diarrhoea(
+                        HSI_PersistentDiarrhoea_PlanB(
                             person_id=person_id,
                             module=self.sim.modules['Diarrhoea']),
                         priority=0,
@@ -157,7 +157,7 @@ class DxAlgorithmChild(Module):
                     # TODO:add "...and not other severe classification from other disease modules
                     #  (measles, pneumonia, etc)"
                     schedule_hsi(
-                        HSI_Diarrhoea_Treatment_PlanB(
+                        HSI_AcuteDiarrhoea_PlanB(
                             person_id=person_id,
                             module=self.sim.modules['Diarrhoea']),
                         priority=0,
@@ -166,7 +166,7 @@ class DxAlgorithmChild(Module):
                 else:
                     # Danger sign for 'Severe_Dehydration'
                     schedule_hsi(
-                        HSI_Diarrhoea_Treatment_PlanC(
+                        HSI_AcuteDiarrhoea_PlanC(
                             person_id=person_id,
                             module=self.sim.modules['Diarrhoea']),
                         priority=0,
@@ -179,7 +179,7 @@ class DxAlgorithmChild(Module):
             if blood_in_stool:
                 # 'Dysentery'
                 schedule_hsi(
-                    HSI_Diarrhoea_Dysentery(
+                    HSI_AcuteDiarrhoea_Dysentery_PlanA(
                         person_id=person_id,
                         module=self.sim.modules['Diarrhoea']),
                     priority=0,

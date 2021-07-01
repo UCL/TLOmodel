@@ -375,10 +375,6 @@ class Diarrhoea(Module):
         'rr_diarr_death_shigella':
             Parameter(Types.REAL, 'relative risk of diarrhoea death if caused by shigella'
                       ),
-        'days_onset_severe_dehydration_before_death':
-            Parameter(Types.INT, 'number of days before a death (in the untreated case) that dehydration would be '
-                                 'classified as severe and child ought to be classified as positive for the danger'
-                                 'signs'),
         'mean_days_duration_with_rotavirus':
             Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by rotavirus'),
         'mean_days_duration_with_shigella':
@@ -400,37 +396,29 @@ class Diarrhoea(Module):
             Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by astrovirus'),
         'mean_days_duration_with_tEPEC':
             Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by tEPEC'),
-        'prob_of_cure_given_Treatment_PlanA':
-            Parameter(Types.REAL, 'probability of the person being cured if is provided with Treatment Plan A'),
-        'prob_of_cure_given_Treatment_PlanB':
-            Parameter(Types.REAL, 'probability of the person being cured if is provided with Treatment Plan B'),
-        'prob_of_cure_given_Treatment_PlanC':
+        'prob_of_cure_given_HSI_AcuteDiarrhoea_PlanC':
             Parameter(Types.REAL, 'probability of the person being cured if is provided with Treatment Plan C'),
-        'max_number_of_days_for_onset_of_severe_dehydration_before_end_of_episode':
-            Parameter(Types.INT, 'if severe dehydration occurs, it onsets a number of days before the end of the '
-                                 'episode of diarrhoea; that number of days is chosen from a uniform distribution '
-                                 'between 0 and this number'),
+
         'probability_of_severe_dehydration_if_some_dehydration':
             Parameter(Types.REAL, 'probability that someone with diarrhoea and some dehydration develops severe '
                                   'dehydration'),
-        'min_days_duration_of_episode':
-            Parameter(Types.INT, 'the shortest duration of any episode of diarrhoea'),
         'range_in_days_duration_of_episode':
             Parameter(Types.INT, 'the duration of an episode of diarrhoea is a uniform distribution around the mean '
                                  'with a range equal by this number.'),
 
         # TODO check the below parmaeters for those HSI are relevant
-        'prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea':
+        'prob_of_cure_given_HSI_PersistentDiarrhoea_PlanA':
             Parameter(Types.REAL,
                       'probability of the person being cured if is provided with '
-                      'HSI_Diarrhoea_Severe_Persistent_Diarrhoea.'),
-        'prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea':
+                      'prob_of_cure_given_HSI_PersistentDiarrhoea_PlanA'),
+        'prob_of_cure_given_HSI_PersistentDiarrhoea_PlanB':
             Parameter(Types.REAL,
                       'probability of the person being cured if is provided with '
-                      'HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea.'),
-        'prob_of_cure_given_HSI_Diarrhoea_Dysentery':
+                      'prob_of_cure_given_HSI_PersistentDiarrhoea_PlanB'),
+        'prob_of_cure_given_HSI_PersistentDiarrhoea_PlanC':
             Parameter(Types.REAL,
-                      'probability of the person being cured if is provided with HSI_Diarrhoea_Dysentery.'),
+                      'probability of the person being cured if is provided with '
+                      'prob_of_cure_given_HSI_PersistentDiarrhoea_PlanC'),
         'days_between_treatment_and_cure':
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'),
         'ors_effectiveness_on_diarrhoea_mortality':
@@ -721,7 +709,7 @@ class Diarrhoea(Module):
             Predictor('gi_last_diarrhoea_dehydration').when('some', p['rr_diarr_death_dehydration']),
             Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_diarr_death_age12to23mo'])
                                         .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo'])
-                                        .otherwise(0.0),
+                                        .when('.between(0,0.9999)', 1).otherwise(0.0),
             Predictor('gi_last_diarrhoea_pathogen').when('cryptosporidium', p['rr_diarr_death_cryptosporidium'])
                                                    .when('shigella', p['rr_diarr_death_shigella']),
             # Predictor('ri_current_ALRI_status').when(True, p['rr_diarr_death_alri']),
@@ -1101,8 +1089,10 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             props_new['gi_last_diarrhoea_duration_type'] = 'persistent'
             duration = 21
 
-        date_of_outcome = self.sim.date + DateOffset(days=duration)
         props_new['gi_last_diarrhoea_duration'] = duration
+
+        # Date of outcome (end of diarrhoeal episode)
+        date_of_outcome = self.sim.date + DateOffset(days=duration)
 
         # ----------------------- Determine symptoms for this episode ----------------------
         possible_symptoms_for_this_pathogen = m.prob_symptoms[self.pathogen]
@@ -1484,7 +1474,7 @@ class HSI_AcuteDiarrhoea_PlanC(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=self.module.parameters['prob_of_cure_given_Treatment_PlanC']
+                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_AcuteDiarrhoea_PlanC']
             )
 
 
@@ -1514,10 +1504,11 @@ class HSI_PersistentDiarrhoea_PlanA(HSI_Event, IndividualScopeEventMixin):
 
         if person.age_exact_years < 0.5:
             cons_footprint = self.module.consumables_used_in_hsi[
-                'HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea_Under6mo']
+                'Persistent_Diarrhoea_Under6mo']
         else:
             cons_footprint = self.module.consumables_used_in_hsi[
-                'HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea_6moPlus']
+                'Persistent_Diarrhoea_6moPlus']
+        cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanA'])
 
         # give multivitamins for 14 days
         # give zinc for 10 days
@@ -1534,7 +1525,7 @@ class HSI_PersistentDiarrhoea_PlanA(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea']
+                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanA']
             )
 
 
@@ -1559,6 +1550,7 @@ class HSI_PersistentDiarrhoea_PlanB(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
 
         df = self.sim.population.props
+        person = self.sim.population.props.loc[person_id]
 
         if not df.at[person_id, 'is_alive']:
             return
@@ -1567,7 +1559,12 @@ class HSI_PersistentDiarrhoea_PlanB(HSI_Event, IndividualScopeEventMixin):
         # if bloody stool and fever in persistent diarroea - give Nalidixic Acid 50mg/kg divided in 4 doses per day for
         # 5 days if malnourished give cotrimoxazole 24mg/kg every 12 hours for 5 days and supplemental feeding and
         # supplements
-        cons_footprint = self.module.consumables_used_in_hsi['Persistent_Diarrhoea']
+        if person.age_exact_years < 0.5:
+            cons_footprint = self.module.consumables_used_in_hsi[
+                'Persistent_Diarrhoea_Under6mo']
+        else:
+            cons_footprint = self.module.consumables_used_in_hsi[
+                'Persistent_Diarrhoea_6moPlus']
         cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanB'])
 
         rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
@@ -1581,7 +1578,7 @@ class HSI_PersistentDiarrhoea_PlanB(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea']
+                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanB']
             )
 
 
@@ -1606,6 +1603,7 @@ class HSI_PersistentDiarrhoea_PlanC(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
 
         df = self.sim.population.props
+        person = self.sim.population.props.loc[person_id]
 
         if not df.at[person_id, 'is_alive']:
             return
@@ -1614,7 +1612,12 @@ class HSI_PersistentDiarrhoea_PlanC(HSI_Event, IndividualScopeEventMixin):
         # if bloody stool and fever in persistent diarroea - give Nalidixic Acid 50mg/kg divided in 4 doses per day for
         # 5 days if malnourished give cotrimoxazole 24mg/kg every 12 hours for 5 days and supplemental feeding and
         # supplements
-        cons_footprint = self.module.consumables_used_in_hsi['Persistent_Diarrhoea']
+        if person.age_exact_years < 0.5:
+            cons_footprint = self.module.consumables_used_in_hsi[
+                'Persistent_Diarrhoea_Under6mo']
+        else:
+            cons_footprint = self.module.consumables_used_in_hsi[
+                'Persistent_Diarrhoea_6moPlus']
         cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanC'])
 
         rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
@@ -1628,7 +1631,7 @@ class HSI_PersistentDiarrhoea_PlanC(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea']
+                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanC']
             )
 
 
@@ -1769,7 +1772,8 @@ class HSI_AcuteDiarrhoea_Dysentery_PlanC(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=p['ors_effectiveness_on_diarrhoea_mortality'] * p['antibiotic_effectiveness_for_dysentery']
+                prob_of_cure=p['prob_of_cure_given_HSI_AcuteDiarrhoea_PlanC'] *
+                             p['antibiotic_effectiveness_for_dysentery']
             )
 
 
@@ -1793,11 +1797,18 @@ class HSI_PersistentDiarrhoea_Dysentery_PlanA(HSI_Event, IndividualScopeEventMix
 
         df = self.sim.population.props
         p = self.module.parameters
+        person = self.sim.population.props.loc[person_id]
 
         if not df.at[person_id, 'is_alive']:
             return
 
-        cons_footprint = self.module.consumables_used_in_hsi['Dysentery']
+        if person.age_exact_years < 0.5:
+            cons_footprint = self.module.consumables_used_in_hsi[
+                'Persistent_Diarrhoea_Under6mo']
+        else:
+            cons_footprint = self.module.consumables_used_in_hsi[
+                'Persistent_Diarrhoea_6moPlus']
+        cons_footprint.update(self.module.consumables_used_in_hsi['Dysentery'])
         cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanA'])
 
         # Get consumables required
@@ -1816,7 +1827,9 @@ class HSI_PersistentDiarrhoea_Dysentery_PlanA(HSI_Event, IndividualScopeEventMix
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=p['ors_effectiveness_on_diarrhoea_mortality'] * p['antibiotic_effectiveness_for_dysentery']
+                prob_of_cure=p['ors_effectiveness_on_diarrhoea_mortality'] *
+                             p['antibiotic_effectiveness_for_dysentery'] *
+                             p['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanA']
             )
 
 
@@ -1840,11 +1853,18 @@ class HSI_PersistentDiarrhoea_Dysentery_PlanB(HSI_Event, IndividualScopeEventMix
 
         df = self.sim.population.props
         p = self.module.parameters
+        person = self.sim.population.props.loc[person_id]
 
         if not df.at[person_id, 'is_alive']:
             return
 
-        cons_footprint = self.module.consumables_used_in_hsi['Dysentery']
+        if person.age_exact_years < 0.5:
+            cons_footprint = self.module.consumables_used_in_hsi[
+                'Persistent_Diarrhoea_Under6mo']
+        else:
+            cons_footprint = self.module.consumables_used_in_hsi[
+                'Persistent_Diarrhoea_6moPlus']
+        cons_footprint.update(self.module.consumables_used_in_hsi['Dysentery'])
         cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanB'])
 
         # Get consumables required
@@ -1863,7 +1883,9 @@ class HSI_PersistentDiarrhoea_Dysentery_PlanB(HSI_Event, IndividualScopeEventMix
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=p['ors_effectiveness_on_diarrhoea_mortality'] * p['antibiotic_effectiveness_for_dysentery']
+                prob_of_cure=p['ors_effectiveness_on_diarrhoea_mortality'] *
+                             p['antibiotic_effectiveness_for_dysentery'] *
+                             p['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanB']
             )
 
 
@@ -1887,11 +1909,18 @@ class HSI_PersistentDiarrhoea_Dysentery_PlanC(HSI_Event, IndividualScopeEventMix
 
         df = self.sim.population.props
         p = self.module.parameters
+        person = self.sim.population.props.loc[person_id]
 
         if not df.at[person_id, 'is_alive']:
             return
 
-        cons_footprint = self.module.consumables_used_in_hsi['Dysentery']
+        if person.age_exact_years < 0.5:
+            cons_footprint = self.module.consumables_used_in_hsi[
+                'Persistent_Diarrhoea_Under6mo']
+        else:
+            cons_footprint = self.module.consumables_used_in_hsi[
+                'Persistent_Diarrhoea_6moPlus']
+        cons_footprint.update(self.module.consumables_used_in_hsi['Dysentery'])
         cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanC'])
 
         # Get consumables required
@@ -1910,5 +1939,8 @@ class HSI_PersistentDiarrhoea_Dysentery_PlanC(HSI_Event, IndividualScopeEventMix
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=p['ors_effectiveness_on_diarrhoea_mortality'] * p['antibiotic_effectiveness_for_dysentery']
+                prob_of_cure=p['prob_of_cure_given_HSI_AcuteDiarrhoea_PlanC'] *
+                             p['antibiotic_effectiveness_for_dysentery'] *
+                             p['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanC']
             )
+
