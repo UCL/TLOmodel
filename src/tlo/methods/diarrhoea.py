@@ -1772,8 +1772,9 @@ class HSI_AcuteDiarrhoea_Dysentery_PlanC(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=p['prob_of_cure_given_HSI_AcuteDiarrhoea_PlanC'] *
-                             p['antibiotic_effectiveness_for_dysentery']
+                prob_of_cure=p[
+                                 'prob_of_cure_given_HSI_AcuteDiarrhoea_PlanC'] * p[
+                    'antibiotic_effectiveness_for_dysentery']
             )
 
 
@@ -1827,9 +1828,9 @@ class HSI_PersistentDiarrhoea_Dysentery_PlanA(HSI_Event, IndividualScopeEventMix
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=p['ors_effectiveness_on_diarrhoea_mortality'] *
-                             p['antibiotic_effectiveness_for_dysentery'] *
-                             p['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanA']
+                prob_of_cure=p[
+                                 'ors_effectiveness_on_diarrhoea_mortality'] * p[
+                    'antibiotic_effectiveness_for_dysentery'] * p['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanA']
             )
 
 
@@ -1883,9 +1884,8 @@ class HSI_PersistentDiarrhoea_Dysentery_PlanB(HSI_Event, IndividualScopeEventMix
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=p['ors_effectiveness_on_diarrhoea_mortality'] *
-                             p['antibiotic_effectiveness_for_dysentery'] *
-                             p['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanB']
+                prob_of_cure=p[ 'ors_effectiveness_on_diarrhoea_mortality'] * p[
+                    'antibiotic_effectiveness_for_dysentery'] * p['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanB']
             )
 
 
@@ -1939,8 +1939,7 @@ class HSI_PersistentDiarrhoea_Dysentery_PlanC(HSI_Event, IndividualScopeEventMix
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=p['prob_of_cure_given_HSI_AcuteDiarrhoea_PlanC'] *
-                             p['antibiotic_effectiveness_for_dysentery'] *
-                             p['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanC']
+                prob_of_cure=p[
+                                 'prob_of_cure_given_HSI_AcuteDiarrhoea_PlanC'] * p[
+                    'antibiotic_effectiveness_for_dysentery'] * p['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanC']
             )
-

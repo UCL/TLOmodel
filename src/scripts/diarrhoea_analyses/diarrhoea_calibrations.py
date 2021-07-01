@@ -13,14 +13,11 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, create_age_range_lookup, parse_log_file
 from tlo.methods import (
     diarrhoea,
-    contraception,
     demography,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    pregnancy_supervisor,
     symptommanager, simplified_births, dx_algorithm_child
 )
 
@@ -42,7 +39,6 @@ def run_sim(service_availability):
     sim = Simulation(start_date=start_date, log_config={"filename": "LogFile"})
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability),
@@ -50,8 +46,6 @@ def run_sim(service_availability):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
