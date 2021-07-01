@@ -1457,11 +1457,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
                         total_footprint -= original_call
                         total_footprint += updated_call
-                        squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
-                            footprints_per_event=footprints_of_all_individual_level_hsi_event,
-                            total_footprint=total_footprint,
-                            current_capabilities=current_capabilities,
-                        )
+                        if self.module.mode_appt_constraints != 0:
+                            # only need to recompute squeeze factors if running with constraints
+                            # i.e. mode != 0
+                            squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
+                                footprints_per_event=footprints_of_all_individual_level_hsi_event,
+                                total_footprint=total_footprint,
+                                current_capabilities=current_capabilities,
+                            )
                     else:
                         # no actual footprint is returned so take the expected initial declaration as the actual
                         actual_appt_footprint = event.EXPECTED_APPT_FOOTPRINT
@@ -1581,8 +1584,9 @@ class HSI_Event:
 
     def run(self, squeeze_factor):
         """Make the event happen."""
-        self.apply(self.target, squeeze_factor)
+        updated_appt_footprint = self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
+        return updated_appt_footprint
 
     def get_all_consumables(self, item_codes=None, pkg_codes=None, footprint=None):
         """Helper function to allow for getting and checking of entire set of consumables.
