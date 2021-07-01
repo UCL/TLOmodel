@@ -3,9 +3,6 @@ This will run the Diarrhoea Module and plot the rate of death for diarrhoea over
 There is treatment.
 """
 
-# todo @ines ----- this is the file that I've edited.
-
-
 # %% Import Statements and initial declarations
 import datetime
 from pathlib import Path
@@ -31,15 +28,18 @@ from tlo.methods import (
 outputpath = Path("./outputs")
 resourcefilepath = Path("./resources")
 
+run_now = True
+
+
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-
+# if run_now:
 # %% Run the Simulation
 # Do not run this cell if you already have a  logfile from a simulation:
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 20_000
+popsize = 50000
 
 log_config = {
     'filename': 'LogFile',
@@ -69,14 +69,16 @@ sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
 # display filenmae
-filenmae = sim.log_filepath
+filename = sim.log_filepath
 print(f"filename: {filename}")
 
 # %% Load the logile:
 
 # Get the output from the logfile
-filename = Path('')  # <-- insert name of the logfile here if you do not want to run the simulation again,
-                     # e.g. filename = Path("outputs/LogFile__2021-06-29T131200.log")
+filename = Path('outputs/LogFile__2021-06-29T191225.log')
+
+# filename = Path(f'{filename}')  # <-- insert name of the logfile here if you do not want to run the simulation again,
+#                      # e.g. filename = Path("outputs/LogFile__2021-06-29T131200.log")
 output = parse_log_file(filename)
 
 # %% ----------------------------  INCIDENCE RATE OF DIARRHOEA BY PATHOGEN  ----------------------------
@@ -251,7 +253,7 @@ deaths['cause_simplified'] = [x[0] for x in deaths['cause'].str.split('_')]
 deaths = deaths.drop(deaths.loc[deaths['cause_simplified'] != 'Diarrhoea'].index)
 deaths = deaths.groupby(by=['age_grp', 'year']).size().reset_index()
 deaths.rename(columns={0: 'count'}, inplace=True)
-deaths.drop(deaths.index[deaths['year'] > 2010.0], inplace=True)
+# deaths.drop(deaths.index[deaths['year'] > 2010.0], inplace=True)
 deaths = deaths.pivot(values='count', columns='age_grp', index='year')
 
 # Death Rate = death count (by year, by age-group) / person-years
@@ -274,7 +276,7 @@ plt.show()
 # %% Plot total numbers of death against comparable estimate from GBD
 
 # Get comparison
-comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
+comparison = compare_number_of_deaths(logfile=filename, resourcefilepath=resourcefilepath)
 
 # Make a simple bar chart
 comparison.loc[('2015-2019', slice(None), '0-4', 'Childhood Diarrhoea')].sum().plot.bar()
@@ -284,7 +286,7 @@ plt.show()
 
 # %% Look at Case Fatality Rate
 cfr = dict()
-for age_grp in ['0y', '1y', '2-4y']:
+for age_grp in ['1y', '2-4y']:
     cfr[age_grp] = deaths[age_grp] / counts[age_grp].apply(pd.Series).sum(axis=1)
 cfr = pd.DataFrame(cfr).drop(index=2015).mean() * 100_000
 
