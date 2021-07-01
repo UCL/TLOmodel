@@ -322,12 +322,28 @@ class Contraception(Module):
         df.at[mother_id, 'co_contraception'] = chosen_co.index[0]
 
         # Log that this women had initiated this contraceptive following birth:
-        logger.info(key='post_birth_contraception',
+        self.log_contraception_change(mother_id,
+                               old='not_using',
+                               new=df.at[mother_id, 'co_contraception'],
+                               init_after_pregnancy=True)
+
+    def log_contraception_change(self, woman_id: int, old, new, init_after_pregnancy=False):
+        """Log a start / stop / switch of contraception. """
+        assert old in self.all_contraception_states
+        assert new in self.all_contraception_states
+
+        df = self.sim.population.props
+        woman = df.loc[w]
+        logger.info(key='contraception',
                     data={
-                        'woman_index': mother_id,
-                        'co_contraception': df.at[mother_id, 'co_contraception']
+                        'woman': w,
+                        'age': woman['age_years'],
+                        'switch_from': old,
+                        'switch_to': new,
+                        'init_after_pregnancy': init_after_pregnancy
                     },
-                    description='post birth_contraception')
+                    description='All changes in contraception'
+                    )
 
 
 class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
@@ -341,6 +357,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
         self.age_low = 15
         self.age_high = 49
+        self.all_contraception_states = set(self.module.PROPERTIES['co_contraception'].categories)
 
     def apply(self, population):
         """Update contraceptive method and determine who will become pregnant."""
@@ -350,7 +367,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # Update contraception:
         self.update_contraceptive()
-
 
     def update_contraceptive(self):
         """ Determine women that will start, stop or switch contraceptive method.
@@ -410,15 +426,9 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             # only update entries for all those now using a contraceptive
             df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
 
-            # Log information for each woman about the contraceptive being initiated:
+            # log women that are starting a new contraceptive
             for woman in now_using_co:
-                logger.info(key='start_contraception',
-                            data={
-                                'woman_index': woman,
-                                'age': df.at[woman, 'age_years'],
-                                'co_contraception': df.at[woman, 'co_contraception']
-                            },
-                            description='start_contraception')
+                self.module.log_contraception_change(woman, old='not_using', new=df.at[woman, 'co_contraception'])
 
     def switch(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception Switches
@@ -446,25 +456,10 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # log women that are switching to a new contraceptive
         for woman in switch_co:
-            logger.info(key='switch_contraception',
-                        data={
-                            'woman_index': woman,
-                            'co_from': df.at[woman, 'co_contraception'],
-                            'co_to': new_co[woman]
-                        },
-                        description='switch_contraception')
+            self.module.log_contraception_change(woman, old=df.at[woman, 'co_contraception'], new=new_co[woman])
 
         # update contraception for all who switched
         df.loc[switch_co, 'co_contraception'] = new_co
-
-    def update_pregnancy(self):
-        """Determine who will become pregnant"""
-
-        # Determine pregnancy for those on a contraceptive ("unintentional pregnancy")
-        self.pregnancy_for_those_on_contraceptive()
-
-        # Determine pregnancy for those not on contraceptive ("intentional pregnancy")
-        self.pregnancy_for_those_not_on_contraceptive()
 
     def discontinue(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception discontinues
@@ -486,18 +481,23 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # random choose some to discontinue
         random_draw = rng.random_sample(size=len(individuals_using))
-        if len(random_draw):
-            co_discontinue = discontinue_prob.index[discontinue_prob > random_draw]
-            df.loc[co_discontinue, 'co_contraception'] = 'not_using'
+        co_discontinue = discontinue_prob.index[discontinue_prob > random_draw]
 
-            # Log each woman that is discontinuing contraception
-            for woman in co_discontinue:
-                logger.info(key='stop_contraception',
-                            data={
-                                'woman_index': woman,
-                                'co_from': df.at[woman, 'co_contraception']
-                            },
-                            description='stop_contraception')
+        # Log information for each woman about the contraceptive being initiated:
+        for woman in co_discontinue:
+            self.module.log_contraception_change(woman, old=df.at[woman, 'co_contraception'], new='not_using')
+
+        # Update contraception property:
+        df.loc[co_discontinue, 'co_contraception'] = 'not_using'
+
+    def update_pregnancy(self):
+        """Determine who will become pregnant"""
+
+        # Determine pregnancy for those on a contraceptive ("unintentional pregnancy")
+        self.pregnancy_for_those_on_contraceptive()
+
+        # Determine pregnancy for those not on contraceptive ("intentional pregnancy")
+        self.pregnancy_for_those_not_on_contraceptive()
 
     def pregnancy_for_those_on_contraceptive(self):
         """Look across all women who are using a contraception method to determine if they become pregnant i.e. the
@@ -534,8 +534,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             women_co_failure = prob_of_failure.index[prob_of_failure > random_draw]
 
             # Effect these women to be pregnant now:
-            self.set_new_pregnancy(women_id=women_co_failure, unintended_preg=True)
-
+            self.set_new_pregnancy(women_id=women_co_failure)
 
     def pregnancy_for_those_not_on_contraceptive(self, population):
         """
@@ -583,34 +582,43 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         newly_pregnant_ids = females.index[(self.module.rng.rand(len(females)) < monthly_risk_of_pregnancy)]
 
         # Effect these women to be pregnant now:
-        self.set_new_pregnancy(women_id=newly_pregnant_ids, unintended_preg=False)
+        self.set_new_pregnancy(women_id=newly_pregnant_ids)
 
-
-    def set_new_pregnancy(self, women_id: list, unintended_preg: bool):
+    def set_new_pregnancy(self, women_id: list):
         """Effect that these women are now pregnancy and enter to the log"""
+        df = self.sim.population.props
 
-        for woman in women_id:
+        for w in women_id:
+            women = df.loc[w]
+
+            # Determine if this is unintended or not.  For now let this be the simple rule of if it 'unintended' if
+            # the women is using a contraceptive. # todo - @TimC - update this logic as you see fit!
+            unintended = (woman['co_contraception'] != 'not_using')
+
             # Update properties:
-            df.loc[woman, (
+            df.loc[w, (
                 'is_pregnant',
                 'date_of_last_pregnancy',
                 'co_unintended_preg'
             )] = (
                 True,
                 self.sim.date,
-                unintended_preg
+                unintended
             )
 
             # Set date of labour in the Labour module:
-            self.sim.modules['Labour'].set_date_of_labour(woman)
+            self.sim.modules['Labour'].set_date_of_labour(w)
 
             # Log that a pregnancy has occured following the failure of a contraceptive:
             logger.info(key='pregnancy',
                         data={
-                            'woman_index': woman,
-                            'age_years': females.at[female_id, 'age_years'],
-                            'unintended': unintended_preg},
+                            'woman_index': w,
+                            'age_years': woman['age_years'],
+                            'contraception': woman['co_contraception'],
+                            'unintended_preg': unintended
+                        },
                         description='pregnancy following the failure of contraceptive method')
+
 
 
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -620,6 +628,8 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         self.age_low = 15
         self.age_high = 49
+        self.all_contraception_states = set(self.module.PROPERTIES['co_contraception'].categories)
+
 
         self.get_costs_of_each_contraceptive()
 
@@ -642,7 +652,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'Male condom'].sum()
         self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'Female sterilization'].sum()
         self.costs['other_modern'] = item_cost.loc[consumables['Intervention_Pkg']== 'Female Condom'].sum()
-        assert set(self.costs.keys()).issubset(self.module.PROPERTIES['co_contraception'].categories)
+        assert set(self.costs.keys()).issubset(self.all_contraception_states)
 
     def apply(self, population):
         df = population.props
