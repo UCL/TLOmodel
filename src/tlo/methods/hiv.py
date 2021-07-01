@@ -1960,6 +1960,11 @@ def unpack_raw_output_dict(raw_dict):
     return x
 
 
+# ---------------------------------------------------------------------------
+#   Dummy Version of the Module
+# ---------------------------------------------------------------------------
+
+
 class DummyHivModule(Module):
     """Dummy HIV Module - it's only job is to create and maintain the 'hv_inf' property.
      This can be used in test files."""

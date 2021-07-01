@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import numpy as np
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
@@ -585,38 +585,26 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         # load the fertility schedule (imported datasheet from excel workbook)
         fertility_schedule = self.module.parameters['fertility_schedule']
 
-        # get the probability of pregnancy for each woman in the model, through merging with the fert_schedule data
-        len_before_merge = len(females)
-        females = females.reset_index().merge(fertility_schedule,
-                                              left_on=['age_years'],
-                                              right_on=['age'],
-                                              how='inner').set_index('person')
-        assert len(females) == len_before_merge
-
-        # adjust for r_hiv relative fertility in HIV+ compared to HIV- by age:
-        # todo - this doesn't need a merge. Can just be of the form:
-        #  ```female.loc[df.hv_inf] *= self.module.parameters['r_hiv']['hiv']```
+        # load the age-specific effects of HIV
         frr_hiv = self.module.parameters['r_hiv']
-        females = females.reset_index().merge(frr_hiv,
-                                              left_on=['age_years'],
-                                              right_on=['age_'],
-                                              how='inner').set_index('person')
+
+        # get the probability of pregnancy for each woman in the model, through merging with the fert_schedule data and
+        # the 'r_hiv' parameter
+        len_before_merge = len(females)
+        females = females.reset_index().merge(
+            fertility_schedule, left_on=['age_years'], right_on=['age'], how='left'
+        ).merge(
+            frr_hiv, left_on=['age_years'], right_on=['age_'], how='left'
+                ).set_index('person')
         assert len(females) == len_before_merge
 
-        # flipping the coin to determine if this woman will become pregnant (basefert_dhs is in the Excel sheet)
-        newly_pregnant = (
-            self.module.rng.random_sample(size=len(females)) <
-            ((females.basefert_dhs / 12) * (females.frr_hiv * females.hv_inf))
-        )
-        # probability adjusted for HIV+ women (assume * females.hv_inf==False means times zero)
-        # todo @TimC - your comment read "probability adjusted for HIV+ women (assume * females.hv_inf==False means times zero)"
-        #  but - i presume you really want for the multiplied effect to be 1 when the person is not HIV-pos? I've made
-        #  the edits to reflect that logic.
+        # probability of pregnancy
+        annual_risk_of_pregnancy = females.basefert_dhs
+        annual_risk_of_pregnancy.loc[females.hv_inf] *= females.frr_hiv
+        monthly_risk_of_pregnancy = 1 - np.exp(-annual_risk_of_pregnancy / 12.0)
 
-        # Nb. the imported number is a yearly proportion. So adjust the rate accordingly to the frequency with which
-        # the event is recurring (divide by 12) todo - convert to monthly risk using p=1-exp(-r/12)
-
-        newly_pregnant_ids = females.index[newly_pregnant]
+        # flipping the coin to determine which women become pregnant
+        newly_pregnant_ids = females.index[(self.module.rng.rand(len(females)) < monthly_risk_of_pregnancy)]
 
         # updating the pregancy status for that women
         df.loc[newly_pregnant_ids, 'is_pregnant'] = True
