@@ -16,6 +16,8 @@ logger.setLevel(logging.INFO)
 # * it would also be useful to run a check that when there is no contracpetive, then the number of births matches WPP very closely (ResourceFile_ASFR_WPP.csv) (as does the simplified_birth module)
 # * There is a comment "add link to unintended preg from not using" - but I think it should be that the flag for unintended pregnancy comes when there is Fail (from a method).
 # * We could encapsulate each init and swtich inside an HSI pretty easily now -- shall we do this? Could make it an optional thing (argument for ```no_hsi=True``` could preserve current behaviour)
+# todo  - Should remove women with hysterectomy from being on contraception??
+
 """
 
 
@@ -102,7 +104,8 @@ class Contraception(Module):
         'date_of_last_pregnancy': Property(Types.DATE,
                                            'Date of the last pregnancy of this individual'),
         'co_unintended_preg': Property(Types.BOOL,
-                                       'Most recent or current pregnancy was unintended pregnancies following contraception failure'),
+                                       'Most recent or current pregnancy was unintended (following contraception '
+                                       'failure)'),
 
         # TODO: add link to unintended preg from not using????
     }
@@ -198,14 +201,7 @@ class Contraception(Module):
         * Schedule the recurring events: ContraceptiveSwitchingPoll, Fail, PregnancyPoll, ContraceptiveLoggingEvent
         """
         # starting contraception, switching contraception metho, and stopping contraception:
-        sim.schedule_event(ContraceptionSwitchingPoll(self), sim.date)
-
-        # check all females using contraception to determine if contraception fails i.e. woman becomes
-        # pregnant whilst using contraception (starts at month 0)
-        sim.schedule_event(Fail(self), sim.date)
-
-        # check all population to determine if pregnancy should be triggered (repeats every month)
-        sim.schedule_event(PregnancyPoll(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(ContraceptionPoll(self), sim.date)
 
         # Launch the repeating event that will store statistics about the population structure
         sim.schedule_event(ContraceptionLoggingEvent(self), sim.date)
@@ -242,7 +238,7 @@ class Contraception(Module):
         # todo - this could be tidied-up!
         # =================== ARRANGE INPUTS FOR USE BY REGULAR EVENTS =============================
 
-        # For ContraceptionSwitchingPoll.init1 -----------------------------------------------------
+        # For ContraceptionPoll.init1 -----------------------------------------------------
 
         # from Stata analysis line 250 of initiation rates_age_stcox_2005_2016_5yrPeriods.do:
         # fracpoly: regress _d age_
@@ -268,7 +264,7 @@ class Contraception(Module):
         c_adjusted = c_baseline + c_adjusted
         self.parameters['contraception_initiation1'] = c_adjusted.set_index(c_multiplier.age)
 
-        # For ContraceptionSwitchingPoll.switch ----------------------------------------------------
+        # For ContraceptionPoll.switch ----------------------------------------------------
         switching_prob = self.parameters['Switching'].transpose()
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv outputs from
         # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
@@ -283,7 +279,7 @@ class Contraception(Module):
         switching_matrix = switching_matrix.transpose()
         self.parameters['contraception_switching_matrix'] = switching_matrix
 
-        # For ContraceptionSwitchingPoll.discontinue
+        # For ContraceptionPoll.discontinue
         c_baseline = self.parameters['Discontinuation']
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv outputs from
         # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
@@ -334,23 +330,11 @@ class Contraception(Module):
                     description='post birth_contraception')
 
 
-class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
+class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
     """
-    Switching contraception status for population
-
-    This event looks across:
-    1) all women who are 'not_using' contraception to determine if they start using each method=
-    according to initiation_rate1 (irate_1)
-    2) all women who are using a contraception method to determine if they switch to another
-    method according to switching_rate, and then for those that switch directs towards a new method according to
-    switching_matrix
-    3) all women who are using a contraception method to determine if they stop using it
-    according to discontinuation_rate
-
-    (Was previously in Init1, Switch, Discontinue events)
-
-    # todo  - Should remove women with hysterectomy from being on contraception
-
+    The regular poll (monthly) for the Contraceptive Module.
+    * Determines contraceptive use
+    * Pregnancy
     """
 
     def __init__(self, module):
@@ -359,6 +343,25 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
         self.age_high = 49
 
     def apply(self, population):
+        """Update contraceptive method and determine who will become pregnant."""
+
+        # Determine who will become pregnant:
+        self.update_pregnancy()
+
+        # Update contraception:
+        self.update_contraceptive()
+
+
+    def update_contraceptive(self):
+        """ Determine women that will start, stop or switch contraceptive method.
+        1) For all women who are 'not_using' contraception to determine if they start using each method according to
+        initiation_rate1 (irate_1).
+        2) For all women who are using a contraception method to determine if they switch to another method according to
+        switching_rate, and then for those that switch directs towards a new method according to switching_matrix.
+        3) For all women who are using a contraception method to determine if they stop using it according to
+        discontinuation_rate
+        """
+
         df = population.props
 
         possible_co_users = ((df.sex == 'F') &
@@ -454,6 +457,15 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
         # update contraception for all who switched
         df.loc[switch_co, 'co_contraception'] = new_co
 
+    def update_pregnancy(self):
+        """Determine who will become pregnant"""
+
+        # Determine pregnancy for those on a contraceptive ("unintentional pregnancy")
+        self.pregnancy_for_those_on_contraceptive()
+
+        # Determine pregnancy for those not on contraceptive ("intentional pregnancy")
+        self.pregnancy_for_those_not_on_contraceptive()
+
     def discontinue(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception discontinues
         i.e. category should change to 'not_using'
@@ -487,84 +499,48 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
                             },
                             description='stop_contraception')
 
+    def pregnancy_for_those_on_contraceptive(self):
+        """Look across all women who are using a contraception method to determine if they become pregnant i.e. the
+         method fails according to failure_rate."""
+        def apply(self, population):
+            df = population.props
+            p = self.module.parameters
+            rng = self.module.rng
 
-class Fail(RegularEvent, PopulationScopeEventMixin):
-    """
-    This event looks across all women who are using a contraception method to determine if they become pregnant
-    i.e. the method fails according to failure_rate.
-    """
+            prob_of_failure = p['contraception_failure']
 
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
-        self.age_low = 15
-        self.age_high = 49
+            # Get the women who are using a contracpetive that may fail and who may become pregnanct (i.e., women who are
+            # not in labour, have been pregnant in the last month, have previously had a hysterectomy,
+            # cannot get pregnant.)
 
-    def apply(self, population):
-        df = population.props
-        p = self.module.parameters
-        rng = self.module.rng
+            possible_to_fail = ((df.sex == 'F') &
+                                df.is_alive &
+                                ~df.is_pregnant &
+                                ~df.la_currently_in_labour &
+                                ~df.la_has_had_hysterectomy &
+                                df.age_years.between(self.age_low, self.age_high) &
+                                ~df.co_contraception.isin(['not_using', 'female_steralization']) &
+                                ~df.la_is_postpartum &
+                                (df.ps_ectopic_pregnancy == 'none')
+                                )
 
-        prob_of_failure = p['contraception_failure']
+            prob_of_failure = df.loc[possible_to_fail, 'co_contraception'].map(prob_of_failure)
 
-        # Get the women who are using a contracpetive that may fail and who may become pregnanct (i.e., women who are
-        # not in labour, have been pregnant in the last month, have previously had a hysterectomy,
-        # cannot get pregnant.)
+            # apply increased risk of failure to under 25s
+            prob_of_failure.loc[df.index[possible_to_fail & (df.age_years.between(15, 25))]] *= p['rr_fail_under25']
 
-        # todo @TimC - should the HIV risk effect manifest on the failure rate too?
-        possible_to_fail = ((df.sex == 'F') &
-                            df.is_alive &
-                            ~df.is_pregnant &
-                            ~df.la_currently_in_labour &
-                            ~df.la_has_had_hysterectomy &
-                            df.age_years.between(self.age_low, self.age_high) &
-                            ~df.co_contraception.isin(['not_using', 'female_steralization']) &
-                            ~df.la_is_postpartum &
-                            (df.ps_ectopic_pregnancy == 'none')
-                            )
+            # randomly select some individual's for contraceptive failure
+            random_draw = rng.random_sample(size=len(prob_of_failure))
+            women_co_failure = prob_of_failure.index[prob_of_failure > random_draw]
 
-        prob_of_failure = df.loc[possible_to_fail, 'co_contraception'].map(prob_of_failure)
-
-        # apply increased risk of failure to under 25s
-        prob_of_failure.loc[df.index[possible_to_fail & (df.age_years.between(15, 25))]] *= p['rr_fail_under25']
-
-        # randomly select some individual's for contraceptive failure
-        random_draw = rng.random_sample(size=len(prob_of_failure))
-        women_co_failure = prob_of_failure.index[prob_of_failure > random_draw]
-
-        for woman in women_co_failure:
-            # this woman's contraception has failed - she is now pregnant
-
-            # update properties:
-            df.loc[woman, (
-                'is_pregnant',
-                'date_of_last_pregnancy',
-                'co_unintended_preg'
-            )] = (
-                True,
-                self.sim.date,
-                True
-            )
-
-            # Set date of labour in the Labour module:
-            self.sim.modules['Labour'].set_date_of_labour(woman)
-
-            # Log that a pregnancy has occured following the failure of a contraceptive:
-            logger.info(key='fail_contraception',
-                        data={'woman_index': woman},
-                        description='pregnancy following the failure of contraceptive method')
+            # Effect these women to be pregnant now:
+            self.set_new_pregnancy(women_id=women_co_failure, unintended_preg=True)
 
 
-class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
-    """
-    This event looks across each woman who is not using a contracpetive to determine who will become pregnant.
-    """
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
-        self.age_low = 15
-        self.age_high = 49
-
-    def apply(self, population):
+    def pregnancy_for_those_not_on_contraceptive(self, population):
+        """
+        This event looks across each woman who is not using a contracpetive to determine who will become pregnant.
+        """
         df = population.props  # get the population dataframe
 
         # get subset of women who are not using a contraceptive and who may become pregnant
@@ -606,23 +582,35 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         # flipping the coin to determine which women become pregnant
         newly_pregnant_ids = females.index[(self.module.rng.rand(len(females)) < monthly_risk_of_pregnancy)]
 
-        # updating the pregancy status for that women
-        df.loc[newly_pregnant_ids, 'is_pregnant'] = True
-        df.loc[newly_pregnant_ids, 'date_of_last_pregnancy'] = self.sim.date
-        # todo @TimC - should we set co_unintended_preg = False in this case?
+        # Effect these women to be pregnant now:
+        self.set_new_pregnancy(women_id=newly_pregnant_ids, unintended_preg=False)
 
-        # loop through each newly pregnant women in order to schedule them to have labour
-        # todo - if we unify the logging, factorize so that all pregnancies go through same function (from Fail and from PregnancyPoll)
-        for female_id in newly_pregnant_ids:
-            self.sim.modules['Labour'].set_date_of_labour(female_id)
 
-            # Log each pregnancy that occurs to a woman not using contraceptive
-            logger.info(key='pregnant_at_age_',
+    def set_new_pregnancy(self, women_id: list, unintended_preg: bool):
+        """Effect that these women are now pregnancy and enter to the log"""
+
+        for woman in women_id:
+            # Update properties:
+            df.loc[woman, (
+                'is_pregnant',
+                'date_of_last_pregnancy',
+                'co_unintended_preg'
+            )] = (
+                True,
+                self.sim.date,
+                unintended_preg
+            )
+
+            # Set date of labour in the Labour module:
+            self.sim.modules['Labour'].set_date_of_labour(woman)
+
+            # Log that a pregnancy has occured following the failure of a contraceptive:
+            logger.info(key='pregnancy',
                         data={
-                            'person_id': female_id,
-                            'age_years': females.at[female_id, 'age_years']
-                        },
-                        description='pregnany to a woman not on contraceptive')
+                            'woman_index': woman,
+                            'age_years': females.at[female_id, 'age_years'],
+                            'unintended': unintended_preg},
+                        description='pregnancy following the failure of contraceptive method')
 
 
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -636,67 +624,41 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.get_costs_of_each_contraceptive()
 
     def get_costs_of_each_contraceptive(self):
-        # cost_pill = pd.Series(consumables.loc[
-        #                                  consumables['Intervention_Pkg']
-        #                                  == 'Pill',
-        #                                  'item_cost']).sum()    # adds all item costs
+        """Get the cost for a year's useage of the consumable"""
 
-        # cost_IUD = pd.Series(consumables.loc[
-        #                          consumables['Intervention_Pkg']
-        #                          == 'IUD',
-        #                          'item_cost']).sum()  # adds all item costs
+        # Costs for each contraceptive
+        # We multiply each Unit_Cost by Expected_Units_Per_Case so they can be summed for all Items for each
+        # contraceptive package to get cost of each contraceptive user for each contraceptive.
+        # todo @TimC - do you want each to represent a year's use?
+        # NB. Cost of "other modern method" is estimated to be equal to the cost of a female condom
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        item_cost = consumables['Expected_Units_Per_Case'] * consumables['Unit_Cost']
 
-        # cost_injections = pd.Series(consumables.loc[
-        #                                  consumables['Intervention_Pkg']
-        #                                  == 'Injectable',
-        #                                  'item_cost']).sum()    # adds all item costs
-
-        # cost_implant = pd.Series(consumables.loc[
-        #                                  consumables['Intervention_Pkg']
-        #                                  == 'Implant',
-        #                                  'item_cost']).sum()    # adds all item costs
-
-        # cost_male_condom = pd.Series(consumables.loc[
-        #                                  consumables['Intervention_Pkg']
-        #                                  == 'Male condom',
-        #                                  'item_cost']).sum()
-
-        # cost_female_sterilization = pd.Series(consumables.loc[
-        #                                  consumables['Intervention_Pkg']
-        #                                  == 'Female sterilization',
-        #                                  'item_cost']).sum()    # adds all item costs
-
-        # cost_other_modern = pd.Series(consumables.loc[
-        #                                    consumables['Intervention_Pkg']
-        #                                    == 'Female Condom',
-        #                                    'item_cost']).sum()  # adds all item costs
-        # nb- estimated to be equal to the cost of a female condom
-        pass
+        self.costs = dict()
+        self.costs['pill'] = item_cost.loc[consumables['Intervention_Pkg']== 'Pill'].sum()
+        self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'IUD'].sum()
+        self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'Injectable'].sum()
+        self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'Implant'].sum()
+        self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'Male condom'].sum()
+        self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'Female sterilization'].sum()
+        self.costs['other_modern'] = item_cost.loc[consumables['Intervention_Pkg']== 'Female Condom'].sum()
+        assert set(self.costs.keys()).issubset(self.module.PROPERTIES['co_contraception'].categories)
 
     def apply(self, population):
         df = population.props
 
-        # 1) Log current distributuion of persons who are pregnant / not pregnant
-        # todo - @TimC - is this really useful!?!? also note that it includes men! if so could be simplified to
-        #  ```logger.info(key='pregnancy', data=df.loc[df.is_alive & df.age_years.between(self.age_low, self.age_high)].is_pregnant.value_counts())```
-        preg_counts = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].is_pregnant.value_counts()
-        is_preg_count = (df.is_alive & df.age_years.between(self.age_low, self.age_high) & df.is_pregnant).sum()
-        is_notpreg_count = (df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant).sum()
+        # Log usage of contracpetive
+        logger.info(key='contraception_summary',
+                    data=df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts(),
+                    description='Counts of women on each type of contraceptive')
 
-        logger.info(key='pregnancy',
-                    data={
-                        'total': sum(preg_counts),
-                        'pregnant': is_preg_count,
-                        'not_pregnant': is_notpreg_count
-                    },
-                    description='pregnancy')
-
-        # 2) Log usage of contracpetive (and compute costs)
+        # Log costs associated with the consumables used for this pattern of usage (if annualised)
         # todo @TimC - I've made this work for now, but note that this is only giving a rough estimate and its based
         #  on a cross-sectional measure taken every year and people will start and stop in the intervening time. The log
         #  already contains the full information (every person that starts and stops and the dates), so I think it'd
         #  be better to contruct estimates of cost outside of the simulation and in the analysis files. If you did want
-        #  to continue using this, then to be accurate its frequency must be at lesst equal to monthly.
+        #  to continue using this, then to be accurate its frequency must be at lesst equal to monthly. I haven't made
+        #  that change to allow your script files to still work, but if you do, you would need to adjust the cost calcs.
 
         c_intervention = self.module.parameters['contraception_interventions']
 
@@ -706,13 +668,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         cost_per_year1 = c_intervention.iloc[1]  # cost_per_year_multiplier for increasing r_init1
         cost_per_year2 = c_intervention.iloc[3]  # cost_per_year_multiplier for increasing r_init2 PPFP
 
-        # Costs for each contraceptive
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        # multiply each Unit_Cost by Expected_Units_Per_Case so they can be summed for all Items for each contraceptive
-        # package to get cost of each contraceptive user for each contraceptive
-        item_cost = self.sim.modules['HealthSystem'].parameters['Consumables']['Expected_Units_Per_Case'] * \
-            self.sim.modules['HealthSystem'].parameters['Consumables']['Unit_Cost']
-        consumables['item_cost'] = item_cost
+
 
         # # Pill
 
@@ -790,3 +746,21 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # logger.info(key='contraception_summary',
         #             data=contraception_summary,
         #             description='contraception_summary')
+
+
+        # # Log current distributuion of persons who are pregnant / not pregnant
+        # # todo - @TimC - is this really useful!?!? also note that it includes men! I've commented-out and we can
+        # #  probably delete it. If it's useful then it should be
+        # #  ```logger.info(key='pregnancy', data=df.loc[df.is_alive & df.age_years.between(self.age_low, self.age_high)
+        # #  ].is_pregnant.value_counts())```
+        # preg_counts = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].is_pregnant.value_counts()
+        # is_preg_count = (df.is_alive & df.age_years.between(self.age_low, self.age_high) & df.is_pregnant).sum()
+        # is_notpreg_count = (df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant).sum()
+        #
+        # logger.info(key='pregnancy',
+        #             data={
+        #                 'total': sum(preg_counts),
+        #                 'pregnant': is_preg_count,
+        #                 'not_pregnant': is_notpreg_count
+        #             },
+        #             description='pregnancy')
