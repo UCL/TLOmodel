@@ -39,11 +39,11 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 2
+yearsrun = 5
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 2000
+pop_size = 20000
 nsim = 2
 # Create a variable whether to save figures or not (used in debugging)
 save_figures = True
@@ -182,15 +182,15 @@ for i in range(0, nsim):
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
     # make parameter adjustments
-    # number_inj_data = [0.38, 0.25, 0.153, 0.094, 0.055, 0.031, 0.018, 0.019]
-    # sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
-    #     [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
-    # ]
+    number_inj_data = [0.7, 0.15, 0.075, 0.0375, 0.01875, 0.009375, 0.007031250000000089, 0.00234375]
+    sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
+        [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
+    ]
     # sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
     #     [1, 2, 3, 4, 5, 6, 7, 8], [1, 0, 0, 0, 0, 0, 0, 0]
     # ]
 
-    sim.modules['RTI'].parameters['imm_death_proportion_rti'] = 0.01
+    sim.modules['RTI'].parameters['imm_death_proportion_rti'] = 0.018
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation

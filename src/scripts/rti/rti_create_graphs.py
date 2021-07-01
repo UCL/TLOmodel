@@ -1175,14 +1175,40 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
     model_data = [np.mean(average_incidence), np.mean(average_deaths), mean_inc_total]
     plt.bar(n, gbd_data, width=0.4, color='lightsalmon', label='GBD estimates')
     plt.bar(n + 0.4, model_data, width=0.4, color='lightsteelblue', label='Model estimates')
-    plt.xticks(n + 0.2, ['Incidence of people with RTIs', 'Incidence of death', 'Incidence of injuries'])
+    plt.xticks(n + 0.2, ['Incidence of \npeople \nwith RTIs', 'Incidence \nof \ndeath', 'Incidence \nof \ninjuries'])
     for i in range(len(gbd_data)):
         plt.annotate(str(np.round(gbd_data[i], 2)), xy=(n[i], gbd_data[i]), ha='center', va='bottom')
     for i in range(len(model_data)):
         plt.annotate(str(np.round(model_data[i], 2)), xy=(n[i] + 0.4, model_data[i]), ha='center', va='bottom')
     plt.legend()
+    plt.title(f"The model's predicted incidence of RTI, incidence of RTI death and incidence of injuries"
+              f"\n"
+              f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
     plt.savefig(save_directory + "/" + filename_description + "_" +
                 f"GBD_comparison_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
+                bbox_inches='tight')
+    plt.clf()
+    # ============== Plot number of injuries compared to Sundet et al =========================================
+    # plot the number of injuries per patient compared to results shown in Sundet et al.
+    # DOI: 10.1177/0049475518808969
+    # Load the data from Sundet
+    Sundet_n_patients = 4776
+    Sundet_n_injuries = 7057
+    # Calculate Sundet's estimated number of injuries per patient
+    Sundet_injuries_per_patient = Sundet_n_injuries / Sundet_n_patients
+    # Calculate total number of injuries in model
+    injuries_per_sim = inj_loc_data.to_list()
+    total_number_of_injuries = sum([float(sum(col)) / len(col) for col in zip(*injuries_per_sim)])
+    total_n_crashes = r['total_in_rti'].mean()
+    # Calculate number of injuries per patient predicted in the model
+    Model_injuries_per_patient = total_number_of_injuries / total_n_crashes
+    # plot Sundets estimate compared to the model
+    plt.bar(np.arange(2), [Sundet_injuries_per_patient, Model_injuries_per_patient], color='lightsteelblue')
+    plt.xticks(np.arange(2), ['Injuries per person\nSundet et al. 2018', 'Injuries per person\n model'])
+    plt.title(f"Injuries per person, Model compared to Sundet et al. 2018"
+              f"\n"
+              f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+    plt.savefig(save_directory + "/" + filename_description + "_" + "Injuries_per_person_model_Sundet_comp.png",
                 bbox_inches='tight')
     plt.clf()
     # ============ Plot overall health system usage =============================================

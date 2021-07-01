@@ -40,11 +40,11 @@ log_config = {
 resourcefilepath = Path('./resources')
 save_file_path = "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/"
 # Establish the simulation object
-yearsrun = 1
+yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 2000
+pop_size = 20000
 nsim = 3
 # Create a variable whether to save figures or not (used in debugging)
 save_figures = True
@@ -58,9 +58,10 @@ sing_inj_incidences_of_injuries = []
 sing_inj_cause_of_death_in_sim = []
 sing_number_of_injuries = []
 sing_dalys = []
+sing_number_of_deaths = []
 for i in range(0, nsim):
-    # Create the simulation object
-    sim = Simulation(start_date=start_date)
+    # Create the simulation object  seed=1336898099
+    sim = Simulation(start_date=start_date, seed=1621365318)
     # Register the modules
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -82,11 +83,13 @@ for i in range(0, nsim):
     # alter the number of injuries given out
     # Injury vibes number of GBD injury category distribution:
     number_inj_data = [1, 0, 0, 0, 0, 0, 0, 0]
-
     sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
         [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
     ]
     sim.modules['RTI'].parameters['imm_death_proportion_rti'] = imm_death
+    # sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 0
+    sim.modules['RTI'].parameters['rr_injrti_mortality_polytrauma'] = 1
+
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
@@ -110,6 +113,7 @@ for i in range(0, nsim):
     YLL = dalys_df[YLL_RTI].sum(axis=1)
     DALYs = YLD.sum() + YLL.sum()
     sing_dalys.append(DALYs)
+    sing_number_of_deaths.append(log_df['tlo.methods.rti']['summary_1m']['number rti deaths'].sum())
 
 mult_inj_incidences_of_rti = []
 mult_inj_incidences_of_death = []
@@ -117,6 +121,7 @@ mult_inj_incidences_of_injuries = []
 mult_inj_cause_of_death_in_sim = []
 mult_number_of_injuries = []
 mult_dalys = []
+mult_number_of_deaths = []
 # Run model using the Injury Vibes distribution of number of injuries
 
 # Run model using the Injury Vibes distribution of number of injuries
@@ -149,6 +154,8 @@ for i in range(0, nsim):
         [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
     ]
     sim.modules['RTI'].parameters['imm_death_proportion_rti'] = imm_death
+    # sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 0
+    sim.modules['RTI'].parameters['rr_injrti_mortality_polytrauma'] = 1
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
@@ -171,6 +178,8 @@ for i in range(0, nsim):
     YLL = dalys_df[YLL_RTI].sum(axis=1)
     DALYs = YLD.sum() + YLL.sum()
     mult_dalys.append(DALYs)
+    mult_number_of_deaths.append(log_df['tlo.methods.rti']['summary_1m']['number rti deaths'].sum())
+
 
 # flatten number of injury lists
 sing_n_inj_list_of_lists = []
@@ -273,7 +282,7 @@ plt.title(f"The effect of allowing multiple injuries\n in the model on populatio
           f"Number of simulations: {nsim}, population size: {pop_size}, years run: {yearsrun}")
 plt.savefig(save_file_path + f"Single_vs_multiple_injuries_full_comp_imm_death_{imm_death}.png",
             bbox_inches='tight')
-plt.ylim([0, max(results_mult) + 500])
+plt.ylim([0, max(results_mult) + 1000])
 plt.clf()
 plt.bar(n, results_single, width=0.3, color='lightsalmon', label='single injury model')
 plt.bar(n + 0.3, results_mult, width=0.3, color='burlywood', label='multiple injury model run')
@@ -285,7 +294,7 @@ for i in range(len(results_mult)):
     plt.annotate(str(np.round(results_mult[i], 1)), xy=(n[i] + 0.3, results_mult[i]), ha='center', va='bottom',
                  rotation=60)
 plt.ylabel('Incidence per 100,000')
-plt.ylim([0, max(results_mult) + 500])
+plt.ylim([0, max(results_mult) + 1000])
 plt.legend()
 plt.title(f"The effect of allowing multiple injuries\n in the model on population health outcomes.\n"
           f"Number of simulations: {nsim}, population size: {pop_size}, years run: {yearsrun}")
@@ -302,7 +311,7 @@ plt.bar(n, results_gbd, width=0.3, color='lightsalmon', label='GBD estimates')
 plt.bar(n + 0.3, results_mult, width=0.3, color='burlywood', label='multiple injury model run')
 plt.xticks(n + 0.15, ['Incidence of \nRTI', 'Incidence of \nRTI death', 'Incidence of \ninjuries'])
 for i in range(len(results_single)):
-    plt.annotate(str(np.round(results_single[i], 1)), xy=(n[i], results_single[i]), ha='center', va='bottom',
+    plt.annotate(str(np.round(results_gbd[i], 1)), xy=(n[i], results_gbd[i]), ha='center', va='bottom',
                  rotation=60)
 for i in range(len(results_mult)):
     plt.annotate(str(np.round(results_mult[i], 1)), xy=(n[i] + 0.3, results_mult[i]), ha='center', va='bottom',
@@ -322,5 +331,13 @@ plt.ylabel('DALYs')
 plt.title(f"The effect of allowing multiple injuries\n in the model on population health burden.\n"
           f"Number of simulations: {nsim}, population size: {pop_size}, years run: {yearsrun}")
 plt.savefig(save_file_path + f"Single_vs_multiple_injury_model_comp_DALYs_imm_death_{imm_death}.png",
+            bbox_inches='tight')
+plt.clf()
+plt.bar([1, 2], [np.mean(sing_number_of_deaths), np.mean(mult_number_of_deaths)])
+plt.xticks([1, 2], ['Single injury \nmodel', 'Multiple injury \nmodel'])
+plt.ylabel('Deaths')
+plt.title(f"The effect of allowing multiple injuries\n in the model on number of deaths.\n"
+          f"Number of simulations: {nsim}, population size: {pop_size}, years run: {yearsrun}")
+plt.savefig(save_file_path + f"Single_vs_multiple_injury_model_comp_n_deaths_imm_death_{imm_death}.png",
             bbox_inches='tight')
 plt.clf()
