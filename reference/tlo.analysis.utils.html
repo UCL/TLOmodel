@@ -228,6 +228,20 @@ rows being data only rows (without column names or metadata).</p>
 <dt class="sig sig-object py" id="tlo.analysis.utils.make_calendar_period_lookup">
 <span class="sig-name descname"><span class="pre">make_calendar_period_lookup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#make_calendar_period_lookup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.make_calendar_period_lookup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a dictionary mapping calendar year (in years) to five year period
+i.e. { 1950: ‘1950-1954’, 1951: ‘1950-1954, …}</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.make_calendar_period_type">
+<span class="sig-name descname"><span class="pre">make_calendar_period_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#make_calendar_period_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.make_calendar_period_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make an ordered categorical type for calendar periods
+Returns CategoricalDType</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.make_age_grp_lookup">
+<span class="sig-name descname"><span class="pre">make_age_grp_lookup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#make_age_grp_lookup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.make_age_grp_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dictionary mapping age (in years) to five year period
 i.e. { 0: ‘0-4’, 1: ‘0-4’, …, 119: ‘100+’, 120: ‘100+’ }</p>
 </dd></dl>
 
@@ -235,13 +249,6 @@ i.e. { 0: ‘0-4’, 1: ‘0-4’, …, 119: ‘100+’, 120: ‘100+’ }</p>
 <dt class="sig sig-object py" id="tlo.analysis.utils.make_age_grp_types">
 <span class="sig-name descname"><span class="pre">make_age_grp_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#make_age_grp_types"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.make_age_grp_types" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make an ordered categorical type for age-groups
-Returns CategoricalDType</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="tlo.analysis.utils.make_calendar_period_type">
-<span class="sig-name descname"><span class="pre">make_calendar_period_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#make_calendar_period_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.make_calendar_period_type" title="Permalink to this definition">¶</a></dt>
-<dd><p>Make an ordered categorical type for calendar periods
 Returns CategoricalDType</p>
 </dd></dl>
 
@@ -266,7 +273,7 @@ Returns CategoricalDType</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.extract_params">
-<span class="sig-name descname"><span class="pre">extract_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.frame.DataFrame</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#extract_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.extract_params" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">extract_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">]</span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#extract_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.extract_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility function to get overridden parameters from scenario runs</p>
 <p>Returns dateframe summarizing parameters that change across the draws. It produces a dataframe with index of draw
 and columns of each parameters that is specified to be varied in the batch. NB. This does the extraction from run 0
@@ -275,16 +282,20 @@ in each draw, under the assumption that the over-written parameters are the same
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.extract_results">
-<span class="sig-name descname"><span class="pre">extract_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.frame.DataFrame</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#extract_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.extract_results" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">extract_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_generate_series</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_scaling</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.frame.DataFrame</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#extract_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.extract_results" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility function to unpack results</p>
 <p>Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an ‘index’
 component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
-index is the same in each run).</p>
+index is the same in each run).
+Optionally, instead of a series that exists in the dataframe already, a function can be provided that, when applied
+to the dataframe indicated, yields a new pd.Series.
+Optionally, with <cite>do_scaling</cite>, each element is multiplied by the the scaling_factor recorded in the simulation
+(if available)</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.summarize">
-<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_mean</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.frame.DataFrame</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#summarize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.summarize" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_mean</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collapse_columns</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.frame.DataFrame</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#summarize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.summarize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility function to compute summary statistics</p>
 <p>Finds mean value and 95% interval across the runs for each draw.</p>
 </dd></dl>
@@ -306,6 +317,29 @@ index is the same in each run).</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.format_gbd">
+<span class="sig-name descname"><span class="pre">format_gbd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gbd_df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#format_gbd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.format_gbd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format GBD data to give standarize categories for age_group and period</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.create_pickles_locally">
+<span class="sig-name descname"><span class="pre">create_pickles_locally</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_output_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#create_pickles_locally"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.create_pickles_locally" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
+locally.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.compare_number_of_deaths">
+<span class="sig-name descname"><span class="pre">compare_number_of_deaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logfile</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#compare_number_of_deaths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.compare_number_of_deaths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to produce tables summarising deaths in the model run (given be a logfile) and the corresponding
+number of deaths in the GBD dataset.
+NB.
+* Requires output from the module <cite>tlo.methods.demography</cite>
+* Will do scaling automatically if the scaling-factor has been computed in the simulation (but not otherwise).</p>
+</dd></dl>
+
 </div>
 
 
@@ -323,7 +357,7 @@ index is the same in each run).</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 23, 2021.
+        Last updated on Jul 01, 2021.
       </span>
 
     </p>

@@ -681,7 +681,12 @@
             <span class="n">eligible_population</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
             <span class="n">selected_to_die</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_event_death</span><span class="p">[</span><span class="n">event</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">],</span> <span class="n">rng</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">selected_to_die</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>  <span class="c1"># catch in case no one dies</span>
-                <span class="n">idx_selected_to_die</span> <span class="o">=</span> <span class="n">selected_to_die</span><span class="p">[</span><span class="n">selected_to_die</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">eligible_population</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">idx_selected_to_die</span> <span class="o">=</span> <span class="n">selected_to_die</span><span class="p">[</span><span class="n">selected_to_die</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># if there is only one eligible person, the predict method of linear model will return just a bool</span>
+                    <span class="c1">#  instead of a pd.Series. Handle this special case:</span>
+                    <span class="n">idx_selected_to_die</span> <span class="o">=</span> <span class="n">eligible_population</span><span class="o">.</span><span class="n">index</span>
 
                 <span class="k">for</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">idx_selected_to_die</span><span class="p">:</span>
                     <span class="n">schedule_death_to_occur_before_next_poll</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;ever_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
@@ -868,7 +873,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 23, 2021.
+        Last updated on Jul 01, 2021.
       </span>
 
     </p>

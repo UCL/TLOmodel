@@ -409,7 +409,9 @@
         <span class="s2">&quot;vls_m&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s2">&quot;Rates of viral load suppression males&quot;</span><span class="p">),</span>
         <span class="s2">&quot;vls_f&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s2">&quot;Rates of viral load suppression males&quot;</span><span class="p">),</span>
         <span class="s2">&quot;vls_child&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s2">&quot;Rates of viral load suppression in children 0-14 years&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;prep_start_year&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s2">&quot;Year from which PrEP is available&quot;</span><span class="p">)</span>
+        <span class="s2">&quot;prep_start_year&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s2">&quot;Year from which PrEP is available&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;ART_age_cutoff_young_child&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s2">&quot;Age cutoff for ART regimen for young children&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;ART_age_cutoff_older_child&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s2">&quot;Age cutoff for ART regimen for older children&quot;</span><span class="p">),</span>
     <span class="p">}</span>
 
 <div class="viewcode-block" id="Hiv.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
@@ -884,34 +886,52 @@
             <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_for_prep</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
         <span class="p">}</span>
 
-        <span class="c1"># ART for adults</span>
-        <span class="n">item_code_for_art</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+        <span class="c1"># First-line ART for adults (age &gt; &quot;ART_age_cutoff_older_child&quot;)</span>
+        <span class="n">item_code_for_art_adult</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
             <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Adult First line 1A d4T-based&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;First-line ART regimen: adult&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Item_Code&quot;</span>
             <span class="p">]</span>
         <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_for_art2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+
+        <span class="n">item_code_for_cotrim_adult</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
             <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
                 <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Cotrimoxizole, 960mg pppy&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span>
             <span class="p">]</span>
         <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># NB spelling error in consumables file &quot;Cotrimoxizole&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;art_adult&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First-line ART regimen: adult&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_for_art</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_for_art2</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_for_art_adult</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_for_cotrim_adult</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
         <span class="p">}</span>
 
-        <span class="c1"># ART for children:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;art_child&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                              <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Cotrimoxazole for children&quot;</span><span class="p">,</span>
-                              <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]:</span> <span class="mi">1</span><span class="p">},</span>
-            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                              <span class="n">consumables</span><span class="p">[</span>
-                                  <span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Lamiduvine/Zidovudine/Nevirapine (3TC + AZT + NVP), tablet, 150 + 300&quot;</span>
-                                              <span class="s2">&quot; + 200 mg&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span><span class="p">])[</span>
-                    <span class="mi">0</span><span class="p">]:</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="c1"># ART for older children aged (&quot;ART_age_cutoff_younger_child&quot; &lt; age &lt;= &quot;ART_age_cutoff_older_child&quot;):</span>
+        <span class="n">item_code_for_art_older_child</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;First line ART regimen: older child&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Item_Code&quot;</span>
+            <span class="p">]</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">pkg_code_for_cotrim_child</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Cotrimoxazole for children&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: older child&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_code_for_cotrim_child</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_for_art_older_child</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="c1"># ART for younger children aged (age &lt; &quot;ART_age_cutoff_younger_child&quot;):</span>
+        <span class="n">item_code_for_art_younger_child</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;First line ART regimen: young child&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Item_Code&quot;</span>
+            <span class="p">]</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: young child&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_code_for_cotrim_child</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_for_art_younger_child</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
         <span class="p">}</span>
 
         <span class="c1"># Viral Load monitoring</span>
@@ -1816,14 +1836,21 @@
 <div class="viewcode-block" id="HSI_Hiv_StartOrContinueTreatment.get_drugs"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.get_drugs">[docs]</a>    <span class="k">def</span> <span class="nf">get_drugs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">age_of_person</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Helper function to get the ART according to the age of the person being treated. Returns bool to indicate</span>
 <span class="sd">        whether drugs were available&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">age_of_person</span> <span class="o">&lt;</span> <span class="mf">5.0</span><span class="p">:</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span>
+
+        <span class="k">if</span> <span class="n">age_of_person</span> <span class="o">&lt;</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;ART_age_cutoff_young_child&quot;</span><span class="p">]:</span>
             <span class="c1"># Formulation for children</span>
             <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-                <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;art_child&#39;</span><span class="p">])</span>
+                <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: young child&#39;</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">age_of_person</span> <span class="o">&lt;=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;ART_age_cutoff_older_child&quot;</span><span class="p">]:</span>
+            <span class="c1"># Formulation for children</span>
+            <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
+                <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: older child&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Formulation for adults</span>
             <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-                <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;art_adult&#39;</span><span class="p">])</span>
+                <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First-line ART regimen: adult&#39;</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">drugs_available</span></div>
 
@@ -2113,7 +2140,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 23, 2021.
+        Last updated on Jul 01, 2021.
       </span>
 
     </p>

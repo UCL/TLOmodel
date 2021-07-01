@@ -115,7 +115,7 @@ tlo.methods.healthsystem module
 
      .. automethod:: schedule_hsi_event
 
-     .. automethod:: check_appt_footprint_format
+     .. automethod:: appt_footprint_is_valid
 
      .. automethod:: broadcast_healthsystem_interaction
 
@@ -217,7 +217,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x7fc30053eea0>
+     bed_days_allocated_to_this_event : <property object at 0x7fb60d73ff90>
 
      **Functions (defined or overridden in class HSI_Event):**
 

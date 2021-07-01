@@ -31,6 +31,7 @@ Submodules
    tlo.methods.labour
    tlo.methods.labour_lm
    tlo.methods.malaria
+   tlo.methods.measles
    tlo.methods.mockitis
    tlo.methods.newborn_outcomes
    tlo.methods.newborn_outcomes_lm

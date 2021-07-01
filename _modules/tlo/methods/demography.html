@@ -208,9 +208,12 @@
 <div class="viewcode-block" id="Demography.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># will store all the causes of death that are possible in the simulation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">popsize_by_year</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># will store total population size each year</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death_not_represented_in_disease_modules</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># will store all the causes of death that are possible in the simulation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># will store all the causes of death defined in the GBD data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death_not_represented_in_disease_modules</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="c1">#  will store causes of death in GBD not represented in the simulation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">other_death_poll</span> <span class="o">=</span> <span class="kc">None</span>    <span class="c1"># will hold pointer to the OtherDeathPoll object</span></div>
 
     <span class="n">AGE_RANGE_CATEGORIES</span><span class="p">,</span> <span class="n">AGE_RANGE_LOOKUP</span> <span class="o">=</span> <span class="n">create_age_range_lookup</span><span class="p">(</span>
         <span class="n">min_age</span><span class="o">=</span><span class="n">MIN_AGE_FOR_RANGE</span><span class="p">,</span>
@@ -226,11 +229,11 @@
         <span class="s1">&#39;pop_2010&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;Population in 2010 for initialising population&#39;</span><span class="p">),</span>
         <span class="s1">&#39;district_num_to_district_name&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span> <span class="s1">&#39;Mapping from district_num to district name&#39;</span><span class="p">),</span>
         <span class="s1">&#39;district_num_to_region_name&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span> <span class="s1">&#39;Mapping from district_num to region name&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;mortality_schedule&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;Age-spec mortality rates from WPP&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;all_cause_mortality_schedule&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;All-cause age-specific mortality rates from WPP&#39;</span><span class="p">),</span>
         <span class="s1">&#39;fraction_of_births_male&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;Birth Sex Ratio&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;gbd_data&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span>
-                              <span class="s1">&#39;Data from GBD, including deaths and dalys by cause, age, sex and year&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;gbd_causes_of_death&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;List of the strings of causes of death defined in the GBD data&#39;</span><span class="p">)</span>
+        <span class="s1">&#39;gbd_causes_of_death_data&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span>
+                                              <span class="s1">&#39;Proportion of deaths in each age/sex group attributable to each possible&#39;</span>
+                                              <span class="s1">&#39; cause of death in the GBD dataset.&#39;</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="c1"># Next we declare the properties of individuals that this module provides.</span>
@@ -281,7 +284,7 @@
 
         <span class="c1"># Initial population size:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;pop_2010&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Population_2010.csv&#39;</span>
+            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;demography&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Population_2010.csv&#39;</span>
         <span class="p">)</span>
 
         <span class="c1"># Lookup dicts to map from district_num_of_residence (in the df) and District name and Region name</span>
@@ -297,34 +300,33 @@
 
         <span class="c1"># Fraction of babies that are male</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;fraction_of_births_male&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Pop_Frac_Births_Male.csv&#39;</span>
+            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;demography&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Pop_Frac_Births_Male.csv&#39;</span>
         <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;Year&#39;</span><span class="p">)[</span><span class="s1">&#39;frac_births_male&#39;</span><span class="p">]</span>
 
-        <span class="c1"># Mortality schedule:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;mortality_schedule&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Pop_DeathRates_Expanded_WPP.csv&#39;</span>
+        <span class="c1"># All-Cause Mortality schedule:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;all_cause_mortality_schedule&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;demography&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Pop_DeathRates_Expanded_WPP.csv&#39;</span>
         <span class="p">)</span>
 
-        <span class="c1"># GBD causes of death</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_death&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv&#39;</span>
-        <span class="p">)[</span><span class="s1">&#39;cause_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-
-        <span class="c1"># GBD causes of death</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv&#39;</span>
-        <span class="p">)</span></div>
+        <span class="c1"># GBD Dataset for Causes of Death</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_death_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;gbd&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_CausesOfDeath_GBD2019.csv&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s1">&#39;Sex&#39;</span><span class="p">,</span> <span class="s1">&#39;Age_Grp&#39;</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="Demography.pre_initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        1) Process the declarations of causes of death made by the disease modules</span>
+<span class="sd">        1) Store all the cause of death represented in the imported GBD data</span>
+<span class="sd">        2) Process the declarations of causes of death made by the disease modules</span>
 <span class="sd">        3) Define categorical properties for &#39;cause_of_death&#39;, &#39;region_of_residence&#39; and &#39;district_of_residence&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># 1) Process the declarations of causes of death made by the disease modules</span>
+        <span class="c1"># 1) Store all the cause of death represented in the imported GBD data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_death_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+
+        <span class="c1"># 2) Process the declarations of causes of death made by the disease modules</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">process_causes_of_death</span><span class="p">()</span>
 
-        <span class="c1"># 2) Update the properties for &#39;cause_of_death&#39;, &#39;region_of_residence&#39; and &#39;district_of_residence&#39;</span>
+        <span class="c1"># 3) Define categorical properties for &#39;cause_of_death&#39;, &#39;region_of_residence&#39; and &#39;district_of_residence&#39;</span>
         <span class="c1"># Nb. This couldn&#39;t be done before categories for each of these has been determined following read-in of data</span>
         <span class="c1"># and initialising of other modules.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PROPERTIES</span><span class="p">[</span><span class="s1">&#39;cause_of_death&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Property</span><span class="p">(</span>
@@ -341,38 +343,6 @@
             <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span>
             <span class="s1">&#39;The region of residence (mapped from district_num_of_residence).&#39;</span><span class="p">,</span>
             <span class="n">categories</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;pop_2010&#39;</span><span class="p">][</span><span class="s1">&#39;Region&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-        <span class="p">)</span></div>
-
-<div class="viewcode-block" id="Demography.process_causes_of_death"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.process_causes_of_death">[docs]</a>    <span class="k">def</span> <span class="nf">process_causes_of_death</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        1) Register all causes of deaths defined by Module</span>
-<span class="sd">        2) Define the &quot;Other&quot; causes of death (that is managed in this module by the OtherDeathPoll)</span>
-<span class="sd">        3) Output to the log mappers for causes of death (tlo_cause --&gt; label; gbd_cause --&gt; label).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># 1) Register all the causes of death from the disease modules: gives dict(&lt;tlo_cause&gt;: &lt;Cause instance&gt;)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span> <span class="o">=</span> <span class="n">collect_causes_from_disease_modules</span><span class="p">(</span>
-            <span class="n">all_modules</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
-            <span class="n">collect</span><span class="o">=</span><span class="s1">&#39;CAUSES_OF_DEATH&#39;</span><span class="p">,</span>
-            <span class="n">acceptable_causes</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_death&#39;</span><span class="p">])</span>
-        <span class="p">)</span>
-
-        <span class="c1"># 2) Define the &quot;Other&quot; tlo_cause of death (that is managed in this module by the OtherDeathPoll)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death_not_represented_in_disease_modules</span> <span class="o">=</span> \
-            <span class="bp">self</span><span class="o">.</span><span class="n">get_gbd_causes_of_death_not_represented_in_disease_modules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span><span class="p">[</span><span class="s1">&#39;Other&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Cause</span><span class="p">(</span>
-            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Other&#39;</span><span class="p">,</span>
-            <span class="n">gbd_causes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death_not_represented_in_disease_modules</span>
-        <span class="p">)</span>
-
-        <span class="c1"># 3) Output to the log mappers for causes of death</span>
-        <span class="n">mapper_from_tlo_causes</span><span class="p">,</span> <span class="n">mapper_from_gbd_causes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_mappers_from_causes_of_death_to_label</span><span class="p">()</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;mapper_from_tlo_cause_to_common_label&#39;</span><span class="p">,</span>
-            <span class="n">data</span><span class="o">=</span><span class="n">mapper_from_tlo_causes</span>
-        <span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;mapper_from_gbd_cause_to_common_label&#39;</span><span class="p">,</span>
-            <span class="n">data</span><span class="o">=</span><span class="n">mapper_from_gbd_causes</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
@@ -431,7 +401,8 @@
 
         <span class="c1"># check all population to determine if person should die (from causes other than those</span>
         <span class="c1"># explicitly modelled) (repeats every month)</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">OtherDeathPoll</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">other_death_poll</span> <span class="o">=</span> <span class="n">OtherDeathPoll</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">other_death_poll</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
         <span class="c1"># Launch the repeating event that will store statistics about the population structure</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">DemographyLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
@@ -487,6 +458,38 @@
                 <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">:</span> <span class="n">sf</span><span class="p">},</span>
                 <span class="n">description</span><span class="o">=</span><span class="s1">&#39;The scaling factor (if can be computed)&#39;</span>
             <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Demography.process_causes_of_death"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.process_causes_of_death">[docs]</a>    <span class="k">def</span> <span class="nf">process_causes_of_death</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        1) Register all causes of deaths defined by Module</span>
+<span class="sd">        2) Define the &quot;Other&quot; causes of death (that is managed in this module by the OtherDeathPoll)</span>
+<span class="sd">        3) Output to the log mappers for causes of death (tlo_cause --&gt; label; gbd_cause --&gt; label).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 1) Register all the causes of death from the disease modules: gives dict(&lt;tlo_cause&gt;: &lt;Cause instance&gt;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span> <span class="o">=</span> <span class="n">collect_causes_from_disease_modules</span><span class="p">(</span>
+            <span class="n">all_modules</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+            <span class="n">collect</span><span class="o">=</span><span class="s1">&#39;CAUSES_OF_DEATH&#39;</span><span class="p">,</span>
+            <span class="n">acceptable_causes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 2) Define the &quot;Other&quot; tlo_cause of death (that is managed in this module by the OtherDeathPoll)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death_not_represented_in_disease_modules</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_gbd_causes_of_death_not_represented_in_disease_modules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span><span class="p">[</span><span class="s1">&#39;Other&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Cause</span><span class="p">(</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Other&#39;</span><span class="p">,</span>
+            <span class="n">gbd_causes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death_not_represented_in_disease_modules</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 3) Output to the log mappers for causes of death</span>
+        <span class="n">mapper_from_tlo_causes</span><span class="p">,</span> <span class="n">mapper_from_gbd_causes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_mappers_from_causes_of_death_to_label</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;mapper_from_tlo_cause_to_common_label&#39;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">mapper_from_tlo_causes</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;mapper_from_gbd_cause_to_common_label&#39;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">mapper_from_gbd_causes</span>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.do_death"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.do_death">[docs]</a>    <span class="k">def</span> <span class="nf">do_death</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cause</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">originating_module</span><span class="p">:</span> <span class="n">Module</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Register and log the death of an individual from a specific cause.</span>
@@ -556,13 +559,13 @@
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">causes_of_death</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">all_gbd_causes_in_sim</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">gbd_causes</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_death&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="n">all_gbd_causes_in_sim</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death</span> <span class="o">-</span> <span class="n">all_gbd_causes_in_sim</span></div>
 
 <div class="viewcode-block" id="Demography.create_mappers_from_causes_of_death_to_label"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.create_mappers_from_causes_of_death_to_label">[docs]</a>    <span class="k">def</span> <span class="nf">create_mappers_from_causes_of_death_to_label</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Use a helper function to create mappers for causes of death to label.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">create_mappers_from_causes_to_label</span><span class="p">(</span>
             <span class="n">causes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span><span class="p">,</span>
-            <span class="n">all_gbd_causes</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_death&#39;</span><span class="p">])</span>
+            <span class="n">all_gbd_causes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.calc_py_lived_in_last_year"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.calc_py_lived_in_last_year">[docs]</a>    <span class="k">def</span> <span class="nf">calc_py_lived_in_last_year</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -641,10 +644,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Get Census data</span>
-        <span class="c1"># todo - move this to parameters, and update filename later (when other changes in different branch merged in)</span>
         <span class="n">year_of_census</span> <span class="o">=</span> <span class="mi">2018</span>
-        <span class="n">census_popsize</span> <span class="o">=</span> \
-            <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_PopulationSize_2018Census.csv&quot;</span><span class="p">)[</span><span class="s1">&#39;Count&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">census_popsize</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;demography&quot;</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_PopulationSize_2018Census.csv&quot;</span>
+        <span class="p">)[</span><span class="s1">&#39;Count&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
         <span class="c1"># Get model total population size in that same year</span>
         <span class="k">if</span> <span class="n">year_of_census</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">popsize_by_year</span><span class="p">:</span>
@@ -687,17 +690,51 @@
 
 <div class="viewcode-block" id="OtherDeathPoll.get_mort_risk_per_poll"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.OtherDeathPoll.get_mort_risk_per_poll">[docs]</a>    <span class="k">def</span> <span class="nf">get_mort_risk_per_poll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute the death-rates to use (i.e., those from causes of death defined in `self.causes_to_represent`).</span>
-<span class="sd">        Adjust the rates of death so that it is a risk of death per person per occurrence of the polling event.</span>
+<span class="sd">        This is based on using the WPP schedule for all-cause deaths and scaling by the proportion of deaths caused by</span>
+<span class="sd">        those caused defined in `self.causes_to_represent` (as per the latest available GBD data).</span>
+<span class="sd">        These mortality rates are used to compute a risk of death per person per occurrence of the polling event.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO - this is pending a further PR that brings in newest GBD data. For now, just return the mortality</span>
-        <span class="c1">#        schedule from WPP</span>
 
-        <span class="c1"># Work out probability of dying in the time before the next occurrence of this poll</span>
+        <span class="c1"># Get the all-cause risk of death per poll</span>
+        <span class="n">all_cause_mort_risk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_cause_mort_risk_per_poll</span><span class="p">()</span>
+
+        <span class="c1"># Get the proportion of the total death rates that the OtherDeathPollEvent must represent (and log it)</span>
+        <span class="n">prop_of_deaths_to_represent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_proportion_of_deaths_to_represent_as_other_deaths</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;other_deaths&#39;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">prop_of_deaths_to_represent</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="n">description</span><span class="o">=</span><span class="s1">&#39;proportion of all deaths that are represented as OtherDeaths&#39;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Mulitiply probabilities by the proportion of deaths that are to be represented by OtherDeathPollEvent</span>
+        <span class="n">all_cause_mort_risk</span><span class="p">[</span><span class="s1">&#39;age_group&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_cause_mort_risk</span><span class="p">[</span><span class="s1">&#39;age_years&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span><span class="p">)</span>
+        <span class="n">mort_risk</span> <span class="o">=</span> <span class="n">all_cause_mort_risk</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">prop_of_deaths_to_represent</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;prop&#39;</span><span class="p">),</span>
+                                              <span class="n">left_on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_group&#39;</span><span class="p">],</span>
+                                              <span class="n">right_on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Sex&#39;</span><span class="p">,</span> <span class="s1">&#39;Age_Grp&#39;</span><span class="p">],</span>
+                                              <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+        <span class="n">mort_risk</span><span class="p">[</span><span class="s1">&#39;prop&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mort_risk</span><span class="p">[</span><span class="s1">&#39;prop&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;ffill&#39;</span><span class="p">)</span>
+        <span class="n">mort_risk</span><span class="p">[</span><span class="s1">&#39;prob_of_dying_before_next_poll&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">mort_risk</span><span class="p">[</span><span class="s1">&#39;prop&#39;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">mort_risk</span><span class="p">[</span><span class="s1">&#39;prob_of_dying_before_next_poll&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">mort_risk</span><span class="p">[[</span><span class="s1">&#39;fallbackyear&#39;</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_of_dying_before_next_poll&#39;</span><span class="p">]]</span></div>
+
+<div class="viewcode-block" id="OtherDeathPoll.get_all_cause_mort_risk_per_poll"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.OtherDeathPoll.get_all_cause_mort_risk_per_poll">[docs]</a>    <span class="k">def</span> <span class="nf">get_all_cause_mort_risk_per_poll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the all-cause risk of death per poll&quot;&quot;&quot;</span>
+        <span class="c1"># Get time elapsed between each poll:</span>
         <span class="n">dur_in_years_between_polls</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency</span><span class="o">.</span><span class="n">months</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;mortality_schedule&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+        <span class="c1"># Compute all-cause mortality risk per poll</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;all_cause_mortality_schedule&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
             <span class="n">prob_of_dying_before_next_poll</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="o">.</span><span class="n">death_rate</span> <span class="o">*</span> <span class="n">dur_in_years_between_polls</span><span class="p">))</span>
         <span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;death_rate&#39;</span><span class="p">})</span></div>
+
+<div class="viewcode-block" id="OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths">[docs]</a>    <span class="k">def</span> <span class="nf">get_proportion_of_deaths_to_represent_as_other_deaths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the fraction of deaths that will be reprsented by the OtherDeathPoll&quot;&quot;&quot;</span>
+        <span class="c1"># Get the breakdown of deaths by cause from GBD data:</span>
+        <span class="n">gbd_deaths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_death_data&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Find the proportion of deaths to be represented by the OtherDeathPoll</span>
+        <span class="k">return</span> <span class="n">gbd_deaths</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">causes_to_represent</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="OtherDeathPoll.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.OtherDeathPoll.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Randomly select some persons to die of the &#39;Other&#39; tlo cause (the causes of death that are not represented</span>
@@ -891,7 +928,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 23, 2021.
+        Last updated on Jul 01, 2021.
       </span>
 
     </p>

@@ -343,6 +343,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Appt_Types_Table&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
             <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Appt_Types_Table.csv&#39;</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_appointment_types</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Appt_Types_Table&#39;</span><span class="p">][</span><span class="s1">&#39;Appt_Type_Code&#39;</span><span class="p">])</span>
 
         <span class="n">appt_time_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
             <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Appt_Time_Table.csv&#39;</span>
@@ -598,7 +600,7 @@
 
             <span class="c1"># Correct formated EXPECTED_APPT_FOOTPRINT</span>
             <span class="k">assert</span> <span class="s1">&#39;EXPECTED_APPT_FOOTPRINT&#39;</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">check_appt_footprint_format</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">appt_footprint_is_valid</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="p">)</span>
 
             <span class="c1"># That it has an &#39;ACCEPTED_FACILITY_LEVEL&#39; attribute</span>
             <span class="c1"># (Integer specificying the facility level at which HSI_Event must occur)</span>
@@ -662,11 +664,11 @@
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">tlo</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">Population</span><span class="p">:</span>
 
             <span class="c1"># 4) Check that at least one type of appointment is required</span>
-            <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> \
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="p">(</span>
                 <span class="s1">&#39;No appointment types required in the EXPECTED_APPT_FOOTPRINT&#39;</span>
-
+            <span class="p">)</span>
             <span class="c1"># 5) Check that the event does not request an appointment at a facility level which is not possible</span>
-            <span class="n">appt_type_to_check_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">appt_type_to_check_list</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
             <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;ApptType_By_FacLevel&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;ApptType_By_FacLevel&#39;</span><span class="p">][</span><span class="s1">&#39;Appt_Type_Code&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">appt_type_to_check</span><span class="p">,</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;ApptType_By_FacLevel&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span>
@@ -680,8 +682,7 @@
             <span class="c1"># (ie. Check that this does not demand officers that are never available at a particular facility)</span>
             <span class="n">caps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Daily_Capabilities&#39;</span><span class="p">]</span>
             <span class="n">footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_appt_footprint_as_time_request</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
-            <span class="n">footprint_is_possible</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">footprint</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span>
-                <span class="n">caps</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">footprint</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="n">footprint_is_possible</span> <span class="o">=</span> <span class="p">(</span><span class="n">caps</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">footprint</span><span class="p">,</span> <span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">footprint_is_possible</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
                                <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;The expected footprint is not possible with the configuration of officers: &quot;</span>
@@ -732,18 +733,17 @@
                      <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.check_appt_footprint_format"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.check_appt_footprint_format">[docs]</a>    <span class="k">def</span> <span class="nf">check_appt_footprint_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">appt_footprint</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSystem.appt_footprint_is_valid"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.appt_footprint_is_valid">[docs]</a>    <span class="k">def</span> <span class="nf">appt_footprint_is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">appt_footprint</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This function runs some checks on the appt_footprint to ensure it is the right format</span>
-<span class="sd">        :return: None</span>
+<span class="sd">        Checks an appointment footprint to ensure it is in the correct format.</span>
+<span class="sd">        :param appt_footprint: Appointment footprint to check.</span>
+<span class="sd">        :return: True if valid and False otherwise.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">appt_footprint</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Appt_Types_Table&#39;</span><span class="p">][</span><span class="s1">&#39;Appt_Type_Code&#39;</span><span class="p">])</span>
-        <span class="c1"># All sensible numbers for the number of appointments requested (no negative and at least one appt required)</span>
-
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([(</span><span class="n">appt_footprint</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">appt_footprint</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
-
-        <span class="k">assert</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">value</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">appt_footprint</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
+        <span class="c1"># Check that all keys known appointment types and all values non-negative</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">appt_footprint</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_appointment_types</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">appt_footprint</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSystem.broadcast_healthsystem_interaction"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.broadcast_healthsystem_interaction">[docs]</a>    <span class="k">def</span> <span class="nf">broadcast_healthsystem_interaction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -853,15 +853,10 @@
 <div class="viewcode-block" id="HealthSystem.get_blank_appt_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_blank_appt_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">get_blank_appt_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a helper function so that disease modules can easily create their appt_footprints.</span>
-<span class="sd">        It returns a dataframe containing the appointment footprint information in the format that /</span>
-<span class="sd">        the HealthSystemScheduler expects.</span>
+<span class="sd">        It returns an empty Counter instance.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Appt_Types_Table&#39;</span><span class="p">][</span><span class="s1">&#39;Appt_Type_Code&#39;</span><span class="p">]</span>
-        <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">))</span>
-        <span class="n">blank_footprint</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">values</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">blank_footprint</span></div>
+        <span class="k">return</span> <span class="n">Counter</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="HealthSystem.get_blank_cons_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_blank_cons_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">get_blank_cons_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -915,7 +910,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Gather useful information</span>
-        <span class="n">appt_types</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Appt_Types_Table&#39;</span><span class="p">][</span><span class="s1">&#39;Appt_Type_Code&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
         <span class="n">appt_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Appt_Time_Table&#39;</span><span class="p">]</span>
 
         <span class="c1"># Gather information about the HSI event</span>
@@ -933,13 +927,8 @@
         <span class="c1"># district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL:</span>
         <span class="n">the_facility</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_facility_info</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">)</span>
 
-        <span class="c1"># Transform the treatment footprint into a demand for time for officers of each</span>
-        <span class="c1"># type, for this facility level (it varies by facility level)</span>
-        <span class="n">appts_with_duration</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">appt_type</span> <span class="k">for</span> <span class="n">appt_type</span> <span class="ow">in</span> <span class="n">appt_types</span> <span class="k">if</span> <span class="n">the_appt_footprint</span><span class="p">[</span><span class="n">appt_type</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="p">]</span>
         <span class="n">appt_footprint_times</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">appt_type</span> <span class="ow">in</span> <span class="n">appts_with_duration</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">appt_type</span> <span class="ow">in</span> <span class="n">the_appt_footprint</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">appt_info_list</span> <span class="o">=</span> <span class="n">appt_times</span><span class="p">[</span><span class="n">the_facility_level</span><span class="p">][</span><span class="n">appt_type</span><span class="p">]</span>
             <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -1199,13 +1188,10 @@
             <span class="k">assert</span> <span class="n">actual_appt_footprint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="k">assert</span> <span class="n">squeeze_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
-            <span class="n">appts</span> <span class="o">=</span> <span class="n">actual_appt_footprint</span>
             <span class="n">log_info</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
             <span class="n">log_info</span><span class="p">[</span><span class="s1">&#39;TREATMENT_ID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span>
             <span class="c1"># key appointment types that are non-zero</span>
-            <span class="n">log_info</span><span class="p">[</span><span class="s1">&#39;Number_By_Appt_Type_Code&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">key</span><span class="p">:</span> <span class="n">val</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">appts</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">val</span>
-            <span class="p">}</span>
+            <span class="n">log_info</span><span class="p">[</span><span class="s1">&#39;Number_By_Appt_Type_Code&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">actual_appt_footprint</span>
             <span class="n">log_info</span><span class="p">[</span><span class="s1">&#39;Person_ID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
 
             <span class="k">if</span> <span class="n">squeeze_factor</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
@@ -1628,7 +1614,7 @@
                         <span class="c1"># The returned footprint is different to the expected footprint: so must update load factors</span>
 
                         <span class="c1"># check its formatting:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">check_appt_footprint_format</span><span class="p">(</span><span class="n">actual_appt_footprint</span><span class="p">)</span>
+                        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">appt_footprint_is_valid</span><span class="p">(</span><span class="n">actual_appt_footprint</span><span class="p">)</span>
 
                         <span class="c1"># Update load factors:</span>
                         <span class="n">updated_call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_appt_footprint_as_time_request</span><span class="p">(</span>
@@ -1830,21 +1816,20 @@
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="HSI_Event.make_appt_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.make_appt_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">make_appt_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dict_of_appts</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Helper function to make an appt_footprint. Create the full appt_footprint that is expected from a dictionary</span>
-<span class="sd">        only giving the types of appointments needed.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Helper function to make appointment footprint in format expected downstream.</span>
 
-        <span class="c1"># get blank footprint</span>
-        <span class="n">footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
-
-        <span class="c1"># do checks</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dict_of_appts</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">([(</span><span class="n">k</span> <span class="ow">in</span> <span class="n">footprint</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">dict_of_appts</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">))</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dict_of_appts</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
-
-        <span class="c1"># make footprint (defaulting to zero where a type of appointment is not specified)</span>
-        <span class="n">footprint</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dict_of_appts</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">footprint</span></div></div>
+<span class="sd">        Should be passed a dictionary keyed by appointment type codes with non-negative</span>
+<span class="sd">        values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">health_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">health_system</span><span class="o">.</span><span class="n">appt_footprint_is_valid</span><span class="p">(</span><span class="n">dict_of_appts</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Counter</span><span class="p">(</span><span class="n">dict_of_appts</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Argument to make_appt_footprint should be a dictionary keyed by &quot;</span>
+                <span class="s2">&quot;appointment type code strings in Appt_Types_Table with non-negative &quot;</span>
+                <span class="s2">&quot;values&quot;</span>
+            <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSIEventWrapper"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSIEventWrapper">[docs]</a><span class="k">class</span> <span class="nc">HSIEventWrapper</span><span class="p">(</span><span class="n">Event</span><span class="p">):</span>
@@ -1880,7 +1865,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 23, 2021.
+        Last updated on Jul 01, 2021.
       </span>
 
     </p>

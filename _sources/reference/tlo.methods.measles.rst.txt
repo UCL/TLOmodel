@@ -1,0 +1,246 @@
+tlo.methods.measles module
+==========================
+
+.. automodule:: tlo.methods.measles
+
+
+.. autoclass:: Measles
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - beta_baseline
+          - REAL
+          - Baseline measles transmission probability
+        * - beta_scale
+          - REAL
+          - Scale value for measles transmission probability sinusoidal function
+        * - phase_shift
+          - REAL
+          - Phase shift for measles transmission probability sinusoidal function
+        * - period
+          - REAL
+          - Period for measles transmission probability sinusoidal function
+        * - vaccine_efficacy_1
+          - REAL
+          - Efficacy of first measles vaccine dose against measles infection
+        * - vaccine_efficacy_2
+          - REAL
+          - Efficacy of second measles vaccine dose against measles infection
+        * - prob_severe
+          - REAL
+          - Probability of severe measles infection, requiring hospitalisation
+        * - risk_death_on_treatment
+          - REAL
+          - Risk of scheduled death occurring if on treatment for measles complications
+        * - symptom_prob
+          - DATA_FRAME
+          - Probability of each symptom with measles infection
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - me_has_measles
+          - BOOL
+          - Measles infection status
+        * - me_date_measles
+          - DATE
+          - Date of onset of measles
+        * - me_on_treatment
+          - BOOL
+          - Currently on treatment for measles complications
+
+
+
+     **Class attributes:**
+
+     CAUSES_OF_DEATH : {'Measles': <tlo.methods.causes.Cause object at 0x7fb60e8be970>}
+
+     CAUSES_OF_DISABILITY : {'Measles': <tlo.methods.causes.Cause object at 0x7fb60e8bea00>}
+
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+
+     SYMPTOMS : {'rash', 'otitis_media', 'encephalitis'}
+
+     **Functions (defined or overridden in class Measles):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: on_hsi_alert
+
+     .. automethod:: report_daly_values
+
+
+
+
+
+
+
+
+.. autoclass:: MeaslesEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MeaslesEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MeaslesOnsetEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MeaslesOnsetEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MeaslesSymptomResolveEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MeaslesSymptomResolveEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MeaslesDeathEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MeaslesDeathEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Measles_Treatment
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Measles_Treatment):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: MeaslesLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MeaslesLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MeaslesLoggingFortnightEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MeaslesLoggingFortnightEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MeaslesLoggingAnnualEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MeaslesLoggingAnnualEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

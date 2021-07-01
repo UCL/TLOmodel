@@ -213,6 +213,12 @@ tlo.methods.hiv module
         * - prep_start_year
           - REAL
           - Year from which PrEP is available
+        * - ART_age_cutoff_young_child
+          - INT
+          - Age cutoff for ART regimen for young children
+        * - ART_age_cutoff_older_child
+          - INT
+          - Age cutoff for ART regimen for older children
 
 
      **PROPERTIES:**
@@ -253,11 +259,11 @@ tlo.methods.hiv module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'AIDS': <tlo.methods.causes.Cause object at 0x7fc300639190>}
+     CAUSES_OF_DEATH : {'AIDS': <tlo.methods.causes.Cause object at 0x7fb60e83c100>}
 
-     CAUSES_OF_DISABILITY : {'AIDS': <tlo.methods.causes.Cause object at 0x7fc300639220>}
+     CAUSES_OF_DISABILITY : {'AIDS': <tlo.methods.causes.Cause object at 0x7fb60e83c190>}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      **Functions (defined or overridden in class Hiv):**
 

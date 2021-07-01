@@ -212,21 +212,17 @@
 <td><p>DICT</p></td>
 <td><p>Mapping from district_num to region name</p></td>
 </tr>
-<tr class="row-odd"><td><p>mortality_schedule</p></td>
+<tr class="row-odd"><td><p>all_cause_mortality_schedule</p></td>
 <td><p>DATA_FRAME</p></td>
-<td><p>Age-spec mortality rates from WPP</p></td>
+<td><p>All-cause age-specific mortality rates from WPP</p></td>
 </tr>
 <tr class="row-even"><td><p>fraction_of_births_male</p></td>
 <td><p>REAL</p></td>
 <td><p>Birth Sex Ratio</p></td>
 </tr>
-<tr class="row-odd"><td><p>gbd_data</p></td>
+<tr class="row-odd"><td><p>gbd_causes_of_death_data</p></td>
 <td><p>DATA_FRAME</p></td>
-<td><p>Data from GBD, including deaths and dalys by cause, age, sex and year</p></td>
-</tr>
-<tr class="row-even"><td><p>gbd_causes_of_death</p></td>
-<td><p>LIST</p></td>
-<td><p>List of the strings of causes of death defined in the GBD data</p></td>
+<td><p>Proportion of deaths in each age/sex group attributable to each possible cause of death in the GBD dataset.</p></td>
 </tr>
 </tbody>
 </table>
@@ -300,7 +296,7 @@
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>AGE_RANGE_CATEGORIES : [‘0-4’, ‘5-9’, ‘10-14’, ‘15-19’, ‘20-24’, ‘25-29’, ‘30-34’, ‘35-39’, ‘40-44’, ‘45-49’, ‘50-54’, ‘55-59’, ‘60-64’, ‘65-69’, ‘70-74’, ‘75-79’, ‘80-84’, ‘85-89’, ‘90-94’, ‘95-99’, ‘100+’]</p>
-<p>AGE_RANGE_LOOKUP : defaultdict(&lt;function create_age_range_lookup.&lt;locals&gt;.&lt;lambda&gt; at 0x7fc30055ef70&gt;, {0: ‘0-4’, 1: ‘0-4’, 2: ‘0-4’, 3: ‘0-4’, 4: ‘0-4’, 5: ‘5-9’, 6: ‘5-9’, 7: ‘5-9’, 8: ‘5-9’, 9: ‘5-9’, 10: ‘10-14’, 11: ‘10-14’, 12: ‘10-14’, 13: ‘10-14’, 14: ‘10-14’, 15: ‘15-19’, 16: ‘15-19’, 17: ‘15-19’, 18: ‘15-19’, 19: ‘15-19’, 20: ‘20-24’, 21: ‘20-24’, 22: ‘20-24’, 23: ‘20-24’, 24: ‘20-24’, 25: ‘25-29’, 26: ‘25-29’, 27: ‘25-29’, 28: ‘25-29’, 29: ‘25-29’, 30: ‘30-34’, 31: ‘30-34’, 32: ‘30-34’, 33: ‘30-34’, 34: ‘30-34’, 35: ‘35-39’, 36: ‘35-39’, 37: ‘35-39’, 38: ‘35-39’, 39: ‘35-39’, 40: ‘40-44’, 41: ‘40-44’, 42: ‘40-44’, 43: ‘40-44’, 44: ‘40-44’, 45: ‘45-49’, 46: ‘45-49’, 47: ‘45-49’, 48: ‘45-49’, 49: ‘45-49’, 50: ‘50-54’, 51: ‘50-54’, 52: ‘50-54’, 53: ‘50-54’, 54: ‘50-54’, 55: ‘55-59’, 56: ‘55-59’, 57: ‘55-59’, 58: ‘55-59’, 59: ‘55-59’, 60: ‘60-64’, 61: ‘60-64’, 62: ‘60-64’, 63: ‘60-64’, 64: ‘60-64’, 65: ‘65-69’, 66: ‘65-69’, 67: ‘65-69’, 68: ‘65-69’, 69: ‘65-69’, 70: ‘70-74’, 71: ‘70-74’, 72: ‘70-74’, 73: ‘70-74’, 74: ‘70-74’, 75: ‘75-79’, 76: ‘75-79’, 77: ‘75-79’, 78: ‘75-79’, 79: ‘75-79’, 80: ‘80-84’, 81: ‘80-84’, 82: ‘80-84’, 83: ‘80-84’, 84: ‘80-84’, 85: ‘85-89’, 86: ‘85-89’, 87: ‘85-89’, 88: ‘85-89’, 89: ‘85-89’, 90: ‘90-94’, 91: ‘90-94’, 92: ‘90-94’, 93: ‘90-94’, 94: ‘90-94’, 95: ‘95-99’, 96: ‘95-99’, 97: ‘95-99’, 98: ‘95-99’, 99: ‘95-99’})</p>
+<p>AGE_RANGE_LOOKUP : defaultdict(&lt;function create_age_range_lookup.&lt;locals&gt;.&lt;lambda&gt; at 0x7fb60d76c040&gt;, {0: ‘0-4’, 1: ‘0-4’, 2: ‘0-4’, 3: ‘0-4’, 4: ‘0-4’, 5: ‘5-9’, 6: ‘5-9’, 7: ‘5-9’, 8: ‘5-9’, 9: ‘5-9’, 10: ‘10-14’, 11: ‘10-14’, 12: ‘10-14’, 13: ‘10-14’, 14: ‘10-14’, 15: ‘15-19’, 16: ‘15-19’, 17: ‘15-19’, 18: ‘15-19’, 19: ‘15-19’, 20: ‘20-24’, 21: ‘20-24’, 22: ‘20-24’, 23: ‘20-24’, 24: ‘20-24’, 25: ‘25-29’, 26: ‘25-29’, 27: ‘25-29’, 28: ‘25-29’, 29: ‘25-29’, 30: ‘30-34’, 31: ‘30-34’, 32: ‘30-34’, 33: ‘30-34’, 34: ‘30-34’, 35: ‘35-39’, 36: ‘35-39’, 37: ‘35-39’, 38: ‘35-39’, 39: ‘35-39’, 40: ‘40-44’, 41: ‘40-44’, 42: ‘40-44’, 43: ‘40-44’, 44: ‘40-44’, 45: ‘45-49’, 46: ‘45-49’, 47: ‘45-49’, 48: ‘45-49’, 49: ‘45-49’, 50: ‘50-54’, 51: ‘50-54’, 52: ‘50-54’, 53: ‘50-54’, 54: ‘50-54’, 55: ‘55-59’, 56: ‘55-59’, 57: ‘55-59’, 58: ‘55-59’, 59: ‘55-59’, 60: ‘60-64’, 61: ‘60-64’, 62: ‘60-64’, 63: ‘60-64’, 64: ‘60-64’, 65: ‘65-69’, 66: ‘65-69’, 67: ‘65-69’, 68: ‘65-69’, 69: ‘65-69’, 70: ‘70-74’, 71: ‘70-74’, 72: ‘70-74’, 73: ‘70-74’, 74: ‘70-74’, 75: ‘75-79’, 76: ‘75-79’, 77: ‘75-79’, 78: ‘75-79’, 79: ‘75-79’, 80: ‘80-84’, 81: ‘80-84’, 82: ‘80-84’, 83: ‘80-84’, 84: ‘80-84’, 85: ‘85-89’, 86: ‘85-89’, 87: ‘85-89’, 88: ‘85-89’, 89: ‘85-89’, 90: ‘90-94’, 91: ‘90-94’, 92: ‘90-94’, 93: ‘90-94’, 94: ‘90-94’, 95: ‘95-99’, 96: ‘95-99’, 97: ‘95-99’, 98: ‘95-99’, 99: ‘95-99’})</p>
 <p><strong>Functions (defined or overridden in class Demography):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.__init__">
@@ -329,17 +325,10 @@ Loads the ‘Interpolated Pop Structure’ worksheet from the Demography Excel w
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.pre_initialise_population">
 <span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.pre_initialise_population" title="Permalink to this definition">¶</a></dt>
-<dd><p>1) Process the declarations of causes of death made by the disease modules
-3) Define categorical properties for ‘cause_of_death’, ‘region_of_residence’ and ‘district_of_residence’</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.demography.Demography.process_causes_of_death">
-<span class="sig-name descname"><span class="pre">process_causes_of_death</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.process_causes_of_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.process_causes_of_death" title="Permalink to this definition">¶</a></dt>
 <dd><ol class="arabic simple">
-<li><p>Register all causes of deaths defined by Module</p></li>
-<li><p>Define the “Other” causes of death (that is managed in this module by the OtherDeathPoll)</p></li>
-<li><p>Output to the log mappers for causes of death (tlo_cause –&gt; label; gbd_cause –&gt; label).</p></li>
+<li><p>Store all the cause of death represented in the imported GBD data</p></li>
+<li><p>Process the declarations of causes of death made by the disease modules</p></li>
+<li><p>Define categorical properties for ‘cause_of_death’, ‘region_of_residence’ and ‘district_of_residence’</p></li>
 </ol>
 </dd></dl>
 
@@ -377,6 +366,16 @@ This is called by the simulation whenever a new person is born.
 <span class="sig-name descname"><span class="pre">on_simulation_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.on_simulation_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.on_simulation_end" title="Permalink to this definition">¶</a></dt>
 <dd><p>Things to do at end of the simulation:
 * Compute and log the scaling-factor</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.demography.Demography.process_causes_of_death">
+<span class="sig-name descname"><span class="pre">process_causes_of_death</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.process_causes_of_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.process_causes_of_death" title="Permalink to this definition">¶</a></dt>
+<dd><ol class="arabic simple">
+<li><p>Register all causes of deaths defined by Module</p></li>
+<li><p>Define the “Other” causes of death (that is managed in this module by the OtherDeathPoll)</p></li>
+<li><p>Output to the log mappers for causes of death (tlo_cause –&gt; label; gbd_cause –&gt; label).</p></li>
+</ol>
 </dd></dl>
 
 <dl class="py method">
@@ -491,7 +490,21 @@ represented in the disease module registered in this simulation.</p>
 <dt class="sig sig-object py" id="tlo.methods.demography.OtherDeathPoll.get_mort_risk_per_poll">
 <span class="sig-name descname"><span class="pre">get_mort_risk_per_poll</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.get_mort_risk_per_poll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.get_mort_risk_per_poll" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the death-rates to use (i.e., those from causes of death defined in <cite>self.causes_to_represent</cite>).
-Adjust the rates of death so that it is a risk of death per person per occurrence of the polling event.</p>
+This is based on using the WPP schedule for all-cause deaths and scaling by the proportion of deaths caused by
+those caused defined in <cite>self.causes_to_represent</cite> (as per the latest available GBD data).
+These mortality rates are used to compute a risk of death per person per occurrence of the polling event.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.demography.OtherDeathPoll.get_all_cause_mort_risk_per_poll">
+<span class="sig-name descname"><span class="pre">get_all_cause_mort_risk_per_poll</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.get_all_cause_mort_risk_per_poll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.get_all_cause_mort_risk_per_poll" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the all-cause risk of death per poll</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.demography.OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths">
+<span class="sig-name descname"><span class="pre">get_proportion_of_deaths_to_represent_as_other_deaths</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the fraction of deaths that will be reprsented by the OtherDeathPoll</p>
 </dd></dl>
 
 <dl class="py method">
@@ -586,7 +599,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 23, 2021.
+        Last updated on Jul 01, 2021.
       </span>
 
     </p>

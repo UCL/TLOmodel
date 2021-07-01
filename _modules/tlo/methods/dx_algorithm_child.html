@@ -180,8 +180,6 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Module</span><span class="p">,</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.diarrhoea</span> <span class="kn">import</span> <span class="p">(</span>
@@ -226,6 +224,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Test for the visual inspection of &#39;Danger signs&#39; for a child who is dehydrated</span>
+        <span class="c1"># todo - this to be parameterised from the resource file and maybe should be declared by the diarrhoea module...</span>
+        <span class="c1">#  tbd when the ALRI module and this file are finalised.</span>
         <span class="k">if</span> <span class="s1">&#39;Diarrhoea&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">register_dx_test</span><span class="p">(</span>
                 <span class="n">danger_signs_visual_inspection</span><span class="o">=</span><span class="n">DxTest</span><span class="p">(</span>
@@ -264,87 +264,92 @@
 
         <span class="c1"># Gather information that can be reported:</span>
         <span class="c1"># 1) Get duration of diarrhoea to date</span>
-        <span class="n">duration_in_days</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;gi_last_diarrhoea_date_of_onset&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">days</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">duration_in_days</span><span class="p">):</span>
-            <span class="c1"># The dirarrhoe has been caused by something other than the the diarrhoea module, so this property is not</span>
-            <span class="c1"># know. Set the duration to 0 days:</span>
-            <span class="n">duration_in_days</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="c1"># 2) Get type of diarrhoea</span>
-        <span class="n">blood_in_stool</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;gi_last_diarrhoea_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;bloody&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;Diarrhoea&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="n">duration_in_days</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;gi_last_diarrhoea_date_of_onset&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">days</span>
 
-        <span class="c1"># 3) Get status of dehydration</span>
-        <span class="n">dehydration</span> <span class="o">=</span> <span class="s1">&#39;dehydration&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span>
+            <span class="c1"># 2) Get type of diarrhoea</span>
+            <span class="n">blood_in_stool</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;gi_last_diarrhoea_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;bloody&#39;</span>
 
-        <span class="c1"># Gather information that cannot be reported:</span>
-        <span class="c1"># 1) Assessment of danger signs</span>
-        <span class="n">danger_signs</span> <span class="o">=</span> <span class="n">run_dx_test</span><span class="p">(</span><span class="s1">&#39;danger_signs_visual_inspection&#39;</span><span class="p">)</span>
+            <span class="c1"># 3) Get status of dehydration</span>
+            <span class="n">dehydration</span> <span class="o">=</span> <span class="s1">&#39;dehydration&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span>
 
-        <span class="c1"># Apply the algorithms:</span>
-        <span class="c1"># --------   Classify Extent of Dehydration   ---------</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">dehydration</span><span class="p">:</span>
-            <span class="c1"># Those who do NOT have DEHYDRATION</span>
+            <span class="c1"># Gather information that cannot be reported:</span>
+            <span class="c1"># 1) Assessment of danger signs</span>
+            <span class="n">danger_signs</span> <span class="o">=</span> <span class="n">run_dx_test</span><span class="p">(</span><span class="s1">&#39;danger_signs_visual_inspection&#39;</span><span class="p">)</span>
 
-            <span class="c1"># Treatment Plan A for uncomplicated diarrhoea (no dehydration and no danger signs)</span>
-            <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Diarrhoea_Treatment_PlanA</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                                                                 <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]),</span>
-                         <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                         <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                         <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                         <span class="p">)</span>
+            <span class="c1"># Apply the algorithms:</span>
+            <span class="c1"># --------   Classify Extent of Dehydration   ---------</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dehydration</span><span class="p">:</span>
+                <span class="c1"># Those who do NOT have DEHYDRATION</span>
 
-            <span class="k">if</span> <span class="n">duration_in_days</span> <span class="o">&gt;=</span> <span class="mi">14</span><span class="p">:</span>
-                <span class="c1"># &#39;Non_Severe_Persistent_Diarrhoea&#39;</span>
-                <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                                                                                     <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span>
-                                                                                         <span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]),</span>
-                             <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                             <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                             <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                             <span class="p">)</span>
+                <span class="c1"># Treatment Plan A for uncomplicated diarrhoea (no dehydration and no danger signs)</span>
+                <span class="n">schedule_hsi</span><span class="p">(</span>
+                    <span class="n">HSI_Diarrhoea_Treatment_PlanA</span><span class="p">(</span>
+                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                        <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]),</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Those who do have DEHYDRATION</span>
+                <span class="k">if</span> <span class="n">duration_in_days</span> <span class="o">&gt;=</span> <span class="mi">14</span><span class="p">:</span>
+                    <span class="c1"># &#39;Non_Severe_Persistent_Diarrhoea&#39;</span>
+                    <span class="n">schedule_hsi</span><span class="p">(</span>
+                        <span class="n">HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea</span><span class="p">(</span>
+                            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                            <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]),</span>
+                        <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                        <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
-            <span class="c1"># Given that there is dehydration - schedule an HSI if the duration of diarrhoea has been long</span>
-            <span class="k">if</span> <span class="n">duration_in_days</span> <span class="o">&gt;=</span> <span class="mi">14</span><span class="p">:</span>
-                <span class="c1"># &#39;Severe_Persistent_Diarrhoea&#39;</span>
-                <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Diarrhoea_Severe_Persistent_Diarrhoea</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                                                                                 <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]),</span>
-                             <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                             <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                             <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                             <span class="p">)</span>
-
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">danger_signs</span><span class="p">:</span>
-                <span class="c1"># Treatment Plan B for some dehydration diarrhoea but not danger signs</span>
-                <span class="c1"># TODO:add &quot;...and not other severe classification from other disease modules (measles, pneumonia, etc)&quot;</span>
-                <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Diarrhoea_Treatment_PlanB</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                                                                     <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]),</span>
-                             <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                             <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                             <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                             <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Danger sign for &#39;Severe_Dehydration&#39;</span>
-                <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Diarrhoea_Treatment_PlanC</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                                                                     <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]),</span>
-                             <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                             <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                             <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                             <span class="p">)</span>
+                <span class="c1"># Those who do have DEHYDRATION</span>
 
-        <span class="c1"># --------  Classify Whether Dysentery or Not  --------</span>
-        <span class="c1"># TODO: note that the &#39;work&#39; inside this is never used because the cure is completed by one of the other HSI</span>
-        <span class="c1">#  and so this HSI returns prematurely.</span>
-        <span class="k">if</span> <span class="n">blood_in_stool</span><span class="p">:</span>
-            <span class="c1"># &#39;Dysentery&#39;</span>
-            <span class="n">schedule_hsi</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Diarrhoea_Dysentery</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]),</span>
-                         <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                         <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                         <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                         <span class="p">)</span></div>
-        <span class="c1"># -----------------------------------------------------</span>
+                <span class="c1"># Given that there is dehydration - schedule an HSI if the duration of diarrhoea has been long</span>
+                <span class="k">if</span> <span class="n">duration_in_days</span> <span class="o">&gt;=</span> <span class="mi">14</span><span class="p">:</span>
+                    <span class="c1"># &#39;Severe_Persistent_Diarrhoea&#39;</span>
+                    <span class="n">schedule_hsi</span><span class="p">(</span>
+                        <span class="n">HSI_Diarrhoea_Severe_Persistent_Diarrhoea</span><span class="p">(</span>
+                            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                            <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]),</span>
+                        <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                        <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">danger_signs</span><span class="p">:</span>
+                    <span class="c1"># Treatment Plan B for some dehydration diarrhoea but not danger signs</span>
+                    <span class="c1"># TODO:add &quot;...and not other severe classification from other disease modules</span>
+                    <span class="c1">#  (measles, pneumonia, etc)&quot;</span>
+                    <span class="n">schedule_hsi</span><span class="p">(</span>
+                        <span class="n">HSI_Diarrhoea_Treatment_PlanB</span><span class="p">(</span>
+                            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                            <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]),</span>
+                        <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                        <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Danger sign for &#39;Severe_Dehydration&#39;</span>
+                    <span class="n">schedule_hsi</span><span class="p">(</span>
+                        <span class="n">HSI_Diarrhoea_Treatment_PlanC</span><span class="p">(</span>
+                            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                            <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]),</span>
+                        <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                        <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+            <span class="c1"># --------  Classify Whether Dysentery or Not  --------</span>
+            <span class="c1"># TODO: note that the &#39;work&#39; inside this is never used because the cure is completed by one of the other HSI</span>
+            <span class="c1">#  and so this HSI returns prematurely.</span>
+            <span class="k">if</span> <span class="n">blood_in_stool</span><span class="p">:</span>
+                <span class="c1"># &#39;Dysentery&#39;</span>
+                <span class="n">schedule_hsi</span><span class="p">(</span>
+                    <span class="n">HSI_Diarrhoea_Dysentery</span><span class="p">(</span>
+                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                        <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]),</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></div>
+            <span class="c1"># -----------------------------------------------------</span>
 
 <div class="viewcode-block" id="DxAlgorithmChild.diagnose"><a class="viewcode-back" href="../../../reference/tlo.methods.dx_algorithm_child.html#tlo.methods.dx_algorithm_child.DxAlgorithmChild.diagnose">[docs]</a>    <span class="k">def</span> <span class="nf">diagnose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -424,7 +429,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jun 23, 2021.
+        Last updated on Jul 01, 2021.
       </span>
 
     </p>
