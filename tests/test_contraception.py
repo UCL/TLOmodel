@@ -4,7 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from tlo import Date, Simulation, Types
+from tlo import Date, Simulation, Types, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
@@ -23,6 +24,7 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
 popsize = 200
 
+# todo reorgnsie this to remove duplication and to use the logs to check that things are happening (pregnancies, contracpeitvr start, stop etc)
 
 @pytest.fixture(scope='module')
 def simulation():
@@ -58,7 +60,6 @@ def __check_properties(df):
 
 def test_make_initial_population(simulation):
     simulation.make_initial_population(n=popsize)
-    simulation.population.make_test_property('hv_inf', Types.BOOL)
 
 
 def test_initial_population(simulation):
@@ -67,7 +68,6 @@ def test_initial_population(simulation):
 
 def test_run(simulation):
     simulation.simulate(end_date=end_date)
-
 
 def test_final_population(simulation):
     __check_properties(simulation.population.props)
@@ -78,6 +78,49 @@ def test_dtypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
+
+
+def test_log(tmpdir):
+    """test that what comes out in log is as expected"""
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+
+    log_config = {
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "*": logging.WARNING,
+            'tlo.methods.contraception': logging.INFO
+        }
+    }
+
+    sim = Simulation(start_date=start_date, log_config=log_config)
+    sim.register(
+        # - core modules:
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False),
+
+        # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+
+        # - Dummy HIV module (as contraception requires the property hv_inf)
+        DummyHivModule()
+    )
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    logs = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
+    assert set(logs.keys()) == set([
+        'contraception_use_yearly_summary',
+        'contraception_costs_yearly_summary',
+        'pregnancy',
+        'contraception',
+    ])
 
 
 if __name__ == '__main__':

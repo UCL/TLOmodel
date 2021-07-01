@@ -17,7 +17,6 @@ logger.setLevel(logging.INFO)
 # * There is a comment "add link to unintended preg from not using" - but I think it should be that the flag for unintended pregnancy comes when there is Fail (from a method).
 # * We could encapsulate each init and swtich inside an HSI pretty easily now -- shall we do this? Could make it an optional thing (argument for ```no_hsi=True``` could preserve current behaviour)
 # todo  - Should remove women with hysterectomy from being on contraception??
-
 """
 
 
@@ -26,10 +25,6 @@ class Contraception(Module):
     Contraception module covering baseline contraception methods use, failure (pregnancy),
     Switching contraceptive methods, and discontinuation rates by age.
     """
-
-    def __init__(self, name=None, resourcefilepath=None):
-        super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
     # Declare Metadata
     METADATA = {}
@@ -91,24 +86,36 @@ class Contraception(Module):
     # Declare Properties
     PROPERTIES = {
         'co_contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
-                                     categories=['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
-                                                 'female_sterilization', 'other_modern', 'periodic_abstinence',
-                                                 'withdrawal', 'other_traditional']),
-        # These are the 11 categories of contraception ('not using' + 10 methods) from the DHS analysis of initiation,
-        # discontinuation, failure and switching rates.
-        # 'other modern' includes Male sterilization, Female Condom, Emergency contraception
-        # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
-        #  method'
-
+                                     categories=[
+                                         'not_using',
+                                         'pill',
+                                         'IUD',
+                                         'injections',
+                                         'implant',
+                                         'male_condom',
+                                         'female_sterilization',
+                                         'other_modern',
+                                         'periodic_abstinence',
+                                         'withdrawal',
+                                         'other_traditional'
+    # These are the 11 categories of contraception ('not using' + 10 methods) from the DHS analysis of initiation,
+    # discontinuation, failure and switching rates.
+    # 'other modern' includes Male sterilization, Female Condom, Emergency contraception
+    # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
+    #  method'),
+                                     ]),
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
         'date_of_last_pregnancy': Property(Types.DATE,
                                            'Date of the last pregnancy of this individual'),
         'co_unintended_preg': Property(Types.BOOL,
                                        'Most recent or current pregnancy was unintended (following contraception '
                                        'failure)'),
-
-        # TODO: add link to unintended preg from not using????
     }
+
+    def __init__(self, name=None, resourcefilepath=None):
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+        self.all_contraception_states = set(self.PROPERTIES['co_contraception'].categories)
 
     def read_parameters(self, data_folder):
         """
@@ -333,16 +340,16 @@ class Contraception(Module):
         assert new in self.all_contraception_states
 
         df = self.sim.population.props
-        woman = df.loc[w]
+        woman = df.loc[woman_id]
         logger.info(key='contraception',
                     data={
-                        'woman': w,
+                        'woman': woman_id,
                         'age': woman['age_years'],
                         'switch_from': old,
                         'switch_to': new,
                         'init_after_pregnancy': init_after_pregnancy
                     },
-                    description='All changes in contraception'
+                    description='All changes in contraception use'
                     )
 
 
@@ -357,7 +364,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
         self.age_low = 15
         self.age_high = 49
-        self.all_contraception_states = set(self.module.PROPERTIES['co_contraception'].categories)
 
     def apply(self, population):
         """Update contraceptive method and determine who will become pregnant."""
@@ -378,7 +384,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         discontinuation_rate
         """
 
-        df = population.props
+        df = self.sim.population.props
 
         possible_co_users = ((df.sex == 'F') &
                              df.is_alive &
@@ -536,11 +542,11 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             # Effect these women to be pregnant now:
             self.set_new_pregnancy(women_id=women_co_failure)
 
-    def pregnancy_for_those_not_on_contraceptive(self, population):
+    def pregnancy_for_those_not_on_contraceptive(self):
         """
         This event looks across each woman who is not using a contracpetive to determine who will become pregnant.
         """
-        df = population.props  # get the population dataframe
+        df = self.sim.population.props  # get the population dataframe
 
         # get subset of women who are not using a contraceptive and who may become pregnant
         subset = (
@@ -589,7 +595,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
 
         for w in women_id:
-            women = df.loc[w]
+            woman = df.loc[w]
 
             # Determine if this is unintended or not.  For now let this be the simple rule of if it 'unintended' if
             # the women is using a contraceptive. # todo - @TimC - update this logic as you see fit!
@@ -620,7 +626,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
                         description='pregnancy following the failure of contraceptive method')
 
 
-
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Logs state of contraceptive usage in the population each year."""
@@ -628,8 +633,6 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         self.age_low = 15
         self.age_high = 49
-        self.all_contraception_states = set(self.module.PROPERTIES['co_contraception'].categories)
-
 
         self.get_costs_of_each_contraceptive()
 
@@ -647,20 +650,25 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.costs = dict()
         self.costs['pill'] = item_cost.loc[consumables['Intervention_Pkg']== 'Pill'].sum()
         self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'IUD'].sum()
-        self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'Injectable'].sum()
-        self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'Implant'].sum()
-        self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'Male condom'].sum()
-        self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'Female sterilization'].sum()
+        self.costs['injections'] = item_cost.loc[consumables['Intervention_Pkg']== 'Injectable'].sum()
+        self.costs['implant'] = item_cost.loc[consumables['Intervention_Pkg']== 'Implant'].sum()
+        self.costs['male_condom'] = item_cost.loc[consumables['Intervention_Pkg']== 'Male condom'].sum()
+        self.costs['female_sterilization'] = item_cost.loc[consumables['Intervention_Pkg']== 'Female sterilization'].sum()
         self.costs['other_modern'] = item_cost.loc[consumables['Intervention_Pkg']== 'Female Condom'].sum()
-        assert set(self.costs.keys()).issubset(self.all_contraception_states)
+
+        assert set(self.costs.keys()).issubset(self.module.all_contraception_states)
+        assert set(self.costs.keys()) == set(['male_condom', 'injections', 'other_modern', 'IUD', 'pill',
+                                              'female_sterilization', 'implant'])
+
 
     def apply(self, population):
         df = population.props
 
         # Log usage of contracpetive
-        logger.info(key='contraception_summary',
-                    data=df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts(),
-                    description='Counts of women on each type of contraceptive')
+        num_using = df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().to_dict()
+        logger.info(key='contraception_use_yearly_summary',
+                    data=num_using,
+                    description='Counts of women on each type of contraceptive at a point each time.')
 
         # Log costs associated with the consumables used for this pattern of usage (if annualised)
         # todo @TimC - I've made this work for now, but note that this is only giving a rough estimate and its based
@@ -669,94 +677,30 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #  be better to contruct estimates of cost outside of the simulation and in the analysis files. If you did want
         #  to continue using this, then to be accurate its frequency must be at lesst equal to monthly. I haven't made
         #  that change to allow your script files to still work, but if you do, you would need to adjust the cost calcs.
-
-        c_intervention = self.module.parameters['contraception_interventions']
+        #  Also - note that the HSI system automatically keeps track of all consumables etc, so either way I think it's
+        #  not neccessary, but this working works as intended, I think.
 
         # Public health costs per year of interventions - sum these annually below:
-        c_intervention = pd.DataFrame(c_intervention)
+        c_intervention = self.module.parameters['contraception_interventions']
         c_intervention = c_intervention.set_index('contraception').T
         cost_per_year1 = c_intervention.iloc[1]  # cost_per_year_multiplier for increasing r_init1
         cost_per_year2 = c_intervention.iloc[3]  # cost_per_year_multiplier for increasing r_init2 PPFP
 
+        costs = {
+            'public_health_costs1': sum(cost_per_year1),
+            'public_health_costs2': sum(cost_per_year2)
+        }
 
+        # Get cost for provisioning of each type of contraceptive
+        for method in self.costs.keys():
+            costs.update({
+               f"{method}_annual_cost" : num_using[method] * self.costs[method]
+            })
 
-        # # Pill
-
-        # pill_users = df.loc[df.co_contraception == 'pill']
-        # # df.loc[pill_users.index, 'pill_costs'] = cost_pill
-        # # pill_costs = df.pill_costs.sum()
-
-        # # IUD
-
-        # IUD_users = df.loc[df.co_contraception == 'IUD']
-        # # df.loc[IUD_users.index, 'IUD_costs'] = cost_IUD
-        # # IUD_costs = df.IUD_costs.sum()
-
-        # # Injections
-
-        # injections_users = df.loc[df.co_contraception == 'injections']
-        # # df.loc[injections_users.index, 'injections_costs'] = cost_injections
-        # # injections_costs = df.injections_costs.sum()
-
-        # # Implants
-
-        # implant_users = df.loc[df.co_contraception == 'implant']
-        # # df.loc[implant_users.index, 'implant_costs'] = cost_implant
-        # # implant_costs = df.implant_costs.sum()
-
-        # # Male condoms
-
-        # male_condom_users = df.loc[df.co_contraception == 'male_condom']
-        # # df.loc[male_condom_users.index, 'male_condom_costs'] = cost_male_condom
-        # # male_condom_costs = df.male_condom_costs.sum()
-
-        # # Female Sterilization
-
-        # female_sterilization_users = df.loc[df.co_contraception == 'female_sterilization']
-        # # df.loc[female_sterilization_users.index, 'female_sterilization_costs'] = cost_female_sterilization
-        # female_sterilization_costs = df.female_sterilization_costs.sum()
-
-        # Other Modern
-
-        # other_modern_users = df.loc[df.co_contraception == 'other_modern']
-        # # df.loc[other_modern_users.index, 'female_condom_costs'] = cost_female_condom
-        # female_condom_costs = df.female_condom_costs.sum()
-        #
-
-        # contraception_count = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].groupby(
-        #     'co_contraception').size()
-        #
-        # contraception_summary = {
-        #     'total': sum(contraception_count),
-        #     'not_using': contraception_count['not_using'],
-        #     'using': sum(contraception_count) - contraception_count['not_using'],
-        #     'pill': contraception_count['pill'],
-        #     'IUD': contraception_count['IUD'],
-        #     'injections': contraception_count['injections'],
-        #     'implant': contraception_count['implant'],
-        #     'male_condom': contraception_count['male_condom'],
-        #     'female_sterilization': contraception_count['female_sterilization'],
-        #     'female_condom': contraception_count['other_modern'],
-        #     'periodic_abstinence': contraception_count['periodic_abstinence'],
-        #     'withdrawal': contraception_count['withdrawal'],
-        #     'other_traditional': contraception_count['other_traditional'],
-        #
-        #     # costs
-        #     'public_health_costs1': sum(cost_per_year1),
-        #     'public_health_costs2': sum(cost_per_year2),
-        #     'pill_costs': pill_costs,
-        #     'IUD_costs': IUD_costs,
-        #     'injections_costs': injections_costs,
-        #     'implant_costs': implant_costs,
-        #     'male_condom_costs': male_condom_costs,
-        #     'female_sterilization_costs': female_sterilization_costs,
-        #     'female_condom_costs': female_condom_costs,
-        # }
-
-        # logger.info(key='contraception_summary',
-        #             data=contraception_summary,
-        #             description='contraception_summary')
-
+        logger.info(key='contraception_costs_yearly_summary',
+                    data=costs,
+                    description='Annual cost (if current pattern of usaage is annualised) for the consumables required'
+                                'for each contraceptive method')
 
         # # Log current distributuion of persons who are pregnant / not pregnant
         # # todo - @TimC - is this really useful!?!? also note that it includes men! I've commented-out and we can
