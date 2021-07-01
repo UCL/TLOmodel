@@ -12,8 +12,7 @@ from tlo.methods.breast_cancer import (
     HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
 from tlo.methods.cardio_metabolic_disorders import (
-    HSI_CardioMetabolicDisorders_BloodPressureMeasurement,
-    HSI_CardioMetabolicDisorders_GlucoseMeasurement,
+    HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
     HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
     HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment)
 from tlo.methods.care_of_women_during_pregnancy import (
@@ -343,50 +342,37 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     # take a blood pressure measurement for proportion of individuals who have not been diagnosed and
                     # are either over 50 or younger than 50 but are selected to get tested
                     cmd = self.sim.modules['CardioMetabolicDisorders']
-                    if ~df.at[person_id, 'nc_diabetes_ever_diagnosed']:
-                        if df.at[person_id, 'age_years'] >= 50 or self.module.rng.rand() < cmd.parameters[
-                                'diabetes_hsi'].get('pr_assessed_other_symptoms'):
-                            hsi_event = HSI_CardioMetabolicDisorders_GlucoseMeasurement(
-                                module=cmd,
-                                person_id=person_id,
-                                condition='diabetes'
-                            )
-                            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                hsi_event,
-                                priority=0,
-                                topen=self.sim.date,
-                                tclose=None
-                            )
-                    if ~df.at[person_id, 'nc_hypertension_ever_diagnosed']:
-                        if df.at[person_id, 'age_years'] >= 50 or self.module.rng.rand() < cmd.parameters[
-                                'hypertension_hsi'].get('pr_assessed_other_symptoms'):
-                            hsi_event = HSI_CardioMetabolicDisorders_BloodPressureMeasurement(
-                                module=cmd,
-                                person_id=person_id,
-                                condition='hypertension'
-                            )
-                            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                hsi_event,
-                                priority=0,
-                                topen=self.sim.date,
-                                tclose=None
-                            )
-
-                    # If the symptoms include those for an CMD condition, then begin investigation for condition
                     for condition in cmd.conditions:
-                        if ~df.at[person_id, f'nc_{condition}_ever_diagnosed']:
-                            if f'{condition}_symptoms' in symptoms:
-                                hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
-                                    module=cmd,
-                                    person_id=person_id,
-                                    condition=f'{condition}'
-                                )
-                                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                    hsi_event,
-                                    priority=0,
-                                    topen=self.sim.date,
-                                    tclose=None
-                                )
+                        if ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' not in \
+                            symptoms:
+                            if condition != 'chronic_ischemic_hd':
+                                if df.at[person_id, 'age_years'] >= 50 or self.module.rng.rand() < cmd.parameters[
+                                    f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                                    hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
+                                        module=cmd,
+                                        person_id=person_id,
+                                        condition=f'{condition}'
+                                    )
+                                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                        hsi_event,
+                                        priority=0,
+                                        topen=self.sim.date,
+                                        tclose=None
+                                    )
+                        # If the symptoms include those for an CMD condition, then begin investigation for condition
+                        elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
+                            symptoms:
+                            hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
+                                module=cmd,
+                                person_id=person_id,
+                                condition=f'{condition}'
+                            )
+                            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                hsi_event,
+                                priority=0,
+                                topen=self.sim.date,
+                                tclose=None
+                            )
 
     def did_not_run(self):
         logger.debug(key='message',
