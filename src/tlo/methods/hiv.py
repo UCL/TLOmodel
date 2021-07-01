@@ -33,6 +33,7 @@ from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, lo
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
+from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
@@ -65,6 +66,16 @@ class Hiv(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
     }
 
     PROPERTIES = {
@@ -228,7 +239,9 @@ class Hiv(Module):
         "vls_m": Parameter(Types.REAL, "Rates of viral load suppression males"),
         "vls_f": Parameter(Types.REAL, "Rates of viral load suppression males"),
         "vls_child": Parameter(Types.REAL, "Rates of viral load suppression in children 0-14 years"),
-        "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available")
+        "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available"),
+        "ART_age_cutoff_young_child": Parameter(Types.INT, "Age cutoff for ART regimen for young children"),
+        "ART_age_cutoff_older_child": Parameter(Types.INT, "Age cutoff for ART regimen for older children"),
     }
 
     def read_parameters(self, data_folder):
@@ -703,34 +716,52 @@ class Hiv(Module):
             "Item_Code": {item_code_for_prep: 1}
         }
 
-        # ART for adults
-        item_code_for_art = pd.unique(
+        # First-line ART for adults (age > "ART_age_cutoff_older_child")
+        item_code_for_art_adult = pd.unique(
             consumables.loc[
-                consumables["Items"] == "Adult First line 1A d4T-based", "Item_Code"
+                consumables["Items"] == "First-line ART regimen: adult",
+                "Item_Code"
             ]
         )[0]
-        item_code_for_art2 = pd.unique(
+
+        item_code_for_cotrim_adult = pd.unique(
             consumables.loc[
                 consumables["Items"] == "Cotrimoxizole, 960mg pppy", "Item_Code"
             ]
         )[0]  # NB spelling error in consumables file "Cotrimoxizole"
-        self.footprints_for_consumables_required['art_adult'] = {
+        self.footprints_for_consumables_required['First-line ART regimen: adult'] = {
             "Intervention_Package_Code": {},
-            "Item_Code": {item_code_for_art: 1, item_code_for_art2: 1}
+            "Item_Code": {item_code_for_art_adult: 1, item_code_for_cotrim_adult: 1}
         }
 
-        # ART for children:
-        self.footprints_for_consumables_required['art_child'] = {
-            "Intervention_Package_Code": {
-                pd.unique(consumables.loc[
-                              consumables["Intervention_Pkg"] == "Cotrimoxazole for children",
-                              "Intervention_Pkg_Code"])[0]: 1},
-            "Item_Code": {
-                pd.unique(consumables.loc[
-                              consumables[
-                                  "Items"] == "Lamiduvine/Zidovudine/Nevirapine (3TC + AZT + NVP), tablet, 150 + 300"
-                                              " + 200 mg", "Item_Code"])[
-                    0]: 1}
+        # ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
+        item_code_for_art_older_child = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "First line ART regimen: older child",
+                "Item_Code"
+            ]
+        )[0]
+        pkg_code_for_cotrim_child = pd.unique(
+            consumables.loc[
+                consumables["Intervention_Pkg"] == "Cotrimoxazole for children",
+                "Intervention_Pkg_Code",
+            ]
+        )[0]
+        self.footprints_for_consumables_required['First line ART regimen: older child'] = {
+            "Intervention_Package_Code": {pkg_code_for_cotrim_child: 1},
+            "Item_Code": {item_code_for_art_older_child: 1}
+        }
+
+        # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
+        item_code_for_art_younger_child = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "First line ART regimen: young child",
+                "Item_Code"
+            ]
+        )[0]
+        self.footprints_for_consumables_required['First line ART regimen: young child'] = {
+            "Intervention_Package_Code": {pkg_code_for_cotrim_child: 1},
+            "Item_Code": {item_code_for_art_younger_child: 1}
         }
 
         # Viral Load monitoring
@@ -815,7 +846,6 @@ class Hiv(Module):
         # Overwrite the value for those that currently have symptoms of AIDS with the 'AIDS' daly_wt:
         dalys.loc[self.sim.modules['SymptomManager'].who_has('aids_symptoms')] = self.daly_wts['aids']
 
-        dalys.name = 'hiv'
         return dalys
 
     def mtct_during_breastfeeding(self, mother_id, child_id):
@@ -1211,7 +1241,11 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
             return
 
         # Cause the death to happen immediately
-        demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS").apply(person_id)
+        self.sim.modules['Demography'].do_death(
+            individual_id=person_id,
+            cause="AIDS",
+            originating_module=self.module
+        )
 
 
 class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
@@ -1469,7 +1503,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
         # If test is positive, flag as diagnosed and refer to ART
         if test_result is True:
-            # label as diagnosed
+            # cause_of_death as diagnosed
             df.at[person_id, 'hv_diagnosed'] = True
 
             # Do actions for when a person has been diagnosed with HIV
@@ -1632,14 +1666,21 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
     def get_drugs(self, age_of_person):
         """Helper function to get the ART according to the age of the person being treated. Returns bool to indicate
         whether drugs were available"""
-        if age_of_person < 5.0:
+
+        p = self.module.parameters
+
+        if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for children
             drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['art_child'])
+                footprint=self.module.footprints_for_consumables_required['First line ART regimen: young child'])
+        elif age_of_person <= p["ART_age_cutoff_older_child"]:
+            # Formulation for children
+            drugs_available = self.get_all_consumables(
+                footprint=self.module.footprints_for_consumables_required['First line ART regimen: older child'])
         else:
             # Formulation for adults
             drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['art_adult'])
+                footprint=self.module.footprints_for_consumables_required['First-line ART regimen: adult'])
 
         return drugs_available
 

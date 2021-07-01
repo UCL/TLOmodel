@@ -56,17 +56,11 @@ def make_simulation_nohsi():
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
                  )
     return sim
@@ -272,7 +266,7 @@ def test_check_progression_through_stages_is_happening():
 
     # check that some people have died of bladder cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
-    assert yll['YLL_BladderCancer_BladderCancer'].sum() > 0
+    assert yll['BladderCancer'].sum() > 0
 
     # check that people are being diagnosed, going onto treatment and palliative care:
     assert (df.bc_date_diagnosis > start_date).any()
@@ -321,13 +315,14 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
 
     # check that some people have died of bladder cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
-    assert yll['YLL_BladderCancer_BladderCancer'].sum() > 0
+    assert yll['BladderCancer'].sum() > 0
 
     # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
-#   assert not (df.bc_date_diagnosis > start_date).any()
-#   assert not (df.bc_date_treatment > start_date).any()
-#   assert not (df.bc_stage_at_which_treatment_applied != 'none').any()
-#   assert not (df.bc_date_palliative_care > start_date).any()
+    ever_born = ~df.date_of_birth.isna()
+    assert not (df.loc[ever_born].bc_date_diagnosis > start_date).any()
+    assert not (df.loc[ever_born].bc_date_treatment > start_date).any()
+    assert not (df.loc[ever_born].bc_stage_at_which_treatment_given != 'none').any()
+    assert not (df.loc[ever_born].bc_date_palliative_care > start_date).any()
 
 
 def test_check_progression_through_stages_is_blocked_by_treatment():

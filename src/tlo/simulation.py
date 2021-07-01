@@ -226,15 +226,13 @@ class Simulation:
                 break
             self.fire_single_event(event, date)
 
+        # The simulation has ended. Call 'on_simulation_end' method at the end of simulation
         if self.show_progress_bar:
             progress_bar.stop()
 
         # The simulation has ended. Call 'on_simulation_end' method at the end of simulation (if a module has it)
         for module in self.modules.values():
-            try:
-                module.on_simulation_end()
-            except AttributeError:
-                pass
+            module.on_simulation_end()
 
         # complete logging
         if self.output_file:
