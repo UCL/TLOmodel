@@ -1960,14 +1960,13 @@ def unpack_raw_output_dict(raw_dict):
     return x
 
 
-class DummyHIVModule(Module):
+class DummyHivModule(Module):
     """Dummy HIV Module - it's only job is to create and maintain the 'hv_inf' property.
      This can be used in test files."""
     PROPERTIES = {'hv_inf': Property(Types.BOOL, "DUMMY version of the property for hv_inf")}
 
     def read_parameters(self, data_folder):
         self.hiv_prev = 0.1
-        pass
 
     def initialise_population(self, population):
         df = population.props
@@ -1977,5 +1976,4 @@ class DummyHIVModule(Module):
         pass
 
     def on_birth(self, mother, child):
-        df = self.sim.population.props
-        df.at[child, 'hv_inf'] = self.rng.rand() < self.hiv_prev
+        self.sim.population.props.at[child, 'hv_inf'] = self.rng.rand() < self.hiv_prev

@@ -25,6 +25,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
+from tlo.methods.hiv import DummyHivModule
 
 seed = 677
 
@@ -112,7 +113,11 @@ def register_all_modules():
                  hiv.Hiv(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath))
+                 depression.Depression(resourcefilepath=resourcefilepath),
+
+                 # - Dummy HIV module (as contraception requires the property hv_inf)
+                 DummyHivModule()
+                 )
 
     return sim
 

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tlo import Date, Simulation, Types, Module, Property
+from tlo import Date, Simulation, Types
 from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
@@ -17,7 +17,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager
 )
-from tlo.methods.hiv import DummyHIVModule
+from tlo.methods.hiv import DummyHivModule
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
@@ -45,7 +45,7 @@ def simulation():
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
 
         # - Dummy HIV module (as contraception requires the property hv_inf)
-        DummyHIVModule()
+        DummyHivModule()
     )
     return sim
 
@@ -59,6 +59,7 @@ def __check_properties(df):
 def test_make_initial_population(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.population.make_test_property('hv_inf', Types.BOOL)
+
 
 def test_initial_population(simulation):
     __check_properties(simulation.population.props)
