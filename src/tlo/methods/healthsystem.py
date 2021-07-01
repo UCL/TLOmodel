@@ -743,6 +743,12 @@ class HealthSystem(Module):
         :return: A series that gives the time required for each officer-type in each facility_ID
         """
 
+        # If actual_appt_footprint not specified (such that EXPECTED_APPT_FOOTPRINT is
+        # used) and there is a cached time request previously computed from
+        # EXPECTED_APPT_FOOTPRINT then return this
+        if actual_appt_footprint is None and hsi_event._cached_time_request is not None:
+            return hsi_event._cached_time_request
+
         # Gather useful information
         appt_times = self.parameters['Appt_Time_Table']
 
@@ -775,6 +781,11 @@ class HealthSystem(Module):
                 appt_footprint_times[
                     f"FacilityID_{the_facility.id}_Officer_{appt_info.officer_type}"
                 ] += appt_info.time_taken
+
+        # Cache a time request generated from EXPECTED_APPT_FOOTPRINT to avoid having
+        # to recompute on subsequent calls
+        if actual_appt_footprint is None:
+            hsi_event._cached_time_request = appt_footprint_times
 
         return appt_footprint_times
 
@@ -1537,6 +1548,7 @@ class HSI_Event:
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._received_info_about_bed_days = None
+        self._cached_time_request = None
 
     @property
     def bed_days_allocated_to_this_event(self):
