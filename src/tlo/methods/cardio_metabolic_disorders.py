@@ -103,7 +103,15 @@ class CardioMetabolicDisorders(Module):
         in conditions
     }
     condition_date_diagnosis_list = {
-        f"nc_{p}_date_diagnosis": Property(Types.BOOL, f"When someone has  been diagnosed with {p}") for p
+        f"nc_{p}_date_diagnosis": Property(Types.DATE, f"When someone has  been diagnosed with {p}") for p
+        in conditions
+    }
+    condition_ever_tested_list = {
+        f"nc_{p}_ever_tested": Property(Types.DATE, f"Whether someone has  been tested for {p}") for p
+        in conditions
+    }
+    condition_date_of_last_test_list = {
+        f"nc_{p}_date_last_test": Property(Types.DATE, f"When someone has  last been tested for {p}") for p
         in conditions
     }
     condition_medication_list = {
@@ -117,11 +125,12 @@ class CardioMetabolicDisorders(Module):
         in events
     }
     event_date_diagnosis_list = {
-        f"nc_{p}_date_diagnosis": Property(Types.BOOL, f"When someone has  been diagnosed with {p}") for p
+        f"nc_{p}_date_diagnosis": Property(Types.DATE, f"When someone has  been diagnosed with {p}") for p
         in events}
 
     PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **condition_date_diagnosis_list,
-                  **event_diagnosis_list, **condition_medication_list, **event_date_diagnosis_list,
+                  **condition_ever_tested_list, **condition_date_of_last_test_list, **condition_medication_list,
+                  **event_diagnosis_list, **event_date_diagnosis_list,
                   'nc_ever_weight_loss_treatment': Property(Types.BOOL,
                                                             'whether or not the person has ever had weight loss '
                                                             'treatment'),
@@ -286,6 +295,9 @@ class CardioMetabolicDisorders(Module):
                 else:
                     age_min = age_min + 5
                     age_max = age_max + 20
+            # set ever tested and date of last test to false / NaT for everyone
+            df.loc[df.is_alive, f'nc_{condition}_ever_tested'] = False
+            df.loc[df.is_alive, f'nc_{condition}_date_last_test'] = pd.NaT
 
         # ----- Impose the symptom on random sample of those with each condition to have:
         for condition in self.conditions:
@@ -931,6 +943,8 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
             dx_tests_to_run=f'assess_{self.condition}',
             hsi_event=self
         )
+        df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
+        df.at[person_id, f'nc_{self.condition}_ever_tested'] = True
         if dx_result:
             # record date of diagnosis:
             df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
