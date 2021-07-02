@@ -1,6 +1,10 @@
 """
 Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths
 In the combination of both the codes from Tim C in Contraception and Tim H in Demography
+
+# NB. For a version of this code that uses results from a run on Batch see:
+ src/scripts/calibration_analyses/long_run/analysis_demography_calibrations.py
+
 """
 
 # %% Import Statements and initial declarations
@@ -16,6 +20,7 @@ from tlo.analysis.utils import (
     make_calendar_period_lookup,
     make_calendar_period_type,
     parse_log_file,
+    format_gbd
 )
 from tlo.methods import (
     care_of_women_during_pregnancy,
@@ -94,14 +99,18 @@ datestamp = "__2020_06_16"
 resourcefilepath = "./resources"
 outputpath = Path("./outputs")
 
-# %% Run the Simulation
+# %% Run the Simulation or read results from log file:
+
+# EITHER:
 sim = run()
+filename = sim.log_filepath
 
-# %% read the results
+# OR:
+# filename = Path('outputs/demography_calibrations__2021-07-01T205832.log')
 
-# FOR STORED RESULTS
 
-parsed_output = parse_log_file(sim.log_filepath)
+# %% Run Analysis
+parsed_output = parse_log_file(filename)
 
 scale_to_population = demography.scale_to_population
 scaled_output = scale_to_population(parsed_output, resourcefilepath)
@@ -115,11 +124,11 @@ model_df = scaled_output["tlo.methods.demography"]["population"]
 model_df['year'] = pd.to_datetime(model_df.date).dt.year
 
 # Load Data: WPP_Annual
-wpp_ann = pd.read_csv(Path(resourcefilepath) / "ResourceFile_Pop_Annual_WPP.csv")
+wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" /  "ResourceFile_Pop_Annual_WPP.csv")
 wpp_ann_total = wpp_ann.groupby(['Year']).sum().sum(axis=1)
 
 # Load Data: Census
-cens = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")
+cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
 cens_2018 = cens.groupby('Sex')['Count'].sum()
 
 # Plot population size over time
@@ -172,7 +181,7 @@ for year in [2010]:
     model_f = model_f.loc[model_f.index.dropna(), 'Model']
 
     # Import and format WPP data:
-    wpp_ann = pd.read_csv(Path(resourcefilepath) / "ResourceFile_Pop_Annual_WPP.csv")
+    wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
     wpp_ann = wpp_ann.loc[wpp_ann['Year'] == year]
     wpp_m = wpp_ann.loc[wpp_ann['Sex'] == 'M', ['Count', 'Age_Grp']].groupby('Age_Grp')['Count'].sum()
     wpp_m.index = wpp_m.index.astype(make_age_grp_types())
@@ -191,7 +200,7 @@ for year in [2010]:
 
     if year == 2018:
         # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
-        cens = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")
+        cens = pd.read_csv(Path(resourcefilepath) / "demography" /  "ResourceFile_PopulationSize_2018Census.csv")
         cens_m = cens.loc[cens['Sex'] == 'M'].groupby(by='Age_Grp')['Count'].sum()
         cens_m.index = cens_m.index.astype(make_age_grp_types())
         cens_m = cens_m.loc[cens_m.index.dropna()]
@@ -224,13 +233,13 @@ births_model = births_model.groupby(by='Period')['count'].sum()
 births_model.index = births_model.index.astype(make_calendar_period_type())
 
 # Births over time (WPP)
-wpp = pd.read_csv(Path(resourcefilepath) / "ResourceFile_TotalBirths_WPP.csv")
+wpp = pd.read_csv(Path(resourcefilepath) / "demography" /  "ResourceFile_TotalBirths_WPP.csv")
 wpp = wpp.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
 wpp.index = wpp.index.astype(make_calendar_period_type())
 wpp.columns = 'WPP_' + wpp.columns
 
 # Births in 2018 Census
-cens = pd.read_csv(Path(resourcefilepath) / "ResourceFile_Births_2018Census.csv")
+cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Births_2018Census.csv")
 cens_per_5y_per = cens['Count'].sum() * 5
 
 # Merge in model results
@@ -275,11 +284,11 @@ deaths_model = pd.DataFrame(deaths_model.groupby(['Period', 'Sex', 'Age_Grp'])['
 deaths_model['Variant'] = 'Model'
 
 # Load WPP data
-wpp = pd.read_csv(Path(resourcefilepath) / "ResourceFile_TotalDeaths_WPP.csv")
+wpp = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")
 
 # Load GBD
 # TODO: Deaths among 0-1 for GBD?
-gbd = pd.read_csv(Path(resourcefilepath) / "ResourceFile_TotalDeaths_GBD.csv")
+gbd = format_gbd(pd.read_csv(Path(resourcefilepath) / "gbd" / "ResourceFile_TotalDeaths_GBD2019.csv"))
 gbd = pd.DataFrame(gbd.drop(columns=['Year']).groupby(by=['Period', 'Sex', 'Age_Grp', 'Variant']).sum()).reset_index()
 
 # Combine into one large dataframe
