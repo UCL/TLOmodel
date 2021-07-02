@@ -355,6 +355,10 @@ class HealthSystem(Module):
         df.at[child_id, 'hs_dist_to_facility'] = df.at[mother_id, 'hs_dist_to_facility']
         self.bed_days.on_birth(df, mother_id, child_id)
 
+    def on_simulation_end(self):
+        """Put out to the log the information from the tracker of the last day of the simulation"""
+        self.bed_days.log_yesterday_info_from_all_bed_trackers()
+
     def register_disease_module(self, new_disease_module):
         """
         This is now deprecated. Disease modules do not need to register with the health system.
@@ -1371,8 +1375,8 @@ class HSI_Event:
     def post_apply_hook(self):
         """Impose the bed-days footprint (if target of the HSI is a person_id)"""
         if type(self.target) is int:
-            if 'BedDays' in self.module.sim.modules:
-                self.module.sim.modules['BedDays'].impose_beddays_footprint(
+            if 'HealthSystem' in self.module.sim.modules:
+                self.module.sim.modules['HealthSystem'].bed_days.impose_beddays_footprint(
                     person_id=self.target,
                     footprint=self.bed_days_allocated_to_this_event
                 )
@@ -1429,8 +1433,8 @@ class HSI_Event:
         """Helper function to make a correctly-formed 'bed-days footprint'"""
 
         # get blank footprint
-        if 'BedDays' in self.module.sim.modules:
-            footprint = self.sim.modules['BedDays'].get_blank_beddays_footprint()
+        if 'HealthSystem' in self.module.sim.modules:
+            footprint = self.sim.modules['HealthSystem'].bed_days.get_blank_beddays_footprint()
 
             # do checks
             assert type(dict_of_beddays) is dict

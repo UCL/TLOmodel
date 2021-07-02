@@ -234,8 +234,8 @@ class Demography(Module):
                       })
 
         # Release any beds-days that would be used by this person:
-        if 'BedDays' in self.sim.modules:
-            self.sim.modules['BedDays'].remove_beddays_footprint(person_id=individual_id)
+        if 'HealthSystem' in self.sim.modules:
+            self.sim.modules['HealthSystem'].bed_days.remove_beddays_footprint(person_id=individual_id)
 
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
         if 'HealthBurden' in self.sim.modules.keys():

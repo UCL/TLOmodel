@@ -1,18 +1,16 @@
 """
-This is the Bed days modules.
+This is the Bed days class.
 
 It maintains a current record of the availability and usage of beds in the healthcare system.
 
 """
-from pathlib import Path
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo import Property, Types, logging
 
 # ---------------------------------------------------------------------------------------------------------
-#   MODULE DEFINITIONS
+#   CLASS DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
@@ -43,11 +41,13 @@ class BedDays:
         self.bed_types = list()  # List of bed-types
 
     def get_bed_types(self):
-        """Helper function to get the bed_types from the resoure file imported to 'bed_capacity'"""
+        """Helper function to get the bed_types from the resource file imported to parameter 'BedCapacity' of the
+        health system module"""
         return [x for x in self.hs_module.parameters['BedCapacity'].columns if x != 'Facility_ID']
 
     def pre_initialise_population(self):
-        """Define the properties that this module will control in the sim.population.props dataframe"""
+        """Define the properties that will then be added to the sim.population.props dataframe by the healthsystem
+        module """
 
         self.bed_types = self.get_bed_types()
         for bed_type in self.bed_types:
@@ -162,6 +162,7 @@ class BedDays:
         Generate a blank footprint for the bed-days
         :return: a footprint of the correct format, specifying no bed days
         """
+        self.bed_types = self.get_bed_types()
         assert 0 < len(self.bed_types), "No bed types have been defined"
         return dict(zip(self.bed_types, [0] * len(self.bed_types)))
 
