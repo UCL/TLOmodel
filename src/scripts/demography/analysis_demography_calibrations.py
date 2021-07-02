@@ -26,12 +26,12 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
-    hiv,
 )
 from tlo.util import create_age_range_lookup
 

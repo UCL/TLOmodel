@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -17,12 +18,12 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
-    hiv,
 )
 
 # Where will outputs go - by default, wherever this script is run
@@ -208,15 +209,15 @@ months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-com_df = log_df['tlo.methods.contraception']['contraception_costs_yearly_summary']
+com_df = log_df['tlo.methods.contraception']['contraception_use_yearly_summary']
 Model_Years = pd.to_datetime(com_df.date)
-Model_pill = com_df.pill_annual_cost
-Model_IUD = com_df.IUD_annual_cost
-Model_injections = com_df.injections_annual_cost
-Model_implant = com_df.implant_annual_cost
-Model_male_condom = com_df.male_condom_annual_cost
-Model_female_sterilization = com_df.female_sterilization_annual_cost
-Model_other_modern = com_df.other_modern_annual_cost
+Model_pill = com_df.pill
+Model_IUD = com_df.IUD
+Model_injections = com_df.injections
+Model_implant = com_df.implant
+Model_male_condom = com_df.male_condom
+Model_female_sterilization = com_df.female_sterilization
+Model_other_modern = com_df.other_modern
 
 fig, ax = plt.subplots()
 ax.plot(np.asarray(Model_Years), Model_pill)
@@ -247,15 +248,15 @@ months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-com_df = log_df['tlo.methods.contraception']['contraception_summary']
+com_df = log_df['tlo.methods.contraception']['contraception_costs_yearly_summary']
 Model_Years = pd.to_datetime(com_df.date)
-Model_pill = com_df.pill_costs
-Model_IUD = com_df.IUD_costs
-Model_injections = com_df.injections_costs
-Model_implant = com_df.implant_costs
-Model_male_condom = com_df.male_condom_costs
-Model_female_sterilization = com_df.female_sterilization_costs
-Model_female_condom = com_df.female_condom_costs
+Model_pill = com_df.pill_annual_cost
+Model_IUD = com_df.IUD_annual_cost
+Model_injections = com_df.injections_annual_cost
+Model_implant = com_df.implant_annual_cost
+Model_male_condom = com_df.male_condom_annual_cost
+Model_female_sterilization = com_df.female_sterilization_annual_cost
+Model_other_modern = com_df.other_modern_annual_cost
 
 fig, ax = plt.subplots()
 ax.plot(np.asarray(Model_Years), Model_pill)
@@ -264,7 +265,7 @@ ax.plot(np.asarray(Model_Years), Model_injections)
 ax.plot(np.asarray(Model_Years), Model_implant)
 ax.plot(np.asarray(Model_Years), Model_male_condom)
 ax.plot(np.asarray(Model_Years), Model_female_sterilization)
-ax.plot(np.asarray(Model_Years), Model_female_condom)
+ax.plot(np.asarray(Model_Years), Model_other_modern)
 
 # format the ticks
 # ax.xaxis.set_major_locator(years)
@@ -275,7 +276,7 @@ plt.xlabel("Year")
 plt.ylabel("Consumable Costs (Cumulative)")
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['pill costs', 'IUD costs', 'injection costs', 'implant costs', 'male condom costs',
-            'female sterilization costs', 'female condom costs'])
+            'female sterilization costs', 'other modern method costs'])
 plt.savefig(outputpath / ('Contraception Consumable Costs By Method' + datestamp + '.pdf'), format='pdf')
 plt.show()
 

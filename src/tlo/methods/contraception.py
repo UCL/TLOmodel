@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import transition_states
@@ -11,12 +12,10 @@ logger.setLevel(logging.INFO)
 
 """
 # Issues remaining:
-# * unify logging events: might be helpful to unify the logs (all pregnancies, all contrapctive changes). Currently _a lot_ of separate logs, each with differennt information and different labelling
-# * remove computing of costs (this is done working but will give inaccurate results as structured).
-# * should hiv effect on fertility also affect the risk of failure?
-# * it would also be useful to run a check that when there is no contracpetive, then the number of births matches WPP very closely (ResourceFile_ASFR_WPP.csv) (as does the simplified_birth module)
-# * There is a comment "add link to unintended preg from not using" - but I think it should be that the flag for unintended pregnancy comes when there is Fail (from a method).
-# * We could encapsulate each init and swtich inside an HSI pretty easily now -- shall we do this? Could make it an optional thing (argument for ```no_hsi=True``` could preserve current behaviour)
+# * it would also be useful to run a check that when there is no contracpetive, then the number of births matches WPP
+very closely (ResourceFile_ASFR_WPP.csv) (as does the simplified_birth module)
+# * We could encapsulate each init and swtich inside an HSI pretty easily now -- shall we do this? Could make it an
+optional thing (argument for ```no_hsi=True``` could preserve current behaviour)
 # todo  - Should remove women with hysterectomy from being on contraception??
 """
 
@@ -129,7 +128,8 @@ class Contraception(Module):
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
 
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
-        # todo @TimC - is this the WPP fertility scheudle? To keep things in sync, I'd suggest we use instead: "ResourceFile_ASFR_WPP.csv"
+        # todo @TimC - is this the WPP fertility scheudle? To keep things in sync, I'd suggest we use instead:
+        #  "ResourceFile_ASFR_WPP.csv"
 
         self.parameters['contraception_failure'] = workbook['Failure'].loc[0]
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv outputs from
@@ -306,11 +306,6 @@ class Contraception(Module):
         c_baseline = c_baseline.drop(columns=['not_using'])
         c_adjusted = c_baseline.mul(c_intervention2.iloc[0])
         self.parameters['contraception_initiation2'] = c_adjusted.loc[0]
-
-        # Public health costs per year of interventions - sum these annually - in a separate new event?:
-        # doesn't seem possible to simply do it in the LoggingEvent as that doesn't have access to parameters
-        cost_per_year1 = c_intervention.iloc[[1]]  # cost_per_year_multiplier for increasing r_init1
-        cost_per_year2 = c_intervention.iloc[[3]]  # cost_per_year_multiplier for increasing r_init2 PPFP
 
     def select_contraceptive_following_birth(self, mother_id):
         """
@@ -519,9 +514,9 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
             prob_of_failure = p['contraception_failure']
 
-            # Get the women who are using a contracpetive that may fail and who may become pregnanct (i.e., women who are
-            # not in labour, have been pregnant in the last month, have previously had a hysterectomy,
-            # cannot get pregnant.)
+            # Get the women who are using a contracpetive that may fail and who may become pregnanct (i.e., women who
+            # are not in labour, have been pregnant in the last month, have previously had a hysterectomy, cannot get
+            # pregnant.)
 
             possible_to_fail = ((df.sex == 'F') &
                                 df.is_alive &

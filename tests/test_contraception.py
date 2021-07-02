@@ -1,10 +1,7 @@
 import os
-import time
 from pathlib import Path
 
-import pytest
-
-from tlo import Date, Simulation, Types, logging
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     care_of_women_during_pregnancy,
@@ -16,7 +13,7 @@ from tlo.methods import (
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
-    symptommanager
+    symptommanager,
 )
 from tlo.methods.hiv import DummyHivModule
 
@@ -24,63 +21,22 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
 popsize = 200
 
-# todo reorgnsie this to remove duplication and to use the logs to check that things are happening (pregnancies, contracpeitvr start, stop etc)
-
-@pytest.fixture(scope='module')
-def simulation():
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-
-    sim = Simulation(start_date=start_date)
-    sim.register(
-        # - core modules:
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False),
-
-        # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
-        contraception.Contraception(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-
-        # - Dummy HIV module (as contraception requires the property hv_inf)
-        DummyHivModule()
-    )
-    return sim
-
 
 def __check_properties(df):
+    # basic checks on configuration of properties
     assert not ((~df.date_of_birth.isna()) & (df.sex == 'M') & (df.co_contraception != 'not_using')).any()
     assert not ((~df.date_of_birth.isna()) & (df.age_years < 15) & (df.co_contraception != 'not_using')).any()
     assert not ((~df.date_of_birth.isna()) & (df.sex == 'M') & df.is_pregnant).any()
 
 
-def test_make_initial_population(simulation):
-    simulation.make_initial_population(n=popsize)
-
-
-def test_initial_population(simulation):
-    __check_properties(simulation.population.props)
-
-
-def test_run(simulation):
-    simulation.simulate(end_date=end_date)
-
-def test_final_population(simulation):
-    __check_properties(simulation.population.props)
-
-
-def test_dtypes(simulation):
+def __check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_log(tmpdir):
+def test_contraception(tmpdir):
     """test that what comes out in log is as expected"""
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -113,7 +69,13 @@ def test_log(tmpdir):
         DummyHivModule()
     )
     sim.make_initial_population(n=popsize)
+    __check_dtypes(sim)
+    __check_properties(sim.population.props)
+
     sim.simulate(end_date=end_date)
+    __check_dtypes(sim)
+    __check_properties(sim.population.props)
+
     logs = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
     assert set(logs.keys()) == set([
         'contraception_use_yearly_summary',
@@ -122,14 +84,28 @@ def test_log(tmpdir):
         'contraception',
     ])
 
-    # todo - check that there are some births, and some switches in contraception
-    # todo - organize this file: the first (long) test is superfluous.
+    # check that pregnancies are happening:
+    assert len(logs['pregnancy'])
 
+    # check that yearly-summary logs are as expected and that some use of contraception is happening:
+    ys = logs['contraception_use_yearly_summary']
+    ys = ys.set_index('date')
+    assert set(ys.columns) == sim.modules['Contraception'].all_contraception_states
+    assert (ys.drop(columns=['not_using']).sum(axis=1) > 0).all()
 
-if __name__ == '__main__':
-    t0 = time.time()
-    simulation = simulation()
-    test_make_initial_population(simulation)
-    test_run(simulation)
-    t1 = time.time()
-    print('Time taken', t1 - t0)
+    # check that there is some starting/stopping/switching of contraceptive:
+    con = logs['contraception']
+
+    # some starting
+    assert len(con.loc[con.switch_from == "not_using"])
+
+    # some starting after pregnancy
+    assert len(con.loc[con.init_after_pregnancy])
+    assert (con.loc[con.init_after_pregnancy].switch_from == "not_using").all()
+    assert (con.loc[con.init_after_pregnancy].switch_to != "not_using").any()
+
+    # some switching
+    assert len(con.loc[(con.switch_from != "not_using") & (con.switch_to != "not_using")])
+
+    # no switching from female_sterilization
+    assert not (con.switch_from == 'female_sterilization').any()
