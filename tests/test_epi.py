@@ -7,7 +7,6 @@ import pytest
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    bed_days,
     demography,
     enhanced_lifestyle,
     epi,
@@ -51,6 +50,8 @@ def test_no_health_system(tmpdir):
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
             service_availability=[],  # no services allowed
@@ -58,12 +59,9 @@ def test_no_health_system(tmpdir):
             ignore_priority=True,
             capabilities_coefficient=0.0  # no officer time
         ),
-        bed_days.BedDays(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         epi.Epi(resourcefilepath=resourcefilepath),
     )
 
@@ -98,6 +96,8 @@ def test_epi_scheduling_hsi_events(tmpdir):
 
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
             service_availability=["*"],  # all services allowed
@@ -107,12 +107,9 @@ def test_epi_scheduling_hsi_events(tmpdir):
             mode_appt_constraints=0,  # no constraints
             disable=False
         ),
-        bed_days.BedDays(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         epi.Epi(resourcefilepath=resourcefilepath),
     )
 
