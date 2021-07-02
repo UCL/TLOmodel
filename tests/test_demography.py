@@ -5,9 +5,33 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from pytest import approx
 
-from tlo import Date, Simulation
-from tlo.methods import demography
+from tlo import Date, Module, Simulation, logging
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
+from tlo.methods import (
+    Metadata,
+    bladder_cancer,
+    breast_cancer,
+    cardio_metabolic_disorders,
+    care_of_women_during_pregnancy,
+    contraception,
+    demography,
+    depression,
+    diarrhoea,
+    enhanced_lifestyle,
+    healthsystem,
+    hiv,
+    labour,
+    malaria,
+    newborn_outcomes,
+    oesophagealcancer,
+    postnatal_supervisor,
+    pregnancy_supervisor,
+    prostate_cancer,
+    symptommanager,
+)
+from tlo.methods.causes import Cause
 from tlo.methods.demography import AgeUpdateEvent
 
 start_date = Date(2010, 1, 1)
@@ -27,9 +51,10 @@ def simulation():
 def test_run(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
+    assert set(['Other']) == set(simulation.population.props['cause_of_death'].cat.categories)
 
 
-def test_dypes(simulation):
+def test_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
@@ -42,6 +67,145 @@ def test_mothers_female(simulation):
     mothers = df.loc[df.mother_id >= 0, 'mother_id']
     is_female = mothers.apply(lambda mother_id: df.at[mother_id, 'sex'] == 'F')
     assert is_female.all()
+
+
+def test_storage_of_cause_of_death():
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+        CAUSES_OF_DEATH = {'a_cause': Cause(label='a_cause')}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+        DummyModule()
+    )
+    sim.make_initial_population(n=20)
+    df = sim.population.props
+    orig = df.dtypes
+    assert type(orig['cause_of_death']) == pd.CategoricalDtype
+    assert set(['Other', 'a_cause']) == set(df['cause_of_death'].cat.categories)
+
+    # Cause a person to die by the DummyModule
+    person_id = 0
+    sim.modules['Demography'].do_death(
+        individual_id=person_id,
+        originating_module=sim.modules['DummyModule'],
+        cause='a_cause'
+    )
+
+    person = df.loc[person_id]
+    assert not person.is_alive
+    assert person.cause_of_death == 'a_cause'
+    assert (df.dtypes == orig).all()
+    test_dtypes(sim)
+
+
+def test_cause_of_death_being_registered(tmpdir):
+    """Test that the modules can declare causes of death, that the mappers between tlo causes of death and gbd
+    causes of death can be created correctly and that the analysis helper scripts can be used to produce comparisons
+    between model outputs and GBD data."""
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "*": logging.WARNING,
+            'tlo.methods.demography': logging.INFO
+        }
+    })
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+        symptommanager.SymptomManager(resourcefilepath=rfp),
+        breast_cancer.BreastCancer(resourcefilepath=rfp),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
+        healthsystem.HealthSystem(resourcefilepath=rfp, disable_and_reject_all=True),
+        bladder_cancer.BladderCancer(resourcefilepath=rfp),
+        prostate_cancer.ProstateCancer(resourcefilepath=rfp),
+        depression.Depression(resourcefilepath=rfp),
+        diarrhoea.Diarrhoea(resourcefilepath=rfp),
+        hiv.Hiv(resourcefilepath=rfp),
+        malaria.Malaria(resourcefilepath=rfp),
+        cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=rfp),
+        oesophagealcancer.OesophagealCancer(resourcefilepath=rfp),
+        contraception.Contraception(resourcefilepath=rfp),
+        labour.Labour(resourcefilepath=rfp),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=rfp),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=Date(2010, 5, 31))
+    test_dtypes(sim)
+
+    mapper_from_tlo_causes, mapper_from_gbd_causes = \
+        sim.modules['Demography'].create_mappers_from_causes_of_death_to_label()
+
+    assert set(mapper_from_tlo_causes.keys()) == set(sim.modules['Demography'].causes_of_death)
+    assert set(mapper_from_gbd_causes.keys()) == sim.modules['Demography'].gbd_causes_of_death
+    assert set(mapper_from_gbd_causes.values()) == set(mapper_from_tlo_causes.values())
+
+    # check that these mappers come out in the log correctly
+    output = parse_log_file(sim.log_filepath)
+    demoglog = output['tlo.methods.demography']
+    assert mapper_from_tlo_causes == \
+           pd.Series(demoglog['mapper_from_tlo_cause_to_common_label'].drop(columns={'date'}).loc[0]).to_dict()
+    assert mapper_from_gbd_causes == \
+           pd.Series(demoglog['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]).to_dict()
+
+    # Check that the mortality risks being used in Other Death Poll have been reduced from the 'all-cause' rates
+    odp = sim.modules['Demography'].other_death_poll
+    all_cause_risk = odp.get_all_cause_mort_risk_per_poll()
+    actual_risk_per_poll = odp.mort_risk_per_poll
+    assert (
+        actual_risk_per_poll['prob_of_dying_before_next_poll'] < all_cause_risk['prob_of_dying_before_next_poll']
+    ).all()
+
+    # check that can recover from the log the proportion of deaths represented by the OtherDeaths
+    logged_prop_of_death_by_odp = demoglog['other_deaths'][['Sex', 'Age_Grp', '0']].to_dict()
+    dict_of_ser = {k: pd.DataFrame(v)[0] for k, v in logged_prop_of_death_by_odp.items()}
+    log_odp = pd.concat(dict_of_ser, axis=1).set_index(['Sex', 'Age_Grp'])['0']
+    assert (log_odp < 1.0).all()
+
+    # Run the analysis file:
+    results = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=rfp)
+    # Check the number of deaths in model represented in right
+    assert (results['model'].sum() * 5.0) == approx(len(output['tlo.methods.demography']['death']))
+
+
+def test_calc_of_scaling_factor(tmpdir):
+    """Test that the scaling factor is computed and put out to the log"""
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+    popsize = 10_000
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "*": logging.INFO,
+        }
+    })
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+    )
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2019, 12, 31))
+
+    # Check that the scaling factor is calculated in the log correctly:
+    output = parse_log_file(sim.log_filepath)
+    sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
+    assert sf == approx(19e6 / popsize, rel=0.10)
 
 
 def test_py_calc(simulation):
