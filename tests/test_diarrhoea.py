@@ -501,7 +501,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanA)
 
-    # ---- PERSON WITH NON-SEVERE DEHYRATION AND NON-BLOODY DIARRHOEA: ---> PLAN B ----
+    # ---- PERSON WITH NON-SEVERE DEHYDRATION AND NON-BLOODY DIARRHOEA: ---> PLAN B ----
     # Set up the simulation:
     sim, hsi_event = make_blank_simulation()
 
@@ -533,6 +533,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
         add_or_remove='+'
     )
     # Run the diagnostic algorithm:
+    sim.modules['HealthSystem'].dx_manager.dx_tests['danger_signs_visual_inspection'][0].specificity = 1.0
     sim.modules['DxAlgorithmChild'].do_when_diarrhoea(
         person_id=0,
         hsi_event=hsi_event
@@ -580,6 +581,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
         add_or_remove='+'
     )
     # Run the diagnostic algorithm:
+    sim.modules['HealthSystem'].dx_manager.dx_tests['danger_signs_visual_inspection'][0].sensitivity = 1.0
     sim.modules['DxAlgorithmChild'].do_when_diarrhoea(
         person_id=0,
         hsi_event=hsi_event
@@ -664,6 +666,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
         add_or_remove='+'
     )
     # Run the diagnostic algorithm:
+    sim.modules['HealthSystem'].dx_manager.dx_tests['danger_signs_visual_inspection'][0].specificity = 1.0
     sim.modules['DxAlgorithmChild'].do_when_diarrhoea(
         person_id=0,
         hsi_event=hsi_event
