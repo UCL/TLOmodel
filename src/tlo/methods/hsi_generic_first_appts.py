@@ -342,17 +342,20 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     # take a blood pressure measurement for proportion of individuals who have not been diagnosed and
                     # are either over 50 or younger than 50 but are selected to get tested
                     cmd = self.sim.modules['CardioMetabolicDisorders']
+
+                    def get_time_since_last_test(current_date, date_of_last_test):
+                        return (current_date.year - date_of_last_test.year) * 12 + \
+                               (current_date.month - date_of_last_test.month)
+
                     for condition in cmd.conditions:
                         if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and \
-                            (f'{condition}_symptoms' not in symptoms):
-                            if (df.at[person_id, f'nc_{condition}_ever_tested']):
-                                num_months_since_last_test = (self.sim.date.year -
-                                                              df.at[person_id, f'nc_{condition}_date_last_test'].year) * \
-                                                             12 + (self.sim.date.month - df.at[person_id,
-                                                                                               f'nc_{condition}_date_last_test'].month)
+                                (f'{condition}_symptoms' not in symptoms):
+                            if df.at[person_id, f'nc_{condition}_ever_tested']:
+                                num_months_since_last_test = get_time_since_last_test(
+                                    self.sim.date, df.at[person_id, f'nc_{condition}_date_last_test'])
                                 if num_months_since_last_test >= 6 and condition != 'chronic_ischemic_hd':
                                     if df.at[person_id, 'age_years'] >= 50 or self.module.rng.rand() < cmd.parameters[
-                                        f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                                            f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
                                         hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
                                             module=cmd,
                                             person_id=person_id,
@@ -366,7 +369,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                                         )
                         # If the symptoms include those for an CMD condition, then begin investigation for condition
                         elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
-                            symptoms:
+                                symptoms:
                             hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
                                 module=cmd,
                                 person_id=person_id,
