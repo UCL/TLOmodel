@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
@@ -59,7 +60,8 @@ class Contraception(Module):
                                                    'Monthly probabilities of discontinuation of each method of '
                                                    'contaception to not using contraception'),
         'contraception_failure': Parameter(Types.DATA_FRAME,
-                                           'Monthly probabilities of failure of each contraception method to pregnancy'),
+                                           'Monthly probabilities of failure of each contraception method to '
+                                           'pregnancy'),
         # from Fracpoly regression:
         'r_init1_age': Parameter(Types.REAL,
                                  'Proportioniate change in probabilities of initiating each method of contraception '
@@ -98,18 +100,17 @@ class Contraception(Module):
                                          'periodic_abstinence',
                                          'withdrawal',
                                          'other_traditional'
-    # These are the 11 categories of contraception ('not using' + 10 methods) from the DHS analysis of initiation,
-    # discontinuation, failure and switching rates.
-    # 'other modern' includes Male sterilization, Female Condom, Emergency contraception
-    # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
-    #  method'),
                                      ]),
+        # These are the 11 categories of contraception ('not using' + 10 methods) from the DHS analysis of initiation,
+        # discontinuation, failure and switching rates.
+        # 'other modern' includes Male sterilization, Female Condom, Emergency contraception
+        # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
+        #  method'),
+
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
-        'date_of_last_pregnancy': Property(Types.DATE,
-                                           'Date of the last pregnancy of this individual'),
-        'co_unintended_preg': Property(Types.BOOL,
-                                       'Most recent or current pregnancy was unintended (following contraception '
-                                       'failure)'),
+        'date_of_last_pregnancy': Property(Types.DATE, 'Date of the last pregnancy of this individual'),
+        'co_unintended_preg': Property(Types.BOOL, 'Most recent or current pregnancy was unintended (following '
+                                                   'contraception failure)'),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -123,6 +124,8 @@ class Contraception(Module):
         Please see documentation for description of the relationships between baseline fertility rate, intitiation
         rates, discontinuation, failure and switching rates, and being on contraception or not and being pregnant.
         """
+        # todo - something in here is generrating a warning?
+
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
 
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
@@ -181,7 +184,7 @@ class Contraception(Module):
         df.loc[df.is_alive, 'co_contraception'] = 'not_using'
         df.loc[df.is_alive, 'is_pregnant'] = False
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
-        df.loc[df.is_alive, 'co_unintended_preg'] = False
+        df.loc[df.is_alive, 'co_unintended_preg'] = False   # todo should this be np.nan?
 
         # Assign contraception method
         # 1. select females aged 15-49 from population, for current year
@@ -231,7 +234,7 @@ class Contraception(Module):
             'not_using',
             False,
             pd.NaT,
-            False
+            False       # todo should this be np.nan?
         )
 
         # 2) Reset the mother's is_pregnant status showing that she is no longer pregnant
@@ -330,9 +333,9 @@ class Contraception(Module):
 
         # Log that this women had initiated this contraceptive following birth:
         self.log_contraception_change(mother_id,
-                               old='not_using',
-                               new=df.at[mother_id, 'co_contraception'],
-                               init_after_pregnancy=True)
+                                      old='not_using',
+                                      new=df.at[mother_id, 'co_contraception'],
+                                      init_after_pregnancy=True)
 
     def log_contraception_change(self, woman_id: int, old, new, init_after_pregnancy=False):
         """Log a start / stop / switch of contraception. """
@@ -396,7 +399,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         currently_not_using_co = df.index[possible_co_users & (df.co_contraception == 'not_using')]
 
         # initiating: not using -> using
-        self.init1(df, currently_not_using_co)
+        self.initiate(df, currently_not_using_co)
 
         # switching: using A -> using B
         self.switch(df, currently_using_co)
@@ -404,7 +407,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # discontinuing: using -> not using
         self.discontinue(df, currently_using_co)
 
-    def init1(self, df: pd.DataFrame, individuals_not_using: pd.Index):
+    def initiate(self, df: pd.DataFrame, individuals_not_using: pd.Index):
         """check all females not using contraception to determine if contraception starts
         i.e. category should change from 'not_using'
         """
@@ -508,6 +511,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
     def pregnancy_for_those_on_contraceptive(self):
         """Look across all women who are using a contraception method to determine if they become pregnant i.e. the
          method fails according to failure_rate."""
+
         def apply(self, population):
             df = population.props
             p = self.module.parameters
@@ -536,6 +540,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             prob_of_failure.loc[df.index[possible_to_fail & (df.age_years.between(15, 25))]] *= p['rr_fail_under25']
 
             # randomly select some individual's for contraceptive failure
+            # todo convert 12mo to 1mo probability of pregnancy
             random_draw = rng.random_sample(size=len(prob_of_failure))
             women_co_failure = prob_of_failure.index[prob_of_failure > random_draw]
 
@@ -576,7 +581,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             fertility_schedule, left_on=['age_years'], right_on=['age'], how='left'
         ).merge(
             frr_hiv, left_on=['age_years'], right_on=['age_'], how='left'
-                ).set_index('person')
+        ).set_index('person')
         assert len(females) == len_before_merge
 
         # probability of pregnancy
@@ -648,18 +653,18 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         item_cost = consumables['Expected_Units_Per_Case'] * consumables['Unit_Cost']
 
         self.costs = dict()
-        self.costs['pill'] = item_cost.loc[consumables['Intervention_Pkg']== 'Pill'].sum()
-        self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg']== 'IUD'].sum()
-        self.costs['injections'] = item_cost.loc[consumables['Intervention_Pkg']== 'Injectable'].sum()
-        self.costs['implant'] = item_cost.loc[consumables['Intervention_Pkg']== 'Implant'].sum()
-        self.costs['male_condom'] = item_cost.loc[consumables['Intervention_Pkg']== 'Male condom'].sum()
-        self.costs['female_sterilization'] = item_cost.loc[consumables['Intervention_Pkg']== 'Female sterilization'].sum()
-        self.costs['other_modern'] = item_cost.loc[consumables['Intervention_Pkg']== 'Female Condom'].sum()
+        self.costs['pill'] = item_cost.loc[consumables['Intervention_Pkg'] == 'Pill'].sum()
+        self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg'] == 'IUD'].sum()
+        self.costs['injections'] = item_cost.loc[consumables['Intervention_Pkg'] == 'Injectable'].sum()
+        self.costs['implant'] = item_cost.loc[consumables['Intervention_Pkg'] == 'Implant'].sum()
+        self.costs['male_condom'] = item_cost.loc[consumables['Intervention_Pkg'] == 'Male condom'].sum()
+        self.costs['female_sterilization'] = item_cost.loc[
+            consumables['Intervention_Pkg'] == 'Female sterilization'].sum()
+        self.costs['other_modern'] = item_cost.loc[consumables['Intervention_Pkg'] == 'Female Condom'].sum()
 
         assert set(self.costs.keys()).issubset(self.module.all_contraception_states)
         assert set(self.costs.keys()) == set(['male_condom', 'injections', 'other_modern', 'IUD', 'pill',
                                               'female_sterilization', 'implant'])
-
 
     def apply(self, population):
         df = population.props
@@ -694,7 +699,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Get cost for provisioning of each type of contraceptive
         for method in self.costs.keys():
             costs.update({
-               f"{method}_annual_cost" : num_using[method] * self.costs[method]
+                f"{method}_annual_cost": num_using[method] * self.costs[method]
             })
 
         logger.info(key='contraception_costs_yearly_summary',

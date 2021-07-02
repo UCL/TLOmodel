@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -34,7 +33,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource directory for modules
 # by default, this script runs in the same directory as this file
-#resourcefilepath = Path("./resources")
+# resourcefilepath = Path("./resources")
 
 
 # %% Run the Simulation
@@ -46,7 +45,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 seed = 123
 
 log_config = {
-    "filename": "contraception_analysis",   # The name of the output file (a timestamp will be appended).
+    "filename": "contraception_analysis",  # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
@@ -95,18 +94,17 @@ sim.simulate(end_date=end_date)
 # parse the simulation logfile to get the output dataframes
 log_df = parse_log_file(sim.log_filepath)
 
-
 # %% Plot Contraception Use Over time:
-years = mdates.YearLocator()   # every year
+years = mdates.YearLocator()  # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-co_df = log_df['tlo.methods.contraception']['contraception_summary']
-Model_Years = pd.to_datetime(co_df.date)
-Model_total = co_df.total
+co_df = log_df['tlo.methods.contraception']['contraception_use_yearly_summary'].set_index('date')
+Model_Years = pd.to_datetime(co_df.index)
+Model_total = co_df.sum(axis=1)
 Model_not_using = co_df.not_using
-Model_using = co_df.using
+Model_using = Model_total - Model_not_using
 
 fig, ax = plt.subplots()
 ax.plot(np.asarray(Model_Years), Model_total)
@@ -115,8 +113,8 @@ ax.plot(np.asarray(Model_Years), Model_using)
 # plt.plot(Data_Years, Data_Pop_Normalised)
 
 # format the ticks
-#ax.xaxis.set_major_locator(years)
-#ax.xaxis.set_major_formatter(years_fmt)
+# ax.xaxis.set_major_locator(years)
+# ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Contraception Use")
 plt.xlabel("Year")
@@ -126,15 +124,14 @@ plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Con
 plt.savefig(outputpath / ('Contraception Use' + datestamp + '.pdf'), format='pdf')
 plt.show()
 
-
 # %% Plot Contraception Use By Method Over time:
 
-years = mdates.YearLocator()   # every year
+years = mdates.YearLocator()  # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-com_df = log_df['tlo.methods.contraception']['contraception_summary']
+com_df = log_df['tlo.methods.contraception']['contraception_use_yearly_summary']
 Model_Years = pd.to_datetime(com_df.date)
 Model_pill = com_df.pill
 Model_IUD = com_df.IUD
@@ -142,7 +139,7 @@ Model_injections = com_df.injections
 Model_implant = com_df.implant
 Model_male_condom = com_df.male_condom
 Model_female_sterilization = com_df.female_sterilization
-Model_female_condom = com_df.female_condom
+Model_other_modern = com_df.other_modern
 Model_periodic_abstinence = com_df.periodic_abstinence
 Model_withdrawal = com_df.withdrawal
 Model_other_traditional = com_df.other_traditional
@@ -154,14 +151,14 @@ ax.plot(np.asarray(Model_Years), Model_injections)
 ax.plot(np.asarray(Model_Years), Model_implant)
 ax.plot(np.asarray(Model_Years), Model_male_condom)
 ax.plot(np.asarray(Model_Years), Model_female_sterilization)
-ax.plot(np.asarray(Model_Years), Model_female_condom)
+ax.plot(np.asarray(Model_Years), Model_other_modern)
 ax.plot(np.asarray(Model_Years), Model_periodic_abstinence)
 ax.plot(np.asarray(Model_Years), Model_withdrawal)
 ax.plot(np.asarray(Model_Years), Model_other_traditional)
 
 # format the ticks
-#ax.xaxis.set_major_locator(years)
-#ax.xaxis.set_major_formatter(years_fmt)
+# ax.xaxis.set_major_locator(years)
+# ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Contraception Use By Method")
 plt.xlabel("Year")
@@ -175,25 +172,25 @@ plt.show()
 
 # %% Plot Pregnancies Over time:
 
-years = mdates.YearLocator()   # every year
+years = mdates.YearLocator()  # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-preg_df = log_df['tlo.methods.contraception']['pregnancy']
-Model_Years = pd.to_datetime(preg_df.date)
-Model_pregnancy = preg_df.total
-Model_pregnant = preg_df.pregnant
-Model_not_pregnant = preg_df.not_pregnant
+preg_df = log_df['tlo.methods.contraception']['pregnancy'].set_index('date')
+preg_df.index = pd.to_datetime(preg_df.index).year
+num_pregs_by_year = preg_df.groupby(by=preg_df.index).size()
+Model_Years = num_pregs_by_year.index
+Model_pregnancy = num_pregs_by_year.values
+
 
 fig, ax = plt.subplots()
-ax.plot(np.asarray(Model_Years), Model_total)
-ax.plot(np.asarray(Model_Years), Model_pregnant)
-ax.plot(np.asarray(Model_Years), Model_not_pregnant)
+ax.plot(np.asarray(Model_Years), Model_pregnancy)
+
 
 # format the ticks
-#ax.xaxis.set_major_locator(years)
-#ax.xaxis.set_major_formatter(years_fmt)
+# ax.xaxis.set_major_locator(years)
+# ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Pregnancies Over Time")
 plt.xlabel("Year")
@@ -206,20 +203,20 @@ plt.show()
 
 # %% Plot Consumables Over time:
 
-years = mdates.YearLocator()   # every year
+years = mdates.YearLocator()  # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-com_df = log_df['tlo.methods.contraception']['contraception_summary']
+com_df = log_df['tlo.methods.contraception']['contraception_costs_yearly_summary']
 Model_Years = pd.to_datetime(com_df.date)
-Model_pill = com_df.pill
-Model_IUD = com_df.IUD
-Model_injections = com_df.injections
-Model_implant = com_df.implant
-Model_male_condom = com_df.male_condom
-Model_female_sterilization = com_df.female_sterilization
-Model_female_condom = com_df.female_condom
+Model_pill = com_df.pill_annual_cost
+Model_IUD = com_df.IUD_annual_cost
+Model_injections = com_df.injections_annual_cost
+Model_implant = com_df.implant_annual_cost
+Model_male_condom = com_df.male_condom_annual_cost
+Model_female_sterilization = com_df.female_sterilization_annual_cost
+Model_other_modern = com_df.other_modern_annual_cost
 
 fig, ax = plt.subplots()
 ax.plot(np.asarray(Model_Years), Model_pill)
@@ -228,24 +225,24 @@ ax.plot(np.asarray(Model_Years), Model_injections)
 ax.plot(np.asarray(Model_Years), Model_implant)
 ax.plot(np.asarray(Model_Years), Model_male_condom)
 ax.plot(np.asarray(Model_Years), Model_female_sterilization)
-ax.plot(np.asarray(Model_Years), Model_female_condom)
+ax.plot(np.asarray(Model_Years), Model_other_modern)
 
 # format the ticks
-#ax.xaxis.set_major_locator(years)
-#ax.xaxis.set_major_formatter(years_fmt)
+# ax.xaxis.set_major_locator(years)
+# ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Contraception Consumables By Method")
 plt.xlabel("Year")
 plt.ylabel("Consumables used (number using method")
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['pills', 'IUDs', 'injections', 'implants', 'male_condoms', 'female_sterilizations',
-            'female condoms'])
+            'other modern'])
 plt.savefig(outputpath / ('Contraception Consumables By Method' + datestamp + '.pdf'), format='pdf')
 plt.show()
 
 # %% Plot Consumable Costs Over time:
 
-years = mdates.YearLocator()   # every year
+years = mdates.YearLocator()  # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
@@ -270,8 +267,8 @@ ax.plot(np.asarray(Model_Years), Model_female_sterilization)
 ax.plot(np.asarray(Model_Years), Model_female_condom)
 
 # format the ticks
-#ax.xaxis.set_major_locator(years)
-#ax.xaxis.set_major_formatter(years_fmt)
+# ax.xaxis.set_major_locator(years)
+# ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Contraception Consumable Costs By Method")
 plt.xlabel("Year")
@@ -284,11 +281,11 @@ plt.show()
 
 # %% Plot Public Health Costs Over time:
 
-years = mdates.YearLocator()   # every year
+years = mdates.YearLocator()  # every year
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-com_df = log_df['tlo.methods.contraception']['contraception_summary']
+com_df = log_df['tlo.methods.contraception']['contraception_costs_yearly_summary']
 Model_Years = pd.to_datetime(com_df.date)
 Model_public_health_costs1 = com_df.public_health_costs1
 Model_public_health_costs2 = com_df.public_health_costs2
@@ -298,15 +295,14 @@ ax.plot(np.asarray(Model_Years), Model_public_health_costs1)
 ax.plot(np.asarray(Model_Years), Model_public_health_costs2)
 
 # format the ticks
-#ax.xaxis.set_major_locator(years)
-#ax.xaxis.set_major_formatter(years_fmt)
+# ax.xaxis.set_major_locator(years)
+# ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Public Health Costs for Contraception uptake")
 plt.xlabel("Year")
 plt.ylabel("Cost")
-#plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
+# plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['population scope campaign to increase contraception initiation',
             'post partum family planning (PPFP) campaign'])
 plt.savefig(outputpath / ('Public Health Costs' + datestamp + '.pdf'), format='pdf')
 plt.show()
-

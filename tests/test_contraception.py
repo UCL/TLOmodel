@@ -122,6 +122,9 @@ def test_log(tmpdir):
         'contraception',
     ])
 
+    # todo - check that there are some births, and some switches in contraception
+    # todo - organize this file: the first (long) test is superfluous.
+
 
 if __name__ == '__main__':
     t0 = time.time()
