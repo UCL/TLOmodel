@@ -406,6 +406,10 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         """check all females not using contraception to determine if contraception starts
         i.e. category should change from 'not_using'
         """
+        # exit if there are no individuals currenlty not using a contraceptive:
+        if not len(individuals_not_using):
+            return
+
         p = self.module.parameters
         rng = self.module.rng
 
@@ -423,21 +427,24 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # select a random contraceptive for everyone not currently using
         random_co = df.loc[individuals_not_using, 'age_years'].apply(pick_random_contraceptive)
 
-        if len(random_co):
-            # get index of all those now using
-            now_using_co = random_co.index[random_co != 'not_using']
+        # get index of all those now using
+        now_using_co = random_co.index[random_co != 'not_using']
 
-            # only update entries for all those now using a contraceptive
-            df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
+        # only update entries for all those now using a contraceptive
+        df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
 
-            # log women that are starting a new contraceptive
-            for woman in now_using_co:
-                self.module.log_contraception_change(woman, old='not_using', new=df.at[woman, 'co_contraception'])
+        # log women that are starting a new contraceptive
+        for woman in now_using_co:
+            self.module.log_contraception_change(woman, old='not_using', new=df.at[woman, 'co_contraception'])
 
     def switch(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception Switches
         i.e. category should change from any method to a new method (not including 'not_using')
         """
+        # exit if there are no individuals currenlty using a contraceptive:
+        if not len(individuals_using):
+            return
+
         p = self.module.parameters
         rng = self.module.rng
 
@@ -469,6 +476,10 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         """check all females using contraception to determine if contraception discontinues
         i.e. category should change to 'not_using'
         """
+        # exit if there are no individuals currenlty using a contraceptive:
+        if not len(individuals_using):
+            return
+
         p = self.module.parameters
         rng = self.module.rng
 
@@ -484,8 +495,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         discontinue_prob = df.loc[individuals_using].apply(get_prob_discontinued, axis=1)
 
         # random choose some to discontinue
-        random_draw = rng.random_sample(size=len(individuals_using))
-        co_discontinue = discontinue_prob.index[discontinue_prob > random_draw]
+        co_discontinue = discontinue_prob.index[discontinue_prob > rng.rand(len(individuals_using))]
 
         # Log information for each woman about the contraceptive being initiated:
         for woman in co_discontinue:
@@ -625,6 +635,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
                         },
                         description='pregnancy following the failure of contraceptive method')
 
+        # todo: @TimC/Joe - should a woman who is now pregnant stop any contraceptive method she may be on (apart from
+        #  'female_sterilization')?
 
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):

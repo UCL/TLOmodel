@@ -382,7 +382,7 @@ def test_run_all_births_end_in_abortion():
 
     df = sim.population.props
 
-    # Check that there are no newborns
+    # Check that there are no newborns #todo - @Joe - this is failing!?!
     possible_newborns = df.is_alive & (df.date_of_birth > sim.start_date)
     assert possible_newborns.loc[possible_newborns].empty
 
