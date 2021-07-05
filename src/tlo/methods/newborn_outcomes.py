@@ -492,7 +492,7 @@ class NewbornOutcomes(Module):
         steroid_status = nci[person_id]['corticosteroids_given']
         abx_for_prom = nci[person_id]['abx_for_prom_given']
 
-        if df.at[mother, 'ps_chorioamnionitis'] or nci[person_id]['maternal_chorio_lab']:
+        if nci[person_id]['maternal_chorio']:
             chorio = True
         else:
             chorio = False
@@ -1183,7 +1183,7 @@ class NewbornOutcomes(Module):
 
             #  Next we populate the newborn info dictionary with relevant parameters
             nci[child_id] = {'ga_at_birth': int(df.at[mother_id, 'ps_gestational_age_in_weeks']),
-                             'maternal_chorio_lab': mni[mother_id]['chorio_lab'],
+                             'maternal_chorio': mni[mother_id]['chorio_in_preg'],
                              'maternal_gest_diab': df.at[mother_id, 'ps_gest_diab'],
                              'vit_k': False,
                              'tetra_eye_d': False,
@@ -1428,7 +1428,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
         if not df.at[person_id, 'is_alive'] or df.at[person_id, 'nb_death_after_birth'] or (person_id not in nci):
             return
-
+        # todo: what about 'none' checks
         if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
             assert self.sim.date == df.at[person_id, 'date_of_birth']
             assert df.at[person_id, 'nb_pnc_check'] == 0

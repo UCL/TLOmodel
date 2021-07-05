@@ -50,8 +50,9 @@ class PostnatalSupervisor(Module):
     CAUSES_OF_DEATH = {
         'secondary_postpartum_haemorrhage': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
         'postpartum_sepsis': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'severe_pre_eclampsia': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
         'eclampsia': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
-        'hypertension': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'severe_gestational_hypertension': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
         'early_onset_sepsis': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'late_onset_sepsis': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
     }
@@ -116,10 +117,16 @@ class PostnatalSupervisor(Module):
             Types.LIST, 'probability of severe pre-eclampsia moving between states: gestational '
                         'hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, '
                         'eclampsia'),
+        'probs_for_ec_matrix_pn': Parameter(
+            Types.LIST, 'probability of eclampsia moving between states: gestational hypertension, '
+                        'severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, '
+                        'eclampsia'),
         'cfr_eclampsia': Parameter(
             Types.LIST, 'case fatality rate of eclampsia in the postnatal period'),
-        'cfr_severe_htn_pn': Parameter(
-            Types.LIST, 'case fatality rate of severe hypertension in the postnatal period'),
+        'cfr_severe_pre_eclampsia': Parameter(
+            Types.LIST, 'case fatality rate of severe pre-eclampsia in the postnatal period'),
+        'weekly_prob_death_severe_gest_htn': Parameter(
+            Types.LIST, 'weekly risk of death from  severe hypertension in the postnatal period'),
 
         # ANAEMIA
         'baseline_prob_anaemia_per_week': Parameter(
@@ -469,7 +476,7 @@ class PostnatalSupervisor(Module):
         mode_of_delivery = pd.Series(False, index=df.index)
         received_abx_for_prom = pd.Series(False, index=df.index)
         endometritis = pd.Series(False, index=df.index)
-        chorio = pd.Series(False, index=df.index)
+        chorio_in_preg = pd.Series(False, index=df.index)
 
         if 'mode_of_delivery' in mni_df.columns:
             mode_of_delivery = pd.Series(mni_df['mode_of_delivery'], index=df.index)
@@ -477,9 +484,8 @@ class PostnatalSupervisor(Module):
         if 'abx_for_prom_given' in mni_df.columns:
             received_abx_for_prom = pd.Series(mni_df['abx_for_prom_given'], index=df.index)
 
-        #if 'chorio_lab' in mni_df.columns:
-            # todo: this isnt doing anything
-        #    chorio = (df['ps_chorioamnionitis']) | (df['la_sepsis'] & mni_df['chorio_lab'])
+        if 'chorio_in_preg' in mni_df.columns:
+            chorio_in_preg = pd.Series(mni_df['chorio_in_preg'], index=df.index)
 
         if 'endo_pp' in mni_df.columns:
             endometritis = pd.Series(mni_df['endo_pp'], index=df.index)
@@ -491,7 +497,7 @@ class PostnatalSupervisor(Module):
                                                             received_abx_for_prom=received_abx_for_prom,
                                                             maternal_prom=maternal_prom,
                                                             endometritis=endometritis,
-                                                            maternal_chorioamnionitis=chorio,
+                                                            maternal_chorioamnionitis=chorio_in_preg,
                                                             )
 
     def set_postnatal_complications_mothers(self, week):
@@ -671,7 +677,7 @@ class PostnatalSupervisor(Module):
             prob_matrix['severe_gest_htn'] = params['probs_for_sgh_matrix_pn']
             prob_matrix['mild_pre_eclamp'] = params['probs_for_mpe_matrix_pn']
             prob_matrix['severe_pre_eclamp'] = params['probs_for_spe_matrix_pn']
-            prob_matrix['eclampsia'] = [0, 0, 0, 0, 1]  # todo: replace with param
+            prob_matrix['eclampsia'] = params['probs_for_ec_matrix_pn']
 
             current_status = df.loc[selected, "pn_htn_disorders"]
             new_status = util.transition_states(current_status, prob_matrix, self.rng)
@@ -769,14 +775,14 @@ class PostnatalSupervisor(Module):
         at_risk_of_death_htn = self.apply_linear_model(
             self.pn_linear_models['death_from_hypertensive_disorder_pn'],
             df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
-                   (df['pn_htn_disorders'].str.contains('severe_gest_htn|severe_pre_eclamp'))])
+                   (df['pn_htn_disorders'] == 'severe_gest_htn')])
 
         # Those women who die the on_death function in demography is applied
         for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
             logger.info(key='direct_maternal_death', data={'person': person, 'preg_state': 'postnatal',
                                                            'year': self.sim.date.year})
 
-            self.sim.modules['Demography'].do_death(individual_id=person, cause='hypertension',
+            self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
                                                     originating_module=self.sim.modules['PostnatalSupervisor'])
 
             del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]
@@ -833,16 +839,12 @@ class PostnatalSupervisor(Module):
         # Set external variables used in the linear model equation
         maternal_prom = pd.Series(df.at[mother_id, 'ps_premature_rupture_of_membranes'], index=df.loc[[child_id]].index)
         received_abx_for_prom = pd.Series(nci_df.at[child_id, 'abx_for_prom_given'],  index=df.loc[[child_id]].index)
-
-        # todo: fix
-        #if 'chorio_lab' in mni_df.keys():
-        #    chorio = (df['ps_chorioamnionitis']) | (df['la_sepsis'] & mni_dict['chorio_lab'])
-        chorio = pd.Series(False, index=df.loc[[child_id]].index)
+        chorio_in_preg = pd.Series(mni_df.at[mother_id, 'chorio_in_preg'], index=df.loc[[child_id]].index)
 
         # We then apply a risk that this womans newborn will develop sepsis during week one
         risk_eons = self.pn_linear_models['early_onset_neonatal_sepsis_week_1'].predict(
             df.loc[[child_id]], received_abx_for_prom=received_abx_for_prom,
-            maternal_chorioamnionitis=chorio,
+            maternal_chorioamnionitis=chorio_in_preg,
             maternal_prom=maternal_prom)[child_id]
 
         if self.rng.random_sample() < risk_eons:
@@ -922,6 +924,8 @@ class PostnatalSupervisor(Module):
                 causes.append('secondary_postpartum_haemorrhage')
             if mother.pn_sepsis_late_postpartum:
                 causes.append('postpartum_sepsis')
+            if mother.pn_htn_disorders == 'severe_pre_eclamp':
+                causes.append('severe_pre_eclampsia')
             if mother.pn_htn_disorders == 'eclampsia':
                 causes.append('eclampsia')
 
@@ -1229,14 +1233,15 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                     prob_matrix['severe_gest_htn'] = params['probs_for_sgh_matrix_pn']
                     prob_matrix['mild_pre_eclamp'] = params['probs_for_mpe_matrix_pn']
                     prob_matrix['severe_pre_eclamp'] = params['probs_for_spe_matrix_pn']
+                    prob_matrix['eclampsia'] = params['probs_for_ec_matrix_pn']
 
                     # We modify the probability of progressing from mild to severe gestational hypertension for women
                     # who are on anti hypertensives
                     if df.at[individual_id, 'la_gest_htn_on_treatment']:
-                        treatment_reduced_risk = prob_matrix['gest_htn'][1] * \
+                        treatment_reduced_risk = prob_matrix['gest_htn']['severe_gest_htn'] * \
                                                      params['treatment_effect_anti_htns_progression_pn']
-                        prob_matrix['gest_htn'][1] = treatment_reduced_risk
-                        prob_matrix['gest_htn'][0] = 1 - (treatment_reduced_risk + prob_matrix['gest_htn'][2])
+                        prob_matrix.at['gest_htn', 'severe_gest_htn'] = treatment_reduced_risk
+                        prob_matrix.at['gest_htn', 'gest_htn'] = 1 - (treatment_reduced_risk + prob_matrix['gest_htn'][2])
 
                     current_status = df.loc[[individual_id], 'pn_htn_disorders']
                     new_status = util.transition_states(current_status, prob_matrix, self.module.rng)

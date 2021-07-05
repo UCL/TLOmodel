@@ -166,7 +166,10 @@ class PregnancySupervisor(Module):
         'probs_for_spe_matrix': Parameter(
             Types.LIST, 'probability of severe pre-eclampsia moving between states: gestational hypertension,'
                         ' severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia'),
-        'prob_antenatal_spe_death': Parameter(
+        'probs_for_ec_matrix': Parameter(
+            Types.LIST, 'probability of eclampsia moving between states: gestational hypertension,'
+                        ' severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia'),
+        'prob_severe_pre_eclamp_death': Parameter(
             Types.LIST, 'probability of death for a woman experiencing acute severe pre-eclampsia'),
         'prob_eclampsia_death': Parameter(
             Types.LIST, 'probability of death for a woman experiencing eclampsia'),
@@ -230,16 +233,17 @@ class PregnancySupervisor(Module):
             Types.LIST, 'relative risk of still birth in women with syphilis'),
         'rr_still_birth_pre_eclampsia': Parameter(
             Types.LIST, 'relative risk of still birth in women with pre-eclampsia'),
+        'rr_still_birth_eclampsia': Parameter(
+            Types.LIST, 'relative risk of still birth in women with eclampsia'),
         'rr_still_birth_gest_htn': Parameter(
             Types.LIST, 'relative risk of still birth in women with mild gestational hypertension'),
         'rr_still_birth_chronic_htn': Parameter(
             Types.LIST, 'relative risk of still birth in women with chronic hypertension'),
-        'prob_still_birth_antepartum_haemorrhage': Parameter(
-            Types.LIST, 'probability of stillbirth for a woman suffering acute antepartum haemorrhage'),
-        'prob_still_birth_eclampsia': Parameter(
-            Types.LIST, 'probability of a stillbirth following an episode of eclampsia'),
-        'prob_still_birth_antenatal_sepsis': Parameter(
-            Types.LIST, 'probability of still birth for chorioamnionitis'),
+        'rr_still_birth_aph': Parameter(
+            Types.LIST, 'relative risk of still birth in women with antepartum haemorrhage'),
+        'rr_still_birth_chorio': Parameter(
+            Types.LIST, 'relative risk of still birth in women with chorioamnionitis'),
+
 
         # CARE SEEKING (NOT ANC)...
         'prob_seek_care_pregnancy_complication': Parameter(
@@ -588,9 +592,12 @@ class PregnancySupervisor(Module):
                 params['prob_still_birth_per_month'],
                 Predictor('ps_gestational_age_in_weeks').when('>41', params['rr_still_birth_post_term']),
                 Predictor('ps_htn_disorders').when('mild_pre_eclamp', params['rr_still_birth_pre_eclampsia'])
-                                             .when('severe_pre_eclamp', params['rr_still_birth_pre_eclampsia'])
+                                             .when('severe_pre_eclamp', params['rr_still_birth_eclampsia'])
+                                             .when('eclampsia', params['rr_still_birth_pre_eclampsia'])
                                              .when('gest_htn', params['rr_still_birth_gest_htn'])
                                              .when('severe_gest_htn', params['rr_still_birth_gest_htn']),
+                Predictor('ps_antepartum_haemorrhage').when('!= "none"', params['rr_still_birth_aph']),
+                Predictor('ps_chorioamnionitis').when(True, params['rr_still_birth_chorio']),
                 Predictor('nc_hypertension').when(True, params['rr_still_birth_chronic_htn']),
                 Predictor('ps_gest_diab').when('uncontrolled', params['rr_still_birth_gest_diab']),
                 Predictor().when('(ps_gest_diab == "controlled ") & (ac_gest_diab_on_treatment != "none")',
@@ -598,6 +605,7 @@ class PregnancySupervisor(Module):
                 Predictor('ma_is_infected').when(True, params['rr_still_birth_maternal_malaria']),
                 Predictor('nc_diabetes').when(True, params['rr_still_birth_diab_mellitus']),
                 Predictor('ps_syphilis').when(True, params['rr_still_birth_maternal_syphilis'])),
+
 
             # This equation calculates a risk of dying after ectopic pregnancy and is mitigated by treatment
             'ectopic_pregnancy_death': LinearModel(
@@ -1243,6 +1251,7 @@ class PregnancySupervisor(Module):
             prob_matrix['severe_gest_htn'] = params['probs_for_sgh_matrix']
             prob_matrix['mild_pre_eclamp'] = params['probs_for_mpe_matrix']
             prob_matrix['severe_pre_eclamp'] = params['probs_for_spe_matrix']
+            prob_matrix['eclampsia'] = params['probs_for_ec_matrix']
 
             # We update the data frame with transitioned states (which may not have changed)
             current_status = df.loc[selected, "ps_htn_disorders"]
@@ -1320,19 +1329,19 @@ class PregnancySupervisor(Module):
         # Risk of death is applied to women with severe hypertensive disease
         at_risk = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
                   (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient & ~df.la_currently_in_labour & \
-                  (df.ps_htn_disorders.str.contains('severe_gest_htn|severe_pre_eclamp'))
+                  (df.ps_htn_disorders == 'severe_gest_htn')
 
         at_risk_of_death_htn = pd.Series(self.rng.random_sample(len(at_risk.loc[at_risk])) <
                                          params['prob_monthly_death_severe_htn'], index=at_risk.loc[at_risk].index)
 
         if not at_risk_of_death_htn.loc[at_risk_of_death_htn].empty:
             logger.debug(key='message',
-                         data=f'The following women have died due to severe hypertensive disorder,'
+                         data=f'The following women have died due to severe gestational hypertension'
                               f'{at_risk_of_death_htn.loc[at_risk_of_death_htn].index}')
 
             # Those women who die have InstantaneousDeath scheduled
             for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
-                self.sim.modules['Demography'].do_death(individual_id=person, cause='maternal',
+                self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
                                                         originating_module=self.sim.modules['PregnancySupervisor'])
 
                 logger.info(key='direct_maternal_death', data={'person': person, 'preg_state': 'antenatal',
@@ -1430,6 +1439,7 @@ class PregnancySupervisor(Module):
         infection.loc[infection].index.to_series().apply(self.store_dalys_in_mni, mni_variable='chorio_onset')
 
         for person in infection.loc[infection].index:
+            self.mother_and_newborn_info[person]['chorio_in_preg'] = True
             logger.info(key='maternal_complication', data={'person': person,
                                                            'type': 'clinical_chorioamnionitis',
                                                            'timing': 'antenatal'})
@@ -1576,7 +1586,8 @@ class PregnancySupervisor(Module):
         still_birth = self.apply_linear_model(
             self.ps_linear_models['antenatal_stillbirth'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   (df['ps_ectopic_pregnancy'] == 'none') & ~df['hs_is_inpatient'] & ~df['la_currently_in_labour']])
+                   (df['ps_ectopic_pregnancy'] == 'none') & ~df['hs_is_inpatient'] & ~df['la_currently_in_labour'] &
+                   ~df['ps_emergency_event']])
 
         self.update_variables_post_still_birth_for_data_frame(still_birth.loc[still_birth])
 
@@ -1591,7 +1602,8 @@ class PregnancySupervisor(Module):
 
         # We select the appropriate women
         post_term_women = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
-                             (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient & ~df.la_currently_in_labour
+                             (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient & ~df.la_currently_in_labour & \
+                          ~df.ps_emergency_event
 
         # Apply a probability they will seek care for induction
         care_seekers = pd.Series(self.rng.random_sample(len(post_term_women.loc[post_term_women]))
@@ -1656,6 +1668,68 @@ class PregnancySupervisor(Module):
             logger.debug(key='message', data=f'Mother {individual_id} will not seek care following pregnancy loss')
             return False
 
+    def apply_risk_of_death_from_monthly_complications(self, individual_id):
+        """
+        This calculated risk of death for women who have developed complications but have not received treatment.
+        It is called by the PregnancySupervisor Event and HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment
+         if care cant be delivered .
+        :param individual_id: individual_id
+        """
+
+        df = self.sim.population.props
+        params = self.current_parameters
+
+        mother = df.loc[individual_id]
+        causes = list()
+
+        # Create list of the potential causes of death if they are present in the mother
+        if mother.ps_antepartum_haemorrhage == 'severe':
+            causes.append('antepartum_haemorrhage')
+        if mother.ps_htn_disorders == 'severe_pre_eclamp':
+            causes.append('severe_pre_eclamp')
+        if mother.ps_htn_disorders == 'eclampsia':
+            causes.append('eclampsia')
+        if mother.ps_chorioamnionitis:
+            causes.append('antenatal_sepsis')
+
+        risks = dict()
+        for cause in causes:
+            risk = {f'{cause}': params[f'prob_{cause}_death']}
+            risks.update(risk)
+
+        result = 1
+        for cause in risks:
+            result *= (1 - risks[cause])
+
+        # If random draw is less that the total risk of death, she will die and the primary cause is then
+        # determined
+        if self.rng.random_sample() < (1 - result):
+            denominator = sum(risks.values())
+            probs = list()
+
+            # Cycle over each cause in the dictionary and divide by the sum of the probabilities
+            for cause in risks:
+                risks[cause] = risks[cause] / denominator
+                probs.append(risks[cause])
+
+            cause_of_death = self.rng.choice(causes, p=probs)
+
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{cause_of_death}',
+                                                    originating_module=self.sim.modules['PregnancySupervisor'])
+
+            logger.info(key='direct_maternal_death', data={'person': individual_id, 'preg_state': 'antenatal',
+                                                           'year': self.sim.date.year})
+
+            del self.mother_and_newborn_info[individual_id]
+            # We assume all deaths in the antenatal period lead to stillbirth
+        #else:
+         #   stillbirth = False
+         #   for cause in causes:
+         #       if self.rng.random_sample() < params[f'prob_still_birth_{cause}']:
+         #           stillbirth = True
+         #   if stillbirth:
+         #       self.update_variables_post_still_birth_for_individual(individual_id)
+
     def generate_mother_and_newborn_dictionary_for_individual(self, individual_id):
         """ This function generates variables within the mni dictionary for women. It is abstracted to a function for
         testing purposes"""
@@ -1669,6 +1743,7 @@ class PregnancySupervisor(Module):
                               'mild_mod_aph_onset': pd.NaT,
                               'severe_aph_onset': pd.NaT,
                               'chorio_onset': pd.NaT,
+                              'chorio_in_preg': False,
                               'ectopic_onset': pd.NaT,
                               'ectopic_rupture_onset': pd.NaT,
                               'gest_diab_onset': pd.NaT,
@@ -1858,12 +1933,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         for gestation_of_interest in [4, 8, 13, 17, 22, 27, 31, 35, 40]:
             self.module.apply_risk_of_deficiencies_and_anaemia(gestation_of_interest=gestation_of_interest)
 
-        # In the later months of pregnancy we apply a background risk of still birth. Risk of still birth is applied to
-        # all women every month, with additional risk applied to women who experience acute pregnancy emergencies
-        # (antepartum haemorrhage, eclampsia, chorioamnionitis)
-        for gestation_of_interest in [27, 31, 35, 40]:
-            self.module.apply_risk_of_still_birth(gestation_of_interest=gestation_of_interest)
-
         # For women whose pregnancy will continue will apply a risk of developing a number of acute and chronic
         # (length of pregnancy) complications
         for gestation_of_interest in [22, 27, 31, 35, 40]:
@@ -1900,9 +1969,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                  < params['prob_seek_care_pregnancy_complication'],
                                  index=potential_care_seekers.loc[potential_care_seekers].index)
 
-        # We reset this variable to prevent additional unnecessary care seeking next month
-        df.loc[care_seeking.index, 'ps_emergency_event'] = False
-
         # We assume women who seek care will present to a form of Maternal Assessment Unit- not through normal A&E
         for person in care_seeking.loc[care_seeking].index:
             logger.debug(key='message', data=f'Mother {person} will seek care following acute pregnancy'
@@ -1921,71 +1987,32 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------- APPLYING RISK OF DEATH/STILL BIRTH FOR NON-CARE SEEKERS FOLLOWING PREGNANCY EMERGENCIES --------
         # We select the women who have chosen not to seek care following pregnancy emergency- and we now apply risk of
-        # death and pregnancy loss (other wise this risk is applied following treatment in the
-        # CareOfWomenDuringPregnancy module)
-
-        # Todo: women who seek care but hsi doesnt run will not have risk of death applied...
+        # death
 
         if not care_seeking.loc[~care_seeking].empty:
+            # We reset this variable to prevent additional unnecessary care seeking next month
+            df.loc[care_seeking.loc[~care_seeking].index, 'ps_emergency_event'] = False
+
             logger.debug(key='message', data=f'The following women will not seek care after experiencing a '
                                              f'pregnancy emergency: {care_seeking.loc[~care_seeking].index}')
 
             # As women may have experience more than one complication during the moth we determine here which of the
             # complication will be the primary cause of death
             for person in care_seeking.loc[~care_seeking].index:
-                mother = df.loc[person]
-                causes = list()
+                self.module.apply_risk_of_death_from_monthly_complications(person)
 
-                if mother.ps_antepartum_haemorrhage == 'severe':
-                    causes.append('antepartum_haemorrhage')
-                if mother.ps_htn_disorders == 'eclampsia':
-                    causes.append('eclampsia')
-                if mother.ps_chorioamnionitis:
-                    causes.append('antenatal_sepsis')
-
-                risks = dict()
-                for cause in causes:
-                    risk = {f'{cause}': params[f'prob_{cause}_death']}
-                    risks.update(risk)
-
-                result = 1
-                for cause in risks:
-                    result *= (1 - risks[cause])
-
-                # If random draw is less that the total risk of death, she will die and the primary cause is then
-                # determined
-                if self.module.rng.random_sample() < (1 - result):
-                    denominator = sum(risks.values())
-                    probs = list()
-
-                    # Cycle over each cause in the dictionary and divide by the sum of the probabilities
-                    for cause in risks:
-                        risks[cause] = risks[cause] / denominator
-                        probs.append(risks[cause])
-
-                    cause_of_death = self.module.rng.choice(causes, p=probs)
-
-                    self.sim.modules['Demography'].do_death(individual_id=person, cause=f'{cause_of_death}',
-                                                            originating_module=self.sim.modules['PregnancySupervisor'])
-
-                    logger.info(key='direct_maternal_death', data={'person': person, 'preg_state': 'antenatal',
-                                                                   'year': self.sim.date.year})
-
-                    del mni[person]
-                    # We assume all deaths in the antenatal period lead to stillbirth
-                else:
-                    stillbirth = False
-                    for cause in causes:
-                        if self.module.rng.random_sample() < params[f'prob_still_birth_{cause}']:
-                            stillbirth = True
-                    if stillbirth:
-                        self.module.update_variables_post_still_birth_for_individual(person)
+        # ============================ RISK OF STILLBIRTH ========================================================
+        for gestation_of_interest in [27, 31, 35, 40]:
+            self.module.apply_risk_of_still_birth(gestation_of_interest=gestation_of_interest)
 
         # ============================ POST TERM RISK OF STILLBIRTH ==================================================
         # Finally we determine if women who are post term will seek care for induction/experience stillbirth
         for gestation_of_interest in [41, 42, 43, 44, 45]:
             self.module.induction_care_seeking_and_still_birth_risk(gestation_of_interest=gestation_of_interest)
 
+        # Finally reset the emergency event property for care seeking women (used to ensure risk of stillbirth is
+        # applied to women who arent seeking care that month)
+        df.loc[care_seeking.index, 'ps_emergency_event'] = False
 
 class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
     """This is EctopicPregnancyEvent. It is scheduled by the set_pregnancy_complications function within
@@ -2037,8 +2064,6 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
-
-        print(individual_id)
 
         # Check the right woman has arrived at this event
         assert df.at[individual_id, 'ps_ectopic_pregnancy'] == 'not_ruptured'

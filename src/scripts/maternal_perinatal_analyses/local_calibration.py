@@ -217,9 +217,9 @@ def do_normal_run_all_pregnant(config_name, start_date, end_date, seed, populati
 
 seeds = [111]
 for seed in seeds:
-    do_run_pregnancy_only(config_name='hpd_test_with_pn_levels_2010', start_date=Date(2010, 1, 1),
-                          end_date=Date(2012, 1, 1),
-                          seed=seed, population=5000, parameters=2010, age_correct=True)
-    do_run_pregnancy_only(config_name='hpd_test_with_pn_levels_2015', start_date=Date(2015, 1, 1),
-                          end_date=Date(2016, 1, 1),
-                          seed=seed, population=5000, parameters=2015, age_correct=True)
+    do_run_pregnancy_only(config_name='ectopic_rupture_and_abortion_2010', start_date=Date(2010, 1, 1),
+                          end_date=Date(2010, 7, 1),
+                          seed=seed, population=5000, parameters=2010, age_correct=False)
+    do_run_pregnancy_only(config_name='ectopic_rupture_and_abortion_2015', start_date=Date(2015, 1, 1),
+                          end_date=Date(2015, 7, 1),
+                          seed=seed, population=5000, parameters=2015, age_correct=False)

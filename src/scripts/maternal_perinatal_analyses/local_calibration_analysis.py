@@ -33,8 +33,8 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 
 logs_dict = dict()
 
-files = ['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857',
-         'hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104']
+files = ['ectopic_rupture_2010_calibration_111__2021-07-02T093216',
+         'ectopic_rupture_2015_calibration_111__2021-07-02T093734']
 
 for file in files:
     new_parse_log = {file: parse_log_file(filepath=f"./outputs/calibration_files/{file}.log")}
@@ -63,29 +63,33 @@ for complication in postnatal_comps:
     master_dict_pn_2015.update(new_row)
 
 for complication in antenatal_comps:
-    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857'],
+    graph_maker.get_incidence(logs_dict['ectopic_rupture_2010_calibration_111__2021-07-02T093216'],
                               'pregnancy_supervisor', complication, master_dict_an_2010)
-    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104'],
+    graph_maker.get_incidence(logs_dict['ectopic_rupture_2015_calibration_111__2021-07-02T093734'],
                               'pregnancy_supervisor', complication, master_dict_an_2015)
 
-for complication in intrapartum_comps:
-    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857'],
-                              'labour', complication, master_dict_la_2010)
-    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104'],
-                              'labour', complication, master_dict_la_2015)
+#for complication in intrapartum_comps:
+#    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857'],
+#                              'labour', complication, master_dict_la_2010)
+#    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104'],
+#                              'labour', complication, master_dict_la_2015)
 
-for complication in postnatal_comps:
-    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857'],
-                              'postnatal_supervisor', complication, master_dict_pn_2010)
-    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104'],
-                              'labour', complication, master_dict_pn_2015)
+#for complication in postnatal_comps:
+#    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857'],
+#                              'postnatal_supervisor', complication, master_dict_pn_2010)
+#    graph_maker.get_incidence(logs_dict['hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104'],
+#                              'labour', complication, master_dict_pn_2015)
 
-total_births_2010 = graph_maker.get_total_births(
-    logs_dict['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857'])
-total_births_2015 = graph_maker.get_total_births(
-    logs_dict['hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104'])
+#total_births_2010 = graph_maker.get_total_births(
+#    logs_dict['hpd_test_with_pn_levels_2015_calibration_111__2021-06-29T133857'])
+#total_births_2015 = graph_maker.get_total_births(
+#    logs_dict['hpd_test_with_pn_levels_2010_calibration_111__2021-06-29T132104'])
 
-graph_maker.get_htn_disorders_graph(master_dict_an_2010, master_dict_la_2010, master_dict_pn_2010,
-                                    total_births_2010, 2010)
-graph_maker.get_htn_disorders_graph(master_dict_an_2015, master_dict_la_2015, master_dict_pn_2015,
-                                    total_births_2015, 2015)
+graph_maker.get_generic_incidence_graph('induced_abortion', master_dict_an_2010, master_dict_an_2015, 10000, 86,
+                                        159, ['orange', 'moccasin'])
+
+graph_maker.get_generic_incidence_graph('complicated_induced_abortion', master_dict_an_2010, master_dict_an_2015,
+                                        10000, 0,
+                                        0, ['orange', 'moccasin'])
+#graph_maker.get_generic_incidence_graph('spontaneous_abortion', master_dict_an_2010, master_dict_an_2015, 10000, 189,
+#                                        189, ['orange', 'moccasin'])

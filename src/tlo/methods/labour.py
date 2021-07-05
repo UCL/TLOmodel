@@ -1160,7 +1160,7 @@ class Labour(Module):
 
             elif complication == 'sepsis_chorioamnionitis':
                 df.at[individual_id, 'la_sepsis'] = True
-                mni[individual_id]['chorio_lab'] = True
+                mni[individual_id]['chorio_in_preg'] = True
                 self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'sepsis_onset')
                 logger.info(key='maternal_complication', data={'person': individual_id,
                                                                'type': 'sepsis',
@@ -1377,7 +1377,7 @@ class Labour(Module):
                 df.loc[[individual_id]],
                 received_blood_transfusion=mni[individual_id]['received_blood_transfusion'],
                 mode_of_delivery=mni[individual_id]['mode_of_delivery'],
-                chorio_lab=mni[individual_id]['chorio_lab'])[individual_id]}
+                chorio_in_preg=mni[individual_id]['chorio_in_preg'])[individual_id]}
 
             risks.update(risk)
 
@@ -2418,7 +2418,6 @@ class Labour(Module):
                             'clean_birth_practices': False,
                             'abx_for_prom_given': False,
                             'abx_for_pprom_given': False,
-                            'chorio_lab': False,
                             'endo_pp': False,
                             'retained_placenta': False,
                             'uterine_atony': False,
@@ -3038,7 +3037,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
         if not mni[person_id]['sought_care_for_complication']:
             for complication in ['obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other',
-                                 'placental_abruption', 'antepartum_haem', 'sepsis_chorioamnionitis']:
+                                 'placental_abruption', 'antepartum_haem', 'sepsis_chorioamnionitis', 'uterine_rupture']:
 
                 # Uterine rupture is the only complication we dont apply the risk of here due to the causal link
                 # between obstructed labour and uterine rupture. Therefore we want interventions for obstructed labour
@@ -3070,13 +3069,6 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
         if squeeze_factor < params['squeeze_threshold_treatment_ec']:
             self.module.assessment_and_treatment_of_eclampsia(self, facility_type_code, 'ip')
-
-        # todo: change as per helen allott
-
-        # Now we apply the risk of uterine rupture to all women who will deliver vaginally
-        if mni[person_id]['mode_of_delivery'] == 'vaginal_delivery' and not mni[person_id]['referred_for_cs']:
-            self.module.set_intrapartum_complications(
-                person_id, complication='uterine_rupture')
 
         # Uterine rupture follows the same pattern as antepartum haemorrhage
         if squeeze_factor < params['squeeze_threshold_treatment_ur']:
@@ -3392,17 +3384,9 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         logger.debug(key='message', data='HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare: did not run as the '
                                          f'squeeze factor is too high, mother {person_id} did not receive care')
 
-        # For women who cant deliver via caesarean we apply risk of uterine rupture (which was blocked before)
-        if mni[person_id]['referred_for_cs'] and self.timing == 'intrapartum':
-            logger.debug(key='message', data=f'squeeze factor is too high for this event to run for mother'
-                                             f' {person_id} on date {self.sim.date} and she is unable to deliver via '
-                                             f'caesarean section')
-            self.module.set_intrapartum_complications(
-                person_id, complication='uterine_rupture')
-
         # For women referred to this event after the postnatal SBA HSI we apply risk of death (as if should have been
         # applied in this event if it ran)
-        elif self.timing == 'postpartum':
+        if self.timing == 'postpartum':
             logger.debug(key='msg', data=f'{person_id} apply_risk_of_early_postpartum_death')
             self.module.apply_risk_of_early_postpartum_death(person_id)
 
@@ -3412,15 +3396,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         person_id = self.target
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        logger.debug(key='message', data='HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare is not in the '
-                                         f'allowed service availability and therefore cannot run for mother {person_id}'
-                                         f'meaning she will not receive CEmONC interventions she requires')
-
-        if mni[person_id]['referred_for_cs'] and self.timing == 'intrapartum':
-            self.module.set_intrapartum_complications(
-                person_id, complication='uterine_rupture')
-
-        elif self.timing == 'postpartum':
+        if self.timing == 'postpartum':
             logger.debug(key='msg', data=f'{person_id} apply_risk_of_early_postpartum_death')
             self.module.apply_risk_of_early_postpartum_death(person_id)
 

@@ -100,7 +100,7 @@ def predict_pre_eclampsia_pn(self, df, rng=None, **externals):
 def predict_death_from_hypertensive_disorder_pn(self, df, rng=None, **externals):
     """population level"""
     params = self.parameters
-    result = pd.Series(data=params['cfr_severe_htn_pn'], index=df.index)
+    result = pd.Series(data=params['weekly_prob_death_severe_gest_htn'], index=df.index)
 
     return result
 
@@ -137,13 +137,6 @@ def predict_early_onset_neonatal_sepsis_week_1(self, df, rng=None, **externals):
     result[externals['received_abx_for_prom']] *= params['treatment_effect_abx_prom']
     result[externals['maternal_chorioamnionitis']] *= params['rr_eons_maternal_chorio']
     result[externals['maternal_prom']] *= params['rr_eons_maternal_prom']
-
-    #if externals['received_abx_for_prom']:
-    #    result *= params['treatment_effect_abx_prom']
-    #if externals['maternal_chorioamnionitis']:
-    #    result *= params['rr_eons_maternal_chorio']
-    #if externals['maternal_prom']:
-    #    result *= params['rr_eons_maternal_prom']
 
     return result
 

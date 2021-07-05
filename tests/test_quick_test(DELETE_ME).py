@@ -108,7 +108,7 @@ def register_all_modules():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*']),
                  #ncds.Ncds(resourcefilepath=resourcefilepath),
@@ -151,5 +151,5 @@ def test_run_all_labour():
     sim.simulate(end_date=Date(2010, 4, 1))
     check_dtypes(sim)
 
-test_run_core_modules_normal_allocation_of_pregnancy()
-#test_run_all_labour()
+#test_run_core_modules_normal_allocation_of_pregnancy()
+test_run_all_labour()

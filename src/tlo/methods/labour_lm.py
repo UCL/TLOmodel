@@ -115,7 +115,8 @@ def predict_sepsis_death(self, df, rng=None, **externals):
     result = params['cfr_sepsis']
 
     # todo: wont this give a treatment effect to postpartum women who develop a different kind of sepsis
-    if ((externals['chorio_lab'] or person['ps_chorioamnionitis']) and person['ac_received_abx_for_chorioamnionitis'])\
+    if ((externals['chorio_in_preg'] or person['ps_chorioamnionitis']) and person['ac_received_abx_'
+                                                                                  'for_chorioamnionitis'])\
        or person['la_sepsis_treatment']:
         result *= params['sepsis_treatment_effect_md']
 
@@ -233,7 +234,7 @@ def predict_pph_uterine_atony_pp(self, df, rng=None, **externals):
 def predict_pph_retained_placenta_pp(self, df, rng=None, **externals):
     """individual level"""
     params = self.parameters
-    result = params['cfr_aph']
+    result = params['prob_pph_retained_placenta']
 
     if externals['amtsl_given']:
         result *= params['treatment_effect_amtsl']
