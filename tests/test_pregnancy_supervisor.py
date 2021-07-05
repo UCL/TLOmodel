@@ -367,8 +367,6 @@ def test_run_all_births_end_in_abortion():
 
     # Set parity to 0 for an additional check for births
     df.loc[women.index, 'la_parity'] = 0
-    # Set all births as unintended to ensure women are at risk of abortion
-    df.loc[women.index, 'co_unintended_preg'] = True
 
     # Risk of ectopic applied before miscarriage so set to 0
     params = sim.modules['PregnancySupervisor'].parameters
@@ -382,7 +380,7 @@ def test_run_all_births_end_in_abortion():
 
     df = sim.population.props
 
-    # Check that there are no newborns #todo - @Joe - this is failing!?!
+    # Check that there are no newborns =
     possible_newborns = df.is_alive & (df.date_of_birth > sim.start_date)
     assert possible_newborns.loc[possible_newborns].empty
 
