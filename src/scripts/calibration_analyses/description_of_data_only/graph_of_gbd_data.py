@@ -4,7 +4,6 @@
 import datetime
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -103,6 +102,3 @@ gbd.sum()[[
     'Diabetes',
     'Stroke & Heart Disease'
 ]].sum() / gbd.sum().sum()
-
-
-

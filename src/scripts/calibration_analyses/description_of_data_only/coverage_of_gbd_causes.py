@@ -1,13 +1,14 @@
 """This script produces estimates of the fraction of the GBD causes of death/disability that are covered in the model
 currently, and eventually."""
 
-import pandas as pd
 from pathlib import Path
-from tlo import Date, Module, Simulation, logging
-from tlo.methods.causes import Cause
+
+import pandas as pd
+
+from tlo import Date, Module, Simulation
 from tlo.analysis.utils import format_gbd
-from tlo.methods import Metadata
 from tlo.methods import (
+    Metadata,
     bladder_cancer,
     breast_cancer,
     cardio_metabolic_disorders,
@@ -36,20 +37,23 @@ from tlo.methods import (
     prostate_cancer,
     symptommanager,
 )
+from tlo.methods.causes import Cause
 
 resourcefilepath = Path("./resources")
 outputs = Path("./outputs")
 
 
 # Get all the GBD causes of death and disability:
-cod = pd.Series((pd.read_csv(resourcefilepath / "gbd" / "ResourceFile_CausesOfDeath_GBD2019.csv"
-                  ).set_index(['Sex', 'Age_Grp']).columns)).sort_values()
+cod = pd.Series(
+    (pd.read_csv(resourcefilepath / "gbd" / "ResourceFile_CausesOfDeath_GBD2019.csv").set_index(
+        ['Sex', 'Age_Grp']).columns)
+).sort_values()
 
-codis = pd.Series((pd.read_csv(resourcefilepath / "gbd" / "ResourceFile_CausesOfDALYS_GBD2019.csv", header=None)[0])).sort_values()
+codis = pd.Series(
+    (pd.read_csv(resourcefilepath / "gbd" / "ResourceFile_CausesOfDALYS_GBD2019.csv", header=None)[0])
+).sort_values()
 
-
-
-#%% Get all modules that have been completed in Master:
+# %% Get all modules that have been completed in Master:
 complete = [
     # Core Modules
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -96,7 +100,8 @@ complete = [
     epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
 ]
 
-#%% Make Dummy modules for causes of death/disability in forthcoming modules
+# %% Make Dummy modules for causes of death/disability in forthcoming modules
+
 
 class Tb(Module):
     METADATA = {Metadata.DISEASE_MODULE}
@@ -123,6 +128,7 @@ class Tb(Module):
     def initialise_simulation(self, sim):
         pass
 
+
 class Alri(Module):
     METADATA = {Metadata.DISEASE_MODULE}
     # Declare Causes of Death
@@ -147,6 +153,7 @@ class Alri(Module):
 
     def initialise_simulation(self, sim):
         pass
+
 
 class RoadTrafficInjuries(Module):
     METADATA = {Metadata.DISEASE_MODULE}
@@ -173,6 +180,7 @@ class RoadTrafficInjuries(Module):
     def initialise_simulation(self, sim):
         pass
 
+
 class Copd(Module):
     METADATA = {Metadata.DISEASE_MODULE}
     # Declare Causes of Death
@@ -198,6 +206,7 @@ class Copd(Module):
     def initialise_simulation(self, sim):
         pass
 
+
 class Schisto(Module):
     METADATA = {Metadata.DISEASE_MODULE}
     # Declare Causes of Death
@@ -222,6 +231,7 @@ class Schisto(Module):
 
     def initialise_simulation(self, sim):
         pass
+
 
 class OtherInjuries(Module):
     METADATA = {Metadata.DISEASE_MODULE}
@@ -269,6 +279,7 @@ class OtherInjuries(Module):
     def initialise_simulation(self, sim):
         pass
 
+
 class Backpain(Module):
     METADATA = {Metadata.DISEASE_MODULE}
     # Declare Causes of Disability
@@ -286,6 +297,7 @@ class Backpain(Module):
 
     def initialise_simulation(self, sim):
         pass
+
 
 dummies = [
     Tb(),
@@ -322,7 +334,8 @@ deaths = gbd.loc[(gbd.measure_name == 'Deaths') & (gbd.Year == 2019)].copy().gro
 deaths = pd.DataFrame(deaths / deaths.sum())
 
 # extract total dalys (all age/sex)
-dalys = gbd.loc[(gbd.measure_name == 'DALYs (Disability-Adjusted Life Years)') & (gbd.Year == 2019)].copy().groupby(by='cause_name')['GBD_Est'].sum()
+dalys = gbd.loc[(gbd.measure_name == 'DALYs (Disability-Adjusted Life Years)') & (gbd.Year == 2019)].copy().groupby(
+    by='cause_name')['GBD_Est'].sum()
 dalys = pd.DataFrame(dalys / dalys.sum())
 
 # %% Label TLO causes of death accordingly
@@ -342,8 +355,7 @@ deaths['TLO'] = deaths.index.map(deaths_mapper_from_gbd_causes)
 # Level of TLO Cause
 deaths['TLO_Level'] = 3
 deaths['TLO_Level'].loc[deaths['TLO'].isin(['Other'])] = 1
-deaths['TLO_Level'].loc[deaths['TLO'].isin([level2_conds])
-] = 2
+deaths['TLO_Level'].loc[deaths['TLO'].isin([level2_conds])] = 2
 
 deaths.groupby('TLO')['GBD_Est'].sum()
 
@@ -356,8 +368,6 @@ dalys['TLO_Level'].loc[dalys['TLO'].isin(level2_conds)] = 2
 dalys['TLO_Level'].loc[dalys['TLO'].isin(['Other'])] = 1
 
 
-#%% Get proportion of death according to each category
+# %% Get proportion of death according to each category
 props_deaths = deaths.groupby(by='TLO_Level')['GBD_Est'].sum()
 props_dalys = dalys.groupby(by='TLO_Level')['GBD_Est'].sum()
-
-
