@@ -11,6 +11,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
+from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
@@ -1121,6 +1122,19 @@ class RTI(Module):
         Metadata.USES_HEALTHBURDEN  # The 'HealthBurden' module recognises modules with this label.
     }
 
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'RTI_death_without_med': Cause(gbd_causes='Road injuries', label='Transport Injuries'),
+        'RTI_death_with_med': Cause(gbd_causes='Road injuries', label='Transport Injuries'),
+        'RTI_unavailable_med': Cause(gbd_causes='Road injuries', label='Transport Injuries'),
+        'RTI_imm_death': Cause(gbd_causes='Road injuries', label='Transport Injuries'),
+        'RTI_death_shock': Cause(gbd_causes='Road injuries', label='Transport Injuries'),
+    }
+
+    # Declare Causes of Death and Disability
+    CAUSES_OF_DISABILITY = {
+        f'RTI': Cause(gbd_causes='Road injuries', label='Transport Injuries')
+    }
     def read_parameters(self, data_folder):
         """ Reads the parameters used in the RTI module"""
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
@@ -2617,7 +2631,7 @@ class RTI(Module):
         """
         p = self.parameters
         df = self.sim.population.props
-        if df.loc[person_id, 'cause_of_death'] != '':
+        if not pd.isnull(df.loc[person_id, 'cause_of_death']):
             pass
         # Load the parameters needed to determine the length of stay
         mean_los_ISS_less_than_4 = p['mean_los_ISS_less_than_4']
@@ -3913,7 +3927,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
         for individual_id in selected_to_die:
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, individual_id, "RTI_imm_death"),
+                demography.InstantaneousDeath(self.module, individual_id, cause="RTI_imm_death"),
                 self.sim.date
             )
         # ============= Take those remaining people involved in a RTI and assign injuries to them ==================
@@ -3927,8 +3941,8 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # scene
         selected_for_rti_inj = selected_for_rti_inj.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death]
         # To stop people who have died from causes outside of the RTI module progressing through the model, remove
-        # any person with the condition 'cause_of_death' != ''
-        died_elsewhere_index = selected_for_rti_inj[selected_for_rti_inj['cause_of_death'] != ''].index
+        # any person with the condition 'cause_of_death' is not null
+        died_elsewhere_index = selected_for_rti_inj[~ selected_for_rti_inj['cause_of_death'].isnull()].index
         # drop the died_elsewhere_index from selected_for_rti_inj
         selected_for_rti_inj.drop(died_elsewhere_index, inplace=True)
         # Create shorthand link to RTI module
@@ -5173,7 +5187,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Specify the type of bed days needed? not sure if necessary
         self.BEDDAYS_FOOTPRINT.update({'general_bed': self.inpatient_days})
         # update the expected appointment foortprint
-        self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': self.inpatient_days})
+        if self.inpatient_days > 0:
+            self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': self.inpatient_days})
         # ================ Determine whether the person will require ICU days =========================================
         # Percentage of RTIs that required ICU stay 2.7% at KCH : https://doi.org/10.1007/s00268-020-05853-z
         # Percentage of RTIs that require HDU stay 3.3% at KCH
@@ -5432,7 +5447,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Schedule the surgeries by calling the functions rti_do_for_major/minor_surgeries which in turn schedules the
         # surgeries
         # Check they haven't died from another source
-        if df.loc[person_id, 'cause_of_death'] != '':
+        if not pd.isnull(df.loc[person_id, 'cause_of_death']):
             pass
         else:
             if self.major_surgery_counts > 0:
@@ -5497,7 +5512,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Determine whether this person dies with medical treatment or not with the RTIMediaclInterventionDeathEvent
 
         # Check that the person hasn't died from another source
-        if df.loc[person_id, 'cause_of_death'] != '':
+        if not pd.isnull(df.loc[person_id, 'cause_of_death']):
             pass
         else:
             road_traffic_injuries.rti_acute_pain_management(person_id=person_id)

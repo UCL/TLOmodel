@@ -44,10 +44,9 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 20000
-nsim = 3
+pop_size = 5000
+nsim = 2
 # Create a variable whether to save figures or not (used in debugging)
-save_figures = True
 imm_death = 0.018
 # Iterate over the number of simulations nsim
 log_file_location = './outputs/single_injury_model_vs_multiple_injury'
@@ -60,8 +59,8 @@ sing_number_of_injuries = []
 sing_dalys = []
 sing_number_of_deaths = []
 for i in range(0, nsim):
-    # Create the simulation object  seed=1336898099
-    sim = Simulation(start_date=start_date, seed=1621365318)
+    # Create the simulation object
+    sim = Simulation(start_date=start_date)
     # Register the modules
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -107,11 +106,8 @@ for i in range(0, nsim):
         log_df['tlo.methods.rti']['Inj_category_incidence']['number_of_injuries'].tolist())
     rti_deaths = deaths_in_sim.loc[deaths_in_sim['cause'] != 'Other']
     sing_inj_cause_of_death_in_sim.append(rti_deaths['cause'].to_list())
-    dalys_df = log_df['tlo.methods.healthburden']['dalys']
-    YLL_RTI = dalys_df.filter(like='YLL_RTI').columns
-    YLD = dalys_df['YLD_RTI_rt_disability']
-    YLL = dalys_df[YLL_RTI].sum(axis=1)
-    DALYs = YLD.sum() + YLL.sum()
+    dalys_df = log_df['tlo.methods.healthburden']['dalys']['Transport Injuries']
+    DALYs = dalys_df.sum()
     sing_dalys.append(DALYs)
     sing_number_of_deaths.append(log_df['tlo.methods.rti']['summary_1m']['number rti deaths'].sum())
 
@@ -148,8 +144,8 @@ for i in range(0, nsim):
     sim.make_initial_population(n=pop_size)
     # alter the number of injuries given out
     # Injury vibes number of GBD injury category distribution:
-    number_inj_data = [0.38, 0.25, 0.153, 0.094, 0.055, 0.031, 0.018, 0.019]
-
+    # number_inj_data = [0.38, 0.25, 0.153, 0.094, 0.055, 0.031, 0.018, 0.019]
+    number_inj_data = [0.7, 0.15, 0.075, 0.0375, 0.01875, 0.009375, 0.007031250000000089, 0.00234375]
     sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
         [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
     ]
@@ -172,11 +168,8 @@ for i in range(0, nsim):
     mult_inj_cause_of_death_in_sim.append(rti_deaths['cause'].to_list())
     mult_number_of_injuries.append(
         log_df['tlo.methods.rti']['Inj_category_incidence']['number_of_injuries'].tolist())
-    dalys_df = log_df['tlo.methods.healthburden']['dalys']
-    YLL_RTI = dalys_df.filter(like='YLL_RTI').columns
-    YLD = dalys_df['YLD_RTI_rt_disability']
-    YLL = dalys_df[YLL_RTI].sum(axis=1)
-    DALYs = YLD.sum() + YLL.sum()
+    dalys_df = log_df['tlo.methods.healthburden']['dalys']['Transport Injuries']
+    DALYs = dalys_df.sum()
     mult_dalys.append(DALYs)
     mult_number_of_deaths.append(log_df['tlo.methods.rti']['summary_1m']['number rti deaths'].sum())
 

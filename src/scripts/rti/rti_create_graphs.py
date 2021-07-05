@@ -395,11 +395,8 @@ def create_rti_data(logfile):
             num_surg += 1
         if 'MinorSurg' in dictionary.keys():
             num_surg += 1
-    dalys_df = parsed_log['tlo.methods.healthburden']['dalys']
-    YLL_RTI = dalys_df.filter(like='YLL_RTI').columns
-    YLD = dalys_df['YLD_RTI_rt_disability']
-    YLL = dalys_df[YLL_RTI].sum(axis=1)
-    DALYs = YLD.sum() + YLL.sum()
+    dalys_df = parsed_log['tlo.methods.healthburden']['dalys']['Transport Injuries']
+    DALYs = dalys_df.sum()
     # Get simulaion data
     pop_size = parsed_log['tlo.methods.demography']['population']['total'].iloc[0]
     sim_start_date = parsed_log['tlo.methods.demography']['population']['date'].iloc[0]
@@ -1020,13 +1017,15 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
     plt.clf()
     # ===== Plot the number of deaths and number of injuries predicted by the model compared to the GBD data =====
     # Get the GBD death data
-    GBD_death_data = pd.read_csv('resources/ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv')
+    GBD_death_data = pd.read_csv('resources/gbd/ResourceFile_Deaths_and_DALYS_GBD2019.csv')
+    GBD_death_data = GBD_death_data.loc[GBD_death_data['measure_name'] == 'Deaths']
+
     # Isolate RTI deaths
     road_data = GBD_death_data.loc[GBD_death_data['cause_name'] == 'Road injuries']
     # Isolate RTI deaths in 2010
-    road_data_2010 = road_data.loc[road_data['year'] == 2010]
+    road_data_2010 = road_data.loc[road_data['Year'] == 2010]
     # Get the Malawian population values for 2010
-    Malawi_Pop_2010 = pd.read_csv('resources/ResourceFile_Population_2010.csv')
+    Malawi_Pop_2010 = pd.read_csv('resources/demography/ResourceFile_Population_2010.csv')
     # Get an estimate of Malawis population size in 2010
     Malawi_pop_size_2010 = sum(Malawi_Pop_2010['Count'])
     # Calculate how much to scale the model's population size by to match Malawi's population
@@ -1034,7 +1033,7 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
     # Scale up the model's predicted deaths to match the estimate from Malawi
     scaled_2010_deaths = r['deaths_2010'].mean() * scaler_to_pop_size
     # plot the number of deaths
-    plt.bar(np.arange(2), [scaled_2010_deaths, sum(road_data_2010['val'])], color='lightsteelblue')
+    plt.bar(np.arange(2), [scaled_2010_deaths, sum(road_data_2010['GBD_Est'])], color='lightsteelblue')
     plt.ylabel('Number of deaths')
     plt.xticks(np.arange(2), ['Scaled model deaths', 'GBD estimated'
                                                      '\n'
@@ -1082,7 +1081,7 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
     # =================== Compare model deaths over popsize for model and Malawi GBD data ====================
     # Calculate deaths divided by populaton size for the model and the GBD data
     deaths_over_pop_size = [r['deaths_2010'].mean() / pop_size,
-                            sum(road_data_2010['val']) / Malawi_pop_size_2010]
+                            sum(road_data_2010['GBD_Est']) / Malawi_pop_size_2010]
     # Plot data in a bar chart
     plt.bar(np.arange(2), deaths_over_pop_size, color='lightsalmon')
     plt.ylabel('Deaths/Population')

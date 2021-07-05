@@ -330,13 +330,11 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     df = self.sim.population.props
                     road_traffic_injuries = self.sim.modules['RTI']
                     # Check they haven't died from another source
-                    if df.loc[person_id, 'cause_of_death'] != '':
-                        pass
-                    else:
+                    if (pd.isnull(df.loc[person_id, 'cause_of_death'])) & (not df.loc[person_id, 'rt_diagnosed']):
                         df.loc[person_id, 'rt_diagnosed'] = True
                         road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
-                    if df.loc[person_id, 'rt_in_shock']:
-                        self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
+                        if df.loc[person_id, 'rt_in_shock']:
+                            self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
 
     def did_not_run(self):
         logger.debug(key='message',
@@ -548,13 +546,11 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         if 'RTI' in self.sim.modules:
             if 'severe_trauma' in symptoms:
-                if df.loc[person_id, 'rt_in_shock']:
-                    self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
                 df = self.sim.population.props
                 # Check they haven't died from another source
-                if df.loc[person_id, 'cause_of_death'] != '':
-                    pass
-                else:
+                if (pd.isnull(df.loc[person_id, 'cause_of_death'])) & (not df.loc[person_id, 'rt_diagnosed']):
+                    if df.loc[person_id, 'rt_in_shock']:
+                        self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
                     consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
                     columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
