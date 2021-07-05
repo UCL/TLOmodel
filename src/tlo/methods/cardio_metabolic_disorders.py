@@ -136,9 +136,7 @@ class CardioMetabolicDisorders(Module):
                                                             'treatment'),
                   'nc_weight_loss_worked': Property(Types.BOOL,
                                                     'whether or not weight loss treatment worked'),
-                  'nc_depression': Property(Types.BOOL,
-                                            'shadow property for whether or not the person currently has depression'
-                                            ),
+                  'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has'),
                   'nc_cancers': Property(Types.BOOL,
                                          'shadow property for whether or not the person currently has any cancer'
                                          ),
@@ -523,13 +521,20 @@ class CardioMetabolicDisorders(Module):
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
-        # TODO: @britta - assuming that the all children have nothing when they are born
         df = self.sim.population.props
         for condition in self.conditions:
             df.at[child_id, f'nc_{condition}'] = False
+            df.at[child_id, f'nc_{condition}_ever_diagnosed'] = False
+            df.at[child_id, f'nc_{condition}_date_diagnosis'] = pd.NaT
+            df.at[child_id, f'nc_{condition}_ever_tested'] = False
+            df.at[child_id, f'nc_{condition}_date_last_test'] = pd.NaT
+            df.at[child_id, f'nc_{condition}_on_medication'] = False
         for event in self.events:
             df.at[child_id, f'nc_{event}'] = False
+            df.at[child_id, f'nc_{event}_ever_diagnosed'] = False
+            df.at[child_id, f'nc_{event}_date_diagnosis'] = pd.NaT
         # df.at[child_id, 'nc_cancers'] = False
+        df.at[child_id, 'nc_risk_score'] = 0
         df.at[child_id, 'nc_n_conditions'] = 0
         df.at[child_id, 'nc_condition_combos'] = False
 
