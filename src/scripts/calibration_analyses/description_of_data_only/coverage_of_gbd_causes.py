@@ -321,8 +321,20 @@ gbd = format_gbd(pd.read_csv(resourcefilepath / "gbd" / "ResourceFile_Deaths_And
 deaths = gbd.loc[(gbd.measure_name == 'Deaths') & (gbd.Year == 2019)].copy().groupby(by='cause_name')['GBD_Est'].sum()
 deaths = pd.DataFrame(deaths / deaths.sum())
 
+# extract total dalys (all age/sex)
+dalys = gbd.loc[(gbd.measure_name == 'DALYs (Disability-Adjusted Life Years)') & (gbd.Year == 2019)].copy().groupby(by='cause_name')['GBD_Est'].sum()
+dalys = pd.DataFrame(dalys / dalys.sum())
 
-# %% Label TLO causes accordingly
+# %% Label TLO causes of death accordingly
+level2_conds = [
+    'Depression / Self-harm',
+    'Epilepsy',
+    'Kidney Disease',
+    'Other Cancer',
+    'Other Injuries',
+    'Schistosomiasis',
+    'Chronic obstructive pulmonary disease'
+]
 
 # TLO Cause
 deaths['TLO'] = deaths.index.map(deaths_mapper_from_gbd_causes)
@@ -330,25 +342,22 @@ deaths['TLO'] = deaths.index.map(deaths_mapper_from_gbd_causes)
 # Level of TLO Cause
 deaths['TLO_Level'] = 3
 deaths['TLO_Level'].loc[deaths['TLO'].isin(['Other'])] = 1
-deaths['TLO_Level'].loc[deaths['TLO'].isin([
-    'Depression / Self-harm',
-    'Epilepsy',
-    'Kidney Disease',
-    'Other Cancer',
-    'Other Injuries',
-    'Schistosomiasis',
-    'Chronic obstructive pulmonary disease'])
+deaths['TLO_Level'].loc[deaths['TLO'].isin([level2_conds])
 ] = 2
-
-# Measure of completeness
-deaths['Complete'] = True
-deaths.loc[deaths.index.isin([
-    'COPD',
-    'OtherInjuries',
-])] = False
 
 deaths.groupby('TLO')['GBD_Est'].sum()
 
+# %% # %% Label TLO causes of disability accordingly
+
+# TLO Cause
+dalys['TLO'] = dalys.index.map(dalys_mapper_from_gbd_causes)
+dalys['TLO_Level'] = 3
+dalys['TLO_Level'].loc[dalys['TLO'].isin(level2_conds)] = 2
+dalys['TLO_Level'].loc[dalys['TLO'].isin(['Other'])] = 1
+
+
 #%% Get proportion of death according to each category
-props = deaths.groupby(by='TLO_Level')['GBD_Est'].sum()
+props_deaths = deaths.groupby(by='TLO_Level')['GBD_Est'].sum()
+props_dalys = dalys.groupby(by='TLO_Level')['GBD_Est'].sum()
+
 
