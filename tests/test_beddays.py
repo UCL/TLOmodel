@@ -409,7 +409,7 @@ def test_bed_days_released_on_death(tmpdir):
 
             # Schedule person_id=0 to die on 6th January
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.sim.modules['Demography'], 0, ''),
+                demography.InstantaneousDeath(self.sim.modules['Demography'], 0, 'Other'),
                 Date(2010, 1, 6)
             )
 

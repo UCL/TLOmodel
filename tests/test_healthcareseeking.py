@@ -7,7 +7,6 @@ from pandas import DateOffset
 from tlo import Date, Module, Simulation
 from tlo.methods import (
     Metadata,
-    bed_days,
     chronicsyndrome,
     demography,
     enhanced_lifestyle,
@@ -67,7 +66,6 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease()
@@ -136,7 +134,6 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease()
@@ -206,7 +203,6 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease()
@@ -247,7 +243,6 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules()
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -275,7 +270,6 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only():
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  )
@@ -316,7 +310,6 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),

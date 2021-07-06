@@ -8,7 +8,6 @@ from pandas._libs.tslibs.offsets import DateOffset
 from tlo import Date, Simulation, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
-    bed_days,
     bladder_cancer,
     demography,
     diarrhoea,
@@ -217,7 +216,7 @@ def test_standard_run_using_simplified_birth_module():
     # Get simulation object
     sim = get_sim(popsize=10_000)
 
-    # Force all newborns to be given a breastfeeding status of 'exclusive'
+    # Force all new borns to be given a breastfeeding status of 'exclusive'
     sim.modules['SimplifiedBirths'].parameters['prob_breastfeeding_type'] = [0, 0, 1]
 
     # Cause the 'check on configuration' of properties to run daily during the simulation.
@@ -263,7 +262,6 @@ def test_other_modules_running_with_simplified_births_module():
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),

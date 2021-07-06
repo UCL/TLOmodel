@@ -4,7 +4,11 @@ from pathlib import Path
 import pytest
 
 from tlo import Simulation, Date
-from tlo.methods import demography, mymockitis
+from tlo.methods import (
+    demography,
+    mockitis,
+    symptommanager,
+)
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -16,11 +20,12 @@ popsize = 100
 @pytest.fixture
 def simulation():
     sim = Simulation(start_date=start_date)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),)
     # sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 
     # Instantiate and add the MyMockitis module to the simulation
-    mymockitis_module = mymockitis.MyMockitis()
+    mymockitis_module = mockitis.Mockitis()
     sim.register(mymockitis_module)
 
     return sim

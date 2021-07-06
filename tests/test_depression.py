@@ -8,7 +8,6 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
-    bed_days,
     demography,
     depression,
     enhanced_lifestyle,
@@ -36,7 +35,6 @@ def test_configuration_of_properties():
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -113,15 +111,20 @@ def test_hsi_functions(tmpdir):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0,
                                            ignore_cons_constraints=True),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
     # Make it more likely that individual with depression seeks care
@@ -175,14 +178,19 @@ def test_hsi_functions_no_medication_available(tmpdir):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
     # Make it more likely that individual with depression seeks care
@@ -251,16 +259,21 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=2,
                                            ignore_cons_constraints=True,
                                            capabilities_coefficient=0.0),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 # labour.Labour(resourcefilepath=resourcefilepath),
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
     # Make it more likely that individual with depression seeks care

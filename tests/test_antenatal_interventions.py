@@ -6,7 +6,6 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import (
-    bed_days,
     care_of_women_during_pregnancy,
     contraception,
     demography,
@@ -57,7 +56,6 @@ def register_all_modules(ignore_cons_constraints):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
                                            ignore_cons_constraints=ignore_cons_constraints),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
@@ -222,7 +220,7 @@ def test_perfect_run_of_anc_contacts_no_constraints():
     assert (df.at[mother_id, 'ac_itn_provided'])
     assert (df.at[mother_id, 'ac_ttd_received'] == 1)
 
-    # We would expect some additional HSI events to have been scheduled for a woman on her first ANC and for this woman
+    # We would expect som additional HSI events to have been scheduled for a woman on her first ANC and for this woman
     # specifically due to her complications (pre-eclampsia and depression)
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
 

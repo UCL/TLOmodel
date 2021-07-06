@@ -10,7 +10,6 @@ import pytest
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
-    bed_days,
     demography,
     diarrhoea,
     dx_algorithm_child,
@@ -141,7 +140,6 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -171,7 +169,6 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -236,7 +233,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -316,7 +312,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                          resourcefilepath=resourcefilepath,
                          disable=True
                      ),
-                     bed_days.BedDays(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
                                                    spurious_symptoms=spurious_symptoms),
                      healthseekingbehaviour.HealthSeekingBehaviour(
@@ -436,7 +431,6 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
                          resourcefilepath=resourcefilepath,
                          disable=False
                      ),
-                     bed_days.BedDays(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(
                          resourcefilepath=resourcefilepath,
@@ -691,7 +685,6 @@ def test_run_each_of_the_HSI():
                      resourcefilepath=resourcefilepath,
                      disable=False
                  ),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
                      resourcefilepath=resourcefilepath,

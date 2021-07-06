@@ -5,7 +5,6 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
-    bed_days,
     demography,
     enhanced_lifestyle,
     healthburden,
@@ -40,7 +39,6 @@ def make_simulation_healthsystemdisabled():
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -61,7 +59,6 @@ def make_simulation_nohsi():
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
-                 bed_days.BedDays(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),

@@ -29,7 +29,7 @@ class BedDays:
         self.hs_module = hs_module
 
         # Number of days to the last day of bed_tracker
-        self.days_until_last_day_of_bed_tracker = 21
+        self.days_until_last_day_of_bed_tracker = 200
 
         # a dictionary to create a footprint according to facility bed days capacity
         self.available_footprint = {}
@@ -212,6 +212,7 @@ class BedDays:
     def apply_footprint(self, person_id, footprint):
         """Edit the internal properties in the dataframe to reflect this in-patient stay"""
 
+        print(f'the footprint is{footprint}')
         # check that the number of inpatient days does not exceed the maximum of 21 days
         assert self.days_until_last_day_of_bed_tracker >= sum(footprint.values()), \
             "total number of bed days is more than bed days tracking period"
