@@ -44,8 +44,8 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 5000
-nsim = 2
+pop_size = 20000
+nsim = 3
 # Create a variable whether to save figures or not (used in debugging)
 imm_death = 0.018
 # Iterate over the number of simulations nsim
