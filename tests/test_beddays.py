@@ -48,7 +48,7 @@ def test_beddays_in_isolation(tmpdir):
     )
 
     # Create a 21 day simulation
-    days_sim = 21
+    days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
 
@@ -343,7 +343,8 @@ def test_bed_days_property_is_inpatient(tmpdir):
     ips.index = pd.to_datetime(ips.index)
 
     # check that the daily checks on 'is_inpatient' are as expected:
-    false_ser = pd.Series(index=pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1), freq='D'), data=False)
+    false_ser = pd.Series(index=pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1), freq='D'),
+                          data=False)
 
     # person 0
     person0 = false_ser.copy()

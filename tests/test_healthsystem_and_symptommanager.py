@@ -9,7 +9,6 @@ from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
     Metadata,
-    bed_days,
     chronicsyndrome,
     demography,
     dx_algorithm_child,
