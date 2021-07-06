@@ -1072,6 +1072,10 @@ class HealthSystem(Module):
 
         return list_of_events
 
+    def remove_beddays_footprint(self, person_id):
+        # removing bed_days from a particular individual if any
+        self.bed_days.remove_beddays_footprint(person_id=person_id)
+
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """

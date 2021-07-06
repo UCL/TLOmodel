@@ -212,7 +212,6 @@ class BedDays:
     def apply_footprint(self, person_id, footprint):
         """Edit the internal properties in the dataframe to reflect this in-patient stay"""
 
-        print(f'the footprint is{footprint}')
         # check that the number of inpatient days does not exceed the maximum of 21 days
         assert self.days_until_last_day_of_bed_tracker >= sum(footprint.values()), \
             "total number of bed days is more than bed days tracking period"

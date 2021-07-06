@@ -377,7 +377,7 @@ class Demography(Module):
 
         # Release any beds-days that would be used by this person:
         if 'HealthSystem' in self.sim.modules:
-            self.sim.modules['HealthSystem'].bed_days.remove_beddays_footprint(person_id=individual_id)
+            self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
 
     def get_gbd_causes_of_death_not_represented_in_disease_modules(self, causes_of_death):
         """
