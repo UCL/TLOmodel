@@ -36,6 +36,7 @@ Contents
    self
    aims
    writeups
+   data_sources
    readme
    azure_batch
    reference/index
