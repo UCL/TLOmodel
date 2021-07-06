@@ -1,0 +1,839 @@
+Core Architecture
+#################
+
+Healthcare System
+*****************
+
+#. \ :sup:`†`\ Government of Malawi, Ministry of Health and Population: Human Resources for Health Strategic Plan 2018-2022 (for 2018)
+
+#. \ :sup:`†`\ Draft Final Report of the Analysis of Human Resources for Health in Malawi through Implementation of a WISN Study in 75 Facilities. Washington DC: World Bank. License: Creative Commons Attribution CC BY 3.0 (for 2017; https://documents1.worldbank.org/curated/en/294301580714814242/pdf/Implementation-of-WISN-Study-in-Seventy-Five-Facilities.pdf)
+
+#. \ :sup:`†`\ Malawi - Harmonized Health Facility Assessment : 2018-2019 Report : Main Report (English). Washington, D.C. : World Bank Group. (for 2019; http://documents.worldbank.org/curated/en/417871611550272923/Main-Report)
+
+#. \ :sup:`†`\ Government of Malawi: Health Sector Strategic Plan II 2017-2022 (for 2017; https://extranet.who.int/countryplanningcycles/sites/default/files/planning_cycle_repository/malawi/health_sector_strategic_plan_ii_030417_smt_dps.pdf)
+
+#. \ :sup:`†`\ Malawi Harmonized Health Facility Assessment (HHFA) 2018-2019 : District Profiles (English). Washington, D.C. : World Bank Group. (for 2019; http://documents.worldbank.org/curated/en/552991611645542004/Malawi-Harmonized-Health-Facility-Assessment-HHFA-2018-2019-District-Profiles)
+
+#. \ :sup:`†`\ Malawi - Harmonized Health Facility Assessment : 2018-2019 Report (Vol. 2) : Short Report (English). Washington, D.C. : World Bank Group. (for 2019; http://documents.worldbank.org/curated/en/521421611550618689/Short-Report)
+
+#. \ :sup:`†`\ Malawi - Harmonized Health Facility Assessment : 2018-2019 Report (Vol. 3) : Malawi Master Health Facility List (English). Washington, D.C. : World Bank Group. (for 2019; http://documents.worldbank.org/curated/en/496011611551081262/Malawi-Master-Health-Facility-List)
+
+#. \ :sup:`†`\ Closing the Gap : Why Achieving Universal Health Coverage in Malawi Now Requires Targeted Investment in Underperforming and Underserved Districts (English). Policy Brief Washington, D.C. : World Bank Group. (for 2020; http://documents.worldbank.org/curated/en/482201611638301118/Closing-the-Gap-Why-Achieving-Universal-Health-Coverage-in-Malawi-Now-Requires-Targeted-Investment-in-Underperforming-and-Underserved-Districts)
+
+#. \ :sup:`†`\ Harnessing Momentum : Priority Areas of Intervention to Further Strengthen Malawi’s Health Sector (English). Policy Brief Washington, D.C. : World Bank Group. (for 2020; http://documents.worldbank.org/curated/en/108221611566167934/Harnessing-Momentum-Priority-Areas-of-Intervention-to-Further-Strengthen-Malawi-s-Health-Sector)
+
+#. \ :sup:`†`\ Ministry of Health and Population, Malawi. OpenLMIS version 3.0, 2018 (NB. Not publicly available) (for 2018; https://dhis2.health.gov.mw/)
+
+Contraception, Pregnancy and Labour
+###################################
+
+Contraception
+*************
+
+#. \ :sup:`†`\ National Statistical Office (NSO), ICF Macro. Malawi Demographic and Health Survey 2010. Zomba, Malawi, and Calverton, Maryland, USA: NSO and ICF Macro, 2011. (for 2011; https://dhsprogram.com/publications/publication-fr247-dhs-final-reports.cfm)
+
+#. \ :sup:`†`\ National Statistical Office (NSO) [Malawi], ICF. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA: NSO and ICF, 2017. (for 2016; https://dhsprogram.com/publications/publication-fr319-dhs-final-reports.cfm)
+
+#. \ :sup:`†`\ National Statistical Office (NSO). 2018 Malawi Population and Housing Census. Zomba, Malawi: National Statistical Office, 2019. (for 2019; https://malawi.unfpa.org/sites/default/files/resource-pdf/2018%20Malawi%20Population%20and%20Housing%20Census%20Main%20Report%20%281%29.pdf)
+
+Conditions of Early Childhood
+#############################
+
+Undernutrition
+**************
+
+#. \ :sup:`†`\ National Statistical Office (NSO) [Malawi] and ICF. 2017. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA. NSO and ICF (for 2017; https://dhsprogram.com/pubs/pdf/FR319/FR319.pdf)
+
+#. \ :sup:`†`\ Ntenda, P. A. M. & Chuang, Y. C. Analysis of individual-level and community-level effects on childhood undernutrition in Malawi. Pediatr. Neonatol. 59, 380–389 (2018) (for 2018; https://doi.org/10.1016/j.pedneo.2017.11.019)
+
+#. \ :sup:`†`\ Maleta, K., Virtanen, S. M., Espo, M., Kulmala, T. & Ashorn, P. Childhood malnutrition and its predictors in rural Malawi. Paediatr. Perinat. Epidemiol. 17, 384–390 (2003) (for 2003; https://doi.org/10.1046/j.1365-3016.2003.00519.x.)
+
+#. \ :sup:`†`\ Alvarez, J. L., Dent, N., Browne, L., Myatt, M. & Briend, A. Mid-Upper Arm Circumference (MUAC) shows strong geographical variations in children with edema: Results from 2277 surveys in 55 countries. Arch. Public Heal. 76, 1–10 (2018) (for 2018; https://doi.org/10.1186/s13690-018-0290-4)
+
+#. \ :sup:`†`\ Frison, S., Checchi, F. & Kerac, M. Omitting edema measurement: How much acute malnutrition are we missing? Am. J. Clin. Nutr. 102, 1176–1181 (2015). (for 2015; https://doi.org/10.3945/ajcn.115.108282)
+
+#. \ :sup:`†`\ Grellety, E. & Golden, M. H. Weight-for-height and mid-upper-arm circumference should be used independently to diagnose acute malnutrition: Policy implications. BMC Nutr. 2, 1–17 (2016) (for 2016; https://doi.org/10.1186/s40795-016-0049-7)
+
+#. \ :sup:`†`\ Maleta, K. & Amadi, B. Community-based management of acute malnutrition (CMAM) in sub-Saharan Africa: Case studies from Ghana, Malawi, and Zambia. Food Nutr. Bull. 35, S34–S38 (2014) (for 2014; https://doi.org/10.1177/15648265140352S105)
+
+#. \ :sup:`†`\ Stobaugh, H. C. et al. Including whey protein and whey permeate in ready-to-use supplementary food improves recovery rates in children with moderate acute malnutrition: A randomized, double-blind clinical trial. Am. J. Clin. Nutr. 103, 926–933 (2016) (for 2016; https://doi.org/10.3945/ajcn.115.124636)
+
+#. \ :sup:`†`\ Lagrone, L., Cole, S., Schondelmeyer, A., Maleta, K. & Manary, M. J. Locally produced ready-to-use supplementary food is an effective treatment of moderate acute malnutrition in an operational setting. Ann. Trop. Paediatr. 30, 103–108 (2010) (for 2010; https://doi.org/10.1179/146532810X12703901870651)
+
+#. \ :sup:`†`\ Grellety, E. & Golden, M. H. Severely malnourished children with a low weight-for-height have a higher mortality than those with a low mid-upper-arm-circumference: I. Empirical data demonstrates Simpson’s paradox. Nutr. J. 17, (2018) (for 2018; https://doi.org/10.1186/s12937-018-0384-4)
+
+#. \ :sup:`†`\ Wright, C. M. et al. Wasting and Stunting in Infants and Young Children as Risk Factors for Subsequent Stunting or Mortality: Longitudinal Analysis of Data from Malawi, South Africa, and Pakistan. J. Nutr. (2021) (for 2021; https://doi.org/10.1093/jn/nxab054)
+
+Acute Lower Respiratory Infection
+*********************************
+
+#. \ :sup:`†`\ McCollum, E. D. et al. Impact of the 13-Valent Pneumococcal Conjugate Vaccine on Clinical and Hypoxemic Childhood Pneumonia over Three Years in Central Malawi: An Observational Study. PLoS One 12, e0168209 (2017) (for 2017; https://doi.org/10.1371/journal.pone.0168209)
+
+#. \ :sup:`†`\ Lazzerini, M. et al. Mortality and its risk factors in Malawian children admitted to hospital with clinical pneumonia, 2001-12: A retrospective observational study. Lancet Glob. Heal. (2016) (for 2016; https://doi.org/10.1016/S2214-109X(15)00215-6)
+
+#. \ :sup:`†`\ Johansson, E. W., Nsona, H., Carvajal-Aguirre, L., Amouzou, A. & Hildenwall, H. Determinants of Integrated Management of hildhood Illness (IMCI) non-severe pneumonia classification and care in Malawi health facilities: Analysis of a national facility census. J. Glob. Health 7, (2017). (for 2017; https://doi.org/10.7189/jogh.07.020408)
+
+#. \ :sup:`†`\ Uwemedimo, O. T. et al. Distribution and determinants of pneumonia diagnosis using Integrated Management of Childhood Illness guidelines: a nationally representative study in Malawi. BMJ Glob. Heal. 3, e000506 (2018). (for 2018; http://dx.doi.org/10.1136/bmjgh-2017-000506)
+
+Injuries
+########
+
+Road Traffic Injuries
+*********************
+
+#. \ :sup:`†`\ Bach, O. 2004. “Musculo Skeletal Trauma in an East African Public Hospital.” Injury 35 (4): 401–6. (for 2004; https://doi.org/10.1016/S0020-1383(03)00290-0.)
+
+#. \ :sup:`†`\ Banza, Leonard Ngoie, Jared Gallaher, Eva Dybvik, Anthony Charles, Geir Hallan, Jan-Erik Gjertsen, Nyengo Mkandawire, Carlos Varela, and Sven Young. 2018. “The Rise in Road Traffic Injuries in Lilongwe, Malawi A Snapshot of the Growing Epidemic of Trauma in Low Income Countries.” International Journal of Surgery Open 10: 55–60. (for 2018; https://doi.org/10.1016/j.ijso.2017.11.004)
+
+#. \ :sup:`†`\ Chagomerana, Maganizo B., Jared Tomlinson, Sven Young, Mina C. Hosseinipour, Leonard Banza, and Clara N. Lee. 2017. “High Morbidity and Mortality after Lower Extremity Injuries in Malawi: A Prospective Cohort Study of 905 Patients.” International Journal of Surgery 39 (March): 23–29. (for 2017; https://doi.org/10.1016/j.ijsu.2017.01.047)
+
+#. \ :sup:`†`\ Eaton, Jessica, Asma Bilal Hanif, Joanna Grudziak, and Anthony Charles. 2017. “Epidemiology, Management, and Functional Outcomes of Traumatic Brain Injury in Sub-Saharan Africa.” World Neurosurgery 108 (December): 650–55. (for 2017; https://doi.org/10.1016/j.wneu.2017.09.084)
+
+#. \ :sup:`†`\ Eaton, Jessica, Cornelius Mukuzunga, Joanna Grudziak, and Anthony Charles. 2019. “Characteristics and Outcomes of Traumatic Spinal Cord Injury in a Low-Resource Setting.” Tropical Doctor 49 (1): 62–64. (for 2019; https://doi.org/10.1177/0049475518808969)
+
+#. \ :sup:`†`\ Gallaher, Jared, Malcolm Jefferson, Carlos Varela, Rebecca Maine, Bruce Cairns, and Anthony Charles. 2019. “The Malawi Trauma Score: A Model for Predicting Trauma-Associated Mortality in a Resource-Poor Setting.” Injury 50 (9): 1552–57.  (for 2019; https://doi.org/10.1016/j.injury.2019.07.004)
+
+#. \ :sup:`†`\ Grudziak, Joanna, Cornelius Mukuzunga, Caroline Melhado, Sven Young, Leonard Banza, Bruce Cairns, and Anthony Charles. 2019. “Etiology of Major Limb Amputations at a Tertiary Care Centre in Malawi.” Malawi Medical Journal 31 (4): 244–48. (for 2019; https://doi.org/10.4314/mmj.v31i4.5)
+
+#. \ :sup:`†`\ Katundu, Kondwani G.H., Timothy W. Mutafya, Noel C. Lozani, Patrick M. Nyirongo, and Molly E. Uebele. 2018. “An Observational Study of Perioperative Nutrition and Postoperative Outcomes in Patients Undergoing Laparotomy at Queen Elizabeth Central Hospital in Blantyre, Malawi.” Malawi Medical Journal 30 (2): 79–85. (for 2018; https://doi.org/10.4314/mmj.v30i2.5)
+
+#. \ :sup:`†`\ Khuluza, Felix, and Christine Haefele-Abah. 2019. “The Availability, Prices and Affordability of Essential Medicines in Malawi: A Cross-Sectional Study.” Edited by Khin Thet Wai. PLOS ONE 14 (2): e0212125. (for 2019; https://doi.org/10.1371/journal.pone.0212125)
+
+#. \ :sup:`†`\ Lavy, Chris, Alistair Tindall, Colin Steinlechner, Nyengo Mkandawire, and Sandy Chimangeni. 2007. “Surgery in Malawi - A National Survey of Activity in Rural and Urban Hospitals.” Annals of the Royal College of Surgeons of England 89 (7): 722–24. (for 2007; https://doi.org/10.1308/003588407X209329)
+
+#. \ :sup:`†`\ Mkandawire, Nyengo, Christopher Ngulube, and Christopher Lavy. 2008. “Orthopaedic Clinical Officer Program in Malawi: A Model for Providing Orthopaedic Care.” In Clinical Orthopaedics and Related Research, 466:2385–91. (for 2008; https://doi.org/10.1007/s11999-008-0366-5)
+
+#. \ :sup:`†`\ Ng’ambi, Wingston, Tara Mangal, Andrew Phillips, Tim Colbourn, Joseph Mfutso-Bengo, Paul Revill, and Timothy B. Hallett. 2020. “Factors Associated with Healthcare Seeking Behaviour for Children in Malawi: 2016.” Tropical Medicine and International Health 25 (12): 1486–95. (for 2020; https://doi.org/10.1111/tmi.13499)
+
+#. \ :sup:`†`\ Ng’ambi, Wingston, Tara Mangal, Andrew Phillips, Tim Colbourn, Dominic Nkhoma, Joseph Mfutso-Bengo, Paul Revill, and Timothy B. Hallett. 2020. “A Cross-Sectional Study on Factors Associated with Health Seeking Behaviour of Malawians Aged 15+ Years in 2016 | Malawi Medical Journal.” Malawi Medical Journal 32 (4).  (for 2020; https://www.ajol.info/index.php/mmj/article/view/202965)
+
+#. \ :sup:`†`\ Samuel, Jonathan C., Edward Sankhulani, Javeria S. Qureshi, Paul Baloyi, Charles Thupi, Clara N. Lee, William C. Miller, Bruce A. Cairns, and Anthony G. Charles. 2012. “Under-Reporting of Road Traffic Mortality in Developing Countries: Application of a Capture-Recapture Statistical Model to Refine Mortality Estimates.” Edited by Vittoria Colizza. Plos One 7 (2): e31091. (for 2012; https://doi.org/10.1371/journal.pone.0031091)
+
+#. \ :sup:`†`\ Schade, Alexander Thomas, Master Yesaya, Jeremy Bates, Claude Martin, and William James Harrison. 2020. “The Malawi Orthopaedic Association/Ao Alliance Guidelines and Standards for Open Fracture Management in Malawi: A National Consensus Statement.” Malawi Medical Journal 32 (3): 112–19.  (for 2020; https://doi.org/10.4314/mmj.v32i3.2)
+
+#. \ :sup:`†`\ Schlottmann, Francisco, Anna F. Tyson, Bruce A. Cairns, Carlos Varela, and Anthony G. Charles. 2017. “Road Traffic Collisions in Malawi: Trends and Patterns of Mortality on Scene.” Malawi Medical Journal 29 (4): 301–5. (for 2017; https://doi.org/10.4314/mmj.v29i4.4)
+
+#. \ :sup:`†`\ Sundet, Mads, Joanna Grudziak, Anthony Charles, Leonard Banza, Carlos Varela, and Sven Young. 2018. “Paediatric Road Traffic Injuries in Lilongwe, Malawi: An Analysis of 4776 Consecutive Cases.” Tropical Doctor 48 (4): 316–22. (for 2018; https://doi.org/10.1177/0049475518790893)
+
+#. \ :sup:`†`\ Sundet, Mads, Chifundo Kajombo, Gift Mulima, Stig Tore Bogstrand, Carlos Varela, Sven Young, Asbjørg S. Christophersen, and Hallvard Gjerde. 2020. “Prevalence of Alcohol Use among Road Traffic Crash Victims Presenting to a Malawian Central Hospital: A Cross-Sectional Study.” Traffic Injury Prevention.  (for 2020; https://doi.org/10.1080/15389588.2020.1819990)
+
+#. \ :sup:`†`\ Tyson, Anna F., Carlos Varela, Bruce A. Cairns, and Anthony G. Charles. 2015. “Hospital Mortality Following Trauma: An Analysis of a Hospital-Based Injury Surveillance Registry in Sub-Saharan Africa.” Journal of Surgical Education 72 (4): e66-72. (for 2015; https://doi.org/10.1016/j.jsurg.2014.09.010)
+
+#. \ :sup:`†`\ Zijlstra, Ed E., and Robert L. Broadhead. 2007. “The College of Medicine in the Republic of Malawi: Towards Sustainable Staff Development.” Human Resources for Health 5 (1): 1–5. (for 2007; https://doi.org/10.1186/1478-4491-5-10)
+
+Cardiometabolic Disorders
+#########################
+
+Diabetes Type 2, Hypertension, Stroke, Ischemic Heart Disease, Myocardial Infarction
+************************************************************************************
+
+#. \ :sup:`†`\ Hamilton et al., Prevalence and risk factors for chronic kidney disease of unknown cause in Malawi: a cross-sectional analysis in a rural and urban population, BMC Nephrology 21:387 (for 2020; https://bmcnephrol.biomedcentral.com/articles/10.1186/s12882-020-02034-x)
+
+#. \ :sup:`†`\ Kachimanga et al., Prevalence and Correlates of Chronic Kidney Disease in Patients with Hypertension in Rural Malawi, SN Comprehensive Clinical Medicine 1, 905-914 (for 2019; https://link.springer.com/article/10.1007/s42399-019-00154-6)
+
+#. \ :sup:`†`\ Kachimanga et al., Screening for chronic kidney disease in rural Malawi: results from a diabetes clinic, BMC Research Notes 12:375 (for 2019; https://bmcresnotes.biomedcentral.com/articles/10.1186/s13104-019-4415-9)
+
+#. \ :sup:`†`\ Nakanga et al., Prevalence of impaired renal function among rural and urban populations: findings of a cross-sectional study in Malawi, Wellcome Open Research 4:92 (for 2019; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6798316.1/)
+
+#. \ :sup:`†`\ Price et al., Prevalence of obesity, hypertension, and diabetes, and cascade of care in sub-Saharan Africa: a cross-sectional, population-based study in rural and urban Malawi, The Lancet Diabetes & Endocrinology 6:3, 208-222 (for 2018; https://www.sciencedirect.com/science/article/pii/S2213858717304321)
+
+#. \ :sup:`†`\ Crampin et al., Hypertension and diabetes in Africa: design and implementation of a large population-based study of burden and risk factors in urban and rural Malawi, Emerging Themes in Epidemiology 13:3 (for 2016; https://ete-online.biomedcentral.com/articles/10.1186/s12982-015-0039-2)
+
+#. \ :sup:`†`\ Amberbir et al., Systematic Review of Hypertension and Diabetes Burden, Risk Factors, and Interventions for Prevention and Control in Malawi: The NCD BRITE Consortium, Global Heart 14:2, 109-118 (for 2019; https://www.sciencedirect.com/science/article/abs/pii/S2211816019300766)
+
+#. \ :sup:`†`\ Mphwanthe et al., Perceived barriers and facilitators to diet and physical activity among adults diagnosed with type 2 diabetes in Malawi, Global Public Health 16:3 (for 2021; https://www.tandfonline.com/doi/full/10.1080/17441692.2020.1805784)
+
+#. \ :sup:`†`\ Allain et al., The spectrum of heart disease in adults in Malawi: A review of the literature with reference to the importance of echocardiography as a diagnostic modality, Malawi Medical Journal 28(2): 61-65 (for 2016; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5117102/#R11)
+
+#. \ :sup:`†`\ Gowshall et al., The increasing prevalence of non-communicable diseases in low-middle income countries: the view from Malawi, International Journal of General Medicine 11: 255-264 (for 2018; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6029598/)
+
+Core Architecture
+#################
+
+Lifestyle
+*********
+
+#. \ :sup:`†`\ National Statistical Office (NSO), ICF Macro. Malawi Demographic and Health Survey 2010. Zomba, Malawi, and Calverton, Maryland, USA: NSO and ICF Macro, 2011. (for 2011; https://dhsprogram.com/publications/publication-fr247-dhs-final-reports.cfm)
+
+#. \ :sup:`†`\ National Statistical Office (NSO) [Malawi], ICF. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA: NSO and ICF, 2017. (for 2016; https://dhsprogram.com/publications/publication-fr319-dhs-final-reports.cfm)
+
+#. \ :sup:`†`\ National Statistical Office (NSO). 2018 Malawi Population and Housing Census. Zomba, Malawi: National Statistical Office, 2019. (for 2019; https://malawi.unfpa.org/sites/default/files/resource-pdf/2018%20Malawi%20Population%20and%20Housing%20Census%20Main%20Report%20%281%29.pdf)
+
+#. \ :sup:`†`\ Price A, et al. Prevalence of obesity, hypertension, and diabetes, and cascade of care in sub-Saharan Africa: a cross-sectional,population-based study in rural and urban Malawi. Lancet Diabetes & Endocrinol 2018; 6: 208–22 (for 2018)
+
+#. \ :sup:`†`\ Msyamboza et al; The Burden of Selected Chronic Non-Communicable Diseases and Their Risk Factors in Malawi: Nationwide STEPS Survey 2011 PLoS One (for 2011)
+
+#. \ :sup:`†`\ Msyamboza et al; The burden of hypertension and its risk factors in Malawi: nationwide population-based STEPS survey. International Health 4 (2012) 246–252 (for 2012)
+
+#. \ :sup:`†`\ WHO 2014 report http://www.who.int/substance_abuse/publications/global_alcohol_report/msb_gsr_2014_2.pdf?ua=1 (for 2014)
+
+#. \ :sup:`†`\ Amberbir et al. Systematic Review of Hypertension and Diabetes Burden, Risk Factors, and Interventions for Prevention and Control in Malawi The NCD BRITE Consortium. Global Heart 2019 (for 2019)
+
+#. \ :sup:`†`\ 2018 Malawi Population and Housing National Statistical Office May 2019 Main Report  (for 2019; http://www.nsomalawi.mw/images/stories/data_on_line/demography/census_2018/2018%20Malawi%20Population%20and%20Housing%20Census%20Main%20Report.pdf)
+
+#. \ :sup:`†`\ Chasimpha et al. Patterns and risk factors for deaths from external causes in rural Malawi over 10 years: a prospective population-based study. BMC Public Health (2015) 15:1036 DOI 10.1186/s12889-015-2323-z (for 2015; https://bmcpublichealth.biomedcentral.com/articles/10.1186/s12889-015-2323-z)
+
+Other Non-Communicable Conditions
+#################################
+
+Depression
+**********
+
+#. \ :sup:`†`\ Dow A et al. Postpartum Depression and HIV Infection Among Women in Malawi. JAIDS 2014 Volume: 65 Issue: 3 Pages: 359-365 DOI: 10.1097/QAI.0000000000000050 (for 2014; https://pubmed.ncbi.nlm.nih.gov/24189149/)
+
+#. \ :sup:`†`\ Kim et al. Factors associated with depression among adolescents living with HIV in Malawi. BMC Psychiatry 2015; 15:264 (for 2015)
+
+#. \ :sup:`†`\ Kohler IV at al. The Demography of Mental Health Among Mature Adults in a Low-Income, High-HIV-Prevalence Context. Demography 2017; 54:1529–1558 (for 2017)
+
+#. \ :sup:`†`\ Udedi et al. Health service utilization by patients with common mental disorder identified by the Self-Reporting Questionnaire in a primary care setting in Zomba, Malawi: A descriptive study. International Journal of Social Psychiatry 2014, Vol. 60(5) 454–461 (for 2014)
+
+#. \ :sup:`†`\ National Statistical Office (NSO), ICF Macro. Malawi Demographic and Health Survey 2010. Zomba, Malawi, and Calverton, Maryland, USA: NSO and ICF Macro, 2011. (for 2011; https://data.worldbank.org/indicator/SP.RUR.TOTL.ZS?locations=MW)
+
+#. \ :sup:`†`\ National Statistical Office (NSO) [Malawi], ICF. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA: NSO and ICF, 2017. (for 2016; https://data.worldbank.org/indicator/SP.RUR.TOTL.ZS?locations=MW)
+
+#. \ :sup:`†`\ National Statistical Office (NSO). 2018 Malawi Population and Housing Census. Zomba, Malawi: National Statistical Office, 2019. (for 2019)
+
+Epilepsy
+********
+
+#. \ :sup:`†`\ Munthali et al. Seeking care for epilepsy and its impacts on households in a rural district in southern Malawi’, African Journal of Disability 2013 2(1), Art. #54, 8 pages. (for 2013; http://dx.doi. org/10.4102/ajod.v2i1.54)
+
+Cancers
+#######
+
+Cancers
+*******
+
+#. \ :sup:`†`\ Msyamboza et al. Burden of cancer in Malawi; common types, incidence and trends: National population-based cancer registry. BMC Research Notes 2012, 5:149 (for 2012)
+
+#. \ :sup:`†`\ Moses et al. Risk factors for common cancers among patients at Kamuzu Central Hospital in Lilongwe, Malawi: A retrospective cohort study. Malawi Medical Journal 29 (2): June 2017 (for 2017)
+
+#. \ :sup:`†`\ Chasimpha et al. Three-year cancer incidence in Blantyre, Malawi (2008–2010). Int. J. Cancer: 141, 694–700 (2017). (for 2017)
+
+#. \ :sup:`†`\ Masamba et al. The state of oncology in Malawi in 2015. Malawi Medical Journal; 27(3): 77-78 September 2015. (for 2015)
+
+#. \ :sup:`†`\ Mukhula et al. Characterising cancer burden and quality of care at two palliative care clinics in Malawi. Malawi Medical Journal 29 (2): June 2017 (for 2017)
+
+#. \ :sup:`†`\ Gowshall et al. The increasing prevalence of non-communicable diseases in low-middle income countries: the view from Malawi. International Journal of General Medicine 2018:11 255–264 (for 2018)
+
+#. \ :sup:`†`\ UNC Project- Malawi Cancer Program (for 2021; http://malawicancerconsortium.web.unc.edu/)
+
+#. \ :sup:`†`\ Globocan Malawi estimates  (for 2021; http://gco.iarc.fr/today/data/factsheets/populations/454-malawi-fact-sheets.pdf)
+
+#. \ :sup:`†`\ P Mtonga et al. Biopsy case mix and diagnostic yield at a Malawian central hospital. Malawi Medical Journal; 23(3): 62-64 September 2013 (for 2013)
+
+#. \ :sup:`†`\ Gopal S, Krysiak R, Liomba NG, Horner M-J, Shores CG, et al. (2013) Early Experience after Developing a Pathology Laboratory in Malawi, with Emphasis on Cancer Diagnoses. PLoS ONE 8(8): e70361. doi:10.1371/journal.pone.0070361 (for 2013; https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0070361)
+
+#. \ :sup:`†`\ Ackroyd-Parkin et al. ESTABLISHING BREAST TRIPLE ASSESSMENT IN BLANTYRE, MALAWI: THE FIRST YEAR'S EXPERIENCE. Abstracts / European Journal of Surgical Oncology 44 (2018) 862e918 (for 2018)
+
+#. \ :sup:`†`\ Cornelissen et al. The Cost of Providing District-Level Surgery in Malawi. World J Surg (2018) 42:46–53 DOI 10.1007/s00268-017-4166-5 (for 2018)
+
+#. \ :sup:`†`\ Youngblood et al. Outcomes and prognostic factors for women with breast cancer in Malawi. Cancer Causes & Control (2020) 31:393–402 (for 2020; https://doi.org/10.1007/s10552-020-01282-4)
+
+#. \ :sup:`†`\ Banda et al. Cancer incidence in Blantyre, Malawi 1994-1998. Tropical Medicine and International Health. volume 6 no 4 pp 296±304 april 2001 (for 2001)
+
+#. \ :sup:`†`\ Chetwood et al. Five-year single-centre experience of carcinoma of the oesophagus from Blantyre, Malawi. BMJ Open Gastro 2018;5:e000232. doi:10.1136/bmjgast-2018-000232 (for 2018; https://bmjopengastro.bmj.com/content/5/1/e000232)
+
+#. \ :sup:`†`\ Mlombe et al. Environmental risk factors for oesophageal cancer in Malawi: A case-control study. Malawi Medical Journal; 27(3): 88-92 September 2015 (for 2015)
+
+Core Architecture
+#################
+
+Demography
+**********
+
+#. \ :sup:`†`\ Malawi Population and House Census Main Report. National Statistical Office. May 2019, Lilongwe (for 2019; http://www.nsomalawi.mw/index.php?option=com_content&view=article&id=226&Itemid=)
+
+#. \ :sup:`†`\ World Population Prospects 2019. United Nations Department of Economic and Social Affairs (for 2019; https://population.un.org/wpp/Download/Standard/Population/)
+
+#. \ :sup:`†`\ Global Burden of Disease Collaborative Network. Global Burden of Disease Study 2017 (GBD 2017) Results (for 2017; http://ghdx.healthdata.org/gbd-results-tool)
+
+HealthSeekingBehaviour
+**********************
+
+#. \ :sup:`†`\ Ng'ambi et al. A cross-sectional study on factors associated with health seeking behaviour of Malawians aged 15+ years in 2016. (for 2021; https://www.ajol.info/index.php/mmj/article/view/202965)
+
+#. \ :sup:`†`\ Ng'ambi et al. Factors associated with healthcare seeking behaviour for children in Malawi: 2016 (for 2020; https://onlinelibrary.wiley.com/doi/abs/10.1111/tmi.13499)
+
+#. \ :sup:`†`\ Fourth Integrated Household Survey 2016-2017 (for 2017; https://microdata.worldbank.org/index.php/catalog/2936)
+
+#. \ :sup:`†`\ Fifth Integrated Household Survey 2019-2020 (for 2020; https://microdata.worldbank.org/index.php/catalog/3818)
+
+Contraception, Pregnancy and Labour
+###################################
+
+Pregnancy
+*********
+
+#. \ :sup:`†`\ Ministry of Health Malawi, UNICEF, UNFPA, WHO, AMDD. Malawi 2010 EmONC Needs Assessment Final Report. 2010. (for 2010)
+
+#. \ :sup:`†`\ Ministry of Health Malawi, USAID, UNFPA, UNICEF, CHAI, Save the Children. Malawi Emergency Obstetric and Newborn Care Needs Assessment, 2014. 2015. (for 2015; https://www.healthynewbornnetwork.org/hnn-content/uploads/Malawi-EmONC-Report-June-2015_FINAL.pdf)
+
+#. \ :sup:`†`\ Monden CWS, Smits J. Mortality among twins and singletons in sub-Saharan Africa between 1995 and 2014: a pooled analysis of data from 90 Demographic and Health Surveys in 30 countries. Lancet Glob Heal. 2017 Jul 1;5(7):e673–9. (for 2017; https://linkinghub.elsevier.com/retrieve/pii/S2214109X17301973)
+
+#. \ :sup:`†`\ Levandowski BA, Mhango C, Kuchingale E, Lunguzi J, Katengeza H, Gebreselassie H, et al. The Incidence of Induced Abortion in Malawi. Vol. 39, Perspectives on Sexual and Reproductive Health. 2013 (for 2013; https://www.jstor.org/stable/41959960)
+
+#. \ :sup:`†`\ Polis CB, Mhango C, Philbin J, Chimwaza W, Chipeta E, Msusa A. Incidence of induced abortion in Malawi, 2015. Foster AM, editor. PLoS One. 2017 Apr 3;12(4):e0173639.  (for 2017; https://dx.plos.org/10.1371/journal.pone.0173639)
+
+#. \ :sup:`†`\ Kalilani-Phiri L, Gebreselassie H, Levandowski BA, Kuchingale E, Kachale F, Kangaude G. The severity of abortion complications in malawi. Int J Gynecol Obstet. 2015;128(2):160–4. (for 2015; http://doi.wiley.com/10.1016/j.ijgo.2014.08.022)
+
+#. \ :sup:`†`\ Antony KM, Kazembe PN, Pace RM, Levison J, Phiri H, Chiudzu G, et al. Population-Based Estimation of the Preterm Birth Rate in Lilongwe, Malawi: Making Every Birth Count. AJP Rep. 2020 Jan 1;10(1):E78–86.  (for 2020; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7062552/)
+
+#. \ :sup:`†`\ van den Broek NR, Jean-Baptiste R, Neilson JP. Factors Associated with Preterm, Early Preterm and Late Preterm Birth in Malawi. Hawkins SM, editor. PLoS One. 2014 Mar 3;9(3):e90128.  (for 2014; https://dx.plos.org/10.1371/journal.pone.0090128)
+
+#. \ :sup:`†`\ Phiri TJ, Kasiya M, Allain T. Full Prevalence Of Gestational Diabetes In Urban Women In Blantyre, Malawi: A Cross Sectional Study And Comparison Of Who And IADPSG Criteria. 2019. (for 2019; https://www.researchsquare.com/article/rs-4200/v1)
+
+#. \ :sup:`†`\ National Statistical Office - NSO/Malawi and ICF. Malawi Demographic and Health Survey 2010. 2011. (for 2011; https://dhsprogram.com/publications/publication-fr247-dhs-final-reports.cfm)
+
+#. \ :sup:`†`\ National Statistical Office - NSO/Malawi and ICF. Malawi Demographic and Health Survey 2015-16. 2017 Feb. (for 2017; https://dhsprogram.com/publications/publication-FR319-DHS-Final-Reports.cfm)
+
+#. \ :sup:`†`\ Oaks BM, Jorgensen JM, Baldiviez LM, Adu-Afarwuah S, Maleta K, Okronipa H, et al. Prenatal iron deficiency and replete iron status are associated with adverse birth outcomes, but associations differ in Ghana and Malawi. J Nutr. 2019 Mar 1;149(3):513–21.  (for 2019; https://pubmed.ncbi.nlm.nih.gov/30629202/)
+
+#. \ :sup:`†`\ National Statistical Office Malawi, Ministry of Health Malawi, CDCP. Malawi Micronutrient Survey 2015-2016. 2017. (for 2017; https://dhsprogram.com/pubs/pdf/FR319/FR319.m.final.pdf)
+
+#. \ :sup:`†`\ Adamu AL, Crampin A, Kayuni N, Amberbir A, Koole O, Phiri A, et al. Prevalence and risk factors for anemia severity and type in Malawian men and women: Urban and rural differences. Popul Health Metr. 2017 Mar 29 ;15(1):12.  (for 2017; http://pophealthmetrics.biomedcentral.com/articles/10.1186/s12963-017-0128-2)
+
+#. \ :sup:`†`\ Van Den Broek NR, Ntonya C, Mhango E, White SA. Diagnosing anaemia in pregnancy in rural clinics: Assessing the potential of the haemoglobin colour scale. Bull World Health Organ. 1999;77(1):15–21.  (for 1999; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2557566/)
+
+Care of Women During Pregnancy
+******************************
+
+#. \ :sup:`†`\ Malawi Ministry of Health. Malawi Standard Treatment Guidelines (MSTG) Incorporating Malawi Essential Medicines List (MEML). 2015. (for 2015; https://www.medbox.org/document/malawi-standard-treatment-guidelines-mstg-5th-edition#GO)
+
+#. \ :sup:`†`\ The Association of Obstetricians & Gynaecologists of Malawi. Obstetrics & Gynaecology Protocols and Guidelines. 2014;(September):1–105. (for 2014; http://lifesavingcommodities.org/wp-content/uploads/2015/03/Malawi-2014_Malawi-Obstetric-and-Gynaecology-Protocols_Guidelines.pdf)
+
+#. \ :sup:`†`\ Ministry of Health Malawi, ICF internatational. Malawi Service Provision Assessment 2013-14. 2014.  (for 2014; https://dhsprogram.com/publications/publication-spa20-spa-final-reports.cfm)
+
+#. \ :sup:`†`\ Ministry of Health Malawi. Malawi Harmonised Health Facility Assessment (HHFA) 2018/2019 Report. 2019. (for 2019)
+
+#. \ :sup:`†`\ Government of Malawi. 2012 GLOBAL AIDS RESPONSE PROGRESS REPORT: Malawi Country Report for 2010 and 2011. 2012.  (for 2012; https://www.unaids.org/sites/default/files/country/documents/ce_MW_Narrative_Report[1].pdf)
+
+#. \ :sup:`†`\ Government of Malawi. Global AIDS Response Progress Report (GARPR) Malawi Progress Report for 2013 31 st. 2014. (for 2014; https://www.unaids.org/sites/default/files/country/documents/MWI_narrative_report_2014.pdf)
+
+#. \ :sup:`†`\ Titilayo A, Palamuleni ME, Omisakin O. Sociodemographic factors influencing adherence to antenatal iron supplementation recommendations among pregnant women in Malawi: Analysis of data from the 2010 Malawi Demographic and Health Survey. Malawi Med J. 2016 Mar 1;28(1):1–5.  (for 2016; https://pubmed.ncbi.nlm.nih.gov/27217909/)
+
+#. \ :sup:`†`\ Ba DM, Ssentongo P, Kjerulff KH, Na M, Liu G, Gao X, et al. Adherence to Iron Supplementation in 22 Sub-Saharan African Countries and Associated Factors among Pregnant Women: A Large Population-Based Study. Curr Dev Nutr. 2019 Oct 21;3(12).  (for 2019; https://academic.oup.com/cdn/article/3/12/nzz120/5601697)
+
+#. \ :sup:`†`\ Owili PO, Muga MA, Mendez BR, Chen B. Quality of care in six sub-Saharan Africa countries: A provider-based study on adherence to WHO’s antenatal care guideline. Int J Qual Heal Care. 2019 Feb 1;31(1):43–8.  (for 2019; https://pubmed.ncbi.nlm.nih.gov/30428045/)
+
+#. \ :sup:`†`\ McHenga M, Burger R, Von Fintel D. Examining the impact of WHO’s Focused Antenatal Care policy on early access, underutilisation and quality of antenatal care services in Malawi: A retrospective study. BMC Health Serv Res. 2019 May 8;19(1). (for 2019; https://bmchealthservres.biomedcentral.com/articles/10.1186/s12913-019-4130-1)
+
+#. \ :sup:`†`\ Stones W, Peno WW. Access to antenatal blood pressure measurement in Malawi: Findings from a national census of health facilities. Malawi Med J. 2018 Sep 1;30(3):141–5. (for 2018; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6307051/)
+
+Labour
+******
+
+#. \ :sup:`†`\ Beltman J, Van Den Akker T, Van Lonkhuijzen L, Schmidt A, Chidakwani R, Van Roosmalen J. Beyond maternal mortality: Obstetric hemorrhage in a Malawian district. Acta Obstet Gynecol Scand. 2011;90(12):1423–7. (for 2011; https://pubmed.ncbi.nlm.nih.gov/21682698/)
+
+#. \ :sup:`†`\ Bonet M, Brizuela V, Abalos E, Cuesta C, Baguiya A, Chamillard M, et al. Frequency and management of maternal infection in health facilities in 52 countries (GLOSS): a 1-week inception cohort study. Lancet Glob Heal. 2020 May 1;8(5):e661–71. A (for 2020; https://linkinghub.elsevier.com/retrieve/pii/S2214109X20301091)
+
+#. \ :sup:`†`\ van den Akker T, de Vroome S, Mwagomba B, Ford N, van Roosmalen J. Peripartum Infections and Associated Maternal Mortality in Rural Malawi. Obstet Gynecol. 2011 Aug;118(2):266–72.  (for 2011; https://journals.lww.com/00006250-201108000-00010)
+
+Newborns
+********
+
+#. \ :sup:`†`\ Mkandawire M, Kaunda E. An Audit of Congenital Anomalies in the Neonatal Unit of Queen Elizabeth Central Hospital. One-Year Study Period: 1st November 2000 to 31st October 2001. Vol. 7, East and Central African Journal of Surgery. 2016 Jun.  (for 2016; https://www.ajol.info/index.php/ecajs/article/view/136658)
+
+#. \ :sup:`†`\ Kalanda BF, van Buuren S, Verhoeff FH, Brabin BJ. Anthropometry of Malawian live births between 35 and 41 weeks of gestation. Ann Hum Biol. 2005 Jan 9;32(5):639–49.  (for 2005; http://www.tandfonline.com/doi/full/10.1080/03014460500228675)
+
+#. \ :sup:`†`\ Fottrell E, Osrin D, Alcock G, Azad K, Bapat U, Beard J, et al. Cause-specific neonatal mortality: analysis of 3772 neonatal deaths in Nepal, Bangladesh, Malawi and India. Arch Dis Child - Fetal Neonatal Ed. 2015 Sep 13;100(5):F439–47.  (for 2015; http://fn.bmj.com/lookup/doi/10.1136/archdischild-2014-307636)
+
+#. \ :sup:`†`\ Kawaza K, Kinshella MLW, Hiwa T, Njirammadzi J, Banda M, Vidler M, et al. Assessing quality of newborn care at district facilities in Malawi. BMC Health Serv Res. 2020 Mar 18;20(1):1–11.  (for 2020; https://doi.org/10.1186/s12913-020-5065-2)
+
+Postnatal Women
+***************
+
+#. \ :sup:`†`\ Kalilani-Phiri, L. V. et al. (2010) ‘Prevalence of obstetric fistula in Malawi’, International Journal of Gynecology & Obstetrics. No longer published by Elsevier, 109(3), pp. 204–208. doi: 10.1016/j.ijgo.2009.12.019. (for 2010; https://www.sciencedirect.com/science/article/abs/pii/S0020729210000536)
+
+#. \ :sup:`†`\ Khaki JJ, Sithole L. Factors associated with the utilization of postnatal care services among malawian women. Malawi Med J. 2019;31(1):2–11. (for 2019; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6526341/)
+
+#. \ :sup:`†`\ Pindani M, Phiri C, Chikazinga W, Chilinda I, Botha J, Chorwe-Sungani G. Assessing the quality of postnatal care offered to mothers and babies by Midwivein Lilongwe Distric (for 2020; https://pubmed.ncbi.nlm.nih.gov/32787385/)
+
+#. \ :sup:`†`\ Adams YJ, Stommel M, Ayoola A, Horodynski M, Malata A, Smith B. Use and Evaluation of Postpartum Care Services in Rural Malawi. J Nurs Scholarsh. 2017 Jan 1;49(1):87–95.  (for 2017; https://pubmed.ncbi.nlm.nih.gov/27779814/)
+
+#. \ :sup:`†`\ Chimtembo LK, Maluwa A, Chimwaza A, Chirwa E, Pindani M. Assessment of quality of postnatal care services offered to mothers in Dedza district, Malawi. Open J Nurs. 2013 Jul 26;03(04):343–50. (for 2013; http://www.scirp.org/journal/ojn/)
+
+Contraception
+*************
+
+#. Polis CB, Bradley SEK, Bankole A, Onda T, Croft T, Singh S. Contraceptive Failure Rates in the Developing World: An Analysis of Demographic and Health Survey Data in 43 Countries. New York: Guttmacher Institute, 2016 (for 2016; http://www.guttmacher.org/report/contraceptive-failure-rates-in-developing-world)
+
+#. United Nations Department of Economic and Social Affairs Population Division. World Population Prospects 2019, Volume I: Comprehensive Tables (ST/ESA/SER.A/426).. 2019. (for 2019; https://population.un.org/wpp/)
+
+Conditions of Early Childhood
+#############################
+
+Undernutrition
+**************
+
+#. Isanaka, S., Grais, R. F., Briend, A. & Checchi, F. Estimates of the Duration of Untreated Acute Malnutrition in Children From Niger. Am. J. Epidemiol. 173, 932–940 (2011) (for 2011; https://doi.org/10.1093/aje/kwq436)
+
+#. Lenters, L., Wazny, K. & Bhutta, Z. A. Management of Severe and Moderate Acute Malnutrition in Children. in Disease Control Priorities, Third Edition (Volume 2): Reproductive, Maternal, Newborn, and Child Health 205–223 (The World Bank, 2016) (for 2016; https://doi.org/10.1596/978-1-4648-0348-2_ch11)
+
+#. Schoonees, A., Lombard, M. J., Musekiwa, A., Nel, E. & Volmink, J. Ready-to-use therapeutic food (RUTF) for home-based nutritional rehabilitation of severe acute malnutrition in children from six months to five years of age. Cochrane Database of Systematic Reviews 2019, (2019). (for 2019; https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD009000.pub3/full)
+
+#. Desyibelew, H. D., Bayih, M. T., Baraki, A. G. & Dadi, A. F. The recovery rate from severe acute malnutrition among under-five years of children remains low in sub-Saharan Africa. A systematic review and meta-analysis of observational studies. PLoS One 15, (2020) (for 2020; https://doi.org/10.1371/journal.pone.0229698)
+
+#. Bhutta, Z. A. et al. What works? Interventions for maternal and child undernutrition and survival. The Lancet 371, 417–440 (2008) (for 2008; https://doi.org/10.1016/S0140-6736(07)61693-6)
+
+#. Christian, P. et al. Risk of childhood undernutrition related to small-for-gestational age and preterm birth in low- and middle-income countries. Int. J. Epidemiol. 42, 1340–1355 (2013) (for 2013; https://doi.org/10.1093/ije/dyt109)
+
+Diarrhoea
+*********
+
+#. Wolf, J. et al. Impact of drinking water, sanitation and handwashing with soap on childhood diarrhoeal disease: updated meta-analysis and meta-regression. Trop. Med. Int. Heal. 23, 508–525 (2018) (for 2018; https://doi.org/10.1111/tmi.13051)
+
+#. Lamberti, L. M., Fischer Walker, C. L., Noiman, A., Victora, C. & Black, R. E. Breastfeeding and the risk for diarrhea morbidity and mortality. BMC Public Health 11, S15 (2011) (for 2011; https://doi.org/10.1186/1471-2458-11-S3-S15)
+
+#. Black, R. E. et al. Maternal and child undernutrition: global and regional exposures and health consequences. The Lancet 371, 243–260 (2008) (for 2008; https://doi.org/10.1016/S0140-6736(07)61690-0)
+
+#. Acácio, S. et al. The role of HIV infection in the etiology and epidemiology of diarrheal disease among children aged 0–59 months in Manhiça District, Rural Mozambique. Int. J. Infect. Dis. 73, 10–17 (2018) (for 2018; https://doi.org/10.1016/j.ijid.2018.05.012)
+
+#. Soares-Weiser, K., Bergman, H., Henschke, N., Pitan, F. & Cunliffe, N. Vaccines for preventing rotavirus diarrhoea: vaccines in use. Cochrane database Syst. Rev. 2019, (2019) (for 2019; https://doi.org/10.1002/14651858.CD008521.pub4)
+
+#. Levine, M. M. et al. Diarrhoeal disease and subsequent risk of death in infants and children residing in low-income and middle-income countries: analysis of the GEMS case-control study and 12-month GEMS-1A follow-on study. Lancet Glob. Heal. 8, e204–e214 (2020) (for 2019; https://doi.org/10.1016/S2214-109X(19)30541-8)
+
+#. Tickell, K. D. et al. Identification and management of Shigella infection in children with diarrhoea: a systematic review and meta-analysis. Lancet Glob. Heal. 5, e1235–e1248 (2017) (for 2017; https://doi.org/10.1016/S2214-109X(17)30392-3)
+
+#. Acácio, S. et al. Risk factors for death among children 0–59 months of age with moderate-to-severe diarrhea in Manhiça district, southern Mozambique. BMC Infect. Dis. 19, 322 (2019) (for 2019; https://doi.org/10.1186/s12879-019-3948-9)
+
+#. Black, R. E. et al. Maternal and child undernutrition: global and regional exposures and health consequences. The Lancet, 371, 9608 (2008) (for 2008; https://doi.org/10.1016/S0140-6736(07)61690-0)
+
+#. Platts-Mills, J. A. et al. Use of quantitative molecular diagnostic methods to assess the aetiology, burden, and clinical characteristics of diarrhoea in children in low-resource settings: a reanalysis of the MAL-ED cohort study. Lancet Glob. Heal. 6, e1309–e1318 (2018) (for 2018; https://doi.org/10.1016/S2214-109X(18)30349-8)
+
+#. Liu, J. et al. Use of quantitative molecular diagnostic methods to identify causes of diarrhoea in children: a reanalysis of the GEMS case-control study. Lancet 388, 1291–1301 (2016). (for 2016; https://doi.org/10.1016/S0140-6736(16)31529-X)
+
+#. K.L. Kotloff, D. Nasrin, W.C. Blackwelder, Y. Wu, T. Farag, S. Panchalingham, et al. The incidence, aetiology, and adverse clinical consequences of less severe diarrhoeal episodes among infants and children residing in low-income and middle-income countries: a 12-month case-control study as a follow-on to the Global Enteric Multicenter St. Lancet Glob Heal, 7 (2019), pp. e568-e584 (for 2019; https://doi.org/10.1016/S2214-109X(19)30076-2)
+
+#. Lazzerini, M. & Wanzira, H. Oral zinc for treating diarrhoea in children. Cochrane Database of Systematic Reviews 2016, CD005436 (John Wiley and Sons Ltd, 2016) (for 2016; https://doi.org/10.1002/14651858.CD005436.pub5)
+
+#. Bhandari, N., Bhan, M. K. & Sazawal, S. Mortality associated with acute watery diarrhea, dysentery and persistent diarrhea in rural north India. Acta Paediatr. Suppl. 381, 3–6 (1992). (for 1992; https://pubmed.ncbi.nlm.nih.gov/12286021/)
+
+Acute Lower Respiratory Infection
+*********************************
+
+#. Balk, D. S. et al. Lung ultrasound compared to chest X-ray for diagnosis of pediatric pneumonia: A meta-analysis. Pediatr. Pulmonol. 53, 1130–1139 (2018) (for 2018; https://doi.org/10.1002/ppul.24020)
+
+#. O, K. L. et al. Causes of severe pneumonia requiring hospital admission in children without HIV infection from Africa and Asia: the PERCH multi-country case-control study. (2019) (for 2019; https://doi.org/10.1016/S0140-6736(19)30721-4)
+
+#. Walker, C. L. F. et al. Global burden of childhood pneumonia and diarrhoea. Lancet (London, England) 381, 1405–1416 (2013) (for 2013; https://doi.org/10.1016/S0140-6736(13)60222-6)
+
+#. Jackson, S. et al. Risk factors for severe acute lower respiratory infections in children - a systematic review and meta-analysis. Croat. Med. J. 54, 110–121 (2013). (for 2013; https://doi.org/10.3325/cmj.2013.54.110)
+
+#. Hazir, T. et al. Chest radiography in children aged 2-59 months diagnosed with non-severe pneumonia as defined by World Health Organization: Descriptive multicentre study in Pakistan. Br. Med. J. 333, 629–631 (2006). (for 2006; https://doi.org/10.1136/bmj.38915.673322.80)
+
+Injuries
+########
+
+Road Traffic Injuries
+*********************
+
+#. Zafar, Syed Nabeel, Joseph K. Canner, Neeraja Nagarajan, Adam L. Kushner, Shailvi Gupta, Tu M. Tran, Neeraja Nagarajan, et al. 2018. “Road Traffic Injuries: Cross-Sectional Cluster Randomized Countrywide Population Data from 4 Low-Income Countries.” International Journal of Surgery 52 (April): 237–42.  (for 2018; https://doi.org/10.1016/j.ijsu.2018.02.034)
+
+#. World Health Organization. 2015. “Global Status Report on Road Safety 2015.” Geneva (for 2015; https://apps.who.int/iris/handle/10665/189242)
+
+#. Vos, Theo, Ryan M. Barber, Brad Bell, Amelia Bertozzi-Villa, Stan Biryukov, Ian Bolliger, Fiona Charlson, et al. 2015. “Global, Regional, and National Incidence, Prevalence, and Years Lived with Disability for 301 Acute and Chronic Diseases and Injuries in 188 Countries, 1990-2013: A Systematic Analysis for the Global Burden of Disease Study 2013.” The Lancet 386 (9995): 743–800. (for 2015; https://doi.org/10.1016/S0140-6736(15)60692-4)
+
+#. Tian, Hao, Liangxi Wang, Weiguo Xie, Chuanan Shen, Guanghua Guo, Jiaqi Liu, Chunmao Han, et al. 2018. “Epidemiologic and Clinical Characteristics of Severe Burn Patients: Results of a Retrospective Multicenter Study in China, 2011–2015.” Burns & Trauma 6: 2011–15.  (for 2018; https://doi.org/10.1186/s41038-018-0118-z)
+
+#. Stephan, Katharina, Stephan Huber, Sandra Häberle, Karl Georg Kanz, Volker Bühren, Martijn Van Griensven, Bernhard Meyer, Peter Biberthaler, Rolf Lefering, and Stefan Huber-Wagner. 2015. “Spinal Cord Injury - Incidence, Prognosis, and Outcome: An Analysis of the TraumaRegister DGU.” Spine Journal 15 (9): 1994–2001.  (for 2015; https://doi.org/10.1016/j.spinee.2015.04.041)
+
+#. Staton, Catherine A., Joao Ricardo Nickenig Vissoci, Nicole Toomey, Jihad Abdelgadir, Patricia Chou, Michael Haglund, Blandina T. Mmbaga, Mark Mvungi, and Monica Swahn. 2018. “The Impact of Alcohol among Injury Patients in Moshi, Tanzania: A Nested Case-Crossover Study.” BMC Public Health 18 (1).  (for 2018; https://doi.org/10.1186/s12889-018-5144-z)
+
+#. Sharma, B. R. 2008. “Road Traffic Injuries: A Major Global Public Health Crisis.” Public Health. (for 2008; https://doi.org/10.1016/j.puhe.2008.06.009)
+
+#. Salomon, Joshua A., Juanita A. Haagsma, Adrian Davis, Charline Maertens de Noordhout, Suzanne Polinder, Arie H. Havelaar, Alessandro Cassini, et al. 2015. “Disability Weights for the Global Burden of Disease 2013 Study.” The Lancet Global Health 3 (11): e712–23.  (for 2015; https://doi.org/10.1016/S2214-109X(15)00069-8)
+
+#. Saidi, Hassan, Ben Kasyoka Mutiso, and Julius Ogengo. 2014. “Mortality after Road Traffic Crashes in a System with Limited Trauma Data Capability.”  (for 2014; https://doi.org/10.1186/1752-2897-8-4)
+
+#. Ruhinda, G., P. Kyamanywa, D. Kitya, and F. Bajunirwe. 2008. “Abdominal Injury at Mbarara Regional Referral Hospital, Uganda.” East and Central African Journal of Surgery 13 (2): 29–36. (for 2008; https://www.ajol.info/index.php/ecajs/article/view/136648)
+
+#. Ranti, Babalola O, Yakub Saheed, Olakulehin O Adebayo, and Oluwadiya Kehinde. 2015. “Injury Pattern among Patients with Road Traffic Crash Presenting At a Tertiary Health Facility.” IOSR Journal of Dental and Medical Sciences (IOSR-JDMS) e-ISSN 14 (5): 71–75. (for 2015; https://d1wqtxts1xzle7.cloudfront.net/37861235/Injury_Pattern_among_Patients_with_Road_Traffic_Crash_WITH_RANTI.pdf?1433825858=&response-content-disposition=inline%3B+filename%3DInjury_Pattern_among_Patients_with_Road.pdf&Expires=1625501051&Signature=W1mrL2g7DeT8GDzHoXodB82loqKDIKjiqyKF3BMq-UTzoQfo33awfsqxmd3lxE1dLiKPmZTXyOXhuePIJ9MFSWcx3AeKVW-znsFn3QIsG8CUZXUI1Wg4TE9zFSN7f6Vcm7wgC~LsKptGOEMpD7gDbSOk6uSiShEdpH2Be7LxJvFQb8uOR68bwCSNN9bPD-81F3W8wcL1WYjWaCky7fa3SHCT4rtkaDN032NHez7IG1~T~K9uSmjIZuU8-uucS-0Oax39l1V2yELNMkdhv0Wy2QRgN9lWjUqJchtB5vF53wq3rxO0xP2STQNmSR580W8F92abRpePFSbniJsZsoumIA__&Key-Pair-Id=APKAJLOHF5GGSLRBV4ZA)
+
+#. Patel, Parth B., Christopher A. Staley, Samir Mehta, and Mara L. Schenker. 2019. “Unhelmeted Motorcycle Riders Have Increased Injury Burden: A Need to Revisit Universal Helmet Laws.” Journal of Surgical Research 242 (October): 177–82. (for 2019; https://doi.org/10.1016/j.jss.2019.03.023)
+
+#. Otieno, Tobias, John C. Woodfield, Peter Bird, and Andrew G. Hill. 2004. “Trauma in Rural Kenya.” Injury 35 (12): 1228–33.  (for 2004; https://doi.org/10.1016/j.injury.2004.03.013)
+
+#. OECD. 2006. “Speed Management.” Paris. (for 2006; https://www.itf-oecd.org/content/publication)
+
+#. Okugbo, Su, E Okoro, and Pe Irhibogbe. 2012. “Chest Trauma in a Regional Trauma Centre.” Journal of the West African College of Surgeons 2 (2): 91–101.  (for 2012; http://www.ncbi.nlm.nih.gov/pubmed/25452986)
+
+#. Mathers, Colin D., and Dejan Loncar. 2006. “Projections of Global Mortality and Burden of Disease from 2002 to 2030.” Edited by Jon Samet. PLoS Medicine 3 (11): 2011–30. (for 2006; https://doi.org/10.1371/journal.pmed.0030442)
+
+#. Malm, Sigrun, Maria Krafft, Anders Kullgren, Anders Ydenius, and Claes Tingvall. 2008. “Risk of Permanent Medical Impairment (RPMI) in Road Traffic Accidents.” In Annals of Advances in Automotive Medicine - 52nd Annual Scientific Conference, 52:93–100. (for 2008; https://pubmed.ncbi.nlm.nih.gov/19026226/)
+
+#. Lozano, Rafael, Mohsen Naghavi, Kyle Foreman, Stephen Lim, Kenji Shibuya, Victor Aboyans, Jerry Abraham, et al. 2012. “Global and Regional Mortality from 235 Causes of Death for 20 Age Groups in 1990 and 2010: A Systematic Analysis for the Global Burden of Disease Study 2010.” The Lancet 380 (9859): 2095–2128. (for 2012; https://doi.org/10.1016/S0140-6736(12)61728-0)
+
+#. Lee, Jung Soo, Yeo Hyung Kim, Jae Sung Yun, Sang Eun Jung, Choong Sik Chae, and Min Jae Chung. 2016. “Characteristics of Patients Injured in Road Traffic Accidents According to the New Injury Severity Score.” Annals of Rehabilitation Medicine 40 (2): 288–93. (for 2016; https://doi.org/10.5535/arm.2016.40.2.288)
+
+#. Lagarde, Emmanuel. 2007. “Road Traffic Injury Is an Escalating Burden in Africa and Deserves Proportionate Research Efforts.” PLoS Medicine 4 (6): 0967–71.  (for 2007; https://doi.org/10.1371/journal.pmed.0040170)
+
+#. Kasantikul, Vira, James V. Ouellet, and T. A. Smith. 2003. “Head and Neck Injuries in Fatal Motorcycle Collisions as Determined by Detailed Autopsy.” Traffic Injury Prevention 4 (3): 255–62. (for 2003; https://doi.org/10.1080/15389580309878)
+
+#. Hassan, Saidi. 2016. “Major Injury Cases in Nairobi: Characterization of Contexts, Outcomes and Injury Documentation.” University of Nairobi. (for 2016; https://www.semanticscholar.org/paper/Major-injury-cases-in-Nairobi%3A-characterization-of-Saidi/c45f4b3743f661492f601124577cedef0856bda6)
+
+#. Ibrahim, Nasiru A., Abdul Wahab O. Ajani, Ibrahim A. Mustafa, Rufai A. Balogun, Mobolaji A. Oludara, Olufemi E. Idowu, and Babatunde A. Solagberu. 2017. “Road Traffic Injury in Lagos, Nigeria: Assessing Prehospital Care.” Prehospital and Disaster Medicine. (for 2017; https://doi.org/10.1017/S1049023X17006410)
+
+#. Haagsma, Juanita A., Nicholas Graetz, Ian Bolliger, Mohsen Naghavi, Hideki Higashi, Erin C. Mullany, Semaw Ferede Abera, et al. 2016. “The Global Burden of Injury: Incidence, Mortality, Disability-Adjusted Life Years and Time Trends from the Global Burden of Disease Study 2013.” Injury Prevention 22 (1): 3–18.  (for 2016; https://doi.org/10.1136/injuryprev-2015-041616)
+
+#. Gennarelli, Thomas A., and Elaine Wodzin. 2006. “AIS 2005: A Contemporary Injury Scale.” Injury 37 (12): 1083–91. (for 2006; https://doi.org/10.1016/j.injury.2006.07.009)
+
+#. Gabbe, Belinda J, Ronan A Lyons, Pamela M Simpson, Frederick P Rivara, Shanthi Ameratunga, Suzanne Polinder, Sarah Derrett, and James E Harrison. 2016. “Disability Weights Based on Patient-Reported Data from a Multinational Injury Cohort.” Bull World Health Organ.  (for 2016; https://doi.org/10.2471/BLT.16.172155)
+
+#. Gabbe, Belinda J., Ronan A. Lyons, James E. Harrison, Frederick P. Rivara, Shanthi Ameratunga, Damien Jolley, Suzanne Polinder, and Sarah Derrett. 2014. “Validating and Improving Injury Burden Estimates Study: The Injury-VIBES Study Protocol.” Injury Prevention 20 (3).  (for 2014; https://doi.org/10.1136/injuryprev-2013-040936)
+
+#. Court-Brown, Charles M., Kate E. Bugler, Nicholas D. Clement, Andrew D. Duckworth, and Margaret M. McQueen. 2012. “The Epidemiology of Open Fractures in Adults. A 15-Year Review.” Injury.  (for 2012; https://doi.org/10.1016/j.injury.2011.12.007)
+
+#. Compton, R P. 2002. “Crash Risk of Alcohol Impaired Driving.” Proceedings of the 16th International Conference on Alcohol, Drugs and Traffic Safety, Montreal, 4–9 August 2002. (for 2002; https://www.semanticscholar.org/paper/CRASH-RISK-OF-ALCOHOL-IMPAIRED-DRIVING-Compton-Blomberg/eb8ca82c35989e10cb131fed2474073c10d90023)
+
+#. Champion, Howard R., John B. Holcomb, Mary M. Lawnick, Timothy Kelliher, Mary Ann Spott, Michael R. Galarneau, Donald H. Jenkins, et al. 2010. “Improved Characterization of Combat Injury.” The Journal of Trauma: Injury, Infection, and Critical Care 68 (5): 1139–50.  (for 2010; https://doi.org/10.1097/TA.0b013e3181d86a0d)
+
+#. Carroll, Christopher P, Joseph A Cochran, Janet P Price, Clare E Guse, and Marjorie C Wang. 2010. “The AIS-2005 Revision in Severe Traumatic Brain Injury: Mission Accomplished or Problems for Future Research?” In Annals of Advances in Automotive Medicine - 54th Annual Scientific Conference, 233–38. (for 2010; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3242550/)
+
+#. Biluts, Hagos, Mersha Abebe, Tsegazeab Laeke, Abenezer Tirsit, and Addisalem Belete. 2015. “PATTERN OF SPINE AND SPINAL CORD INJURIES IN TIKUR ANBESSA HOSPITAL, ETHIOPIA.” Ethiopian Medical Journal 53 (2): 75–82. (for 2015; http://www.ncbi.nlm.nih.gov/pubmed/26591295)
+
+#. Bhalla, K, J Harrison, S Shahraz, J Abraham, D Bartels, Pon Hsiu Yeh, Mohsen Naghavi, et al. 2013. “Burden of Injuries in Sub-Saharan Africa.” Department of Global Health and Population. Harvard School of Public Health. (for 2013; africa.globalburdenofinjuries.org)
+
+#. Baker, S. P., B. O’Neill, W. Haddon, and W. B. Long. 1974. “The Injury Severity Score: A Method for Describing Patients with Multiple Injuries and Evaluating Emergency Care.” Journal of Trauma 14 (3): 187–96. (for 1974; https://doi.org/10.1097/00005373-197403000-00001.)
+
+#. Adeloye, Davies, Jacqueline Y Thompson, Moses A Akanbi, Dominic Azuh, Victoria Samuel, Nicholas Omoregbe, and Charles K Ayo. 2016. “The Burden of Road Traffic Crashes, Injuries and Deaths in Africa: A Systematic Review and Meta-Analysis.” Bulletin of the World Health Organization 94 (7): 510-521A (for 2016; https://doi.org/10.2471/BLT.15.163121)
+
+#. Abbas, Alaa K., Ashraf F. Hefny, and Fikri M. Abu-Zidan. 2011. “Seatbelts and Road Traffic Collision Injuries.” World Journal of Emergency Surgery. (for 2011; https://doi.org/10.1186/1749-7922-6-18)
+
+Cardiometabolic Disorders
+#########################
+
+Diabetes Type 2, Hypertension, Stroke, Ischemic Heart Disease, Myocardial Infarction
+************************************************************************************
+
+#. Keates et al., Cardiovascular disease in Africa: epidemiological profile and challenges, Nature Reviews Cardiology 14, 273-293 (for 2017; https://www.nature.com/articles/nrcardio.2017.19#ref-CR113)
+
+#. Ntsekhe et al., Recent advances in the epidemiology, outcome, and prevention of myocardial infarction and stroke in sub-Saharan Africa, Heart 99:1230-1235 (for 2013; https://heart.bmj.com/content/heartjnl/99/17/1230.full.pdf)
+
+#. Prynn et al., Perspectives on Disability and Non-Communicable Diseases in Low- and Middle-Income Countries, with a Focus on Stroke and Dementia, Int. J. Environ. Res. Public Health 16(18), 3488 (for 2019; https://www.mdpi.com/1660-4601/16/18/3488)
+
+#. Holden et al., The incidence of type 2 diabetes in the United Kingdom from 1991 to 2010, Diabetes Obes Metab. 15(9): 844-52 (for 2013; https://dom-pubs.onlinelibrary.wiley.com/doi/10.1111/dom.12123)
+
+#. Bellou et al., Risk factors for type 2 diabetes mellitus: An exposure-wide umbrella review of meta-analyses, PLoS ONE 13(3): e0194127 (for 2018; https://doi.org/10.1371/journal.pone.0194127)
+
+#. Pugliese et al., Health Survey for England hypertension analysis and local prevalence models (for 2016; https://fingertips.phe.org.uk/documents/Hypertension-model-2016-Technical-Document-v2.5 (2).docx)
+
+#. Coyle et al., Variation in the diagnosis and control of hypertension is not explained by conventional variables: Cross-sectional database study in English general practice, PloS ONE 14(1): e0210657 (for 2019; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6328229/)
+
+#. Andriolo et al., Traditional risk factors for essential hypertension: analysis of their specific combinations in the EPIC-Potsdam cohort, Nature Scientific Reports 9:1501 (for 2019; https://www.nature.com/articles/s41598-019-38783-5/)
+
+#. Chen et al., Interactions of Genes and Sodium Intake on the Development of Hypertension: A Cohort-Based Case-Control Study, Int J Environ Res Public Health 15(6): 1110 (for 2018; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6025596/)
+
+#. Pajak et al., Binge Drinking and Blood Pressure: Cross-Sectional Results of the HAPIEE Study, PLoS ONE 8(6): e65856 (for 2013; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3676342/)
+
+#. Meng et al., Depression increases the risk of hypertension incidence: a meta-analysis of prospective cohort studies, J Hypertens. 30(5): 842-51 (for 2012; https://pubmed.ncbi.nlm.nih.gov/22343537/)
+
+#. Derakhshan et al., Different Combinations of Glucose Tolerance and Blood Pressure Status and Incident Diabetes, Hypertension, and Chronic Kidney Disease, Journal of the American Heart Association 5(8): e003917 (for 2016; https://www.ahajournals.org/doi/10.1161/JAHA.116.003917)
+
+#. Judge et al., Inequalities in rates of renal replacement therapy in England: does it matter where you are or where you live? Nephrology Dialysis Transplanation 27(4): 1598-1607 (for 2012; https://doi.org/10.1093/ndt/gfr466)
+
+#. Weldegiorgis et al., Socioeconomic disadvantage and the risk of advanced chronic kidney disease: results from a cohort study with 1.4 million participants, Nephrology Dialysis Transplantation 35(9): 1562-1570 (for 2020; https://doi.org/10.1093/ndt/gfz059)
+
+#. Herrington et al., Body-mass index and risk of advanced chronic kidney disease: Prospective analyses from a primary care cohort of 1.4 million adults in England, PLoS ONE 12(3): 30173515 (for 2017; https://doi.org/10.1371/journal.pone.0173515)
+
+#. Bello et al., Socioeconomic status and chronic kidney disease at presentation to a renal service in the United Kingdom, Clin J Am Soc Nephrol. 3(5): 1316-1323 (for 2008; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2518794/)
+
+#. Hossain et al., Social deprivation and prevalence of chronic kidney disease in the UK: workload implications for primary care, QJM 105(2): 167-75 (for 2012; https://pubmed.ncbi.nlm.nih.gov/21964722/)
+
+#. Akrawi et al., End stage renal disease risk and neighbourhood deprivation: A nationwide cohort study in Sweden, European Journal of Internal Medicine 25(9): 853-59 (for 2014; https://doi.org/10.1016/j.ejim.2014.09.016)
+
+#. Fored et al., Socio‐economic status and chronic renal failure: a population‐based case‐control study in Sweden, Nephrology Dialysis Transplantation 18(1): 82-88 (for 2013; https://doi.org/10.1093/ndt/18.1.82)
+
+#. Kop et al., Longitudinal Association of Depressive Symptoms with Rapid Kidney Function Decline and Adverse Clinical Renal Disease Outcomes, Clin J Am Soc Nephrol. 6(4): 834-44 (for 2011; https://dx.doi.org/10.2215%2FCJN.03840510)
+
+#. Lipworth et al., Incidence and Predictors of End Stage Renal Disease among Low-Income Blacks and Whites, PLoS ONE 7(10): e48407 (for 2012; https://doi.org/10.1371/journal.pone.0048407)
+
+#. Witte et al., Socioeconomic deprivation and mode-specific outcomes in patients with chronic heart failure, Heart 104: 993-998 (for 2018; http://dx.doi.org/10.1136/heartjnl-2017-312814)
+
+#. Jousilahti et al., Body weight, cardiovascular risk factors, and coronary mortality. 15-year follow-up of middle-aged men and women in eastern Finland, Circulation 93(7): 1372-9 (for 1996; https://doi.org/10.1161/01.cir.93.7.1372)
+
+#. Sandvik et al., Physical Fitness as a Predictor of Mortality among Healthy, Middle-Aged Norwegian Men, N Engl J Med 328: 533-37 (for 1993; https://www.nejm.org/doi/10.1056/NEJM199302253280803)
+
+#. Strazzullo et al., Salt intake, stroke, and cardiovascular disease: meta-analysis of prospective studies, BMJ 339: b4567 (for 2009; https://doi.org/10.1136/bmj.b4567)
+
+#. Emberson et al., Alcohol intake in middle age and risk of cardiovascular disease and mortality: accounting for intake variation over time, Am J Epidemiol. 161(9): 856-63 (for 2005; https://doi.org/10.1093/aje/kwi111)
+
+#. Kilander et al., Education, lifestyle factors and mortality from cardiovascular disease and cancer. A 25-year follow-up of Swedish 50-year-old men, Int J Epidemiol. 30(5): 1119-1126 (for 2001; https://doi.org/10.1093/ije/30.5.1119)
+
+#. Asia Pacific Cohort Studies Collaboration, The Effects of Diabetes on the Risks of Major Cardiovascular Diseases and Death in the Asia-Pacific Region, Diabetes Care 26(2): 360-66 (for 2003; https://doi.org/10.2337/diacare.26.2.360)
+
+#. Angelantonio et al., Chronic kidney disease and risk of major cardiovascular disease and non-vascular mortality: prospective population based cohort study, BMJ 341: c4986 (for 2010; https://doi.org/10.1136/bmj.c4986)
+
+#. Fatoye et al., Real-world incidence and prevalence of low back pain using routinely collected data, Rheumatology International 39: 619-626 (for 2019; https://link.springer.com/article/10.1007/s00296-019-04273-0)
+
+#. Docking et al., Epidemiology of back pain in older adults: prevalence and risk factors for back pain onset, Rheumatology (Oxford) 50(9): 1645-53 (for 2011; https://doi.org/10.1093/rheumatology/ker175)
+
+#. Heuch et al., Body Mass Index as a Risk Factor for Developing Chronic Low Back Pain: A Follow-up in the Nord-Trøndelag Health Study, Spine 38(2): 133-139 (for 2013; https://doi.org/10.1097/BRS.0b013e3182647af2)
+
+#. Shiri et al., The Association between Smoking and Low Back Pain: A Meta-analysis, Am J of Med. 123(1): 87.e7-87.e35 (for 2010; https://doi.org/10.1016/j.amjmed.2009.05.028)
+
+#. Pozzobon et al., Is there an association between diabetes and neck and back pain? A systematic review with meta-analyses, PLoS ONE 14(2): e0212030 (for 2019; https://doi.org/10.1371/journal.pone.0212030)
+
+#. Bae et al., Association between Hypertension and the Prevalence of Low Back Pain and Osteoarthritis in Koreans: A Cross-Sectional Study, PLoS ONE 10(9): e0138790 (for 2015; https://doi.org/10.1371/journal.pone.0138790)
+
+#. Wang et al., Increased risk of strokes in patients with chronic low back pain (CLBP): A nationwide population-based cohort study, Clin Neurol and Neuros. 192: 105725 (for 2020; https://doi.org/10.1016/j.clineuro.2020.105725)
+
+Core Architecture
+#################
+
+Lifestyle
+*********
+
+#. Abas MA, Broadhead JC. Depression and anxiety among women in an urban setting in Zimbabwe. Psychological Medicine Jan 1997 Volume: 27 Issue: 1 Pages: 59-71 DOI: 10.1017/S0033291796004163 (for 1997; https://pubmed.ncbi.nlm.nih.gov/9122309/)
+
+Other Non-Communicable Conditions
+#################################
+
+Depression
+**********
+
+#. Brandt R. The mental health of people living with HIV/AIDS in Africa: a systematic review, African Journal of AIDS Research 2009, 8:2, 123-133, DOI: 10.2989/AJAR.2009.8.2.1.853 (for 2009; https://pubmed.ncbi.nlm.nih.gov/25875564/)
+
+#. Cipriani et al. Comparative efficacy and acceptability of 21 antidepressant drugs for the acute treatment of adults with major depressive disorder: a systematic review and network meta-analysis. Lancet 2018; 391: 1357–66 (for 2018)
+
+#. Cohen, MH et al. Prevalence and Predictors of Posttraumatic Stress Disorder and Depression in HIV-Infected and At-Risk Rwandan Women. J Womens Health 2009, Volume: 18 Issue: 11 Pages: 1783-1791 DOI: 10.1089/jwh.2009.1367 (for 2009; https://pubmed.ncbi.nlm.nih.gov/19951212/)
+
+#. Dunner DL et al. Primary Care Companion. Preventing recurrent depression: long term treatment for major depressive disorder. J Clinical Psychiatry 2007 9(3). (for 2007)
+
+#. Faria V, et al. Do You Believe It? Verbal Suggestions Influence the Clinical and Neural Effects of Escitalopram in Social Anxiety Disorder: A Randomized Trial. eBiomedicine (for 2017; https://doi.org/10.1016/j.ebiom.2017.09.031)
+
+#. Furukawa TA et al. Placebo response rates in antidepressant trials: a systematic review of published and unpublished double-blind randomised controlled studies. Lancet Psychiatry 2016; 3: 1059–66 (for 2016)
+
+#. Furukawa TA et al Initial severity of major depression and efficacy of new generation antidepressants: individual participant data meta-analysis. Acta Psychiatr Scand 2018: 137: 450–458 (for 2018)
+
+#. Grimsrud a et al. The Association between Hypertension and Depression and Anxiety Disorders: Results from a Nationally-Representative Sample of South African Adults. PLOS ONE 2009 4(5): e5552 DOI: 10.1371/journal.pone.0005552 (for 2009; https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0005552)
+
+#. Hengartner M. Methodological Flaws, Conflicts of Interest, and Scientific Fallacies: Implications for the Evaluation of Antidepressants’ Efficacy and Harm. Fronters in Psychiatry 2017 doi: 10.3389/fpsyt.2017.00275 (for 2017; https://pubmed.ncbi.nlm.nih.gov/29270136/)
+
+#. Keller MB, Keller RJ. Implications of Failing to Achieve Successful Long-Term Maintenance Treatment of Recurrent Unipolar Major Depression. Biol Psychiatry 1998;44:348–360 (for 1998)
+
+#. Kirsch I. Antidepressants and the Placebo Effect. Zeitschrift fur Psychologie 2014; Vol. 222(3):128–134 (for 2014)
+
+#. Leucht C, Huhn M, Leucht S.  Amitriptyline versus placebo for major depressive disorder. Cochrane Database of Systematic Reviews 2012, Issue 12. Art. No.: CD009138.  DOI: 10.1002/14651858.CD009138.pub2 (for 2012; https://www.cochranelibrary.com)
+
+#. Marwick K et al. Prevalence of depression and anxiety disorders in HIV-positive outpatients in rural Tanzania. AIDS Care 2010 22(4): 415-419 DOI: 10.1080/09540120903253981 (for 2010; https://pubmed.ncbi.nlm.nih.gov/20131127/)
+
+#. Salomon et al. Common values in assessing health outcomes from disease and injury: disability weights measurement study for the Global Burden of Disease Study 2010. Lancet 2012; 380: 2129–43. (for 2012)
+
+#. Todd C et al. The onset of common mental disorders in primary care attenders in Harare, Zimbabwe Psychological Medicine, 1999, 29, 97-104. (for 1999)
+
+#. World Health Organization, Global Health Observatory data repository. (for 2021; http://apps.who.int/gho/data/node.main.MHSUICIDE5YEARAGEGROUPS?lang=en)
+
+#. Barbui et al. Efficacy of psychosocial interventions for mental health outcomes in low-income and middle-income countries: an umbrella review. Lancet Psychiatry 2020; 7: 162–72 (for 2020)
+
+Epilepsy
+********
+
+#. Ba-Diop et al. Epidemiology, causes, and treatment of epilepsy in sub-Saharan Africa. Lancet Neurol 2014; 13: 1029–44 2014 (for 2014)
+
+#. Dent et al. Prevalence of Active Epilepsy in a Rural Area in South Tanzania: A Door-to-Door Survey Epilepsia 2005, 46(12):1963–1969. (for 2005)
+
+#. Faught et al. Patient characteristics and treatment patterns in patients with newly diagnosed epilepsy: A US database analysis. Epilepsy & Behavior 2018; 85 37–44. (for 2018)
+
+#. GBD 2016 Epilepsy Collaborators. Global, regional, and national burden of epilepsy, 1990–2016: a systematic analysis for the Global Burden of Disease Study 2016 Lancet Neurology 18: 357–75 2019 (for 2019)
+
+#. Jost et al. Interventional programs to improve therapeutic management of people with epilepsy in low- and middle-income countries Epilepsy & Behavior 2018; 337-345 DOI: 10.1016/j.yebeh.2018.01.0112018 (for 2018; https://pubmed.ncbi.nlm.nih.gov/29398627/)
+
+#. Ngugi 2012 Prevalence, incidence and mortality of epilepsy in four health and demographic surveillance sites in subSaharan Africa. PhD thesis, London School of Hygiene & Tropical Medicine. (for 2012; https://researchonline.lshtm.ac.uk/682448/1/558374.pdf)
+
+#. Shorvon et al. Antiepileptic drug treatment of generalized tonic–clonic seizures: An evaluation of regulatory data and five criteria for drug selection. Epilepsy & Behavior 2018; 82 91–103. (for 2018)
+
+#. Berg et al. Remission of Epilepsy after Two Drug Failures in Children: A Prospective Study. Ann Neurol 2009;65:510–519. (for 2009)
+
+#. Chisholm, D., and WHO-CHOICE. 2005. “Cost-Effectiveness of First-Line Antiepileptic Drug Treatments in the Developing World: A Population-Level Analysis.” Epilepsia 46 (5): 751–59. (for 2005)
+
+#. Jette et al. Saving lives by treating epilepsy in developing countries. Neurology 2014;82:552–553 (for 2014)
+
+#. Kwan et al. Early identification of refractory epilepsy. NEJM 2000 342: 314-9. (for 2000)
+
+#. Newton et al. Epilepsy in poor regions of the world. Lancet 2012; 380: 1193–1201. (for 2012)
+
+#. Schiller et. Quantifying the response to antiepileptic drugs: effect of past treatment history. Neurology 2008;70:54–65. (for 2008)
+
+#. Semah et al. Is the underlying cause of epilepsy a major risk factor for its recurrence ? Neurology 1998;51: 1256-1262 (for 1998)
+
+Cancers
+#######
+
+Cancers
+*******
+
+#. Riffenburgh et al. Survival Patterns of Cancer Patients. Cancer 2001; 91:2469–75. (for 2001)
+
+#. Cancer Research UK - Statistics by cancer type (for 2020; https://www.cancerresearchuk.org/health-professional/cancer-statistics/statistics-by-cancer-type/)
+
+#. Stefan et al. Cancer Care in Africa: An Overview of Resources Volume 1, Issue 1, October 2015.. J Glob Oncol 1:30-36.  (for 2015)
+
+#. Parkin M, Hämmer L, Ferlay J, Kantelhardt EJ. Cancer in Africa 2018: The role of infections. Int. J. Cancer 2019 (for 2018)
+
+#. Parkin M et al. Part I: Cancer in Indigenous Africans—burden, distribution, and trends. Lancet Oncol 2008; 9: 683–92 (for 208)
+
+#. Carla Carrilho et al. Cancer incidence in Mozambique in 2015–2016: data from the Maputo Central Hospital Cancer Registry. European Journal of Cancer Prevention 2019, 28:373–376 (for 2019)
+
+#. Cancer treatment guidelines for SSA (for 2021; https://www.nccn.org/harmonized/)
+
+#. Parkin DM et al. Cancer in Sub-Saharan Africa. International Agency for Research on Cancer Lyon, France 2018 (for 2018)
+
+#. van der Werf MJ et al. Quantification of clinical morbidity associated with schistosome infection in sub-Saharan Africa. Acta Tropica 86 (2003) 125_/139 (for 2003)
+
+#. Rambau et al. Infectious Agents and Cancer 2013, 8:19 Schistosomiasis and urinary bladder cancer in North Western Tanzania: a retrospective review of 185 patients (for 2013; http://www.infectagentscancer.com/content/8/1/19)
+
+#. Tadao Kakizoe, Lorelei A. Mucci, Peter C. Albertsen & Michael J. Droller.  (2008) Screening for bladder cancer: Theoretical and practical issues in considering the treated and untreated natural history of the various forms of the disease, Scandinavian Journal of Urology and Nephrology, 42:sup218, 191-212, DOI: 10.1080/03008880802284936 (for 2008)
+
+#. Foresman et al. Bladder Cancer: Natural History, Tumor Markers, and Early Detection Strategies. Seminars in Surgical Oncology 1997; 13:299–306 (for 1997)
+
+#. Martini et al. The natural history of untreated muscle-invasive bladder cancer. BJU Int 2020; 125: 270–275. (for 2020)
+
+#. E. De Berardinis et al. T1G3 high-risk NMIBC (non-muscle invasive bladder cancer): conservative treatment versus immediate cystectomy. Int Urol Nephrol (2011) 43:1047–1057 (for 2011)
+
+#. Antoni S et al. Bladder Cancer Incidence and Mortality: A Global Overview and Recent Trends. DOI: 10.1016/j.eururo.2016.06.010 European urology , 2017, Vol.71(1), p.96-108 (for 2017)
+
+#. Cumberbatch MG et al. The Role of Tobacco Smoke in Bladder and Kidney Carcinogenesis: A Comparison of Exposures and Meta-analysis of Incidence and Mortality Risks. DOI: 10.1016/j.eururo.2015.06.042 European urology , 2016, Vol.70(3), p.458-466 (for 2016; https://pubmed.ncbi.nlm.nih.gov/26149669/)
+
+#. Kingham TP et al. Treatment of cancer in sub-Saharan Africa. Lancet Oncol 2013; 14: e158–67 (for 2013)
+
+#. Johnstone et al. Survival of Patients With Untreated Breast Cancer J. Surg. Oncol. 2000:73:273–277.  (for 2000)
+
+#. Foerster et al. Breast Cancer Research (2019) 21:93 https://doi.org/10.1186/s13058-019-1174-4. Inequities in breast cancer treatment in sub-Saharan Africa: findings from a prospective multi-country observational study (for 2019; https://doi.org/10.1186/s13058-019-1174-4)
+
+#. Sutter et al. Surgical Management of Breast Cancer in Africa: A Continent-Wide Review of Intervention Practices, Barriers to Care, and Adjuvant Therapy. Glob Oncol Volume 3, Issue 2, April 2017 (for 2017)
+
+#. Koo et al. Typical and atypical presenting symptoms of breast cancer and their associations with diagnostic intervals: Evidence from a national audit of cancer diagnosis. Cancer Epidemiology (for 2017)
+
+#. Kastelein et al. Surveillance in patients with long-segment Barrett’s oesophagus: a cost-effectiveness analysis. Gut 2015;64: 864–871. (for 2015)
+
+#. Kauppila et al. Prognosis of oesophageal adenocarcinoma and squamous cell carcinoma following surgery and no surgery in a nationwide Swedish cohort study. BMJ Open 2018;8:e021495. doi:10.1136/bmjopen-2018-021495 (for 2018; https://bmjopen.bmj.com/content/8/5/e021495)
+
+#. Mannell A, Murray W. Oesophageal cancer in South Africa. A review of 1926 cases. Cancer 1989;64:2604–8. (for 1989)
+
+#. Sun X, Zhao D, Liu Y, Liu Y, Yuan Z, Wang J, et al. (2017) The long-term spatialtemporal trends and burden of esophageal cancer in one high-risk area: A population-registered study in Feicheng, China. PLoS ONE 12(3): e0173211. doi:10.1371/journal.pone.0173211 (for 2017; https://pubmed.ncbi.nlm.nih.gov/28267769/)
+
+#. Verbeek et al. Surveillance and Follow-Up Strategies in Patients With High-Grade Dysplasia in Barrett’s Esophagus: A Dutch Population-Based Study. Am J Gastroenterol 2012; 107:534–542; doi: 10.1038/ajg.2011.459. (for 2012; https://pubmed.ncbi.nlm.nih.gov/22270082/)
+
+#. Popiolek et al. Natural History of Early, Localized Prostate Cancer: A Final Report from Three Decades of Follow-up. EUROPEAN UROLOGY 6 3 (2 01 3 ) 4 2 8 – 4 3 5 (for 2013)
+
+#. Roman Gulati et al. What If I Don't Treat My PSA-Detected Prostate Cancer? Answers from Three Natural History Models. Cancer Epidemiol Biomarkers Prev; 20(5); 740–50. 2011 (for 2011)
+
+#. Cancer research UK - prostate cancer (for 2020; https://www.cancerresearchuk.org/health-professional/cancer-statistics/statistics-by-cancer-type/prostate-cancer/survival#heading-Zero)
+
+#. Adeloye D, David RA, Aderemi AV, Iseolorunkanmi A, Oyedokun A, Iweala EEJ, et al. (2016) An Estimate of the Incidence of Prostate Cancer in Africa: A Systematic Review and Meta-Analysis. PLoS ONE 11(4): e0153496. doi:10.1371/journal.pone.0153496 (for 2016; https://pubmed.ncbi.nlm.nih.gov/27073921/)
+
+Contraception, Pregnancy and Labour
+###################################
+
+Pregnancy
+*********
+
+#. Senkoro EE, Mwanamsangu AH, Chuwa FS, Msuya SE, Mnali OP, Brown BG, et al. Frequency, Risk Factors, and Adverse Fetomaternal Outcomes of Placenta Previa in Northern Tanzania. J Pregnancy. 2017;2017.  (for 2017; https://pubmed.ncbi.nlm.nih.gov/28321338/)
+
+#. Dellicour S, Aol G, Ouma P, Yan N, Bigogo G, Hamel MJ, et al. Weekly miscarriage rates in a community-based prospective cohort study in rural western Kenya. BMJ Open. 2016;6(4). (for 2016; https://bmjopen.bmj.com/content/6/4/e011088)
+
+#. Calvert C, Owolabi OO, Yeung F, Pittrof R, Ganatra B, Tunçalp Ö, et al. The magnitude and severity of abortion-related morbidity in settings with limited access to abortion services: a systematic review and meta-regression. BMJ Glob Heal. 2018 Jun 29;3(3):e000692.  (for 2018; http://gh.bmj.com/lookup/doi/10.1136/bmjgh-2017-000692)
+
+#. Noubiap JJ, Bigna JJ, Nyaga UF, Jingi AM, Kaze AD, Nansseu JR, et al. The burden of hypertensive disorders of pregnancy in Africa: A systematic review and meta‐analysis. J Clin Hypertens. 2019 Apr 7;21(4):479–88.  (for 2019; https://onlinelibrary.wiley.com/doi/abs/10.1111/jch.13514)
+
+#. Onwughara CE, Moodley D, Valashiya N, Sebitloane M. Preterm prelabour rupture of membranes (PPROM) and pregnancy outcomes in association with HIV-1 infection in KwaZulu-Natal, South Africa. BMC Pregnancy Childbirth. 2020 Apr 9;20(1):1–8.  (for 2020; https://doi.org/10.1186/s12884-020-02911-1)
+
+#. Takai IU, Sayyadi BM, Galadanci HS. Antepartum Hemorrhage: A Retrospective Analysis from a Northern Nigerian Teaching Hospital. Int J Appl Basic Med Res. 2017;7(2):112. (for 2017; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5441258/)
+
+#. Yang Q, Wen SW, Oppenheimer L, Chen XK, Black D, Gao J, et al. Association of caesarean delivery for first birth with placenta praevia and placental abruption in second pregnancy. BJOG An Int J Obstet Gynaecol. 2007 May;114(5):609–13. A (for 2007; https://pubmed.ncbi.nlm.nih.gov/17355267/)
+
+#. Baingana RK, Enyaru JK, Tjalsma H, Swinkels DW, Davidsson L. The aetiology of anaemia during pregnancy: A study to evaluate the contribution of iron deficiency and common infections in pregnant Ugandan women. Public Health Nutr. 2015;18(8):1423–35.  (for 2015; https://pubmed.ncbi.nlm.nih.gov/25222882/)
+
+#. Wagner KS, Ronsmans C, Thomas SL, Calvert C, Adler A, Ganaba R, et al. Women who experience obstetric haemorrhage are at higher risk of anaemia, in both rich and poor countries. Vol. 17, Tropical Medicine and International Health. John Wiley & Sons, Ltd; 2012. p. 9–22.  (for 2012; https://onlinelibrary.wiley.com/doi/full/10.1111/j.1365-3156.2011.02883.x)
+
+#. Santos S, Voerman E, Amiano P, Barros H, Beilin LJ, Bergström A, et al. Impact of maternal body mass index and gestational weight gain on pregnancy complications: an individual participant data meta-analysis of European, North American and Australian cohorts. BJOG An Int J Obstet Gynaecol. 2019 Jul 1;126(8):984–95.  (for 2019; https://obgyn.onlinelibrary.wiley.com/doi/full/10.1111/1471-0528.15661)
+
+#. Laine K, Murzakanova G, Sole KB, Pay AD, Heradstveit S, Raïsänen S. Prevalence and risk of pre-eclampsia and gestational hypertension in twin pregnancies: A population-based register study. BMJ Open. 2019 Jul 1;9(7).  (for 2019; https://pubmed.ncbi.nlm.nih.gov/31278106/)
+
+#. Meazaw MW, Chojenta C, Muluneh MD, Loxton D. Systematic and meta-analysis of factors associated with preeclampsia and eclampsia in sub-Saharan Africa. PLoS One. 2020 Aug 1;15(8 August):e0237600. (for 2020; https://doi.org/10.1371/journal.pone.0237600)
+
+#. Bartsch E, Medcalf KE, Park AL, Ray JG, Al-Rubaie ZTA, Askie LM, et al. Clinical risk factors for pre-eclampsia determined in early pregnancy: Systematic review and meta-analysis of large cohort studies. BMJ. 2016 Apr 19;353.  (for 2016; http://dx.doi.org/10.1136/bmj.i1753)
+
+#. Laelago T, Yohannes T, Tsige G. Determinants of preterm birth among mothers who gave birth in East Africa: Systematic review and meta-analysis. Vol. 46, Italian Journal of Pediatrics. BioMed Central Ltd.; 2020. p. 1–14.  (for 2020; https://doi.org/10.1186/s13052-020-0772-1)
+
+#. Tabatabaee HR, Zahedi A, Etemad K, Valadbeigi T, Mahdavi S, Enayatrad M, et al. Risk of stillbirth in women with gestational diabetes and high blood pressure. Iran J Public Health. 2020;49(4):773–81. (for 2020; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7283174/)
+
+#. Xiong T, Mu Y, Liang J, Zhu J, Li X, Li J, et al. Hypertensive disorders in pregnancy and stillbirth rates: A facility-based study in China. Bull World Health Organ. 2018;96(8):531–9.  (for 2018; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6083384/)
+
+Care of Women During Pregnancy
+******************************
+
+#. Peña-Rosas JP, De-Regil LM, Garcia-Casal MN, Dowswell T. Daily oral iron supplementation during pregnancy. Vol. 2015, Cochrane Database of Systematic Reviews. John Wiley and Sons Ltd; 2015. p. 1–527.  (for 2015; https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD004736.pub5/full)
+
+#. Abalos E, Duley L, Steyn DW, Gialdini C. Antihypertensive drug therapy for mild to moderate hypertension during pregnancy. Cochrane Database Syst Rev. 2018 Oct 1;2018(10).  (for 2018; http://doi.wiley.com/10.1002/14651858.CD002252.pub4)
+
+#. Pollard SL, Mathai M, Walker N. Estimating the impact of interventions on cause-specific maternal mortality: A Delphi approach. Vol. 13, BMC Public Health. BioMed Central; 2013. p. S12. (for 2013; https://bmcpublichealth.biomedcentral.com/articles/10.1186/1471-2458-13-S3-S12)
+
+#. Hofmeyr GJ, Lawrie TA, Atallah ÁN, Torloni MR. Calcium supplementation during pregnancy for preventing hypertensive disorders and related problems. Vol. 2018, Cochrane Database of Systematic Reviews. John Wiley and Sons Ltd; 2018.  (for 2018; https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD001059.pub5/full)
+
+#. Ota E, Hori H, Mori R, Tobe-Gai R, Farrar D. Antenatal dietary education and supplementation to increase energy and protein intake. Vol. 2015, Cochrane Database of Systematic Reviews. John Wiley and Sons Ltd; 2015.  (for 2015; https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD000032.pub3/full)
+
+#. Karnjanapiboonwong A, Anothaisintawee T, Chaikledkaew U, Dejthevaporn C, Attia J, Thakkinstian A. Diagnostic performance of clinic and home blood pressure measurements compared with ambulatory blood pressure: a systematic review and meta-analysis. BMC Cardiovasc Disord. 2020 Dec 1;20(1):1–17. (for 2020; https://doi.org/10.1186/s12872-020-01736-2)
+
+#. Gangaram R, Ojwang PJ, Moodley J, Maharaj D. The accuracy of urine dipsticks as a screening test for proteinuria in hypertensive disorders of pregnancy. Hypertens Pregnancy. 2005 Jan 1;24(2):117–23. (for 2005; https://europepmc.org/article/med/16036396)
+
+Labour
+******
+
+#. Duffy CR, Moore JL, Saleem S, Tshefu A, Bose CL, Chomba E, et al. Malpresentation in low- and middle-income countries: Associations with perinatal and maternal outcomes in the Global Network. Acta Obstet Gynecol Scand. 2019 Mar 1;98(3):300–8.  (for 2019; https://pubmed.ncbi.nlm.nih.gov/30414270/)
+
+#. Delafield R, Pirkle CM, Dumont A. Predictors of uterine rupture in a large sample of women in Senegal and Mali: cross-sectional analysis of QUARITE trial data. BMC Pregnancy Childbirth. 2018;18(1):432. (for 2018; https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-018-2064-y)
+
+#. Toh-Adam R, Srisupundit K, Tongsong T. Short stature as an independent risk factor for cephalopelvic disproportion in a country of relatively small-sized mothers. Arch Gynecol Obstet. 2012 Jun;285(6):1513–6. (for 2012; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3351595/)
+
+#. Tsvieli O, Sergienko R, Sheiner E. Risk factors and perinatal outcome of pregnancies complicated with cephalopelvic disproportion: A population-based study. Arch Gynecol Obstet. 2012 Apr;285(4):931–6.  (for 2012; https://pubmed.ncbi.nlm.nih.gov/21932085/)
+
+#. Seaward PG, Hannah ME, Myhr TL, Farine D, Ohlsson A, Wang EE, et al. International multicentre term prelabor rupture of membranes study: Evaluation of predictors of clinical chorioamnionitis and postpartum fever in patients with prelabor rupture of membranes at term. In: American Journal of Obstetrics and Gynecology. Mosby Inc.; 1997. p. 1024–9. A (for 1997; https://pubmed.ncbi.nlm.nih.gov/9396886/)
+
+#. Ende HB, Lozada MJ, Chestnut DH, Osmundson SS, Walden RL, Shotwell MS, et al. Risk Factors for Atonic Postpartum Hemorrhage: A Systematic Review and Meta-analysis. Obstet Gynecol. 2021 Feb 1;137(2):305–23.  (for 2021; https://pubmed.ncbi.nlm.nih.gov/33417319/)
+
+#. Begley, C. M. et al. (2019) ‘Active versus expectant management for women in the third stage of labour’, Cochrane Database of Systematic Reviews. John Wiley & Sons, Ltd, (2). doi: 10.1002/14651858.CD007412.pub5. (for 2019; https://pubmed.ncbi.nlm.nih.gov/30754073/)
+
+#. Roberts, D. et al. (2017) ‘Antenatal corticosteroids for accelerating fetal lung maturation for women at risk of preterm birth’, Cochrane Database of Systematic Reviews. John Wiley and Sons Ltd. doi: 10.1002/14651858.CD004454.pub3. (for 2017; https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD004454.pub4/full#:~:text=Evidence%20from%20this%20updated%20review,reduces%20the%20risk%20of%20IVH.)
+
+#. Blencowe, H. et al. (2011) ‘Clean birth and postnatal care practices to reduce neonatal deaths from sepsis and tetanus: A systematic review and Delphi estimation of mortality effect’, BMC Public Health. BioMed Central Ltd, 11(SUPPL. 3), p. S11. doi: 10.1186/1471-2458-11-S3-S11. (for 2011; https://bmcpublichealth.biomedcentral.com/articles/10.1186/1471-2458-11-S3-S11)
+
+#. Gallos ID, Papadopoulou A, Man R, Athanasopoulos N, Tobias A, Price MJ, et al. Uterotonic agents for preventing postpartum haemorrhage: A network meta-analysis. Vol. 2018, Cochrane Database of Systematic Reviews. John Wiley and Sons Ltd; 2018.  (for 2018; https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD011689.pub3/full)
+
+Newborns
+********
+
+#. Fleischmann C, Reichert F, Cassini A, Horner R, Harder T, Markwart R, et al. Global incidence and mortality of neonatal sepsis: a systematic review and meta-analysis. Arch Dis Child. 2021 Jan 22;0:archdischild-2020-320217.  (for 2021; http://dx.doi.org/10.1136/archdischild-2020-320217)
+
+#. Minuye Birihane B, Alebachew Bayih W, Yeshambel Alemu A, Belay DM, Demis A. The burden of hyaline membrane disease, mortality and its determinant factors among preterm neonates admitted at Debre Tabor General Hospital, North Central Ethiopia: A retrospective follow up study. PLoS One. 2021;16(3):e0249365. (for 2021; https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0249365#sec021)
+
+#. Muhe LM, McClure EM, Nigussie AK, Mekasha A, Worku B, Worku A, et al. Major causes of death in preterm infants in selected hospitals in Ethiopia (SIP): a prospective, cross-sectional, observational study. Lancet Glob Heal. 2019 Aug 1;7(8):e1130–8. (for 2019; https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(19)30220-7/fulltext#:~:text=The%20main%20primary%20causes%20of,asphyxia%20(151%20%5B14%25%5D).)
+
+#. Blencowe H, Lawn JE, Vazquez T, Fielder A, Gilbert C. Preterm-associated visual impairment and estimates of retinopathy of prematurity at regional and global levels for 2010. Pediatr Res. 2013 Dec;74(SUPPL. 1):35–49. (for 2013; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3873709/)
+
+#. Lee AC, Kozuki N, Blencowe H, Vos T, Bahalim A, Darmstadt GL, et al. Intrapartum-related neonatal encephalopathy incidence and impairment at regional and global levels for 2010 with trends from 1990. Pediatr Res. 2013 Dec 20;74(S1):50–72.  (for 2013; http://www.nature.com/articles/pr2013206)
+
+#. Blencowe H, Lee ACC, Cousens S, Bahalim A, Narwal R, Zhong N, et al. Preterm birth-associated neurodevelopmental impairment estimates at regional and global levels for 2010. Pediatr Res. 2013 Dec;74(SUPPL. 1):17–34. (for 2013; https://pubmed.ncbi.nlm.nih.gov/24366461/)
+
+#. Han Z, Mulla S, Beyene J, Liao G, McDonald SD. Maternal underweight and the risk of preterm birth and low birth weight: A systematic review and meta-analyses. Vol. 40, International Journal of Epidemiology. Int J Epidemiol; 2011. p. 65–101.  (for 2011; https://pubmed.ncbi.nlm.nih.gov/21097954/)
+
+#. Belachew A, Tewabe T. Neonatal sepsis and its association with birth weight and gestational age among admitted neonates in Ethiopia: Systematic review and meta-analysis. BMC Pediatr. 2020 Feb 5;20(1):1–7.  (for 2020; https://doi.org/10.1186/s12887-020-1949-x)
+
+#. Chan GJ, Lee AC, Baqui AH, Tan J, Black RE. Risk of Early-Onset Neonatal Infection with Maternal Infection or Colonization: A Global Systematic Review and Meta-Analysis. PLoS Med. 2013 Aug;10(8).  (for 2013; https://pubmed.ncbi.nlm.nih.gov/23976885/)
+
+#. Li Y, Wang W, Zhang D. Maternal diabetes mellitus and risk of neonatal respiratory distress syndrome: a meta-analysis. Vol. 56, Acta Diabetologica. Springer-Verlag Italia s.r.l.; 2019. p. 729–40.  (for 2019; https://pubmed.ncbi.nlm.nih.gov/30955125/)
+
+#. Tann CJ, Nakakeeto M, Willey BA, Sewegaba M, Webb EL, Oke I, et al. Perinatal risk factors for neonatal encephalopathy: an unmatched case-control study. Arch Dis Child Fetal Neonatal Ed. 2018;103(3):F250–6. (for 2018; https://pubmed.ncbi.nlm.nih.gov/28780500/)
+
+#. Cousens, S. et al. (2010) ‘Antibiotics for pre-term pre-labour rupture of membranes: Prevention of neonatal deaths due to complications of pre-term birth and infection’, International Journal of Epidemiology. Int J Epidemiol, 39(SUPPL. 1). doi: 10.1093/ije/dyq030. (for 2010; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2845869/)
+
+#. Blencowe, H. et al. (2011) ‘Clean birth and postnatal care practices to reduce neonatal deaths from sepsis and tetanus: A systematic review and Delphi estimation of mortality effect’, BMC Public Health. BioMed Central Ltd, 11(SUPPL. 3), p. S11. doi: 10.1186/1471-2458-11-S3-S11. (for 2011; https://pubmed.ncbi.nlm.nih.gov/21501428/)
+
+#. Lee, A. C. et al. (2011) ‘Neonatal resuscitation and immediate newborn assessment and stimulation for the prevention of neonatal deaths: A systematic review, meta-analysis and Delphi estimation of mortality effect’, BMC Public Health. BMC Public Health, 11(SUPPL. 3). doi: 10.1186/1471-2458-11-S3-S12. (for 2011; https://pubmed.ncbi.nlm.nih.gov/21501429/)
+
+#. Conde-Agudelo, A., Belizán, J. M. and Diaz-Rossello, J. (2016) ‘Kangaroo mother care to reduce morbidity and mortality in low birthweight infants’, in Conde-Agudelo, A. (ed.) Cochrane Database of Systematic Reviews. Chichester, UK: John Wiley & Sons, Ltd. doi: 10.1002/14651858.CD002771.pub2. (for 2016; https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD002771.pub4/full)
+
+#. Roberts, D. et al. (2020) ‘Antenatal corticosteroids for accelerating fetal lung maturation for women at risk of preterm birth’, Cochrane Database of Systematic Reviews. John Wiley and Sons Ltd. doi: 10.1002/14651858.CD004454.pub3. (for 2020; https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD004454.pub4/full)
+
+#. Zaidi, A. K. M. et al. (2011) ‘Effect of case management on neonatal mortality due to sepsis and pneumonia’, BMC Public Health. BioMed Central, p. S13. doi: 10.1186/1471-2458-11-S3-S13. (for 2011; https://pubmed.ncbi.nlm.nih.gov/21501430/)

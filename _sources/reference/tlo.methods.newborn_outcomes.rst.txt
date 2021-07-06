@@ -286,11 +286,11 @@ tlo.methods.newborn_outcomes module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'intrapartum stillbirth': <tlo.methods.causes.Cause object at 0x7fb60eb064f0>, 'neonatal': <tlo.methods.causes.Cause object at 0x7fb60eb065b0>}
+     CAUSES_OF_DEATH : {'intrapartum stillbirth': <tlo.methods.causes.Cause object at 0x7fee46306580>, 'neonatal': <tlo.methods.causes.Cause object at 0x7fee46306640>}
 
-     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x7fb60eb2af40>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x7fb60f6835b0>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x7fb60f683dc0>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x7fb60f69e760>}
+     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x7fee4632bfa0>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x7fee46e80640>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x7fee46e80e50>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x7fee46e9b7f0>}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      **Functions (defined or overridden in class NewbornOutcomes):**
 

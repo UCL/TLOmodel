@@ -94,6 +94,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_sources.html">Data Sources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
@@ -234,7 +235,7 @@
             <span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span> <span class="s1">&#39;The time taken for each appointment, according to officer and facility type.&#39;</span>
         <span class="p">),</span>
         <span class="s1">&#39;ApptType_By_FacLevel&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;Indicates whether an appointment type can occur at a facility level.&#39;</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;Indicates whether an appointment type can occur at a facility level.&#39;</span>
         <span class="p">),</span>
         <span class="s1">&#39;Master_Facilities_List&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;Listing of all health facilities.&#39;</span><span class="p">),</span>
         <span class="s1">&#39;Facilities_For_Each_District&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
@@ -379,9 +380,17 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Appt_Time_Table&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">appt_times_per_level_and_type</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;ApptType_By_FacLevel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+        <span class="n">appt_type_per_level_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
             <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_ApptType_By_FacLevel.csv&#39;</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;ApptType_By_FacLevel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">set</span><span class="p">(</span>
+                <span class="n">appt_type_per_level_data</span><span class="p">[</span><span class="s1">&#39;Appt_Type_Code&#39;</span><span class="p">][</span>
+                    <span class="n">appt_type_per_level_data</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;Facility_Level_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">facility_levels</span>
+        <span class="p">]</span>
 
         <span class="n">mfl</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Master_Facilities_List.csv&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Master_Facilities_List&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mfl</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span>  <span class="c1"># get rid of extra column</span>
@@ -669,15 +678,11 @@
             <span class="p">)</span>
             <span class="c1"># 5) Check that the event does not request an appointment at a facility level which is not possible</span>
             <span class="n">appt_type_to_check_list</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-            <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;ApptType_By_FacLevel&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;ApptType_By_FacLevel&#39;</span><span class="p">][</span><span class="s1">&#39;Appt_Type_Code&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">appt_type_to_check</span><span class="p">,</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;ApptType_By_FacLevel&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span>
-                                <span class="nb">str</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">))]</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-                        <span class="k">for</span> <span class="n">appt_type_to_check</span> <span class="ow">in</span> <span class="n">appt_type_to_check_list</span>
-                        <span class="p">]),</span> \
-                <span class="s2">&quot;An appointment type has been requested at a facility level for which is it not possibe: &quot;</span> \
-                <span class="o">+</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span>
-
+            <span class="n">facility_appt_types</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;ApptType_By_FacLevel&#39;</span><span class="p">][</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="n">facility_appt_types</span><span class="o">.</span><span class="n">issuperset</span><span class="p">(</span><span class="n">appt_type_to_check_list</span><span class="p">),</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;An appointment type has been requested at a facility level for which &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;it is not possible: </span><span class="si">{</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
             <span class="c1"># 6) Check that event (if individual level) is able to run with this configuration of officers</span>
             <span class="c1"># (ie. Check that this does not demand officers that are never available at a particular facility)</span>
             <span class="n">caps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Daily_Capabilities&#39;</span><span class="p">]</span>
@@ -1563,11 +1568,11 @@
             <span class="p">]</span>
 
             <span class="c1"># Compute total appointment footprint across all events</span>
-            <span class="c1"># Summing manually in loop seems to be ~3 time quicker than</span>
-            <span class="c1"># sum(footprints_of_all_individual_level_hsi_event, Counter())</span>
             <span class="n">total_footprint</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">footprint</span> <span class="ow">in</span> <span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">:</span>
-                <span class="n">total_footprint</span> <span class="o">+=</span> <span class="n">footprint</span>
+                <span class="c1"># Counter.update method when called with dict-like argument adds counts</span>
+                <span class="c1"># from argument to Counter object called from</span>
+                <span class="n">total_footprint</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">footprint</span><span class="p">)</span>
 
             <span class="c1"># 5) Estimate Squeeze-Factors for today</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -1865,7 +1870,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jul 01, 2021.
+        Last updated on Jul 06, 2021.
       </span>
 
     </p>

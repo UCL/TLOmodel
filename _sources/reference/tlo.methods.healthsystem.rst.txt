@@ -31,7 +31,7 @@ tlo.methods.healthsystem module
           - DICT
           - The time taken for each appointment, according to officer and facility type.
         * - ApptType_By_FacLevel
-          - DATA_FRAME
+          - LIST
           - Indicates whether an appointment type can occur at a facility level.
         * - Master_Facilities_List
           - DATA_FRAME
@@ -217,7 +217,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x7fb60d73ff90>
+     bed_days_allocated_to_this_event : <property object at 0x7fee446472c0>
 
      **Functions (defined or overridden in class HSI_Event):**
 
