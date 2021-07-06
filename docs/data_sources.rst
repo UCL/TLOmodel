@@ -1,10 +1,10 @@
 ************
-Data sources
+Data Sources
 ************
 
-The data sources being used in the model currently are listed here.
+The data sources currently being used in the model are listed here.
 
 Malawi-specific\ :sup:`†`
 
-.. include:: _data.rst
+.. include:: _data_sources.rst
 

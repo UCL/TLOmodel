@@ -1,23 +1,14 @@
 """
 A script to parse the data sources spreadsheet and generate an .rst file
 """
-import os
 import textwrap
 from pathlib import Path
 
 import pandas as pd
 
-# data sources spreadsheet
-key = ''
-sheet_name = 'longformat'
-sheet_url = f'https://docs.google.com/spreadsheets/d/{key}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
-
 dagger = "\\ :sup:`†`\\ "
-
-
-def get_output_path():
-    path = Path(os.path.realpath(__file__)).parents[0]
-    return path / '_data_sources.rst'
+data_file = "data_sources.csv"
+data_out = "_data_sources.rst"
 
 
 def heading(string, level):
@@ -53,21 +44,24 @@ def generate_content(_data):
             current_category = row.Category
             lines.append(heading(current_category, 2))
 
-        if row['Module Name'] is not module_name:
-            module_name = row['Module Name']
+        if row["Module Name"] is not module_name:
+            module_name = row["Module Name"]
             lines.append(heading(module_name, 3))
 
         lines.append(
-            f'#. {dagger if row["Malawi-specific"] else ""}'
-            f'{row.Citation} '
-            f'(for {row["Year Relevant to Data"]}{"; " + row.URL if not pd.isna(row.URL) else ""})\n'
+            f"#. {dagger if row['Malawi-specific'] else ''}"
+            f"{row.Citation} "
+            f"(for {row['Year Relevant to Data']}{'; ' + row.URL if not pd.isna(row.URL) else ''})\n"
         )
 
     return lines
 
 
 if __name__ == "__main__":
-    data = pd.read_csv(sheet_url)
+    directory = Path(__file__).resolve().parents[0]
+    data = pd.read_csv(directory / data_file)
+    print(f"Found {len(data)} lines in {directory / data_file}.")
     content = generate_content(data)
-    with open(get_output_path(), 'w') as outfile:
+    print(f"Writing data sources to {directory / data_out}.")
+    with open(directory / data_out, 'w') as outfile:
         outfile.write('\n'.join(content))
