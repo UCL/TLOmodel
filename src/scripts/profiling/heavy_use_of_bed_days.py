@@ -1,4 +1,4 @@
-"""This script heavily use the BedDays module and is used to improve performance of the BedDays module"""
+"""This script heavily use the BedDays class and is used to improve performance of the BedDays class"""
 
 import pandas as pd
 import cProfile as cp
@@ -24,7 +24,7 @@ sim.register(
 )
 hs = sim.modules['HealthSystem']
 
-# Update BedCapacity data with a simple table:
+# Update BedCapacity data defined in HealthSystem Module with a simple table:
 hs.parameters['BedCapacity'] = pd.DataFrame(
     index=[0],
     data={
