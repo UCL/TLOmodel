@@ -107,7 +107,7 @@ class CardioMetabolicDisorders(Module):
         in conditions
     }
     condition_ever_tested_list = {
-        f"nc_{p}_ever_tested": Property(Types.DATE, f"Whether someone has  been tested for {p}") for p
+        f"nc_{p}_ever_tested": Property(Types.BOOL, f"Whether someone has  been tested for {p}") for p
         in conditions
     }
     condition_date_of_last_test_list = {
@@ -311,6 +311,12 @@ class CardioMetabolicDisorders(Module):
                     symptom_string=f'{symptom}',
                     add_or_remove='+',
                     disease_module=self)
+
+        # ----- Generate the initial "risk score" for the population:
+        df['nc_risk_score'] = (df[[
+            'li_low_ex', 'li_high_salt', 'li_high_sugar', 'li_tob', 'li_ex_alc']] > 0).sum(1)
+        df.loc[df['li_bmi'] >= 3, ['nc_risk_score']] += 1
+
 
     def initialise_simulation(self, sim):
         """Schedule:
@@ -848,6 +854,11 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # output entire dataframe for logistic regression
         # df = population.props
         # df.to_csv('df_for_regression.csv')
+
+        # Update risk score
+        df['nc_risk_score'] = (df[[
+            'li_low_ex', 'li_high_salt', 'li_high_sugar', 'li_tob', 'li_ex_alc']] > 0).sum(1)
+        df.loc[df['li_bmi'] >= 3, ['nc_risk_score']] += 1
 
 
 # ---------------------------------------------------------------------------------------------------------
