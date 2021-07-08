@@ -57,10 +57,33 @@ def generate_content(_data):
     return lines
 
 
+def sort_by_category_and_module_name(_data):
+    """Sort the imported list of data_sources by Category (specific order) and module name (alphabetical)."""
+
+    # define ordered category
+    _data['Category'] = _data['Category'].astype(
+        pd.CategoricalDtype(
+            ['Core Functions',
+             'Healthcare System',
+             'Contraception, Pregnancy and Labour',
+             'Conditions of Early Childhood',
+             'Infectious Diseases',
+             'Cardiometabolic Disorders',
+             'Cancers',
+             'Other Non-Communicable Conditions',
+             'Injuries'],
+            ordered=True)
+    )
+    assert not _data['Category'].isna().any()
+
+    return _data.sort_values(['Category', 'Module Name'])
+
+
 if __name__ == "__main__":
     directory = Path(__file__).resolve().parents[0]
     data = pd.read_csv(directory / data_file)
     print(f"Found {len(data)} lines in {directory / data_file}.")
+    data = sort_by_category_and_module_name(data)
     content = generate_content(data)
     print(f"Writing data sources to {directory / data_out}.")
     with open(directory / data_out, 'w') as outfile:
