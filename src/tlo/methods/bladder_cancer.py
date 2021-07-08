@@ -14,6 +14,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
+from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
@@ -39,6 +40,16 @@ class BladderCancer(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'BladderCancer': Cause(gbd_causes='Bladder cancer', label='Cancer'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'BladderCancer': Cause(gbd_causes='Bladder cancer', label='Cancer'),
     }
 
     PARAMETERS = {
@@ -752,6 +763,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
+        the_appt_footprint['MajorSurg'] = 1
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "BladderCancer_StartTreatment"

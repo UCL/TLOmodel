@@ -16,6 +16,7 @@ import shared
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
     demography,
@@ -32,7 +33,6 @@ from tlo.methods import (
     hiv,
     labour,
     malaria,
-    ncds,
     newborn_outcomes,
     oesophagealcancer,
     other_adult_cancers,
@@ -85,13 +85,13 @@ sim.register(
     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
 
     # Disease modules considered complete:
+    cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
     depression.Depression(resourcefilepath=resourcefilepath),
     diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
     epi.Epi(resourcefilepath=resourcefilepath),
     epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath),
     malaria.Malaria(resourcefilepath=resourcefilepath),
-    ncds.Ncds(resourcefilepath=resourcefilepath),
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
     other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
 )

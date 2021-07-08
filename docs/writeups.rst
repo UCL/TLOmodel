@@ -61,7 +61,7 @@ Communicable Diseases
 
 * **Measles**: Measles-related disease and associated prevention and treatment programmes. (Forthcoming)
 
-* **Malaria**: Malaria disease and associated prevention and treatment programmes. (Forthcoming)
+* **Malaria**: Malaria disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Malaria.docx>`
 
 * **Schistosomiasis**: Schistosomiasis disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Schistosomiasis.docx>`
 
@@ -81,16 +81,16 @@ Non-Communicable Conditions
 
     * **Prostate Cancer**: Cancer of the prostate and its treatment. :download:`.docx <./write-ups/ProstateCancer.docx>`
 
-* Caridometabolic Diorders:
-    * **Diabetes Type 2, Hypertension, Stroke, Ischemic Heart Disease, Myocardial Infarction** :download:`.docx <./write-ups/Ncds.docx>`
+* Cardio-metabolic Disorders:
+    * **Diabetes Type 2, Hypertension, Stroke, Ischemic Heart Disease, Myocardial Infarction** :download:`.docx <./write-ups/CardioMetabolicDisorders.docx>`
 
 * Injuries:
     * **Road Traffic Injuries**: Injuries arising from road traffic incidents and their treatment. (Forthcoming)
 
 * Other Non-Communicable Conditions
-    * **Chronic Lower Back Pain**: Summary representation of chronic lower back pain as part of a set of common non-communicable conditions. :download:`.docx <./write-ups/Ncds.docx>`
+    * **Chronic Lower Back Pain**: Summary representation of chronic lower back pain as part of a set of common non-communicable conditions. :download:`.docx <./write-ups/CardioMetabolicDisorders.docx>`
 
-    * **Chronic Kidney Disease**: Summary representation of chronic kidney disease as part of a set of common non-communicable conditions. :download:`.docx <./write-ups/Ncds.docx>`
+    * **Chronic Kidney Disease**: Summary representation of chronic kidney disease as part of a set of common non-communicable conditions. :download:`.docx <./write-ups/CardioMetabolicDisorders.docx>`
 
     * **Depression**: Depression, self-harm and suicide, and the treatment of depression. :download:`.docx <./write-ups/Depression.docx>`
 

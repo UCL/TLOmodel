@@ -626,7 +626,7 @@ def test_preterm_labour_logic():
     events = sim.find_events_for_person(person_id=mother_id)
     events = [e.__class__ for d, e in events]
     assert labour.LabourDeathAndStillBirthEvent in events
-    assert labour.BirthEvent in events
+    assert labour.BirthAndPostnatalOutcomesEvent in events
 
 
 def test_check_first_anc_visit_scheduling():

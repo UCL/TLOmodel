@@ -26,7 +26,7 @@ from tlo.methods import (
 seed = 563
 
 log_config = {
-    "filename": "postnatal_analysis",   # The name of the output file (a timestamp will be appended).
+    "filename": "postnatal_analysis",  # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
@@ -185,20 +185,23 @@ failure_to_transition_deaths = dict()
 encephalopathy_death = dict()
 newborn_sepsis_death = dict()
 
-
-# for label, file in output_files.items():
-#    maternal_deaths[label], still_births[label], newborn_deaths[label], antepartum_haem[label], \
-#    obstructed_labour[label], uterine_rupture[label], maternal_sepsis[label], eclampsia[label],\
-#        postpartum_haem[label], home_births[label], health_centre_births[label], hospital_births[label],\
-#        caesarean_births[label] = \
+# for cause_of_death, file in output_files.items():
+#    maternal_deaths[cause_of_death], still_births[cause_of_death], newborn_deaths[cause_of_death],
+#    antepartum_haem[cause_of_death], \
+#    obstructed_labour[cause_of_death], uterine_rupture[cause_of_death], maternal_sepsis[cause_of_death],
+#    eclampsia[cause_of_death],\
+#        postpartum_haem[cause_of_death], home_births[cause_of_death], health_centre_births[cause_of_death],
+#        hospital_births[cause_of_death],\
+#        caesarean_births[cause_of_death] = \
 #        get_incidence_rate_and_death_numbers_from_logfile(file)
 
-# for label, file in output_files.items():
-#    sepsis_deaths[label], uterine_rupture_deaths[label], antepartum_haem_deaths[label], eclampsia_deaths[label], \
-#    postpartum_haem_deaths[label] = get_incidence_rate_and_death_numbers_from_logfile(file)
+# for cause_of_death, file in output_files.items():
+#    sepsis_deaths[cause_of_death], uterine_rupture_deaths[cause_of_death], antepartum_haem_deaths[cause_of_death],
+#    eclampsia_deaths[cause_of_death], \
+#    postpartum_haem_deaths[cause_of_death] = get_incidence_rate_and_death_numbers_from_logfile(file)
 
-# for label, file in output_files.items():
-#    home_births[label], health_centre_births[label], hospital_births[label] = \
+# for cause_of_death, file in output_files.items():
+#    home_births[cause_of_death], health_centre_births[cause_of_death], hospital_births[cause_of_death] = \
 #        get_incidence_rate_and_death_numbers_from_logfile(file)
 
 for label, file in output_files.items():
@@ -240,12 +243,12 @@ generate_graphs(newborn_sepsis_death, 'Neonatal Sepsis Deaths by Year', "nsep_de
 
 # data2 = {}
 # data3 = {}
-# for label in home_births.keys():
-#    data.update({label: home_births[label]})
-# for label in hospital_births.keys():
-#    data2.update({label: hospital_births[label]})
-# for label in health_centre_births.keys():
-#    data3.update({label: health_centre_births[label]})
+# for cause_of_death in home_births.keys():
+#    data.update({cause_of_death: home_births[cause_of_death]})
+# for cause_of_death in hospital_births.keys():
+#    data2.update({cause_of_death: hospital_births[cause_of_death]})
+# for cause_of_death in health_centre_births.keys():
+#    data3.update({cause_of_death: health_centre_births[cause_of_death]})
 
 # fig, ax = plt.subplots()
 # pd.concat(data, axis=1).plot.bar()

@@ -115,8 +115,9 @@ def predict_sepsis_death(self, df, rng=None, **externals):
     result = params['cfr_sepsis']
 
     # todo: wont this give a treatment effect to postpartum women who develop a different kind of sepsis
-
-    if person['la_sepsis_treatment'] or person['ac_received_abx_for_chorioamnionitis']:
+    if ((externals['chorio_in_preg'] or person['ps_chorioamnionitis']) and person['ac_received_abx_'
+                                                                                  'for_chorioamnionitis'])\
+       or person['la_sepsis_treatment']:
         result *= params['sepsis_treatment_effect_md']
 
     return pd.Series(data=[result], index=df.index)
@@ -130,8 +131,6 @@ def predict_eclampsia_death(self, df, rng=None, **externals):
 
     if person['la_eclampsia_treatment']:
         result *= params['eclampsia_treatment_effect_md']
-    # Both these predictors represent intravenous antihypertensives- both will not be true for the same
-    # woman
     if person['la_maternal_hypertension_treatment'] or person['ac_iv_anti_htn_treatment']:
         result *= params['anti_htns_treatment_effect_md']
 
@@ -145,9 +144,7 @@ def predict_severe_pre_eclamp_death(self, df, rng=None, **externals):
     params = self.parameters
     result = params['cfr_severe_pre_eclamp']
 
-    if person['la_maternal_hypertension_treatment']:
-        result *= params['anti_htns_treatment_effect_md']
-    if person['ac_iv_anti_htn_treatment']:
+    if person['la_maternal_hypertension_treatment'] or person['ac_iv_anti_htn_treatment']:
         result *= params['anti_htns_treatment_effect_md']
 
     # caller expects a series to be returned
@@ -237,7 +234,7 @@ def predict_pph_uterine_atony_pp(self, df, rng=None, **externals):
 def predict_pph_retained_placenta_pp(self, df, rng=None, **externals):
     """individual level"""
     params = self.parameters
-    result = params['cfr_aph']
+    result = params['prob_pph_retained_placenta']
 
     if externals['amtsl_given']:
         result *= params['treatment_effect_amtsl']
@@ -439,6 +436,34 @@ def predict_probability_delivery_at_home(self, df, rng=None, **externals):
 
     if person['li_mar_stat'] == 3:
         result *= params['rrr_hb_delivery_married']
+
+    result = result / (1 + result)
+    return pd.Series(data=[result], index=df.index)
+
+
+def predict_postnatal_check(self, df, rng=None, **externals):
+    """individual level"""
+    person = df.iloc[0]
+    params = self.parameters
+    result = params['odds_will_attend_pnc']
+
+    if 29 < person['age_years'] < 36:
+        result *= params['or_pnc_age_30_35']
+    if person['age_years'] >= 36:
+        result *= params['or_pnc_age_>35']
+    if not person['li_urban']:
+        result *= params['or_pnc_rural']
+
+    if person['li_wealth'] == 1:
+        result *= params['or_pnc_wealth_level_1']
+
+    if person['la_parity'] > 4:
+        result *= params['or_pnc_parity_>4']
+
+    if externals['mode_of_delivery'] == 'caesarean_section':
+        result *= params['or_pnc_caesarean_delivery']
+    if externals['delivery_setting'] == 'home_birth':
+        result *= params['or_pnc_facility_delivery']
 
     result = result / (1 + result)
     return pd.Series(data=[result], index=df.index)

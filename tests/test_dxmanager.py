@@ -49,7 +49,6 @@ def bundle():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 # healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable_and_reject_all=True
