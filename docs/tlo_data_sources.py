@@ -77,10 +77,7 @@ def sort_by_category_and_module_name(_data):
     )
     assert not _data['Category'].isna().any()
 
-    # sort
-    _data = _data.sort_values(['Category', 'Module Name'])
-
-    return _data
+    return _data.sort_values(['Category', 'Module Name'])
 
 
 if __name__ == "__main__":
