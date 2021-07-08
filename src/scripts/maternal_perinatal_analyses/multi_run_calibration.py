@@ -19,7 +19,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
-    ncds
+    cardio_metabolic_disorders
 )
 
 
@@ -29,13 +29,13 @@ class MyTestScenario(BaseScenario):
         self.seed = 611
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 1, 1)
-        self.pop_size = 100000
+        self.pop_size = 20000
         self.number_of_draws = 10
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'multi_run_aph_fix', 'directory': './outputs',
+            'filename': 'htn_disorders_calibration', 'directory': './outputs',
             'custom_levels': {'*': logging.INFO}
         }
 
@@ -48,19 +48,19 @@ class MyTestScenario(BaseScenario):
             healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       service_availability=['*'],
                                       ignore_cons_constraints=True),
-            ncds.Ncds(resourcefilepath=self.resources),
-            newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
-            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
-            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
+            depression.Depression(resourcefilepath=self.resources),
+            cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
-            labour.Labour(resourcefilepath=self.resources),
-            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             malaria.Malaria(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
             dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=self.resources),
             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
-            depression.Depression(resourcefilepath=self.resources),
+            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
+            labour.Labour(resourcefilepath=self.resources),
+            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
+            newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
