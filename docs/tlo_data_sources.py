@@ -64,7 +64,8 @@ def sort_by_category_and_module_name(_data):
     # define ordered category
     _data['Category'] = _data['Category'].astype(
         CategoricalDtype(
-            ['Core Architecture',
+            ['Core Functions',
+             'Healthcare System',
              'Contraception, Pregnancy and Labour',
              'Conditions of Early Childhood',
              'Infectious Diseases',
