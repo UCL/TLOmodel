@@ -733,34 +733,48 @@ class HealthSystem(Module):
 
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
-        This will take an HSI event and return the required appointments in terms of the time required of each
-        Officer Type in each Facility ID.
-        The index will identify the Facility ID and the Officer Type in the same format as is used in
-        Daily_Capabilities.
+        This will take an HSI event and return the required appointments in terms of the
+        time required of each Officer Type in each Facility ID.
+        The index will identify the Facility ID and the Officer Type in the same format
+        as is used in Daily_Capabilities.
 
         :param hsi_event: The HSI event
-        :param actual_appt_footprint: The actual appt footprint (optional) if different to that in the HSI_event
-        :return: A series that gives the time required for each officer-type in each facility_ID
+        :param actual_appt_footprint: The actual appt footprint (optional) if different
+            to that in the HSI event.
+        :return: A Counter that gives the times required for each officer-type in each
+            facility_ID, where this time is non-zero.
         """
+        # If specified use actual_appt_footprint otherwise use EXPECTED_APPT_FOOTPRINT
+        the_appt_footprint = (
+            hsi_event.EXPECTED_APPT_FOOTPRINT if actual_appt_footprint is None else
+            actual_appt_footprint
+        )
+        # Check in time request cache in event if a time request corresponding to the
+        # current relevant event attributes and appointment footprint has previously
+        # been stored, and if so return this
+        cache_key = (
+            hsi_event.target,
+            hsi_event.ACCEPTED_FACILITY_LEVEL,
+            tuple(the_appt_footprint)
+        )
+        cached_time_request = hsi_event._cached_time_requests.get(cache_key)
+        if cached_time_request is not None:
+            return cached_time_request
 
-        # Gather useful information
+        # No entry in cache so compute time request
+
+        # Appointment times for each facility and officer combination
         appt_times = self.parameters['Appt_Time_Table']
 
-        # Gather information about the HSI event
+        # Facility level required by this event
         the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
-
-        # Get the appt_footprint
-        if actual_appt_footprint is None:
-            # use the appt_footprint in the hsi_event
-            the_appt_footprint = hsi_event.EXPECTED_APPT_FOOTPRINT
-        else:
-            # use the actual_appt_provided
-            the_appt_footprint = actual_appt_footprint
 
         # Get the (one) health_facility available to this person (based on their
         # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL:
         the_facility = self.get_facility_info(hsi_event)
 
+        # Accumulate appointment times for specified footprint using times from
+        # appointment times table
         appt_footprint_times = Counter()
         for appt_type in the_appt_footprint:
             try:
@@ -775,6 +789,9 @@ class HealthSystem(Module):
                 appt_footprint_times[
                     f"FacilityID_{the_facility.id}_Officer_{appt_info.officer_type}"
                 ] += appt_info.time_taken
+
+        # Cache the time request to avoid having to recompute on subsequent calls
+        hsi_event._cached_time_requests[cache_key] = appt_footprint_times
 
         return appt_footprint_times
 
@@ -1537,6 +1554,7 @@ class HSI_Event:
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._received_info_about_bed_days = None
+        self._cached_time_requests = {}
 
     @property
     def bed_days_allocated_to_this_event(self):
