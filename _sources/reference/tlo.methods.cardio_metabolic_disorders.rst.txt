@@ -136,11 +136,11 @@ tlo.methods.cardio_metabolic_disorders module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x7fee4700ba00>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x7fee4700ba60>, 'heart_attack': <tlo.methods.causes.Cause object at 0x7fee4700bac0>, 'stroke': <tlo.methods.causes.Cause object at 0x7fee4700bb20>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x7fee4700bb80>}
+     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x7f866b151c40>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x7f866b151ca0>, 'heart_attack': <tlo.methods.causes.Cause object at 0x7f866b151d00>, 'stroke': <tlo.methods.causes.Cause object at 0x7f866b151d60>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x7f866b151dc0>}
 
-     CAUSES_OF_DISABILITY : {'any_ncd': <tlo.methods.causes.Cause object at 0x7fee4700bc10>}
+     CAUSES_OF_DISABILITY : {'any_ncd': <tlo.methods.causes.Cause object at 0x7f866b151e50>}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
      SYMPTOMS : {}
 

@@ -497,19 +497,21 @@ HealthSeekingBehaviour module will schedule a generic hsi.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_appt_footprint_as_time_request">
 <span class="sig-name descname"><span class="pre">get_appt_footprint_as_time_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actual_appt_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_appt_footprint_as_time_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_appt_footprint_as_time_request" title="Permalink to this definition">¶</a></dt>
-<dd><p>This will take an HSI event and return the required appointments in terms of the time required of each
-Officer Type in each Facility ID.
-The index will identify the Facility ID and the Officer Type in the same format as is used in
-Daily_Capabilities.</p>
+<dd><p>This will take an HSI event and return the required appointments in terms of the
+time required of each Officer Type in each Facility ID.
+The index will identify the Facility ID and the Officer Type in the same format
+as is used in Daily_Capabilities.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>hsi_event</strong> – The HSI event</p></li>
-<li><p><strong>actual_appt_footprint</strong> – The actual appt footprint (optional) if different to that in the HSI_event</p></li>
+<li><p><strong>actual_appt_footprint</strong> – The actual appt footprint (optional) if different
+to that in the HSI event.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A series that gives the time required for each officer-type in each facility_ID</p>
+<dd class="field-even"><p>A Counter that gives the times required for each officer-type in each
+facility_ID, where this time is non-zero.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -805,7 +807,7 @@ The overall Prioritation algorithm is:</p>
 <p>Concrete subclasses should also inherit from one of the EventMixin classes
 defined below, and implement at least an <cite>apply</cite> and <cite>did_not_run</cite> method.</p>
 <p><strong>Class attributes:</strong></p>
-<p>bed_days_allocated_to_this_event : &lt;property object at 0x7fee446472c0&gt;</p>
+<p>bed_days_allocated_to_this_event : &lt;property object at 0x7f8668e082c0&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.__init__">
@@ -942,7 +944,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jul 06, 2021.
+        Last updated on Jul 08, 2021.
       </span>
 
     </p>

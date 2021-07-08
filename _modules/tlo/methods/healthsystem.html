@@ -904,34 +904,48 @@
 
 <div class="viewcode-block" id="HealthSystem.get_appt_footprint_as_time_request"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_appt_footprint_as_time_request">[docs]</a>    <span class="k">def</span> <span class="nf">get_appt_footprint_as_time_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">actual_appt_footprint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This will take an HSI event and return the required appointments in terms of the time required of each</span>
-<span class="sd">        Officer Type in each Facility ID.</span>
-<span class="sd">        The index will identify the Facility ID and the Officer Type in the same format as is used in</span>
-<span class="sd">        Daily_Capabilities.</span>
+<span class="sd">        This will take an HSI event and return the required appointments in terms of the</span>
+<span class="sd">        time required of each Officer Type in each Facility ID.</span>
+<span class="sd">        The index will identify the Facility ID and the Officer Type in the same format</span>
+<span class="sd">        as is used in Daily_Capabilities.</span>
 
 <span class="sd">        :param hsi_event: The HSI event</span>
-<span class="sd">        :param actual_appt_footprint: The actual appt footprint (optional) if different to that in the HSI_event</span>
-<span class="sd">        :return: A series that gives the time required for each officer-type in each facility_ID</span>
+<span class="sd">        :param actual_appt_footprint: The actual appt footprint (optional) if different</span>
+<span class="sd">            to that in the HSI event.</span>
+<span class="sd">        :return: A Counter that gives the times required for each officer-type in each</span>
+<span class="sd">            facility_ID, where this time is non-zero.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If specified use actual_appt_footprint otherwise use EXPECTED_APPT_FOOTPRINT</span>
+        <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">hsi_event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="k">if</span> <span class="n">actual_appt_footprint</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span>
+            <span class="n">actual_appt_footprint</span>
+        <span class="p">)</span>
+        <span class="c1"># Check in time request cache in event if a time request corresponding to the</span>
+        <span class="c1"># current relevant event attributes and appointment footprint has previously</span>
+        <span class="c1"># been stored, and if so return this</span>
+        <span class="n">cache_key</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
+            <span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span>
+            <span class="nb">tuple</span><span class="p">(</span><span class="n">the_appt_footprint</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">cached_time_request</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">_cached_time_requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cache_key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cached_time_request</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cached_time_request</span>
 
-        <span class="c1"># Gather useful information</span>
+        <span class="c1"># No entry in cache so compute time request</span>
+
+        <span class="c1"># Appointment times for each facility and officer combination</span>
         <span class="n">appt_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Appt_Time_Table&#39;</span><span class="p">]</span>
 
-        <span class="c1"># Gather information about the HSI event</span>
+        <span class="c1"># Facility level required by this event</span>
         <span class="n">the_facility_level</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span>
-
-        <span class="c1"># Get the appt_footprint</span>
-        <span class="k">if</span> <span class="n">actual_appt_footprint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># use the appt_footprint in the hsi_event</span>
-            <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># use the actual_appt_provided</span>
-            <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="n">actual_appt_footprint</span>
 
         <span class="c1"># Get the (one) health_facility available to this person (based on their</span>
         <span class="c1"># district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL:</span>
         <span class="n">the_facility</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_facility_info</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">)</span>
 
+        <span class="c1"># Accumulate appointment times for specified footprint using times from</span>
+        <span class="c1"># appointment times table</span>
         <span class="n">appt_footprint_times</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">appt_type</span> <span class="ow">in</span> <span class="n">the_appt_footprint</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -946,6 +960,9 @@
                 <span class="n">appt_footprint_times</span><span class="p">[</span>
                     <span class="sa">f</span><span class="s2">&quot;FacilityID_</span><span class="si">{</span><span class="n">the_facility</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">_Officer_</span><span class="si">{</span><span class="n">appt_info</span><span class="o">.</span><span class="n">officer_type</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">]</span> <span class="o">+=</span> <span class="n">appt_info</span><span class="o">.</span><span class="n">time_taken</span>
+
+        <span class="c1"># Cache the time request to avoid having to recompute on subsequent calls</span>
+        <span class="n">hsi_event</span><span class="o">.</span><span class="n">_cached_time_requests</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">appt_footprint_times</span>
 
         <span class="k">return</span> <span class="n">appt_footprint_times</span></div>
 
@@ -1628,11 +1645,14 @@
                         <span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_call</span>
                         <span class="n">total_footprint</span> <span class="o">-=</span> <span class="n">original_call</span>
                         <span class="n">total_footprint</span> <span class="o">+=</span> <span class="n">updated_call</span>
-                        <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_squeeze_factors</span><span class="p">(</span>
-                            <span class="n">footprints_per_event</span><span class="o">=</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">,</span>
-                            <span class="n">total_footprint</span><span class="o">=</span><span class="n">total_footprint</span><span class="p">,</span>
-                            <span class="n">current_capabilities</span><span class="o">=</span><span class="n">current_capabilities</span><span class="p">,</span>
-                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="c1"># only need to recompute squeeze factors if running with constraints</span>
+                            <span class="c1"># i.e. mode != 0</span>
+                            <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_squeeze_factors</span><span class="p">(</span>
+                                <span class="n">footprints_per_event</span><span class="o">=</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">,</span>
+                                <span class="n">total_footprint</span><span class="o">=</span><span class="n">total_footprint</span><span class="p">,</span>
+                                <span class="n">current_capabilities</span><span class="o">=</span><span class="n">current_capabilities</span><span class="p">,</span>
+                            <span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="c1"># no actual footprint is returned so take the expected initial declaration as the actual</span>
                         <span class="n">actual_appt_footprint</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span>
@@ -1707,7 +1727,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_received_info_about_bed_days</span> <span class="o">=</span> <span class="kc">None</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_received_info_about_bed_days</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_time_requests</span> <span class="o">=</span> <span class="p">{}</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">bed_days_allocated_to_this_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1752,8 +1773,9 @@
 
 <div class="viewcode-block" id="HSI_Event.run"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Make the event happen.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">post_apply_hook</span><span class="p">()</span></div>
+        <span class="n">updated_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post_apply_hook</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">updated_appt_footprint</span></div>
 
 <div class="viewcode-block" id="HSI_Event.get_all_consumables"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.get_all_consumables">[docs]</a>    <span class="k">def</span> <span class="nf">get_all_consumables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_codes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pkg_codes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">footprint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Helper function to allow for getting and checking of entire set of consumables.</span>
@@ -1870,7 +1892,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jul 06, 2021.
+        Last updated on Jul 08, 2021.
       </span>
 
     </p>

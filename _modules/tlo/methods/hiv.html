@@ -2129,6 +2129,33 @@
     <span class="n">x</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="s1">&#39;age_group&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;value&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">x</span><span class="p">[</span><span class="s1">&#39;age_group&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">set_age_group</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;age_group&#39;</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">x</span>
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1">#   Dummy Version of the Module</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="DummyHivModule"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.DummyHivModule">[docs]</a><span class="k">class</span> <span class="nc">DummyHivModule</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Dummy HIV Module - it&#39;s only job is to create and maintain the &#39;hv_inf&#39; property.</span>
+<span class="sd">     This can be used in test files.&quot;&quot;&quot;</span>
+    <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;hv_inf&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s2">&quot;DUMMY version of the property for hv_inf&quot;</span><span class="p">)}</span>
+
+<div class="viewcode-block" id="DummyHivModule.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.DummyHivModule.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hiv_prev</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hiv_prev</span> <span class="o">=</span> <span class="n">hiv_prev</span></div>
+
+<div class="viewcode-block" id="DummyHivModule.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.DummyHivModule.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummyHivModule.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.DummyHivModule.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;hv_inf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">))</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">hiv_prev</span></div>
+
+<div class="viewcode-block" id="DummyHivModule.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.DummyHivModule.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummyHivModule.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.DummyHivModule.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;hv_inf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">hiv_prev</span></div></div>
 </pre></div>
 
            </div>
@@ -2141,7 +2168,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jul 06, 2021.
+        Last updated on Jul 08, 2021.
       </span>
 
     </p>
