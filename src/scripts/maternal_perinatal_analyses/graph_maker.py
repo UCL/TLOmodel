@@ -133,11 +133,12 @@ def get_htn_disorders_graph(master_dict_an, master_dict_la, master_dict_pn, deno
     plt.show() """
 
 
-def get_generic_incidence_graph(complication, dict_2010, dict_2015, denominator, target_2010, target_2015, colours):
+def get_generic_incidence_graph(complication, dict_2010, dict_2015, denominator_2010, denominator_2015, target_2010,
+                                target_2015, colours):
 
-    rate_2010 = (dict_2010[complication] / denominator) * 1000
+    rate_2010 = (dict_2010[complication] / denominator_2010) * 1000
     print(f'{complication} rate 2010 {rate_2010}')
-    rate_2015 = (dict_2015[complication] / denominator) * 1000
+    rate_2015 = (dict_2015[complication] / denominator_2015) * 1000
     print(f'{complication} rate 2015 {rate_2015}')
 
     N = 2
@@ -153,6 +154,46 @@ def get_generic_incidence_graph(complication, dict_2010, dict_2015, denominator,
     plt.xticks(ind + width / 2, ('2010', '2015'))
     plt.legend(loc='best')
     plt.show()
+
+
+
+def get_total_anaemia_graph(logs_2010, logs_2015, denominator_2010, denominator_2015, colours):
+
+    def get_anaemia_prevalence(log):
+        anaemia_df = log['tlo.methods.pregnancy_supervisor']['anaemia_on_birth']
+        total_prevalence = (len(anaemia_df.loc[anaemia_df['anaemia_status'] != 'none']) / len(anaemia_df)) * 100
+        mild_prevalence = (len(anaemia_df.loc[anaemia_df['anaemia_status'] == 'mild']) / len(anaemia_df)) * 100
+        moderate_prevalence = (len(anaemia_df.loc[anaemia_df['anaemia_status'] == 'moderate']) / len(anaemia_df)) * 100
+        severe_prevalence = (len(anaemia_df.loc[anaemia_df['anaemia_status'] == 'severe']) / len(anaemia_df)) * 100
+
+        return [total_prevalence, mild_prevalence, moderate_prevalence, severe_prevalence]
+
+    prev_2010 = get_anaemia_prevalence(logs_2010)[0]
+    print(f'anaemia prevalence 2010 {prev_2010}')
+    prev_2015 = get_anaemia_prevalence(logs_2015)[0]
+    print(f'anaemia prevalence 2015 {prev_2015}')
+
+    mild_prev_10 = get_anaemia_prevalence(logs_2010)[1]
+    mild_prev_15 = get_anaemia_prevalence(logs_2015)[1]
+    mod_prev_10 = get_anaemia_prevalence(logs_2010)[2]
+    mod_prev_15 = get_anaemia_prevalence(logs_2015)[2]
+    sev_prev_10 = get_anaemia_prevalence(logs_2010)[3]
+    sev_prev_15 = get_anaemia_prevalence(logs_2015)[3]
+
+    N = 8
+    model_rates = (prev_2010, prev_2015, mild_prev_10, mild_prev_15, mod_prev_10, mod_prev_15, sev_prev_10, sev_prev_15)
+    target_rates = (34.5, 45.1, 19.5, 22.7, 17.8, 20.8, 0.2, 1.6)
+
+    ind = np.arange(N)
+    width = 0.35
+    plt.bar(ind, model_rates, width, label='Model', color=colours[0])
+    plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
+    plt.ylabel(f'Prevalence')
+    plt.title(f'Prevalence of Maternal anaemia at birth')
+    plt.xticks(ind + width / 2, ('2010', '2015', 'm2010', 'm2015', 'mo2010', 'mo2015', 's2010', 's2015'))
+    plt.legend(loc='best')
+    plt.show()
+
 
 
 def get_incidence_graph_from_an_and_la(complication, dict_an_2010, dict_la_2010, dict_an_2015, dict_la_2015,
@@ -180,6 +221,90 @@ def get_incidence_graph_from_an_and_la(complication, dict_an_2010, dict_la_2010,
     plt.legend(loc='best')
     plt.show()
 
+
+def get_abortion_complication_graphs(dict_2010, dict_2015, denominator_2010, denominator_2015, colours):
+
+    complicated_rate_sa_10 = (dict_2010['complicated_spontaneous_abortion'] / denominator_2010) * 1000
+    complicated_proportion_sa_10 = (dict_2010['complicated_spontaneous_abortion'] /
+                                    dict_2010['spontaneous_abortion']) * 100
+    complicated_rate_sa_15 = (dict_2015['complicated_spontaneous_abortion'] / denominator_2015) * 1000
+    complicated_proportion_sa_15 = (dict_2015['complicated_spontaneous_abortion'] /
+                                    dict_2015['spontaneous_abortion']) * 100
+
+    complicated_rate_ia_10 = (dict_2010['complicated_induced_abortion'] / denominator_2010) * 1000
+    complicated_proportion_ia_10 = (dict_2010['complicated_induced_abortion'] /
+                                    dict_2010['induced_abortion']) * 100
+    complicated_rate_ia_15 = (dict_2015['complicated_induced_abortion'] / denominator_2015) * 1000
+    complicated_proportion_ia_15 = (dict_2015['complicated_induced_abortion'] /
+                                    dict_2015['induced_abortion']) * 100
+
+    N = 4
+    model_rates = (complicated_rate_sa_10, complicated_rate_sa_15, complicated_rate_ia_10, complicated_rate_ia_15)
+    target_rates = (26, 22, 24, 59)
+
+    ind = np.arange(N)
+    width = 0.35
+    plt.bar(ind, model_rates, width, label='Model', color=colours[0])
+    plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
+    plt.ylabel(f'Rate per 000 pregnancies')
+    plt.title(f'Rate of complicated spontaneous and induced abortion')
+    plt.xticks(ind + width / 2, ('SA10', 'SA15', 'IA10', 'IA15'))
+    plt.legend(loc='best')
+    plt.show()
+
+    N = 4
+    model_rates = (complicated_proportion_sa_10, complicated_proportion_sa_15,
+                   complicated_proportion_ia_10, complicated_proportion_ia_15)
+
+    target_rates = (14, 12, 28, 37)
+    ind = np.arange(N)
+    width = 0.35
+    plt.bar(ind, model_rates, width, label='Model', color=colours[0])
+    plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
+    plt.ylabel(f'Proportion of total abortion by type')
+    plt.title(f'Proportion of abortions leading to complications')
+    plt.xticks(ind + width / 2, ('SA10', 'SA15', 'IA10', 'IA15'))
+    plt.legend(loc='best')
+    plt.show()
+
+    sepsis_sa_10 = (dict_2010['spontaneous_abortion_sepsis'] / dict_2010['complicated_spontaneous_abortion']) * 100
+    sepsis_sa_15 = (dict_2015['spontaneous_abortion_sepsis'] / dict_2015['complicated_spontaneous_abortion']) * 100
+
+    haem_sa_10 = (dict_2010['spontaneous_abortion_haemorrhage'] / dict_2010['complicated_spontaneous_abortion']) * 100
+    haem_sa_15 = (dict_2015['spontaneous_abortion_haemorrhage'] / dict_2015['complicated_spontaneous_abortion']) * 100
+
+    other_sa_10 = (dict_2010['spontaneous_abortion_other_comp'] / dict_2010['complicated_spontaneous_abortion']) * 100
+    other_sa_15 = (dict_2015['spontaneous_abortion_other_comp'] / dict_2015['complicated_spontaneous_abortion']) * 100
+
+    sepsis_ia_10 = (dict_2010['induced_abortion_sepsis'] / dict_2010['complicated_induced_abortion']) * 100
+    sepsis_ia_15 = (dict_2015['induced_abortion_sepsis'] / dict_2015['complicated_induced_abortion']) * 100
+
+    haem_ia_10 = (dict_2010['induced_abortion_haemorrhage'] / dict_2010['complicated_induced_abortion']) * 100
+    haem_ia_15 = (dict_2015['induced_abortion_haemorrhage'] / dict_2015['complicated_induced_abortion']) * 100
+
+    inj_ia_10 = (dict_2010['induced_abortion_injury'] / dict_2010['complicated_induced_abortion']) * 100
+    inj_ia_15 = (dict_2015['induced_abortion_injury'] / dict_2015['complicated_induced_abortion']) * 100
+
+    other_ia_10 = (dict_2010['induced_abortion_other_comp'] / dict_2010['complicated_induced_abortion']) * 100
+    other_ia_15 = (dict_2015['induced_abortion_other_comp'] / dict_2015['complicated_induced_abortion']) * 100
+
+    N = 14
+    model_rates = (sepsis_sa_10, sepsis_sa_15, haem_sa_10, haem_sa_15,  other_sa_10, other_sa_15,  sepsis_ia_10,
+                   sepsis_ia_15, haem_ia_10, haem_ia_15, inj_ia_10, inj_ia_15, other_ia_10, other_ia_15)
+
+    target_rates = (23, 23, 13.5, 13.5, 0, 0, 23, 23, 13.5, 13.5, 5, 5, 0, 0)
+    ind = np.arange(N)
+    width = 0.35
+    plt.bar(ind, model_rates, width, label='Model', color=colours[0])
+    plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
+    plt.ylabel(f'% total complicated abortions')
+    plt.title(f'Proportion of complicated abortions by complication')
+    plt.xticks(ind + width / 2, ('S.SA10', 'S.SA15', 'H.SA10', 'H.SA15', 'O.SA10', 'O.SA15', 'S.IA10', 'S.IA15',
+                                 'H.AA10', 'H.IA15', 'I.IA10', 'I.IA15', 'O.IA10', 'O.IA15'), rotation=45)
+    plt.legend(loc='best')
+    plt.show()
+
+
 def get_preterm_birth_graph(dict_2010, dict_2015, total_births_2010, total_births_2015, colours):
 
     early_rate_2010 = (dict_2010['early_preterm_labour'] / total_births_2010) * 100
@@ -187,12 +312,14 @@ def get_preterm_birth_graph(dict_2010, dict_2015, total_births_2010, total_birth
     late_rate_2010 = (dict_2010['late_preterm_labour'] / total_births_2010) * 100
     print(f'lptl rate 2010 {late_rate_2010}')
     total_preterm_rate_2010 = early_rate_2010 + late_rate_2010
+    print(f'total ptl rate 2010 {total_preterm_rate_2010}')
 
     early_rate_2015 = (dict_2015['early_preterm_labour'] / total_births_2015) * 100
     print(f'eptl rate 2015 {early_rate_2015}')
     late_rate_2015 = (dict_2015['late_preterm_labour'] / total_births_2015) * 100
     print(f'lptl rate 2015 {late_rate_2015}')
     total_preterm_rate_2015 = early_rate_2015 + late_rate_2015
+    print(f'total ptl rate 2015 {total_preterm_rate_2015}')
 
     N = 6
     model_rates = (total_preterm_rate_2010, late_rate_2010, early_rate_2010, total_preterm_rate_2015, early_rate_2015,
@@ -208,7 +335,6 @@ def get_preterm_birth_graph(dict_2010, dict_2015, total_births_2010, total_birth
     plt.xticks(ind + width / 2, ('Rate 10', 'Late 10', 'Early 10', 'Total 15', 'Late 15', 'Early 15', ))
     plt.legend(loc='best')
     plt.show()
-
 
 
 def get_anc_coverage_graph(logs_dict_file, year):

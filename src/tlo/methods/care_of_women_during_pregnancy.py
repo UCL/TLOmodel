@@ -3073,7 +3073,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             return
 
         # We check only women with complications post abortion are sent to this event
-        assert abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury', first=True)
+        assert abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury', 'other', first=True)
 
         # Check the availability of consumables
         pkg_code_infection = pd.unique(

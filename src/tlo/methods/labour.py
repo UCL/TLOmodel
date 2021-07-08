@@ -2349,12 +2349,11 @@ class Labour(Module):
         params = self.current_parameters
 
         if 'Depression' in self.sim.modules.keys():
-            if self.rng.random_sample() < params['prob_intervention_delivered_depression_screen_pnc']:
-                logger.debug(key='msg', data=f'Mother {person_id} will now be receive screening for depression'
-                                             f' during PNC and commence treatment as appropriate')
+            logger.debug(key='msg', data=f'Mother {person_id} will now be receive screening for depression'
+                                         f' during PNC and commence treatment as appropriate')
 
-                if not df.at[person_id, 'de_ever_diagnosed_depression']:
-                    self.sim.modules['Depression'].do_when_suspected_depression(person_id, hsi_event)
+            if not df.at[person_id, 'de_ever_diagnosed_depression']:
+                self.sim.modules['Depression'].do_when_suspected_depression(person_id, hsi_event)
 
     def interventions_delivered_pre_discharge(self, hsi_event):
         """

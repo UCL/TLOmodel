@@ -418,7 +418,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
             # -----  COMPLICATIONS OF ABORTION  -----
             abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
-            if abortion_complications.has_any([person_id], 'sepsis', 'injury', 'haemorrhage', first=True):
+            if abortion_complications.has_any([person_id], 'sepsis', 'injury', 'haemorrhage', 'other', first=True):
                 event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
                     module=self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
                 health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)

@@ -1,6 +1,7 @@
 
 from pathlib import Path
 import pandas as pd
+import numpy as np
 from tlo.analysis.utils import parse_log_file
 from tlo import Date, Simulation, logging
 from tlo.methods.labour import LabourOnsetEvent
@@ -15,7 +16,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     joes_fake_props_module,
-    symptommanager
+    symptommanager, malaria, hiv, cardio_metabolic_disorders, depression, dx_algorithm_child, dx_algorithm_adult
 )
 
 
@@ -39,13 +40,44 @@ def register_modules(sim):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*']),
-                 joes_fake_props_module.JoesFakePropsModule(resourcefilepath=resourcefilepath),
+                 #joes_fake_props_module.JoesFakePropsModule(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+                 malaria.Malaria(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath))
+
+
+def set_pregnant_pop_at_baseline(sim, start_date):
+    df = sim.population.props
+
+    all = df.loc[df.is_alive]
+    df.loc[all.index, 'sex'] = 'F'
+    df.loc[all.index, 'is_pregnant'] = True
+    for person in all.index:
+        age = sim.rng.randint(16, 49)
+        df.at[person, 'age_years'] = age
+        df.at[person, 'age_exact_years'] = float(age)
+        df.at[person, 'age_days'] = age * 365
+        df.at[person, 'date_of_birth'] = start_date - pd.DateOffset(days=(age * 365))
+
+        # Set length of pregnancy
+        days_pregnant = sim.rng.randint(0, 245)
+        df.at[person, 'date_of_last_pregnancy'] = start_date - pd.DateOffset(days=(days_pregnant))
+        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(person)
+
+        # Schedule labour
+        days_till_term = 245 - days_pregnant
+        df.at[person, 'la_due_date_current_pregnancy'] = start_date + pd.DateOffset(days=(days_till_term))
+        sim.schedule_event(LabourOnsetEvent(sim.modules['Labour'], person),
+                           df.at[person, 'la_due_date_current_pregnancy'])
 
 
 def set_pregnant_pop(sim, start_date):
@@ -55,14 +87,6 @@ def set_pregnant_pop(sim, start_date):
     df.loc[all.index, 'sex'] = 'F'
     df.loc[all.index, 'is_pregnant'] = True
     df.loc[all.index, 'date_of_last_pregnancy'] = sim.start_date
-    for person in all.index:
-        age = sim.rng.randint(16, 49)
-        df.at[person, 'age_years'] = age
-        df.at[person, 'age_exact_years'] = float(age)
-        df.at[person, 'age_days'] = age * 365
-        df.at[person, 'date_of_birth'] = start_date - pd.DateOffset(days=(age * 365))
-
-        sim.modules['Labour'].set_date_of_labour(person)
 
 
 def set_pregnant_pop_age_correct(sim):
@@ -94,6 +118,7 @@ def set_labour_pop(sim, start_date):
 
         sim.schedule_event(LabourOnsetEvent(sim.modules['Labour'], person),
                            df.at[person, 'la_due_date_current_pregnancy'])
+
 
 def set_labour_pop_age_correct(sim):
     df = sim.population.props
@@ -176,7 +201,8 @@ def do_labour_run_only(config_name, start_date, end_date, seed, population, para
     sim.simulate(end_date=end_date)
 
 
-def do_normal_run_all_pregnant(config_name, start_date, end_date, seed, population, parameters):
+def age_corrected_run_with_all_women_pregnant_at_baseline(config_name, start_date, end_date, seed, population,
+                                                          parameters):
     log_config = {
         "filename": f"{config_name}_calibration_{seed}",  # The name of the output file (a timestamp will be appended).
         "directory": "./outputs/calibration_files",
@@ -186,12 +212,54 @@ def do_normal_run_all_pregnant(config_name, start_date, end_date, seed, populati
 
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
     register_modules(sim)
+
     sim.make_initial_population(n=population)
 
     df = sim.population.props
-    all = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years <50)]
+    all = df.loc[df.is_alive]
+    df.loc[all.index, 'sex'] = 'F'
     df.loc[all.index, 'is_pregnant'] = True
     df.loc[all.index, 'date_of_last_pregnancy'] = sim.start_date
+
+    init_pop = sim.modules['Demography'].parameters['pop_2010']
+
+    too_young = init_pop.loc[init_pop['Age'] < 15]
+    young_adjusted_init_pop = init_pop.drop(index=too_young.index)
+
+    too_old = young_adjusted_init_pop.loc[young_adjusted_init_pop['Age'] > 49]
+    old_adjusted_init_pop = young_adjusted_init_pop.drop(index=too_old.index)
+
+    male = old_adjusted_init_pop.loc[old_adjusted_init_pop['Sex'] == 'M']
+    final_init_pop = old_adjusted_init_pop.drop(index=male.index)
+
+    final_init_pop['prob'] = final_init_pop['Count'] / final_init_pop['Count'].sum()
+
+    # TODO: note, should we also reassign the region and districts?
+    demog_char_to_assign = final_init_pop.loc[sim.rng.choice(final_init_pop.index.values,
+                                                             size=len(all),
+                                                             replace=True,
+                                                             p=final_init_pop.prob)][['District',
+                                                                                      'District_Num',
+                                                                                      'Region',
+                                                                                      'Age']].reset_index(drop=True)
+    # make a date of birth that is consistent with the allocated age of each person
+    demog_char_to_assign['days_since_last_birthday'] = sim.rng.randint(0, 365, len(demog_char_to_assign))
+
+    demog_char_to_assign['date_of_birth'] = \
+        [sim.date - pd.DateOffset(years=int(demog_char_to_assign['Age'][i]),
+                                  days=int(demog_char_to_assign['days_since_last_birthday'][i])) for i in
+         demog_char_to_assign.index]
+    demog_char_to_assign['age_in_days'] = sim.date - demog_char_to_assign['date_of_birth']
+
+    df.loc[all.index, 'date_of_birth'] = demog_char_to_assign['date_of_birth']
+    df.loc[all.index, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
+    df.loc[all.index, 'age_years'] = df.loc[all.index, 'age_exact_years'].astype('int64')
+    df.loc[all.index, 'age_range'] = df.loc[all.index, 'age_years'].map(sim.modules['Demography'].AGE_RANGE_LOOKUP)
+    df.loc[all.index, 'age_days'] = demog_char_to_assign['age_in_days'].dt.days
+    df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
+    df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
+    df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
+
     for person in all.index:
         sim.modules['Labour'].set_date_of_labour(person)
 
@@ -213,13 +281,18 @@ def do_normal_run_all_pregnant(config_name, start_date, end_date, seed, populati
 
     sim.simulate(end_date=end_date)
 
+
 # Get the log
 
-seeds = [111]
-for seed in seeds:
-    do_run_pregnancy_only(config_name='ectopic_rupture_and_abortion_2010', start_date=Date(2010, 1, 1),
-                          end_date=Date(2010, 7, 1),
-                          seed=seed, population=5000, parameters=2010, age_correct=False)
-    do_run_pregnancy_only(config_name='ectopic_rupture_and_abortion_2015', start_date=Date(2015, 1, 1),
-                          end_date=Date(2015, 7, 1),
-                          seed=seed, population=5000, parameters=2015, age_correct=False)
+
+
+age_corrected_run_with_all_women_pregnant_at_baseline(config_name='anaemia_2010_with_rfs', start_date=Date(2010, 1, 1),
+                                                      end_date=Date(2010, 11, 1), seed=136,
+                                                      population=2000, parameters=2010)
+age_corrected_run_with_all_women_pregnant_at_baseline(config_name='anaemia_2010_with_rfs', start_date=Date(2010, 1, 1),
+                                                      end_date=Date(2010, 11, 1), seed=136,
+                                                      population=2000, parameters=2010)
+
+#age_corrected_run_with_all_women_pregnant_at_baseline(config_name='anaemia_2015_with_rfs', start_date=Date(2015, 1, 1),
+#                                                      end_date=Date(2015, 11, 1), seed=137,
+ #                                                     population=2000, parameters=2015) """

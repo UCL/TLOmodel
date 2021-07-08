@@ -66,6 +66,8 @@ class PregnancySupervisor(Module):
         # ECTOPIC PREGNANCY...
         'prob_ectopic_pregnancy': Parameter(
             Types.LIST, 'probability of ectopic pregnancy'),
+        'prob_care_seeking_ectopic_pre_rupture': Parameter(
+            Types.LIST, 'probability a woman will seek care for ectopic pregnancy prior to rupture'),
         'prob_ectopic_pregnancy_death': Parameter(
             Types.LIST, 'probability of a woman dying from a ruptured ectopic pregnancy'),
 
@@ -94,8 +96,14 @@ class PregnancySupervisor(Module):
         'rr_spont_abortion_prev_sa': Parameter(
             Types.LIST, 'relative risk of spontaneous abortion in women who have previously experiences spontaneous '
                         'abortion'),
+        'prob_complicated_sa': Parameter(
+            Types.LIST, 'probability that a woman who experiences spontaneous abortion with experience any '
+                        'complications'),
         'prob_induced_abortion_per_month': Parameter(
             Types.LIST, 'underlying risk of induced abortion per month'),
+        'prob_complicated_ia': Parameter(
+            Types.LIST, 'probability that a woman who experiences induced abortion with experience any '
+                        'complications'),
         'prob_haemorrhage_post_abortion': Parameter(
             Types.LIST, 'probability of haemorrhage following an abortion'),
         'prob_sepsis_post_abortion': Parameter(
@@ -201,8 +209,6 @@ class PregnancySupervisor(Module):
         # CHORIOAMNIONITIS...
         'prob_chorioamnionitis': Parameter(
             Types.LIST, 'monthly probability of a women developing chorioamnionitis'),
-        'rr_chorio_post_prom': Parameter(
-            Types.LIST, 'relative risk of chorioamnionitis after PROM'),
         'prob_antenatal_sepsis_death': Parameter(
             Types.LIST, 'case fatality rate for chorioamnionitis'),
 
@@ -458,7 +464,7 @@ class PregnancySupervisor(Module):
 
         # This bitset property stores 'types' of complication that can occur after an abortion
         self.abortion_complications = BitsetHandler(self.sim.population, 'ps_abortion_complications',
-                                                    ['sepsis', 'haemorrhage', 'injury'])
+                                                    ['sepsis', 'haemorrhage', 'injury', 'other'])
 
     def initialise_simulation(self, sim):
 
@@ -582,7 +588,6 @@ class PregnancySupervisor(Module):
                                                         .when(35, params['baseline_prob_early_labour_onset'][3]),
                 Predictor('ps_premature_rupture_of_membranes').when(True, params['rr_preterm_labour_post_prom']),
                 Predictor().when('ps_anaemia_in_pregnancy != "none"', params['rr_preterm_labour_anaemia']),
-                Predictor('ps_premature_rupture_of_membranes').when(True, params['rr_preterm_labour_post_prom']),
                 Predictor('ma_is_infected').when(True, params['rr_preterm_labour_malaria']),
                 Predictor('ps_multiple_pregnancy').when(True, params['rr_preterm_labour_multiple_pregnancy'])),
 
@@ -695,6 +700,10 @@ class PregnancySupervisor(Module):
             # We reset all womans gestational age when they deliver as they are no longer pregnant
             df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
             df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT
+
+            # And store her anaemia status to calculate the prevalence of anaemia on birth
+            logger.info(key='anaemia_on_birth', data={'mother': mother_id,
+                                                      'anaemia_status': df.at[mother_id, 'ps_anaemia_in_pregnancy']})
 
             # We currently assume that hyperglycemia due to gestational diabetes resolves following birth
             if df.at[mother_id, 'ps_gest_diab'] != 'none':
@@ -1028,9 +1037,19 @@ class PregnancySupervisor(Module):
         if cause == 'spontaneous_abortion':
             df.at[individual_id, 'ps_prev_spont_abortion'] = True
 
+        complicated_sa = self.rng.random_sample() < params['prob_complicated_sa']
+        complicated_ia = self.rng.random_sample() < params['prob_complicated_ia']
+
         # We apply a risk of developing specific complications associated with abortion type and store using a bitset
         # property
-        if cause == 'spontaneous_abortion' or cause == 'induced_abortion':
+        if (cause == 'induced_abortion') and complicated_ia:
+            if self.rng.random_sample() < params['prob_injury_post_abortion']:
+                self.abortion_complications.set([individual_id], 'injury')
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': f'{cause}_injury',
+                                                               'timing': 'antenatal'})
+
+        if ((cause == 'spontaneous_abortion') and complicated_sa) or ((cause == 'induced_abortion') and complicated_ia):
             if self.rng.random_sample() < params['prob_haemorrhage_post_abortion']:
                 self.abortion_complications.set([individual_id], 'haemorrhage')
                 self.store_dalys_in_mni(individual_id, 'abortion_haem_onset')
@@ -1045,18 +1064,15 @@ class PregnancySupervisor(Module):
                                                                'type': f'{cause}_sepsis',
                                                                'timing': 'antenatal'})
 
-        # Women who induce an abortion are at risk of developing an injury to the reproductive tract
-        if cause == 'induced_abortion':
-            if self.rng.random_sample() < params['prob_injury_post_abortion']:
-                self.abortion_complications.set([individual_id], 'injury')
+            if not self.abortion_complications.has_any([individual_id], 'sepsis', 'haemorrhage', 'injury', first=True):
+                self.abortion_complications.set([individual_id], 'other')
                 logger.info(key='maternal_complication', data={'person': individual_id,
-                                                               'type': f'{cause}_injury',
+                                                               'type': f'{cause}_other_comp',
                                                                'timing': 'antenatal'})
 
         # Then we determine if this woman will seek care, and schedule presentation to the health system
-        if self.abortion_complications.has_any([individual_id], 'sepsis', 'haemorrhage', 'injury', first=True):
-            logger.debug(key='msg', data=f'Mother {individual_id} has experienced one or more complications following '
-                                         f'abortion and may choose to seek care')
+        if self.abortion_complications.has_any([individual_id], 'sepsis', 'haemorrhage', 'injury', 'other', first=True):
+
             logger.info(key='maternal_complication', data={'person': individual_id,
                                                            'type': f'complicated_{cause}',
                                                            'timing': 'antenatal'})
@@ -1065,7 +1081,7 @@ class PregnancySupervisor(Module):
             self.store_dalys_in_mni(individual_id, 'abortion_onset')
 
             # Determine if those women will seek care
-            self.care_seeking_pregnancy_loss_complications(individual_id)
+            self.care_seeking_pregnancy_loss_complications(individual_id, cause='abortion')
 
             # Schedule possible death
             self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self, individual_id, cause=f'{cause}'),
@@ -1632,19 +1648,23 @@ class PregnancySupervisor(Module):
 
         self.update_variables_post_still_birth_for_data_frame(still_birth.loc[still_birth])
 
-    def care_seeking_pregnancy_loss_complications(self, individual_id):
+    def care_seeking_pregnancy_loss_complications(self, individual_id, cause):
         """
         This function manages care seeking for women experiencing ectopic pregnancy or complications following
         spontaneous/induced abortion.
         :param individual_id: individual_id
+        :param cause: 'abortion', 'ectopic_pre_rupture', 'ectopic_ruptured'
         :return: Returns True/False value to signify care seeking
         """
         df = self.sim.population.props
         params = self.current_parameters
 
-        # Determine probability of care seeking via the linear model
-        if self.rng.random_sample() < params['prob_seek_care_pregnancy_loss']:
+        if cause == 'ectopic_pre_rupture':
+            care_seeking = self.rng.random_sample() < params['prob_care_seeking_ectopic_pre_rupture']
+        else:
+            care_seeking = self.rng.random_sample() < params['prob_seek_care_pregnancy_loss']
 
+        if care_seeking:
             logger.debug(key='message', data=f'Mother {individual_id} will seek care following pregnancy loss')
 
             # We assume women will seek care via HSI_GenericEmergencyFirstApptAtFacilityLevel1 and will be admitted for
@@ -2025,6 +2045,7 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
+        params = self.module.current_parameters
 
         # Check only the right women have arrived here
         assert df.at[individual_id, 'ps_ectopic_pregnancy'] == 'not_ruptured'
@@ -2044,7 +2065,8 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
             ind_or_df='individual', id_or_index=individual_id)
 
         # Determine if women will seek care at this stage
-        care_seeking_result = self.module.care_seeking_pregnancy_loss_complications(individual_id)
+        care_seeking_result = self.module.care_seeking_pregnancy_loss_complications(individual_id,
+                                                                                    cause='ectopic_pre_rupture')
         if not care_seeking_result:
 
             # For women who dont seek care (and get treatment) we schedule EctopicPregnancyRuptureEvent (simulating
@@ -2083,7 +2105,7 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
         self.module.store_dalys_in_mni(individual_id, 'ectopic_rupture_onset')
 
         # We see if this woman will now seek care following rupture
-        self.module.care_seeking_pregnancy_loss_complications(individual_id)
+        self.module.care_seeking_pregnancy_loss_complications(individual_id, cause='ectopic_ruptured')
 
         # We delayed the death event by three days to allow any treatment effects to mitigate risk of death
         self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self.module, individual_id, cause='ectopic_pregnancy'),
