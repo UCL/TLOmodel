@@ -5,7 +5,6 @@ import textwrap
 from pathlib import Path
 
 import pandas as pd
-from pandas import CategoricalDtype
 
 dagger = "\\ :sup:`†`\\ "
 data_file = "data_sources.csv"
@@ -63,7 +62,7 @@ def sort_by_category_and_module_name(_data):
 
     # define ordered category
     _data['Category'] = _data['Category'].astype(
-        CategoricalDtype(
+        pd.CategoricalDtype(
             ['Core Functions',
              'Healthcare System',
              'Contraception, Pregnancy and Labour',
