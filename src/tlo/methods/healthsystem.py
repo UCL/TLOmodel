@@ -367,7 +367,7 @@ class HealthSystem(Module):
 
     def on_simulation_end(self):
         """Put out to the log the information from the tracker of the last day of the simulation"""
-        self.bed_days.log_yesterday_info_from_all_bed_trackers()
+        self.bed_days.on_simulation_end()
 
     def register_disease_module(self, new_disease_module):
         """
