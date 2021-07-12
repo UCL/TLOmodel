@@ -31,12 +31,12 @@ class Epilepsy(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'Epilepsy': Cause(gbd_causes='Other neurological disorders', label='Epilepsy'),
+        'Epilepsy': Cause(gbd_causes='Idiopathic epilepsy', label='Epilepsy'),
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'Epilepsy': Cause(gbd_causes='Other neurological disorders', label='Epilepsy'),
+        'Epilepsy': Cause(gbd_causes='Idiopathic epilepsy', label='Epilepsy'),
     }
 
     # Module parameters
