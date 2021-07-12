@@ -312,11 +312,10 @@ class CardioMetabolicDisorders(Module):
                     add_or_remove='+',
                     disease_module=self)
 
-        # ----- Generate the initial "risk score" for the population:
+        # ----- Generate the initial "risk score" for the population based on exercise, diet, tobacco, alcohol, BMI:
         df['nc_risk_score'] = (df[[
             'li_low_ex', 'li_high_salt', 'li_high_sugar', 'li_tob', 'li_ex_alc']] > 0).sum(1)
         df.loc[df['li_bmi'] >= 3, ['nc_risk_score']] += 1
-
 
     def initialise_simulation(self, sim):
         """Schedule:
@@ -383,9 +382,7 @@ class CardioMetabolicDisorders(Module):
         # NB. Specificity is assumed to be 100%
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_diabetes=DxTest(
-                property='nc_diabetes',
-                cons_req_as_footprint={'Intervention_Package_Code': {},
-                                       'Item_Code': {blood_glucose_test: 1, blood_tube: 1}}
+                property='nc_diabetes'
             )
         )
         # Create the diagnostic representing the assessment for whether a person is diagnosed with hypertension:
@@ -405,15 +402,12 @@ class CardioMetabolicDisorders(Module):
         # Create the diagnostic representing the assessment for whether a person is diagnosed with CKD
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_chronic_kidney_disease=DxTest(
-                property='nc_chronic_kidney_disease',
-                cons_req_as_footprint={'Intervention_Package_Code': {}, 'Item_Code': {urine_analysis: 1}}
+                property='nc_chronic_kidney_disease'
             )
         )
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_chronic_ischemic_hd=DxTest(
-                property='nc_chronic_ischemic_hd',
-                cons_req_as_footprint={'Intervention_Package_Code': {},
-                                       'Item_Code': {ecg_electrodes: 1, ecg_paper: 1, ecg_paper_roll: 1}}
+                property='nc_chronic_ischemic_hd'
             )
         )
 
@@ -444,49 +438,49 @@ class CardioMetabolicDisorders(Module):
             baseline_annual_probability,
             Predictor('sex').when('M', p['rr_male']),
             Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
-            .when('.between(5, 9)', p['rr_5_9'])
-            .when('.between(10, 14)', p['rr_10_14'])
-            .when('.between(15, 19)', p['rr_15_19'])
-            .when('.between(20, 24)', p['rr_20_24'])
-            .when('.between(25, 29)', p['rr_25_29'])
-            .when('.between(30, 34)', p['rr_30_34'])
-            .when('.between(35, 39)', p['rr_35_39'])
-            .when('.between(40, 44)', p['rr_40_44'])
-            .when('.between(45, 49)', p['rr_45_49'])
-            .when('.between(50, 54)', p['rr_50_54'])
-            .when('.between(55, 59)', p['rr_55_59'])
-            .when('.between(60, 64)', p['rr_60_64'])
-            .when('.between(65, 69)', p['rr_65_69'])
-            .when('.between(70, 74)', p['rr_70_74'])
-            .when('.between(75, 79)', p['rr_75_79'])
-            .when('.between(80, 84)', p['rr_80_84'])
-            .when('.between(85, 89)', p['rr_85_89'])
-            .when('.between(90, 94)', p['rr_90_94'])
-            .when('.between(95, 99)', p['rr_95_99'])
-            .otherwise(p['rr_100']),
+                .when('.between(5, 9)', p['rr_5_9'])
+                .when('.between(10, 14)', p['rr_10_14'])
+                .when('.between(15, 19)', p['rr_15_19'])
+                .when('.between(20, 24)', p['rr_20_24'])
+                .when('.between(25, 29)', p['rr_25_29'])
+                .when('.between(30, 34)', p['rr_30_34'])
+                .when('.between(35, 39)', p['rr_35_39'])
+                .when('.between(40, 44)', p['rr_40_44'])
+                .when('.between(45, 49)', p['rr_45_49'])
+                .when('.between(50, 54)', p['rr_50_54'])
+                .when('.between(55, 59)', p['rr_55_59'])
+                .when('.between(60, 64)', p['rr_60_64'])
+                .when('.between(65, 69)', p['rr_65_69'])
+                .when('.between(70, 74)', p['rr_70_74'])
+                .when('.between(75, 79)', p['rr_75_79'])
+                .when('.between(80, 84)', p['rr_80_84'])
+                .when('.between(85, 89)', p['rr_85_89'])
+                .when('.between(90, 94)', p['rr_90_94'])
+                .when('.between(95, 99)', p['rr_95_99'])
+                .otherwise(p['rr_100']),
             Predictor('li_urban').when(True, p['rr_urban']),
             Predictor('li_wealth').when('1', p['rr_wealth_1'])
-            .when('2', p['rr_wealth_2'])
-            .when('3', p['rr_wealth_3'])
-            .when('4', p['rr_wealth_4'])
-            .when('5', p['rr_wealth_5']),
+                .when('2', p['rr_wealth_2'])
+                .when('3', p['rr_wealth_3'])
+                .when('4', p['rr_wealth_4'])
+                .when('5', p['rr_wealth_5']),
             Predictor('li_bmi').when('1', p['rr_bmi_1'])
-            .when('2', p['rr_bmi_2'])
-            .when('3', p['rr_bmi_3'])
-            .when('4', p['rr_bmi_4'])
-            .when('5', p['rr_bmi_5']),
+                .when('2', p['rr_bmi_2'])
+                .when('3', p['rr_bmi_3'])
+                .when('4', p['rr_bmi_4'])
+                .when('5', p['rr_bmi_5']),
             Predictor('li_low_ex').when(True, p['rr_low_exercise']),
             Predictor('li_high_salt').when(True, p['rr_high_salt']),
             Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
             Predictor('li_tob').when(True, p['rr_tobacco']),
             Predictor('li_ex_alc').when(True, p['rr_alcohol']),
             Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
-            .when('2', p['rr_marital_status_2'])
-            .when('3', p['rr_marital_status_3']),
+                .when('2', p['rr_marital_status_2'])
+                .when('3', p['rr_marital_status_3']),
             Predictor('li_in_ed').when(True, p['rr_in_education']),
             Predictor('li_ed_lev').when('1', p['rr_current_education_level_1'])
-            .when('2', p['rr_current_education_level_2'])
-            .when('3', p['rr_current_education_level_3']),
+                .when('2', p['rr_current_education_level_2'])
+                .when('3', p['rr_current_education_level_3']),
             Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
             Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
             Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
@@ -543,6 +537,36 @@ class CardioMetabolicDisorders(Module):
         df.at[child_id, 'nc_risk_score'] = 0
         df.at[child_id, 'nc_n_conditions'] = 0
         df.at[child_id, 'nc_condition_combos'] = False
+
+    def get_all_consumables(self, hsi_event, condition, type_of_consumable):
+        """
+        This function defines all consumables and determines the outcome of the request for consumables from the
+        health system.
+        :param hsi_event: HSI event in which the function has been called
+        """
+        person_id = hsi_event.target
+        df = self.sim.population.props
+
+        # Define the consumables to get
+        if type_of_consumable == 'test':
+            consumables_to_get = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {self.parameters[f'{condition}_hsi'].test_item_code: 1}}
+        elif type_of_consumable == 'medication':
+            consumables_to_get = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {self.parameters[f'{condition}_hsi'].medication_item_code: 1}}
+
+        # Confirm availability of consumables
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=hsi_event,
+            cons_req_as_footprint=consumables_to_get)
+
+        # As with previous interventions - condition on consumables and probability intervention is delivered
+        if outcome_of_request_for_consumables['Item_Code'][f'item_code_{condition}_{type_of_consumable}']:
+            return True
+        else:
+            return False
 
     def report_daly_values(self):
         """Report DALY values to the HealthBurden module"""
@@ -886,39 +910,48 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
         # Ignore this event if the person is no longer alive:
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-        # Run a test to diagnose whether the person has condition:
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run=f'assess_{self.condition}',
-            hsi_event=self
-        )
-        if dx_result:
-            # record date of diagnosis:
-            df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
-            df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
-            # start weight loss recommendation:
-            hs.schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                    module=self.module,
-                    person_id=person_id,
-                    condition=f'{self.condition}'
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None
+        # Figure out availability of any consumables needed for the test:
+        if 'test_item_code' in self.module.parameters[f'{self.condition}_hsi']:
+            # check if consumables are available
+            all_available = self.get_all_consumables(item_codes=[self.module.parameters[
+                                                                     f'{self.condition}_hsi'].test_item_code])
+        else:
+            all_available = True
+
+        if all_available:
+            # Run a test to diagnose whether the person has condition:
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run=f'assess_{self.condition}',
+                hsi_event=self
             )
-        elif df.at[person_id, 'li_bmi'] >= 3:  # change to be if individual has >2 risk factors
-            self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
-            # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
-                    module=self.module,
-                    person_id=person_id,
-                    condition='diabetes'
-                ),
-                topen=self.sim.date + DateOffset(months=6),
-                tclose=self.sim.date + DateOffset(months=9),
-                priority=0
-            )
+            if dx_result:
+                # record date of diagnosis:
+                df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
+                df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
+                # start weight loss recommendation:
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                        module=self.module,
+                        person_id=person_id,
+                        condition=f'{self.condition}'
+                    ),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
+            elif df.at[person_id, 'li_bmi'] >= 3:  # change to be if individual has >2 risk factors
+                self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
+                # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
+                        module=self.module,
+                        person_id=person_id,
+                        condition='diabetes'
+                    ),
+                    topen=self.sim.date + DateOffset(months=6),
+                    tclose=self.sim.date + DateOffset(months=9),
+                    priority=0
+                )
 
     def did_not_run(self):
         pass
@@ -947,7 +980,7 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
         # Ignore this event if the person is no longer alive:
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-         # If the person is already diagnosed, then take no action:
+        # If the person is already diagnosed, then take no action:
         if df.at[person_id, f'nc_{self.condition}_ever_diagnosed']:
             return hs.get_blank_appt_footprint()
         # Check that this event has been called for someone with the symptom for the condition
