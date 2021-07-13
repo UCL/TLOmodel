@@ -1158,7 +1158,7 @@ class RTI(Module):
 
     # Declare Causes of Death and Disability
     CAUSES_OF_DISABILITY = {
-        f'RTI': Cause(gbd_causes='Road injuries', label='Transport Injuries')
+        'RTI': Cause(gbd_causes='Road injuries', label='Transport Injuries')
     }
 
     def read_parameters(self, data_folder):
@@ -5612,7 +5612,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         if self.is_child:
             item_code_fluid_replacement = pd.unique(
                 consumables.loc[consumables['Items'] ==
-                                "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
+                                "Sodium lactate injection (Ringer's), 500 ml, with giving set", 'Item_Code'])[0]
             item_code_dextrose = pd.unique(consumables.loc[consumables['Items'] ==
                                                            "Dextrose (glucose) 5%, 1000ml_each_CMST", 'Item_Code'])[0]
             item_code_cannula = pd.unique(consumables.loc[consumables['Items'] ==
@@ -5627,7 +5627,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         else:
             item_code_fluid_replacement = pd.unique(
                 consumables.loc[consumables['Items'] ==
-                                "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
+                                "Sodium lactate injection (Ringer's), 500 ml, with giving set", 'Item_Code'])[0]
             item_code_oxygen = pd.unique(consumables.loc[consumables['Items'] ==
                                                          "Oxygen, 1000 liters, primarily with oxygen cylinders",
                                                          'Item_Code'])[0]
@@ -6146,7 +6146,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
 
                 item_code_fluid_replacement = pd.unique(
                     consumables.loc[consumables['Items'] ==
-                                    "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
+                                    "Sodium lactate injection (Ringer's), 500 ml, with giving set", 'Item_Code'])[0]
                 consumables_burns = {
                     'Intervention_Package_Code': dict(),
                     'Item_Code': {item_code_cetrimide_chlorhexidine: burncounts,
@@ -7191,11 +7191,16 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
         p = self.module.parameters
         self.prob_death_with_med_mild = p['prob_death_with_med_mild']
         self.prob_death_with_med_severe = p['prob_death_with_med_severe']
-        self.prob_death_iss_less_than_9 = p['prob_death_iss_less_than_9']
-        self.prob_death_iss_10_15 = p['prob_death_iss_10_15']
-        self.prob_death_iss_16_24 = p['prob_death_iss_16_24']
-        self.prob_death_iss_25_35 = p['prob_death_iss_25_35']
-        self.prob_death_iss_35_plus = p['prob_death_iss_25_35']
+        # self.prob_death_iss_less_than_9 = p['prob_death_iss_less_than_9']
+        self.prob_death_iss_less_than_9 = 0.0211 * 0.571
+        # self.prob_death_iss_10_15 = p['prob_death_iss_10_15']
+        self.prob_death_iss_10_15 = 0.0306 * 0.571
+        # self.prob_death_iss_16_24 = p['prob_death_iss_16_24']
+        self.prob_death_iss_16_24 = 0.0870573 * 0.571
+        # self.prob_death_iss_25_35 = p['prob_death_iss_25_35']
+        self.prob_death_iss_25_35 = 0.376464 * 0.571
+        # self.prob_death_iss_35_plus = p['prob_death_iss_25_35']
+        self.prob_death_iss_35_plus = 0.6399888 * 0.571
 
         self.rr_injrti_mortality_polytrauma = p['rr_injrti_mortality_polytrauma']
 
@@ -7209,7 +7214,9 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
         # Schedule death for those who died from their injuries despite medical intervention
         if df.loc[person_id, 'cause_of_death'] == 'Other':
             pass
-        if df.loc[person_id, 'rt_ISS_score'] <= 9:
+        # if df.loc[person_id, 'rt_ISS_score'] < 3:
+        #     mortality_checked = True
+        if 1 <= df.loc[person_id, 'rt_ISS_score'] <= 9:
             if randfordeath < self.prob_death_iss_less_than_9:
                 mortality_checked = True
                 df.loc[person_id, 'rt_post_med_death'] = True
@@ -7356,7 +7363,8 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
         #                               'Eight injury': df.loc[person_id, 'rt_injury_8']}
         #             logger.info(key='RTI_Death_Injury_Profile',
         #                         data=dict_to_output,
-        #                         description='The injury profile of those who have died due to rtis despite medical care'
+        #                         description='The injury profile of those who have died due to rtis despite medical
+        #                         care'
         #                         )
         #             # Schedule the death
         #             self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
@@ -7393,7 +7401,8 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
         #                      person_id, self.sim.date)
         #         df.loc[person_id, 'rt_inj_severity'] = 'none'
         #     else:
-        #         logger.debug('RTIMedicalInterventionDeathEvent determining that person %d was treated for injuries and '
+        #         logger.debug('RTIMedicalInterventionDeathEvent determining that person %d was treated for injuries
+        #         and '
         #                      'survived on date %s',
         #                      person_id, self.sim.date)
         #         mortality_checked = True
@@ -7415,7 +7424,8 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
         #                               'Eight injury': df.loc[person_id, 'rt_injury_8']}
         #             logger.info(key='RTI_Death_Injury_Profile',
         #                         data=dict_to_output,
-        #                         description='The injury profile of those who have died due to rtis despite medical care'
+        #                         description='The injury profile of those who have died due to rtis despite medical
+        #                         care'
         #                         )
         #             # Schedule the death
         #             self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
@@ -8016,6 +8026,13 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             frac_incidence = (self.totfracnumber / self.fracdenominator) * 100000
         else:
             frac_incidence = 0
+        # calculate case fatality ratio for those injured who don't seek healthcare
+        did_not_seek_healthcare = len(df.loc[df.rt_road_traffic_inc & ~df.rt_med_int & ~df.rt_diagnosed])
+        died_no_healthcare = len(df.loc[df.rt_road_traffic_inc & df.rt_no_med_death & ~df.rt_med_int & ~df.rt_diagnosed])
+        if did_not_seek_healthcare > 0:
+            cfr_no_med = died_no_healthcare / did_not_seek_healthcare
+        else:
+            cfr_no_med = 'all_sought_care'
         dict_to_output = {
             'number involved in a rti': n_in_RTI,
             'incidence of rti per 100,000': inc_rti,
@@ -8040,6 +8057,7 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             'percent sought healthcare': percent_sought_care,
             'percentage died after med': percent_died_post_care,
             'percent admitted to ICU or HDU': percentage_admitted_to_ICU_or_HDU,
+            'cfr_no_med':cfr_no_med,
         }
         logger.info(key='summary_1m',
                     data=dict_to_output,

@@ -66,7 +66,6 @@ def create_rti_data(logfile):
     rti_log = parsed_log['tlo.methods.rti']
     # get the demographic data of those in RTI
     demog = rti_log['rti_demography']
-
     # Get the total age demographics of those with RTI in the sim
     this_sim_ages = demog['age'].tolist()
     # Get the male and female age demographics of those with RTI in the sim
@@ -207,6 +206,10 @@ def create_rti_data(logfile):
     # Store the percentage of people who died after seeking healthcare in this sim
     percent_died_after_med = (rti_log['summary_1m']['number deaths post med'].sum() /
                               rti_log['model_progression']['total_sought_medical_care'].iloc[-1])
+    # store the percent of people who died without seeking medical care
+    percent_died_without_med_data = rti_log['tlo.methods.rti']['summary_1m']['cfr_no_med'].to_list()
+    flattened_percent_died_without_med_data = [i for i in percent_died_without_med_data if i != 'all_sought_care']
+    percent_died_without_med = np.mean(flattened_percent_died_without_med_data)
     # Store the incidence of RTI per 100,000 person years in this sim
     incidences_of_rti = rti_log['summary_1m']['incidence of rti per 100,000'].tolist()
     # Store the incidence of death due to RTI per 100,000 person years and the sub categories in this sim
@@ -396,6 +399,9 @@ def create_rti_data(logfile):
         if 'MinorSurg' in dictionary.keys():
             num_surg += 1
     dalys_df = parsed_log['tlo.methods.healthburden']['dalys']['Transport Injuries']
+    deceased_persons = parsed_log['tlo.methods.demography']['properties_of_deceased_persons']
+    deceased_persons_in_rti = deceased_persons.loc[deceased_persons['rt_ISS_score'] > 0]
+    decesed_persons_ISS_scores = deceased_persons_in_rti['rt_ISS_score'].tolist()
     DALYs = dalys_df.sum()
     # Get simulaion data
     pop_size = parsed_log['tlo.methods.demography']['population']['total'].iloc[0]
@@ -430,6 +436,7 @@ def create_rti_data(logfile):
                     'ICU_lac': ICU_lac,
                     'ICU_burn': ICU_burn,
                     'percent_died_after_med': percent_died_after_med,
+                    'percent_died_without_med': percent_died_without_med,
                     'incidences_of_rti': incidences_of_rti,
                     'incidences_of_death': incidences_of_death,
                     'incidences_of_death_pre_hospital': incidences_of_death_pre_hospital,
@@ -480,6 +487,7 @@ def create_rti_data(logfile):
                     'per_sim_rural_severe': per_sim_rural_severe,
                     'per_sim_urban_severe': per_sim_urban_severe,
                     'per_sim_average_percentage_lx_open': per_sim_average_percentage_lx_open,
+                    'diceased_iss_scores': decesed_persons_ISS_scores,
                     'num_surg': num_surg,
                     'DALYs': DALYs,
                     'years_run': years_run,
@@ -663,7 +671,54 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
                 f"Percentage_mild_severe_injuries_comparison_pop_{pop_size}_years_{yearsrun}"
                 f"_runs_{nsim}.png", bbox_inches='tight')
     plt.clf()
+    # Plot the ISS scores binned into corresponding categories
+    number_less_than_eq_9 = len([score for score in flattened_scores if score <= 9])
+    number_between_10_15 = len([score for score in flattened_scores if (9 < score <= 15)])
+    number_between_16_24 = len([score for score in flattened_scores if (16 <= score <= 24)])
+    number_between_25_34 = len([score for score in flattened_scores if (25 <= score <= 34)])
+    number_greater_34 = len([score for score in flattened_scores if score > 34])
+    data = [number_less_than_eq_9, number_between_10_15, number_between_16_24, number_between_25_34, number_greater_34]
+    perc_data = np.divide(data, len(flattened_scores))
+    perc_data = np.multiply(perc_data, 100)
+    japan_data = [85.5, 3.9, 7.3, 2.4, 1]
+    iss_score_boundaries = ['ISS <= 9', '9 < ISS <= 15', '15 < ISS <= 24', '25 < ISS <= 34', 'ISS > 34']
+    plt.bar(np.arange(len(perc_data)), perc_data, color='lightsteelblue', width=0.4, label='Model data')
+    plt.bar(np.arange(len(perc_data)) + 0.4, japan_data, color='lightsalmon', width=0.4, label='Kuwubara et al.')
+    plt.xticks(np.arange(len(perc_data)) + 0.2, iss_score_boundaries, rotation=45)
+    plt.ylabel('Percent')
+    plt.legend()
+    plt.title(f"Average road traffic injury severity distribution compared to police data"
+              f"\n"
+              f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 
+    plt.savefig(save_directory + "/" + filename_description + "_" +
+                f"Percentage_ISS_scores_per_boundary_{pop_size}_years_{yearsrun}"
+                f"_runs_{nsim}.png", bbox_inches='tight')
+    plt.clf()
+
+    diceased_persons_iss_scores = r['diceased_iss_scores'].tolist()
+    diceased_persons_iss_scores = [score for list in diceased_persons_iss_scores for score in list]
+    number_less_than_eq_9 = len([score for score in diceased_persons_iss_scores if score <= 9])
+    number_between_10_15 = len([score for score in diceased_persons_iss_scores if (9 < score <= 15)])
+    number_between_16_24 = len([score for score in diceased_persons_iss_scores if (16 <= score <= 24)])
+    number_between_25_34 = len([score for score in diceased_persons_iss_scores if (25 <= score <= 34)])
+    number_greater_34 = len([score for score in diceased_persons_iss_scores if score > 34])
+
+    fatal_data = [number_less_than_eq_9, number_between_10_15, number_between_16_24, number_between_25_34, number_greater_34]
+    percentage_fatal = np.divide(fatal_data, data)
+    percentage_fatal = np.multiply(percentage_fatal, 100)
+    for i in range(len(data)):
+        plt.annotate(str(np.round(percentage_fatal[i], 2)),
+                     xy=(np.arange(len(percentage_fatal))[i], percentage_fatal[i]),
+                     ha='center', va='bottom')
+    plt.bar(np.arange(len(percentage_fatal)), percentage_fatal)
+    plt.xticks(np.arange(len(percentage_fatal)), iss_score_boundaries, rotation=45)
+    plt.ylabel('Percentage fatal')
+    plt.title('The percentage of injuries in each ISS score boundary that are fatal')
+    plt.savefig(save_directory + "/" + filename_description + "_" +
+                f"Percentage_fatal_ISS_scores_per_boundary_{pop_size}_years_{yearsrun}"
+                f"_runs_{nsim}.png", bbox_inches='tight')
+    plt.clf()
     # ======================= Plot the distribution of the number of injured body regions =========================
     # Calculate the average number of injured body regions
     number_of_injured_body_locations = r['ninj_list_sorted']
@@ -824,7 +879,19 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
                 f"Percent_Survival_Healthcare_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
                 bbox_inches='tight')
     plt.clf()
-
+    # plot percentage of death without med intervention
+    overall_average_without_med_death = r['percent_died_without_med'].mean()
+    # Plot this data in a pie chart
+    plt.pie([overall_average_without_med_death, 1 - overall_average_without_med_death],
+            explode=None, labels=['Fatal', "Non-fatal"], colors=['lightsteelblue', 'lightsalmon'],
+            autopct='%1.1f%%')
+    plt.title(f"Average percent survival outcome of those with road traffic injuries who didn't seek health care"
+              f"\n"
+              f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+    plt.savefig(save_directory + "/" + filename_description + "_" +
+                f"Percent_Survival_no_Healthcare_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
+                bbox_inches='tight')
+    plt.clf()
     # ================== Plot the percent of death post med compared to Kamuzu central ============================
     # Take KCH values from: https://doi.org/10.1016/j.jsurg.2014.09.010
     percent_mortality_kamuzu = (182 + 38) / (3840 + 1227 + 182 + 38)

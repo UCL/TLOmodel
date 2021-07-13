@@ -47,7 +47,7 @@ service_availability = ['*']
 pop_size = 20000
 nsim = 3
 # Create a variable whether to save figures or not (used in debugging)
-imm_death = 0.018
+imm_death = 0.018 * 0.7
 # Iterate over the number of simulations nsim
 log_file_location = './outputs/single_injury_model_vs_multiple_injury'
 # store relevent model outputs
@@ -88,7 +88,7 @@ for i in range(0, nsim):
     sim.modules['RTI'].parameters['imm_death_proportion_rti'] = imm_death
     # sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 0
     sim.modules['RTI'].parameters['rr_injrti_mortality_polytrauma'] = 1
-
+    sim.modules['RTI'].parameters['base_rate_injrti'] = 0.007062851134976 * 1.04 * 0.976
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
@@ -145,13 +145,16 @@ for i in range(0, nsim):
     # alter the number of injuries given out
     # Injury vibes number of GBD injury category distribution:
     # number_inj_data = [0.38, 0.25, 0.153, 0.094, 0.055, 0.031, 0.018, 0.019]
-    number_inj_data = [0.7, 0.15, 0.075, 0.0375, 0.01875, 0.009375, 0.007031250000000089, 0.00234375]
+    # number_inj_data = [0.7, 0.15, 0.075, 0.0375, 0.01875, 0.009375, 0.007031250000000089, 0.00234375]
+    number_inj_data = [0.6769101854244929, 0.21875730105991648, 0.0706958733927294, 0.02284681009751498,
+                       0.007383411599319661, 0.002386099705485696, 0.0007711166752566723, 0.00024920204528413345]
     sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
         [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
     ]
     sim.modules['RTI'].parameters['imm_death_proportion_rti'] = imm_death
     # sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 0
     sim.modules['RTI'].parameters['rr_injrti_mortality_polytrauma'] = 1
+    sim.modules['RTI'].parameters['base_rate_injrti'] = 0.007062851134976 * 1.06 * 0.97
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
@@ -234,20 +237,31 @@ in_rti_data = data.loc[data['measure'] == 'Incidence']
 gbd_ten_year_average_inc = in_rti_data['val'].mean()
 gbd_ten_year_average_inc_upper = in_rti_data['upper'].mean()
 gbd_ten_year_average_inc_lower = in_rti_data['lower'].mean()
-
+gbd_inc_yerr = gbd_ten_year_average_inc_upper - gbd_ten_year_average_inc
 gbd_ten_year_average_inc_death = death_data['val'].mean()
 gbd_ten_year_average_inc_death_upper = death_data['upper'].mean()
 gbd_ten_year_average_inc_death_lower = death_data['lower'].mean()
-
+gbd_inc_death_yerr = gbd_ten_year_average_inc_death_upper - gbd_ten_year_average_inc_death
+gbd_yerr = [gbd_inc_yerr, gbd_inc_death_yerr, gbd_inc_yerr]
 # Single injury run summary stats
 single_injury_mean_incidence_rti = np.mean(sing_inj_incidences_of_rti)
+single_injury_std_incidence_rti = np.std(sing_inj_incidences_of_rti)
 single_injury_mean_incidence_rti_death = np.mean(sing_inj_incidences_of_death)
+single_injury_std_incidence_rti_death = np.std(sing_inj_incidences_of_death)
 single_injury_mean_incidence_injuries = true_inc_injury_single_run
+single_injury_std_incidence_injuries = np.std(sing_inj_incidences_of_rti)
+sing_yerr = [single_injury_std_incidence_rti, single_injury_std_incidence_rti_death,
+             single_injury_std_incidence_injuries]
 # model run with vibes number of injury distribution
 multiple_injury_mean_incidence_rti = np.mean(mult_inj_incidences_of_rti)
+multiple_injury_std_incidence_rti = np.std(mult_inj_incidences_of_rti)
 multiple_injury_mean_incidence_rti_death = np.mean(mult_inj_incidences_of_death)
+multiple_injury_std_incidence_rti_death = np.std(mult_inj_incidences_of_death)
 multiple_injury_mean_incidence_injuries = true_inc_injury_mult_run
-#
+multiple_injury_std_incidence_injuries = np.std(mult_inj_incidences_of_rti)
+
+mult_yerr = [multiple_injury_std_incidence_rti, multiple_injury_std_incidence_rti_death,
+             multiple_injury_std_incidence_injuries]
 
 results_single = [single_injury_mean_incidence_rti, single_injury_mean_incidence_rti_death,
                   single_injury_mean_incidence_injuries]
@@ -256,9 +270,9 @@ results_mult = [multiple_injury_mean_incidence_rti, multiple_injury_mean_inciden
 
 results_gbd = [gbd_ten_year_average_inc, gbd_ten_year_average_inc_death, gbd_ten_year_average_inc]
 n = np.arange(3)
-plt.bar(n, results_gbd, width=0.3, color='lightsalmon', label='GBD estimates')
-plt.bar(n + 0.3, results_single, width=0.3, color='lightsteelblue', label='Single injury model run')
-plt.bar(n + 0.6, results_mult, width=0.3, color='burlywood', label='multiple injury model run')
+plt.bar(n, results_gbd, yerr=gbd_yerr, width=0.3, color='lightsalmon', label='GBD estimates')
+plt.bar(n + 0.3, results_single, yerr=sing_yerr, width=0.3, color='lightsteelblue', label='Single injury model run')
+plt.bar(n + 0.6, results_mult, yerr=mult_yerr, width=0.3, color='burlywood', label='multiple injury model run')
 plt.xticks(n + 0.3, ['Incidence of \nRTI', 'Incidence of \nRTI death', 'Incidence of \ninjuries'])
 for i in range(len(results_gbd)):
     plt.annotate(str(np.round(results_gbd[i], 1)), xy=(n[i], results_gbd[i]), ha='center', va='bottom', rotation=60)
