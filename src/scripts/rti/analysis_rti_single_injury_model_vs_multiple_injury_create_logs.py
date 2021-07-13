@@ -46,8 +46,6 @@ end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
 pop_size = 20000
 nsim = 3
-# Create a variable whether to save figures or not (used in debugging)
-imm_death = 0.018 * 0.7
 # Iterate over the number of simulations nsim
 log_file_location = './outputs/single_injury_model_vs_multiple_injury'
 # store relevent model outputs
@@ -85,10 +83,8 @@ for i in range(0, nsim):
     sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
         [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
     ]
-    sim.modules['RTI'].parameters['imm_death_proportion_rti'] = imm_death
-    # sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 0
-    sim.modules['RTI'].parameters['rr_injrti_mortality_polytrauma'] = 1
-    sim.modules['RTI'].parameters['base_rate_injrti'] = 0.007062851134976 * 1.04 * 0.976
+    imm_death = sim.modules['RTI'].parameters['imm_death_proportion_rti']
+    sim.modules['RTI'].parameters['base_rate_injrti'] = sim.modules['RTI'].parameters['base_rate_injrti'] * 0.9872
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
@@ -142,19 +138,6 @@ for i in range(0, nsim):
                                     directory="./outputs/single_injury_model_vs_multiple_injury/multiple_injury")
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
-    # alter the number of injuries given out
-    # Injury vibes number of GBD injury category distribution:
-    # number_inj_data = [0.38, 0.25, 0.153, 0.094, 0.055, 0.031, 0.018, 0.019]
-    # number_inj_data = [0.7, 0.15, 0.075, 0.0375, 0.01875, 0.009375, 0.007031250000000089, 0.00234375]
-    number_inj_data = [0.6769101854244929, 0.21875730105991648, 0.0706958733927294, 0.02284681009751498,
-                       0.007383411599319661, 0.002386099705485696, 0.0007711166752566723, 0.00024920204528413345]
-    sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = [
-        [1, 2, 3, 4, 5, 6, 7, 8], number_inj_data
-    ]
-    sim.modules['RTI'].parameters['imm_death_proportion_rti'] = imm_death
-    # sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 0
-    sim.modules['RTI'].parameters['rr_injrti_mortality_polytrauma'] = 1
-    sim.modules['RTI'].parameters['base_rate_injrti'] = 0.007062851134976 * 1.06 * 0.97
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
