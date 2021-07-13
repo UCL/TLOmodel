@@ -704,7 +704,8 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
     number_between_25_34 = len([score for score in diceased_persons_iss_scores if (25 <= score <= 34)])
     number_greater_34 = len([score for score in diceased_persons_iss_scores if score > 34])
 
-    fatal_data = [number_less_than_eq_9, number_between_10_15, number_between_16_24, number_between_25_34, number_greater_34]
+    fatal_data = [number_less_than_eq_9, number_between_10_15, number_between_16_24, number_between_25_34,
+                  number_greater_34]
     percentage_fatal = np.divide(fatal_data, data)
     percentage_fatal = np.multiply(percentage_fatal, 100)
     for i in range(len(data)):

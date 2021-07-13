@@ -7888,7 +7888,8 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             frac_incidence = 0
         # calculate case fatality ratio for those injured who don't seek healthcare
         did_not_seek_healthcare = len(df.loc[df.rt_road_traffic_inc & ~df.rt_med_int & ~df.rt_diagnosed])
-        died_no_healthcare = len(df.loc[df.rt_road_traffic_inc & df.rt_no_med_death & ~df.rt_med_int & ~df.rt_diagnosed])
+        died_no_healthcare = \
+            len(df.loc[df.rt_road_traffic_inc & df.rt_no_med_death & ~df.rt_med_int & ~df.rt_diagnosed])
         if did_not_seek_healthcare > 0:
             cfr_no_med = died_no_healthcare / did_not_seek_healthcare
         else:
@@ -7917,7 +7918,7 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             'percent sought healthcare': percent_sought_care,
             'percentage died after med': percent_died_post_care,
             'percent admitted to ICU or HDU': percentage_admitted_to_ICU_or_HDU,
-            'cfr_no_med':cfr_no_med,
+            'cfr_no_med': cfr_no_med,
         }
         logger.info(key='summary_1m',
                     data=dict_to_output,

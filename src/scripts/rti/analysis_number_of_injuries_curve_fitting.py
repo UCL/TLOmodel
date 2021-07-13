@@ -25,7 +25,7 @@ probability_distributions = []
 for percentage in percent_multiple_as_decimal:
 
     data_dict = {'Ninj': [1, 2, 9],
-                 'dist': [(1 - percentage),  percentage/ 2 + 0.04, 0]}
+                 'dist': [(1 - percentage),  percentage / 2 + 0.04, 0]}
     data = pd.DataFrame(data_dict)
 
     xdata = data['Ninj']
