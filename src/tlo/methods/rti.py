@@ -7167,18 +7167,16 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         p = self.module.parameters
-        # # self.prob_death_iss_less_than_9 = p['prob_death_iss_less_than_9']
+        self.prob_death_iss_less_than_9 = p['prob_death_iss_less_than_9']
         # self.prob_death_iss_less_than_9 = 0.0211 * 0.571
-        # # self.prob_death_iss_10_15 = p['prob_death_iss_10_15']
+        self.prob_death_iss_10_15 = p['prob_death_iss_10_15']
         # self.prob_death_iss_10_15 = 0.0306 * 0.571
-        # # self.prob_death_iss_16_24 = p['prob_death_iss_16_24']
+        self.prob_death_iss_16_24 = p['prob_death_iss_16_24']
         # self.prob_death_iss_16_24 = 0.0870573 * 0.571
-        # # self.prob_death_iss_25_35 = p['prob_death_iss_25_35']
+        self.prob_death_iss_25_35 = p['prob_death_iss_25_35']
         # self.prob_death_iss_25_35 = 0.376464 * 0.571
-        # # self.prob_death_iss_35_plus = p['prob_death_iss_25_35']
+        self.prob_death_iss_35_plus = p['prob_death_iss_25_35']
         # self.prob_death_iss_35_plus = 0.6399888 * 0.571
-
-        self.rr_injrti_mortality_polytrauma = p['rr_injrti_mortality_polytrauma']
 
     def apply(self, person_id):
         df = self.sim.population.props

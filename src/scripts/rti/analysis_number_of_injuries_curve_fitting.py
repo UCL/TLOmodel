@@ -1,7 +1,7 @@
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
-import pandas as pd
 
 # Here I am trying to create a curve that will be used to predict the number of injuries
 # people receive from road traffic accidents. I am using curve fitting from scipy to fit to data
