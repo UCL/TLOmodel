@@ -365,18 +365,6 @@ class CardioMetabolicDisorders(Module):
             self.lms_event_symptoms[event] = self.build_linear_model_symptoms(event, self.parameters[
                 'interval_between_polls'])
 
-        # ------- DEFINE THE CONSUMABLES USED IN TESETS -------
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        blood_glucose_test = \
-            pd.unique(consumables.loc[consumables["Items"] == "Blood glucose level test", "Item_Code"])[0]
-        blood_tube = pd.unique(consumables.loc[consumables["Items"] == "Blood collecting tube, 5 ml", "Item_Code"])[
-            0]
-        urine_analysis = pd.unique(consumables.loc[consumables["Items"] == "Urine analysis", "Item_Code"])[0]
-        ecg_electrodes = \
-            pd.unique(consumables.loc[consumables["Items"] == "Electrodes, electrocardiographic", "Item_Code"])[0]
-        ecg_paper = pd.unique(consumables.loc[consumables["Items"] == "Paper, Recording ECG", "Item_Code"])[0]
-        ecg_paper_roll = \
-            pd.unique(consumables.loc[consumables["Items"] == "ECG paper for printing_Roll_CMST", "Item_Code"])[0]
         # ------- DEFINE THE TESTS -------
         # Create the diagnostic representing the assessment for whether a person is diagnosed with diabetes
         # NB. Specificity is assumed to be 100%
