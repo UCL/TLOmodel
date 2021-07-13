@@ -356,6 +356,8 @@ class CardioMetabolicDisorders(Module):
                                                                   lm_type='removal')
             self.lms_death[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'],
                                                                 lm_type='death')
+            self.lms_symptoms[condition] = self.build_linear_model_symptoms(condition, self.parameters[
+                'interval_between_polls'])
 
         for event in self.events:
             self.lms_event_onset[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
@@ -644,6 +646,23 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             # Add incident cases to the tracker
             current_incidence_df[condition] = df.loc[idx_acquires_condition].groupby('age_range').size()
 
+            # Schedule symptom onset
+            symptom_eligible_population = df.is_alive & df[f'nc_{condition}']
+            symptom_onset = lmpredict_rtn_a_series(self.module.lms_symptoms[condition],
+                                                   df.loc[symptom_eligible_population])
+            idx_symptom_onset = symptom_onset[symptom_onset].index
+            if idx_symptom_onset.any():
+                # schedule symptom onset in next 2 months
+                symp_onset_date = self.sim.date + DateOffset(days=rng.randint(7, 60))
+                self.sim.modules["SymptomManager"].change_symptom(
+                    person_id=person_id,
+                    symptom_string=f'{condition}_symptoms',
+                    add_or_remove="+",
+                    disease_module=self.sim.modules["CardioMetabolicDisorders"],
+                    date_of_onset=symp_onset_date
+                )
+
+
             # -------------------------------------------------------------------------------------------
 
             # removal:
@@ -724,6 +743,47 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
             add_or_remove='+',
             symptom_string=f'{self.event}_damage'
         )
+
+
+class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
+    """
+    Performs the Death operation on an individual and logs it.
+    """
+
+    def __init__(self, module, person_id, condition):
+        super().__init__(module, person_id=person_id)
+        self.condition = condition
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+
+        if not df.at[person_id, "is_alive"]:
+            return
+
+        # reduction in risk of death if being treated for condition
+        # check still have condition (has not resolved)
+        if df.at[person_id, f'nc_{self.condition}']:
+
+            if df.at[person_id, f'nc_{self.condition}_on_medication']:
+                reduction_in_death_risk = self.module.rng.uniform(low=0.2, high=0.6, size=1) # not data for now
+
+                if self.module.rng.rand() < reduction_in_death_risk:
+                    logger.debug(key="CardioMetabolicDisordersDeathEvent",
+                                 data=f"CardioMetabolicDisordersDeathEvent: scheduling death for treated "
+                                      f"{person_id} on {self.sim.date}")
+
+                    self.sim.modules['Demography'].do_death(individual_id=person_id,
+                                                            cause=f'{self.condition}',
+                                                            originating_module=self.module)
+
+            else:
+                logger.debug(key="CardioMetabolicDisordersDeathEvent",
+                             data=f"CardioMetabolicDisordersDeathEvent: scheduling death for untreated "
+                                  f"{person_id} on {self.sim.date}")
+
+                self.sim.modules['Demography'].do_death(individual_id=person_id,
+                                                        cause=f'{self.condition}',
+                                                        originating_module=self.module)
 
 
 # ---------------------------------------------------------------------------------------------------------
