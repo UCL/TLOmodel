@@ -619,7 +619,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
         def schedule_death_to_occur_before_next_poll(p_id, cond, interval_between_polls):
             ndays = (self.sim.date + DateOffset(months=interval_between_polls, days=-1) - self.sim.date).days
             self.sim.schedule_event(
-                InstantaneousDeath(self.module, p_id, cond),
+                CardioMetabolicDisordersDeathEvent(self.module, p_id, cond),
                 self.sim.date + DateOffset(days=self.module.rng.randint(ndays))
             )
 
@@ -653,15 +653,19 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             idx_symptom_onset = symptom_onset[symptom_onset].index
             if idx_symptom_onset.any():
                 # schedule symptom onset in next 2 months
-                symp_onset_date = self.sim.date + DateOffset(days=rng.randint(7, 60))
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=person_id,
-                    symptom_string=f'{condition}_symptoms',
-                    add_or_remove="+",
-                    disease_module=self.sim.modules["CardioMetabolicDisorders"],
-                    date_of_onset=symp_onset_date
-                )
-
+                for symptom in self.module.parameters.prob_symptoms[condition].keys():
+                    lm_init_symptoms = LinearModel(
+                        LinearModelType.MULTIPLICATIVE,
+                        self.module.parameters.prob_symptoms[condition].get(f'{symptom}'),
+                        Predictor(f'nc_{condition}').when(True, 1.0)
+                            .otherwise(0.0))
+                    has_symptom_at_init = lm_init_symptoms.predict(df.loc[df.is_alive], self.module.rng)
+                    self.sim.modules['SymptomManager'].change_symptom(
+                        person_id=has_symptom_at_init.index[has_symptom_at_init].tolist(),
+                        symptom_string=f'{symptom}',
+                        add_or_remove='+',
+                        date_of_onset=self.sim.date + DateOffset(days=rng.randint(7, 60)),
+                        disease_module=self)
 
             # -------------------------------------------------------------------------------------------
 
@@ -718,8 +722,8 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
 class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
     """
-    This is an Cardio Metabolic Disorders event. It has been scheduled to occur by the
-    CardioMetabolicDisorders_MainPollingEvent.
+    This is an Cardio Metabolic Disorders event (indicating an emergency occurrence of stroke or heart attack.
+    It has been scheduled to occur by the CardioMetabolicDisorders_MainPollingEvent.
     """
 
     def __init__(self, module, person_id, event):
@@ -732,8 +736,6 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
 
         self.module.events_tracker[f'{self.event}_events'] += 1
         self.sim.population.props.at[person_id, f'nc_{self.event}'] = True
-
-        # TODO: @britta add functionality to add symptoms
 
         # Add the outward symptom to the SymptomManager. This will result in emergency care being sought for any
         # event that takes place
