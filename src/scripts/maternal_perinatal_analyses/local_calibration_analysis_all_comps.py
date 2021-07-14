@@ -34,9 +34,9 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 logs_dict = dict()
 
 new_parse_log_2010 = {2010: parse_log_file(
-    filepath=f"./outputs/calibration_files/ptb_2010_with_rfs_calibration_142__2021-07-08T111423.log")}
+    filepath=f"./outputs/calibration_files/sa_10_with_baseline_effect_calibration_180__2021-07-13T180804.log")}
 new_parse_log_2015 = {2015: parse_log_file(
-    filepath=f"./outputs/calibration_files/ptb_2015_with_rfs_calibration_143__2021-07-08T113346.log")}
+    filepath=f"./outputs/calibration_files/sa_15_with_baseline_effect_calibration_181__2021-07-13T195247.log")}
 logs_dict.update(new_parse_log_2010)
 logs_dict.update(new_parse_log_2015)
 
@@ -51,18 +51,40 @@ def update_dicts(comps, dict_2010, dict_2015, module):
     for complication in comps:
         new_row = {complication: 0}
         dict_2010.update(new_row)
-        graph_maker.get_incidence(logs_dict[2010], module, complication, dict_2010)
+        graph_maker.get_incidence(logs_dict[2010], module, complication, dict_2010, specific_year=False, year=2010
+                                  )
         dict_2015.update(new_row)
-        graph_maker.get_incidence(logs_dict[2015], module, complication, dict_2015)
+        graph_maker.get_incidence(logs_dict[2015], module, complication, dict_2015, specific_year=False, year=2015)
 
 update_dicts(antenatal_comps, master_dict_an_2010, master_dict_an_2015, 'pregnancy_supervisor')
 update_dicts(intrapartum_comps, master_dict_la_2010, master_dict_la_2015, 'labour')
 update_dicts(postnatal_comps, master_dict_pn_2010, master_dict_pn_2015, 'postnatal_supervisor')
 
+#graph_maker.get_parity_graphs(logs_dict[2010])
 
 total_births_2010 = graph_maker.get_total_births(logs_dict[2010])
 total_births_2015 = graph_maker.get_total_births(logs_dict[2015])
 
+pregnancies_2011 = graph_maker.get_pregnancies_in_a_year(logs_dict[2010], 2010)
+pregnancies_2016 = graph_maker.get_pregnancies_in_a_year(logs_dict[2015], 2015)
+
+# SPONTANEOUS/INDUCED ABORTION...
+graph_maker.get_generic_incidence_graph('spontaneous_abortion', master_dict_an_2010, master_dict_an_2015,
+                                         10000, 10000, 189, 189, ['firebrick', 'lightcoral'])
+
+#graph_maker.get_abortion_complication_graphs(master_dict_an_2010, master_dict_an_2015, pregnancies_2011,
+ #                                            pregnancies_2016, ['firebrick', 'lightcoral'])
+
+#graph_maker.get_anc_coverage_graph(logs_dict[2010], 2010)
+#graph_maker.get_anc_coverage_graph(logs_dict[2015], 2015)
+#graph_maker.get_facility_delivery_graph(logs_dict[2010], total_births_2010, 2010)
+#graph_maker.get_facility_delivery_graph(logs_dict[2015], total_births_2015, 2015)
+#graph_maker.get_pnc_coverage(logs_dict[2010], total_births_2010, 2010)
+#graph_maker.get_pnc_coverage(logs_dict[2015], total_births_2015, 2015)
+
+
+
+#graph_maker.get_total_anaemia_graph(logs_dict[2010], logs_dict[2015], ['red', 'pink'])
 
 #graph_maker.get_generic_incidence_graph('mild_anaemia', master_dict_an_2010, master_dict_an_2015,
 #                                        1000, 1000, 195, 225, ['firebrick', 'lightcoral'])
@@ -71,12 +93,12 @@ total_births_2015 = graph_maker.get_total_births(logs_dict[2015])
 #graph_maker.get_generic_incidence_graph('severe_anaemia', master_dict_an_2010, master_dict_an_2015,
 #                                        1000, 1000, 15, 2, ['firebrick', 'lightcoral'])
 
-graph_maker.get_preterm_birth_graph(master_dict_la_2010, master_dict_la_2015, total_births_2010, total_births_2015,
-                                    ['plum', 'thistle'])
+#graph_maker.get_preterm_birth_graph(master_dict_la_2010, master_dict_la_2015, total_births_2010, total_births_2015,
+#                                    ['plum', 'thistle'])
 
-graph_maker.get_htn_disorders_graph(master_dict_an_2010, master_dict_la_2010, master_dict_pn_2010, total_births_2010,
-                                    2010)
-graph_maker.get_htn_disorders_graph(master_dict_an_2015, master_dict_la_2015, master_dict_pn_2015, total_births_2015,
-                                    2015)
+#graph_maker.get_htn_disorders_graph(master_dict_an_2010, master_dict_la_2010, master_dict_pn_2010, total_births_2010,
+#                                    2010)
+#graph_maker.get_htn_disorders_graph(master_dict_an_2015, master_dict_la_2015, master_dict_pn_2015, total_births_2015,
+#                                    2015)
 
 

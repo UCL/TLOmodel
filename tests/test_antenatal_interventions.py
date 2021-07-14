@@ -125,7 +125,7 @@ def test_perfect_run_of_anc_contacts_no_constraints():
     sim = register_all_modules(ignore_cons_constraints=True)
     sim.make_initial_population(n=100)
 
-    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
+    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
     params_dep = sim.modules['Depression'].parameters
 
     # Set sensitivity/specificity of dx_tests to one
@@ -155,31 +155,34 @@ def test_perfect_run_of_anc_contacts_no_constraints():
     df.at[mother_id, 'ps_will_attend_four_or_more_anc'] = True
     df.at[mother_id, 'ps_date_of_anc1'] = start_date + pd.DateOffset(weeks=8)
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'hypertension_onset': pd.NaT,
-                                                                             'gest_diab_onset': pd.NaT}
+    df.at[mother_id, 'li_bmi'] = 1
+    df.at[mother_id, 'la_parity'] = 0
+    df.at[mother_id, 'ps_prev_gest_diab'] = True
+
+    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
 
     # Set some complications that should be be detected in ANC leading to further action
     df.at[mother_id, 'ps_htn_disorders'] = 'mild_pre_eclamp'
     df.at[mother_id, 'de_depr'] = True
 
     # ensure care seeking will continue for all ANC visits
-    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
-    params['ac_linear_equations']['anc_continues'] = \
-        LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1)
+    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+    params['prob_anc_continues'] = 1
 
     # Set parameters used to determine if HCW will deliver intervention (if consumables available) to 1
     params['prob_intervention_delivered_urine_ds'] = 1
     params['prob_intervention_delivered_bp'] = 1
     params['prob_intervention_delivered_depression_screen'] = 1
     params['prob_intervention_delivered_ifa'] = 1
+    params['prob_adherent_ifa'] = 1
     params['prob_intervention_delivered_bep'] = 1
     params['prob_intervention_delivered_llitn'] = 1
     params['prob_intervention_delivered_iptp'] = 1
     params['prob_intervention_delivered_hiv_test'] = 1
     params['prob_intervention_delivered_poct'] = 1
     params['prob_intervention_delivered_tt'] = 1
+    params['sensitivity_blood_test_glucose'] = 1
+    params['specificity_blood_test_glucose'] = 1
 
     # Register the anc HSIs
     first_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
@@ -288,7 +291,7 @@ def test_perfect_run_of_anc_contacts_no_constraints():
 
     # Check the second dose of IPTp is given
     assert (df.at[mother_id, 'ac_doses_of_iptp_received'] == 2)
-
+    # TODO: UP TO HERE!!!!!!!!!!!!!!!!!!
     # Check that this woman has undergone screening for diabetes, and will be admitted for treatment
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare in hsi_events
@@ -402,6 +405,7 @@ def test_perfect_run_of_anc_contacts_no_constraints():
 
     # todo: test with probabilities low/0? same with dx test?
 
+test_perfect_run_of_anc_contacts_no_constraints()
 
 def test_anc_contacts_that_should_not_run_wont_run():
     """This test checks the inbuilt functions within ANC1 and ANC subsequent that should block, and in some cases

@@ -87,6 +87,8 @@ class PregnancySupervisor(Module):
             Types.LIST, 'probability that this womans will develop syphilis during her pregnancy'),
 
         # SPONTANEOUS AND INDUCED ABORTION
+        'prob_previous_miscarriage_at_baseline': Parameter(
+            Types.LIST, 'probability that a woman at baseline will have previously experienced a miscarriage'),
         'prob_spontaneous_abortion_per_month': Parameter(
             Types.LIST, 'underlying risk of spontaneous abortion per month'),
         'rr_spont_abortion_age_35': Parameter(
@@ -465,6 +467,16 @@ class PregnancySupervisor(Module):
         # This bitset property stores 'types' of complication that can occur after an abortion
         self.abortion_complications = BitsetHandler(self.sim.population, 'ps_abortion_complications',
                                                     ['sepsis', 'haemorrhage', 'injury', 'other'])
+
+        # Here we set properties in the population that effect the rates of complications in the baseline year
+        reproductive_age_women = df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
+
+        previous_miscarriage = pd.Series(
+            self.rng.random_sample(len(reproductive_age_women.loc[reproductive_age_women])) <
+            self.current_parameters['prob_previous_miscarriage_at_baseline'],
+            index=reproductive_age_women.loc[reproductive_age_women].index)
+
+        df.loc[previous_miscarriage.loc[previous_miscarriage].index, 'ps_prev_spont_abortion'] = True
 
     def initialise_simulation(self, sim):
 
@@ -2254,18 +2266,18 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props
 
-        # TODO: this could be removed OR we could do some calculations as the simulation progresses instead of within
+        women_reproductive_age = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
+                                               (df.age_years < 50))])
+        women_with_previous_sa = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
+                                               (df.age_years < 50) & df.ps_prev_spont_abortion)])
+        women_with_previous_pe = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
+                                               (df.age_years < 50) & df.ps_prev_pre_eclamp)])
+        yearly_prev_sa = (women_with_previous_sa / women_reproductive_age) * 100
+        yearly_prev_pe = (women_with_previous_pe / women_reproductive_age) * 100
 
-        # Previous Year...
-        one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
+        logger.info(key='prevalences', data={'year': self.sim.year,
+                                            'prev_sa': yearly_prev_sa,
+                                             'prev_pe': yearly_prev_pe})
 
-        # Denominators...
-        total_births_last_year = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
-        if total_births_last_year == 0:
-            total_births_last_year = 1
 
-        ra_lower_limit = 14
-        ra_upper_limit = 50
-        women_reproductive_age = df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > ra_lower_limit) &
-                                           (df.age_years < ra_upper_limit))]
-        total_women_reproductive_age = len(women_reproductive_age)
+

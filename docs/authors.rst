@@ -7,7 +7,7 @@ Scientific Leads
 * `Timothy Hallett <https://orcid.org/0000-0002-9681-0424>`_ (Joint-Lead Epidemiology)
 * `Andrew Phillips <https://orcid.org/0000-0003-2384-4807>`_ (Joint-Lead Epidemiology)
 * `Asif Tamuri <https://www.homepages.ucl.ac.uk/~ucbtaut/>`_ (Lead Developer)
-* `Joseph Mfutso-Bengo <http://sphfm.medcol.mw/staff/dr-joseph-mfutso-bengo-phd/>`_
+* `Joseph Mfutso-Bengo <http://sphfm.medcol.mw/staff/dr-joseph-mfutso-bengo-phd/>`_ (Lead Policy Translation)
 
 Epidemiologists/Modellers
 =========================

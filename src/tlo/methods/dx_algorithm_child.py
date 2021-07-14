@@ -54,6 +54,8 @@ class DxAlgorithmChild(Module):
         """
 
         # Test for the visual inspection of 'Danger signs' for a child who is dehydrated
+        # todo - this to be parameterised from the resource file and maybe should be declared by the diarrhoea module...
+        #  tbd when the ALRI module and this file are finalised.
         if 'Diarrhoea' in self.sim.modules:
             self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
                 danger_signs_visual_inspection=DxTest(
