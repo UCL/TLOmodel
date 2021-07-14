@@ -97,6 +97,7 @@ def check_dtypes(sim):
     orig = sim.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
+
 def test_basic_run(tmpdir):
     """Short run of the module using default parameters with check on dtypes"""
     dur = pd.DateOffset(months=1)
@@ -126,6 +127,7 @@ def test_basic_run_lasting_two_years(tmpdir):
     log_one_person = log_one_person.set_index('date')
     assert log_one_person.index.equals(pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1)))
     assert set(log_one_person.columns) == set(sim.modules['Alri'].PROPERTIES.keys())
+
 
 
 # todo - Need some kind of test bed so that Ines can see the effects of the linear models she is programming.
