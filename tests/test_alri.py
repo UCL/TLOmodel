@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation, logging, Module, Property, Types
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     alri,
@@ -26,6 +26,38 @@ try:
 except NameError:
     # running interactively
     resourcefilepath = Path('./resources')
+
+
+class PropertiesOfOtherModules(Module):
+    """For the purpose of the testing, create a module to generate the properties upon which this module relies"""
+    # todo - update these name to relfect the properties that are already defined:
+
+    PROPERTIES = {
+        'hv_inf': Property(Types.BOOL, 'temporary property - hiv infection'),
+        'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
+        'tmp_low_birth_weight': Property(Types.BOOL, 'temporary property - low birth weight'),
+        'tmp_exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
+        'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
+        'tmp_pneumococcal_vaccination': Property(Types.BOOL, 'temporary property - streptococcus pneumoniae vaccine'),
+        'tmp_haemophilus_vaccination': Property(Types.BOOL, 'temporary property - H. influenzae type b vaccine'),
+        'tmp_influenza_vaccination': Property(Types.BOOL, 'temporary property - flu vaccine'),
+    }
+
+    def __init__(self, name=None):
+        super().__init__(name)
+
+    def read_parameters(self, data_folder):
+        pass
+
+    def initialise_population(self, population):
+        df = population.props
+        df.loc[df.is_alive, self.PROPERTIES.keys()] = False
+
+    def initialise_simulation(self, sim):
+        pass
+
+    def on_birth(self, mother, child):
+        self.sim.population.props.at[child, self.PROPERTIES.keys()] = False
 
 
 def get_sim(tmpdir, popsize=100, dur=pd.DateOffset(months=3)):
@@ -49,10 +81,12 @@ def get_sim(tmpdir, popsize=100, dur=pd.DateOffset(months=3)):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
         dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-        alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=True, do_checks=True)
+        alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=True, do_checks=True),
+        PropertiesOfOtherModules()
     )
 
     sim.make_initial_population(n=popsize)
+
     sim.simulate(end_date=end_date)
 
     return sim
@@ -62,7 +96,6 @@ def check_dtypes(sim):
     df = sim.population.props
     orig = sim.population.new_row
     assert (df.dtypes == orig.dtypes).all()
-
 
 def test_basic_run(tmpdir):
     """Short run of the module using default parameters with check on dtypes"""

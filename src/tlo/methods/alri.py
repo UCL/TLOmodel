@@ -666,17 +666,6 @@ class Alri(Module):
                                  'This is used to determine when a new episode can begin. '
                                  'This stops successive episodes interfering with one another.'),
 
-        # ---- Temporary Variables: To be replaced with the properties of other modules ----
-        # todo - put these in a support module for testing:
-        'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
-        'tmp_low_birth_weight': Property(Types.BOOL, 'temporary property - low birth weight'),
-        'tmp_hv_inf': Property(Types.BOOL, 'temporary property - hiv infection'),
-        'tmp_exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
-        'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
-        'tmp_pneumococcal_vaccination': Property(Types.BOOL, 'temporary property - streptococcus pneumoniae vaccine'),
-        'tmp_haemophilus_vaccination': Property(Types.BOOL, 'temporary property - H. influenzae type b vaccine'),
-        'tmp_influenza_vaccination': Property(Types.BOOL, 'temporary property - flu vaccine'),
-
         # ---- Health System interventions / Treatment properties ----
         'ri_ALRI_tx_start_date': Property(Types.DATE, 'start date of Alri treatment for current event'),
 
@@ -785,13 +774,6 @@ class Alri(Module):
         df.loc[df.is_alive, 'ri_ALRI_treatment'] = False
         df.loc[df.is_alive, 'ri_ALRI_tx_start_date'] = pd.NaT
 
-        # ---- Temporary values ----
-        df.loc[df.is_alive, 'tmp_malnutrition'] = False
-        df.loc[df.is_alive, 'tmp_hv_inf'] = False
-        df.loc[df.is_alive, 'tmp_low_birth_weight'] = False
-        df.loc[df.is_alive, 'tmp_exclusive_breastfeeding'] = False
-        df.loc[df.is_alive, 'tmp_continued_breastfeeding'] = False
-
         # This biset property stores set of symptoms that can occur
         # todo - @ines - this seems to be replicating what the SymptomManager does?
         # self.ALRI_symptoms = BitsetHandler(self.sim.population, 'ri_current_ALRI_symptoms',
@@ -860,12 +842,6 @@ class Alri(Module):
         df.at[child_id, 'ri_ALRI_event_death_date'] = pd.NaT
         df.at[child_id, 'ri_end_of_last_alri_episode'] = pd.NaT
 
-        # ---- Temporary values ----
-        df.at[child_id, 'tmp_malnutrition'] = False
-        df.at[child_id, 'tmp_hv_inf'] = False
-        df.at[child_id, 'tmp_low_birth_weight'] = False
-        df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
-        df.at[child_id, 'tmp_continued_breastfeeding'] = False
 
     def report_daly_values(self):
         """Report DALY incurred in the population in the last month due to ALRI"""
@@ -921,7 +897,7 @@ class Alri(Module):
                         .otherwise(0.0),
                     Predictor('li_no_access_handwashing').when(False, p['rr_ALRI_HHhandwashing']),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
-                    Predictor('tmp_hv_inf').when(True, p['rr_ALRI_HIV_untreated']),
+                    Predictor('hv_inf').when(True, p['rr_ALRI_HIV_untreated']),
                     # Predictor().when(
                     #     "va_pneumo == '>1' & "
                     #     "((ri_primary_ALRI_pathogen == 'streptococcus') | "
@@ -1230,7 +1206,7 @@ class Alri(Module):
                     .when(f'viral_pneumonia', p[f'base_death_rate_ALRI_by_viral_pneumonia'])
                     .when(f'bacterial_pneumonia', p[f'base_death_rate_ALRI_by_bacterial_pneumonia'])
                     .when(f'bronchiolitis', p[f'base_death_rate_ALRI_by_bronchiolitis']),
-                Predictor('tmp_hv_inf')
+                Predictor('hv_inf')
                     .when(True, p['rr_death_ALRI_HIV']),
                 Predictor('tmp_malnutrition')
                     .when(True, p['rr_death_ALRI_SAM']),
@@ -1647,6 +1623,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         """Impose the set of complications for this person, and onset these all instantanesouly."""
         # todo - make this go faster by doing one .loc and passing it all updates to the df at the same time.
 
+        df = self.sim.population.props
         rng = self.module.rng
         m = self.module
 
@@ -1668,7 +1645,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         for symptom, prob in m.prob_extra_symptoms_complications[complication].items():
             if rng.rand() < prob:
-                m['SymptomManager'].change_symptom(
+                m.sim.modules['SymptomManager'].change_symptom(
                     person_id=person_id,
                     symptom_string=symptom,
                     add_or_remove='+',
