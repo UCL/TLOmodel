@@ -627,32 +627,30 @@ class Alri(Module):
         # ---- Alri status ----
         'ri_current_ALRI_status':
             Property(Types.BOOL,
-                     'Alri status (current or last episode)'
+                     'Does the person currently have an infection with a pathogen that can cause Alri.'
                      ),
-        # ---- Treatment Status ----
-        # todo- @ines: i saw you using a property like this but it wasn't defined, so have defined it here.
-        'ri_ALRI_treatment':
-            Property(Types.BOOL,
-                     'Whether this person is currentlt receiving treatment for a current episode of ALRI'
-                     ),
+
         # ---- The pathogen which is the attributed cause of Alri ----
         'ri_primary_ALRI_pathogen':
             Property(Types.CATEGORICAL,
-                     'Attributable pathogen for the current Alri event',
-                     categories=list(pathogens) + ['not_applicable']
+                     'If infected, what is the pathogen with which the person is currently infected. (np.nan if not '
+                     'infected)',
+                     categories=list(pathogens)
                      ),
         # ---- The bacterial pathogen which is the attributed co-/secondary infection ----
         'ri_secondary_bacterial_pathogen':
             Property(Types.CATEGORICAL,
-                     'Secondary bacterial pathogen for the current Alri event (np.nan if none or not applicable)',
+                     'If infected, is there a secondary bacterial pathogen (np.nan if none or not applicable)',
                      categories=list(bacterial_patho)
                      ),
         # ---- The underlying Alri condition ----
         'ri_ALRI_disease_type':
-            Property(Types.CATEGORICAL, 'underlying Alri condition',
-                     categories=['viral_pneumonia', 'bacterial_pneumonia', 'fungal_pneumonia',
-                                 'bronchiolitis']
+            Property(Types.CATEGORICAL, 'If infected, what disease is the person currently suffering from.',
+                     categories=list(self.disease_type)
                      ),
+
+        # ---- Treatment Status ----
+        'ri_ALRI_treatment': Property(Types.BOOL, 'Is this person currently receiving treatment.'),
 
         # < --- other properties of the form 'ri_complication_{complication-name}' are added later -->
 
@@ -706,16 +704,6 @@ class Alri(Module):
         # will store the logging event used by this module
         self.logging_event = None
 
-        # Define the symptoms that this module will use:
-        # todo - @ines: is it right that 'danger_signs' is an indepednet symptom? It seems like this is something that
-        #  is determined in the course of a diagnosis (like in diarrhoea module).
-        # todo - move this to the defintions of 'disease' , 'complications' etc.
-        self.symptoms = {
-            'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain',
-            'cyanosis', 'respiratory_distress', 'danger_signs'
-        }
-
-
     def read_parameters(self, data_folder):
         """ Setup parameters values used by the module
         """
@@ -725,12 +713,7 @@ class Alri(Module):
 
         self.check_params_read_in_ok()
 
-        # Declare symptoms that this modules will cause and which are not included in the generic symptoms:
-        for symptom_name in self.symptoms:
-            if symptom_name not in self.sim.modules['SymptomManager'].generic_symptoms:
-                self.sim.modules['SymptomManager'].register_symptom(
-                    Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
-                )
+        self.define_symptoms()
 
     def check_params_read_in_ok(self):
         """Check that every value has been read-in successfully"""
@@ -741,6 +724,24 @@ class Alri(Module):
             assert isinstance(self.parameters[param_name],
                               param_type.python_type), f'Parameter "{param_name}" ' \
                                                        f'is not read in correctly from the resourcefile.'
+
+    def define_symptoms(self):
+        """Define the symptoms that this module will use"""
+        # todo - @ines: is it right that 'danger_signs' is an indepednet symptom? It seems like this is something that
+        #  is determined in the course of a diagnosis (like in diarrhoea module).
+
+        all_symptoms = {
+            'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain', 'cyanosis',
+            'respiratory_distress', 'danger_signs'
+        }
+
+        for symptom_name in all_symptoms:
+            if symptom_name not in self.sim.modules['SymptomManager'].generic_symptoms:
+                self.sim.modules['SymptomManager'].register_symptom(
+                    Symptom(name=symptom_name)
+                    # (give non-generic symptom 'average' healthcare seeking)
+                )
+
 
     def pre_initialise_population(self):
         """Define columns for complications at run-time"""
@@ -842,7 +843,6 @@ class Alri(Module):
         df.at[child_id, 'ri_ALRI_event_death_date'] = pd.NaT
         df.at[child_id, 'ri_end_of_last_alri_episode'] = pd.NaT
 
-
     def report_daly_values(self):
         """Report DALY incurred in the population in the last month due to ALRI"""
 
@@ -885,7 +885,6 @@ class Alri(Module):
 
             def make_naive_linear_model(patho, intercept=1.0):
                 """Make the linear model based exactly on the parameters specified"""
-                # todo - @ines - 'va_pneumo' is not defined?
 
                 base_inc_rate = f'base_inc_rate_ALRI_by_{patho}'
                 return LinearModel(
@@ -898,11 +897,11 @@ class Alri(Module):
                     Predictor('li_no_access_handwashing').when(False, p['rr_ALRI_HHhandwashing']),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor('hv_inf').when(True, p['rr_ALRI_HIV_untreated']),
-                    # Predictor().when(
-                    #     "va_pneumo == '>1' & "
-                    #     "((ri_primary_ALRI_pathogen == 'streptococcus') | "
-                    #     "(ri_secondary_bacterial_pathogen == 'streptococcus'))",
-                    #     p['rr_ALRI_PCV13']),
+                    Predictor().when(
+                        "(tmp_pneumococcal_vaccination == True) & "
+                        "((ri_primary_ALRI_pathogen == 'streptococcus') | "
+                        "(ri_secondary_bacterial_pathogen == 'streptococcus'))",
+                        p['rr_ALRI_PCV13']),
                     Predictor('tmp_malnutrition').when(True, p['rr_ALRI_underweight']),
                     Predictor('tmp_exclusive_breastfeeding').when(False, p['rr_ALRI_not_excl_breastfeeding'])
                 )
@@ -1253,7 +1252,6 @@ class Alri(Module):
         assert disease_type in self.disease_type
         return disease_type
 
-
     def complications_append(self, person_id, complication):
         """
         This function is called at the onset of complications in AlriComplicationOnsetEvent
@@ -1387,7 +1385,6 @@ class Alri(Module):
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self)
-
 
 
     # def do_when_not_improving(self, person_id):

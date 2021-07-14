@@ -146,5 +146,5 @@ def test_basic_run_lasting_two_years(tmpdir):
 # check that things are being logged
 
 # todo  - test use of cure event
-
+# todo - test use of do_alri_treatment
 
