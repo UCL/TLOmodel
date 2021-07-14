@@ -110,5 +110,8 @@ def test_basic_run_lasting_two_years(tmpdir):
 # 3) Show that if treatment not provided, and CFR is 100%, every case results in a death
 
 
+# check that things are being logged
+
+# todo  - test use of cure event
 
 
