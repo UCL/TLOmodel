@@ -34,9 +34,9 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 logs_dict = dict()
 
 new_parse_log_2010 = {2010: parse_log_file(
-    filepath=f"./outputs/calibration_files/sa_10_with_baseline_effect_calibration_180__2021-07-13T180804.log")}
+    filepath=f"./outputs/calibration_files/interventions_2010_updated_calibration_160__2021-07-13T155715.log")}
 new_parse_log_2015 = {2015: parse_log_file(
-    filepath=f"./outputs/calibration_files/sa_15_with_baseline_effect_calibration_181__2021-07-13T195247.log")}
+    filepath=f"./outputs/calibration_files/interventions_2015_updated_calibration_161__2021-07-13T180046.log")}
 logs_dict.update(new_parse_log_2010)
 logs_dict.update(new_parse_log_2015)
 
@@ -69,8 +69,8 @@ pregnancies_2011 = graph_maker.get_pregnancies_in_a_year(logs_dict[2010], 2010)
 pregnancies_2016 = graph_maker.get_pregnancies_in_a_year(logs_dict[2015], 2015)
 
 # SPONTANEOUS/INDUCED ABORTION...
-graph_maker.get_generic_incidence_graph('spontaneous_abortion', master_dict_an_2010, master_dict_an_2015,
-                                         10000, 10000, 189, 189, ['firebrick', 'lightcoral'])
+graph_maker.get_generic_incidence_graph('PROM', master_dict_an_2010, master_dict_an_2015,
+                                         10000, 10000, 27, 27, ['firebrick', 'lightcoral'])
 
 #graph_maker.get_abortion_complication_graphs(master_dict_an_2010, master_dict_an_2015, pregnancies_2011,
  #                                            pregnancies_2016, ['firebrick', 'lightcoral'])
