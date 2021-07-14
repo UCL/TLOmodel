@@ -28,57 +28,61 @@ from tlo.methods import (
 outputpath = Path("./outputs")
 resourcefilepath = Path("./resources")
 
-run_now = True
-
+no_existing_logfile = True
 
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# if run_now:
 # %% Run the Simulation
-# Do not run this cell if you already have a  logfile from a simulation:
-start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 50000
 
-log_config = {
-    'filename': 'LogFile',
-    'custom_levels': {
-        '*': logging.WARNING,
-        'tlo.methods.demography': logging.INFO,
-        'tlo.methods.diarrhoea': logging.INFO
+if no_existing_logfile:
+
+    # Do not run this cell if you already have a  logfile from a simulation:
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2012, 1, 1)
+    popsize = 50000
+
+    log_config = {
+        'filename': 'LogFile',
+        'custom_levels': {
+            '*': logging.WARNING,
+            'tlo.methods.demography': logging.INFO,
+            'tlo.methods.diarrhoea': logging.INFO
+        }
     }
-}
 
-# add file handler for the purpose of logging
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
+    # add file handler for the purpose of logging
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
 
-# run the simulation
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-             diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-             )
+    # run the simulation
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                 )
 
-sim.make_initial_population(n=popsize)
-sim.simulate(end_date=end_date)
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
 
-# display filenmae
-filename = sim.log_filepath
-print(f"filename: {filename}")
+    # display filename
+    filename = sim.log_filepath
+    print(f"filename: {filename}")
 
-# %% Load the logile:
+    # %% Load the logile:
 
-# Get the output from the logfile
-filename = Path('outputs/LogFile__2021-06-29T191225.log')
+    # Get the output from the logfile
+    filename = Path(f'{filename}')
 
-# filename = Path(f'{filename}')  # <-- insert name of the logfile here if you do not want to run the simulation again,
-#                      # e.g. filename = Path("outputs/LogFile__2021-06-29T131200.log")
+else:
+    # <-- insert name of the logfile here if you do not want to run the simulation again,
+    # e.g. filename = Path("outputs/LogFile__2021-06-29T131200.log")
+    filename = Path('outputs/LogFile__2021-06-29T191225.log')
+
 output = parse_log_file(filename)
 
 # %% ----------------------------  INCIDENCE RATE OF DIARRHOEA BY PATHOGEN  ----------------------------
