@@ -26,16 +26,16 @@ from tlo.methods import (
 class MyTestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 611
+        self.seed = 802
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2012, 1, 1)
-        self.pop_size = 20000
+        self.end_date = Date(2011, 1, 2)
+        self.pop_size = 50000
         self.number_of_draws = 10
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'htn_disorders_calibration', 'directory': './outputs',
+            'filename': 'whole_model_2010_calibration', 'directory': './outputs',
             'custom_levels': {'*': logging.INFO}
         }
 
