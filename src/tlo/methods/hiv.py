@@ -239,7 +239,9 @@ class Hiv(Module):
         "vls_m": Parameter(Types.REAL, "Rates of viral load suppression males"),
         "vls_f": Parameter(Types.REAL, "Rates of viral load suppression males"),
         "vls_child": Parameter(Types.REAL, "Rates of viral load suppression in children 0-14 years"),
-        "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available")
+        "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available"),
+        "ART_age_cutoff_young_child": Parameter(Types.INT, "Age cutoff for ART regimen for young children"),
+        "ART_age_cutoff_older_child": Parameter(Types.INT, "Age cutoff for ART regimen for older children"),
     }
 
     def read_parameters(self, data_folder):
@@ -714,34 +716,52 @@ class Hiv(Module):
             "Item_Code": {item_code_for_prep: 1}
         }
 
-        # ART for adults
-        item_code_for_art = pd.unique(
+        # First-line ART for adults (age > "ART_age_cutoff_older_child")
+        item_code_for_art_adult = pd.unique(
             consumables.loc[
-                consumables["Items"] == "Adult First line 1A d4T-based", "Item_Code"
+                consumables["Items"] == "First-line ART regimen: adult",
+                "Item_Code"
             ]
         )[0]
-        item_code_for_art2 = pd.unique(
+
+        item_code_for_cotrim_adult = pd.unique(
             consumables.loc[
                 consumables["Items"] == "Cotrimoxizole, 960mg pppy", "Item_Code"
             ]
         )[0]  # NB spelling error in consumables file "Cotrimoxizole"
-        self.footprints_for_consumables_required['art_adult'] = {
+        self.footprints_for_consumables_required['First-line ART regimen: adult'] = {
             "Intervention_Package_Code": {},
-            "Item_Code": {item_code_for_art: 1, item_code_for_art2: 1}
+            "Item_Code": {item_code_for_art_adult: 1, item_code_for_cotrim_adult: 1}
         }
 
-        # ART for children:
-        self.footprints_for_consumables_required['art_child'] = {
-            "Intervention_Package_Code": {
-                pd.unique(consumables.loc[
-                              consumables["Intervention_Pkg"] == "Cotrimoxazole for children",
-                              "Intervention_Pkg_Code"])[0]: 1},
-            "Item_Code": {
-                pd.unique(consumables.loc[
-                              consumables[
-                                  "Items"] == "Lamiduvine/Zidovudine/Nevirapine (3TC + AZT + NVP), tablet, 150 + 300"
-                                              " + 200 mg", "Item_Code"])[
-                    0]: 1}
+        # ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
+        item_code_for_art_older_child = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "First line ART regimen: older child",
+                "Item_Code"
+            ]
+        )[0]
+        pkg_code_for_cotrim_child = pd.unique(
+            consumables.loc[
+                consumables["Intervention_Pkg"] == "Cotrimoxazole for children",
+                "Intervention_Pkg_Code",
+            ]
+        )[0]
+        self.footprints_for_consumables_required['First line ART regimen: older child'] = {
+            "Intervention_Package_Code": {pkg_code_for_cotrim_child: 1},
+            "Item_Code": {item_code_for_art_older_child: 1}
+        }
+
+        # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
+        item_code_for_art_younger_child = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "First line ART regimen: young child",
+                "Item_Code"
+            ]
+        )[0]
+        self.footprints_for_consumables_required['First line ART regimen: young child'] = {
+            "Intervention_Package_Code": {pkg_code_for_cotrim_child: 1},
+            "Item_Code": {item_code_for_art_younger_child: 1}
         }
 
         # Viral Load monitoring
@@ -1646,14 +1666,21 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
     def get_drugs(self, age_of_person):
         """Helper function to get the ART according to the age of the person being treated. Returns bool to indicate
         whether drugs were available"""
-        if age_of_person < 5.0:
+
+        p = self.module.parameters
+
+        if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for children
             drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['art_child'])
+                footprint=self.module.footprints_for_consumables_required['First line ART regimen: young child'])
+        elif age_of_person <= p["ART_age_cutoff_older_child"]:
+            # Formulation for children
+            drugs_available = self.get_all_consumables(
+                footprint=self.module.footprints_for_consumables_required['First line ART regimen: older child'])
         else:
             # Formulation for adults
             drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['art_adult'])
+                footprint=self.module.footprints_for_consumables_required['First-line ART regimen: adult'])
 
         return drugs_available
 
@@ -1931,3 +1958,30 @@ def unpack_raw_output_dict(raw_dict):
     x.rename(columns={'index': 'age_group', 0: 'value'}, inplace=True)
     x['age_group'] = set_age_group(x['age_group'])
     return x
+
+# ---------------------------------------------------------------------------
+#   Dummy Version of the Module
+# ---------------------------------------------------------------------------
+
+
+class DummyHivModule(Module):
+    """Dummy HIV Module - it's only job is to create and maintain the 'hv_inf' property.
+     This can be used in test files."""
+    PROPERTIES = {'hv_inf': Property(Types.BOOL, "DUMMY version of the property for hv_inf")}
+
+    def __init__(self, name=None, hiv_prev=0.1):
+        super().__init__(name)
+        self.hiv_prev = hiv_prev
+
+    def read_parameters(self, data_folder):
+        pass
+
+    def initialise_population(self, population):
+        df = population.props
+        df.loc[df.is_alive, 'hv_inf'] = self.rng.rand(sum(df.is_alive)) < self.hiv_prev
+
+    def initialise_simulation(self, sim):
+        pass
+
+    def on_birth(self, mother, child):
+        self.sim.population.props.at[child, 'hv_inf'] = self.rng.rand() < self.hiv_prev
