@@ -64,7 +64,7 @@ class HealthSystem(Module):
             Types.DICT, 'The time taken for each appointment, according to officer and facility type.'
         ),
         'ApptType_By_FacLevel': Parameter(
-            Types.DATA_FRAME, 'Indicates whether an appointment type can occur at a facility level.'
+            Types.LIST, 'Indicates whether an appointment type can occur at a facility level.'
         ),
         'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
         'Facilities_For_Each_District': Parameter(
@@ -173,6 +173,8 @@ class HealthSystem(Module):
         self.parameters['Appt_Types_Table'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Appt_Types_Table.csv'
         )
+        self._appointment_types = set(
+            self.parameters['Appt_Types_Table']['Appt_Type_Code'])
 
         appt_time_data = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Appt_Time_Table.csv'
@@ -207,9 +209,17 @@ class HealthSystem(Module):
         )
         self.parameters['Appt_Time_Table'] = appt_times_per_level_and_type
 
-        self.parameters['ApptType_By_FacLevel'] = pd.read_csv(
+        appt_type_per_level_data = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_ApptType_By_FacLevel.csv'
         )
+        self.parameters['ApptType_By_FacLevel'] = [
+            set(
+                appt_type_per_level_data['Appt_Type_Code'][
+                    appt_type_per_level_data[f'Facility_Level_{i}']
+                ]
+            )
+            for i in facility_levels
+        ]
 
         mfl = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Master_Facilities_List.csv')
         self.parameters['Master_Facilities_List'] = mfl.iloc[:, 1:]  # get rid of extra column
@@ -428,7 +438,7 @@ class HealthSystem(Module):
 
             # Correct formated EXPECTED_APPT_FOOTPRINT
             assert 'EXPECTED_APPT_FOOTPRINT' in dir(hsi_event)
-            self.check_appt_footprint_format(hsi_event.EXPECTED_APPT_FOOTPRINT)
+            assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
 
             # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
             # (Integer specificying the facility level at which HSI_Event must occur)
@@ -453,10 +463,9 @@ class HealthSystem(Module):
 
         # 2) Check that topen, tclose and priority are valid
 
-        # If there is no specified tclose time then set this to the later of (i) the day after the end of the
-        # simulation, (ii) the day after topen
+        # If there is no specified tclose time then set this to a week after topen
         if tclose is None:
-            tclose = max(self.sim.end_date + DateOffset(days=1), topen + DateOffset(days=1))
+            tclose = topen + DateOffset(days=7)
 
         # Check topen is not in the past
         assert topen >= self.sim.date
@@ -492,26 +501,21 @@ class HealthSystem(Module):
         if type(hsi_event.target) is not tlo.population.Population:
 
             # 4) Check that at least one type of appointment is required
-            assert any(value > 0 for value in hsi_event.EXPECTED_APPT_FOOTPRINT.values()), \
+            assert len(hsi_event.EXPECTED_APPT_FOOTPRINT) > 0, (
                 'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
-
+            )
             # 5) Check that the event does not request an appointment at a facility level which is not possible
-            appt_type_to_check_list = [k for k, v in hsi_event.EXPECTED_APPT_FOOTPRINT.items() if v > 0]
-            assert all([self.parameters['ApptType_By_FacLevel'].loc[
-                            self.parameters['ApptType_By_FacLevel']['Appt_Type_Code'] == appt_type_to_check,
-                            self.parameters['ApptType_By_FacLevel'].columns.str.contains(
-                                str(hsi_event.ACCEPTED_FACILITY_LEVEL))].all().all()
-                        for appt_type_to_check in appt_type_to_check_list
-                        ]), \
-                "An appointment type has been requested at a facility level for which is it not possibe: " \
-                + hsi_event.TREATMENT_ID
-
+            appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
+            facility_appt_types = self.parameters['ApptType_By_FacLevel'][hsi_event.ACCEPTED_FACILITY_LEVEL]
+            assert facility_appt_types.issuperset(appt_type_to_check_list), (
+                f"An appointment type has been requested at a facility level for which "
+                f"it is not possible: {hsi_event.TREATMENT_ID}"
+            )
             # 6) Check that event (if individual level) is able to run with this configuration of officers
             # (ie. Check that this does not demand officers that are never available at a particular facility)
             caps = self.parameters['Daily_Capabilities']
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
-            footprint_is_possible = (len(footprint) > 0) & (
-                caps.loc[footprint.keys(), 'Total_Minutes_Per_Day'] > 0).all()
+            footprint_is_possible = (caps.loc[footprint, 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
                 logger.warning(key="message",
                                data=f"The expected footprint is not possible with the configuration of officers: "
@@ -562,18 +566,17 @@ class HealthSystem(Module):
                      f" {hsi_event.TREATMENT_ID}"
             )
 
-    def check_appt_footprint_format(self, appt_footprint):
+    def appt_footprint_is_valid(self, appt_footprint):
         """
-        This function runs some checks on the appt_footprint to ensure it is the right format
-        :return: None
+        Checks an appointment footprint to ensure it is in the correct format.
+        :param appt_footprint: Appointment footprint to check.
+        :return: True if valid and False otherwise.
         """
-
-        assert set(appt_footprint.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
-        # All sensible numbers for the number of appointments requested (no negative and at least one appt required)
-
-        assert all(np.asarray([(appt_footprint[k]) for k in appt_footprint.keys()]) >= 0)
-
-        assert not all(value == 0 for value in appt_footprint.values())
+        # Check that all keys known appointment types and all values non-negative
+        return isinstance(appt_footprint, dict) and all(
+            k in self._appointment_types and v > 0
+            for k, v in appt_footprint.items()
+        )
 
     def broadcast_healthsystem_interaction(self, hsi_event):
         """
@@ -683,15 +686,10 @@ class HealthSystem(Module):
     def get_blank_appt_footprint(self):
         """
         This is a helper function so that disease modules can easily create their appt_footprints.
-        It returns a dataframe containing the appointment footprint information in the format that /
-        the HealthSystemScheduler expects.
+        It returns an empty Counter instance.
 
         """
-
-        keys = self.parameters['Appt_Types_Table']['Appt_Type_Code']
-        values = np.zeros(len(keys))
-        blank_footprint = dict(zip(keys, values))
-        return blank_footprint
+        return Counter()
 
     def get_blank_cons_footprint(self):
         """
@@ -734,42 +732,50 @@ class HealthSystem(Module):
 
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
-        This will take an HSI event and return the required appointments in terms of the time required of each
-        Officer Type in each Facility ID.
-        The index will identify the Facility ID and the Officer Type in the same format as is used in
-        Daily_Capabilities.
+        This will take an HSI event and return the required appointments in terms of the
+        time required of each Officer Type in each Facility ID.
+        The index will identify the Facility ID and the Officer Type in the same format
+        as is used in Daily_Capabilities.
 
         :param hsi_event: The HSI event
-        :param actual_appt_footprint: The actual appt footprint (optional) if different to that in the HSI_event
-        :return: A series that gives the time required for each officer-type in each facility_ID
+        :param actual_appt_footprint: The actual appt footprint (optional) if different
+            to that in the HSI event.
+        :return: A Counter that gives the times required for each officer-type in each
+            facility_ID, where this time is non-zero.
         """
+        # If specified use actual_appt_footprint otherwise use EXPECTED_APPT_FOOTPRINT
+        the_appt_footprint = (
+            hsi_event.EXPECTED_APPT_FOOTPRINT if actual_appt_footprint is None else
+            actual_appt_footprint
+        )
+        # Check in time request cache in event if a time request corresponding to the
+        # current relevant event attributes and appointment footprint has previously
+        # been stored, and if so return this
+        cache_key = (
+            hsi_event.target,
+            hsi_event.ACCEPTED_FACILITY_LEVEL,
+            tuple(the_appt_footprint)
+        )
+        cached_time_request = hsi_event._cached_time_requests.get(cache_key)
+        if cached_time_request is not None:
+            return cached_time_request
 
-        # Gather useful information
-        appt_types = self.parameters['Appt_Types_Table']['Appt_Type_Code'].values
+        # No entry in cache so compute time request
+
+        # Appointment times for each facility and officer combination
         appt_times = self.parameters['Appt_Time_Table']
 
-        # Gather information about the HSI event
+        # Facility level required by this event
         the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
-
-        # Get the appt_footprint
-        if actual_appt_footprint is None:
-            # use the appt_footprint in the hsi_event
-            the_appt_footprint = hsi_event.EXPECTED_APPT_FOOTPRINT
-        else:
-            # use the actual_appt_provided
-            the_appt_footprint = actual_appt_footprint
 
         # Get the (one) health_facility available to this person (based on their
         # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL:
         the_facility = self.get_facility_info(hsi_event)
 
-        # Transform the treatment footprint into a demand for time for officers of each
-        # type, for this facility level (it varies by facility level)
-        appts_with_duration = [
-            appt_type for appt_type in appt_types if the_appt_footprint[appt_type] > 0
-        ]
+        # Accumulate appointment times for specified footprint using times from
+        # appointment times table
         appt_footprint_times = Counter()
-        for appt_type in appts_with_duration:
+        for appt_type in the_appt_footprint:
             try:
                 appt_info_list = appt_times[the_facility_level][appt_type]
             except KeyError as e:
@@ -782,6 +788,9 @@ class HealthSystem(Module):
                 appt_footprint_times[
                     f"FacilityID_{the_facility.id}_Officer_{appt_info.officer_type}"
                 ] += appt_info.time_taken
+
+        # Cache the time request to avoid having to recompute on subsequent calls
+        hsi_event._cached_time_requests[cache_key] = appt_footprint_times
 
         return appt_footprint_times
 
@@ -1029,13 +1038,10 @@ class HealthSystem(Module):
             assert actual_appt_footprint is not None
             assert squeeze_factor is not None
 
-            appts = actual_appt_footprint
             log_info = dict()
             log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
             # key appointment types that are non-zero
-            log_info['Number_By_Appt_Type_Code'] = {
-                key: val for key, val in appts.items() if val
-            }
+            log_info['Number_By_Appt_Type_Code'] = actual_appt_footprint
             log_info['Person_ID'] = hsi_event.target
 
             if squeeze_factor == np.inf:
@@ -1407,11 +1413,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             ]
 
             # Compute total appointment footprint across all events
-            # Summing manually in loop seems to be ~3 time quicker than
-            # sum(footprints_of_all_individual_level_hsi_event, Counter())
             total_footprint = Counter()
             for footprint in footprints_of_all_individual_level_hsi_event:
-                total_footprint += footprint
+                # Counter.update method when called with dict-like argument adds counts
+                # from argument to Counter object called from
+                total_footprint.update(footprint)
 
             # 5) Estimate Squeeze-Factors for today
             if self.module.mode_appt_constraints == 0:
@@ -1458,7 +1464,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # The returned footprint is different to the expected footprint: so must update load factors
 
                         # check its formatting:
-                        self.module.check_appt_footprint_format(actual_appt_footprint)
+                        assert self.module.appt_footprint_is_valid(actual_appt_footprint)
 
                         # Update load factors:
                         updated_call = self.module.get_appt_footprint_as_time_request(
@@ -1467,11 +1473,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
                         total_footprint -= original_call
                         total_footprint += updated_call
-                        squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
-                            footprints_per_event=footprints_of_all_individual_level_hsi_event,
-                            total_footprint=total_footprint,
-                            current_capabilities=current_capabilities,
-                        )
+                        if self.module.mode_appt_constraints != 0:
+                            # only need to recompute squeeze factors if running with constraints
+                            # i.e. mode != 0
+                            squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
+                                footprints_per_event=footprints_of_all_individual_level_hsi_event,
+                                total_footprint=total_footprint,
+                                current_capabilities=current_capabilities,
+                            )
                     else:
                         # no actual footprint is returned so take the expected initial declaration as the actual
                         actual_appt_footprint = event.EXPECTED_APPT_FOOTPRINT
@@ -1547,6 +1556,7 @@ class HSI_Event:
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._received_info_about_bed_days = None
+        self._cached_time_requests = {}
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -1591,8 +1601,9 @@ class HSI_Event:
 
     def run(self, squeeze_factor):
         """Make the event happen."""
-        self.apply(self.target, squeeze_factor)
+        updated_appt_footprint = self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
+        return updated_appt_footprint
 
     def get_all_consumables(self, item_codes=None, pkg_codes=None, footprint=None):
         """Helper function to allow for getting and checking of entire set of consumables.
@@ -1660,21 +1671,20 @@ class HSI_Event:
         )
 
     def make_appt_footprint(self, dict_of_appts):
-        """Helper function to make an appt_footprint. Create the full appt_footprint that is expected from a dictionary
-        only giving the types of appointments needed."""
+        """Helper function to make appointment footprint in format expected downstream.
 
-        # get blank footprint
-        footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-
-        # do checks
-        assert isinstance(dict_of_appts, dict)
-        assert all([(k in footprint.keys()) for k in dict_of_appts.keys()])
-        assert all([isinstance(v, (float, int)) for v in dict_of_appts.values()])
-
-        # make footprint (defaulting to zero where a type of appointment is not specified)
-        footprint.update(dict_of_appts)
-
-        return footprint
+        Should be passed a dictionary keyed by appointment type codes with non-negative
+        values.
+        """
+        health_system = self.sim.modules['HealthSystem']
+        if health_system.appt_footprint_is_valid(dict_of_appts):
+            return Counter(dict_of_appts)
+        else:
+            raise ValueError(
+                "Argument to make_appt_footprint should be a dictionary keyed by "
+                "appointment type code strings in Appt_Types_Table with non-negative "
+                "values"
+            )
 
 
 class HSIEventWrapper(Event):

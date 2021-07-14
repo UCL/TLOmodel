@@ -1090,3 +1090,25 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart():
         ev[0] for ev in sim.find_events_for_person(person_id=1) if
         (isinstance(ev[1], hiv.HivAidsOnsetEvent) & (ev[0] >= sim.date))
     ])
+
+
+def test_use_dummy_version():
+    """check that the dummy version of the HIV module works ok: provides the hv_inf property as a bool"""
+    start_date = Date(2010, 1, 1)
+    popsize = 1000
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 hiv.DummyHivModule(hiv_prev=1.0)
+                 )
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2014, 12, 31))
+
+    check_dtypes(sim)
+
+    df = sim.population.props
+    assert df.dtypes['hv_inf'].name == 'bool'
+    assert df.loc[df.is_alive, 'hv_inf'].all()
