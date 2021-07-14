@@ -7188,9 +7188,9 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
         # Schedule death for those who died from their injuries despite medical intervention
         if df.loc[person_id, 'cause_of_death'] == 'Other':
             pass
-        # if df.loc[person_id, 'rt_ISS_score'] < 3:
-        #     mortality_checked = True
-        if 1 <= df.loc[person_id, 'rt_ISS_score'] <= 9:
+        if df.loc[person_id, 'rt_ISS_score'] <= 4:
+            mortality_checked = True
+        elif 4 < df.loc[person_id, 'rt_ISS_score'] <= 9:
             if randfordeath < self.prob_death_iss_less_than_9:
                 mortality_checked = True
                 df.loc[person_id, 'rt_post_med_death'] = True

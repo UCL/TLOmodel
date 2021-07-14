@@ -203,11 +203,23 @@ def create_rti_data(logfile):
         ICU_eye = 0
         ICU_lac = 0
         ICU_burn = 0
+
+    # calculate the percentage of those who died with an ISS score less than 9 (who didn't automatically go into medical
+    # treatment) who died in and out of hospital
+    deceased_persons = parsed_log['tlo.methods.demography']['properties_of_deceased_persons']
+    non_emergency_symptom_assigned = \
+        deceased_persons.loc[deceased_persons['rt_ISS_score'].between(0, 9, inclusive=False)]
+    died_from_rti = (non_emergency_symptom_assigned.rt_death_from_shock | non_emergency_symptom_assigned.rt_imm_death |
+                     non_emergency_symptom_assigned.rt_post_med_death | non_emergency_symptom_assigned.rt_no_med_death |
+                     non_emergency_symptom_assigned.rt_unavailable_med_death)
+    non_emergency_symptom_assigned = non_emergency_symptom_assigned.loc[died_from_rti]
+    percent_non_emergency_died_without_med = \
+        sum(non_emergency_symptom_assigned.rt_no_med_death) / len(non_emergency_symptom_assigned)
     # Store the percentage of people who died after seeking healthcare in this sim
     percent_died_after_med = (rti_log['summary_1m']['number deaths post med'].sum() /
                               rti_log['model_progression']['total_sought_medical_care'].iloc[-1])
     # store the percent of people who died without seeking medical care
-    percent_died_without_med_data = rti_log['tlo.methods.rti']['summary_1m']['cfr_no_med'].to_list()
+    percent_died_without_med_data = rti_log['summary_1m']['cfr_no_med'].to_list()
     flattened_percent_died_without_med_data = [i for i in percent_died_without_med_data if i != 'all_sought_care']
     percent_died_without_med = np.mean(flattened_percent_died_without_med_data)
     # Store the incidence of RTI per 100,000 person years in this sim
@@ -488,6 +500,7 @@ def create_rti_data(logfile):
                     'per_sim_urban_severe': per_sim_urban_severe,
                     'per_sim_average_percentage_lx_open': per_sim_average_percentage_lx_open,
                     'diceased_iss_scores': decesed_persons_ISS_scores,
+                    'percent_non_emergency_died_without_med': percent_non_emergency_died_without_med,
                     'num_surg': num_surg,
                     'DALYs': DALYs,
                     'years_run': years_run,
@@ -865,7 +878,18 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
                 f"Percent_admitted_icu_hdu_bar_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
                 bbox_inches='tight')
     plt.clf()
-
+    # plot the percentage of deaths that occurred due to an ISS score less than 9 in and outside of hospital
+    percent_non_emergency_died_without_med = r['percent_non_emergency_died_without_med'].mean()
+    percent_non_emergency_died_with_med = 1 - percent_non_emergency_died_without_med
+    plt.pie([percent_non_emergency_died_without_med, percent_non_emergency_died_with_med], explode=None,
+            labels=['Without med', 'With med'], colors=['lightsteelblue', 'lightsalmon'], autopct='%1.1f%%')
+    plt.title(f"Average percentage of fatal mild injuries that occurred with and without medical intervention"
+              f"\n"
+              f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+    plt.savefig(save_directory + "/" + filename_description + "_" +
+                f"Percent_fatal_mild_injuries_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
+                bbox_inches='tight')
+    plt.clf()
     # ======================== Plot the percentage of death post med ============================================
     # Calculate the overall percentage of death post medical intervention for RTI
     overall_average_post_med_death = r['percent_died_after_med'].mean()
