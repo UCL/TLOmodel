@@ -200,6 +200,35 @@ def do_labour_run_only(config_name, start_date, end_date, seed, population, para
 
     sim.simulate(end_date=end_date)
 
+def do_normal_run(config_name, start_date, end_date, seed, population, parameters):
+    log_config = {
+        "filename": f"{config_name}_calibration_{seed}",  # The name of the output file (a timestamp will be appended).
+        "directory": "./outputs/calibration_files",
+        # The default output path is `./outputs`. Change it here, if necessary
+        "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+            "*": logging.DEBUG}}
+
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    register_modules(sim)
+    sim.make_initial_population(n=population)
+
+    if parameters == 2015:
+        def switch_parameters(master_params, current_params):
+            for key, value in current_params.items():
+                current_params[key] = master_params[key][1]
+
+        switch_parameters(sim.modules['PregnancySupervisor'].parameters,
+                          sim.modules['PregnancySupervisor'].current_parameters)
+        switch_parameters(sim.modules['CareOfWomenDuringPregnancy'].parameters,
+                          sim.modules['CareOfWomenDuringPregnancy'].current_parameters)
+        switch_parameters(sim.modules['Labour'].parameters,
+                          sim.modules['Labour'].current_parameters)
+        switch_parameters(sim.modules['NewbornOutcomes'].parameters,
+                          sim.modules['NewbornOutcomes'].current_parameters)
+        switch_parameters(sim.modules['PostnatalSupervisor'].parameters,
+                          sim.modules['PostnatalSupervisor'].current_parameters)
+
+    sim.simulate(end_date=end_date)
 
 def age_corrected_run_with_all_women_pregnant_at_baseline(config_name, start_date, end_date, seed, population,
                                                           parameters):
@@ -284,9 +313,9 @@ def age_corrected_run_with_all_women_pregnant_at_baseline(config_name, start_dat
 
 # Get the log
 
-#age_corrected_run_with_all_women_pregnant_at_baseline(config_name='interventions_2010_updated',
- #                                                     start_date=Date(2010, 1, 1),
- #                     end_date=Date(2011, 1, 1), seed=160, population=10000, parameters=2010)
-age_corrected_run_with_all_women_pregnant_at_baseline(config_name='interventions_2015_updated',
+age_corrected_run_with_all_women_pregnant_at_baseline(config_name='sa_10_with_baseline_effect',
+                                                      start_date=Date(2010, 1, 1), end_date=Date(2011, 1, 1),
+              seed=180, population=10000, parameters=2010)
+age_corrected_run_with_all_women_pregnant_at_baseline(config_name='sa_15_with_baseline_effect',
                                                       start_date=Date(2015, 1, 1),
-                      end_date=Date(2016, 1, 1), seed=161, population=10000, parameters=2015)
+              end_date=Date(2016, 1, 1), seed=181, population=10000, parameters=2015)

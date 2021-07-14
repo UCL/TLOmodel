@@ -64,6 +64,7 @@ def set_pregnancy_characteristics(sim, mother_id):
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 40
     sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
 
+
 def register_modules(ignore_cons_constraints):
     """Register all modules that are required for labour to run"""
 
@@ -448,7 +449,6 @@ def test_logic_within_death_and_still_birth_events():
     # todo: seperate test for the BirthPostnatal event?
 
 
-
 def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_constraints_via_functions():
 
     sim = register_modules(ignore_cons_constraints=True)
@@ -569,6 +569,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
 
     # Finally check treatment for postpartum haem. Set probablity that uterotonics will stop bleeding to 1
     df.at[mother_id, 'la_postpartum_haem'] = True
+    mni[mother_id]['uterine_atony'] = True
     params['prob_haemostatis_uterotonics'] = 1
 
     # Run the event and check that the woman is referred for blood but not surgery. And that treatment is stored in
@@ -594,6 +595,9 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     mni[mother_id]['referred_for_blood'] = False
     mni[mother_id]['referred_for_surgery'] = False
 
+    # set retained placenta variable
+    mni[mother_id]['retained_placenta'] = True
+
     # Now assume the bleed is due to retained placenta, set probablity of bedside removal to 1 and call function
     params['prob_successful_manual_removal_placenta'] = 1
     sim.modules['Labour'].assessment_and_treatment_of_pph_retained_placenta(
@@ -610,8 +614,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     assert mni[mother_id]['referred_for_blood']
     assert mni[mother_id]['referred_for_surgery']
 
-test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_constraints_via_functions()
-"""
+
 def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quality_constraints():
     sim = register_modules(ignore_cons_constraints=True)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
@@ -620,7 +623,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
 
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
     df = sim.population.props
-    params = sim.modules['Labour'].parameters
+    params = sim.modules['Labour'].current_parameters
 
     # Run labour onset event to update additional variables
     labour_onset = labour.LabourOnsetEvent(individual_id=mother_id, module=sim.modules['Labour'])
@@ -668,9 +671,10 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     # Test PPH surgery - uterine atony
     # Set PPH to true and the underlying cause to being uterine atony
     df.at[mother_id, 'la_postpartum_haem'] = True
+    df.at[mother_id, 'la_is_postpartum'] = True
     mni[mother_id]['referred_for_surgery'] = True
+    mni[mother_id]['uterine_atony'] = True
 
-    sim.modules['Labour'].cause_of_primary_pph.set(mother_id, 'uterine_atony')
     df.at[mother_id, 'la_date_most_recent_delivery'] = sim.date + pd.DateOffset(days=4)
 
     # force surgery to be successful
@@ -689,14 +693,13 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     sim.modules['Labour'].women_in_labour.append(mother_id)
 
     # reset comp variables
-    df.at[mother_id, 'la_postpartum_haem'] = True
-    mni[mother_id]['referred_for_surgery'] = True
     df.at[mother_id, 'la_currently_in_labour'] = True
-    sim.modules['Labour'].cause_of_primary_pph.set(mother_id, 'uterine_atony')
+    df.at[mother_id, 'la_postpartum_haem'] = True
 
     # now set surgery success to 0 and check that hysterectomy occurred
     params['success_rate_pph_surgery'] = 0
     sim.modules['Labour'].pph_treatment.unset(mother_id, 'surgery')
+    sim.modules['Labour'].pph_treatment.unset(mother_id, 'uterotonics')
     pp_cemonc_event.apply(person_id=updated_id, squeeze_factor=0.0)
 
     assert df.at[mother_id, 'la_has_had_hysterectomy']
@@ -706,7 +709,7 @@ def test_to_check_similarly_named_and_functioning_dx_tests_work_as_expected():
     sim = register_modules(ignore_cons_constraints=False)
     sim.make_initial_population(n=100)
 
-    params = sim.modules['Labour'].parameters
+    params = sim.modules['Labour'].current_parameters
     params['sensitivity_of_assessment_of_obstructed_labour_hc'] = 1.0
     params['sensitivity_of_assessment_of_obstructed_labour_hp'] = 1.0
     params['sensitivity_of_assessment_of_hypertension_hc'] = 1.0
@@ -722,8 +725,8 @@ def test_to_check_similarly_named_and_functioning_dx_tests_work_as_expected():
 
     # Test a catagorical test
     # Confirm correct sensitivity and specificiy
-    sim.modules['HealthSystem'].dx_manager.print_info_about_dx_test('assess_hypertension_hc')
-    sim.modules['HealthSystem'].dx_manager.print_info_about_dx_test('assess_hypertension_hp')
+    sim.modules['HealthSystem'].dx_manager.print_info_about_dx_test('assess_hypertension_hc_ip')
+    sim.modules['HealthSystem'].dx_manager.print_info_about_dx_test('assess_hypertension_hp_ip')
 
     # Find all categories for blood pressure in the df
     all_categories = list(df['ps_htn_disorders'].cat.categories)
@@ -733,12 +736,12 @@ def test_to_check_similarly_named_and_functioning_dx_tests_work_as_expected():
 
     # check target categories has been specified correctly:
     assert set(target_categories) == set(
-        sim.modules['HealthSystem'].dx_manager.dx_tests['assess_hypertension_hc'][0].target_categories
+        sim.modules['HealthSystem'].dx_manager.dx_tests['assess_hypertension_hc_ip'][0].target_categories
     )
     assert set(target_categories).issubset(target_categories)
 
     assert set(target_categories) == set(
-        sim.modules['HealthSystem'].dx_manager.dx_tests['assess_hypertension_hp'][0].target_categories
+        sim.modules['HealthSystem'].dx_manager.dx_tests['assess_hypertension_hp_ip'][0].target_categories
     )
     assert set(target_categories).issubset(target_categories)
 
@@ -764,7 +767,7 @@ def test_to_check_similarly_named_and_functioning_dx_tests_work_as_expected():
         sim.population.props.at[updated_id, 'ps_htn_disorders'] = true_value
         # Run DxTest for 'blood_pressure_measurement'
         test_result = sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run='assess_hypertension_hc',
+            dx_tests_to_run='assess_hypertension_hc_ip',
             hsi_event=hsi_event
         )
         # check that result of dx test is as expected:
@@ -774,7 +777,7 @@ def test_to_check_similarly_named_and_functioning_dx_tests_work_as_expected():
         sim.population.props.at[updated_id, 'ps_htn_disorders'] = true_value
         # Run DxTest for 'blood_pressure_measurement'
         test_result = sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run='assess_hypertension_hp',
+            dx_tests_to_run='assess_hypertension_hp_ip',
             hsi_event=hsi_event
         )
         # check that result of dx test is as expected:
@@ -802,8 +805,8 @@ def test_to_check_similarly_named_and_functioning_dx_tests_work_as_expected():
 
     # additional examples
 
-    sim.modules['HealthSystem'].dx_manager.print_info_about_dx_test('assess_hypertension_hc')
-    sim.modules['HealthSystem'].dx_manager.print_info_about_dx_test('assess_hypertension_hp')
+    sim.modules['HealthSystem'].dx_manager.print_info_about_dx_test('assess_hypertension_hc_ip')
+    sim.modules['HealthSystem'].dx_manager.print_info_about_dx_test('assess_hypertension_hp_ip')
 
     df.at[updated_id, 'la_sepsis'] = True
 
@@ -826,4 +829,4 @@ def test_to_check_similarly_named_and_functioning_dx_tests_work_as_expected():
 # todo: further CEmONC testing
 # todo: test consumables constraints block interventions
 
-"""
+

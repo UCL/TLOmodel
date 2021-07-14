@@ -77,25 +77,31 @@ class Labour(Module):
                         'womens parity at 2010 baseline'),
         'effect_mar_stat_2_parity_lr2010': Parameter(
             Types.LIST, 'effect of a change in marriage status from comparison (level 1) in the linear '
-                        'regression equation predicating womens parity at 2010 baseline'),
+                        'regression equation predicating womans parity at 2010 baseline'),
         'effect_mar_stat_3_parity_lr2010': Parameter(
             Types.LIST, 'effect of a change in marriage status from comparison (level 1) in the linear '
-                        'regression equation predicating womens parity at 2010 baseline'),
-        'effect_wealth_lev_5_parity_lr2010': Parameter(
-            Types.LIST, 'effect of a change in wealth status from comparison (level 1) in the linear '
-                        'regression equation predicating womens parity at 2010 baseline'),
+                        'regression equation predicating womans parity at 2010 baseline'),
         'effect_wealth_lev_4_parity_lr2010': Parameter(
-            Types.LIST, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+            Types.LIST, 'effect of an increase in wealth level in the linear regression equation predicating womans '
                         'parity at 2010 base line'),
         'effect_wealth_lev_3_parity_lr2010': Parameter(
-            Types.LIST, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+            Types.LIST, 'effect of an increase in wealth level in the linear regression equation predicating womans '
                         'parity at 2010 base line'),
         'effect_wealth_lev_2_parity_lr2010': Parameter(
-            Types.LIST, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+            Types.LIST, 'effect of an increase in wealth level in the linear regression equation predicating womans '
                         'parity at 2010 base line'),
         'effect_wealth_lev_1_parity_lr2010': Parameter(
-            Types.LIST, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+            Types.LIST, 'effect of an increase in wealth level in the linear regression equation predicating womans '
                         'parity at 2010 base line'),
+        'effect_edu_lev_2_parity_lr2010': Parameter(
+            Types.LIST, 'effect of an increase in education level in the linear regression equation predicating womans '
+                        'parity at 2010 base line'),
+        'effect_edu_lev_3_parity_lr2010': Parameter(
+            Types.LIST, 'effect of an increase in education level in the linear regression equation predicating womans '
+                        'parity at 2010 base line'),
+        'effect_rural_parity_lr2010': Parameter(
+            Types.LIST, 'effect of rural living in the linear regression equation predicating womans parity at 2010 base line'),
+
 
         # POSTTERM RATE
         'risk_post_term_labour': Parameter(
@@ -605,11 +611,11 @@ class Labour(Module):
         parity_equation = LinearModel.custom(labour_lm.predict_parity, parameters=params)
 
         # We assign parity to all women of reproductive age at baseline
-        df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] = np.ceil(
+        df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] = \
             parity_equation.predict(df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14)])
-        )
 
         assert (df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] >= 0).all().all()
+
 
     def initialise_simulation(self, sim):
 
@@ -1545,8 +1551,6 @@ class Labour(Module):
         assert df.at[individual_id, 'sex'] == 'F'
         assert df.at[individual_id, 'age_years'] > 14
         assert df.at[individual_id, 'age_years'] < 51
-        if not df.at[individual_id, 'la_is_postpartum']:
-            x = 1
         assert df.at[individual_id, 'la_is_postpartum']
 
     # ============================================== HSI FUNCTIONS ====================================================
@@ -2191,7 +2195,6 @@ class Labour(Module):
                         mni[person_id]['referred_for_surgery'] = True
                         mni[person_id]['referred_for_blood'] = True
 
-
     def surgical_management_of_pph(self, hsi_event):
         """
         This function represents the surgical management of postpartum haemorrhage (all-cause) following labour. This
@@ -2205,7 +2208,7 @@ class Labour(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         if df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['uterine_atony'] \
-            and not self.pph_treatment.has_all(person_id, 'uterotonics'):
+            and not self.pph_treatment.has_all(person_id, 'uterotonics'): # todo: why condition on not receiving uterotonics?
 
             # We apply a probability that surgical techniques will be effective
             treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
@@ -3166,6 +3169,8 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         df = self.sim.population.props
         params = self.module.current_parameters
+
+        print(person_id, 'at pnc')
 
         if not df.at[person_id, 'is_alive']:
             return

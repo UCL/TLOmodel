@@ -704,7 +704,7 @@ class CareOfWomenDuringPregnancy(Module):
                 (self.rng.random_sample() < params['prob_intervention_delivered_ifa']):
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'iron_folic_acid'})
 
-                if self.rng.random_sample() > params['prob_adherent_ifa']:
+                if self.rng.random_sample() < params['prob_adherent_ifa']:
                     df.at[person_id, 'ac_receiving_iron_folic_acid'] = True
 
     def balance_energy_and_protein_supplementation(self, hsi_event):
@@ -1943,6 +1943,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             # gestational age
             self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
+            self.module.tetanus_vaccination(hsi_event=self)
 
             # And we schedule the next ANC appointment
             if mother.ps_gestational_age_in_weeks < 40:

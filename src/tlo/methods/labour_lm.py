@@ -27,16 +27,26 @@ def predict_parity(self, df, rng=None, **externals):
     """population level"""
     params = self.parameters
     result = pd.Series(data=params['intercept_parity_lr2010'], index=df.index)
-    result += df.age_years * 0.22
+
+    result += (df.age_years * 0.21)  #todo: should that start at 15 or 0?
     result[df.li_mar_stat == 2] += params['effect_mar_stat_2_parity_lr2010']
     result[df.li_mar_stat == 3] += params['effect_mar_stat_3_parity_lr2010']
     result[df.li_wealth == 1] += params['effect_wealth_lev_1_parity_lr2010']
     result[df.li_wealth == 2] += params['effect_wealth_lev_2_parity_lr2010']
     result[df.li_wealth == 3] += params['effect_wealth_lev_3_parity_lr2010']
     result[df.li_wealth == 4] += params['effect_wealth_lev_4_parity_lr2010']
-    result[df.li_wealth == 5] += params['effect_wealth_lev_5_parity_lr2010']
 
-    return result
+    result[df.li_ed_lev == 2] += params['effect_edu_lev_2_parity_lr2010']
+    result[df.li_ed_lev == 3] += params['effect_edu_lev_3_parity_lr2010']
+
+    result[~df.li_urban] += params['effect_rural_parity_lr2010']
+
+    rounded_result = result.round()
+    minus_women = rounded_result.loc[rounded_result.values < 0]
+    rounded_result.loc[minus_women.index] = 0
+    updated_result = rounded_result.astype(int)
+
+    return updated_result
 
 
 def predict_obstruction_cpd_ip(self, df, rng=None, **externals):

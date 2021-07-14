@@ -9,12 +9,21 @@ import statistics as st
 import pandas as pd
 
 
-def get_incidence(logs_dict_file, module, complication, dictionary):
-    if f'tlo.methods.{module}' in logs_dict_file:
-        if 'maternal_complication' in logs_dict_file[f'tlo.methods.{module}']:
-            comps = logs_dict_file[f'tlo.methods.{module}']['maternal_complication']
-            dictionary[complication] = len(comps.loc[(comps['type'] == f'{complication}')])
+def get_incidence(logs_dict_file, module, complication, dictionary, specific_year, year):
+    if specific_year:
+        if f'tlo.methods.{module}' in logs_dict_file:
+            if 'maternal_complication' in logs_dict_file[f'tlo.methods.{module}']:
+                comps = logs_dict_file[f'tlo.methods.{module}']['maternal_complication']
+                comps['date'] = pd.to_datetime(comps['date'])
+                comps['year'] = comps['date'].dt.year
+                dictionary[complication] = len(comps.loc[(comps['type'] == f'{complication}') &
+                                                         (comps['year'] == year)])
 
+    else:
+        if f'tlo.methods.{module}' in logs_dict_file:
+            if 'maternal_complication' in logs_dict_file[f'tlo.methods.{module}']:
+                comps = logs_dict_file[f'tlo.methods.{module}']['maternal_complication']
+                dictionary[complication] = len(comps.loc[(comps['type'] == f'{complication}')])
 
 def get_prop_unintended_preg(logs_dict, dict):
     for file in logs_dict:
@@ -62,30 +71,116 @@ def get_ip_stillbirths(logs_dict):
     return ip_stillbirths
 
 
+def get_pregnancies_in_a_year(logs_dict_file, year):
+    preg_poll = logs_dict_file['tlo.methods.contraception']['pregnant_at_age']
+    preg_poll['date'] = pd.to_datetime(preg_poll['date'])
+    preg_poll['year'] = preg_poll['date'].dt.year
+    pp_pregs = len(preg_poll.loc[preg_poll['year'] == year])
+
+    failed_contraception = logs_dict_file['tlo.methods.contraception']['fail_contraception']
+    failed_contraception['date'] = pd.to_datetime(failed_contraception['date'])
+    failed_contraception['year'] = failed_contraception['date'].dt.year
+    fc_pregs = len(failed_contraception.loc[failed_contraception['year'] == year])
+
+    total_pregnancies = pp_pregs + fc_pregs
+
+    return total_pregnancies
+
+
+def get_parity_graphs(log_file):
+    proportions_15_19 = dict()
+    proportions_20_24 = dict()
+    proportions_25_29 = dict()
+    proportions_30_34 = dict()
+    proportions_35_39 = dict()
+    proportions_40_44 = dict()
+    proportions_45_49 = dict()
+    total = dict()
+    all_ages = dict()
+
+    def get_proportions(low_limit, high_limit, proportions, parity):
+        parity_df = log_file['tlo.methods.labour']['parity']
+
+        denom = len(parity_df.loc[(parity_df['age'] > low_limit) & (parity_df['age'] < high_limit)])
+
+        if parity != 10:
+            prop = (len(parity_df.loc[(parity_df['age'] > low_limit) & (parity_df['age'] < high_limit) &
+                                      (parity_df['parity'] == parity)]) / denom) * 100
+        else:
+            prop = (len(parity_df.loc[(parity_df['age'] > low_limit) & (parity_df['age'] < high_limit) &
+                                      (parity_df['parity'] >= parity)]) / denom) * 100
+        new_row = {parity: prop}
+        proportions.update(new_row)
+
+    for parity in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+        get_proportions(14, 20, proportions_15_19, parity)
+        get_proportions(19, 25, proportions_20_24, parity)
+        get_proportions(24, 31, proportions_25_29, parity)
+        get_proportions(30, 35, proportions_30_34, parity)
+        get_proportions(34, 40, proportions_35_39, parity)
+        get_proportions(39, 45, proportions_40_44, parity)
+        get_proportions(44, 50, proportions_45_49, parity)
+        get_proportions(14, 50, total, parity)
+        get_proportions(14, 100, all_ages, parity)
+
+
+    def make_parity_graphs(dict, target_rates, age_group):
+        N = 11
+        model_rates = (dict[0], dict[1], dict[2], dict[3], dict[4],dict[5] , dict[6], dict[7], dict[8], dict[9],
+                       dict[10])
+        target_rates = (target_rates)
+        ind = np.arange(N)
+        width = 0.35
+        plt.bar(ind, model_rates, width, label='Model', color='seagreen')
+        plt.bar(ind + width, target_rates, width,
+                label='Target Rate', color='mediumseagreen')
+        plt.ylabel('Proportion of total women')
+        plt.title(f'Female parity at baseline for age group {age_group}')
+        plt.xticks(ind + width / 2, ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'))
+        plt.legend(loc='best')
+        plt.show()
+
+
+    make_parity_graphs(proportions_15_19, [79.9, 17.6, 2.3, 0.2, 0, 0, 0, 0, 0, 0, 0], '15_19')
+    make_parity_graphs(proportions_20_24, [15.4, 31.7, 34.1, 14.5, 3.6, 0.6, 0.1, 0, 0, 0, 0], '20_24')
+    make_parity_graphs(proportions_25_29, [3.8, 8.8, 22.6, 30.5, 23.2, 8, 2.6, 0.4, 0.1, 0, 0], '25_29')
+    make_parity_graphs(proportions_30_34, [1.9, 4.3, 7.4, 18, 22.7, 22.7, 13.2, 6.1, 1.9, 0.4, 0.3], '30_34')
+    make_parity_graphs(proportions_35_39, [2.1, 2.3, 4.3, 7.4, 13.3, 20.3, 19.8, 15.6, 8.5, 4.2, 2.3], '35_39')
+    make_parity_graphs(proportions_40_44, [1.3, 2.4, 4.0, 6.1, 9.1, 12.8, 13.9, 21.6, 12.1, 8.3, 8.4], '40_44')
+    make_parity_graphs(proportions_45_49, [1.6, 2.9, 3.6, 4.7, 6.6, 9.2, 12.4, 13.6, 13.8, 14, 17.5], '45_49')
+    make_parity_graphs(total, [21.8, 13, 13.8, 12.9, 10.9, 8.7, 6.4, 5.2, 3.1, 2.1, 2.1], '15_49')
+    make_parity_graphs(all_ages, [21.8, 13, 13.8, 12.9, 10.9, 8.7, 6.4, 5.2, 3.1, 2.1, 2.1], '15_100')
+
+
 def get_htn_disorders_graph(master_dict_an, master_dict_la, master_dict_pn, denominator, year):
 
     gh_rate = ((master_dict_an['mild_gest_htn'] +
                  master_dict_pn['mild_gest_htn']) / denominator) * 1000
+    print(f'total gh rate {year} =', gh_rate)
 
     sgh_rate = ((master_dict_an['severe_gest_htn'] +
                  master_dict_la['severe_gest_htn'] +
                  master_dict_pn['severe_gest_htn'] ) / denominator) * 1000
+    print(f'total sgh rate {year} =', sgh_rate)
 
     mpe_rate = ((master_dict_an['mild_pre_eclamp'] +
                 master_dict_pn['mild_pre_eclamp']) / denominator) * 1000
+    print(f'total mpe rate {year} =', mpe_rate)
 
     spe_rate = ((master_dict_an['severe_pre_eclamp'] +
                  master_dict_la['severe_pre_eclamp'] +
                  master_dict_pn['severe_pre_eclamp']) / denominator) * 1000
+    print(f'total spe rate {year} =', spe_rate)
 
     ec_rate = ((master_dict_an['eclampsia'] +
                  master_dict_la['eclampsia'] +
                  master_dict_pn['eclampsia']) / denominator) * 1000
+    print(f'total ec rate {year} =', ec_rate)
 
 
     N = 5
     model_rates = (gh_rate, sgh_rate, mpe_rate, spe_rate, ec_rate)
-    target_rates = (25.7, 5.67, 30.8, 22, 10)
+    target_rates = (36.8, 8.1, 44, 22, 10)
     ind = np.arange(N)
     width = 0.35
     plt.bar(ind, model_rates, width, label='Model', color='seagreen')
@@ -157,7 +252,7 @@ def get_generic_incidence_graph(complication, dict_2010, dict_2015, denominator_
 
 
 
-def get_total_anaemia_graph(logs_2010, logs_2015, denominator_2010, denominator_2015, colours):
+def get_total_anaemia_graph(logs_2010, logs_2015, colours):
 
     def get_anaemia_prevalence(log):
         anaemia_df = log['tlo.methods.pregnancy_supervisor']['anaemia_on_birth']
@@ -360,17 +455,25 @@ def get_anc_coverage_graph(logs_dict_file, year):
     medians.append(anc1_at_birth['ga_anc_one'].median())
 
     anc1_rate = (total_anc1 / total_anc_num) * 100
+    print(f'anc1_rate {year}', anc1_rate)
     anc4_rate = (total_anc4 / total_anc_num) * 100
+    print(f'anc4_rate {year}', anc4_rate)
     anc8_rate = (total_anc8 / total_anc_num) * 100
+    print(f'anc8_rate {year}', anc8_rate)
 
     # todo: is this the right denominator, otherwise we need to catch gestation of  anc 1 at birth
     month_less_than_4 = (anc1_3 / total_women_anc1) * 100
+    print(f'anc1 < 4 months {year}', month_less_than_4)
     month_5_5 = (anc1_4_5 / total_women_anc1) * 100
+    print(f'anc1 4-5 months {year}', month_5_5)
     month_6_7 = (anc1_months_6_7 / total_women_anc1) * 100
+    print(f'anc1 6-7 months {year}', month_6_7)
     month_8_plus = (anc1_months_8 / total_women_anc1) * 100
+    print(f'anc1 8+ months {year}', month_8_plus)
 
     median_week = sum(medians) / len(medians)  # todo: this might not be right
     median_month = median_week / 4.5  # todo: replace with a better check
+    print(f'median month first visit {year}', median_month)
 
     N = 8
     model_rates = (anc1_rate, anc4_rate, anc8_rate, median_month, month_less_than_4, month_5_5, month_6_7, month_8_plus)
@@ -515,10 +618,14 @@ def get_pnc_coverage(logs_dict_file, total_births, year):
         two_plus_visit_n = len(total_visits_n.loc[total_visits_n['visits'] > 2])
 
     maternal_pnc_coverage = (len(maternal_pnc) / total_births) * 100
+    print(f'maternal pnc coverage {year}', maternal_pnc_coverage)
     neonatal_pnc_coverage = (len(neonatal_pnc) / total_births) * 100
+    print(f'neonatal pnc coverage {year}', neonatal_pnc_coverage)
 
     early_pnc_mother = (early_pnc_mother / total_births) * 100
+    print(f'early maternal pnc coverage {year}', early_pnc_mother)
     early_neonatal_pnc = (early_neonatal_pnc / total_births) * 100
+    print(f'early neonatal  pnc coverage {year}', early_neonatal_pnc)
 
     N = 4
     model_rates = (maternal_pnc_coverage, early_pnc_mother, neonatal_pnc_coverage, early_neonatal_pnc)

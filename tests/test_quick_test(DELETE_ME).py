@@ -25,7 +25,7 @@ from tlo.methods import (
      joes_fake_props_module
 )
 
-seed = 8246
+seed = 854
 
 # The resource files
 try:
@@ -85,7 +85,7 @@ def register_all_modules():
     modules"""
 
     log_config = {
-        "filename": "dummy_test",  # The name of the output file (a timestamp will be appended).
+        "filename": "parity_200k",  # The name of the output file (a timestamp will be appended).
         "directory": "./outputs",
         # The default output path is `./outputs`. Change it here, if necessary
         "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
@@ -135,9 +135,9 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=10000)
+    sim.make_initial_population(n=200000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=Date(2010, 1, 2))
     check_dtypes(sim)
 
 
@@ -151,5 +151,5 @@ def test_run_all_labour():
     sim.simulate(end_date=Date(2010, 4, 1))
     check_dtypes(sim)
 
-#test_run_core_modules_normal_allocation_of_pregnancy()
-test_run_all_labour()
+test_run_core_modules_normal_allocation_of_pregnancy()
+#test_run_all_labour()
