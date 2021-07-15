@@ -20,6 +20,31 @@ rfp = Path('./resources')
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 # create_pickles_locally(results_folder)  # if not created via batch
 
+# HELPER FUNCTIONS
+
+def get_df_without_null_values(extracted_df):
+    new_df = pd.DataFrame(index=[0])
+    for column in extracted_df:
+        null_values = extracted_df[column].isnull()
+        new_df[f"draw {column}"] = len(null_values.loc[~null_values].index)
+
+    return new_df
+
+
+def return_graph_with_credible_intervals(target_rates, model_rates, ci, colours, labels, title, ylabel):
+    barWidth = 0.35
+    y_r = [model_rates[i] - ci[i][1] for i in range(len(ci))]
+    r1 = np.arange(len(model_rates))
+    r2 = [x + barWidth for x in r1]
+    plt.bar(r1, model_rates, width=barWidth, color=colours[0], yerr=y_r, capsize=7, label='model')
+    plt.bar(r2, target_rates, width=barWidth, color=colours[1], capsize=7, label='target')
+    plt.title(title)
+    plt.xticks([r + barWidth for r in range(len(model_rates))], labels)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.show()
+
+
 # ============================================== ANTENATAL CARE =======================================================
 extracted_anc = extract_results(results_folder,
                                 module="tlo.methods.care_of_women_during_pregnancy",
@@ -27,11 +52,7 @@ extracted_anc = extract_results(results_folder,
                                 column="ga_anc_one")
 
 extracted_anc.columns = extracted_anc.columns.get_level_values(0)
-anc_ga_birth = pd.DataFrame(index=[0])
-
-for column in extracted_anc:
-    null_values = extracted_anc[column].isnull()
-    anc_ga_birth[f"draw {column}"] = len(null_values.loc[~null_values].index)
+anc_ga_birth = get_df_without_null_values(extracted_anc)
 
 mean = anc_ga_birth.mean(axis=1)
 lower_q = anc_ga_birth.quantile(0.025, axis=1)
@@ -68,12 +89,8 @@ extracted_total = extract_results(results_folder,
 extracted_total.columns = extracted_total.columns.get_level_values(0)
 
 
-anc_tot = pd.DataFrame(index=[0])
+anc_tot = get_df_without_null_values(extracted_total)
 anc_visits = pd.DataFrame(columns=["anc1", "anc4", "anc8"], index=[extracted_total.columns])
-
-for column in extracted_total:
-    null_values = extracted_total[column].isnull()
-    anc_tot[f"draw {column}"] = len(null_values.loc[~null_values].index)
 
 mean_total_women = anc_tot.mean(axis=1)
 lower_tot = anc_tot.quantile(0.025, axis=1)
@@ -106,18 +123,10 @@ ci = [(int(anc1_lq.values), int(anc1_uq.values)), (int(anc4_lq.values), int(anc4
        (int(ga_4_5_lq.values), int(ga_4_5_uq.values)), (int(ga_6_7_lq.values), int(ga_6_7_uq.values)),
        (int(ga_8_lq.values), int(ga_8_uq.values))]
 
-y_r = [model_rates[i] - ci[i][1] for i in range(len(ci))]
-
-r1 = np.arange(len(model_rates))
-r2 = [x + barWidth for x in r1]
-
-plt.bar(r1, model_rates, width=barWidth, color='mediumturquoise', yerr=y_r, capsize=7, label='model')
-plt.bar(r2, target_rates, width=barWidth, color='cyan', capsize=7, label='target')
-plt.title(f'Coverage indicators of ANC in 2010')
-plt.xticks([r + barWidth for r in range(len(model_rates))], ['ANC1', 'ANC4+', 'ANC8+', '<4', 'M4/5', 'M6/7', 'M8+'])
-plt.ylabel('% of women delivered')
-plt.legend()
-plt.show()
+return_graph_with_credible_intervals(target_rates, model_rates, ci, ['mediumturquoise', 'cyan'],
+                                     ['ANC1', 'ANC4+', 'ANC8+', '<4', 'M4/5', 'M6/7', 'M8+'],
+                                     'Coverage indicators of ANC in 2010',
+                                     '% of women delivered')
 
 # todo: median GA at first visit
 
@@ -169,7 +178,7 @@ fd_rate = (mean_fds.loc['total_fd']/mean_births) * 100
 fd_uq = (fds['total_fd'].quantile(0.925)/mean_births) * 100
 fd_lq = (fds['total_fd'].quantile(0.025) / mean_births) * 100
 
-barWidth = 0.35
+
 model_rates_fd = [int(fd_rate.values), int(hc_rate.values), int(hp_rate.values), int(hb_rate.values)]
 target_rates_fd = [73, 32, 41, 27]
 
@@ -177,18 +186,10 @@ ci_fd = [(int(fd_lq.values), int(fd_uq.values)), (int(hc_lq.values), int(hc_uq.v
                                                                                           int(hp_uq.values)),
          (int(hb_lq.values), int(hb_uq.values))]
 
-y_r_fd = [model_rates_fd[i] - ci_fd[i][1] for i in range(len(ci_fd))]
-
-r1 = np.arange(len(model_rates_fd))
-r2 = [x + barWidth for x in r1]
-
-plt.bar(r1, model_rates_fd, width=barWidth, color='palevioletred', yerr=y_r_fd, capsize=7, label='model')
-plt.bar(r2, target_rates_fd, width=barWidth, color='lavenderblush', capsize=7, label='target')
-plt.title(f'Coverage indicators of Facility Delivery in 2010')
-plt.xticks([r + barWidth for r in range(len(model_rates_fd))], ['FD', 'HC', 'HP', 'HB'])
-plt.ylabel('% of total births')
-plt.legend()
-plt.show()
+return_graph_with_credible_intervals(target_rates_fd, model_rates_fd, ci_fd, ['palevioletred', 'lavenderblush'],
+                                     ['FD', 'HC', 'HP', 'HB'],
+                                     'Coverage indicators of Facility Delivery in 2010',
+                                     '% of total births')
 
 # ============================================== POSTNATAL CARE ===================================================
 extracted_pnc_lab = extract_results(results_folder,
@@ -230,19 +231,11 @@ npnc_lq = (nb_pnc.quantile(0.025, axis=1) / mean_births) * 100
 
 # todo: early vs late
 
-barWidth = 0.35
 model_rates_pn = [int(mpnc_rate.values), int(npnc_rate.values)]
 target_rates_pn = [50, 60]
 ci_pn = [(int(mpnc_lq.values), int(mpnc_uq.values)), (int(npnc_lq.values), int(npnc_uq.values))]
-y_r_pn = [model_rates_pn[i] - ci_pn[i][1] for i in range(len(ci_pn))]
 
-r1 = np.arange(len(model_rates_pn))
-r2 = [x + barWidth for x in r1]
-
-plt.bar(r1, model_rates_pn, width=barWidth, color='darkseagreen', yerr=y_r_pn, capsize=7, label='model')
-plt.bar(r2, target_rates_pn, width=barWidth, color='honeydew', capsize=7, label='target')
-plt.title(f'Coverage indicators of Postnatal Care in 2010')
-plt.xticks([r + barWidth for r in range(len(model_rates_pn))], ['Mat.', 'Neo.'])
-plt.ylabel('% of total births')
-plt.legend()
-plt.show()
+return_graph_with_credible_intervals(target_rates_pn, model_rates_pn, ci_pn, ['darkseagreen', 'honeydew'],
+                                     ['Mat.', 'Neo.'],
+                                     'Coverage indicators of Postnatal Care in 2010',
+                                     '% of total births')
