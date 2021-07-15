@@ -39,7 +39,7 @@ if no_existing_logfile:
 
     # Do not run this cell if you already have a  logfile from a simulation:
     start_date = Date(2010, 1, 1)
-    end_date = Date(2012, 1, 1)
+    end_date = Date(2016, 1, 1)
     popsize = 50000
 
     log_config = {
@@ -81,7 +81,7 @@ if no_existing_logfile:
 else:
     # <-- insert name of the logfile here if you do not want to run the simulation again,
     # e.g. filename = Path("outputs/LogFile__2021-06-29T131200.log")
-    filename = Path('outputs/LogFile__2021-06-29T191225.log')
+    filename = Path('outputs\LogFile__2021-07-14T161651.log')
 
 output = parse_log_file(filename)
 

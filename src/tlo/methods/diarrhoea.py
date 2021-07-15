@@ -396,7 +396,7 @@ class Diarrhoea(Module):
             Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by astrovirus'),
         'mean_days_duration_with_tEPEC':
             Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by tEPEC'),
-        'prob_of_cure_given_HSI_AcuteDiarrhoea_PlanC':
+        'prob_of_cure_given_WHO_PlanC':
             Parameter(Types.REAL, 'probability of the person being cured if is provided with Treatment Plan C'),
 
         'probability_of_severe_dehydration_if_some_dehydration':
@@ -407,18 +407,10 @@ class Diarrhoea(Module):
                                  'with a range equal by this number.'),
 
         # TODO check the below parmaeters for those HSI are relevant
-        'prob_of_cure_given_HSI_PersistentDiarrhoea_PlanA':
-            Parameter(Types.REAL,
-                      'probability of the person being cured if is provided with '
-                      'prob_of_cure_given_HSI_PersistentDiarrhoea_PlanA'),
-        'prob_of_cure_given_HSI_PersistentDiarrhoea_PlanB':
-            Parameter(Types.REAL,
-                      'probability of the person being cured if is provided with '
-                      'prob_of_cure_given_HSI_PersistentDiarrhoea_PlanB'),
-        'prob_of_cure_given_HSI_PersistentDiarrhoea_PlanC':
-            Parameter(Types.REAL,
-                      'probability of the person being cured if is provided with '
-                      'prob_of_cure_given_HSI_PersistentDiarrhoea_PlanC'),
+        'ors_effectiveness_against_severe_dehydration':
+            Parameter(Types.INT, 'effectiveness of ORS in treating severe dehydration'),
+        'number_of_days_reduced_duration_with_zinc':
+            Parameter(Types.INT, 'number of days reduced duration with zinc'),
         'days_between_treatment_and_cure':
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'),
         'ors_effectiveness_on_diarrhoea_mortality':
@@ -834,19 +826,6 @@ class Diarrhoea(Module):
         # return with columns labelled to match the declare CAUSES_OF_DISABILITY
         return daly_values_by_pathogen.add_prefix('Diarrhoea_')
 
-    def truncated_normal(self, left_bound, right_bound, normal_mean, normal_std):
-        """
-        Helper function for the skewed normal distribution of duration in days of the episode, by pathogen
-        :param left_bound:
-        :param right_bound:
-        :param normal_mean:
-        :param normal_std:
-        :return:
-        """
-        a = (left_bound - normal_mean) / normal_std
-        b = (right_bound - normal_mean) / normal_std
-        return truncnorm(a=a, b=b, loc=normal_mean, scale=normal_std)
-
     def look_up_consumables(self):
         """Look up and store the consumables used in each of the HSI."""
 
@@ -868,26 +847,34 @@ class Diarrhoea(Module):
 
         ors_code = get_code(package='ORS')
         severe_diarrhoea_code = get_code(package='Treatment of severe diarrhea')
-        zinc_tablet_code = get_code(item='Zinc, tablet, 20 mg')
         zinc_under_6m_code = get_code(package='Zinc for Children 0-6 months')
         zinc_over_6m_code = get_code(package='Zinc for Children 6-59 months')
+        zinc_tablet_code = get_code(item='Zinc, tablet, 20 mg')
         antibiotics_code = get_code(package='Antibiotics for treatment of dysentery')
         cipro_code = get_code(item='Ciprofloxacin 250mg_100_CMST')
 
         # -- Assemble the footprints for each diarrhoea-related condition or plan:
-        add_consumable('Dehydration_Treatment_PlanA', {ors_code: 1}, {})
-        add_consumable('Dehydration_Treatment_PlanB', {ors_code: 1}, {})
-        add_consumable('Dehydration_Treatment_PlanC', {severe_diarrhoea_code: 1}, {})
-        add_consumable('Persistent_Diarrhoea', {ors_code: 1}, {})
-        add_consumable('Persistent_Diarrhoea_Under6mo',
-                       {zinc_under_6m_code: 1},
-                       {zinc_tablet_code: 5})
-        add_consumable('Persistent_Diarrhoea_6moPlus',
-                       {zinc_over_6m_code: 1},
-                       {zinc_tablet_code: 5})
-        add_consumable('Dysentery', {antibiotics_code: 1}, {cipro_code: 6})
+        # add_consumable('AcuteDiarrhoea_PlanA', {ors_code: 1}, {})
+        # add_consumable('AcuteDiarrhoea_PlanB', {ors_code: 1}, {})
+        # add_consumable('AcuteDiarrhoea_PlanC', {severe_diarrhoea_code: 1}, {})
+        # add_consumable('PersistentDiarrhoea_PlanA', {zinc_under_6m_code: 1}, {zinc_tablet_code: 5})
+        # add_consumable('PersistentDiarrhoea_PlanB', {ors_code: 1}, {})
+        # add_consumable('PersistentDiarrhoea_PlanC', {severe_diarrhoea_code: 1}, {})
+        # add_consumable('AcuteDiarrhoea_Dysentery_PlanA', {ors_code: 1, antibiotics_code: 1}, {})
+        # add_consumable('AcuteDiarrhoea_Dysentery_PlanB', {ors_code: 1}, {})
+        # add_consumable('AcuteDiarrhoea_Dysentery_PlanC', {ors_code: 1}, {})
+        # add_consumable('PersistentDiarrhoea_Dysentery_PlanA', {ors_code: 1}, {})
+        # add_consumable('PersistentDiarrhoea_Dysentery_PlanB', {ors_code: 1}, {})
+        # add_consumable('PersistentDiarrhoea_Dysentery_PlanC', {severe_diarrhoea_code: 1}, {})
 
-    def do_treatment(self, person_id, prob_of_cure):
+        add_consumable('Dehydration_Plan_A', {ors_code: 1}, {})
+        add_consumable('Dehydration_Plan_B', {ors_code: 1}, {})
+        add_consumable('Dehydration_Plan_C', {severe_diarrhoea_code: 1}, {})
+        add_consumable('Persistent_Diarrhoea_Under6mo', {zinc_under_6m_code: 1}, {zinc_tablet_code: 5})
+        add_consumable('Persistent_Diarrhoea_6moPlus', {zinc_over_6m_code: 1}, {zinc_tablet_code: 5})
+        add_consumable('Antibiotics_for_Dysentery', {antibiotics_code: 1}, {cipro_code: 6})
+
+    def do_treatment(self, person_id, interventions_given):
         """Helper function that enacts the effects of a treatment to diarrhoea caused by a pathogen.
         It will only do something if the diarrhoea is caused by a pathogen (this module). It will not allow any effect
          if the diarrhoea is caused by another module.
@@ -912,6 +899,52 @@ class Diarrhoea(Module):
         ):
             return
 
+        prob_of_cure = 0.0
+
+        # # # Check the child's condition according to IMCI guidelines ------------------------------------
+
+        # 1) Get the duration
+        duration_in_days = (self.sim.date - df.at[person_id, 'gi_last_diarrhoea_date_of_onset']).days
+        # 1.1.) Get the total duration set for the episode
+        total_duration_in_days = df.at[person_id, 'gi_last_diarrhoea_duration']
+
+        # 2) Get type of diarrhoea - watery or bloody
+        blood_in_stool = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'
+
+        # 3) Get status of dehydration
+        dehydration_level = df.at[person_id, 'gi_last_diarrhoea_dehydration']
+        # dehydration = 'dehydration' in self.sim.modules['SymptomManager'].has_what(person_id)
+
+        # If zinc is given to persistent diarrhoea, apply effectiveness in shortening duration
+        if duration_in_days > 14 and ('Persistent_Diarrhoea' in interventions_given):
+            df.at[person_id, 'gi_last_diarrhoea_duration'] = \
+                total_duration_in_days - self.parameters['number_of_days_reduced_duration_with_zinc']
+
+        # Plan A or B for no dehydration
+        if dehydration_level != 'severe' and (
+            ('Dehydration_Plan_A' in interventions_given) | ('Dehydration_Plan_B' in interventions_given)
+        ):
+            prob_cure = self.parameters['ors_effectiveness_on_diarrhoea_mortality']
+            # Antibiotics for dysentery
+            if blood_in_stool and ('Antibiotics_for_Dysentery' in interventions_given):
+                prob_cure = self.parameters['antibiotic_effectiveness_for_dysentery'] * \
+                            self.parameters['ors_effectiveness_on_diarrhoea_mortality']
+
+        # Plan A or B for severe dehydration
+        if dehydration_level == 'severe' and (
+            ('Dehydration_Plan_A' in interventions_given) | ('Dehydration_Plan_B' in interventions_given)
+        ):
+            prob_cure = self.parameters['ors_effectiveness_against_severe_dehydration']
+            # Antibiotics for dysentery
+            if blood_in_stool and ('Antibiotics_for_Dysentery' in interventions_given):
+                prob_cure = self.parameters['antibiotic_effectiveness_for_dysentery'] * \
+                            self.parameters['ors_effectiveness_against_severe_dehydration']
+
+        # Plan C for severe dehydration
+        if dehydration_level == 'severe' and ('Dehydration_Plan_C' in interventions_given):
+            prob_cure = self.parameters['prob_of_cure_given_WHO_PlanC']
+
+        # -------------------------------------
         # Log that the treatment is provided:
         df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
 
@@ -1333,7 +1366,7 @@ class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_AcuteDiarrhoea_PlanA(HSI_Event, IndividualScopeEventMixin):
+class HSI_Diarrhoea_Treatment_PlanA(HSI_Event, IndividualScopeEventMixin):
     """
     This is a treatment for uncomplicated diarrhoea administered at outpatient setting through IMCI.
     "PLAN A": for children with no dehydration
@@ -1341,12 +1374,13 @@ class HSI_AcuteDiarrhoea_PlanA(HSI_Event, IndividualScopeEventMixin):
     NB. This will be called when a child presents with Diarrhoea that is caused by another module/Symptom Manager.
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, intervention):
         super().__init__(module, person_id=person_id)
+        self.intervention_decision = intervention
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'AcuteDiarrhoea_PlanA'
+        self.TREATMENT_ID = 'Diarrhoea_Treatment_PlanA'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1356,34 +1390,56 @@ class HSI_AcuteDiarrhoea_PlanA(HSI_Event, IndividualScopeEventMixin):
 
         # Stop the person from dying of Diarrhoea (if they were going to die)
         df = self.sim.population.props
+        person = self.sim.population.props.loc[person_id]
 
         if not df.at[person_id, 'is_alive']:
             return
 
         # Get consumables required
-        cons_footprint = self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanA']
 
-        # give the mother 2 packets of ORS
-        # give zinc (2 mo up to 5 years) - <6 mo 1/2 tablet (10mg) for 10 days, >6 mo 1 tab (20mg) for 10 days
-        # follow up in 5 days if not improving
-        # continue feeding
+        # 1) give the mother 2 packets of ORS
+        cons_footprint = self.module.consumables_used_in_hsi['Dehydration_Plan_A']
 
         rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
-        cons_available = all(
-            rtn_from_health_system['Intervention_Package_Code'].values()
-        ) and all(
-            rtn_from_health_system['Item_Code'].values()
-        )
-        # todo use self.get_all_consumables when this is updated in master
+        ors_cons_available = all(rtn_from_health_system['Intervention_Package_Code'].values()
+                                 ) and all(rtn_from_health_system['Item_Code'].values())
 
-        if cons_available:
-            self.module.do_treatment(
-                person_id=person_id,
-                prob_of_cure=self.module.parameters['ors_effectiveness_on_diarrhoea_mortality']
+        if self.intervention_decision=='ors_only':
+            if ors_cons_available:
+                self.module.do_treatment(
+                    person_id=person_id,
+                    interventions_given=['Dehydration_Plan_A']
+                )
+
+        if self.intervention_decision=='recommended_treatment':
+            # add zinc to the consumables footprint
+
+            # 2) give zinc (2 mo - 5 years) - <6 mo 1/2 tablet (10mg) for 14 days, >6 mo 1 tab (20mg) for 14 days
+            if person.age_exact_years < 0.5:
+                cons_footprint.update(self.module.consumables_used_in_hsi[
+                                          'Persistent_Diarrhoea_Under6mo'])
+            else:
+                cons_footprint.update(self.module.consumables_used_in_hsi[
+                                          'Persistent_Diarrhoea_6moPlus'])
+
+            rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
+            ors_zinc_cons_available = all(
+                rtn_from_health_system['Intervention_Package_Code'].values()
+            ) and all(
+                rtn_from_health_system['Item_Code'].values()
             )
 
+            if ors_zinc_cons_available:
+                self.module.do_treatment(
+                    person_id=person_id,
+                    interventions_given=['Dehydration_Plan_A', 'Persistent_Diarrhoea']
+                )
 
-class HSI_AcuteDiarrhoea_PlanB(HSI_Event, IndividualScopeEventMixin):
+        # 3) continue feeding
+        # 4) follow up in 5 days if not improving
+
+
+class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
     """
     This is a treatment for diarrhoea with some dehydration at outpatient setting through IMCI
     """
@@ -1393,12 +1449,13 @@ class HSI_AcuteDiarrhoea_PlanB(HSI_Event, IndividualScopeEventMixin):
     # refer urgently to hospital and gic=ving ORS on the way, advise on breastfeeding
     # advise on follow up in 5 days
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, intervention):
         super().__init__(module, person_id=person_id)
+        self.intervention_decision = intervention
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'AcuteDiarrhoea_PlanB'
+        self.TREATMENT_ID = 'Diarrhoea_Treatment_PlanB'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1412,25 +1469,35 @@ class HSI_AcuteDiarrhoea_PlanB(HSI_Event, IndividualScopeEventMixin):
             return
 
         # Get consumables required
-        cons_footprint = self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanB']
+        cons_footprint = self.module.consumables_used_in_hsi['Dehydration_Plan_B']
         # Give ORS for the first 4 hours and reassess. todo - this is not happening curently
 
         rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
-        cons_available = all(
+        ors_cons_available = all(
             rtn_from_health_system['Intervention_Package_Code'].values()
         ) and all(
             rtn_from_health_system['Item_Code'].values()
         )
         # todo use self.get_all_consumables when this is updated in master
 
-        if cons_available:
+        if ors_cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=self.module.parameters['ors_effectiveness_on_diarrhoea_mortality']
+                interventions_given=['Dehydration_Plan_B']
+                # prob_of_cure=self.module.parameters['ors_effectiveness_on_diarrhoea_mortality']
             )
 
+        # Following recommended amount of ORS in the clinic over 4h, proceed to plan A
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            HSI_Diarrhoea_Treatment_PlanA(
+                person_id=person_id,
+                module=self.sim.modules['Diarrhoea'], intervention=self.intervention_decision),
+            priority=0,
+            topen=self.sim.date,
+            tclose=None)
 
-class HSI_AcuteDiarrhoea_PlanC(HSI_Event, IndividualScopeEventMixin):
+
+class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
     """
     This is a treatment for acute diarrhoea with severe dehydration (no blood)
     administered at outpatient setting through IMCI
@@ -1445,8 +1512,8 @@ class HSI_AcuteDiarrhoea_PlanC(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'AcuteDiarrhoea_PlanC'
+        the_appt_footprint['Under5OPD'] = 1  # This requires one inpatient
+        self.TREATMENT_ID = 'Diarrhoea_Treatment_PlanC'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1460,7 +1527,7 @@ class HSI_AcuteDiarrhoea_PlanC(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        cons_footprint = self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanC']
+        cons_footprint = self.module.consumables_used_in_hsi['Dehydration_Plan_C']
 
         # Request the treatment
         rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
@@ -1471,14 +1538,35 @@ class HSI_AcuteDiarrhoea_PlanC(HSI_Event, IndividualScopeEventMixin):
         )
         # todo use self.get_all_consumables when this is updated in master
 
+        # 1) start IV
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_AcuteDiarrhoea_PlanC']
+                interventions_given=['Dehydration_Plan_C']
+                # prob_of_cure=self.module.parameters['prob_of_cure_given_WHO_PlanC']
             )
 
+            # 2) continue treatment plan B or A
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Diarrhoea_Treatment_PlanB(
+                    person_id=person_id,
+                    module=self.sim.modules['Diarrhoea'], intervention='recommended_treatment'),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None)
 
-class HSI_PersistentDiarrhoea_PlanA(HSI_Event, IndividualScopeEventMixin):
+        # if not available, refer to another hospital for IV treatment todo: refer to another facility
+        else:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Diarrhoea_Treatment_PlanC(
+                    person_id=person_id,
+                    module=self.sim.modules['Diarrhoea']),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None)
+
+
+class HSI_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
     """
     This is a treatment for persistent diarrhoea (duration >13 days without dehydration) at facility level 1
     """
@@ -1488,7 +1576,7 @@ class HSI_PersistentDiarrhoea_PlanA(HSI_Event, IndividualScopeEventMixin):
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'PersistentDiarrhoea_PlanA'
+        self.TREATMENT_ID = 'Persistent_Diarrhoea'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1508,10 +1596,9 @@ class HSI_PersistentDiarrhoea_PlanA(HSI_Event, IndividualScopeEventMixin):
         else:
             cons_footprint = self.module.consumables_used_in_hsi[
                 'Persistent_Diarrhoea_6moPlus']
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanA'])
 
-        # give multivitamins for 14 days
-        # give zinc for 10 days
+        # give multivitamins for 14 days - folate, zinc, vit A, iron, copper, magnesium todo: add these consumables
+
         # follow up in 5 days
 
         rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
@@ -1525,117 +1612,12 @@ class HSI_PersistentDiarrhoea_PlanA(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanA']
+                interventions_given=['Persistent_Diarrhoea']
+                # prob_of_cure=self.module.parameters['number_of_days_reduced_duration_with_zinc']
             )
 
 
-class HSI_PersistentDiarrhoea_PlanB(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a treatment for severe persistent diarrhoea (duration >13 days + some dehydration) at facility level 1
-    """
-
-    # treat the dehydration and refer to the hospital
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'PersistentDiarrhoea_PlanB'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
-
-        df = self.sim.population.props
-        person = self.sim.population.props.loc[person_id]
-
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        # Get consumables
-        # if bloody stool and fever in persistent diarroea - give Nalidixic Acid 50mg/kg divided in 4 doses per day for
-        # 5 days if malnourished give cotrimoxazole 24mg/kg every 12 hours for 5 days and supplemental feeding and
-        # supplements
-        if person.age_exact_years < 0.5:
-            cons_footprint = self.module.consumables_used_in_hsi[
-                'Persistent_Diarrhoea_Under6mo']
-        else:
-            cons_footprint = self.module.consumables_used_in_hsi[
-                'Persistent_Diarrhoea_6moPlus']
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanB'])
-
-        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
-        cons_available = all(
-            rtn_from_health_system['Intervention_Package_Code'].values()
-        ) and all(
-            rtn_from_health_system['Item_Code'].values()
-        )
-        # todo use self.get_all_consumables when this is updated in master
-
-        if cons_available:
-            self.module.do_treatment(
-                person_id=person_id,
-                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanB']
-            )
-
-
-class HSI_PersistentDiarrhoea_PlanC(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a treatment for severe persistent diarrhoea (duration >13 days + severe dehydration) at facility level 1
-    """
-
-    # treat the dehydration and refer to the hospital
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'PersistentDiarrhoea_PlanC'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
-
-        df = self.sim.population.props
-        person = self.sim.population.props.loc[person_id]
-
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        # Get consumables
-        # if bloody stool and fever in persistent diarroea - give Nalidixic Acid 50mg/kg divided in 4 doses per day for
-        # 5 days if malnourished give cotrimoxazole 24mg/kg every 12 hours for 5 days and supplemental feeding and
-        # supplements
-        if person.age_exact_years < 0.5:
-            cons_footprint = self.module.consumables_used_in_hsi[
-                'Persistent_Diarrhoea_Under6mo']
-        else:
-            cons_footprint = self.module.consumables_used_in_hsi[
-                'Persistent_Diarrhoea_6moPlus']
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanC'])
-
-        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
-        cons_available = all(
-            rtn_from_health_system['Intervention_Package_Code'].values()
-        ) and all(
-            rtn_from_health_system['Item_Code'].values()
-        )
-        # todo use self.get_all_consumables when this is updated in master
-
-        if cons_available:
-            self.module.do_treatment(
-                person_id=person_id,
-                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanC']
-            )
-
-
-class HSI_AcuteDiarrhoea_Dysentery_PlanA(HSI_Event, IndividualScopeEventMixin):
+class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
     """
     This is the treatment for dysentery without dehydration administered at facility level 1
     """
@@ -1645,7 +1627,7 @@ class HSI_AcuteDiarrhoea_Dysentery_PlanA(HSI_Event, IndividualScopeEventMixin):
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'AcuteDiarrhoea_Dysentery'
+        self.TREATMENT_ID = 'Diarrhoea_Dysentery'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1659,8 +1641,7 @@ class HSI_AcuteDiarrhoea_Dysentery_PlanA(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        cons_footprint = self.module.consumables_used_in_hsi['Dysentery']
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanA'])
+        cons_footprint = self.module.consumables_used_in_hsi['Antibiotics_for_Dysentery']
 
         # Get consumables required
         # <6 mo - 250mg 1/2 tab x2 daily for 3 days
@@ -1678,268 +1659,6 @@ class HSI_AcuteDiarrhoea_Dysentery_PlanA(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
             self.module.do_treatment(
                 person_id=person_id,
-                prob_of_cure=p['ors_effectiveness_on_diarrhoea_mortality'] * p['antibiotic_effectiveness_for_dysentery']
-            )
-
-
-class HSI_AcuteDiarrhoea_Dysentery_PlanB(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is the treatment for acute bloody diarrhoea with some dehydration administered at facility level 1
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'AcuteDiarrhoea_Dysentery_PlanB'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
-
-        df = self.sim.population.props
-        p = self.module.parameters
-
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        cons_footprint = self.module.consumables_used_in_hsi['Dysentery']
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanB'])
-
-        # Get consumables required
-        # <6 mo - 250mg 1/2 tab x2 daily for 3 days
-        # >6 mo upto 5 yo - 250mg 1 tab x2 daily for 3 days
-        # follow up in 3 days # todo - there are not follow-up events currently
-
-        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
-        cons_available = all(
-            rtn_from_health_system['Intervention_Package_Code'].values()
-        ) and all(
-            rtn_from_health_system['Item_Code'].values()
-        )
-        # todo use self.get_all_consumables when this is updated in master
-
-        if cons_available:
-            self.module.do_treatment(
-                person_id=person_id,
-                prob_of_cure=p['ors_effectiveness_on_diarrhoea_mortality'] * p['antibiotic_effectiveness_for_dysentery']
-            )
-
-
-class HSI_AcuteDiarrhoea_Dysentery_PlanC(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is the treatment for acute bloody diarrhoea with severe dehydration administered at facility level 1
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'AcuteDiarrhoea_Dysentery_PlanC'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
-
-        df = self.sim.population.props
-        p = self.module.parameters
-
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        cons_footprint = self.module.consumables_used_in_hsi['Dysentery']
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanC'])
-
-        # Get consumables required
-        # <6 mo - 250mg 1/2 tab x2 daily for 3 days
-        # >6 mo upto 5 yo - 250mg 1 tab x2 daily for 3 days
-        # follow up in 3 days # todo - there are not follow-up events currently
-
-        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
-        cons_available = all(
-            rtn_from_health_system['Intervention_Package_Code'].values()
-        ) and all(
-            rtn_from_health_system['Item_Code'].values()
-        )
-        # todo use self.get_all_consumables when this is updated in master
-
-        if cons_available:
-            self.module.do_treatment(
-                person_id=person_id,
-                prob_of_cure=p[
-                                 'prob_of_cure_given_HSI_AcuteDiarrhoea_PlanC'] * p[
-                    'antibiotic_effectiveness_for_dysentery']
-            )
-
-
-class HSI_PersistentDiarrhoea_Dysentery_PlanA(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is the treatment for persistent bloody diarrhoea without dehydration administered at facility level 1
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'PersistentDiarrhoea_Dysentery_PlanA'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
-
-        df = self.sim.population.props
-        p = self.module.parameters
-        person = self.sim.population.props.loc[person_id]
-
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        if person.age_exact_years < 0.5:
-            cons_footprint = self.module.consumables_used_in_hsi[
-                'Persistent_Diarrhoea_Under6mo']
-        else:
-            cons_footprint = self.module.consumables_used_in_hsi[
-                'Persistent_Diarrhoea_6moPlus']
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dysentery'])
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanA'])
-
-        # Get consumables required
-        # <6 mo - 250mg 1/2 tab x2 daily for 3 days
-        # >6 mo upto 5 yo - 250mg 1 tab x2 daily for 3 days
-        # follow up in 3 days # todo - there are not follow-up events currently
-
-        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
-        cons_available = all(
-            rtn_from_health_system['Intervention_Package_Code'].values()
-        ) and all(
-            rtn_from_health_system['Item_Code'].values()
-        )
-        # todo use self.get_all_consumables when this is updated in master
-
-        if cons_available:
-            self.module.do_treatment(
-                person_id=person_id,
-                prob_of_cure=p[
-                                 'ors_effectiveness_on_diarrhoea_mortality'] * p[
-                    'antibiotic_effectiveness_for_dysentery'] * p['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanA']
-            )
-
-
-class HSI_PersistentDiarrhoea_Dysentery_PlanB(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is the treatment for persistent bloody diarrhoea with some dehydration administered at facility level 1
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'PersistentDiarrhoea_Dysentery_PlanB'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
-
-        df = self.sim.population.props
-        p = self.module.parameters
-        person = self.sim.population.props.loc[person_id]
-
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        if person.age_exact_years < 0.5:
-            cons_footprint = self.module.consumables_used_in_hsi[
-                'Persistent_Diarrhoea_Under6mo']
-        else:
-            cons_footprint = self.module.consumables_used_in_hsi[
-                'Persistent_Diarrhoea_6moPlus']
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dysentery'])
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanB'])
-
-        # Get consumables required
-        # <6 mo - 250mg 1/2 tab x2 daily for 3 days
-        # >6 mo upto 5 yo - 250mg 1 tab x2 daily for 3 days
-        # follow up in 3 days # todo - there are not follow-up events currently
-
-        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
-        cons_available = all(
-            rtn_from_health_system['Intervention_Package_Code'].values()
-        ) and all(
-            rtn_from_health_system['Item_Code'].values()
-        )
-        # todo use self.get_all_consumables when this is updated in master
-
-        if cons_available:
-            self.module.do_treatment(
-                person_id=person_id,
-                prob_of_cure=p[ 'ors_effectiveness_on_diarrhoea_mortality'] * p[
-                    'antibiotic_effectiveness_for_dysentery'] * p['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanB']
-            )
-
-
-class HSI_PersistentDiarrhoea_Dysentery_PlanC(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is the treatment for persistent bloody diarrhoea with some dehydration administered at facility level 1
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'PersistentDiarrhoea_Dysentery_PlanC'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
-
-        df = self.sim.population.props
-        p = self.module.parameters
-        person = self.sim.population.props.loc[person_id]
-
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        if person.age_exact_years < 0.5:
-            cons_footprint = self.module.consumables_used_in_hsi[
-                'Persistent_Diarrhoea_Under6mo']
-        else:
-            cons_footprint = self.module.consumables_used_in_hsi[
-                'Persistent_Diarrhoea_6moPlus']
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dysentery'])
-        cons_footprint.update(self.module.consumables_used_in_hsi['Dehydration_Treatment_PlanC'])
-
-        # Get consumables required
-        # <6 mo - 250mg 1/2 tab x2 daily for 3 days
-        # >6 mo upto 5 yo - 250mg 1 tab x2 daily for 3 days
-        # follow up in 3 days # todo - there are not follow-up events currently
-
-        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
-        cons_available = all(
-            rtn_from_health_system['Intervention_Package_Code'].values()
-        ) and all(
-            rtn_from_health_system['Item_Code'].values()
-        )
-        # todo use self.get_all_consumables when this is updated in master
-
-        if cons_available:
-            self.module.do_treatment(
-                person_id=person_id,
-                prob_of_cure=p[
-                                 'prob_of_cure_given_HSI_AcuteDiarrhoea_PlanC'] * p[
-                    'antibiotic_effectiveness_for_dysentery'] * p['prob_of_cure_given_HSI_PersistentDiarrhoea_PlanC']
+                interventions_given=['Antibiotics_for_Dysentery']
+                # prob_of_cure=p['antibiotic_effectiveness_for_dysentery']
             )

@@ -10,7 +10,7 @@ served by the following disease modules:
 
 """
 
-from tlo import Module, logging
+from tlo import Module, logging, Parameter, Types
 from tlo.methods import Metadata
 from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_PlanA,
@@ -34,7 +34,20 @@ class DxAlgorithmChild(Module):
     # Declare Metadata
     METADATA = {Metadata.USES_HEALTHSYSTEM}
 
-    PARAMETERS = {}
+    PARAMETERS = {
+        'prob_uncomplicated_diarrhoea_diagnosed_by_health_worker':
+            Parameter(Types.REAL,
+                      'probability of uncomplicated diarrhoea being diagnosed by health care worker'
+                      ),
+        'prob_recommended_treatment_given_by_health_worker':
+            Parameter(Types.REAL,
+                      'probability of uncomplicated diarrhoea being diagnosed by health care worker'
+                      ),
+        'prob_ors_given_with_or_without_zinc_by_health_worker':
+            Parameter(Types.REAL,
+                      'probability of uncomplicated diarrhoea being diagnosed by health care worker'
+                      ),
+    }
     PROPERTIES = {}
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -42,7 +55,16 @@ class DxAlgorithmChild(Module):
         self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, data_folder):
-        pass
+        self.parameters['prob_uncomplicated_diarrhoea_diagnosed_by_health_worker'] = 0.577
+        self.parameters['prob_recommended_treatment_given_by_health_worker'] = 0.734  # for those diagnosed
+        self.parameters['prob_ors_given_with_or_without_zinc_by_health_worker'] = 1  # for those diagnosed
+        self.parameters['prob_hospitalization_referral_for_severe_diarrhoea'] = 0.059
+
+        self.parameters['prob_at_least_ors_given_by_hw'] = 0.633  # for all with uncomplicated diarrhoea
+        self.parameters['prob_recommended_treatment_given_by_hw'] = 0.423  # for all with uncomplicated diarrhoea
+        self.parameters['prob_antibiotic_given_for_dysentery_by_hw'] = 0.8
+
+
 
     def initialise_population(self, population):
         pass
@@ -85,6 +107,7 @@ class DxAlgorithmChild(Module):
         # Create some short-cuts:
         schedule_hsi = self.sim.modules['HealthSystem'].schedule_hsi_event
         df = self.sim.population.props
+        p = self.parameters
 
         def run_dx_test(test):
             return self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=test, hsi_event=hsi_event)
@@ -92,9 +115,9 @@ class DxAlgorithmChild(Module):
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
 
         # Gather information that can be reported:
-        # 1) Get duration of diarrhoea to date
 
         if 'Diarrhoea' in self.sim.modules:
+            # 1) Get duration of diarrhoea to date
             duration_in_days = (self.sim.date - df.at[person_id, 'gi_last_diarrhoea_date_of_onset']).days
 
             # 2) Get type of diarrhoea
@@ -107,14 +130,95 @@ class DxAlgorithmChild(Module):
             # 1) Assessment of danger signs
             danger_signs = run_dx_test('danger_signs_visual_inspection')
 
-            # Apply the algorithms:
-            # --------   Classify Extent of Dehydration   ---------
+            # --------------------------------------------------
+            # Get the classification of uncomplicated diarrhoea:
+            # acute diarrhoea with some or no dehydration without general danger signs
+            uncomplicated_diarrhoea = not danger_signs
 
-            # # # # # NO DEHYDRATION # # # # #
-            if not dehydration:
-                # Treatment Plan A for uncomplicated diarrhoea (no dehydration and no danger signs)
+            # antibiotics to be given for dysentery
+            antibiotics_for_dysentery = p['prob_antibiotic_given_for_dysentery_by_hw'] > self.rng.rand()
+
+            # For no dehydration and some dehydration -----------------------
+            if uncomplicated_diarrhoea:
+                ors_given = p['prob_at_least_ors_given_by_hw'] > self.rng.rand()
+                recommended_treatment_given = (
+                                                  p['prob_recommended_treatment_given_by_hw'] /
+                                                  p['prob_at_least_ors_given_by_hw']
+                                              ) > self.rng.rand()
+                intervention_given = str()
+                if ors_given and not recommended_treatment_given:
+                    intervention_given = 'ors_only'
+                if recommended_treatment_given:
+                    intervention_given = 'recommended_treatment'
+                if not ors_given and not recommended_treatment_given:
+                    intervention_given = 'none'
+
+                # # # # # NO DEHYDRATION # # # # #
+                if not dehydration and intervention_given != 'none':
+                    # Treatment Plan A for uncomplicated diarrhoea (no dehydration and no danger signs)
+                    schedule_hsi(
+                        HSI_Diarrhoea_Treatment_PlanA(
+                            person_id=person_id,
+                            module=self.sim.modules['Diarrhoea'], intervention=intervention_given),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None)
+                    # zinc for persistent diarrhoea
+                    if duration_in_days >= 14:
+                        schedule_hsi(
+                            HSI_Persistent_Diarrhoea(
+                                person_id=person_id,
+                                module=self.sim.modules['Diarrhoea']),
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None)
+                    # antibiotics for dysentery
+                    if blood_in_stool and antibiotics_for_dysentery:
+                        schedule_hsi(
+                            HSI_Diarrhoea_Dysentery(
+                                person_id=person_id,
+                                module=self.sim.modules['Diarrhoea']),
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None)
+
+                # # # # # SOME DEHYDRATION # # # # #
+                elif dehydration and intervention_given != 'none':
+                    # Treatment Plan B for some dehydration diarrhoea but not danger signs
+                    if not danger_signs:
+                        # TODO:add "...and not other severe classification from other disease modules
+                        #  (measles, pneumonia, etc)"
+                        schedule_hsi(
+                            HSI_Diarrhoea_Treatment_PlanB(
+                                person_id=person_id,
+                                module=self.sim.modules['Diarrhoea'], intervention=intervention_given),
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None)
+                        # zinc for persistent diarrhoea
+                        if duration_in_days >= 14:
+                            schedule_hsi(
+                                HSI_Persistent_Diarrhoea(
+                                    person_id=person_id,
+                                    module=self.sim.modules['Diarrhoea']),
+                                priority=0,
+                                topen=self.sim.date,
+                                tclose=None)
+                        # antibiotics for dysentery
+                        if blood_in_stool and antibiotics_for_dysentery:
+                            schedule_hsi(
+                                HSI_Diarrhoea_Dysentery(
+                                    person_id=person_id,
+                                    module=self.sim.modules['Diarrhoea']),
+                                priority=0,
+                                topen=self.sim.date,
+                                tclose=None)
+
+            # # # # # SEVERE DEHYDRATION # # # # #
+            if danger_signs:
+                # Danger sign for 'Severe_Dehydration'
                 schedule_hsi(
-                    HSI_Diarrhoea_Treatment_PlanA(
+                    HSI_Diarrhoea_Treatment_PlanC(
                         person_id=person_id,
                         module=self.sim.modules['Diarrhoea']),
                     priority=0,
@@ -132,7 +236,7 @@ class DxAlgorithmChild(Module):
                         tclose=None)
 
                 # antibiotics for dysentery
-                if blood_in_stool:
+                if blood_in_stool and antibiotics_for_dysentery:
                     schedule_hsi(
                         HSI_Diarrhoea_Dysentery(
                             person_id=person_id,
@@ -141,71 +245,105 @@ class DxAlgorithmChild(Module):
                         topen=self.sim.date,
                         tclose=None)
 
-            # # # # # SOME DEHYDRATION # # # # #
-            else:
-                # Some dehydration for treatment Plan B
-                if not danger_signs:
-                    # Treatment Plan B for some dehydration diarrhoea but not danger signs
-                    # TODO:add "...and not other severe classification from other disease modules
-                    #  (measles, pneumonia, etc)"
-                    schedule_hsi(
-                        HSI_Diarrhoea_Treatment_PlanB(
-                            person_id=person_id,
-                            module=self.sim.modules['Diarrhoea']),
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None)
-
-                    # zinc for persistent diarrhoea
-                    if duration_in_days >= 14:
-                        schedule_hsi(
-                            HSI_Persistent_Diarrhoea(
-                                person_id=person_id,
-                                module=self.sim.modules['Diarrhoea']),
-                            priority=0,
-                            topen=self.sim.date,
-                            tclose=None)
-
-                    # antibiotics for dysentery
-                    if blood_in_stool:
-                        schedule_hsi(
-                            HSI_Diarrhoea_Dysentery(
-                                person_id=person_id,
-                                module=self.sim.modules['Diarrhoea']),
-                            priority=0,
-                            topen=self.sim.date,
-                            tclose=None)
-
-                # # # # # SEVERE DEHYDRATION # # # # #
-                else:
-                    # Danger sign for 'Severe_Dehydration'
-                    schedule_hsi(
-                        HSI_Diarrhoea_Treatment_PlanC(
-                            person_id=person_id,
-                            module=self.sim.modules['Diarrhoea']),
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None)
-
-                    # zinc for persistent diarrhoea
-                    if duration_in_days >= 14:
-                        schedule_hsi(
-                            HSI_Persistent_Diarrhoea(
-                                person_id=person_id,
-                                module=self.sim.modules['Diarrhoea']),
-                            priority=0,
-                            topen=self.sim.date,
-                            tclose=None)
-
-                    # antibiotics for dysentery
-                    if blood_in_stool:
-                        schedule_hsi(
-                            HSI_Diarrhoea_Dysentery(
-                                person_id=person_id,
-                                module=self.sim.modules['Diarrhoea']),
-                            priority=0,
-                            topen=self.sim.date,
-                            tclose=None)
+            # # Apply the algorithms:
+            # # --------   Classify Extent of Dehydration   ---------
+            #
+            # # # # # # NO DEHYDRATION # # # # #
+            # if not dehydration:
+            #     # Treatment Plan A for uncomplicated diarrhoea (no dehydration and no danger signs)
+            #     schedule_hsi(
+            #         HSI_Diarrhoea_Treatment_PlanA(
+            #             person_id=person_id,
+            #             module=self.sim.modules['Diarrhoea']),
+            #         priority=0,
+            #         topen=self.sim.date,
+            #         tclose=None)
+            #
+            #     # zinc for persistent diarrhoea
+            #     if duration_in_days >= 14:
+            #         schedule_hsi(
+            #             HSI_Persistent_Diarrhoea(
+            #                 person_id=person_id,
+            #                 module=self.sim.modules['Diarrhoea']),
+            #             priority=0,
+            #             topen=self.sim.date,
+            #             tclose=None)
+            #
+            #     # antibiotics for dysentery
+            #     if blood_in_stool and antibiotics_for_dysentery:
+            #         schedule_hsi(
+            #             HSI_Diarrhoea_Dysentery(
+            #                 person_id=person_id,
+            #                 module=self.sim.modules['Diarrhoea']),
+            #             priority=0,
+            #             topen=self.sim.date,
+            #             tclose=None)
+            #
+            # # # # # # SOME DEHYDRATION # # # # #
+            # else:
+            #     # Some dehydration for treatment Plan B
+            #     if not danger_signs:
+            #         # Treatment Plan B for some dehydration diarrhoea but not danger signs
+            #         # TODO:add "...and not other severe classification from other disease modules
+            #         #  (measles, pneumonia, etc)"
+            #         schedule_hsi(
+            #             HSI_Diarrhoea_Treatment_PlanB(
+            #                 person_id=person_id,
+            #                 module=self.sim.modules['Diarrhoea']),
+            #             priority=0,
+            #             topen=self.sim.date,
+            #             tclose=None)
+            #
+            #         # zinc for persistent diarrhoea
+            #         if duration_in_days >= 14:
+            #             schedule_hsi(
+            #                 HSI_Persistent_Diarrhoea(
+            #                     person_id=person_id,
+            #                     module=self.sim.modules['Diarrhoea']),
+            #                 priority=0,
+            #                 topen=self.sim.date,
+            #                 tclose=None)
+            #
+            #         # antibiotics for dysentery
+            #         if blood_in_stool and antibiotics_for_dysentery:
+            #             schedule_hsi(
+            #                 HSI_Diarrhoea_Dysentery(
+            #                     person_id=person_id,
+            #                     module=self.sim.modules['Diarrhoea']),
+            #                 priority=0,
+            #                 topen=self.sim.date,
+            #                 tclose=None)
+            #
+            #     # # # # # SEVERE DEHYDRATION # # # # #
+            #     else:
+            #         # Danger sign for 'Severe_Dehydration'
+            #         schedule_hsi(
+            #             HSI_Diarrhoea_Treatment_PlanC(
+            #                 person_id=person_id,
+            #                 module=self.sim.modules['Diarrhoea']),
+            #             priority=0,
+            #             topen=self.sim.date,
+            #             tclose=None)
+            #
+            #         # zinc for persistent diarrhoea
+            #         if duration_in_days >= 14:
+            #             schedule_hsi(
+            #                 HSI_Persistent_Diarrhoea(
+            #                     person_id=person_id,
+            #                     module=self.sim.modules['Diarrhoea']),
+            #                 priority=0,
+            #                 topen=self.sim.date,
+            #                 tclose=None)
+            #
+            #         # antibiotics for dysentery
+            #         if blood_in_stool:
+            #             schedule_hsi(
+            #                 HSI_Diarrhoea_Dysentery(
+            #                     person_id=person_id,
+            #                     module=self.sim.modules['Diarrhoea']),
+            #                 priority=0,
+            #                 topen=self.sim.date,
+            #                 tclose=None)
 
     def diagnose(self, person_id, hsi_event):
         """
