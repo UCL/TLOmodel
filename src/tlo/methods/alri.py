@@ -1,8 +1,3 @@
-# todo - finish going through logic (got to IncidentCase) simplifying and tidying
-# todo - keep structure overall but use complciations as a set of bool properties
-# todo - update linear models accordingly
-# todo - consider reducing number of indepedent events (eg. onset comlications instantanesouly with infection)
-
 """
 Childhood Acute Lower Respiratory Infection Module
 
@@ -24,9 +19,9 @@ and they are cured (symptom resolved) some days later.
 
 Outstanding issues
 ------------------
+* All HSI events
 * Follow-up appointments for initial HSI events.
 * Double check parameters and consumables codes for the HSI events.
-
 """
 
 # #todo - consider properties: remove/rename "
@@ -44,6 +39,7 @@ from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
 from tlo.methods.symptommanager import Symptom
 from tlo.util import BitsetHandler
+from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1264,8 +1260,8 @@ class Alri(Module):
         if not person['ri_current_infection_status']:
             return
 
-        # Log that the treatment is provided:
-        df.at[person_id, 'ri_ALRI_tx_start_date'] = self.sim.date
+        # Record that the person is now on treatment:
+        df.loc[person_id, ['ri_on_treatment', 'ri_ALRI_tx_start_date']] = [True, self.sim.date]
 
         # Determine if the treatment is effective
         if prob_of_cure > self.rng.rand():
@@ -1973,11 +1969,38 @@ class AlriIndividualLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
 
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# ==================================== HEALTH SYSTEM INTERACTION EVENTS ====================================
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-# todo - make a dummy HSI
-# todo - HSI should only do something if the person is currently infected - otherwise exist doing nothing.
-# todo - log using new_treated_case
+class HSI_Alri_GenericTreatment(HSI_Event, IndividualScopeEventMixin):
+    """
+    # todo - @Ines -- here is a template for the HSI interaction events. It just shows the checks to use each time.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = 'Alri_GenericTreatment'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        """Do the treatment"""
+
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        # Exit if the person is not alive or is not currently infected:
+        if not (person['is_alive'] and person['ri_current_infection_status']):
+            return
+
+        # For example, say that probability of cure = 1.0
+        prob_of_cure = 1.0
+        self.module.do_treatment(person_id=person_id, prob_of_cure=prob_of_cure)
+
 
 
 """

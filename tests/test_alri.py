@@ -18,7 +18,8 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-from tlo.methods.alri import AlriPollingEvent, AlriIncidentCase, AlriNaturalRecoveryEvent, AlriDeathEvent, AlriCureEvent
+from tlo.methods.alri import AlriPollingEvent, AlriIncidentCase, AlriNaturalRecoveryEvent, AlriDeathEvent, \
+    AlriCureEvent, HSI_Alri_GenericTreatment
 
 # Path to the resource files used by the disease and intervention methods
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -464,11 +465,53 @@ def test_treatment(tmpdir):
     assert pd.isnull(person['ri_scheduled_recovery_date'])
     assert pd.isnull(person['ri_scheduled_death_date'])
 
+    # check it's logged (one infection + one cure)
+    assert 1 == sim.modules['Alri'].logging_event.trackers['incident_cases'].report_current_total()
+    assert 0 == sim.modules['Alri'].logging_event.trackers['recovered_cases'].report_current_total()
+    assert 0 == sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
+    assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def tests_complication_and_severe_complicatios():
+def test_complication_and_severe_complications():
     """todo TBD"""
     pass
+
+
+def test_use_of_HSI(tmpdir):
+    """Check that the HSI template works"""
+    dur = pd.DateOffset(days=0)
+    popsize = 100
+    sim = get_sim(tmpdir)
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # make probability of death 100%
+    sim.modules['Alri'].risk_of_death = LinearModel.multiplicative()
+
+    # Get person to use:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    assert not df.loc[person_id, 'ri_current_infection_status']
+
+    # Run incident case:
+    pathogen = list(sim.modules['Alri'].pathogens)[0]
+    incidentcase = AlriIncidentCase(person_id=person_id, pathogen=pathogen, module=sim.modules['Alri'])
+    incidentcase.apply(person_id=person_id)
+
+    # Check not on treatment:
+    assert not df.at[person_id, 'ri_on_treatment']
+    assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
+
+    # Run the HSI event
+    hsi = HSI_Alri_GenericTreatment(person_id=person_id, module=sim.modules['Alri'])
+    hsi.run(squeeze_factor=0.0)
+
+    # Check that person is now on treatment:
+    assert df.at[person_id, 'ri_on_treatment']
+    assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
 
 
 
