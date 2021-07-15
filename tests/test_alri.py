@@ -1,5 +1,4 @@
-"""Test file for the Alri module (alri.py)"""
-
+"""Test file for the Alri module"""
 
 import os
 from pathlib import Path
@@ -30,7 +29,7 @@ except NameError:
 
 class PropertiesOfOtherModules(Module):
     """For the purpose of the testing, create a module to generate the properties upon which this module relies"""
-    # todo - update these name to relfect the properties that are already defined:
+    # todo - update these name to reflect the properties that are already defined:
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property - hiv infection'),
@@ -106,20 +105,16 @@ def test_basic_run(tmpdir):
     check_dtypes(sim)
 
 
-def test_nat_hist_progression(tempdir):
-    """Cause infection --> ALRI onset --> complication --> death and check it is logged correctly"""
-    pass
-
-
 def test_basic_run_lasting_two_years(tmpdir):
     """Check logging results in a run of the model for two years, with daily property config checking"""
     dur = pd.DateOffset(years=2)
-    popsize = 100
+    popsize = 500
     sim = get_sim(tmpdir, popsize=popsize, dur=dur)
 
     # Read the log for the population counts of incidence:
     log_counts = parse_log_file(sim.log_filepath)['tlo.methods.alri']['event_counts']
-    log_path_breakdown = parse_log_file(sim.log_filepath)['tlo.methods.alri']['incidence_count_by_age_and_pathogen']
+    assert log_counts['incident_cases'].sum() > 0
+    assert log_counts['deaths'].sum() > 0
 
     # Read the log for the one individual being tracked:
     log_one_person = parse_log_file(sim.log_filepath)['tlo.methods.alri']['log_individual']
@@ -127,6 +122,11 @@ def test_basic_run_lasting_two_years(tmpdir):
     log_one_person = log_one_person.set_index('date')
     assert log_one_person.index.equals(pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1)))
     assert set(log_one_person.columns) == set(sim.modules['Alri'].PROPERTIES.keys())
+
+
+def test_nat_hist_progression(tempdir):
+    """Cause infection --> ALRI onset --> complication --> death and check it is logged correctly"""
+    pass
 
 
 
@@ -145,7 +145,6 @@ def test_basic_run_lasting_two_years(tmpdir):
 # 3) Show that if treatment not provided, and CFR is 100%, every case results in a death
 
 
-# check that things are being logged
 
 # todo  - test use of cure event
 # todo - test use of do_alri_treatment

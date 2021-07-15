@@ -625,13 +625,13 @@ class Alri(Module):
     # todo; @Ines -- some of the labelling of the properties is confusing -- is for currrent or last episode?
     PROPERTIES = {
         # ---- Alri status ----
-        'ri_current_ALRI_status':
+        'ri_current_infection_status':
             Property(Types.BOOL,
                      'Does the person currently have an infection with a pathogen that can cause Alri.'
                      ),
 
         # ---- The pathogen which is the attributed cause of Alri ----
-        'ri_primary_ALRI_pathogen':
+        'ri_primary_pathogen':
             Property(Types.CATEGORICAL,
                      'If infected, what is the pathogen with which the person is currently infected. (np.nan if not '
                      'infected)',
@@ -644,13 +644,13 @@ class Alri(Module):
                      categories=list(bacterial_patho)
                      ),
         # ---- The underlying Alri condition ----
-        'ri_ALRI_disease_type':
-            Property(Types.CATEGORICAL, 'If infected, what disease is the person currently suffering from.',
+        'ri_disease_type':
+            Property(Types.CATEGORICAL, 'If infected, what disease type is the person currently suffering from.',
                      categories=list(disease_types)
                      ),
 
         # ---- Treatment Status ----
-        'ri_ALRI_treatment': Property(Types.BOOL, 'Is this person currently receiving treatment.'),
+        'ri_on_treatment': Property(Types.BOOL, 'Is this person currently receiving treatment.'),
 
         # < --- other properties of the form 'ri_complication_{complication-name}' are added later -->
 
@@ -690,6 +690,9 @@ class Alri(Module):
         # Linear Model for predicting the risk of death:
         self.risk_of_death = dict()
 
+        # Maximum duration of an episode (beginning with inection and ending with recovery)
+        self.max_duration_of_epsiode = None
+
         # dict to hold the probability of onset of different types of symptom given underlying complications:
         self.prob_symptoms_uncomplicated_ALRI = dict()
         self.prob_extra_symptoms_complications = dict()
@@ -701,7 +704,9 @@ class Alri(Module):
         self.logging_event = None
 
     def read_parameters(self, data_folder):
-        """ Setup parameters values used by the module
+        """
+        * Setup parameters values used by the module
+        * Define symptoms
         """
         self.load_parameters_from_dataframe(
             pd.read_excel(
@@ -738,7 +743,6 @@ class Alri(Module):
                     # (give non-generic symptom 'average' healthcare seeking)
                 )
 
-
     def pre_initialise_population(self):
         """Define columns for complications at run-time"""
         Alri.PROPERTIES.update({
@@ -754,10 +758,10 @@ class Alri(Module):
         df = population.props  # a shortcut to the data-frame storing data for individuals
 
         # ---- Key Current Status Classification Properties ----
-        df.loc[df.is_alive, 'ri_current_ALRI_status'] = False
-        df.loc[df.is_alive, 'ri_primary_ALRI_pathogen'] = np.nan
+        df.loc[df.is_alive, 'ri_current_infection_status'] = False
+        df.loc[df.is_alive, 'ri_primary_pathogen'] = np.nan
         df.loc[df.is_alive, 'ri_secondary_bacterial_pathogen'] = np.nan
-        df.loc[df.is_alive, 'ri_ALRI_disease_type'] = np.nan
+        df.loc[df.is_alive, 'ri_disease_type'] = np.nan
         df.loc[df.is_alive, [
             f"ri_complication_{complication}" for complication in self.complications]
         ] = False
@@ -768,20 +772,8 @@ class Alri(Module):
         df.loc[df.is_alive, 'ri_scheduled_death_date'] = pd.NaT
         df.loc[df.is_alive, 'ri_end_of_current_episode'] = pd.NaT
 
-        df.loc[df.is_alive, 'ri_ALRI_treatment'] = False
+        df.loc[df.is_alive, 'ri_on_treatment'] = False
         df.loc[df.is_alive, 'ri_ALRI_tx_start_date'] = pd.NaT
-
-        # This biset property stores set of symptoms that can occur
-        # todo - @ines - this seems to be replicating what the SymptomManager does?
-        # self.ALRI_symptoms = BitsetHandler(self.sim.population, 'ri_current_ALRI_symptoms',
-        #                                    ['fever', 'cough', 'difficult_breathing', 'fast_breathing', 'headache',
-        #                                     'chest_indrawing', 'chest_pain', 'cyanosis', 'respiratory_distress',
-        #                                     'danger_signs'])
-        # todo - @ines - for efficiency, I've just put these as normal properties of type bool.
-        # # This biset property stores set of complications that can occur
-        # self.ALRI_complications = BitsetHandler(self.sim.population, 'ri_ALRI_complications',
-        #                                         ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess',
-        #                                          'sepsis', 'meningitis', 'respiratory_failure'])
 
     def initialise_simulation(self, sim):
         """
@@ -800,22 +792,24 @@ class Alri(Module):
 
         if self.log_individual:
             # Schedule the individual check logging event (to first occur immediately, and to occur every day)
-            sim.schedule_event(AlriIindividualCheckLoggingEvent(self), sim.date)
+            sim.schedule_event(AlriIndividualLoggingEvent(self), sim.date)
 
         if self.do_checks:
             # Schedule the event that does checking every day:
             sim.schedule_event(AlriCheckPropertiesEvent(self), sim.date)
 
+        # Make the linear models:
+        self.make_linear_models()
+
         # Get DALY weights
-        # get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
         if 'HealthBurden' in self.sim.modules.keys():
             self.daly_wts['daly_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
             self.daly_wts['daly_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
             self.daly_wts['daly_very_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
             # todo @ines - 'daly_very_severe_ALRI' is never used: is that right?
 
-        # Make the linear models:
-        self.make_linear_models()
+        # Define the max episode duration
+        self.max_duration_of_epsiode = DateOffset(days=self.parameters['days_between_treatment_and_cure'])
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -826,11 +820,13 @@ class Alri(Module):
 
         df = self.sim.population.props
 
+        #todo - vectorize this:
+
         # ---- Key Current Status Classification Properties ----
-        df.at[child_id, 'ri_current_ALRI_status'] = False
-        df.at[child_id, 'ri_primary_ALRI_pathogen'] = 'not_applicable'
-        df.at[child_id, 'ri_secondary_bacterial_pathogen'] = 'not_applicable'
-        df.at[child_id, 'ri_ALRI_disease_type'] = 'not_applicable'
+        df.at[child_id, 'ri_current_infection_status'] = False
+        df.at[child_id, 'ri_primary_pathogen'] = np.nan
+        df.at[child_id, 'ri_secondary_bacterial_pathogen'] = np.nan
+        df.at[child_id, 'ri_disease_type'] = np.nan
         df.at[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
 
         # ---- Internal values ----
@@ -841,21 +837,16 @@ class Alri(Module):
 
     def report_daly_values(self):
         """Report DALY incurred in the population in the last month due to ALRI"""
-
         df = self.sim.population.props
 
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
-
         total_daly_values.loc[
             self.sim.modules['SymptomManager'].who_has('fast_breathing')] = self.daly_wts['daly_ALRI']
-
         total_daly_values.loc[
             self.sim.modules['SymptomManager'].who_has('danger_signs')] = self.daly_wts['daly_severe_ALRI']
 
         # Split out by pathogen that causes the Alri
-        dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
-                                                     'ri_primary_ALRI_pathogen'],
-                                              dtype='float').drop(columns='not_applicable')
+        dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')
         daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
 
         # add prefix to label according to the name of the causes of disability declared
@@ -895,7 +886,7 @@ class Alri(Module):
                     Predictor('hv_inf').when(True, p['rr_ALRI_HIV_untreated']),
                     Predictor().when(
                         "(tmp_pneumococcal_vaccination == True) & "
-                        "((ri_primary_ALRI_pathogen == 'streptococcus') | "
+                        "((ri_primary_pathogen == 'streptococcus') | "
                         "(ri_secondary_bacterial_pathogen == 'streptococcus'))",
                         p['rr_ALRI_PCV13']),
                     Predictor('tmp_malnutrition').when(True, p['rr_ALRI_underweight']),
@@ -926,16 +917,16 @@ class Alri(Module):
                         0.0,
                         Predictor()
                         .when(
-                            "ri_primary_ALRI_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
+                            "ri_primary_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
                             "'parainfluenza', 'influenza']) & "
-                            "(ri_ALRI_disease_type == 'viral_pneumonia') & "
+                            "(ri_disease_type == 'viral_pneumonia') & "
                             "(ri_secondary_bacterial_pathogen =='not_applicable')",
                             p['prob_viral_pneumonia_bacterial_coinfection']),
                         Predictor()
                         .when(
-                            "ri_primary_ALRI_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
+                            "ri_primary_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
                             "'parainfluenza', 'influenza']) & "
-                            "(ri_ALRI_disease_type == 'bronchiolitis') & "
+                            "(ri_disease_type == 'bronchiolitis') & "
                             "(ri_secondary_bacterial_pathogen =='not_applicable')",
                             p['prob_secondary_bacterial_infection_in_bronchiolitis'])
                         )
@@ -951,7 +942,7 @@ class Alri(Module):
             'pneumothorax':
                 LinearModel(LinearModelType.ADDITIVE,
                             0.0,
-                            Predictor('ri_primary_ALRI_pathogen' or 'ri_secondary_bacterial_pathogen')
+                            Predictor('ri_primary_pathogen' or 'ri_secondary_bacterial_pathogen')
                             .when(
                                 ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
                                 "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
@@ -959,22 +950,22 @@ class Alri(Module):
                                 p['prob_pneumothorax_by_bacterial_pneumonia']).otherwise(0.0),
                             Predictor()
                             .when(
-                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "ri_primary_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
                                 "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
-                                "(ri_ALRI_disease_type == 'viral_pneumonia') ",
+                                "(ri_disease_type == 'viral_pneumonia') ",
                                 p['prob_pneumothorax_by_viral_pneumonia']),
                             Predictor()
                             .when(
-                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "ri_primary_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
                                 "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
-                                "(ri_ALRI_disease_type == 'bronchiolitis') ",
+                                "(ri_disease_type == 'bronchiolitis') ",
                                 p['prob_pneumothorax_by_bronchiolitis'])
                             ),
 
             'pleural_effusion':
                 LinearModel(LinearModelType.ADDITIVE,
                             0.0,
-                            Predictor('ri_primary_ALRI_pathogen' or 'ri_secondary_bacterial_pathogen')
+                            Predictor('ri_primary_pathogen' or 'ri_secondary_bacterial_pathogen')
                             .when(
                                 ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
                                 "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
@@ -982,15 +973,15 @@ class Alri(Module):
                                 p['prob_pleural_effusion_by_bacterial_pneumonia']).otherwise(0.0),
                             Predictor()
                             .when(
-                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "ri_primary_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
                                 "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
-                                "(ri_ALRI_disease_type == 'viral_pneumonia') ",
+                                "(ri_disease_type == 'viral_pneumonia') ",
                                 p['prob_pleural_effusion_by_viral_pneumonia']),
                             Predictor()
                             .when(
-                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "ri_primary_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
                                 "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
-                                "(ri_ALRI_disease_type == 'bronchiolitis') ",
+                                "(ri_disease_type == 'bronchiolitis') ",
                                 p['prob_pleural_effusion_by_bronchiolitis'])
                             ),
 
@@ -1006,7 +997,7 @@ class Alri(Module):
             'lung_abscess':
                 LinearModel(LinearModelType.MULTIPLICATIVE,
                             1.0,
-                            Predictor('ri_primary_ALRI_pathogen' or 'ri_secondary_bacterial_pathogen')
+                            Predictor('ri_primary_pathogen' or 'ri_secondary_bacterial_pathogen')
                             .when(
                                 ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
                                 "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
@@ -1018,7 +1009,7 @@ class Alri(Module):
             'sepsis':
                 LinearModel(LinearModelType.ADDITIVE,
                             0.0,
-                            Predictor('ri_primary_ALRI_pathogen' or 'ri_secondary_bacterial_pathogen')
+                            Predictor('ri_primary_pathogen' or 'ri_secondary_bacterial_pathogen')
                             .when(
                                 ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
                                 "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
@@ -1026,22 +1017,22 @@ class Alri(Module):
                                 p['prob_sepsis_by_bacterial_pneumonia']).otherwise(0.0),
                             Predictor()
                             .when(
-                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "ri_primary_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
                                 "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
-                                "(ri_ALRI_disease_type == 'viral_pneumonia') ",
+                                "(ri_disease_type == 'viral_pneumonia') ",
                                 p['prob_sepsis_by_viral_pneumonia']),
                             Predictor()
                             .when(
-                                "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                                "ri_primary_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
                                 "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
-                                "(ri_ALRI_disease_type == 'bronchiolitis') ",
+                                "(ri_disease_type == 'bronchiolitis') ",
                                 p['prob_sepsis_by_bronchiolitis']),
                             ),
 
             'meningitis':
                 LinearModel(LinearModelType.MULTIPLICATIVE,
                             1.0,
-                            Predictor('ri_primary_ALRI_pathogen' or 'ri_secondary_bacterial_pathogen')
+                            Predictor('ri_primary_pathogen' or 'ri_secondary_bacterial_pathogen')
                             .when(
                                 ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
                                 "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
@@ -1061,7 +1052,7 @@ class Alri(Module):
             'peripheral_oxygen_saturation_low':
                 LinearModel(LinearModelType.ADDITIVE,
                         0.0,
-                        Predictor('ri_primary_ALRI_pathogen' or 'ri_secondary_bacterial_pathogen')
+                        Predictor('ri_primary_pathogen' or 'ri_secondary_bacterial_pathogen')
                         .when(
                             ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
                             "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
@@ -1069,15 +1060,15 @@ class Alri(Module):
                             p['prob_hypoxia_by_bacterial_pneumonia']),
                         Predictor()
                         .when(
-                            "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                            "ri_primary_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
                             "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
-                            "(ri_ALRI_disease_type == 'viral_pneumonia')",
+                            "(ri_disease_type == 'viral_pneumonia')",
                             p['prob_hypoxia_by_viral_pneumonia']),
                         Predictor()
                         .when(
-                            "ri_primary_ALRI_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
+                            "ri_primary_pathogen.isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', "
                             "'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens']) & "
-                            "(ri_ALRI_disease_type == 'bronchiolitis')",
+                            "(ri_disease_type == 'bronchiolitis')",
                             p['prob_hypoxia_by_bronchiolitis']),
                         )
         })
@@ -1149,44 +1140,49 @@ class Alri(Module):
                     'cyanosis': p[f'prob_cyanosis_adding_from_{complicat}'],
                     'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complicat}'],
                 }
-            if complicat == 'pleural_effusion':
+            elif complicat == 'pleural_effusion':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
                     'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complicat}'],
                 }
-            if complicat == 'empyema':
+            elif complicat == 'empyema':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
                     'respiratory_distress': p[f'prob_respiratory_distress_adding_from_{complicat}'],
                 }
-            if complicat == 'lung_abscess':
+            elif complicat == 'lung_abscess':
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
                     'fast_breathing': p[f'prob_fast_breathing_adding_from_{complicat}'],
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
                 }
-            if complicat == 'respiratory_failure':
+            elif complicat == 'respiratory_failure':
                 return {
                     'cyanosis': p[f'prob_cyanosis_adding_from_{complicat}'],
                     'fast_breathing': p[f'prob_fast_breathing_adding_from_{complicat}'],
                     'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complicat}'],
                     'danger_signs': p[f'prob_danger_signs_adding_from_{complicat}'],
                 }
-            if complicat == 'sepsis':
+            elif complicat == 'sepsis':
                 return {
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
                     'fast_breathing': p[f'prob_fast_breathing_adding_from_{complicat}'],
                     'danger_signs': p[f'prob_danger_signs_adding_from_{complicat}'],
 
                 }
-            if complicat == 'meningitis':
+            elif complicat == 'meningitis':
                 return {
                     'fever': p[f'prob_fever_adding_from_{complicat}'],
                     'headache': p[f'prob_headache_adding_from_{complicat}'],
                     'danger_signs': p[f'prob_danger_signs_adding_from_{complicat}'],
                 }
+            elif complicat == 'peripheral_oxygen_saturation_low':
+                # (No specific symptoms for 'peripheral_oxygen_saturation_low')
+                return {}
+            else:
+                raise ValueError
 
         for complication in self.complications:
             self.prob_extra_symptoms_complications[complication] = add_complication_symptom_probs(complication)
@@ -1196,7 +1192,7 @@ class Alri(Module):
         # -----------------------------------------------------------------------------------------------------
         self.risk_of_death = \
             LinearModel.multiplicative(
-                Predictor('ri_ALRI_disease_type')
+                Predictor('ri_disease_type')
                     .when(f'fungal_pneumonia', p[f'base_death_rate_ALRI_by_fungal_pneumonia'])
                     .when(f'viral_pneumonia', p[f'base_death_rate_ALRI_by_viral_pneumonia'])
                     .when(f'bacterial_pneumonia', p[f'base_death_rate_ALRI_by_bacterial_pneumonia'])
@@ -1248,21 +1244,6 @@ class Alri(Module):
         assert disease_type in self.disease_types
         return disease_type
 
-    def complications_append(self, person_id, complication):
-        """
-        This function is called at the onset of complications in AlriComplicationOnsetEvent
-        and AlriSystemicComplicationsOnsetEvent.
-        It adds the complication to the list of complications for the person
-        :param person_id:
-        :param complication:
-        :return:
-        """
-        # if already having this complication, no need to add to the list
-        if self.ALRI_complications.has_all([person_id], f'{complication}', first=True):
-            return
-        else:  # append complications for this person using the BitsetHandler
-            self.ALRI_complications.set([person_id], f'{complication}')
-
     def do_alri_treatment(self, person_id, prob_of_cure):
         """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
         It will only do something if the Alri is caused by a pathogen (this module). It will not allow any effect
@@ -1278,16 +1259,19 @@ class Alri(Module):
         if not person.is_alive:
             return
 
+        # todo - this will not be working as the variables are wrongly named!!!
+
         # Do nothing if the Alri has not been caused by a pathogen
         if not (
-            (person.ri_primary_ALRI_pathogen != 'not_applicable') &
-            (person.ri_ALRI_event_date_of_onset <= self.sim.date <= person.ri_end_of_last_alri_episode)
+            (person['ri_primary_ALRI_pathogen'] != 'not_applicable') &
+            (person['ri_ALRI_event_date_of_onset'] <= self.sim.date <= person['ri_end_of_last_alri_episode'])
         ):
             return
 
         # Log that the treatment is provided:
         df.at[person_id, 'ri_ALRI_tx_start_date'] = self.sim.date
-        df.at[person_id, 'ri_ALRI_treatment_counter'] += 1
+
+        # todo - log treatment is starting
 
         # Determine if the treatment is effective
         if prob_of_cure > self.rng.rand():
@@ -1311,105 +1295,109 @@ class Alri(Module):
         df = self.sim.population.props
         df.at[person_id, 'ri_scheduled_death_date'] = pd.NaT
 
-    def cancel_complication_onset(self, person_id, complication):
-        """
-        Cancels the onset of complications for a person,
-        when treatment was administered before the scheduled date of onset in
-        AlriComplicationOnsetEvent and AlriSystemicComplicationsOnsetEvent.
-        :param person_id:
-        :param complication:
-        :return:
-        """
-        # depending on treatment type: antibiotic administrations vs oxygen supplementation - apply a probability
-        # currently simplified to cancel the occurrence of complication if treatment was given before scheduled onset
-        self.ALRI_complications.unset([person_id], f'{complication}')
-
-    def check_properties(self):
-        """This is used in debugging to make sure that the configuration of properties is correct"""
-        # todo: @ines: we can fill this in. It's used to check that the properties all make sense. I've put in a few
-        #  examples to get us started.
-
-        df = self.sim.population.props
-
-        # check that if there is no current infection, then there is no 'primary ALRI pathogen': this one fails!?
-        # todo - check that if no current infection then all variables about current infection are np.nan
-
-        # assert (df.loc[df.is_alive & ~df.ri_current_ALRI_status, 'ri_primary_ALRI_pathogen'] == 'not_applicable').all()
-
-        # check that no one is on treatment if they do not have a current infection
-        assert df.loc[df.is_alive & df.ri_ALRI_treatment, 'ri_current_ALRI_status'].all()
-
-        # check if that primary pathogen is bacterial then there is np.nan for secondary_bacterial_pathogrn
-        assert df.loc[
-            df.is_alive & df['ri_primary_ALRI_pathogen'].isin(self.bacterial_patho), 'ri_secondary_bacterial_pathogen'
-        ].isna().all()
-
-    def end_infection(self, person_id):
-        """End the infection for a person (i.e. reset all properties to show no current infection).
+    def end_episode(self, person_id):
+        """End the episode infection for a person (i.e. reset all properties to show no current infection or
+        complications).
         This is called by AlriNaturalRecoveryEvent and AlriCureEvent.
         """
         df = self.sim.population.props
 
         # Reset properties to show no current infection:
         df.loc[person_id, [
-            'ri_scheduled_recovery_date',
-            'ri_current_ALRI_status'
-            'ri_start_of_current_episode',
-            'ri_primary_ALRI_pathogen',
+            'ri_current_infection_status',
+            'ri_primary_pathogen',
             'ri_secondary_bacterial_pathogen',
-            'ri_ALRI_disease_type',
+            'ri_disease_type',
+            'ri_on_treatment',
+            'ri_start_of_current_episode',
+            'ri_scheduled_recovery_date',
             'ri_scheduled_death_date',
-            'ri_ALRI_treatment',
             'ri_ALRI_tx_start_date']
         ] = [
-            self.sim.date,
+            False,
+            np.nan,
+            np.nan,
+            np.nan,
             False,
             pd.NaT,
-            np.nan,
-            np.nan,
-            np.nan,
             pd.NaT,
-            False,
+            pd.NaT,
             pd.NaT,
         ]
-
         #  NB> 'ri_end_of_current_episode is not reset: this is used to control behaviour of event (incl. HSI) that
         #  may still be scheduled to occur and to prevent new infections from occuring whilst HSI from a previous
-        #  episode may occur.
+        #  episode occur.
+        #  todo - should 'end of episode' be set to today's date? / do we need 'end of episode' any more?
+
+        # Remove all existing complications
+        df.loc[person_id, [f"ri_complication_{c}" for c in self.complications]] = False
 
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self)
 
+    def check_properties(self):
+        """This is used in debugging to make sure that the configuration of properties is correct"""
 
-    # def do_when_not_improving(self, person_id):
-    #     """
-    #     Prolongs the signs and symptoms of disease
-    #     """
-    #     df = self.sim.population.props
-    #     person = df.loc[person_id]
-    #     # probability of those who follow-up for further care
-    #     # TODO: Care-seeking for those who sought care but following up for further care
-    #
-    #     # function only for those who sought care and started treatment but not improving
-    #     if not (
-    #         (person.ri_ALRI_tx_start_date <= self.sim.date)
-    #     ):
-    #         return
-    #
-    #     if self.parameters['prob_seek_follow_up_care_after_treatment_failure'] > self.rng.rand():
-    #         # schedule follow-up event
-    #         self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self)
-    # not working line
+        df = self.sim.population.props
+
+        # identify those who currently have an infection with a pathogen that can cause ALRI:
+        curr_inf = df['is_alive'] & df['ri_current_infection_status']
+        not_curr_inf = df['is_alive'] & ~df['ri_current_infection_status']
+
+        # For those with no current infection, variables about the current infection should be null
+        assert df.loc[not_curr_inf, [
+            'ri_primary_pathogen',
+            'ri_secondary_bacterial_pathogen',
+            'ri_disease_type',
+            'ri_start_of_current_episode',
+            'ri_scheduled_recovery_date',
+            'ri_scheduled_death_date']
+        ].isna().all().all()
+
+        # For those with no current infection, 'ri_end_of_current_episode' should be null or in the past or within the
+        # period for which the episode can last.
+        assert (df.loc[not_curr_inf, 'ri_end_of_current_episode'].isna() |
+                (df.loc[not_curr_inf, 'ri_end_of_current_episode'] <= self.sim.date) |
+                ((df.loc[not_curr_inf, 'ri_end_of_current_episode'] - self.sim.date).dt.days <= self.max_duration_of_epsiode.days)
+                ).all()
+
+        # For those with no current infection, there should be no treatment
+        assert not df.loc[not_curr_inf, 'ri_on_treatment'].any()
+        assert df.loc[not_curr_inf, 'ri_ALRI_tx_start_date'].isna().all()
+
+        # For those with no current infection, there should be no complications
+        assert not df.loc[not_curr_inf,
+            [f"ri_complication_{c}" for c in self.complications]
+        ].any().any()
+
+        # For those with current infection, variables about the current infection should not be null
+        assert not df.loc[curr_inf, [
+            'ri_primary_pathogen',
+            'ri_disease_type']
+        ].isna().any().any()
+
+        # For those with current infection, dates relating to this episode should make sense
+        # - start is in the past and end is in the future
+        assert (df.loc[curr_inf, 'ri_start_of_current_episode'] <= self.sim.date).all()
+        assert (df.loc[curr_inf, 'ri_end_of_current_episode'] >= self.sim.date).all()
+
+        # - a person has exactly one of a recovery_date _or_ a death_date
+        assert ((~df.loc[curr_inf, 'ri_scheduled_recovery_date'].isna()) | (~df.loc[curr_inf, 'ri_scheduled_death_date'].isna())).all()
+        assert (df.loc[curr_inf,'ri_scheduled_recovery_date'].isna() != df.loc[curr_inf, 'ri_scheduled_death_date'].isna()).all()
+
+        #  If that primary pathogen is bacterial then there should be np.nan for secondary_bacterial_pathogen:
+        assert df.loc[
+            curr_inf & df['ri_primary_pathogen'].isin(self.bacterial_patho), 'ri_secondary_bacterial_pathogen'
+        ].isna().all()
+
+        # If person is on treatment, they should have a treatment start date
+        assert (df.loc[curr_inf, 'ri_on_treatment'] != df.loc[curr_inf, 'ri_ALRI_tx_start_date'].isna()).all()
 
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
-
-# todo @ines; i think this could be done efficiently as a population level event, with all the outcomes determined at
-#  the point of infection with the pathogen... but I don't yet understand all the logic of the model design.
-
 
 class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the main event that runs the acquisition of pathogens that cause Alri.
@@ -1441,7 +1429,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         mask_could_get_new_alri_event = (
             df['is_alive'] &
             (df['age_years'] < 5) &
-            ~df['ri_current_ALRI_status'] &
+            ~df['ri_current_infection_status'] &
             ((df['ri_end_of_current_episode'] < self.sim.date) | pd.isnull(df['ri_end_of_current_episode']))
         )
 
@@ -1552,15 +1540,15 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # Define 'episode end' date. This the date when this episode ends. It is the last possible data that any HSI
         # could affect this episode.
-        episode_end = date_of_outcome + DateOffset(days=self.module.parameters['days_between_treatment_and_cure'])
+        episode_end = date_of_outcome + m.max_duration_of_epsiode
 
-        # 2) Update the properties in the dataframe:
+        # 2) Update the properties in the dataframe:  # todo - order this nicely
         df.loc[person_id,
                (
-                   'ri_current_ALRI_status',
-                   'ri_primary_ALRI_pathogen',
+                   'ri_current_infection_status',
+                   'ri_primary_pathogen',
                    'ri_secondary_bacterial_pathogen',
-                   'ri_ALRI_disease_type',
+                   'ri_disease_type',
                    'ri_start_of_current_episode',
                    'ri_scheduled_recovery_date',
                    'ri_scheduled_death_date',
@@ -1588,8 +1576,10 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         # Determine outcome: death or recovery
         if m.risk_of_death.predict(df.loc[[person_id]], rng):
             self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
+            df.loc[person_id, ['ri_scheduled_death_date', 'ri_scheduled_recovery_date']] = [date_of_outcome, pd.NaT]
         else:
             self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_outcome)
+            df.loc[person_id, ['ri_scheduled_recovery_date', 'ri_scheduled_death_date']] = [date_of_outcome, pd.NaT]
 
     def impose_symptoms_for_uncomplicated_disease(self, person_id, disease):
         """
@@ -1622,6 +1612,8 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         # Order complications with "peripheral_oxygen_saturation_low" first (risk of other complications depends on it).
         complications_ordered = ['peripheral_oxygen_saturation_low'] + list(
             m.complications - {'peripheral_oxygen_saturation_low'})
+        assert set(complications_ordered) == set(m.complications)
+        assert len(complications_ordered) == len(m.complications)
 
         for complication in complications_ordered:
             if m.risk_of_developing_ALRI_complications[complication].predict(df.loc[[person_id]], rng):
@@ -1645,7 +1637,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                 )
 
 
-#
+
 # class AlriComplicationOnsetEvent(Event, IndividualScopeEventMixin):
 #     """
 #     This Event is for the onset of complications from Alri. For some untreated childrenthis occurs a set number of days
@@ -1745,11 +1737,9 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
     """
-    This is the Natural Recovery event.
-    It is part of the natural history and represents the end of an episode of Alri
-    It does the following:
-        * resolves all symptoms caused by Alri
-        * resolves all ri_ properties back to 'none','not_applicable', or False
+    This is the Natural Recovery event. It is scheduled by the AlriIncidentCase Event for someone who will recover
+    from the infection even if no care received.
+    It calls the 'end_infection' function.
     """
 
     def __init__(self, module, person_id):
@@ -1764,18 +1754,20 @@ class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
             return
 
         # Confirm that this is event is occurring during a current episode of Alri
+        # todo - soften this (and in the cure event) to only do something if current_episode is not ended (and not to error)
         assert (
-                   person['ri_start_of_current_episode'] <=
-                   self.sim.date <=
-                   person['ri_end_of_current_episode']
+            person['ri_start_of_current_episode'] <=
+            self.sim.date <=
+            person['ri_end_of_current_episode']
         )
 
-        # Check if person should really recover of Alri:
+        # Check if person should really recover:
         if (
             (df.at[person_id, 'ri_scheduled_recovery_date'] == self.sim.date) and
             pd.isnull(df.at[person_id, 'ri_scheduled_death_date'])
         ):
-            self.module.end_infection(person_id=person_id)
+            self.module.end_episode(person_id=person_id)
+
 
 class AlriCureEvent(Event, IndividualScopeEventMixin):
     """
@@ -1807,7 +1799,7 @@ class AlriCureEvent(Event, IndividualScopeEventMixin):
         )
 
         # End the infection:
-        self.module.end_infection(person_id=person_id)
+        self.module.end_episode(person_id=person_id)
 
 
 class AlriDeathEvent(Event, IndividualScopeEventMixin):
@@ -1837,8 +1829,8 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
             (df.at[person_id, 'ri_scheduled_death_date'] == self.sim.date) and
             pd.isnull(df.at[person_id, 'ri_scheduled_recovery_date'])
         ):
-            pathogen = df.at[person_id, 'ri_primary_ALRI_pathogen']
-            self.module.sim.modules['demography'].do_death(
+            pathogen = df.at[person_id, 'ri_primary_pathogen']
+            self.module.sim.modules['Demography'].do_death(
                 individual_id=person_id,
                 cause='ALRI_' + pathogen,
                 originating_module=self.module
@@ -1876,16 +1868,16 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.trackers['deaths'] = Tracker(age_grps=age_grps, pathogens=self.module.pathogens)
 
     def new_case(self, age, pathogen):
-        self.trackers['incident_cases'].add(age=age, pathogen=pathogen)
+        self.trackers['incident_cases'].add_one(age=age, pathogen=pathogen)
 
     def new_recovered_case(self, age, pathogen):
-        self.trackers['recovered_cases'].add(age=age, pathogen=pathogen)
+        self.trackers['recovered_cases'].add_one(age=age, pathogen=pathogen)
 
     def new_treated_case(self, age, pathogen):
-        self.trackers['treated_cases'].add(age=age, pathogen=pathogen)
+        self.trackers['treated_cases'].add_one(age=age, pathogen=pathogen)
 
     def new_death(self, age, pathogen):
-        self.trackers['deaths'].add(age=age, pathogen=pathogen)
+        self.trackers['deaths'].add_one(age=age, pathogen=pathogen)
 
     def apply(self, population):
         """
@@ -1909,7 +1901,7 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # 3) Reset the trackers
-        for trakcer in self.trackers:
+        for tracker in self.trackers.values():
             tracker.reset()
 
 
@@ -1935,10 +1927,10 @@ class Tracker():
             age: dict(zip(self.pathogens, [0] * len(self.pathogens))) for age in self.unique_age_grps
         }
 
-    def add(self, age, pathogen):
+    def add_one(self, age, pathogen):
         """Increment counter by one for a specific age and pathogen"""
         assert age in self.age_grps_lookup, 'Age not recognised'
-        assert pathogen in self.pathogens, 'Pathogen no recognised'
+        assert pathogen in self.pathogens, 'Pathogen not recognised'
 
         # increment by one:
         age_grp = self.age_grps_lookup[age]
@@ -1948,7 +1940,10 @@ class Tracker():
         return self.tracker
 
     def report_current_total(self):
-        return self.tracker.sum()
+        total = 0
+        for _a in self.tracker.keys():
+            total += sum(self.tracker[_a].values())
+        return total
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1966,15 +1961,14 @@ class AlriCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.check_properties()
 
 
-class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class AlriIndividualLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This Event logs the daily occurrence to a single individual child.
     """
 
     def __init__(self, module):
         # This logging event to occur every day
-        self.repeat = 1
-        super().__init__(module, frequency=DateOffset(days=self.repeat))
+        super().__init__(module, frequency=DateOffset(days=1))
 
         # Find the person to log: the first under-five-year-old in the dataframe
         df = self.sim.population.props
@@ -1983,13 +1977,20 @@ class AlriIindividualCheckLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         """Log all properties for this module"""
-        if self.person_id:
+        if self.person_id is not None:
             df = self.sim.population.props
             logger.info(
                 key='log_individual',
                 data=df.loc[self.person_id, self.module.PROPERTIES.keys()].to_dict(),
-                description='print of properties each day for one person (the first under-five-year-old in the dataframe)'
+                description='Properties for one person (the first under-five-year-old in the dataframe), each day.'
             )
+
+
+
+
+# todo - make a dummy HSI
+# todo - HSI should only do something if the person is currently infected - otherwise exist doing nothing.
+# todo - log using new_treated_case
 
 
 """
