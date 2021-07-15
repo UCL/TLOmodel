@@ -472,8 +472,11 @@ def test_treatment(tmpdir):
     assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_complication_and_severe_complications():
+def test_complication_and_delayed_complications():
     """todo TBD"""
+
+    #if no risk of systemic complications - no onset of systemic complications
+
     pass
 
 
