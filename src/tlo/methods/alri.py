@@ -1244,45 +1244,38 @@ class Alri(Module):
         assert disease_type in self.disease_types
         return disease_type
 
-    def do_alri_treatment(self, person_id, prob_of_cure):
+    def do_treatment(self, person_id, prob_of_cure):
         """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
         It will only do something if the Alri is caused by a pathogen (this module). It will not allow any effect
          if the respiratory infection is caused by another module.
         * Log the treatment date
-        * Prevents this episode of Alri
-         from causing a death
-        * Schedules the cure event, at which symptoms are alleviated.
+        * Prevent any death event that may be scheduled from occuring (prior to the cure event)
+        * Schedules the cure event, at which the episode is ended
         """
+
         df = self.sim.population.props
         person = df.loc[person_id]
 
+        # Do nothing if the person is not alive
         if not person.is_alive:
             return
 
-        # todo - this will not be working as the variables are wrongly named!!!
-
-        # Do nothing if the Alri has not been caused by a pathogen
-        if not (
-            (person['ri_primary_ALRI_pathogen'] != 'not_applicable') &
-            (person['ri_ALRI_event_date_of_onset'] <= self.sim.date <= person['ri_end_of_last_alri_episode'])
-        ):
+        # Do nothing if the person is not infected with a pathogen that can cause ALRI
+        if not person['ri_current_infection_status']:
             return
 
         # Log that the treatment is provided:
         df.at[person_id, 'ri_ALRI_tx_start_date'] = self.sim.date
 
-        # todo - log treatment is starting
-
         # Determine if the treatment is effective
         if prob_of_cure > self.rng.rand():
-            # If treatment is successful: cancel death and schedule cure event
+
+            # Cancel the death
             self.cancel_death_date(person_id)
-            self.sim.schedule_event(AlriCureEvent(self, person_id),
-                                    self.sim.date + DateOffset(
-                                        days=self.parameters['days_between_treatment_and_cure']
-                                    ))
-        # else:  # not improving seek care or death
-        #     self.do_when_not_improving(person_id)
+
+            # Schedule the CureEvent
+            cure_date = self.sim.date + DateOffset(days=self.parameters['days_between_treatment_and_cure'])
+            self.sim.schedule_event(AlriCureEvent(self, person_id), cure_date)
 
     def cancel_death_date(self, person_id):
         """
@@ -1292,8 +1285,7 @@ class Alri(Module):
         :param person_id:
         :return:
         """
-        df = self.sim.population.props
-        df.at[person_id, 'ri_scheduled_death_date'] = pd.NaT
+        self.sim.population.props.at[person_id, 'ri_scheduled_death_date'] = pd.NaT
 
     def end_episode(self, person_id):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
@@ -1327,7 +1319,6 @@ class Alri(Module):
         #  NB> 'ri_end_of_current_episode is not reset: this is used to control behaviour of event (incl. HSI) that
         #  may still be scheduled to occur and to prevent new infections from occuring whilst HSI from a previous
         #  episode occur.
-        #  todo - should 'end of episode' be set to today's date? / do we need 'end of episode' any more?
 
         # Remove all existing complications
         df.loc[person_id, [f"ri_complication_{c}" for c in self.complications]] = False
@@ -1750,21 +1741,14 @@ class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         # The event should not run if the person is not currently alive
-        if not df.at[person_id, 'is_alive']:
+        if not person['is_alive']:
             return
-
-        # Confirm that this is event is occurring during a current episode of Alri
-        # todo - soften this (and in the cure event) to only do something if current_episode is not ended (and not to error)
-        assert (
-            person['ri_start_of_current_episode'] <=
-            self.sim.date <=
-            person['ri_end_of_current_episode']
-        )
 
         # Check if person should really recover:
         if (
-            (df.at[person_id, 'ri_scheduled_recovery_date'] == self.sim.date) and
-            pd.isnull(df.at[person_id, 'ri_scheduled_death_date'])
+            person['ri_current_infection_status'] and
+            (person['ri_scheduled_recovery_date'] == self.sim.date) and
+            pd.isnull(person['ri_scheduled_death_date'])
         ):
             # Log the recovery
             self.module.logging_event.new_recovered_case(
@@ -1772,10 +1756,8 @@ class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
                 pathogen=person['ri_primary_pathogen']
             )
 
-            # Do the recovery:
+            # Do the episode:
             self.module.end_episode(person_id=person_id)
-
-
 
 
 class AlriCureEvent(Event, IndividualScopeEventMixin):
@@ -1791,30 +1773,24 @@ class AlriCureEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        # Do nothing if the person has already died.
-        if not df.at[person_id, 'is_alive']:
+        # The event should not run if the person is not currently alive
+        if not person['is_alive']:
             return
 
-        # Cure should not happen if the person has already recovered for the current episode:
-        if pd.isnull(person['ri_scheduled_recovery_date']):
-            return
+        # Check if person should really be cured:
+        if (
+            person['ri_current_infection_status']
+        ):
+            # Log the cure:
+            pathogen = person['ri_primary_pathogen']
+            self.module.logging_event.new_cured_case(
+                age=df.at[person_id, 'age_years'],
+                pathogen=pathogen
+            )
 
-        # If cure should go ahead, check that it is after when the person has received a treatment during this episode
-        assert (
-            person['ri_start_of_current_episode'] <=
-            person['ri_ALRI_tx_start_date'] <=
-            self.sim.date <=
-            person['ri_end_of_current_episode']
-        )
+            # End the episode:
+            self.module.end_episode(person_id=person_id)
 
-        # End the infection:
-        self.module.end_episode(person_id=person_id)
-
-        # Log the cure:
-        self.module.logging_event.new_cured_case(
-            age=df.at[person_id, 'age_years'],
-            pathogen=pathogen
-        )
 
 class AlriDeathEvent(Event, IndividualScopeEventMixin):
     """
@@ -1826,24 +1802,21 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
+        person = df.loc[person_id]
 
         # The event should not run if the person is not currently alive
-        if not df.at[person_id, 'is_alive']:
+        if not person['is_alive']:
             return
-
-        # Confirm that this is event is occurring during a current episode of Alri
-        assert (
-            (df.at[person_id, 'ri_start_of_current_episode']) <=
-            self.sim.date <=
-            (df.at[person_id, 'ri_end_of_current_episode'])
-        )
 
         # Check if person should really die of Alri:
         if (
-            (df.at[person_id, 'ri_scheduled_death_date'] == self.sim.date) and
-            pd.isnull(df.at[person_id, 'ri_scheduled_recovery_date'])
+            person['ri_current_infection_status'] and
+            (person['ri_scheduled_death_date'] == self.sim.date) and
+            pd.isnull(person['ri_scheduled_recovery_date'])
         ):
-            pathogen = df.at[person_id, 'ri_primary_pathogen']
+
+            # Do the death:
+            pathogen = person['ri_primary_pathogen']
             self.module.sim.modules['Demography'].do_death(
                 individual_id=person_id,
                 cause='ALRI_' + pathogen,

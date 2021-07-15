@@ -18,12 +18,12 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-from tlo.methods.alri import AlriPollingEvent, AlriIncidentCase, AlriNaturalRecoveryEvent, AlriDeathEvent
+from tlo.methods.alri import AlriPollingEvent, AlriIncidentCase, AlriNaturalRecoveryEvent, AlriDeathEvent, AlriCureEvent
 
 # Path to the resource files used by the disease and intervention methods
-
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
+# Default date for the start of simulations
 start_date = Date(2010, 1, 1)
 
 class PropertiesOfOtherModules(Module):
@@ -57,6 +57,7 @@ class PropertiesOfOtherModules(Module):
     def on_birth(self, mother, child):
         self.sim.population.props.at[child, self.PROPERTIES.keys()] = False
 
+
 def get_sim(tmpdir):
     """Return simulation objection with Alri and other necessary modules registered."""
     sim = Simulation(start_date=start_date, seed=0, show_progress_bar=False, log_config={
@@ -80,6 +81,7 @@ def get_sim(tmpdir):
     )
 
     return sim
+
 
 def check_dtypes(sim):
     # Check types of columns
@@ -157,7 +159,7 @@ def test_nat_hist_recovery(tmpdir):
     # make probability of death 0%
     sim.modules['Alri'].risk_of_death = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
 
-    # Run incidence event: check that a death or recovery event is scheduled accordingly
+    # Get person to use:
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
@@ -176,7 +178,7 @@ def test_nat_hist_recovery(tmpdir):
     assert not pd.isnull(person['ri_scheduled_recovery_date'])
     assert pd.isnull(person['ri_scheduled_death_date'])
 
-    # Check events schedule for this person:
+    # Check events scheduled for this person:
     next_event_tuple = sim.find_events_for_person(person_id)[0]
     date = next_event_tuple[0]
     event = next_event_tuple[1]
@@ -215,7 +217,7 @@ def test_nat_hist_death(tmpdir):
     # make probability of death 100%
     sim.modules['Alri'].risk_of_death = LinearModel.multiplicative()
 
-    # Run incidence event: check that a death or recovery event is scheduled accordingly
+    # Get person to use:
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
@@ -256,18 +258,218 @@ def test_nat_hist_death(tmpdir):
     assert 0 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_cure_event():
-    """Show that if a cure event is scheduled the person does not die (if they were going to die) or causes an early
-    end to the episode (if they were going to recover)"""
+def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
+    """Show that if a cure event is run before when a person was going to recover naturally, it cause the episode to
+    end earlier."""
+
+    dur = pd.DateOffset(days=0)
+    popsize = 100
+    sim = get_sim(tmpdir)
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # make probability of death 0%
+    sim.modules['Alri'].risk_of_death = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
+
+    # Get person to use:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    assert not df.loc[person_id, 'ri_current_infection_status']
+
+    # Run incident case:
+    pathogen = list(sim.modules['Alri'].pathogens)[0]
+    incidentcase = AlriIncidentCase(person_id=person_id, pathogen=pathogen, module=sim.modules['Alri'])
+    incidentcase.apply(person_id=person_id)
+
+    # Check properties of this individual: (should now be infected and with a scheduled_recovery_date)
+    person = df.loc[person_id]
+    assert person['ri_current_infection_status']
+    assert person['ri_primary_pathogen'] == pathogen
+    assert person['ri_start_of_current_episode'] == sim.date
+    assert not pd.isnull(person['ri_scheduled_recovery_date'])
+    assert pd.isnull(person['ri_scheduled_death_date'])
+
+    # Check events schedule for this person:
+    next_event_tuple = sim.find_events_for_person(person_id)[0]
+    date_of_scheduled_recovery = next_event_tuple[0]
+    recovery_event = next_event_tuple[1]
+    assert date_of_scheduled_recovery > sim.date
+    assert isinstance(recovery_event, AlriNaturalRecoveryEvent)
+
+    # Run a Cure Event
+    cure_event = AlriCureEvent(person_id=person_id, module=sim.modules['Alri'])
+    cure_event.apply(person_id=person_id)
+
+    # Check that the person is not infected and is alive still:
+    person = df.loc[person_id]
+    assert person['is_alive']
+    assert not person['ri_current_infection_status']
+    assert pd.isnull(person['ri_primary_pathogen'])
+    assert pd.isnull(person['ri_start_of_current_episode'])
+    assert pd.isnull(person['ri_scheduled_recovery_date'])
+    assert pd.isnull(person['ri_scheduled_death_date'])
+
+    # Run the recovery event that was originally scheduled) - this should have no effect
+    sim.date = recovery_event
+    recovery_event.apply(person_id=person_id)
+    person = df.loc[person_id]
+    assert person['is_alive']
+    assert not person['ri_current_infection_status']
+    assert pd.isnull(person['ri_primary_pathogen'])
+    assert pd.isnull(person['ri_start_of_current_episode'])
+    assert pd.isnull(person['ri_scheduled_recovery_date'])
+    assert pd.isnull(person['ri_scheduled_death_date'])
+
+
+    # check it's logged (one infection + one cure)
+    assert 1 == sim.modules['Alri'].logging_event.trackers['incident_cases'].report_current_total()
+    assert 0 == sim.modules['Alri'].logging_event.trackers['recovered_cases'].report_current_total()
+    assert 0 == sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
+    assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
+
+
+def test_nat_hist_cure_if_death_scheduled(tmpdir):
+    """Show that if a cure event is run before when a person was going to die, it cause the episode to end without
+    the person dying.
+    """
+
+    dur = pd.DateOffset(days=0)
+    popsize = 100
+    sim = get_sim(tmpdir)
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # make probability of death 100%
+    sim.modules['Alri'].risk_of_death = LinearModel.multiplicative()
+
+    # Get person to use:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    assert not df.loc[person_id, 'ri_current_infection_status']
+
+    # Run incident case:
+    pathogen = list(sim.modules['Alri'].pathogens)[0]
+    incidentcase = AlriIncidentCase(person_id=person_id, pathogen=pathogen, module=sim.modules['Alri'])
+    incidentcase.apply(person_id=person_id)
+
+    # Check properties of this individual:
+    person = df.loc[person_id]
+    assert person['ri_current_infection_status']
+    assert person['ri_primary_pathogen'] == pathogen
+    assert person['ri_start_of_current_episode'] == sim.date
+    assert pd.isnull(person['ri_scheduled_recovery_date'])
+    assert not pd.isnull(person['ri_scheduled_death_date'])
+
+    # Check events schedule for this person:
+    next_event_tuple = sim.find_events_for_person(person_id)[0]
+    date_of_scheduled_death = next_event_tuple[0]
+    death_event = next_event_tuple[1]
+    assert date_of_scheduled_death > sim.date
+    assert isinstance(death_event, AlriDeathEvent)
+
+    # Run a Cure Event:
+    cure_event = AlriCureEvent(person_id=person_id, module=sim.modules['Alri'])
+    cure_event.apply(person_id=person_id)
+
+    # Check that the person is not infected and is alive still:
+    person = df.loc[person_id]
+    assert person['is_alive']
+    assert not person['ri_current_infection_status']
+    assert pd.isnull(person['ri_primary_pathogen'])
+    assert pd.isnull(person['ri_start_of_current_episode'])
+    assert pd.isnull(person['ri_scheduled_recovery_date'])
+    assert pd.isnull(person['ri_scheduled_death_date'])
+
+    # Run the death event that was originally scheduled) - this should have no effect and the person should not die
+    sim.date = date_of_scheduled_death
+    death_event.apply(person_id=person_id)
+    person = df.loc[person_id]
+    assert person['is_alive']
+
+    # check it's logged (one infection + one cure)
+    assert 1 == sim.modules['Alri'].logging_event.trackers['incident_cases'].report_current_total()
+    assert 0 == sim.modules['Alri'].logging_event.trackers['recovered_cases'].report_current_total()
+    assert 0 == sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
+    assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
+
+
+def test_treatment(tmpdir):
+    """Test that providing a treatment prevent death and causes there to be a CureEvent Scheduled"""
+
+    dur = pd.DateOffset(days=0)
+    popsize = 100
+    sim = get_sim(tmpdir)
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # make probability of death 100%
+    sim.modules['Alri'].risk_of_death = LinearModel.multiplicative()
+
+    # Get person to use:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    assert not df.loc[person_id, 'ri_current_infection_status']
+
+    # Run incident case:
+    pathogen = list(sim.modules['Alri'].pathogens)[0]
+    incidentcase = AlriIncidentCase(person_id=person_id, pathogen=pathogen, module=sim.modules['Alri'])
+    incidentcase.apply(person_id=person_id)
+
+    # Check properties of this individual:
+    person = df.loc[person_id]
+    assert person['ri_current_infection_status']
+    assert person['ri_primary_pathogen'] == pathogen
+    assert person['ri_start_of_current_episode'] == sim.date
+    assert pd.isnull(person['ri_scheduled_recovery_date'])
+    assert not pd.isnull(person['ri_scheduled_death_date'])
+
+    # Check events schedule for this person:
+    next_event_tuple = sim.find_events_for_person(person_id)[0]
+    date_of_scheduled_death = next_event_tuple[0]
+    death_event = next_event_tuple[1]
+    assert date_of_scheduled_death > sim.date
+    assert isinstance(death_event, AlriDeathEvent)
+
+    # Run the 'do_treatment' function
+    sim.modules['Alri'].do_treatment(person_id=person_id, prob_of_cure=1.0)
+
+    # Run the death event that was originally scheduled) - this should have no effect and the person should not die
+    sim.date = date_of_scheduled_death
+    death_event.apply(person_id=person_id)
+    person = df.loc[person_id]
+    assert person['is_alive']
+    assert person['ri_current_infection_status']
+
+    # Check that a CureEvent has been scheduled
+    cure_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if isinstance(event_tuple[1], AlriCureEvent)][0]
+
+    # Run the CureEvent
+    cure_event.apply(person_id=person_id)
+
+    # Check that the person is not infected and is alive still:
+    person = df.loc[person_id]
+    assert person['is_alive']
+    assert not person['ri_current_infection_status']
+    assert pd.isnull(person['ri_primary_pathogen'])
+    assert pd.isnull(person['ri_start_of_current_episode'])
+    assert pd.isnull(person['ri_scheduled_recovery_date'])
+    assert pd.isnull(person['ri_scheduled_death_date'])
+
+
+
+def tests_complication_and_severe_complicatios():
+    """todo TBD"""
     pass
 
-def test_if_infection_leathal_all_die():
-    """Show that if CFR is 100%, every infection results in a death"""
-    pass
-
-def test_treatment_prevents_deaths():
-    """Show that treatment, when provided and has 100% effectiveness, prevents all deaths"""
-    pass
 
 
 # todo - Additionally need some kind of test bed so that Ines can see the effects of the linear models she is programming.
