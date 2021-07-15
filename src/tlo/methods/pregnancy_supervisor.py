@@ -2275,9 +2275,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         yearly_prev_sa = (women_with_previous_sa / women_reproductive_age) * 100
         yearly_prev_pe = (women_with_previous_pe / women_reproductive_age) * 100
 
-        logger.info(key='prevalences', data={'year': self.sim.year,
-                                            'prev_sa': yearly_prev_sa,
-                                             'prev_pe': yearly_prev_pe})
+        logger.info(key='prevalences', data={'prev_sa': yearly_prev_sa, 'prev_pe': yearly_prev_pe})
 
 
 
