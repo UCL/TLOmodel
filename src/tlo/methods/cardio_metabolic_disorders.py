@@ -647,25 +647,26 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             current_incidence_df[condition] = df.loc[idx_acquires_condition].groupby('age_range').size()
 
             # Schedule symptom onset
-            symptom_eligible_population = df.is_alive & df[f'nc_{condition}']
-            symptom_onset = lmpredict_rtn_a_series(self.module.lms_symptoms[condition],
-                                                   df.loc[symptom_eligible_population])
-            idx_symptom_onset = symptom_onset[symptom_onset].index
-            if idx_symptom_onset.any():
-                # schedule symptom onset in next 2 months
-                for symptom in self.module.parameters.prob_symptoms[condition].keys():
-                    lm_init_symptoms = LinearModel(
-                        LinearModelType.MULTIPLICATIVE,
-                        self.module.parameters.prob_symptoms[condition].get(f'{symptom}'),
-                        Predictor(f'nc_{condition}').when(True, 1.0)
-                            .otherwise(0.0))
-                    has_symptom_at_init = lm_init_symptoms.predict(df.loc[df.is_alive], self.module.rng)
-                    self.sim.modules['SymptomManager'].change_symptom(
-                        person_id=has_symptom_at_init.index[has_symptom_at_init].tolist(),
-                        symptom_string=f'{symptom}',
-                        add_or_remove='+',
-                        date_of_onset=self.sim.date + DateOffset(days=rng.randint(7, 60)),
-                        disease_module=self)
+            if len(self.module.lms_symptoms[condition]) > 0:
+                symptom_eligible_population = df.is_alive & df[f'nc_{condition}']
+                symptom_onset = lmpredict_rtn_a_series(self.module.lms_symptoms[condition][f'{condition}_symptoms'],
+                                                       df.loc[symptom_eligible_population])
+                idx_symptom_onset = symptom_onset[symptom_onset].index
+                if idx_symptom_onset.any():
+                    # schedule symptom onset some time in next 12 months
+                    for symptom in self.module.prob_symptoms[condition].keys():
+                        lm_init_symptoms = LinearModel(
+                            LinearModelType.MULTIPLICATIVE,
+                            self.module.prob_symptoms[condition].get(f'{symptom}'),
+                            Predictor(f'nc_{condition}').when(True, 1.0)
+                                .otherwise(0.0))
+                        has_symptom_at_init = lm_init_symptoms.predict(df.loc[df.is_alive], self.module.rng)
+                        self.sim.modules['SymptomManager'].change_symptom(
+                            person_id=has_symptom_at_init.index[has_symptom_at_init].tolist(),
+                            symptom_string=f'{symptom}',
+                            add_or_remove='+',
+                            date_of_onset=self.sim.date + DateOffset(days=rng.randint(7, 365)),
+                            disease_module=self.sim.modules['CardioMetabolicDisorders'])
 
             # -------------------------------------------------------------------------------------------
 
