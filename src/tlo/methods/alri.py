@@ -1766,7 +1766,16 @@ class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
             (df.at[person_id, 'ri_scheduled_recovery_date'] == self.sim.date) and
             pd.isnull(df.at[person_id, 'ri_scheduled_death_date'])
         ):
+            # Log the recovery
+            self.module.logging_event.new_recovered_case(
+                age=person['age_years'],
+                pathogen=person['ri_primary_pathogen']
+            )
+
+            # Do the recovery:
             self.module.end_episode(person_id=person_id)
+
+
 
 
 class AlriCureEvent(Event, IndividualScopeEventMixin):
@@ -1801,6 +1810,11 @@ class AlriCureEvent(Event, IndividualScopeEventMixin):
         # End the infection:
         self.module.end_episode(person_id=person_id)
 
+        # Log the cure:
+        self.module.logging_event.new_cured_case(
+            age=df.at[person_id, 'age_years'],
+            pathogen=pathogen
+        )
 
 class AlriDeathEvent(Event, IndividualScopeEventMixin):
     """
@@ -1836,7 +1850,7 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
                 originating_module=self.module
             )
 
-            # Log the death
+            # Log the death in the Alri logging system
             self.module.logging_event.new_death(
                 age=df.at[person_id, 'age_years'],
                 pathogen=pathogen
@@ -1864,7 +1878,7 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.trackers = dict()
         self.trackers['incident_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.pathogens)
         self.trackers['recovered_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.pathogens)
-        self.trackers['treated_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.pathogens)
+        self.trackers['cured_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.pathogens)
         self.trackers['deaths'] = Tracker(age_grps=age_grps, pathogens=self.module.pathogens)
 
     def new_case(self, age, pathogen):
@@ -1873,8 +1887,8 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def new_recovered_case(self, age, pathogen):
         self.trackers['recovered_cases'].add_one(age=age, pathogen=pathogen)
 
-    def new_treated_case(self, age, pathogen):
-        self.trackers['treated_cases'].add_one(age=age, pathogen=pathogen)
+    def new_cured_case(self, age, pathogen):
+        self.trackers['cured_cases'].add_one(age=age, pathogen=pathogen)
 
     def new_death(self, age, pathogen):
         self.trackers['deaths'].add_one(age=age, pathogen=pathogen)
