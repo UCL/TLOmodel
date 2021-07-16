@@ -12,7 +12,7 @@ import heapq as hp
 import inspect
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -37,6 +37,15 @@ class AppointmentSubunit(NamedTuple):
     """Component of an appointment relating to a specific officer type."""
     officer_type: str
     time_taken: float
+
+
+class HSIEventDetails(NamedTuple):
+    """Non-target specific details of a health system interaction event."""
+    event_name: str
+    module_name: str
+    treatment_id: str
+    facility_level: Optional[int]
+    appt_footprint: Tuple
 
 
 class HealthSystem(Module):
@@ -105,7 +114,8 @@ class HealthSystem(Module):
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
         disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
         disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-        store_hsi_events_that_have_run=False  # convenience function for debugging
+        store_hsi_events_that_have_run=False,  # convenience function for debugging
+        record_hsi_event_details=False,  # Whether to record details of HSI events used
     ):
 
         super().__init__(name)
@@ -151,6 +161,13 @@ class HealthSystem(Module):
         self.store_hsi_events_that_have_run = store_hsi_events_that_have_run
         if self.store_hsi_events_that_have_run:
             self.store_of_hsi_events_that_have_run = list()
+
+        # If record_hsi_event_types == True, a set will be built during the simulation
+        # containing HSIEventType tuples corresponding to all HSI_Event instances used
+        # in the simulation
+        self.record_hsi_event_details = record_hsi_event_details
+        if record_hsi_event_details:
+            self.hsi_event_details = set()
 
         # Create store for ending in-patient status
         self.list_of_cols_with_internal_dates = dict()
@@ -1058,6 +1075,22 @@ class HealthSystem(Module):
         if self.store_hsi_events_that_have_run:
             log_info['date'] = self.sim.date
             self.store_of_hsi_events_that_have_run.append(log_info)
+        if self.record_hsi_event_details:
+            self.hsi_event_details.add(
+                HSIEventDetails(
+                    event_name=type(hsi_event).__name__,
+                    module_name=type(hsi_event.module).__name__,
+                    treatment_id=hsi_event.TREATMENT_ID,
+                    facility_level=getattr(
+                        hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
+                    ),
+                    appt_footprint=(
+                        tuple(actual_appt_footprint)
+                        if actual_appt_footprint is not None
+                        else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
+                    )
+                )
+            )
 
     def log_current_capabilities(self, current_capabilities, total_footprint):
         """
