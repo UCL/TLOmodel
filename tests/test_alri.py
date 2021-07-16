@@ -19,7 +19,7 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.alri import AlriPollingEvent, AlriIncidentCase, AlriNaturalRecoveryEvent, AlriDeathEvent, \
-    AlriCureEvent, HSI_Alri_GenericTreatment
+    AlriCureEvent, HSI_Alri_GenericTreatment, AlriDelayedOnsetComplication
 
 # Path to the resource files used by the disease and intervention methods
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -472,12 +472,52 @@ def test_treatment(tmpdir):
     assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_complication_and_delayed_complications():
-    """todo TBD"""
+def test_complication_and_delayed_complications(tmpdir):
+    """todo TBD
+        #if no risk of systemic complications - no onset of systemic complications
 
-    #if no risk of systemic complications - no onset of systemic complications
+        """
+    dur = pd.DateOffset(days=0)
+    popsize = 100
+    sim = get_sim(tmpdir)
 
-    pass
+    # make risk of complications and delayed complications: 100% (so that person has all the complications)
+    params = sim.modules['Alri'].parameters
+    for p in params:
+        if any([p.startswith(f'prob_{c}') for c in sim.modules['Alri'].complications]):
+            params[p] = 1.0
+    params['prob_pneumothorax_to_respiratory_failure'] = 1.0
+    params['prob_lung_abscess_to_sepsis'] = 1.0
+    params['prob_empyema_to_sepsis'] = 1.0
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # Get person to use:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    assert not df.loc[person_id, 'ri_current_infection_status']
+
+    # Run incident case:
+    pathogen = list(sim.modules['Alri'].pathogens)[0]
+    incidentcase = AlriIncidentCase(person_id=person_id, pathogen=pathogen, module=sim.modules['Alri'])
+    incidentcase.apply(person_id=person_id)
+
+    # Check has some complications
+    complications_cols = [f"ri_complication_{complication}" for complication in sim.modules['Alri'].complications]
+    assert df.loc[person_id, complications_cols].all()
+
+    # Look in simulation queue for delayed onset complication event:
+    delayed_onset_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
+                  isinstance(event_tuple[1], AlriDelayedOnsetComplication)][0]
+
+    # todo - check that person does not have delayed onset event yet
+
+    # run the delayed onset event
+
+    # check that they now have delayed onset event
 
 
 def test_use_of_HSI(tmpdir):

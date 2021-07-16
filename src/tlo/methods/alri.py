@@ -682,15 +682,15 @@ class Alri(Module):
         self.risk_of_developing_ALRI_complications = dict()
         self.risk_of_progressing_to_severe_complications = dict()
 
+        # dict to hold the probability of onset of different types of symptom given underlying complications:
+        self.prob_symptoms_uncomplicated_ALRI = dict()
+        self.prob_extra_symptoms_complications = dict()
+
         # Linear Model for predicting the risk of death:
         self.risk_of_death = dict()
 
         # Maximum duration of an episode (beginning with inection and ending with recovery)
         self.max_duration_of_epsiode = None
-
-        # dict to hold the probability of onset of different types of symptom given underlying complications:
-        self.prob_symptoms_uncomplicated_ALRI = dict()
-        self.prob_extra_symptoms_complications = dict()
 
         # dict to hold the DALY weights
         self.daly_wts = dict()
@@ -1084,6 +1084,7 @@ class Alri(Module):
 
             # - If the person has `lung_abscess` or `empyema` they may progress to `sepsis`
             # todo - what to when they have both or only one?? this currently means that have to have both and get the product of those probabilities:
+            # todo - make the probabilties ADDDDDDDDDDDDD
             'sepsis':
                 LinearModel.multiplicative(
                     Predictor('ri_complication_lung_abscess')
@@ -1641,12 +1642,10 @@ class AlriDelayedOnsetComplication(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id, complication):
         super().__init__(module, person_id=person_id)
-        self.duration_in_days = duration_in_days
 
         assert complication in ['sepsis', 'respiratory_failure'], \
             'Delayed onset is only possible for certain complications'
         self.complication = complication
-
 
     def apply(self, person_id):
         """Apply the complication, if the person is still infected and not on treatment"""
