@@ -1,3 +1,4 @@
+import ast
 from pathlib import Path
 
 import numpy as np
@@ -40,12 +41,12 @@ log_config = {
 resourcefilepath = Path('./resources')
 save_file_path = "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/"
 # Establish the simulation object
-yearsrun = 4
+yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 10000
-nsim = 2
+pop_size = 20000
+nsim = 4
 # Iterate over the number of simulations nsim
 log_file_location = './outputs/single_injury_model_vs_multiple_injury'
 # store relevent model outputs
@@ -56,6 +57,10 @@ sing_inj_cause_of_death_in_sim = []
 sing_number_of_injuries = []
 sing_dalys = []
 sing_number_of_deaths = []
+sing_inpatient_days = []
+sing_percent_sought_healthcare = []
+sing_number_of_surg = []
+sing_number_of_consumables = []
 for i in range(0, nsim):
     # Create the simulation object
     sim = Simulation(start_date=start_date)
@@ -85,7 +90,6 @@ for i in range(0, nsim):
     ]
     imm_death = sim.modules['RTI'].parameters['imm_death_proportion_rti']
     sim.modules['RTI'].parameters['base_rate_injrti'] = sim.modules['RTI'].parameters['base_rate_injrti'] * 0.9872
-    sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 76
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
@@ -107,6 +111,44 @@ for i in range(0, nsim):
     DALYs = dalys_df.sum()
     sing_dalys.append(DALYs)
     sing_number_of_deaths.append(log_df['tlo.methods.rti']['summary_1m']['number rti deaths'].sum())
+    inpatient_day_df = log_df['tlo.methods.healthsystem']['HSI_Event'].loc[
+        log_df['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'] == 'RTI_MedicalIntervention']
+    # iterate over the people in inpatient_day_df
+    for person in inpatient_day_df.index:
+        # Get the number of inpatient days per person, if there is a key error when trying to access inpatient days it
+        # means that this patient didn't require any so append (0)
+        try:
+            sing_inpatient_days.append(inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
+        except KeyError:
+            sing_inpatient_days.append(0)
+    hsb_log = log_df['tlo.methods.rti']['summary_1m']['percent sought healthcare'].tolist()
+    percent_sought_healthcare = [i for i in hsb_log if i != 'none_injured']
+    ave_percent_sought_care = np.mean(percent_sought_healthcare)
+    sing_percent_sought_healthcare.append(ave_percent_sought_care)
+    health_system_events = log_df['tlo.methods.healthsystem']['HSI_Event']
+    rti_events = ['RTI_MedicalIntervention', 'RTI_Shock_Treatment', 'RTI_Fracture_Cast', 'RTI_Open_Fracture_Treatment',
+                  'RTI_Suture', 'RTI_Burn_Management', 'RTI_Tetanus_Vaccine', 'RTI_Acute_Pain_Management',
+                  'RTI_Major_Surgeries', 'RTI_Minor_Surgeries']
+    rti_treatments = health_system_events.loc[health_system_events['TREATMENT_ID'].isin(rti_events)]
+    list_of_appt_footprints = rti_treatments['Number_By_Appt_Type_Code'].to_list()
+    num_surg = 0
+    for dictionary in list_of_appt_footprints:
+        if 'MajorSurg' in dictionary.keys():
+            num_surg += 1
+        if 'MinorSurg' in dictionary.keys():
+            num_surg += 1
+    sing_number_of_surg.append(num_surg)
+    # get the consumables used in each simulation
+    consumables_list = log_df['tlo.methods.healthsystem']['Consumables']['Item_Available'].tolist()
+    # Create empty list to store the consumables used in the simulation
+    consumables_list_to_dict = []
+    for string in consumables_list:
+        consumables_list_to_dict.append(ast.literal_eval(string))
+    # Begin counting the number of consumables used in the simulation starting at 0
+    number_of_consumables_in_sim = 0
+    for dictionary in consumables_list_to_dict:
+        number_of_consumables_in_sim += sum(dictionary.values())
+    sing_number_of_consumables.append(number_of_consumables_in_sim)
 
 mult_inj_incidences_of_rti = []
 mult_inj_incidences_of_death = []
@@ -115,9 +157,11 @@ mult_inj_cause_of_death_in_sim = []
 mult_number_of_injuries = []
 mult_dalys = []
 mult_number_of_deaths = []
-# Run model using the Injury Vibes distribution of number of injuries
+mult_inpatient_days = []
+mult_percent_sought_care = []
+mult_number_of_surg = []
+mult_number_of_consumables = []
 
-# Run model using the Injury Vibes distribution of number of injuries
 for i in range(0, nsim):
     # Create the simulation object
     sim = Simulation(start_date=start_date)
@@ -139,7 +183,6 @@ for i in range(0, nsim):
                                     directory="./outputs/single_injury_model_vs_multiple_injury/multiple_injury")
     # create and run the simulation
     sim.make_initial_population(n=pop_size)
-    # sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 76
     # Run the simulation
     sim.simulate(end_date=end_date)
     # Parse the logfile of this simulation
@@ -160,8 +203,85 @@ for i in range(0, nsim):
     DALYs = dalys_df.sum()
     mult_dalys.append(DALYs)
     mult_number_of_deaths.append(log_df['tlo.methods.rti']['summary_1m']['number rti deaths'].sum())
+    inpatient_day_df = log_df['tlo.methods.healthsystem']['HSI_Event'].loc[
+        log_df['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'] == 'RTI_MedicalIntervention']
+    # iterate over the people in inpatient_day_df
+    for person in inpatient_day_df.index:
+        # Get the number of inpatient days per person, if there is a key error when trying to access inpatient days it
+        # means that this patient didn't require any so append (0)
+        try:
+            mult_inpatient_days.append(inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
+        except KeyError:
+            mult_inpatient_days.append(0)
+    hsb_log = log_df['tlo.methods.rti']['summary_1m']['percent sought healthcare'].tolist()
+    percent_sought_healthcare = [i for i in hsb_log if i != 'none_injured']
+    ave_percent_sought_care = np.mean(percent_sought_healthcare)
+    mult_percent_sought_care.append(ave_percent_sought_care)
+    health_system_events = log_df['tlo.methods.healthsystem']['HSI_Event']
+    rti_events = ['RTI_MedicalIntervention', 'RTI_Shock_Treatment', 'RTI_Fracture_Cast', 'RTI_Open_Fracture_Treatment',
+                  'RTI_Suture', 'RTI_Burn_Management', 'RTI_Tetanus_Vaccine', 'RTI_Acute_Pain_Management',
+                  'RTI_Major_Surgeries', 'RTI_Minor_Surgeries']
+    rti_treatments = health_system_events.loc[health_system_events['TREATMENT_ID'].isin(rti_events)]
+    list_of_appt_footprints = rti_treatments['Number_By_Appt_Type_Code'].to_list()
+    num_surg = 0
+    for dictionary in list_of_appt_footprints:
+        if 'MajorSurg' in dictionary.keys():
+            num_surg += 1
+        if 'MinorSurg' in dictionary.keys():
+            num_surg += 1
+    mult_number_of_surg.append(num_surg)
+    # get the consumables used in each simulation
+    consumables_list = log_df['tlo.methods.healthsystem']['Consumables']['Item_Available'].tolist()
+    # Create empty list to store the consumables used in the simulation
+    consumables_list_to_dict = []
+    for string in consumables_list:
+        consumables_list_to_dict.append(ast.literal_eval(string))
+    # Begin counting the number of consumables used in the simulation starting at 0
+    number_of_consumables_in_sim = 0
+    for dictionary in consumables_list_to_dict:
+        number_of_consumables_in_sim += sum(dictionary.values())
+    mult_number_of_consumables.append(number_of_consumables_in_sim)
 
-
+# Plot differences in number of inpatient days used
+mean_sing_inpatient_days = np.mean(sing_inpatient_days)
+std_sing_inpatient_days = np.std(sing_inpatient_days)
+mean_mult_inpatient_days = np.mean(mult_inpatient_days)
+std_mult_inpatient_days = np.std(mult_inpatient_days)
+data = [mean_sing_inpatient_days, mean_mult_inpatient_days]
+yerr = [std_sing_inpatient_days, std_mult_inpatient_days]
+plt.bar(np.arange(2), data, yerr=yerr, color='lightsteelblue')
+plt.xticks(np.arange(2), ['Single\ninjury', 'Multiple\ninjury'])
+plt.ylabel('Average inpatient day usage')
+plt.title(f"The average inpatient day usage for the \nsingle injury and multiple injury form of the model"
+          f"\nNumber of simulations: {nsim}, population size: {pop_size}, years ran: {yearsrun}")
+plt.savefig(save_file_path + f" inpatient_day, imm death {imm_death}.png", bbox_inches='tight')
+plt.clf()
+# plot the differences in number of consumables used
+sing_mean_consumables = np.mean(sing_number_of_consumables)
+sing_std_consumables = np.std(sing_number_of_consumables)
+mult_mean_consumables = np.mean(mult_number_of_consumables)
+mult_std_consumables = np.std(mult_number_of_consumables)
+data = [sing_mean_consumables, mult_mean_consumables]
+yerr = [sing_std_consumables, mult_std_consumables]
+plt.bar(np.arange(2), data, yerr=yerr, color='lightsteelblue')
+plt.xticks(np.arange(2), ['Single\ninjury', 'Multiple\ninjury'])
+plt.title(f"The average consumable usage for the \nsingle injury and multiple injury form of the model"
+          f"\nNumber of simulations: {nsim}, population size: {pop_size}, years ran: {yearsrun}")
+plt.savefig(save_file_path + f" consumable, imm death {imm_death}.png", bbox_inches='tight')
+plt.clf()
+# plot the number of surgeries performed in each model run
+sing_mean_surgeries = np.mean(sing_number_of_surg)
+sing_std_surgeries = np.std(sing_number_of_surg)
+mult_mean_surgeries = np.mean(mult_number_of_surg)
+mult_std_surgeries = np.std(mult_number_of_surg)
+data = [sing_mean_surgeries, mult_mean_surgeries]
+yerr = [sing_std_surgeries, mult_std_surgeries]
+plt.bar(np.arange(2), data, yerr=yerr, color='lightsteelblue')
+plt.xticks(np.arange(2), ['Single\ninjury', 'Multiple\ninjury'])
+plt.title(f"The average number of surgeries for the \nsingle injury and multiple injury form of the model"
+          f"\nNumber of simulations: {nsim}, population size: {pop_size}, years ran: {yearsrun}")
+plt.savefig(save_file_path + f" surgeries, imm death {imm_death}.png", bbox_inches='tight')
+plt.clf()
 # flatten number of injury lists
 sing_n_inj_list_of_lists = []
 for result in sing_number_of_injuries:

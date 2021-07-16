@@ -937,6 +937,57 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
         f"Percent_Survival_Healthcare_compare_Kamuzu_pop_{pop_size}_years_{yearsrun}_runs_"
         f"{nsim}.png", bbox_inches='tight')
     plt.clf()
+    # Plot the incidence of deaths produced by the model compared to the estimates from the Malawian hospital registry
+    # data, Samuel et al. estimated incidence of death, the GBD estimates and the WHO estimated incidence of death
+    # Get incidence of RTI death from hospital registry data (stated in samuel et al.)
+    hospital_registry_inc = 5.1
+    # Get the incidence of RTI death from the GBD data
+    data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
+    data = data.loc[data['measure'] == 'Deaths']
+    data = data.loc[data['metric'] == 'Rate']
+    data = data.loc[data['year'] > 2009]
+    gbd_average_2010_to_2019 = data['val'].mean()
+    # get the incidence of RTI death from samuel et al.
+    samuel_incidence_of_rti_death = 20.9
+    # get the average incidence of RTI death from the simulation
+    average_deaths = [float(sum(col)) / len(col) for col in zip(*r['incidences_of_death'])]
+    # Get the incidence of RTI death from the police data
+    police_estimated_inc = 7.5
+    # Get the incidence of RTI death from the WHO
+    who_est = 35
+    # get incidence of rti death from south african study (Suffla et al. 2004)
+    suffla_est = 43
+    # get incidence of rti death fom Nigerian study (Labinjo et al. 2009)
+    labinjo_est = 160
+    # get world bank estimate of rti death for Malawi
+    world_bank_est = 33
+    labels = ['Hospital records', 'police records', 'GBD average 2010-2019', 'Samuel et al. 2012', 'WHO', 'Model',
+              'Suffla et al. 2004 (South Africa)', 'Labinjo et al. 2009 (Nigeria)', 'World bank']
+    colors = ['lightsalmon', 'lightsteelblue', 'mediumaquamarine', 'wheat', 'olive', 'blue', 'lemonchiffon', 'orchid',
+              'mediumaquamarine']
+    data = [hospital_registry_inc, police_estimated_inc, gbd_average_2010_to_2019, samuel_incidence_of_rti_death,
+            who_est, np.mean(average_deaths), suffla_est, labinjo_est, world_bank_est]
+    death_estimates = {'Estimates': labels,
+                       'val': data,
+                       'col': colors}
+    data = pd.DataFrame(death_estimates)
+    data = data.sort_values('val')
+    # Plot the data in a bar chart
+    plt.bar(np.arange(len(data)),
+            data['val'],  # remaining deaths
+            color=data['col'])
+    plt.xticks(np.arange(len(data)), data['Estimates'], rotation=90)
+    plt.ylabel('Incidence per 100,000')
+    plt.title(f"The model's predicted incidence of RTI related death "
+              f"\n"
+              f"compared to the various estimates for Malawi and other SSA countries"
+              f"\n"
+              f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+
+    plt.savefig(save_directory + "/" + filename_description + "_" +
+                f"inc_of_death_comp_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png", bbox_inches='tight')
+    plt.clf()
+
     # ============================== Plot health outcomes for road traffic injuries ===============================
     # Calculate the total number of people involved in RTI
     total_n_crashes = r['total_in_rti'].mean()
@@ -1277,6 +1328,24 @@ def create_rti_graphs(logfile_directory, save_directory, filename_description, a
               f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
     plt.savefig(save_directory + "/" + filename_description + "_" +
                 f"GBD_comparison_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
+                bbox_inches='tight')
+    plt.clf()
+    # Plot the incidence of injuries directly compared to the GBD estimate
+    n = [-0.25, 0.25]
+    data = [954.24, mean_inc_total]
+    plt.bar(np.arange(1), data[0], width=0.5, color='lightsalmon', label='GBD')
+    plt.bar(np.arange(1) + 0.5, data[1], width=0.5, color='lightsteelblue', label='Model')
+    plt.xticks(np.arange(1) + 0.25, ['Incidence of injuries'])
+    for i in range(len(data)):
+        plt.annotate(str(np.round(data[i], 2)), xy=(n[i] + 0.25, data[i]), ha='center', va='bottom')
+    plt.ylabel('Incidence of Injuries per 100,000 person years')
+    plt.legend()
+    plt.title('Incidence of injuries predicted by the model compared to the GBD estimate'
+              f"\n"
+              f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}"
+              )
+    plt.savefig(save_directory + "/" + filename_description + "_" +
+                f"GBD_comparison_inc_inj_pop_{pop_size}_years_{yearsrun}_runs_{nsim}.png",
                 bbox_inches='tight')
     plt.clf()
     # ============== Plot number of injuries compared to Sundet et al =========================================
