@@ -58,6 +58,7 @@ class Epi(Module):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.all_doses = dict()
 
     def read_parameters(self, data_folder):
         p = self.parameters
@@ -71,6 +72,21 @@ class Epi(Module):
         p["district_vaccine_coverage"] = pd.read_csv(
             Path(self.resourcefilepath) / "ResourceFile_EPI_vaccine_coverage.csv"
         )
+
+        # Declare definitions of how many doses is labelled as "all doses"
+        self.all_doses.update({
+            'bcg': 1,
+            'opv': 4,
+            'dtp': 3,
+            'hib': 3,
+            'hep': 3,
+            'pneumo': 3,
+            'rot': 2,
+            'measles': 3,
+            'rubella': 3,
+            'hp': 2,
+            'td': 2
+        })
 
     def initialise_population(self, population):
         df = population.props
@@ -88,17 +104,17 @@ class Epi(Module):
         df.loc[df.is_alive, "va_rubella"] = 0
         df.loc[df.is_alive, "va_hpv"] = 0
         df.loc[df.is_alive, "va_td"] = 0
-        df.loc[df.is_alive,"va_bcg_all_doses"] = False
-        df.loc[df.is_alive,"va_opv_all_doses"] = False
-        df.loc[df.is_alive,"va_dtp_all_doses"] = False
-        df.loc[df.is_alive,"va_hib_all_doses"] = False
-        df.loc[df.is_alive,"va_hep_all_doses"] = False
-        df.loc[df.is_alive,"va_pneumo_all_doses"] = False
-        df.loc[df.is_alive,"va_rot_all_doses"] = False
-        df.loc[df.is_alive,"va_measles_all_doses"] = False
-        df.loc[df.is_alive,"va_rubella_all_doses"] = False
-        df.loc[df.is_alive,"va_hp_all_dosesv"] = False
-        df.loc[df.is_alive,"va_td_all_doses"] = False
+        df.loc[df.is_alive, "va_bcg_all_doses"] = False
+        df.loc[df.is_alive, "va_opv_all_doses"] = False
+        df.loc[df.is_alive, "va_dtp_all_doses"] = False
+        df.loc[df.is_alive, "va_hib_all_doses"] = False
+        df.loc[df.is_alive, "va_hep_all_doses"] = False
+        df.loc[df.is_alive, "va_pneumo_all_doses"] = False
+        df.loc[df.is_alive, "va_rot_all_doses"] = False
+        df.loc[df.is_alive, "va_measles_all_doses"] = False
+        df.loc[df.is_alive, "va_rubella_all_doses"] = False
+        df.loc[df.is_alive, "va_hp_all_dosesv"] = False
+        df.loc[df.is_alive, "va_td_all_doses"] = False
 
 
         # BCG
@@ -145,6 +161,9 @@ class Epi(Module):
         # second dose only started in 2015
         # by Jan 2010, anyone <=30 years has 77.2% prob of having vaccine
         df.loc[df.is_alive & (random_draw < df_vaccine_baseline["MCV1"]), "va_measles"] = 3
+
+        # Update the 'all_doses' properties
+        self.update_all_doses_properties()
 
     def initialise_simulation(self, sim):
         # add an event to log to screen
@@ -322,6 +341,15 @@ class Epi(Module):
 
         health_values = pd.Series(index=df.index[df.is_alive], data=0)
         return health_values  # returns the series
+
+    def update_all_doses_properties(self):
+        """Update the properties indicating whether the person has received all the doses of each vaccine.
+        This is called at initialise_population"""
+        df = self.sim.population.props
+        for vacc, max in self.all_doses.items():
+            df.loc[df.is_alive, f"va_{vacc}_all_doses"] = (
+                df.loc[df.is_alive, f"va_{vacc}"] == max
+            )
 
 
 # ---------------------------------------------------------------------------------
