@@ -162,9 +162,9 @@ class HealthSystem(Module):
         if self.store_hsi_events_that_have_run:
             self.store_of_hsi_events_that_have_run = list()
 
-        # If record_hsi_event_types == True, a set will be built during the simulation
-        # containing HSIEventType tuples corresponding to all HSI_Event instances used
-        # in the simulation
+        # If record_hsi_event_details == True, a set will be built during the simulation
+        # containing HSIEventDetails tuples corresponding to all HSI_Event instances
+        # used in the simulation
         self.record_hsi_event_details = record_hsi_event_details
         if record_hsi_event_details:
             self.hsi_event_details = set()
