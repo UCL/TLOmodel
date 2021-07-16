@@ -352,9 +352,9 @@ class Epi(Module):
     def update_all_doses_properties(self):
         """"Update the properties indicating whether the person has received all the doses of each vaccine"""
         df = self.sim.population.props
-        for vacc, max in self.all_doses.items():
-            df.loc[df.is_alive, f"va_{vacc}_all_doses"] = (
-                df.loc[df.is_alive, f"va_{vacc}"] >= max
+        for _vacc, _max in self.all_doses.items():
+            df.loc[df.is_alive, f"va_{_vacc}_all_doses"] = (
+                df.loc[df.is_alive, f"va_{_vacc}"] >= _max
             )
 
 # ---------------------------------------------------------------------------------
