@@ -99,12 +99,7 @@ def test_epi_scheduling_hsi_events(tmpdir):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
-            service_availability=["*"],  # all services allowed
-            ignore_cons_constraints=True,
-            ignore_priority=True,
-            capabilities_coefficient=1.0,  # full capacity
-            mode_appt_constraints=0,  # no constraints
-            disable=False
+            disable=True
         ),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
