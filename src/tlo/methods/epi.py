@@ -150,7 +150,7 @@ class Epi(Module):
         # add an event to log to screen
         sim.schedule_event(EpiLoggingEvent(self), sim.date + DateOffset(years=1))
         # HPV vaccine given from 2018 onwards
-        sim.schedule_event(HpvScheduleEvent(self), pd.to_datetime("2018/01/01", format="%Y/%m/%d"))
+        sim.schedule_event(HpvScheduleEvent(self), Date(2018, 1, 1))
 
         # Update paramerer "district_vaccine_coverage" to use district_num rather than the name of the district;
         self.parameters["district_vaccine_coverage"]["District"] = \
