@@ -320,7 +320,7 @@ def _rst_table_header(column_names, title=''):
 
 
 def _md_table_header(column_names, title=''):
-    header = '*{title}*\n\n' if title != '' else ''
+    header = f'*{title}*\n\n' if title != '' else ''
     header += _md_table_row(column_names)
     header += _md_table_row('-' * len(name) for name in column_names)
     return header
