@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging, Date
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
@@ -45,13 +45,15 @@ class Epi(Module):
         "va_opv_all_doses": Property(Types.BOOL, "whether all doses have been received of the OPV vaccine"),
         "va_dtp_all_doses": Property(Types.BOOL, "whether all doses have been received of the DTP vaccine"),
         "va_hib_all_doses": Property(Types.BOOL, "whether all doses have been received of the Hib vaccine"),
-        "va_hep_all_doses": Property(Types.BOOL, "whether all doses have been received of the HepB vaccine (infant series)"),
+        "va_hep_all_doses": Property(Types.BOOL,
+                                     "whether all doses have been received of the HepB vaccine (infant series)"),
         "va_pneumo_all_doses": Property(Types.BOOL, "whether all doses have been received of the pneumococcal vaccine"),
         "va_rota_all_doses": Property(Types.BOOL, "whether all doses have been received of the rotavirus vaccine"),
         "va_measles_all_doses": Property(Types.BOOL, "whether all doses have been received of the measles vaccine"),
         "va_rubella_all_doses": Property(Types.BOOL, "whether all doses have been received of the rubella vaccine"),
         "va_hpv_all_doses": Property(Types.BOOL, "whether all doses have been received of the HPV vaccine"),
-        "va_td_all_doses": Property(Types.BOOL, "whether all doses have been received of the tetanus/diphtheria vaccine"),
+        "va_td_all_doses": Property(Types.BOOL,
+                                    "whether all doses have been received of the tetanus/diphtheria vaccine"),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -115,7 +117,6 @@ class Epi(Module):
         df.loc[df.is_alive, "va_rubella_all_doses"] = False
         df.loc[df.is_alive, "va_hp_all_doses"] = False
         df.loc[df.is_alive, "va_td_all_doses"] = False
-
 
         # BCG
         # from 1981-2009 average bcg coverage is 92% (WHO estimates)
@@ -222,7 +223,7 @@ class Epi(Module):
             "va_td"]
         ] = 0
 
-        df.at[child_id,[
+        df.at[child_id, [
             "va_bcg_all_doses",
             "va_opv_all_doses",
             "va_dtp_all_doses",
@@ -235,7 +236,6 @@ class Epi(Module):
             "va_hp_all_doses",
             "va_td_all_doses"]
         ] = False
-
 
         # ----------------------------------- 2010-2018 -----------------------------------
         vax_date = p["vaccine_schedule"]
@@ -357,6 +357,7 @@ class Epi(Module):
 # Individually Scheduled Vaccine Events
 # ---------------------------------------------------------------------------------
 
+
 # BCG
 class BcgVaccineEvent(Event, IndividualScopeEventMixin):
     """ give BCG vaccine at birth """
@@ -365,12 +366,14 @@ class BcgVaccineEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, "va_bcg"] = True
         self.module.update_all_doses_property(person_id=person_id, vacc='bcg')
 
+
 class OpvEvent(Event, IndividualScopeEventMixin):
     """ give oral poliovirus vaccine (OPV) """
     def apply(self, person_id):
         df = self.sim.population.props
         df.at[person_id, "va_opv"] += 1
         self.module.update_all_doses_property(person_id=person_id, vacc='opv')
+
 
 class DtpHepVaccineEvent(Event, IndividualScopeEventMixin):
     """ give DTP_Hep vaccine """
@@ -380,6 +383,7 @@ class DtpHepVaccineEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, "va_hep"] += 1
         self.module.update_all_doses_property(person_id=person_id, vacc='dtp')
         self.module.update_all_doses_property(person_id=person_id, vacc='hep')
+
 
 class DtpHibHepVaccineEvent(Event, IndividualScopeEventMixin):
     """ give DTP_Hib_Hep vaccine """
@@ -588,6 +592,7 @@ class HSI_BcgVaccine(HsiBaseVaccine):
                 df.at[person_id, "va_bcg"] = True
                 self.module.update_all_doses_property(person_id=person_id, vacc='bcg')
 
+
 class HSI_opv(HsiBaseVaccine):
     """gives poliovirus vaccine 24 hours after birth, plus weeks 6, 10, 14 or as soon as possible afterwards"""
     def treatment_id(self):
@@ -602,6 +607,7 @@ class HSI_opv(HsiBaseVaccine):
             df = self.sim.population.props
             df.at[person_id, "va_opv"] += 1
             self.module.update_all_doses_property(person_id=person_id, vacc='opv')
+
 
 class HSI_DtpHibHepVaccine(HsiBaseVaccine):
     """ gives DTP-Hib_HepB vaccine """

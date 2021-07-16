@@ -5,9 +5,9 @@ from pathlib import Path
 import pytest
 from pandas import DateOffset
 
-from tlo import Date, Simulation, logging, Module
+from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.events import RegularEvent, PopulationScopeEventMixin
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -178,10 +178,6 @@ def test_all_doses_properties():
                 properties_aligned = (
                     df.loc[df.is_alive, f"va_{_vacc}_all_doses"] == (df.loc[df.is_alive, f"va_{_vacc}"] >= _max)
                 ).all()
-
-
-
-                print('eh?')
                 assert properties_aligned, f"On {self.sim.date} and for vaccine {_vacc}, there is a mismatch between" \
                                            f" the all-doses and number-of-doses."
 
