@@ -31,7 +31,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 1)
+end_date = Date(2020, 1, 1)
 popsize = 1000
 
 # set up the logging file
@@ -103,7 +103,7 @@ def make_plot(
 
     # Make plot
     fig, ax = plt.subplots()
-    ax.plot(model.index, model.values, '-', color='lightcoral')
+    ax.plot(model.index, model.values, '-', color='red')
 
     if data_mid is not None:
         ax.plot(data_mid.index, data_mid.values, '-',)
@@ -116,7 +116,7 @@ def make_plot(
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     #plt.ylim(0, 100)
-    plt.legend(['0% Coverage', 'Data'])
+    plt.legend(['Model', 'Data'])
     plt.gca().set_ylim(bottom=0)
     plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
     plt.show()
@@ -130,15 +130,15 @@ prev_and_inc_over_time = output['tlo.methods.hiv'][
 prev_and_inc_over_time = prev_and_inc_over_time.set_index('date')
 
 # Prevalence 15-49
-make_plot(
-    title_str="HIV Prevalence in Adults (15-49) (%)",
-    model=prev_and_inc_over_time['hiv_prev_adult_1549'] * 100,
-    x_label = "Year",
-    y_label = "HIV Prevalence (%)",
-    data_mid=data['prev_15_49'],
-    data_low=data['prev_15_49_lower'],
-    data_high=data['prev_15_49_upper']
-)
+#make_plot(
+#    title_str="HIV Prevalence in Adults (15-49) (%)",
+#    model=prev_and_inc_over_time['hiv_prev_adult_1549'] * 100,
+#    x_label = "Year",
+#    y_label = "HIV Prevalence (%)",
+#    data_mid=data['prev_15_49'],
+#    data_low=data['prev_15_49_lower'],
+#    data_high=data['prev_15_49_upper']
+#)
 
 # Incidence 15-49
 #make_plot(
@@ -158,10 +158,12 @@ make_plot(
 )
 
 # Incidence Children
-#make_plot(
-#    title_str="HIV Prevalence in Children (0-14) (per 100 pyar)",
-#    model=prev_and_inc_over_time['hiv_child_inc'] * 100,
-#)
+make_plot(
+    title_str="HIV Prevalence in Children (0-14) (per 100 pyar)",
+    x_label="Year",
+    y_label="HIV Incidence (per 100 pyar)",
+    model=prev_and_inc_over_time['hiv_child_inc'] * 100,
+)
 
 # HIV prevalence among female sex workers:
 #make_plot(
@@ -169,14 +171,23 @@ make_plot(
 #    model=prev_and_inc_over_time['hiv_prev_fsw'] * 100,
 #)
 
-# HIV prevalence among pregnant women:
+# HIV prevalence among pregnant  women:
 make_plot(
     title_str="HIV Prevalence among Pregnant Women (%)",
     model=prev_and_inc_over_time['hiv_prev_preg'] * 100,
     x_label="Year",
     y_label="HIV Prevalence (%)",
-    #data_mid=data['prev_preg'],
 )
+
+
+# Number of pregnant women:
+make_plot(
+    title_str="Number of Pregnant Women",
+    model=prev_and_inc_over_time['number_of_pregnant_women'],
+    x_label="Year",
+    y_label="Number of Pregnant Women",
+)
+
 
 # %% : AIDS DEATHS
 #deaths = output['tlo.methods.demography']['death'].copy()
