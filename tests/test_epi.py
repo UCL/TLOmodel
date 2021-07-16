@@ -175,9 +175,15 @@ def test_all_doses_properties():
             """
             df = self.sim.population.props
             for _vacc, _max in self.module.all_doses.items():
-                assert (
+                properties_aligned = (
                     df.loc[df.is_alive, f"va_{_vacc}_all_doses"] == (df.loc[df.is_alive, f"va_{_vacc}"] >= _max)
-                ).all(), f"For vaccine {_vacc}, there is a mismatch between the all-doses and number-of-doses."
+                ).all()
+
+
+
+                print('eh?')
+                assert properties_aligned, f"On {self.sim.date} and for vaccine {_vacc}, there is a mismatch between" \
+                                           f" the all-doses and number-of-doses."
 
     sim = Simulation(start_date=start_date)
     sim.register(
