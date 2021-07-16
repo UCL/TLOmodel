@@ -56,10 +56,7 @@ def test_no_health_system(tmpdir):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
-            service_availability=[],  # no services allowed
-            mode_appt_constraints=2,  # hard constraints
-            ignore_priority=True,
-            capabilities_coefficient=0.0  # no officer time
+            disable_and_reject_all=True
         ),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
