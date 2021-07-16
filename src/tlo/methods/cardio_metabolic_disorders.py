@@ -127,10 +127,14 @@ class CardioMetabolicDisorders(Module):
     event_date_diagnosis_list = {
         f"nc_{p}_date_diagnosis": Property(Types.DATE, f"When someone has  been diagnosed with {p}") for p
         in events}
+    event_medication_list = {
+        f"nc_{p}_on_medication": Property(Types.BOOL, f"Whether or not someone has ever been diagnosed with {p}") for p
+        in events
+    }
 
     PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **condition_date_diagnosis_list,
                   **condition_ever_tested_list, **condition_date_of_last_test_list, **condition_medication_list,
-                  **event_diagnosis_list, **event_date_diagnosis_list,
+                  **event_diagnosis_list, **event_date_diagnosis_list, **event_medication_list,
                   'nc_ever_weight_loss_treatment': Property(Types.BOOL,
                                                             'whether or not the person has ever had weight loss '
                                                             'treatment'),
@@ -717,7 +721,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 idx_selected_to_die = selected_to_die[selected_to_die].index
 
                 for person_id in idx_selected_to_die:
-                    schedule_death_to_occur_before_next_poll(person_id, event.replace('ever_', ''),
+                    schedule_death_to_occur_before_next_poll(person_id, event,
                                                              m.parameters['interval_between_polls'])
 
 

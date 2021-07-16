@@ -56,8 +56,8 @@ def routine_checks(sim):
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('diabetes').any()
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_ischemic_hd').any()
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_kidney_disease').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('stroke').any()
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('heart_attack').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('ever_stroke').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('ever_heart_attack').any()
 
     # check that no one dies of each condition that has a death rate of zero
     assert not df.cause_of_death.loc[~df.is_alive].str.startswith('chronic_lower_back_pain').any()
