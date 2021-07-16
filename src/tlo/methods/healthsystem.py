@@ -660,28 +660,27 @@ class HealthSystem(Module):
         assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Minutes_Per_Day'].sum()) < 1e-7
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
+        # Apply the capabilities coefficient
+        capabilities_ex['Total_Minutes_Per_Day'] *= self.capabilities_coefficient
+
         # Updates the capabilities table with the reformatted version
         self.parameters['Daily_Capabilities'] = capabilities_ex
 
     def get_capabilities_today(self):
         """
-        Get the capabilities of the health system today
+        Get the capabilities of the health system today.
         returns: DataFrame giving minutes available for each officer type in each facility type
 
-        Functions can go in here in the future that could expand the time available, simulating increasing efficiency.
-        (The concept of a productivitiy ratio raised by Martin Chalkley). For now just have a single scaling value,
-        named capabilities_coefficient.
+        Functions can go in here in the future that could expand the time available,
+        simulating increasing efficiency (the concept of a productivitiy ratio raised
+        by Martin Chalkley).
+
+        For now this method does nothing.
+
+        Note that the scaling by `capabilities_coefficient` is applied on the initial
+        processing of the `Daily_Capabilities` data in `reformat_daily_capabilities`.
         """
-
-        # Get the capabilities data as they are imported
-        capabilities_today = self.parameters['Daily_Capabilities']
-
-        # apply the capabilities_coefficient
-        capabilities_today['Total_Minutes_Per_Day'] = (
-            capabilities_today['Total_Minutes_Per_Day'] * self.capabilities_coefficient
-        )
-
-        return capabilities_today
+        return self.parameters['Daily_Capabilities']
 
     def get_blank_appt_footprint(self):
         """
