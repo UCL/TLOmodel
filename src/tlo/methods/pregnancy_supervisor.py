@@ -1884,6 +1884,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         multiples = pd.Series(self.module.rng.random_sample(len(multiple_risk.loc[multiple_risk]))
                               < params['prob_multiples'],  index=multiple_risk.loc[multiple_risk].index)
 
+        df.loc[multiples.loc[multiples].index, 'ps_multiple_pregnancy'] = True
+
         for person in multiples.loc[multiples].index:
             logger.info(key='maternal_complication', data={'person': person,
                                                            'type': 'multiple_pregnancy',
@@ -2268,6 +2270,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         women_reproductive_age = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
                                                (df.age_years < 50))])
+        pregnant_at_year_end = len(df.index[df.is_alive & df.is_pregnant])
         women_with_previous_sa = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
                                                (df.age_years < 50) & df.ps_prev_spont_abortion)])
         women_with_previous_pe = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
@@ -2275,7 +2278,11 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         yearly_prev_sa = (women_with_previous_sa / women_reproductive_age) * 100
         yearly_prev_pe = (women_with_previous_pe / women_reproductive_age) * 100
 
-        logger.info(key='prevalences', data={'prev_sa': yearly_prev_sa, 'prev_pe': yearly_prev_pe})
+        logger.info(key='preg_info',
+                    data={'women_repro_age': women_reproductive_age,
+                          'women_pregnant':pregnant_at_year_end,
+                            'prev_sa': yearly_prev_sa,
+                          'prev_pe': yearly_prev_pe})
 
 
 

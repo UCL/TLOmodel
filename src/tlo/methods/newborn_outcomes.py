@@ -1014,7 +1014,7 @@ class NewbornOutcomes(Module):
         :param facility_type: health centre (hc) or hospital (hp)
         """
         df = self.sim.population.props
-        person_id = hsi_event.target
+        person_id = int(hsi_event.target)
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
@@ -1030,6 +1030,8 @@ class NewbornOutcomes(Module):
                 pkg_codes=[pkg_code_sep])
 
             # Use the dx_manager to determine if staff will correctly identify this neonate will treatment for sepsis
+            print('id', person_id, 'type_id', type(person_id), 'type_target', type(hsi_event.target))
+
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                  dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event) or \
                 df.at[person_id, 'pn_sepsis_late_neonatal'] or df.at[person_id, 'pn_sepsis_early_neonatal']:

@@ -284,9 +284,11 @@ def age_corrected_run_with_all_women_pregnant_at_baseline(config_name, start_dat
 
 # Get the log
 
-#age_corrected_run_with_all_women_pregnant_at_baseline(config_name='interventions_2010_updated',
- #                                                     start_date=Date(2010, 1, 1),
- #                     end_date=Date(2011, 1, 1), seed=160, population=10000, parameters=2010)
-age_corrected_run_with_all_women_pregnant_at_baseline(config_name='interventions_2015_updated',
-                                                      start_date=Date(2015, 1, 1),
-                      end_date=Date(2016, 1, 1), seed=161, population=10000, parameters=2015)
+age_corrected_run_with_all_women_pregnant_at_baseline(config_name='twins_correct_updated',
+                                                      start_date=Date(2010, 1, 1),
+                                                      end_date=Date(2011, 1, 1), seed=163,
+                                                      population=1000, parameters=2010)
+
+#age_corrected_run_with_all_women_pregnant_at_baseline(config_name='interventions_2015_updated',
+#                                                      start_date=Date(2015, 1, 1),
+#                      end_date=Date(2016, 1, 1), seed=161, population=10000, parameters=2015)

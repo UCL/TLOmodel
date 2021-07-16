@@ -6,8 +6,11 @@ from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
     extract_results, extract_str_results,
-    get_scenario_outputs,
+    get_scenario_outputs, create_pickles_locally
 )
+
+# TODO: n.b. this file will need to be edited if you want to look at draws across parameters OR look across times
+#  greater than one year
 
 # %% Declare the name of the file that specified the scenarios used in this run.
 scenario_filename = 'multi_run_calibration.py'  # <-- update this to look at other results
@@ -18,7 +21,7 @@ rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
-# create_pickles_locally(results_folder)  # if not created via batch
+#create_pickles_locally(results_folder)  # if not created via batch
 
 # HELPER FUNCTIONS
 

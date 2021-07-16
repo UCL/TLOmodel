@@ -1312,7 +1312,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
             # allow application of risk to both babies. If both twins have died or the mothers only child has died then
             # the event ends
             if df.at[child_id, 'nb_is_twin']:
-                child_two_id = df.at[child_id, 'nb_twin_sibling_id']
+                child_two_id = int(df.at[child_id, 'nb_twin_sibling_id'])
                 child_two = df.loc[child_two_id]
 
                 if (~child.is_alive or child.nb_death_after_birth) and (~child_two.is_alive or
