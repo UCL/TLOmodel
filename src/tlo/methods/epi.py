@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types, logging, Date
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
@@ -47,10 +47,10 @@ class Epi(Module):
         "va_hib_all_doses": Property(Types.BOOL, "whether all doses have been received of the Hib vaccine"),
         "va_hep_all_doses": Property(Types.BOOL, "whether all doses have been received of the HepB vaccine (infant series)"),
         "va_pneumo_all_doses": Property(Types.BOOL, "whether all doses have been received of the pneumococcal vaccine"),
-        "va_rot_all_doses": Property(Types.BOOL, "whether all doses have been received of the rotavirus vaccine"),
+        "va_rota_all_doses": Property(Types.BOOL, "whether all doses have been received of the rotavirus vaccine"),
         "va_measles_all_doses": Property(Types.BOOL, "whether all doses have been received of the measles vaccine"),
         "va_rubella_all_doses": Property(Types.BOOL, "whether all doses have been received of the rubella vaccine"),
-        "va_hp_all_dosesv": Property(Types.BOOL, "whether all doses have been received of the HPV vaccine"),
+        "va_hpv_all_dosesv": Property(Types.BOOL, "whether all doses have been received of the HPV vaccine"),
         "va_td_all_doses": Property(Types.BOOL, "whether all doses have been received of the tetanus/diphtheria vaccine"),
     }
 
@@ -81,10 +81,10 @@ class Epi(Module):
             'hib': 3,
             'hep': 3,
             'pneumo': 3,
-            'rot': 2,
+            'rota': 2,
             'measles': 3,
             'rubella': 3,
-            'hp': 2,
+            'hpv': 2,
             'td': 2
         })
 

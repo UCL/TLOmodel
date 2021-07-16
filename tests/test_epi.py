@@ -146,7 +146,6 @@ def test_epi_scheduling_hsi_events(tmpdir):
 
 def test_all_doses_properties():
     """check alignment between "number of doses" properties and "all_doses" properties"""
-    sim = Simulation(start_date=start_date)
 
     # Make Dummy class and event to check alignment of the properties:
     class DummyModule(Module):
@@ -159,9 +158,12 @@ def test_all_doses_properties():
 
         def initialise_simulation(self, sim):
             self.sim.schedule_event(
-                CheckProperties(self),
+                CheckProperties(self.sim.modules['Epi']),
                 self.sim.date
             )
+
+        def on_birth(self, mother, child):
+            pass
 
     class CheckProperties(RegularEvent, PopulationScopeEventMixin):
         def __init__(self, module):
@@ -172,17 +174,17 @@ def test_all_doses_properties():
             vaccine and the all_doses_received properties
             """
             df = self.sim.population.props
-            for vacc, max in self.module.all_doses.items():
-                assert df.loc[df.is_alive, f"va_{vacc}_all_doses"] == (
-                    df.loc[df.is_alive, f"va_{vacc}"] == max
-                )
-            print("checking!")
+            for _vacc, _max in self.module.all_doses.items():
+                assert (
+                    df.loc[df.is_alive, f"va_{_vacc}_all_doses"] == (df.loc[df.is_alive, f"va_{_vacc}"] >= _max)
+                ).all(), f"For vaccine {_vacc}, there is a mismatch between the all-doses and number-of-doses."
 
+    sim = Simulation(start_date=start_date)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(disable=True),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
         epi.Epi(resourcefilepath=resourcefilepath),
         DummyModule()
     )
@@ -190,4 +192,3 @@ def test_all_doses_properties():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
-
