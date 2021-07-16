@@ -27,17 +27,31 @@ class Epi(Module):
     }
 
     PROPERTIES = {
+        # -- Properties for the number of doses received of each vaccine --
         "va_bcg": Property(Types.BOOL, "received bcg vaccination"),
         "va_opv": Property(Types.INT, "number of doses of OPV vaccine received"),
         "va_dtp": Property(Types.INT, "number of doses of DTP vaccine received"),
         "va_hib": Property(Types.INT, "number of doses of Hib vaccine received"),
-        "va_hep": Property(Types.INT, "number of doses of HepB vaccine received"),
+        "va_hep": Property(Types.INT, "number of doses of HepB vaccine received (infant series)"),
         "va_pneumo": Property(Types.INT, "number of doses of pneumococcal vaccine received"),
         "va_rota": Property(Types.INT, "number of doses of rotavirus vaccine received"),
         "va_measles": Property(Types.INT, "number of doses of measles vaccine received"),
         "va_rubella": Property(Types.INT, "number of doses of rubella vaccine received"),
         "va_hpv": Property(Types.INT, "number of doses of hpv vaccine received"),
         "va_td": Property(Types.INT, "number of doses of tetanus/diphtheria vaccine received by pregnant women"),
+
+        # -- Properties to inidcate whether the full number of doses have been received --
+        "va_bcg_all_doses": Property(Types.BOOL, "whether all doses have been received of the vaccine bcg"),
+        "va_opv_all_doses": Property(Types.BOOL, "whether all doses have been received of the OPV vaccine"),
+        "va_dtp_all_doses": Property(Types.BOOL, "whether all doses have been received of the DTP vaccine"),
+        "va_hib_all_doses": Property(Types.BOOL, "whether all doses have been received of the Hib vaccine"),
+        "va_hep_all_doses": Property(Types.BOOL, "whether all doses have been received of the HepB vaccine (infant series)"),
+        "va_pneumo_all_doses": Property(Types.BOOL, "whether all doses have been received of the pneumococcal vaccine"),
+        "va_rot_all_doses": Property(Types.BOOL, "whether all doses have been received of the rotavirus vaccine"),
+        "va_measles_all_doses": Property(Types.BOOL, "whether all doses have been received of the measles vaccine"),
+        "va_rubella_all_doses": Property(Types.BOOL, "whether all doses have been received of the rubella vaccine"),
+        "va_hp_all_dosesv": Property(Types.BOOL, "whether all doses have been received of the HPV vaccine"),
+        "va_td_all_doses": Property(Types.BOOL, "whether all doses have been received of the tetanus/diphtheria vaccine"),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -74,6 +88,18 @@ class Epi(Module):
         df.loc[df.is_alive, "va_rubella"] = 0
         df.loc[df.is_alive, "va_hpv"] = 0
         df.loc[df.is_alive, "va_td"] = 0
+        df.loc[df.is_alive,"va_bcg_all_doses"] = False
+        df.loc[df.is_alive,"va_opv_all_doses"] = False
+        df.loc[df.is_alive,"va_dtp_all_doses"] = False
+        df.loc[df.is_alive,"va_hib_all_doses"] = False
+        df.loc[df.is_alive,"va_hep_all_doses"] = False
+        df.loc[df.is_alive,"va_pneumo_all_doses"] = False
+        df.loc[df.is_alive,"va_rot_all_doses"] = False
+        df.loc[df.is_alive,"va_measles_all_doses"] = False
+        df.loc[df.is_alive,"va_rubella_all_doses"] = False
+        df.loc[df.is_alive,"va_hp_all_dosesv"] = False
+        df.loc[df.is_alive,"va_td_all_doses"] = False
+
 
         # BCG
         # from 1981-2009 average bcg coverage is 92% (WHO estimates)
@@ -162,16 +188,32 @@ class Epi(Module):
 
         # Initialise all the properties that this module looks after:
         df.at[child_id, "va_bcg"] = False
-        df.at[child_id, "va_opv"] = 0
-        df.at[child_id, "va_dtp"] = 0
-        df.at[child_id, "va_hib"] = 0
-        df.at[child_id, "va_hep"] = 0
-        df.at[child_id, "va_pneumo"] = 0
-        df.at[child_id, "va_rota"] = 0
-        df.at[child_id, "va_measles"] = 0
-        df.at[child_id, "va_rubella"] = 0
-        df.at[child_id, "va_hpv"] = 0
-        df.at[child_id, "va_td"] = 0
+        df.at[child_id, [
+            "va_opv",
+            "va_dtp",
+            "va_hib",
+            "va_hep",
+            "va_pneumo",
+            "va_rota",
+            "va_measles",
+            "va_rubella",
+            "va_td"]
+        ] = 0
+
+        df.at[child_id,[
+            "va_bcg_all_doses",
+            "va_opv_all_doses",
+            "va_dtp_all_doses",
+            "va_hib_all_doses",
+            "va_hep_all_doses",
+            "va_pneumo_all_doses",
+            "va_rot_all_doses",
+            "va_measles_all_doses",
+            "va_rubella_all_doses",
+            "va_hp_all_dosesv",
+            "va_td_all_doses"]
+        ] = False
+
 
         # ----------------------------------- 2010-2018 -----------------------------------
         vax_date = p["vaccine_schedule"]
@@ -268,6 +310,7 @@ class Epi(Module):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
+        pass
         # TODO: consider here how early interventions are bundled
         # TODO: routine infant check-ups may occur alongside vaccinations
 
