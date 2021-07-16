@@ -39,13 +39,17 @@ class DxAlgorithmChild(Module):
             Parameter(Types.REAL,
                       'probability of uncomplicated diarrhoea being diagnosed by health care worker'
                       ),
-        'prob_recommended_treatment_given_by_health_worker':
+        'prob_recommended_treatment_given_by_hw':
             Parameter(Types.REAL,
-                      'probability of uncomplicated diarrhoea being diagnosed by health care worker'
+                      'probability of recommended treatment given by health care worker'
                       ),
-        'prob_ors_given_with_or_without_zinc_by_health_worker':
+        'prob_at_least_ors_given_by_hw':
             Parameter(Types.REAL,
-                      'probability of uncomplicated diarrhoea being diagnosed by health care worker'
+                      'probability of ORS given by health care worker, with or without zinc'
+                      ),
+        'prob_hospitalization_referral_for_severe_diarrhoea':
+            Parameter(Types.REAL,
+                      'probability of hospitalisation of severe diarrhoea'
                       ),
     }
     PROPERTIES = {}
@@ -55,16 +59,11 @@ class DxAlgorithmChild(Module):
         self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, data_folder):
-        self.parameters['prob_uncomplicated_diarrhoea_diagnosed_by_health_worker'] = 0.577
-        self.parameters['prob_recommended_treatment_given_by_health_worker'] = 0.734  # for those diagnosed
-        self.parameters['prob_ors_given_with_or_without_zinc_by_health_worker'] = 1  # for those diagnosed
         self.parameters['prob_hospitalization_referral_for_severe_diarrhoea'] = 0.059
 
         self.parameters['prob_at_least_ors_given_by_hw'] = 0.633  # for all with uncomplicated diarrhoea
         self.parameters['prob_recommended_treatment_given_by_hw'] = 0.423  # for all with uncomplicated diarrhoea
-        self.parameters['prob_antibiotic_given_for_dysentery_by_hw'] = 0.8
-
-
+        self.parameters['prob_antibiotic_given_for_dysentery_by_hw'] = 0.8  # dummy
 
     def initialise_population(self, population):
         pass
