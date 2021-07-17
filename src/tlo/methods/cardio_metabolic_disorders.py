@@ -144,6 +144,7 @@ class CardioMetabolicDisorders(Module):
                   'nc_cancers': Property(Types.BOOL,
                                          'shadow property for whether or not the person currently has any cancer'
                                          ),
+                  'nc_scheduled_date_death': Property(Types.DATE, 'when someone is scheduled to die'),
                   'nc_n_conditions': Property(Types.INT,
                                               'how many NCD conditions the person currently has'),
                   'nc_condition_combos': Property(Types.BOOL,
@@ -404,6 +405,16 @@ class CardioMetabolicDisorders(Module):
                 property='nc_chronic_ischemic_hd'
             )
         )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_ever_stroke=DxTest(
+                property='nc_ever_stroke'
+            )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_ever_heart_attack=DxTest(
+                property='nc_ever_heart_attack'
+            )
+        )
 
     def build_linear_model(self, condition, interval_between_polls, lm_type):
         """
@@ -550,6 +561,10 @@ class CardioMetabolicDisorders(Module):
             consumables_to_get = {
                 'Intervention_Package_Code': {},
                 'Item_Code': {self.parameters[f'{condition}_hsi'].medication_item_code: 1}}
+        elif type_of_consumable == 'emergency_medication':
+            consumables_to_get = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {self.parameters[f'{condition}_hsi'].emergency_medication_item_code: 1}}
 
         # Confirm availability of consumables
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -682,7 +697,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
             # -------------------- DEATH FROM CARDIO-METABOLIC CONDITION ---------------------------------------
             # There is a risk of death for those who have a cardio-metabolic condition.
-            # Death is assumed to happen instantly.
+            # Death is assumed to happen in the time before the next polling event.
 
             eligible_population = df.is_alive & df[f'nc_{condition}']
             selected_to_die = self.module.lms_death[condition].predict(df.loc[eligible_population], rng)
@@ -713,7 +728,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
             # -------------------- DEATH FROM CARDIO-METABOLIC EVENT ---------------------------------------
             # There is a risk of death for those who have had an CardioMetabolicDisorders event.
-            # Death is assumed to happen instantly.
+            # Death is assumed to happen before the next polling event.
 
             eligible_population = df.is_alive & df[f'nc_{event}']
             selected_to_die = self.module.lms_event_death[event].predict(df.loc[eligible_population], rng)
@@ -1294,21 +1309,68 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             data=('This is HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: '
                   f'The squeeze-factor is {squeeze_factor}.'),
         )
-        if squeeze_factor < 0.5:
-            # If squeeze factor is not too large:
-            logger.debug(key='debug', data='Treatment will be provided.')
+        # Run a test to diagnose whether the person has condition:
+        dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            dx_tests_to_run=f'assess_{self.event}',
+            hsi_event=self
+        )
+        if dx_result:
             df = self.sim.population.props
-            treatmentworks = self.module.rng.rand() < 0.2  # made up number for now
-            if treatmentworks:
-                # (in this we nullify the death event that has been scheduled.)
-                # df.at[person_id, 'nc_scheduled_date_death'] = pd.NaT
-                # remove all symptoms instantly
-                self.sim.modules['SymptomManager'].clear_symptoms(
-                    person_id=person_id,
-                    disease_module=self.module)
-        else:
-            # Squeeze factor is too large
-            logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
+            # record date of diagnosis:
+            df.at[person_id, f'nc_{self.event}_date_diagnosis'] = self.sim.date
+            df.at[person_id, f'nc_{self.event}_ever_diagnosed'] = True
+            if squeeze_factor < 0.5:
+                # If squeeze factor is not too large:
+                all_available = self.get_all_consumables(item_codes=[
+                    self.module.parameters[f'{self.event}_hsi'].emergency_medication_item_code])
+                if all_available:
+                    logger.debug(key='debug', data='Treatment will be provided.')
+                    treatmentworks = self.module.rng.rand() < 0.5  # made up number for now
+                    if treatmentworks:
+                        # remove all symptoms of event instantly
+                        self.sim.modules['SymptomManager'].clear_symptoms(
+                            person_id=person_id,
+                            disease_module=self.module)
+                        # start the person on regular medication
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                                module=self.module,
+                                person_id=person_id,
+                                condition=self.event
+                            ),
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None
+                        )
+                    else:
+                        # Consumables not available
+                        logger.debug(key='debug', data='Treatment will not be provided due to no available consumables')
+                        # probability of death
+
+
+            else:
+                # Squeeze factor is too large
+                logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
+                if self.module.rng.rand() < 0.5:  # probability of death, just a made up number for now
+                    logger.debug(key="CardioMetabolicDisordersDeathEvent",
+                                 data=f"CardioMetabolicDisordersDeathEvent: scheduling death for untreated "
+                                      f"{person_id} on {self.sim.date}")
+
+                    self.sim.modules['Demography'].do_death(individual_id=person_id,
+                                                            cause=f'{self.event}',
+                                                            originating_module=self.module)
+                else:
+                    # start the person on regular medication
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                            module=self.module,
+                            person_id=person_id,
+                            condition=self.event
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
     def did_not_run(self):
         logger.debug(key='debug', data='HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: did not run')
