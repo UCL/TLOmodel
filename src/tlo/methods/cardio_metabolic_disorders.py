@@ -1008,6 +1008,8 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
                 dx_tests_to_run=f'assess_{self.condition}',
                 hsi_event=self
             )
+            df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
+            df.at[person_id, f'nc_{self.condition}_ever_tested'] = True
             if dx_result:
                 # record date of diagnosis:
                 df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
@@ -1030,7 +1032,7 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
                     hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
                         module=self.module,
                         person_id=person_id,
-                        condition='diabetes'
+                        condition=self.condition
                     ),
                     topen=self.sim.date + DateOffset(months=6),
                     tclose=self.sim.date + DateOffset(months=9),
