@@ -15,9 +15,9 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods import demography as de
 from tlo.methods.causes import Cause
-from tlo.methods.symptommanager import Symptom
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS

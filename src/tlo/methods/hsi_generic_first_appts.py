@@ -14,9 +14,10 @@ from tlo.methods.breast_cancer import (
     HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
 from tlo.methods.cardio_metabolic_disorders import (
-    HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
     HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
-    HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment)
+    HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
+    HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment,
+)
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
