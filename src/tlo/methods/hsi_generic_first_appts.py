@@ -370,7 +370,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                                             tclose=None
                                         )
 
-
                         # If the symptoms include those for an CMD condition, then begin investigation for condition
                         elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
                                 symptoms:

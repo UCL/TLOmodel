@@ -2,7 +2,6 @@
 The joint Cardio-Metabolic Disorders model by Tim Hallett and Britta Jewell, October 2020
 
 """
-import copy
 import math
 from itertools import combinations
 from pathlib import Path
@@ -16,7 +15,6 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods import demography as de
 from tlo.methods.causes import Cause
-from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.symptommanager import Symptom
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
@@ -484,49 +482,49 @@ class CardioMetabolicDisorders(Module):
             baseline_annual_probability,
             Predictor('sex').when('M', p['rr_male']),
             Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
-                .when('.between(5, 9)', p['rr_5_9'])
-                .when('.between(10, 14)', p['rr_10_14'])
-                .when('.between(15, 19)', p['rr_15_19'])
-                .when('.between(20, 24)', p['rr_20_24'])
-                .when('.between(25, 29)', p['rr_25_29'])
-                .when('.between(30, 34)', p['rr_30_34'])
-                .when('.between(35, 39)', p['rr_35_39'])
-                .when('.between(40, 44)', p['rr_40_44'])
-                .when('.between(45, 49)', p['rr_45_49'])
-                .when('.between(50, 54)', p['rr_50_54'])
-                .when('.between(55, 59)', p['rr_55_59'])
-                .when('.between(60, 64)', p['rr_60_64'])
-                .when('.between(65, 69)', p['rr_65_69'])
-                .when('.between(70, 74)', p['rr_70_74'])
-                .when('.between(75, 79)', p['rr_75_79'])
-                .when('.between(80, 84)', p['rr_80_84'])
-                .when('.between(85, 89)', p['rr_85_89'])
-                .when('.between(90, 94)', p['rr_90_94'])
-                .when('.between(95, 99)', p['rr_95_99'])
-                .otherwise(p['rr_100']),
+            .when('.between(5, 9)', p['rr_5_9'])
+            .when('.between(10, 14)', p['rr_10_14'])
+            .when('.between(15, 19)', p['rr_15_19'])
+            .when('.between(20, 24)', p['rr_20_24'])
+            .when('.between(25, 29)', p['rr_25_29'])
+            .when('.between(30, 34)', p['rr_30_34'])
+            .when('.between(35, 39)', p['rr_35_39'])
+            .when('.between(40, 44)', p['rr_40_44'])
+            .when('.between(45, 49)', p['rr_45_49'])
+            .when('.between(50, 54)', p['rr_50_54'])
+            .when('.between(55, 59)', p['rr_55_59'])
+            .when('.between(60, 64)', p['rr_60_64'])
+            .when('.between(65, 69)', p['rr_65_69'])
+            .when('.between(70, 74)', p['rr_70_74'])
+            .when('.between(75, 79)', p['rr_75_79'])
+            .when('.between(80, 84)', p['rr_80_84'])
+            .when('.between(85, 89)', p['rr_85_89'])
+            .when('.between(90, 94)', p['rr_90_94'])
+            .when('.between(95, 99)', p['rr_95_99'])
+            .otherwise(p['rr_100']),
             Predictor('li_urban').when(True, p['rr_urban']),
             Predictor('li_wealth').when('1', p['rr_wealth_1'])
-                .when('2', p['rr_wealth_2'])
-                .when('3', p['rr_wealth_3'])
-                .when('4', p['rr_wealth_4'])
-                .when('5', p['rr_wealth_5']),
+            .when('2', p['rr_wealth_2'])
+            .when('3', p['rr_wealth_3'])
+            .when('4', p['rr_wealth_4'])
+            .when('5', p['rr_wealth_5']),
             Predictor('li_bmi').when('1', p['rr_bmi_1'])
-                .when('2', p['rr_bmi_2'])
-                .when('3', p['rr_bmi_3'])
-                .when('4', p['rr_bmi_4'])
-                .when('5', p['rr_bmi_5']),
+            .when('2', p['rr_bmi_2'])
+            .when('3', p['rr_bmi_3'])
+            .when('4', p['rr_bmi_4'])
+            .when('5', p['rr_bmi_5']),
             Predictor('li_low_ex').when(True, p['rr_low_exercise']),
             Predictor('li_high_salt').when(True, p['rr_high_salt']),
             Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
             Predictor('li_tob').when(True, p['rr_tobacco']),
             Predictor('li_ex_alc').when(True, p['rr_alcohol']),
             Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
-                .when('2', p['rr_marital_status_2'])
-                .when('3', p['rr_marital_status_3']),
+            .when('2', p['rr_marital_status_2'])
+            .when('3', p['rr_marital_status_3']),
             Predictor('li_in_ed').when(True, p['rr_in_education']),
             Predictor('li_ed_lev').when('1', p['rr_current_education_level_1'])
-                .when('2', p['rr_current_education_level_2'])
-                .when('3', p['rr_current_education_level_3']),
+            .when('2', p['rr_current_education_level_2'])
+            .when('3', p['rr_current_education_level_3']),
             Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
             Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
             Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
@@ -591,8 +589,6 @@ class CardioMetabolicDisorders(Module):
         health system.
         :param hsi_event: HSI event in which the function has been called
         """
-        person_id = hsi_event.target
-        df = self.sim.population.props
 
         # Define the consumables to get
         if type_of_consumable == 'test':
@@ -839,7 +835,7 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, f'nc_{self.condition}']:
 
             if df.at[person_id, f'nc_{self.condition}_on_medication']:
-                reduction_in_death_risk = self.module.rng.uniform(low=0.2, high=0.6, size=1) # not data for now
+                reduction_in_death_risk = self.module.rng.uniform(low=0.2, high=0.6, size=1)  # not data for now
 
                 if self.module.rng.rand() < reduction_in_death_risk:
                     logger.debug(key="CardioMetabolicDisordersDeathEvent",
@@ -1400,7 +1396,6 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                         # Consumables not available
                         logger.debug(key='debug', data='Treatment will not be provided due to no available consumables')
                         # probability of death
-
 
             else:
                 # Squeeze factor is too large
