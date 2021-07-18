@@ -101,6 +101,7 @@ def test_basic_run():
     sim.simulate(end_date=Date(year=2011, month=1, day=1))
 
     routine_checks(sim)
+    hsi_checks(sim)
 
 
 def test_basic_run_with_high_incidence_hypertension():
@@ -171,3 +172,30 @@ def test_basic_run_with_high_incidence_hypertension():
     # check that everyone has hypertension and CIHD by end
     assert df.loc[df.is_alive & (df.age_years >= 20)].nc_hypertension.all()
     assert df.loc[df.is_alive & (df.age_years >= 20)].nc_chronic_ischemic_hd.all()
+
+def hsi_checks(sim):
+    """
+    Basic checks for the module: types of columns, onset and deaths of each condition and event
+    """
+
+    df = sim.population.props
+
+    # check that all conditions and events have someone diagnosed
+    assert df.nc_diabetes_ever_diagnosed.any()
+    assert df.nc_hypertension_ever_diagnosed.any()
+    assert df.nc_chronic_lower_back_pain_ever_diagnosed.any()
+    assert df.nc_chronic_kidney_disease_ever_diagnosed.any()
+    assert df.nc_chronic_ischemic_hd_ever_diagnosed.any()
+    assert df.nc_ever_stroke_ever_diagnosed.any()
+    assert df.nc_ever_heart_attack_ever_diagnosed.any()
+
+    # check that all conditions and events have someone on medication
+    assert df.nc_diabetes_on_medication.any()
+    assert df.nc_hypertension_on_medication.any()
+    assert df.nc_chronic_lower_back_pain_on_medication.any()
+    assert df.nc_chronic_kidney_disease_on_medication.any()
+    assert df.nc_chronic_ischemic_hd_on_medication.any()
+    assert df.nc_ever_stroke_on_medication.any()
+    assert df.nc_ever_heart_attack_on_medication.any()
+
+    # check that medication start date is

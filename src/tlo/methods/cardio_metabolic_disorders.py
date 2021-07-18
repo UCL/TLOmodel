@@ -144,7 +144,6 @@ class CardioMetabolicDisorders(Module):
                   'nc_cancers': Property(Types.BOOL,
                                          'shadow property for whether or not the person currently has any cancer'
                                          ),
-                  'nc_scheduled_date_death': Property(Types.DATE, 'when someone is scheduled to die'),
                   'nc_n_conditions': Property(Types.INT,
                                               'how many NCD conditions the person currently has'),
                   'nc_condition_combos': Property(Types.BOOL,
@@ -298,12 +297,15 @@ class CardioMetabolicDisorders(Module):
                 else:
                     age_min = age_min + 5
                     age_max = age_max + 20
-            # set ever tested and date of last test to false / NaT for everyone
+            # ----- Set ever tested, date of last test, ever_diagnosed, date of diagnosis, and on_medication to false
+            # / NaT for everyone
             df.loc[df.is_alive, f'nc_{condition}_ever_tested'] = False
             df.loc[df.is_alive, f'nc_{condition}_date_last_test'] = pd.NaT
+            df.loc[df.is_alive, f'nc_{condition}_ever_diagnosed'] = False
+            df.loc[df.is_alive, f'nc_{condition}_date_diagnosis'] = pd.NaT
+            df.loc[df.is_alive, f'nc_{condition}_on_medication'] = False
 
-        # ----- Impose the symptom on random sample of those with each condition to have:
-        for condition in self.conditions:
+            # ----- Impose the symptom on random sample of those with each condition to have:
             for symptom in self.prob_symptoms[condition].keys():
                 lm_init_symptoms = LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -317,10 +319,21 @@ class CardioMetabolicDisorders(Module):
                     add_or_remove='+',
                     disease_module=self)
 
+        # ----- Set ever_diagnosed, date of diagnosis, and on_medication to false / NaT
+        # for everyone
+        for event in self.events:
+            df.loc[df.is_alive, f'nc_{event}_ever_diagnosed'] = False
+            df.loc[df.is_alive, f'nc_{event}_date_diagnosis'] = pd.NaT
+            df.loc[df.is_alive, f'nc_{event}_on_medication'] = False
+
         # ----- Generate the initial "risk score" for the population based on exercise, diet, tobacco, alcohol, BMI:
-        df['nc_risk_score'] = (df[[
+        df.loc[df.is_alive, 'nc_risk_score'] = (df[[
             'li_low_ex', 'li_high_salt', 'li_high_sugar', 'li_tob', 'li_ex_alc']] > 0).sum(1)
         df.loc[df['li_bmi'] >= 3, ['nc_risk_score']] += 1
+
+        # ----- Set all other parameters to False / NaT
+        df.loc[df.is_alive, 'nc_ever_weight_loss_treatment'] = False
+        df.loc[df.is_alive, 'nc_weight_loss_worked'] = False
 
     def initialise_simulation(self, sim):
         """Schedule:
@@ -537,6 +550,7 @@ class CardioMetabolicDisorders(Module):
         for event in self.events:
             df.at[child_id, f'nc_{event}'] = False
             df.at[child_id, f'nc_{event}_ever_diagnosed'] = False
+            df.at[child_id, f'nc_{event}_on_medication'] = False
             df.at[child_id, f'nc_{event}_date_diagnosis'] = pd.NaT
         # df.at[child_id, 'nc_cancers'] = False
         df.at[child_id, 'nc_risk_score'] = 0
