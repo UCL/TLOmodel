@@ -1396,6 +1396,26 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                         # Consumables not available
                         logger.debug(key='debug', data='Treatment will not be provided due to no available consumables')
                         # probability of death
+                        if self.module.rng.rand() < 0.9:  # probability of death, just a made up number for now
+                            logger.debug(key="CardioMetabolicDisordersDeathEvent",
+                                         data=f"CardioMetabolicDisordersDeathEvent: scheduling death for untreated "
+                                              f"{person_id} on {self.sim.date}")
+
+                            self.sim.modules['Demography'].do_death(individual_id=person_id,
+                                                                    cause=f'{self.event}',
+                                                                    originating_module=self.module)
+                        else:
+                            # start the person on regular medication
+                            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                                    module=self.module,
+                                    person_id=person_id,
+                                    condition=self.event
+                                ),
+                                priority=0,
+                                topen=self.sim.date,
+                                tclose=None
+                            )
 
             else:
                 # Squeeze factor is too large
