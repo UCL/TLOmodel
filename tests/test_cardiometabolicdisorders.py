@@ -210,8 +210,6 @@ def hsi_checks(sim):
         df.is_alive & df.nc_chronic_kidney_disease_ever_diagnosed].nc_chronic_kidney_disease_ever_tested.all()
     assert df.loc[
         df.is_alive & df.nc_chronic_ischemic_hd_ever_diagnosed].nc_chronic_ischemic_hd_ever_tested.all()
-    assert df.loc[df.is_alive & df.nc_ever_stroke_ever_diagnosed].nc_ever_stroke_ever_tested.all()
-    assert df.loc[df.is_alive & df.nc_ever_heart_attack_ever_diagnosed].nc_ever_heart_attack_ever_tested.all()
 
     # check that those who have ever tested have a date of last test
 
