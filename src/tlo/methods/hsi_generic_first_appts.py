@@ -13,6 +13,10 @@ from tlo.methods.bladder_cancer import (
 from tlo.methods.breast_cancer import (
     HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
+from tlo.methods.cardio_metabolic_disorders import (
+    HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
+    HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
+    HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment)
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
@@ -80,7 +84,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         if is_child:
             the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
         else:
-            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # Adult out-patient appointment
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel1'
@@ -314,6 +318,74 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         topen=self.sim.date,
                         tclose=None)
 
+                # ---- ASSESSEMENT FOR CARDIO-METABOLIC DISORDERS ----
+                if 'CardioMetabolicDisorders' in self.sim.modules:
+                    # take a blood pressure measurement for proportion of individuals who have not been diagnosed and
+                    # are either over 50 or younger than 50 but are selected to get tested
+                    cmd = self.sim.modules['CardioMetabolicDisorders']
+
+                    def get_time_since_last_test(current_date, date_of_last_test):
+                        return (current_date.year - date_of_last_test.year) * 12 + \
+                               (current_date.month - date_of_last_test.month)
+
+                    for condition in cmd.conditions:
+                        # if the person hasn't been diagnosed and they don't have symptoms of the condition...
+                        if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and \
+                                (f'{condition}_symptoms' not in symptoms):
+                            # if they haven't been tested within the last 6 months...
+                            if df.at[person_id, f'nc_{condition}_ever_tested']:
+                                num_months_since_last_test = get_time_since_last_test(
+                                    self.sim.date, df.at[person_id, f'nc_{condition}_date_last_test'])
+                                if num_months_since_last_test >= 6 and condition != 'chronic_ischemic_hd':
+                                    # and if they're over 50 or are chosen to be tested with some probability...
+                                    if df.at[person_id, 'age_years'] >= 50 or self.module.rng.rand() < cmd.parameters[
+                                            f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                                        # initiate HSI event
+                                        hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
+                                            module=cmd,
+                                            person_id=person_id,
+                                            condition=f'{condition}'
+                                        )
+                                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                            hsi_event,
+                                            priority=0,
+                                            topen=self.sim.date,
+                                            tclose=None
+                                        )
+                            # else if never tested, test if over 50 or chosen to be tested with some probability
+                            else:
+                                if condition != 'chronic_ischemic_hd':
+                                    if df.at[person_id, 'age_years'] >= 50 or self.module.rng.rand() < cmd.parameters[
+                                            f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                                        # initiate HSI event
+                                        hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
+                                            module=cmd,
+                                            person_id=person_id,
+                                            condition=f'{condition}'
+                                        )
+                                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                            hsi_event,
+                                            priority=0,
+                                            topen=self.sim.date,
+                                            tclose=None
+                                        )
+
+
+                        # If the symptoms include those for an CMD condition, then begin investigation for condition
+                        elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
+                                symptoms:
+                            hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
+                                module=cmd,
+                                person_id=person_id,
+                                condition=f'{condition}'
+                            )
+                            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                hsi_event,
+                                priority=0,
+                                topen=self.sim.date,
+                                tclose=None
+                            )
+
     def did_not_run(self):
         logger.debug(key='message',
                      data='HSI_GenericFirstApptAtFacilityLevel1: did not run')
@@ -390,7 +462,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         if is_child:
             the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
         else:
-            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # Adult out-patient appointment
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
@@ -500,6 +572,18 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                     )
         # else:
             # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
+
+        # ------ CARDIO-METABOLIC DISORDERS ------
+        if 'CardioMetabolicDisorders' in self.sim.modules:
+            cmd = self.sim.modules['CardioMetabolicDisorders']
+            for ev in self.sim.modules['CardioMetabolicDisorders'].events:
+                if f'{ev}_damage' in symptoms:
+                    event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
+                        module=cmd,
+                        person_id=person_id,
+                        ev=ev,
+                    )
+                    health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:
