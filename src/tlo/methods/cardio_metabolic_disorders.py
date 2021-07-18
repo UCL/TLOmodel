@@ -59,9 +59,9 @@ class CardioMetabolicDisorders(Module):
             gbd_causes='Diabetes mellitus', label='Diabetes'),
         'chronic_ischemic_hd': Cause(
             gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
-        'heart_attack': Cause(
+        'ever_heart_attack': Cause(
             gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
-        'stroke': Cause(
+        'ever_stroke': Cause(
             gbd_causes='Stroke', label='Stroke'),
         'chronic_kidney_disease': Cause(
             gbd_causes='Chronic kidney disease', label='Kidney Disease')
