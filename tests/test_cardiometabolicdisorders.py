@@ -57,11 +57,6 @@ def routine_checks(sim):
     assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'stroke').any()
     assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'heart_attack').any()
 
-    # check that no one dies of each condition that has a death rate of zero
-    # todo - NB. the below are not causes of death so this test isn't really checking anything
-    assert not (df.cause_of_death.loc[~df.is_alive] == 'chronic_lower_back_pain').any()
-    assert not (df.cause_of_death.loc[~df.is_alive] == 'hypertension').any()
-
 
 def test_basic_run():
     # --------------------------------------------------------------------------
