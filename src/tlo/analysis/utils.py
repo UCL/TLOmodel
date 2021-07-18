@@ -5,6 +5,7 @@ import os
 import pickle
 from ast import literal_eval
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -207,27 +208,19 @@ def write_log_to_excel(filename, log_dataframes):
 
 def make_calendar_period_lookup():
     """Returns a dictionary mapping calendar year (in years) to five year period
-    i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
+    i.e. { 1950: '1950-1954', 1951: '1950-1954, ...}
     """
 
     # Recycles the code used to make age-range lookups:
     ranges, lookup = util.create_age_range_lookup(1950, 2100, 5)
 
-    # Removes the '1950-' category
+    # Removes the '0-1950' category
     ranges.remove('0-1950')
+
     for year in range(1950):
         lookup.pop(year)
 
     return ranges, lookup
-
-
-def make_age_grp_types():
-    """
-    Make an ordered categorical type for age-groups
-    Returns CategoricalDType
-    """
-    keys, _ = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
-    return pd.CategoricalDtype(categories=keys, ordered=True)
 
 
 def make_calendar_period_type():
@@ -239,10 +232,27 @@ def make_calendar_period_type():
     return pd.CategoricalDtype(categories=keys, ordered=True)
 
 
+def make_age_grp_lookup():
+    """Returns a dictionary mapping age (in years) to five year period
+    i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
+    """
+    return create_age_range_lookup(min_age=0, max_age=100, range_size=5)
+
+
+def make_age_grp_types():
+    """
+    Make an ordered categorical type for age-groups
+    Returns CategoricalDType
+    """
+    keys, _ = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
+    return pd.CategoricalDtype(categories=keys, ordered=True)
+
+
 def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
     """Returns paths of folders associated with a batch_file, in chronological order."""
     stub = scenario_filename.rstrip('.py')
-    folders = [Path(f) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
+    f: os.DirEntry
+    folders = [Path(f.path) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
     folders.sort()
     return folders
 
@@ -253,6 +263,7 @@ def get_scenario_info(scenario_output_dir: Path) -> dict:
     TODO: read the JSON file to get further information
     """
     info = dict()
+    f: os.DirEntry
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
 
     info['number_of_draws'] = len(draw_folders)
@@ -266,6 +277,7 @@ def get_scenario_info(scenario_output_dir: Path) -> dict:
 def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> dict:
     """Utility function to create a dict contaning all the logs from the specified run within a batch set"""
     folder = results_folder / str(draw) / str(run)
+    p: os.DirEntry
     pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
     if name is not None:
         pickles = [p for p in pickles if p.name in f"{name}.pickle"]
@@ -279,7 +291,7 @@ def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> d
     return output
 
 
-def extract_params(results_folder: Path) -> pd.DataFrame:
+def extract_params(results_folder: Path) -> Optional[pd.DataFrame]:
     """Utility function to get overridden parameters from scenario runs
 
     Returns dateframe summarizing parameters that change across the draws. It produces a dataframe with index of draw
@@ -287,76 +299,129 @@ def extract_params(results_folder: Path) -> pd.DataFrame:
     in each draw, under the assumption that the over-written parameters are the same in each run.
     """
 
-    # Get the paths for the draws
-    draws = [f for f in os.scandir(results_folder) if f.is_dir()]
+    try:
+        f: os.DirEntry
+        # Get the paths for the draws
+        draws = [f for f in os.scandir(results_folder) if f.is_dir()]
 
-    list_of_param_changes = list()
+        list_of_param_changes = list()
 
-    for d in draws:
-        p = load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")
-        p = p["tlo.scenario"]["override_parameter"]
+        for d in draws:
+            p = load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")
+            p = p["tlo.scenario"]["override_parameter"]
 
-        p['module_param'] = p['module'] + ':' + p['name']
-        p.index = [int(d.name)] * len(p.index)
+            p['module_param'] = p['module'] + ':' + p['name']
+            p.index = [int(d.name)] * len(p.index)
 
-        list_of_param_changes.append(p[['module_param', 'new_value']])
+            list_of_param_changes.append(p[['module_param', 'new_value']])
 
-    params = pd.concat(list_of_param_changes)
-    params.index.name = 'draw'
-    params = params.rename(columns={'new_value': 'value'})
-    params = params.sort_index()
+        params = pd.concat(list_of_param_changes)
+        params.index.name = 'draw'
+        params = params.rename(columns={'new_value': 'value'})
+        params = params.sort_index()
+        return params
 
-    return params
+    except KeyError:
+        print("No parameters changed between the runs")
+        return None
 
 
-def extract_results(results_folder: Path, module: str, key: str, column: str, index: str = None) -> pd.DataFrame:
+def extract_results(results_folder: Path,
+                    module: str,
+                    key: str,
+                    column: str = None,
+                    index: str = None,
+                    custom_generate_series=None,
+                    do_scaling: bool = False,
+                    ) -> pd.DataFrame:
     """Utility function to unpack results
 
     Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an 'index'
     component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
     index is the same in each run).
+    Optionally, instead of a series that exists in the dataframe already, a function can be provided that, when applied
+    to the dataframe indicated, yields a new pd.Series.
+    Optionally, with `do_scaling`, each element is multiplied by the the scaling_factor recorded in the simulation
+    (if available)
     """
-
-    results_index = None
-    if index is not None:
-        # extract the index from the first log, and use this ensure that all other are exactly the same.
-        filename = f"{module}.pickle"
-        df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
-        results_index = df[index]
 
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
 
-    results = pd.DataFrame(columns=pd.MultiIndex.from_product(
+    cols = pd.MultiIndex.from_product(
         [range(info['number_of_draws']), range(info['runs_per_draw'])],
         names=["draw", "run"]
-    ))
+    )
 
-    for draw in range(info['number_of_draws']):
-        for run in range(info['runs_per_draw']):
+    def get_multiplier(_draw, _run):
+        """Helper function to get the multiplier from the simulation, if it's specified and do_scaling=True"""
+        if not do_scaling:
+            return 1.0
+        else:
             try:
+                return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.demography'
+                                               )['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
+            except KeyError:
+                return 1.0
+
+    if custom_generate_series is None:
+
+        assert column is not None, "Must specify which column to extract"
+
+        results_index = None
+        if index is not None:
+            # extract the index from the first log, and use this ensure that all other are exactly the same.
+            filename = f"{module}.pickle"
+            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
+            results_index = df[index]
+
+        results = pd.DataFrame(columns=cols)
+        for draw in range(info['number_of_draws']):
+            for run in range(info['runs_per_draw']):
+
+                try:
+                    df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                    results[draw, run] = df[column] * get_multiplier(draw, run)
+
+                    if index is not None:
+                        idx = df[index]
+                        assert idx.equals(results_index), "Indexes are not the same between runs"
+
+                except ValueError:
+                    results[draw, run] = np.nan
+
+        # if 'index' is provided, set this to be the index of the results
+        if index is not None:
+            results.index = results_index
+
+        return results
+
+    else:
+        # A custom commaand to generate a series has been provided.
+        # No other arguements should be provided.
+        assert index is None, "Cannot specify an index if using custom_generate_series"
+        assert column is None, "Cannot specify a column if using custom_generate_series"
+
+        # Collect results and then use pd.concat as indicies may be different betweeen runs
+        res = dict()
+        for draw in range(info['number_of_draws']):
+            for run in range(info['runs_per_draw']):
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                results[draw, run] = df[column]
+                output_from_eval = custom_generate_series(df)
+                assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
+                res[f"{draw}_{run}"] = output_from_eval * get_multiplier(draw, run)
+        results = pd.concat(res.values(), axis=1).fillna(0)
+        results.columns = cols
 
-                if index is not None:
-                    idx = df[index]
-                    assert idx.equals(results_index), "Indexes are not the same between runs"
-
-            except ValueError:
-                results[draw, run] = np.nan
-
-    # if 'index' is provided, set this to be the index of the results
-    if index is not None:
-        results.index = results_index
-
-    return results
+        return results
 
 
-def summarize(results: pd.DataFrame, only_mean: bool = False) -> pd.DataFrame:
+def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
     """Utility function to compute summary statistics
 
     Finds mean value and 95% interval across the runs for each draw.
     """
+
     summary = pd.DataFrame(
         columns=pd.MultiIndex.from_product(
             [
@@ -371,13 +436,22 @@ def summarize(results: pd.DataFrame, only_mean: bool = False) -> pd.DataFrame:
     summary.loc[:, (slice(None), "lower")] = results.groupby(axis=1, by='draw').quantile(0.025).values
     summary.loc[:, (slice(None), "upper")] = results.groupby(axis=1, by='draw').quantile(0.975).values
 
-    if only_mean:
-        # Remove other metrics and simplify if 'only_mean' is required:
-        om = summary.loc[:, (slice(None), "mean")]
+    if only_mean and (not collapse_columns):
+        # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
+        om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
         om.columns = [c[0] for c in om.columns.to_flat_index()]
         return om
 
-    return summary
+    elif collapse_columns and (len(summary.columns.levels[0]) == 1):
+        # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
+        summary_droppedlevel = summary.droplevel('draw', axis=1)
+        if only_mean:
+            return summary_droppedlevel['mean']
+        else:
+            return summary_droppedlevel
+
+    else:
+        return summary
 
 
 def get_grid(params: pd.DataFrame, res: pd.Series):
@@ -395,3 +469,99 @@ def get_grid(params: pd.DataFrame, res: pd.Series):
     grid[res.columns[2]] = piv.values
 
     return grid
+
+
+def format_gbd(gbd_df: pd.DataFrame):
+    """Format GBD data to give standarize categories for age_group and period"""
+
+    # Age-groups:
+    gbd_df['Age_Grp'] = gbd_df['Age_Grp'].astype(make_age_grp_types())
+
+    # label periods:
+    calperiods, calperiodlookup = make_calendar_period_lookup()
+    gbd_df['Period'] = gbd_df['Year'].map(calperiodlookup).astype(make_calendar_period_type())
+
+    return gbd_df
+
+
+def create_pickles_locally(scenario_output_dir):
+    """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
+     locally."""
+    def turn_log_into_pickles(logfile):
+        print(f"Opening {logfile}")
+        outputs = parse_log_file(logfile)
+        for key, output in outputs.items():
+            if key.startswith("tlo."):
+                print(f" - Writing {key}.pickle")
+                with open(logfile.parent / f"{key}.pickle", "wb") as f:
+                    pickle.dump(output, f)
+
+    f: os.DirEntry
+    draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
+    for draw_folder in draw_folders:
+        run_folders = [f for f in os.scandir(draw_folder) if f.is_dir()]
+        for run_folder in run_folders:
+            logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
+            turn_log_into_pickles(Path(run_folder) / logfile)
+
+
+def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
+    """Helper function to produce tables summarising deaths in the model run (given be a logfile) and the corresponding
+    number of deaths in the GBD dataset.
+    NB.
+    * Requires output from the module `tlo.methods.demography`
+    * Will do scaling automatically if the scaling-factor has been computed in the simulation (but not otherwise).
+    """
+    output = parse_log_file(logfile)
+
+    # 1) Get model outputs:
+    # - get scaling factor if it has been computed:
+    if 'scaling_factor' in output['tlo.methods.demography']:
+        sf = output['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
+    else:
+        sf = 1.0
+
+    # - extract number of death by period/sex/age-group
+    model = output['tlo.methods.demography']['death'].assign(
+        year=lambda x: x['date'].dt.year
+    ).groupby(
+        ['sex', 'year', 'age', 'label']
+    )['person_id'].count().mul(sf)
+
+    # - format categories:
+    agegrps, agegrplookup = make_age_grp_lookup()
+    calperiods, calperiodlookup = make_calendar_period_lookup()
+    model = model.reset_index()
+    model['age_grp'] = model['age'].map(agegrplookup).astype(make_age_grp_types())
+    model['period'] = model['year'].map(calperiodlookup).astype(make_calendar_period_type())
+    model = model.drop(columns=['age', 'year'])
+
+    # - sum over period and divide by five to give yearly averages
+    model = model.groupby(['period', 'sex', 'age_grp', 'label']).sum().div(5.0).rename(
+        columns={'person_id': 'model'}).replace({0: np.nan})
+
+    # 2) Load comparator GBD datasets
+    # - Load data, format and limit to deaths only:
+    gbd_dat = format_gbd(pd.read_csv(resourcefilepath / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'))
+    gbd_dat = gbd_dat.loc[gbd_dat['measure_name'] == 'Deaths']
+    gbd_dat = gbd_dat.rename(columns={
+        'Sex': 'sex',
+        'Age_Grp': 'age_grp',
+        'Period': 'period',
+        'GBD_Est': 'mean',
+        'GBD_Lower': 'lower',
+        'GBD_Upper': 'upper'})
+
+    # - Label GBD causes of death by 'label' defined in the simulation
+    mapper_from_gbd_causes = pd.Series(
+        output['tlo.methods.demography']['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]
+    ).to_dict()
+    gbd_dat['label'] = gbd_dat['cause_name'].map(mapper_from_gbd_causes)
+    assert not gbd_dat['label'].isna().any()
+
+    # - Create comparable data structure:
+    gbd = gbd_dat.groupby(['period', 'sex', 'age_grp', 'label'])[['mean', 'lower', 'upper']].sum().div(5.0)
+    gbd = gbd.add_prefix('GBD_')
+
+    # 3) Return summary
+    return gbd.merge(model, left_index=True, right_index=True, how='left')
