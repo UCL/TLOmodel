@@ -839,7 +839,10 @@ class PostnatalSupervisor(Module):
         # Set external variables used in the linear model equation
         maternal_prom = pd.Series(df.at[mother_id, 'ps_premature_rupture_of_membranes'], index=df.loc[[child_id]].index)
         received_abx_for_prom = pd.Series(nci_df.at[child_id, 'abx_for_prom_given'],  index=df.loc[[child_id]].index)
-        chorio_in_preg = pd.Series(mni_df.at[mother_id, 'chorio_in_preg'], index=df.loc[[child_id]].index)
+        if mother_id in mni_df.index:
+            chorio_in_preg = pd.Series(mni_df.at[mother_id, 'chorio_in_preg'], index=df.loc[[child_id]].index)
+        else:
+            chorio_in_preg = pd.Series(False, index=df.loc[[child_id]].index)
 
         # We then apply a risk that this womans newborn will develop sepsis during week one
         risk_eons = self.pn_linear_models['early_onset_neonatal_sepsis_week_1'].predict(

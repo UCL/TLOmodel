@@ -135,9 +135,9 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=200000)
+    sim.make_initial_population(n=500)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    sim.simulate(end_date=Date(2010, 1, 2))
+    sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
 
 
@@ -148,7 +148,7 @@ def test_run_all_labour():
     sim = register_all_modules()
     sim.make_initial_population(n=500)
     set_all_women_to_go_into_labour(sim)
-    sim.simulate(end_date=Date(2010, 4, 1))
+    sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
 
 test_run_core_modules_normal_allocation_of_pregnancy()
