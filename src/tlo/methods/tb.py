@@ -529,34 +529,24 @@ class Tb(Module):
         now = self.sim.date
 
         # remove individuals not alive
-        # when HIV not registered, properties of newly appended rows set to nan -> error
+        # when HIV not registered, properties of newly appended rows for dummy properties set to nan -> error
         df_tmp = df.loc[df.is_alive]
 
         # ------------------ fast progressors ------------------ #
-        # adults only
-        # eligible_for_fast_progression = df.loc[(df.tb_date_latent == now) &
-        #                                        df.is_alive &
-        #                                        (df.age_years >= 15) &
-        #                                        ~df.hv_inf].index
-
         eligible_for_fast_progression = df_tmp.loc[(df_tmp.tb_date_latent == now) &
                                                df_tmp.is_alive &
                                                (df_tmp.age_years >= 15) &
                                                ~df_tmp.hv_inf].index
 
-
         will_progress = rng.random_sample(len(eligible_for_fast_progression)) < p['prop_fast_progressor']
         fast = eligible_for_fast_progression[will_progress]
 
         # hiv-positive
-        # eligible_for_fast_progression_hiv = df.loc[(df.tb_date_latent == now) &
-        #                                            df.is_alive &
-        #                                            (df.age_years >= 15) &
-        #                                            df.hv_inf].index
         eligible_for_fast_progression_hiv = df_tmp.loc[(df_tmp.tb_date_latent == now) &
                                                    df_tmp.is_alive &
                                                    (df_tmp.age_years >= 15) &
                                                    df_tmp.hv_inf].index
+
         will_progress = rng.random_sample(len(eligible_for_fast_progression_hiv)) < p['prop_fast_progressor_hiv']
         fast_hiv = eligible_for_fast_progression_hiv[will_progress]
 
@@ -1206,8 +1196,9 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
                     df.at[person_id, 'tb_smear'] = True
 
                 if 'Hiv' in self.sim.modules:
-                    # todo think about logging COD in HIV/TB
-                    self.sim.schedule_event(hiv.HivAidsOnsetEvent(self.sim.modules['Hiv'], person_id), now)
+                    self.sim.schedule_event(hiv.HivAidsOnsetEvent(
+                        self.sim.modules['Hiv'], person_id, cause=self.module), now
+                    )
 
         # todo add tb_stage == active_extra with prob based on HIV status
 
@@ -1701,7 +1692,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # -------- Secondary TB infection -------- #
         # person has been treated before
         # possible treatment failure or subsequent reinfection
-        elif person['tb_ever_treated']:
+        else:
 
             if person['age_years'] >= 15:
                 # treatment for reinfection ds-tb: adult

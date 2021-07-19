@@ -627,7 +627,7 @@ class Hiv(Module):
 
             date_onset_aids = self.sim.date + pd.DateOffset(days=days_until_aids)
             sim.schedule_event(
-                HivAidsOnsetEvent(person_id=person_id, module=self),
+                HivAidsOnsetEvent(person_id=person_id, module=self, cause=self),
                 date=date_onset_aids
             )
 
@@ -868,7 +868,7 @@ class Hiv(Module):
 
         # Schedule AIDS onset events for this person
         date_onset_aids = self.sim.date + self.get_time_from_infection_to_aids(person_id=person_id)
-        self.sim.schedule_event(event=HivAidsOnsetEvent(self, person_id), date=date_onset_aids)
+        self.sim.schedule_event(event=HivAidsOnsetEvent(self, person_id, cause=self), date=date_onset_aids)
 
     def get_time_from_infection_to_aids(self, person_id):
         """Gives time between onset of infection and AIDS, returning a pd.DateOffset.
@@ -958,7 +958,7 @@ class Hiv(Module):
         if df.at[person_id, "hv_art"] != "not":
             months_to_aids = int(np.floor(
                 self.rng.exponential(scale=self.parameters["art_default_to_aids_mean_years"]) * 12.0))
-            self.sim.schedule_event(event=HivAidsOnsetEvent(person_id=person_id, module=self),
+            self.sim.schedule_event(event=HivAidsOnsetEvent(person_id=person_id, module=self, cause=self),
                                     date=self.sim.date + pd.DateOffset(months=months_to_aids)
                                     )
 
@@ -1173,8 +1173,10 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
     * Schedule the AIDS death
     """
 
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
+    def __init__(self, module, person_id, cause):
+        super().__init__(module, person_id=person_id, cause=cause)
+
+        self.cause = cause
 
     def apply(self, person_id):
 
@@ -1198,7 +1200,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
         # Schedule AidsDeath
         date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
-        self.sim.schedule_event(event=HivAidsDeathEvent(person_id=person_id, module=self.module),
+        self.sim.schedule_event(event=HivAidsDeathEvent(person_id=person_id, module=self.module, cause=self.cause),
                                 date=date_of_aids_death)
 
 
@@ -1207,8 +1209,10 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
     Causes someone to die of AIDS, if they are not VL suppressed on ART.
     """
 
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
+    def __init__(self, module, person_id, cause):
+        super().__init__(module, person_id=person_id, cause=cause)
+
+        self.cause = cause
 
     def apply(self, person_id):
         df = self.sim.population.props
@@ -1221,10 +1225,9 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, "hv_art"] == "on_VL_suppressed":
             return
 
-        if 'Tb' in self.sim.modules:
+        if self.cause == 'Tb':
             # Cause the death to happen immediately, cause defined by TB status
-            if df.at[person_id, 'tb_inf'] == "active":
-                demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS_TB").apply(person_id)
+            demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS_TB").apply(person_id)
 
         else:
             demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS_non_TB").apply(person_id)
