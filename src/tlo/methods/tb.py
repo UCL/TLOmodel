@@ -1101,9 +1101,10 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
-    """ The Tb Regular Relapse Events
-    * Schedules persons who have previously been infected to relapse
-    * Schedules progression to active tb
+    """ The Tb Regular Relapse Event
+    runs every month to randomly sample amongst those previously infected with active tb
+    * Schedules persons who have previously been infected to relapse with a set probability
+    * Schedules progression to active tb (TbActiveEvent)
     """
 
     def __init__(self, module):
@@ -1163,42 +1164,44 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
         rng = self.module.rng
         now = self.sim.date
 
+        # if on ipt or treatment - do nothing
         if (
-            not df.at[person_id, 'tb_on_ipt']
-            and not df.at[person_id, 'tb_on_treatment']
+            df.at[person_id, 'tb_on_ipt']
+            or df.at[person_id, 'tb_on_treatment']
         ):
+            return
 
-            # -------- 1) change individual properties for active disease --------
+        # -------- 1) change individual properties for active disease --------
 
-            df.at[person_id, 'tb_inf'] = 'active'
-            df.at[person_id, 'tb_date_active'] = now
+        df.at[person_id, 'tb_inf'] = 'active'
+        df.at[person_id, 'tb_date_active'] = now
 
-            # -------- 2) assign smear status --------
-            # hiv-negative
-            if rng.rand() < p['prop_smear_positive']:
+        # -------- 2) assign smear status --------
+        # hiv-negative
+        if rng.rand() < p['prop_smear_positive']:
+            df.at[person_id, 'tb_smear'] = True
+
+        # -------- 3) assign symptoms --------
+
+        for symptom in self.module.symptom_list:
+            self.sim.modules["SymptomManager"].change_symptom(
+                person_id=person_id,
+                symptom_string=symptom,
+                add_or_remove="+",
+                disease_module=self.module,
+                duration_in_days=None,
+            )
+
+        # -------- 4) if HIV+ schedule AIDS onset --------
+        if df.at[person_id, 'hv_inf']:
+            # higher probability of being smear positive
+            if rng.rand() < p['prop_smear_positive_hiv']:
                 df.at[person_id, 'tb_smear'] = True
 
-            # -------- 3) assign symptoms --------
-
-            for symptom in self.module.symptom_list:
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=person_id,
-                    symptom_string=symptom,
-                    add_or_remove="+",
-                    disease_module=self.module,
-                    duration_in_days=None,
+            if 'Hiv' in self.sim.modules:
+                self.sim.schedule_event(hiv.HivAidsOnsetEvent(
+                    self.sim.modules['Hiv'], person_id, cause=self.module), now
                 )
-
-            # -------- 4) if HIV+ schedule AIDS onset --------
-            if df.at[person_id, 'hv_inf']:
-                # higher probability of being smear positive
-                if rng.rand() < p['prop_smear_positive_hiv']:
-                    df.at[person_id, 'tb_smear'] = True
-
-                if 'Hiv' in self.sim.modules:
-                    self.sim.schedule_event(hiv.HivAidsOnsetEvent(
-                        self.sim.modules['Hiv'], person_id, cause=self.module), now
-                    )
 
         # todo add tb_stage == active_extra with prob based on HIV status
 
@@ -1327,72 +1330,6 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['SymptomManager'].clear_symptoms(
                 person_id=person_id, disease_module=self.module
             )
-
-
-# # ---------------------------------------------------------------------------
-# #   HEALTH SYSTEM INTERACTIONS
-# # ---------------------------------------------------------------------------
-#
-
-#                 # ----------------------------------- REFERRALS FOR IPT -----------------------------------
-#                 # todo check these coverage levels relate to paed contacts not HIV cases
-#                 if self.sim.date.year >= 2014:
-#                     # if diagnosed, trigger ipt outreach event for all paediatric contacts of case
-#                     district = df.at[person_id, 'district_of_residence']
-#                     ipt_cov = params['ipt_contact_cov']
-#                     ipt_cov_year = ipt_cov.loc[
-#                         ipt_cov.year == self.sim.date.year
-#                     ].coverage.values
-#
-#                     if (district in params['tb_high_risk_distr'].values) & (
-#                         self.module.rng.rand() < ipt_cov_year
-#                     ):
-#
-#                         # check enough contacts available for sample
-#                         if (
-#                             len(
-#                                 df[
-#                                     (df.age_years <= 5)
-#                                     & ~df.tb_ever_tb
-#                                     & ~df.tb_ever_tb_mdr
-#                                     & df.is_alive
-#                                     & (df.district_of_residence == district)
-#                                 ].index
-#                             )
-#                             > 5
-#                         ):
-#
-#                             # randomly sample from <5 yr olds within district
-#                             ipt_sample = (
-#                                 df[
-#                                     (df.age_years <= 5)
-#                                     & ~df.tb_ever_tb
-#                                     & ~df.tb_ever_tb_mdr
-#                                     & df.is_alive
-#                                     & (df.district_of_residence == district)
-#                                 ]
-#                                 .sample(n=5, replace=False)
-#                                 .index
-#                             )
-#
-#                             for person_id in ipt_sample:
-#                                 logger.debug(
-#                                     'HSI_Tb_Sputum: scheduling IPT for person %d',
-#                                     person_id,
-#                                 )
-#
-#                                 ipt_event = HSI_Tb_Ipt(self.module, person_id=person_id)
-#                                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-#                                     ipt_event,
-#                                     priority=1,
-#                                     topen=self.sim.date,
-#                                     tclose=None,
-#                                 )
-#
-#     def did_not_run(self):
-#         logger.debug('HSI_Tb_SputumTest: did not run')
-#         pass
-#
 
 
 # ---------------------------------------------------------------------------
@@ -2020,16 +1957,15 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # proportion of active TB cases in the last year who are HIV-positive
         prop_hiv = inc_active_hiv / new_tb_cases if new_tb_cases else 0
 
-        logger.info(
-            '%s|tb_incidence|%s',
-            now,
-            {
-                'num_new_active_tb': new_tb_cases,
-                'num_new_latent_tb': new_latent_cases,
-                'num_new_active_tb_in_hiv': inc_active_hiv,
-                'prop_active_tb_in_plhiv': prop_hiv,
-            },
-        )
+        logger.info(key='tb_incidence',
+                    description='Number new active and latent TB cases, total and in PLHIV',
+                    data={
+                        'num_new_active_tb': new_tb_cases,
+                        'num_new_latent_tb': new_latent_cases,
+                        'num_new_active_tb_in_hiv': inc_active_hiv,
+                        'prop_active_tb_in_plhiv': prop_hiv,
+                    },
+                    )
 
         # ------------------------------------ PREVALENCE ------------------------------------
         # number of current active cases divided by population alive
@@ -2082,18 +2018,17 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
         assert prev_latent_child <= 1
 
-        logger.info(
-            '%s|tb_prevalence|%s',
-            now,
-            {
-                'tbPrevActive': prev_active,
-                'tbPrevActiveAdult': prev_active_adult,
-                'tbPrevActiveChild': prev_active_child,
-                'tbPrevLatent': prev_latent,
-                'tbPrevLatentAdult': prev_latent_adult,
-                'tbPrevLatentChild': prev_latent_child,
-            },
-        )
+        logger.info(key='tb_prevalence',
+                    description='Prevalence of active and latent TB cases, total and in PLHIV',
+                    data={
+                        'tbPrevActive': prev_active,
+                        'tbPrevActiveAdult': prev_active_adult,
+                        'tbPrevActiveChild': prev_active_child,
+                        'tbPrevLatent': prev_latent,
+                        'tbPrevLatentAdult': prev_latent_adult,
+                        'tbPrevLatentChild': prev_latent_child,
+                    },
+                    )
 
         # ------------------------------------ MDR ------------------------------------
         # number new mdr tb cases
@@ -2108,14 +2043,13 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             prop_mdr = 0
 
-        logger.info(
-            '%s|tb_mdr|%s',
-            now,
-            {
-                'tbNewActiveMdrCases': new_mdr_cases,
-                'tbPropActiveCasesMdr': prop_mdr
-            },
-        )
+        logger.info(key='tb_mdr',
+                    description='Incidence of new active MDR cases and the proportion of TB cases that are MDR',
+                    data={
+                        'tbNewActiveMdrCases': new_mdr_cases,
+                        'tbPropActiveCasesMdr': prop_mdr
+                    },
+                    )
 
         # ------------------------------------ TREATMENT ------------------------------------
         # number of tb cases initiated treatment in last timeperiod / new active cases
@@ -2127,10 +2061,9 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             tx_coverage = 0
 
-        logger.info(
-            '%s|tb_treatment|%s',
-            now,
-            {
-                'tbTreatmentCoverage': tx_coverage,
-            },
-        )
+        logger.info(key='tb_treatment',
+                    description='TB treatment coverage',
+                    data={
+                        'tbTreatmentCoverage': tx_coverage,
+                    },
+                    )
