@@ -1718,7 +1718,7 @@ class PregnancySupervisor(Module):
         if mother.ps_antepartum_haemorrhage == 'severe':
             causes.append('antepartum_haemorrhage')
         if mother.ps_htn_disorders == 'severe_pre_eclamp':
-            causes.append('severe_pre_eclamp')
+            causes.append('severe_pre_eclampsia')
         if mother.ps_htn_disorders == 'eclampsia':
             causes.append('eclampsia')
         if mother.ps_chorioamnionitis:

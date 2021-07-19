@@ -287,7 +287,7 @@ def age_corrected_run_with_all_women_pregnant_at_baseline(config_name, start_dat
 age_corrected_run_with_all_women_pregnant_at_baseline(config_name='twins_correct_updated',
                                                       start_date=Date(2010, 1, 1),
                                                       end_date=Date(2011, 1, 1), seed=163,
-                                                      population=1000, parameters=2010)
+                                                      population=100, parameters=2015)
 
 #age_corrected_run_with_all_women_pregnant_at_baseline(config_name='interventions_2015_updated',
 #                                                      start_date=Date(2015, 1, 1),

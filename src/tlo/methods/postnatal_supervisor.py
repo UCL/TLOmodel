@@ -1245,7 +1245,7 @@ class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
                         treatment_reduced_risk = prob_matrix['gest_htn']['severe_gest_htn'] * \
                                                      params['treatment_effect_anti_htns_progression_pn']
                         prob_matrix.at['gest_htn', 'severe_gest_htn'] = treatment_reduced_risk
-                        prob_matrix.at['gest_htn', 'gest_htn'] = 1 - (treatment_reduced_risk + prob_matrix['gest_htn'][2])
+                        prob_matrix.at['gest_htn', 'gest_htn'] = 1 - (treatment_reduced_risk +  prob_matrix['gest_htn'][2])
 
                     current_status = df.loc[[individual_id], 'pn_htn_disorders']
                     new_status = util.transition_states(current_status, prob_matrix, self.module.rng)
