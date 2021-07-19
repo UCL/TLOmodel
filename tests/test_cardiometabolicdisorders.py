@@ -55,8 +55,8 @@ def routine_checks(sim):
     assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'diabetes').any()
     assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'chronic_ischemic_hd').any()
     assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'chronic_kidney_disease').any()
-    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'stroke').any()
-    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'heart_attack').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'ever_stroke').any()
+    assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'ever_heart_attack').any()
 
 
 def test_basic_run():
