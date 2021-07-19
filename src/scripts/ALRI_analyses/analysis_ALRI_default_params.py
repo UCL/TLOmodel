@@ -30,6 +30,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
+
 # %%
 outputpath = Path("./outputs")
 resourcefilepath = Path("./resources")
