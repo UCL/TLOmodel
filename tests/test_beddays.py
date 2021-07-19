@@ -472,6 +472,49 @@ def test_bed_days_released_on_death(tmpdir):
     ).add(
         # death of one person, releases bed from 6th January - 12th January:
         pd.Series(index=pd.date_range(Date(2010, 1, 6), Date(2010, 1, 12)), data=-1), fill_value=0
-        )
+    )
 
     assert beds_occupied.astype(int).equals(expected_beds_occupied.astype(int))
+
+
+def test_bed_days_basics_with_healthsystem_disabled(tmpdir):
+    """Check basic functionality of bed-days class when the health-system has been disabled"""
+
+    # Create simulation:
+    sim = Simulation(start_date=start_date, seed=0, log_config={
+        'filename': 'bed_days',
+        'directory': tmpdir,
+        'custom_levels': {
+            "BedDays": logging.INFO}
+    })
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  disable=True),
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=100))
+    hs = sim.modules['HealthSystem']
+
+    # get the number of tracked days from beddays class
+    tracker_days = hs.bed_days.days_until_last_day_of_bed_tracker
+
+    # create a datetime series from start date to a days until last day of bed tracker
+    date_s = pd.date_range(start_date, start_date + pd.DateOffset(days=tracker_days))
+
+    """ since health system is disabled, tracker index will not shift. This implies that tracker index will be equal to
+     date_s variable. check that this is true """
+    for bed_type in hs.bed_days.bed_types:
+        assert (hs.bed_days.bed_tracker[bed_type].index == date_s).all()
+
+    """disabling health system will also cause only start_date to be logged as a result of calling on_simulation_end
+    method of the health system."""
+
+    # Check that structure of the log is as expected
+    log = parse_log_file(sim.log_filepath)['tlo.methods.bed_days']
+    assert set([f"bed_tracker_{bed}" for bed in hs.bed_days.bed_types]) == set(log.keys())
+
+    # check that only one day has been logged and that that day(date_of_bed_occupancy) is start_date.
+    for bed_type in set(log.keys()):
+        assert log[bed_type].index.size == 1
+        assert log[bed_type].loc[log[bed_type].index[0], "date_of_bed_occupancy"] == start_date
