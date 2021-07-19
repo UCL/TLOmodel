@@ -1163,23 +1163,24 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
         p = self.module.parameters
         rng = self.module.rng
         now = self.sim.date
+        person = df.loc[person_id]
 
         # if on ipt or treatment - do nothing
         if (
-            df.at[person_id, 'tb_on_ipt']
-            or df.at[person_id, 'tb_on_treatment']
+            person['tb_on_ipt']
+            or person['tb_on_treatment']
         ):
             return
 
         # -------- 1) change individual properties for active disease --------
 
-        df.at[person_id, 'tb_inf'] = 'active'
-        df.at[person_id, 'tb_date_active'] = now
+        person['tb_inf'] = 'active'
+        person['tb_date_active'] = now
 
         # -------- 2) assign smear status --------
         # hiv-negative
         if rng.rand() < p['prop_smear_positive']:
-            df.at[person_id, 'tb_smear'] = True
+            person['tb_smear'] = True
 
         # -------- 3) assign symptoms --------
 
@@ -1193,10 +1194,10 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
             )
 
         # -------- 4) if HIV+ schedule AIDS onset --------
-        if df.at[person_id, 'hv_inf']:
+        if person['hv_inf']:
             # higher probability of being smear positive
             if rng.rand() < p['prop_smear_positive_hiv']:
-                df.at[person_id, 'tb_smear'] = True
+                person['tb_smear'] = True
 
             if 'Hiv' in self.sim.modules:
                 self.sim.schedule_event(hiv.HivAidsOnsetEvent(
@@ -1325,6 +1326,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[all_self_cure, 'tb_strain'] = 'none'
         df.loc[all_self_cure, 'tb_smear'] = False
 
+        # todo check this returns a series of indices
         for person_id in all_self_cure:
             # this will clear all tb symptoms
             self.sim.modules['SymptomManager'].clear_symptoms(
@@ -1380,12 +1382,13 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         now = self.sim.date
         p = self.module.parameters
         rng = self.module.rng
+        person = df.loc[person_id]
 
-        if not df.at[person_id, 'is_alive']:
+        if not person['is_alive']:
             return
 
         # If the person is already on treatment do nothing do not occupy any resources
-        if df.at[person_id, 'tb_on_treatment']:
+        if person['tb_on_treatment']:
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         test_result = None
@@ -1402,7 +1405,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             # if screening indicates presumptive tb
             # child under 5 -> chest x-ray, has to be health system level 2 or above
-            if df.at[person_id, 'age_years'] < 5:
+            if person['age_years'] < 5:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Tb_Xray(person_id=person_id, module=self.module),
                     topen=now,
@@ -1411,7 +1414,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 )
 
             # never diagnosed/treated before and hiv-neg -> sputum smear
-            elif not df.at[person_id, 'tb_ever_treated'] and not df.at[person_id, 'hv_inf']:
+            elif not person['tb_ever_treated'] and not person['hv_inf']:
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'LabTBMicro': 1})
                 test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                     dx_tests_to_run='tb_sputum_test',
@@ -1419,13 +1422,13 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 )
 
             # previously diagnosed/treated or hiv+ -> xpert
-            elif df.at[person_id, 'tb_ever_treated'] or df.at[person_id, 'hv_inf']:
+            elif person['tb_ever_treated'] or person['hv_inf']:
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'LabMolec': 1})
                 test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                     dx_tests_to_run='tb_xpert_test',
                     hsi_event=self
                 )
-                if test_result and (df.at[person_id, 'tb_strain'] == 'mdr'):
+                if test_result and (person['tb_strain'] == 'mdr'):
                     df.at[person_id, 'tb_diagnosed_mdr'] = True
 
                 # if xpert not available perform sputum test
@@ -1442,11 +1445,11 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # if a test has been performed, update person's properties
         if test_result is not None:
-            df.at[person_id, 'tb_ever_tested'] = True
+            person['tb_ever_tested'] = True
 
             # if any test returns positive result, refer for appropriate treatment
             if test_result:
-                df.at[person_id, 'tb_diagnosed'] = True
+                person['tb_diagnosed'] = True
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
@@ -1461,7 +1464,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             # todo check these coverage levels relate to paed contacts not HIV cases
             if now.year >= p['ipt_start_date']:
-                district = df.at[person_id, 'district_of_residence']
+                district = person['district_of_residence']
                 ipt_cov = p['ipt_contact_cov']
                 ipt_cov_year = ipt_cov.loc[
                     ipt_cov.year == now.year
@@ -1565,7 +1568,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Tb)
 
         self.TREATMENT_ID = "Tb_Treatment_Initiation"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"TBNew": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -1576,16 +1579,17 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         """
         df = self.sim.population.props
         now = self.sim.date
+        person = df.loc[person_id]
 
-        if not df.at[person_id, "is_alive"]:
+        if not person["is_alive"]:
             return
 
         treatment_available = self.select_treatment(person_id)
 
         if treatment_available:
             # start person on tb treatment - update properties
-            df.at[person_id, 'tb_on_treatment'] = True
-            df.at[person_id, 'tb_date_treated'] = now
+            person['tb_on_treatment'] = True
+            person['tb_date_treated'] = now
 
             # schedule clinical monitoring
             self.module.clinical_monitoring(person_id)
@@ -1661,8 +1665,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Tb)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['TBFollowUp'] = 1
+        the_appt_footprint = self.make_appt_footprint({'TBFollowUp': 1})
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_FollowUp'
@@ -1673,6 +1676,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         p = self.module.parameters
         df = self.sim.population.props
+        person = df.loc[person_id]
 
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
@@ -1685,13 +1689,13 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         sputum_fup = follow_up_times['ds_sputum'].dropna()
 
         # if previously treated:
-        if df.at[person_id, 'tb_ever_treated']:
+        if person['tb_ever_treated']:
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times['ds_retreatment_sputum'].dropna()
 
         # if strain is mdr - this treatment schedule takes precedence
-        elif df.at[person_id, 'tb_strain'] == 'mdr':
+        elif person['tb_strain'] == 'mdr':
 
             # if strain is mdr:
             sputum_fup = follow_up_times['mdr_sputum'].dropna()
@@ -1714,8 +1718,8 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
                 # if xpert test returns mdr-tb diagnosis
                 if test_result and (df.at[person_id, 'tb_strain'] == 'mdr'):
-                    df.at[person_id, 'tb_diagnosed_mdr'] = True
-                    df.at[person_id, 'tb_treatment_failure'] = True
+                    person['tb_diagnosed_mdr'] = True
+                    person['tb_treatment_failure'] = True
 
                     # restart treatment (new regimen) if newly diagnosed with mdr-tb
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1766,8 +1770,8 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         # NB. If materials not available, it is assumed that no IPT is given and no further referral is offered
         if self.get_all_consumables(footprint=self.module.footprints_for_consumables_required['tb_ipt']):
             # Update properties
-            df.at[person_id, 'tb_on_ipt'] = True
-            df.at[person_id, 'tb_date_ipt'] = self.sim.date
+            person['tb_on_ipt'] = True
+            person['tb_date_ipt'] = self.sim.date
 
             # schedule decision to continue or end IPT after 6 months
             self.sim.schedule_event(
@@ -1796,7 +1800,7 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
             return
 
         # default update properties for all
-        df.at[person_id, 'tb_on_ipt'] = False
+        person['tb_on_ipt'] = False
 
         # decide whether PLHIV will continue
         if (not person['tb_diagnosed']) and (
