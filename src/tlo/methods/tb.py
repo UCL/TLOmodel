@@ -36,13 +36,6 @@ class Tb(Module):
         self.lm = dict()
         self.footprints_for_consumables_required = dict()
         self.symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-        self.district_list = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_District_Population_Data.csv')
-        ).District
-
-        workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, 'ResourceFile_TB.xlsx'), sheet_name=None
-        )
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -550,6 +543,7 @@ class Tb(Module):
                                                df_tmp.is_alive &
                                                (df_tmp.age_years >= 15) &
                                                ~df_tmp.hv_inf].index
+
 
         will_progress = rng.random_sample(len(eligible_for_fast_progression)) < p['prop_fast_progressor']
         fast = eligible_for_fast_progression[will_progress]

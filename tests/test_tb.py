@@ -113,8 +113,7 @@ def test_basic_run():
     prev_latent = num_latent / len(df[df.is_alive])
     assert prev_latent > 0
 
-    # todo check this works
-    assert not pd.isnull(df.loc[~df.date_of_birth.isna() & df.is_alive, [
+    assert not pd.isnull(df.loc[~df.date_of_birth.isna(), [
         'tb_inf',
         'tb_strain',
         'tb_date_latent']

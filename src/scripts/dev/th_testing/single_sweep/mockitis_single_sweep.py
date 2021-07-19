@@ -2,7 +2,7 @@
 This file defines a batch run through which the Mockitis module is run across a sweep of a single parameter.
 
 Run on the batch system using:
-```tlo batch-submit  src/scripts/dev/th_testing/mockitis_single_sweep.py tlo.conf```
+```tlo batch-submit  src/scripts/dev/th_testing/mockitis_single_sweep.pyoh ok,  tlo.conf```
 
 """
 
