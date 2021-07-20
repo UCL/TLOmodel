@@ -34,15 +34,15 @@ def set_logging_levels(custom_levels: Dict[str, int], modules: Iterable[str]):
             getLogger(key).setLevel(value)
 
 
-def init_logging():
+def init_logging(add_stdout_handler=True):
     """Initialise default logging with stdout stream"""
     for logger_name, logger in _LOGGERS.items():
         logger.reset_attributes()
-
-    handler = _logging.StreamHandler(sys.stdout)
-    handler.setLevel(DEBUG)
-    handler.setFormatter(_FORMATTER)
-    getLogger('tlo').addHandler(handler)
+    if add_stdout_handler:
+        handler = _logging.StreamHandler(sys.stdout)
+        handler.setLevel(DEBUG)
+        handler.setFormatter(_FORMATTER)
+        getLogger('tlo').addHandler(handler)
     _logging.basicConfig(level=_logging.WARNING)
 
 

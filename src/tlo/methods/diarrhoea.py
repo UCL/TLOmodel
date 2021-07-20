@@ -1,7 +1,6 @@
 """
 Childhood Diarrhoea Module
-Documentation: '04 - Methods Repository/Childhood Disease Methods.docx'
-gi_last_diarrhoea_treatment_date
+
 Overview
 =======
 Individuals are exposed to the risk of onset of diarrhoea. They can have diarrhoea caused by one pathogen at a time.
@@ -30,6 +29,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
+from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
@@ -62,6 +62,18 @@ class Diarrhoea(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        f'Diarrhoea_{path}': Cause(gbd_causes='Diarrheal diseases', label='Childhood Diarrhoea')
+        for path in pathogens
+    }
+
+    # Declare Causes of Death and Disability
+    CAUSES_OF_DISABILITY = {
+        f'Diarrhoea_{path}': Cause(gbd_causes='Diarrheal diseases', label='Childhood Diarrhoea')
+        for path in pathogens
     }
 
     PARAMETERS = {
@@ -593,8 +605,8 @@ class Diarrhoea(Module):
         sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Get DALY weights
-        get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
         if 'HealthBurden' in self.sim.modules.keys():
+            get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
             self.daly_wts['mild_diarrhoea'] = get_daly_weight(sequlae_code=32)
             self.daly_wts['moderate_diarrhoea'] = get_daly_weight(sequlae_code=35)
             self.daly_wts['severe_diarrhoea'] = get_daly_weight(sequlae_code=34)
@@ -630,10 +642,12 @@ class Diarrhoea(Module):
             unscaled_lm = make_linear_model(patho)
             target_mean = p[f'base_inc_rate_diarrhoea_by_{patho}'][0]
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean) if (target_mean != 0 and actual_mean != 0) else 1.0
+            scaled_intercept = 1.0 * (target_mean / actual_mean) \
+                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
             scaled_lm = make_linear_model(patho, intercept=scaled_intercept)
             # check by applying the model to mean incidence of 0-year-olds
-            assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
+            if (df.is_alive & (df.age_years == 0)).sum() > 0:
+                assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
             return scaled_lm
 
         for pathogen in Diarrhoea.pathogens:
@@ -786,7 +800,8 @@ class Diarrhoea(Module):
                                               dtype='float').drop(columns='not_applicable')
         daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
 
-        return daly_values_by_pathogen
+        # return with columns labelled to match the declare CAUSES_OF_DISABILITY
+        return daly_values_by_pathogen.add_prefix('Diarrhoea_')
 
     def look_up_consumables(self):
         """Look up and store the consumables used in each of the HSI."""
@@ -844,10 +859,12 @@ class Diarrhoea(Module):
         if not person.is_alive:
             return
 
-        # Do nothing if the diarrhoea has not been caused by a pathogen
+        # Do nothing if the diarrhoea has not been caused by a pathogen or has otherwise resolved already
         if not (
             (person.gi_last_diarrhoea_pathogen != 'not_applicable') &
             (person.gi_last_diarrhoea_date_of_onset <= self.sim.date <= person.gi_end_of_last_episode)
+        ) or (
+            'Diarrhoea' not in self.sim.modules['SymptomManager'].causes_of(person_id, 'diarrhoea')
         ):
             return
 
@@ -901,11 +918,12 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
 
         # Those susceptible are children that do not currently have an episode (never had an episode or last episode
-        # resolved)
+        # resolved) and who do not have diarrhoea as a 'spurious symptom' of diarrhoea already.
         mask_could_get_new_diarrhoea_episode = (
-            df.is_alive & (df.age_years < 5) & (
-                (df.gi_end_of_last_episode < self.sim.date) | pd.isnull(df.gi_end_of_last_episode)
-            )
+            df.is_alive &
+            (df.age_years < 5) &
+            ((df.gi_end_of_last_episode < self.sim.date) | pd.isnull(df.gi_end_of_last_episode)) &
+            ~df.index.isin(self.sim.modules['SymptomManager'].who_has('diarrhoea'))
         )
 
         # Compute the incidence rate for each person getting diarrhoea
@@ -1205,21 +1223,18 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
             return
 
         # Confirm that this is event is occurring during a current episode of diarrhoea
-        if not (person.gi_last_diarrhoea_date_of_onset <= self.sim.date <= person.gi_end_of_last_episode):
+        if ~(
+            person.gi_last_diarrhoea_date_of_onset <= self.sim.date <= person.gi_end_of_last_episode
+        )\
+            or (
+            'Diarrhoea' not in self.sim.modules['SymptomManager'].causes_of(person_id, 'diarrhoea')
+        ):
             # If not, then the event has been caused by another cause of diarrhoea (which may has resolved by now)
             return
 
         # Cure should not happen if the person has already recovered
         if person.gi_last_diarrhoea_recovered_date <= self.sim.date:
             return
-
-        # If cure should go ahead, check that it is after when the person has received a treatment during this episode
-        assert (
-            person.gi_last_diarrhoea_date_of_onset <=
-            person.gi_last_diarrhoea_treatment_date <=
-            self.sim.date <=
-            person.gi_end_of_last_episode
-        )
 
         # Stop the person from dying of Diarrhoea (if they were going to die) and record date of recovery
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = self.sim.date

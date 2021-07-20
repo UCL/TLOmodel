@@ -19,6 +19,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 
 try:
@@ -1041,7 +1042,14 @@ def check_bed_days_released_on_death(hs_disable):
     """Check that bed-days scheduled to be occupied are released upon the death of the person"""
 
     class DummyModule(Module):
-        METADATA = {Metadata.USES_HEALTHSYSTEM}
+        METADATA = {
+            Metadata.DISEASE_MODULE,
+            Metadata.USES_HEALTHSYSTEM
+        }
+
+        CAUSES_OF_DEATH = {
+            'death_from_dummy_module': Cause(label='DummyModule'),
+        }
 
         def read_parameters(self, data_folder):
             pass
@@ -1076,7 +1084,7 @@ def check_bed_days_released_on_death(hs_disable):
 
             # Schedule person_id=0 to die on day 5
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.sim.modules['Demography'], 0, ''),
+                demography.InstantaneousDeath(self.sim.modules['Demography'], 0, 'death_from_dummy_module'),
                 self.sim.date + pd.DateOffset(days=5)
             )
 
