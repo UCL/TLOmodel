@@ -86,7 +86,7 @@ class Epi(Module):
             'rota': 2,
             'measles': 3,
             'rubella': 3,
-            'hpv': 2,
+            'hpv': 1,
             'td': 2
         })
 
