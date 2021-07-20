@@ -33,6 +33,7 @@ from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, lo
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
+from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
@@ -65,6 +66,16 @@ class Hiv(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'AIDS': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
     }
 
     PROPERTIES = {
@@ -255,6 +266,9 @@ class Hiv(Module):
         "prob_prep_adherence_level": Parameter(Types.LIST, "Probability that a pregnant woman on PrEP will"
                                             " have high, medium or low adherence to treatment schedule"),
         "prob_for_prep_selection": Parameter(Types.REAL, "Probability that a pregnant woman will be selected for PrEP")
+        "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available"),
+        "ART_age_cutoff_young_child": Parameter(Types.INT, "Age cutoff for ART regimen for young children"),
+        "ART_age_cutoff_older_child": Parameter(Types.INT, "Age cutoff for ART regimen for older children"),
     }
 
     def read_parameters(self, data_folder):
@@ -310,16 +324,16 @@ class Hiv(Module):
         # ---- LINEAR MODELS -----
         # LinearModel for the relative risk of becoming infected during the simulation
         self.lm['rr_of_infection'] = LinearModel.multiplicative(
-            Predictor('age_years').when('<15', 0.0)
-                .when('<20', 1.0)
-                .when('<25', p["rr_age_gp20"])
-                .when('<30', p["rr_age_gp25"])
-                .when('<35', p["rr_age_gp30"])
-                .when('<40', p["rr_age_gp35"])
-                .when('<45', p["rr_age_gp40"])
-                .when('<50', p["rr_age_gp45"])
-                .when('<80', p["rr_age_gp50"])
-                .otherwise(0.0),
+            Predictor('age_years')  .when('<15', 0.0)
+                                    .when('<20', 1.0)
+                                    .when('<25', p["rr_age_gp20"])
+                                    .when('<30', p["rr_age_gp25"])
+                                    .when('<35', p["rr_age_gp30"])
+                                    .when('<40', p["rr_age_gp35"])
+                                    .when('<45', p["rr_age_gp40"])
+                                    .when('<50', p["rr_age_gp45"])
+                                    .when('<80', p["rr_age_gp50"])
+                                    .otherwise(0.0),
             Predictor('sex').when('F', p["rr_sex_f"]),
             Predictor('li_is_sexworker').when(True, p["rr_fsw"]),
             Predictor('li_is_circ').when(True, p["rr_circumcision"]),
@@ -329,36 +343,36 @@ class Hiv(Module):
             Predictor('hv_prep_adherence').when('Mid', p["rr_prep_mid_adherence"]),
             Predictor('hv_prep_adherence').when('Low', p["rr_prep_low_adherence"]),
             Predictor('li_urban').when(False, p["rr_rural"]),
-            Predictor('li_wealth').when(2, p["rr_windex_poorer"])
-                .when(3, p["rr_windex_middle"])
-                .when(4, p["rr_windex_richer"])
-                .when(5, p["rr_windex_richest"]),
-            Predictor('li_ed_lev').when(2, p["rr_edlevel_primary"])
-                .when(3, p["rr_edlevel_secondary"]),
+            Predictor('li_wealth')  .when(2, p["rr_windex_poorer"])
+                                    .when(3, p["rr_windex_middle"])
+                                    .when(4, p["rr_windex_richer"])
+                                    .when(5, p["rr_windex_richest"]),
+            Predictor('li_ed_lev')  .when(2, p["rr_edlevel_primary"])
+                                    .when(3, p["rr_edlevel_secondary"]),
             Predictor('hv_behaviour_change').when(True, p["rr_behaviour_change"])
         )
 
         # LinearModels to give the shape and scale for the Weibull distribution describing time from infection to death
         self.lm['scale_parameter_for_infection_to_death'] = LinearModel.multiplicative(
-            Predictor('age_years').when('<20', p["infection_to_death_weibull_scale_1519"])
-                .when('<25', p["infection_to_death_weibull_scale_2024"])
-                .when('<30', p["infection_to_death_weibull_scale_2529"])
-                .when('<35', p["infection_to_death_weibull_scale_3034"])
-                .when('<40', p["infection_to_death_weibull_scale_3539"])
-                .when('<45', p["infection_to_death_weibull_scale_4044"])
-                .when('<50', p["infection_to_death_weibull_scale_4549"])
-                .otherwise(p["infection_to_death_weibull_scale_4549"])
+            Predictor('age_years')  .when('<20', p["infection_to_death_weibull_scale_1519"])
+                                    .when('<25', p["infection_to_death_weibull_scale_2024"])
+                                    .when('<30', p["infection_to_death_weibull_scale_2529"])
+                                    .when('<35', p["infection_to_death_weibull_scale_3034"])
+                                    .when('<40', p["infection_to_death_weibull_scale_3539"])
+                                    .when('<45', p["infection_to_death_weibull_scale_4044"])
+                                    .when('<50', p["infection_to_death_weibull_scale_4549"])
+                                    .otherwise(p["infection_to_death_weibull_scale_4549"])
         )
 
         self.lm['shape_parameter_for_infection_to_death'] = LinearModel.multiplicative(
-            Predictor('age_years').when('<20', p["infection_to_death_weibull_shape_1519"])
-                .when('<25', p["infection_to_death_weibull_shape_2024"])
-                .when('<30', p["infection_to_death_weibull_shape_2529"])
-                .when('<35', p["infection_to_death_weibull_shape_3034"])
-                .when('<40', p["infection_to_death_weibull_shape_3539"])
-                .when('<45', p["infection_to_death_weibull_shape_4044"])
-                .when('<50', p["infection_to_death_weibull_shape_4549"])
-                .otherwise(p["infection_to_death_weibull_shape_4549"])
+            Predictor('age_years')  .when('<20', p["infection_to_death_weibull_shape_1519"])
+                                    .when('<25', p["infection_to_death_weibull_shape_2024"])
+                                    .when('<30', p["infection_to_death_weibull_shape_2529"])
+                                    .when('<35', p["infection_to_death_weibull_shape_3034"])
+                                    .when('<40', p["infection_to_death_weibull_shape_3539"])
+                                    .when('<45', p["infection_to_death_weibull_shape_4044"])
+                                    .when('<50', p["infection_to_death_weibull_shape_4549"])
+                                    .otherwise(p["infection_to_death_weibull_shape_4549"])
         )
 
         # -- Linear Models for the Uptake of Services
@@ -408,7 +422,7 @@ class Hiv(Module):
             LinearModelType.MULTIPLICATIVE,
             p["prob_circ_after_hiv_test"],
             Predictor('hv_inf').when(False, 1.0).otherwise(0.0),
-            Predictor('sex').when('M', 1.0).otherwise(0.0)
+            Predictor('sex').when('M', 1.0).otherwise(0.0),
         )
 
     def initialise_population(self, population):
@@ -459,12 +473,12 @@ class Hiv(Module):
             Predictor("li_is_circ").when(True, params["rr_circumcision"]),
             Predictor("is_pregnant").when(True, params["rr_preg"]),
             Predictor("li_urban").when(False, params["rr_rural"]),
-            Predictor("li_wealth").when(2, params["rr_windex_poorer"])
-                .when(3, params["rr_windex_middle"])
-                .when(4, params["rr_windex_richer"])
-                .when(5, params["rr_windex_richest"]),
-            Predictor("li_ed_lev").when(2, params["rr_edlevel_primary"])
-                .when(3, params["rr_edlevel_secondary"])
+            Predictor("li_wealth")  .when(2, params["rr_windex_poorer"])
+                                    .when(3, params["rr_windex_middle"])
+                                    .when(4, params["rr_windex_richer"])
+                                    .when(5, params["rr_windex_richest"]),
+            Predictor("li_ed_lev")  .when(2, params["rr_edlevel_primary"])
+                                    .when(3, params["rr_edlevel_secondary"])
         ).predict(df.loc[df.is_alive])
 
         # Rescale relative probability of infection so that its average is 1.0 within each age/sex group
@@ -746,34 +760,52 @@ class Hiv(Module):
             "Item_Code": {item_code_for_prep: 1}
         }
 
-        # ART for adults
-        item_code_for_art = pd.unique(
+        # First-line ART for adults (age > "ART_age_cutoff_older_child")
+        item_code_for_art_adult = pd.unique(
             consumables.loc[
-                consumables["Items"] == "Adult First line 1A d4T-based", "Item_Code"
+                consumables["Items"] == "First-line ART regimen: adult",
+                "Item_Code"
             ]
         )[0]
-        item_code_for_art2 = pd.unique(
+
+        item_code_for_cotrim_adult = pd.unique(
             consumables.loc[
                 consumables["Items"] == "Cotrimoxizole, 960mg pppy", "Item_Code"
             ]
         )[0]  # NB spelling error in consumables file "Cotrimoxizole"
-        self.footprints_for_consumables_required['art_adult'] = {
+        self.footprints_for_consumables_required['First-line ART regimen: adult'] = {
             "Intervention_Package_Code": {},
-            "Item_Code": {item_code_for_art: 1, item_code_for_art2: 1}
+            "Item_Code": {item_code_for_art_adult: 1, item_code_for_cotrim_adult: 1}
         }
 
-        # ART for children:
-        self.footprints_for_consumables_required['art_child'] = {
-            "Intervention_Package_Code": {
-                pd.unique(consumables.loc[
-                              consumables["Intervention_Pkg"] == "Cotrimoxazole for children",
-                              "Intervention_Pkg_Code"])[0]: 1},
-            "Item_Code": {
-                pd.unique(consumables.loc[
-                              consumables[
-                                  "Items"] == "Lamiduvine/Zidovudine/Nevirapine (3TC + AZT + NVP), tablet, 150 + 300"
-                                              " + 200 mg", "Item_Code"])[
-                    0]: 1}
+        # ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
+        item_code_for_art_older_child = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "First line ART regimen: older child",
+                "Item_Code"
+            ]
+        )[0]
+        pkg_code_for_cotrim_child = pd.unique(
+            consumables.loc[
+                consumables["Intervention_Pkg"] == "Cotrimoxazole for children",
+                "Intervention_Pkg_Code",
+            ]
+        )[0]
+        self.footprints_for_consumables_required['First line ART regimen: older child'] = {
+            "Intervention_Package_Code": {pkg_code_for_cotrim_child: 1},
+            "Item_Code": {item_code_for_art_older_child: 1}
+        }
+
+        # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
+        item_code_for_art_younger_child = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "First line ART regimen: young child",
+                "Item_Code"
+            ]
+        )[0]
+        self.footprints_for_consumables_required['First line ART regimen: young child'] = {
+            "Intervention_Package_Code": {pkg_code_for_cotrim_child: 1},
+            "Item_Code": {item_code_for_art_younger_child: 1}
         }
 
         # Viral Load monitoring
@@ -861,7 +893,6 @@ class Hiv(Module):
         # Overwrite the value for those that currently have symptoms of AIDS with the 'AIDS' daly_wt:
         dalys.loc[self.sim.modules['SymptomManager'].who_has('aids_symptoms')] = self.daly_wts['aids']
 
-        dalys.name = 'hiv'
         return dalys
 
     def mtct_during_breastfeeding(self, mother_id, child_id):
@@ -965,7 +996,7 @@ class Hiv(Module):
 
         if not (df.loc[person_id, 'hv_art'] == 'not'):
             logger.warning(key='message',
-                           data='This event should not be running. do_when_diagnosed is for persons being newly dianogsed.')
+                           data='This event should not be running. do_when_diagnosed is for persons being newly diagnosed.')
 
         # Consider if the person will be referred to start ART
         has_aids_symptoms = 'aids_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
@@ -1280,7 +1311,11 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
             return
 
         # Cause the death to happen immediately
-        demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS").apply(person_id)
+        self.sim.modules['Demography'].do_death(
+            individual_id=person_id,
+            cause="AIDS",
+            originating_module=self.module
+        )
 
 
 class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
@@ -1825,14 +1860,21 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
     def get_drugs(self, age_of_person):
         """Helper function to get the ART according to the age of the person being treated. Returns bool to indicate
         whether drugs were available"""
-        if age_of_person < 5.0:
+
+        p = self.module.parameters
+
+        if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for children
             drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['art_child'])
+                footprint=self.module.footprints_for_consumables_required['First line ART regimen: young child'])
+        elif age_of_person <= p["ART_age_cutoff_older_child"]:
+            # Formulation for children
+            drugs_available = self.get_all_consumables(
+                footprint=self.module.footprints_for_consumables_required['First line ART regimen: older child'])
         else:
             # Formulation for adults
             drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['art_adult'])
+                footprint=self.module.footprints_for_consumables_required['First-line ART regimen: adult'])
 
         return drugs_available
 
@@ -1884,10 +1926,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Logging
 # ---------------------------------------------------------------------------
-
-
-def df(args):
-    pass
 
 
 class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -2147,3 +2185,30 @@ def unpack_raw_output_dict(raw_dict):
     x.rename(columns={'index': 'age_group', 0: 'value'}, inplace=True)
     x['age_group'] = set_age_group(x['age_group'])
     return x
+
+# ---------------------------------------------------------------------------
+#   Dummy Version of the Module
+# ---------------------------------------------------------------------------
+
+
+class DummyHivModule(Module):
+    """Dummy HIV Module - it's only job is to create and maintain the 'hv_inf' property.
+     This can be used in test files."""
+    PROPERTIES = {'hv_inf': Property(Types.BOOL, "DUMMY version of the property for hv_inf")}
+
+    def __init__(self, name=None, hiv_prev=0.1):
+        super().__init__(name)
+        self.hiv_prev = hiv_prev
+
+    def read_parameters(self, data_folder):
+        pass
+
+    def initialise_population(self, population):
+        df = population.props
+        df.loc[df.is_alive, 'hv_inf'] = self.rng.rand(sum(df.is_alive)) < self.hiv_prev
+
+    def initialise_simulation(self, sim):
+        pass
+
+    def on_birth(self, mother, child):
+        self.sim.population.props.at[child, 'hv_inf'] = self.rng.rand() < self.hiv_prev

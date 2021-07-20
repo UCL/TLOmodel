@@ -1,21 +1,9 @@
-========
-Overview
-========
+=====================
+Getting Started
+=====================
 
-.. start-badges
 
-.. image:: https://github.com/UCL/TLOmodel/workflows/CI/badge.svg
-    :alt: GitHub Actions Build Status
-    :target: https://github.com/UCL/TLOmodel/actions?query=workflow%3ACI
 
-.. end-badges
-
-Thanzi la Onse Epidemiology Model
-=================================
-
-This is the main software framework for epidemiology and health system modelling in the Thanzi la Onse project.
-
-See https://thanzi.org for more about the project.
 
 Prequisites
 ===========
