@@ -1207,8 +1207,8 @@ class Models:
 
         return complications
 
-    # todo make to use person_id
-    def delayed_complication(self, person):
+    # todo make to use person_id or explicit arguements
+    def delayed_complications(self, person):
         """Determine the set of delayed complications"""
         p = self.p
 
@@ -1310,7 +1310,7 @@ class Models:
             }
         elif complication == 'hypoxia':
             # (No specific symptoms for 'hypoxia')
-            return {}
+            return set()
         else:
             raise ValueError
 
@@ -1574,7 +1574,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # Consider delayed-onset of complications and schedule events accordingly
         date_of_onset_delayed_complications = m.random_date(self.sim.date, date_of_outcome)
-        delayed_complications = models.delayed_complication(person=df.loc[person_id])
+        delayed_complications = models.delayed_complications(person=df.loc[person_id])
         for delayed_complication in delayed_complications:
             self.sim.schedule_event(
                 AlriDelayedOnsetComplication(person_id=person_id,

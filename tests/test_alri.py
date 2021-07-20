@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation, logging
@@ -60,7 +61,6 @@ def get_sim(tmpdir):
         alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=0, do_checks=True),
         PropertiesOfOtherModules()
     )
-
     return sim
 
 
@@ -71,25 +71,94 @@ def check_dtypes(sim):
     assert (df.dtypes == orig.dtypes).all()
 
 
-# todo this?
 def test_integrity_of_linear_models(tmpdir):
-    """Run every linear model that is defined in the model to make sure that is specified correctly and can run."""
+    """Run the models to make sure that is specified correctly and can run."""
     sim = get_sim(tmpdir)
     sim.make_initial_population(n=100)
+    alri = sim.modules['Alri']
+    df = sim.population.props
 
-    # make linear models
-    models = Models(module=sim.modules['Alri'])
+    # make the models
+    models = Models(alri)
 
-    # todo - loop through all linear models and run each
-    # make_model_for_acquisition_risk
+    # incidence_equations_by_pathogen:
+    for patho in alri.all_pathogens:
+        res = models.incidence_equations_by_pathogen[patho].predict(df.loc[df.is_alive], alri.rng)
+        assert not res.isna().any()
+        assert 'bool' == res.dtype.name
+
     # determine_disease_type
-    # p_secondary_bacterial_infection
-    # p_complications
-    # p_respiratory_failure
-    # p_delayed_complication
-    # p_symptoms_for_disease
-    # p_symptoms_for_complication
-    # p_death
+    for patho in alri.all_pathogens:
+       for age in range(0, 100):
+           res = models.determine_disease_type(patho, int(age))
+           assert res in alri.disease_types
+
+    # secondary_bacterial_infection
+    for patho in alri.all_pathogens:
+        for disease_type in alri.disease_types:
+            res = models.secondary_bacterial_infection(patho, disease_type)
+
+            if patho in alri.pathogens['bacterial']:
+                assert np.isnan(res)
+            else:
+                assert pd.isnull(res) or res in alri.pathogens['bacterial']
+
+    # symptoms_for_disease
+    for disease_type in alri.disease_types:
+        res = models.symptoms_for_disease(disease_type)
+        assert isinstance(res, set)
+        assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
+
+    # symptoms_for_complication
+    for complication in alri.complications:
+        res = models.symptoms_for_complication(complication)
+        assert isinstance(res, set)
+        assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
+
+    # complications
+    for patho in alri.all_pathogens:
+        for coinf in (alri.pathogens['bacterial'] + [np.nan]):
+            for disease_type in alri.disease_types:
+                res = models.complications(person=pd.Series({
+                    'ri_primary_pathogen': patho,
+                    'ri_secondary_bacterial_pathogen': coinf,
+                    'ri_disease_type': disease_type})
+                )
+                assert isinstance(res, set)
+                assert all([c in alri.complications for c in res])
+
+
+    # delayed_complication
+    for ri_complication_sepsis in [True, False]:
+        for ri_complication_pneumothorax in [True, False]:
+            for ri_complication_respiratory_failure in [True, False]:
+                for ri_complication_lung_abscess in [True, False]:
+                    for ri_complication_empyema in [True, False]:
+                        res = models.delayed_complications(person=pd.Series({
+                            'ri_complication_sepsis': ri_complication_sepsis,
+                            'ri_complication_pneumothorax': ri_complication_pneumothorax,
+                            'ri_complication_respiratory_failure': ri_complication_respiratory_failure,
+                            'ri_complication_lung_abscess': ri_complication_lung_abscess,
+                            'ri_complication_empyema': ri_complication_empyema
+                            })
+                        )
+                        assert isinstance(res, set)
+                        assert all([c in ['sepsis', 'respiratory_failure'] for c in res])
+
+    # death
+    for disease_type in alri.disease_types:
+        res = models.death(person=pd.Series({
+            'ri_disease_type': disease_type,
+            'age_years': 0,
+            'ri_complication_sepsis': False,
+            'ri_complication_respiratory_failure': False,
+            'ri_complication_meningitis': True,
+            'hv_inf': False,
+            'un_clinical_acute_malnutrition': 'SAM',
+            'nb_low_birth_weight_status': 'low_birth_weight'
+        })
+        )
+        assert isinstance(res, bool)
 
 
 def test_basic_run(tmpdir):
