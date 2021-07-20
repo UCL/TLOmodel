@@ -13,7 +13,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
     alri,
     demography,
@@ -37,8 +37,8 @@ output_files = dict()
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 1000
+end_date = Date(2020, 1, 1)
+popsize = 5000
 
 log_config = {
     "filename": "alri_with_treatment",
@@ -64,7 +64,7 @@ sim.register(
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
 
-    alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=True),
+    alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=22),
     alri.PropertiesOfOtherModules()
 )
 
@@ -89,6 +89,7 @@ counts.set_index(
     drop=True,
     inplace=True
 )
+counts = counts.drop(columns='5+').rename(columns={'0': '0y', '1': '1y', '2-4': '2-4y'})  # for consistency
 
 # get person-years of 0 year-old, 1 year-olds and 2-4 year-old
 py_ = output['tlo.methods.demography']['person_years']
@@ -184,8 +185,8 @@ calibration_incidence_rate_2_to_4_year_olds = {
 }
 
 # Produce a set of line plot comparing to the calibration data
-fig, axes = plt.subplots(ncols=2, nrows=5, sharey=True, figsize=(10, 20))
-for ax_num, pathogen in enumerate(sim.modules['Alri'].pathogens):
+fig, axes = plt.subplots(ncols=4, nrows=5, sharey=True, figsize=(10, 20))
+for ax_num, pathogen in enumerate(sim.modules['Alri'].all_pathogens):
     ax = fig.axes[ax_num]
     inc_rate['0y'][pathogen].plot(ax=ax, label='Model output')
     ax.hlines(y=calibration_incidence_rate_0_year_olds[pathogen],  # axhlines is to plot horizontal lines at each y
@@ -198,7 +199,7 @@ for ax_num, pathogen in enumerate(sim.modules['Alri'].pathogens):
     ax.set_ylabel("Incidence Rate")
     ax.legend()
 plt.title('Incidence Rate among <1 year old')
-plt.savefig(outputpath / ("ALRI_inc_rate_by_pathogen_0_year_olds" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / ("ALRI_inc_rate_by_pathogen_and_time_0_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # Produce a bar plot for means of incidence rate during the simulation:
@@ -217,8 +218,8 @@ inc_mean.plot.bar(y=['0y_model_output', '0y_calibrating_data'])
 plt.title('Incidence Rate: 0 year-olds')
 plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing Alri per year')
-plt.savefig(outputpath / ("ALRI_inc_rate_calibration_0_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.tight_layout()
+plt.savefig(outputpath / ("ALRI_inc_rate_calibration_0_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # 1 year-olds
@@ -228,8 +229,8 @@ plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing Alri per year')
 plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing Alri per year')
-plt.savefig(outputpath / ("ALRI_inc_rate_calibration_1_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.tight_layout()
+plt.savefig(outputpath / ("ALRI_inc_rate_calibration_1_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # 2-4 year-olds
@@ -239,53 +240,17 @@ plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing Alri per year')
 plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing Alri per year')
-plt.savefig(outputpath / ("ALRI_inc_rate_calibration_2-4_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.tight_layout()
+plt.savefig(outputpath / ("ALRI_inc_rate_calibration_2-4_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # %% ----------------------------  MEAN DEATH RATE BY PATHOGEN  ----------------------------
-# # TODO: this set of graphs - using the helper function (may need a longer run)
 
-# Load the death data to which we calibrate:
-# IHME (www.healthdata.org) / GBD project --> total deaths due to Alri in Malawi,
-# per 100,000 child-years (under 5's) https://vizhub.healthdata.org/gbd-compare/
-# http://ghdx.healthdata.org/gbd-results-tool?params=gbd-api-2017-permalink/9dd202e225b13cc2df7557a5759a0aca
+# Get comparison
+comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
 
-calibration_death_rate_per_year_under_5s = {
-    '2010': 148 / 100000,   # CI: 111-190
-    '2015': 93 / 100000     # CI: 61-135
-}
-
-all_deaths = output['tlo.methods.demography']['death']
-all_deaths['year'] = pd.to_datetime(all_deaths['date']).dt.year
-all_deaths = all_deaths.loc[all_deaths['age'] < 5].copy()
-all_deaths['age_grp'] = all_deaths['age'].map(
-    {0: '0y',
-     1: '1y',
-     2: '2-4y',
-     3: '2-4y',
-     4: '2-4y'}
-)
-deaths = all_deaths.groupby(by=['year', 'age_grp', 'cause']).size().reset_index()
-deaths['cause_simplified'] = [x[0] for x in deaths['cause'].str.split('_')]
-deaths = deaths.drop(deaths.loc[deaths['cause_simplified'] != 'Alri'].index)
-deaths = deaths.groupby(by=['age_grp', 'year']).size().reset_index()
-deaths.rename(columns={0: 'count'}, inplace=True)
-deaths.drop(deaths.index[deaths['year'] > 2010.0], inplace=True)
-deaths = deaths.pivot(values='count', columns='age_grp', index='year')
-
-# Death Rate = death count (by year, by age-group) / person-years
-death_rate = deaths.div(py)
-
-# produce plot comparison in 2010 (<5s):
-death_rate_comparison = pd.Series(
-    data={
-        'data': calibration_death_rate_per_year_under_5s['2010'],
-        'model': death_rate.loc[2010].sum()
-    }
-)
-
-death_rate_comparison.plot.bar()
-plt.title('Death Rate to Alri in Under 5s')
-plt.savefig(outputpath / ("ALRI_death_rate_0-5_year_olds" + datestamp + ".pdf"), format='pdf')
+# Make a simple bar chart
+comparison.loc[('2010-2014', slice(None), '0-4', 'Lower respiratory infections')].sum().plot.bar()
+plt.title('Deaths per year due to ALRI, 2010-2014')
+plt.tight_layout()
 plt.show()

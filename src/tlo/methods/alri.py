@@ -718,7 +718,7 @@ class Alri(Module):
         self.resourcefilepath = resourcefilepath
         self.do_checks = do_checks
 
-        assert log_indivdual is None or isinstance(logging, bool)
+        assert (log_indivdual is None or isinstance(log_indivdual, int)) and (not isinstance(log_indivdual, bool))
         self.log_individual = log_indivdual
 
         # Initialise the pointer to where the models will be stored:
@@ -1874,7 +1874,7 @@ class AlriIndividualLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(days=1))
 
         self.person_id = self.module.log_individual
-        assert self.person_id in df.index, 'The person identified to be logged does not exist.'
+        assert self.person_id in module.sim.population.props.index, 'The person identified to be logged does not exist.'
 
     def apply(self, population):
         """Log all properties for this module"""
