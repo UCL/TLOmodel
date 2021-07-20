@@ -66,6 +66,8 @@ Outstanding issues
 #  ),
 #
 # 6. The risk of death is not affected by delayed-onset complications: should it be?
+#
+# 7. Check that every parameter is used. I think that lots of not being -- perhaps left over from an earlier version?
 """
 
 

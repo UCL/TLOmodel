@@ -103,18 +103,6 @@ def test_integrity_of_linear_models(tmpdir):
             else:
                 assert pd.isnull(res) or res in alri.pathogens['bacterial']
 
-    # symptoms_for_disease
-    for disease_type in alri.disease_types:
-        res = models.symptoms_for_disease(disease_type)
-        assert isinstance(res, set)
-        assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
-
-    # symptoms_for_complication
-    for complication in alri.complications:
-        res = models.symptoms_for_complication(complication)
-        assert isinstance(res, set)
-        assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
-
     # complications
     for patho in alri.all_pathogens:
         for coinf in (alri.pathogens['bacterial'] + [np.nan]):
@@ -127,8 +115,7 @@ def test_integrity_of_linear_models(tmpdir):
                 assert isinstance(res, set)
                 assert all([c in alri.complications for c in res])
 
-
-    # delayed_complication
+    # delayed_complications
     for ri_complication_sepsis in [True, False]:
         for ri_complication_pneumothorax in [True, False]:
             for ri_complication_respiratory_failure in [True, False]:
@@ -140,10 +127,22 @@ def test_integrity_of_linear_models(tmpdir):
                             'ri_complication_respiratory_failure': ri_complication_respiratory_failure,
                             'ri_complication_lung_abscess': ri_complication_lung_abscess,
                             'ri_complication_empyema': ri_complication_empyema
-                            })
+                        })
                         )
                         assert isinstance(res, set)
                         assert all([c in ['sepsis', 'respiratory_failure'] for c in res])
+
+    # symptoms_for_disease
+    for disease_type in alri.disease_types:
+        res = models.symptoms_for_disease(disease_type)
+        assert isinstance(res, set)
+        assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
+
+    # symptoms_for_complication
+    for complication in alri.complications:
+        res = models.symptoms_for_complication(complication)
+        assert isinstance(res, set)
+        assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
     # death
     for disease_type in alri.disease_types:
@@ -217,9 +216,6 @@ def test_alri_polling(tmpdir):
     assert len([q for q in sim.event_queue.queue if isinstance(q[2], AlriIncidentCase)]) > 0
 
 
-# todo - add check on symtoms to test on natural history
-
-
 def test_nat_hist_recovery(tmpdir):
     """Check: Infection onset --> recovery"""
     dur = pd.DateOffset(days=0)
@@ -232,6 +228,19 @@ def test_nat_hist_recovery(tmpdir):
 
     # make probability of death 0%
     sim.modules['Alri'].models.death = lambda x: False
+
+    # make probability of symptoms very high
+    params = sim.modules['Alri'].parameters
+    all_symptoms = {
+        'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain', 'cyanosis',
+        'respiratory_distress', 'danger_signs'
+    }
+    for p in params:
+        if any([p.startswith(f"prob_{symptom}") for symptom in all_symptoms]):
+            if isinstance(params[p], float):
+                params[p] = 1.0
+            else:
+                params[p] = [1.0] * len(params[p])
 
     # Get person to use:
     df = sim.population.props
@@ -252,6 +261,9 @@ def test_nat_hist_recovery(tmpdir):
     assert not pd.isnull(person['ri_scheduled_recovery_date'])
     assert pd.isnull(person['ri_scheduled_death_date'])
 
+    # Check that they have some symptoms caused by ALRI
+    assert 0 < len(sim.modules['SymptomManager'].has_what(person_id, sim.modules['Alri']))
+
     # Check that there is a AlriNaturalRecoveryEvent scheduled for this person:
     recov_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
                          isinstance(event_tuple[1], AlriNaturalRecoveryEvent)
@@ -271,6 +283,9 @@ def test_nat_hist_recovery(tmpdir):
     assert pd.isnull(person['ri_start_of_current_episode'])
     assert pd.isnull(person['ri_scheduled_recovery_date'])
     assert pd.isnull(person['ri_scheduled_death_date'])
+
+    # check they they have no symptoms:
+    assert 0 == len(sim.modules['SymptomManager'].has_what(person_id, sim.modules['Alri']))
 
     # check it's logged (one infection + one recovery)
     assert 1 == sim.modules['Alri'].logging_event.trackers['incident_cases'].report_current_total()
