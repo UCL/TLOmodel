@@ -32,7 +32,6 @@ import pandas as pd
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, demography, tb
 from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
@@ -70,14 +69,14 @@ class Hiv(Module):
     }
 
     # Declare Causes of Death
-    # CAUSES_OF_DEATH = {
-    #     'AIDS_non_TB': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
-    #     'AIDS_TB': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
-    # }
-    #
-    # CAUSES_OF_DISABILITY = {
-    #     'HIV': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
-    # }
+    CAUSES_OF_DEATH = {
+        'AIDS_non_TB': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
+        'AIDS_TB': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
+    }
+
+    CAUSES_OF_DISABILITY = {
+        'HIV': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
+    }
 
     PROPERTIES = {
         # --- Core Properties
@@ -638,7 +637,7 @@ class Hiv(Module):
         for person_id in has_aids_idx:
             date_aids_death = self.sim.date + self.get_time_from_aids_to_death()  # (assumes AIDS onset on this day)
             sim.schedule_event(
-                HivAidsDeathEvent(person_id=person_id, module=self),
+                HivAidsDeathEvent(person_id=person_id, module=self, cause=self),
                 date=date_aids_death
             )
 
@@ -1194,7 +1193,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id, cause):
-        super().__init__(module, person_id=person_id, cause=cause)
+        super().__init__(module, person_id=person_id)
 
         self.cause = cause
 
@@ -1230,7 +1229,7 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id, cause):
-        super().__init__(module, person_id=person_id, cause=cause)
+        super().__init__(module, person_id=person_id)
 
         self.cause = cause
 
@@ -1255,9 +1254,10 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         else:
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
-                cause="AIDS",
+                cause="AIDS_non_TB",
                 originating_module=self.module
             )
+
 
 class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
     """Helper event that is used to 'decide' if someone on PrEP should continue on PrEP.

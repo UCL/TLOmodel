@@ -12,13 +12,12 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, demography
+from tlo.methods import Metadata
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods import hiv
-
-# from tlo.core import Cause
+from tlo.methods import hiv, demography
+from tlo.methods.causes import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -36,6 +35,7 @@ class Tb(Module):
         self.lm = dict()
         self.footprints_for_consumables_required = dict()
         self.symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+        self.district_list = list()
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -45,13 +45,13 @@ class Tb(Module):
     }
 
     # Declare Causes of Death
-    # CAUSES_OF_DEATH = {
-    #     'TB': Cause(gbd_causes='Tuberculosis', label='non_AIDS_TB'),
-    # }
-    #
-    # CAUSES_OF_DISABILITY = {
-    #     'TB': Cause(gbd_causes='Tuberculosis', label='non_AIDS_TB'),
-    # }
+    CAUSES_OF_DEATH = {
+        'TB': Cause(gbd_causes='Tuberculosis', label='non_AIDS_TB'),
+    }
+
+    CAUSES_OF_DISABILITY = {
+        'TB': Cause(gbd_causes='Tuberculosis', label='non_AIDS_TB'),
+    }
 
     PROPERTIES = {
         # ------------------ natural history ------------------ #
@@ -378,6 +378,9 @@ class Tb(Module):
         p['followup_times'] = workbook['followup']
         p['tb_high_risk_distr'] = workbook['IPTdistricts']
         p['ipt_contact_cov'] = workbook['ipt_coverage']
+
+        self.district_list = self.sim.modules['Demography'].parameters['pop_2010']['District'].unique().tolist()
+
 
         # 2) Get the DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
@@ -1174,13 +1177,13 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
 
         # -------- 1) change individual properties for active disease --------
 
-        person['tb_inf'] = 'active'
-        person['tb_date_active'] = now
+        df.at[person_id, 'tb_inf'] = 'active'
+        df.at[person_id, 'tb_date_active'] = now
 
         # -------- 2) assign smear status --------
         # hiv-negative
         if rng.rand() < p['prop_smear_positive']:
-            person['tb_smear'] = True
+            df.at[person_id, 'tb_smear'] = True
 
         # -------- 3) assign symptoms --------
 
@@ -1197,7 +1200,7 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
         if person['hv_inf']:
             # higher probability of being smear positive
             if rng.rand() < p['prop_smear_positive_hiv']:
-                person['tb_smear'] = True
+                df.at[person_id, 'tb_smear'] = True
 
             if 'Hiv' in self.sim.modules:
                 self.sim.schedule_event(hiv.HivAidsOnsetEvent(
@@ -1445,11 +1448,11 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # if a test has been performed, update person's properties
         if test_result is not None:
-            person['tb_ever_tested'] = True
+            df.at[person_id, 'tb_ever_tested'] = True
 
             # if any test returns positive result, refer for appropriate treatment
             if test_result:
-                person['tb_diagnosed'] = True
+                df.at[person_id, 'tb_diagnosed'] = True
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
@@ -1588,8 +1591,8 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if treatment_available:
             # start person on tb treatment - update properties
-            person['tb_on_treatment'] = True
-            person['tb_date_treated'] = now
+            df.at[person_id, 'tb_on_treatment'] = True
+            df.at[person_id, 'tb_date_treated'] = now
 
             # schedule clinical monitoring
             self.module.clinical_monitoring(person_id)
@@ -1860,7 +1863,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person in will_die:
             if df.at[person, 'is_alive']:
-                demography.do_death(
+                self.sim.modules['Demography'].do_death(
                     individual_id=person,
                     cause="TB",
                     originating_module=self.module
@@ -1912,7 +1915,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person in will_die:
             if df.at[person, 'is_alive']:
-                demography.do_death(
+                self.sim.modules['Demography'].do_death(
                     individual_id=person,
                     cause="AIDS_TB",
                     originating_module=self.module
