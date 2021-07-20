@@ -847,22 +847,8 @@ def test_mdr():
                                         module=sim.modules['Tb'])
     tx_start.apply(person_id=person_id, squeeze_factor=0.0)
 
+    # check treatment appropriate for mdr-tb
     assert df.at[person_id, 'tb_treated_mdr']
-
-    # clinical monitoring
-    # default clinical monitoring schedule for mdr-tb
-    follow_up_times = sim.modules['Tb'].parameters['followup_times']
-    clinical_fup = follow_up_times['mdr_clinical_monitor'].dropna()
-    number_fup_appts = len(clinical_fup)
-
-    # count events scheduled currently
-    t1 = len(sim.event_queue.queue)
-
-    # this will schedule future follow-up appts dependent on strain/retreatment status
-    sim.modules['Tb'].clinical_monitoring(person_id=person_id)
-    # check should be 24 more events now
-    t2 = len(sim.event_queue.queue)
-    assert t2 - t1 == number_fup_appts
 
 
 def test_cause_of_death():
