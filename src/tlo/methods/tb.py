@@ -1860,11 +1860,10 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person in will_die:
             if df.at[person, 'is_alive']:
-                self.sim.schedule_event(
-                    demography.InstantaneousDeath(
-                        self.module, individual_id=person, cause='TB'
-                    ),
-                    now,
+                demography.do_death(
+                    individual_id=person,
+                    cause="TB",
+                    originating_module=self.module
                 )
 
         # ---------------------------------- HIV-TB DEATHS ------------------------------------
@@ -1913,11 +1912,10 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person in will_die:
             if df.at[person, 'is_alive']:
-                self.sim.schedule_event(
-                    demography.InstantaneousDeath(
-                        self.module, individual_id=person, cause='AIDS_TB'
-                    ),
-                    now,
+                demography.do_death(
+                    individual_id=person,
+                    cause="AIDS_TB",
+                    originating_module=self.module
                 )
 
 
