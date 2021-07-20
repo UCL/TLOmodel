@@ -764,3 +764,148 @@ def test_ipt_to_child_of_tb_mother():
         if isinstance(future_events[tmp][1], tb.TbActiveEvent):
             assert False
 
+
+def test_mdr():
+    """
+    mdr infection to first-line treatment
+    failure on first line
+    MDR to treatment
+    death
+    checking that death is logged in the right way (two permutations with and without HIV)
+    """
+
+    popsize = 10
+
+    # disable HS, all HSI events will run, but won't be in the HSI queue
+    # they will enter the sim.event_queue
+    sim = get_sim(use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    person_id = 0
+
+    # assign person_id active tb
+    df.at[person_id, 'tb_inf'] = 'active'
+    df.at[person_id, 'tb_strain'] = 'mdr'
+    df.at[person_id, 'tb_date_active'] = sim.date
+    df.at[person_id, 'tb_smear'] = True
+    df.at[person_id, 'age_exact_years'] = 20
+    df.at[person_id, 'age_years'] = 20
+    df.at[person_id, 'hv_inf'] = False
+
+    # assign symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+    for symptom in symptom_list:
+        sim.modules["SymptomManager"].change_symptom(
+            person_id=person_id,
+            symptom_string=symptom,
+            add_or_remove="+",
+            disease_module=sim.modules['Tb'],
+            duration_in_days=None,
+        )
+
+    # screen and test person_id
+    # no previous infection and HIV-negative so will get sputum smear test
+    # should be incorrect diagnosis of ds-tb
+    screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
+                                                 module=sim.modules['Tb'])
+    screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
+
+    assert df.at[person_id, 'tb_ever_tested']
+    assert df.at[person_id, 'tb_diagnosed']
+    assert not df.at[person_id, 'tb_diagnosed_mdr']
+
+    # schedule treatment start
+    tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
+                                        module=sim.modules['Tb'])
+    tx_start.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # end treatment, change sim.date so person will be ready to stop treatment
+    sim.date = Date(2010, 12, 31)
+    tx_end_event = tb.TbEndTreatmentEvent(module=sim.modules['Tb'])
+
+    tx_end_event.apply(sim.population)
+
+    # check individual properties consistent with treatment failure
+    assert df.at[person_id, 'tb_treatment_failure']
+
+    # next screening should pick up case as retreatment / mdr
+    screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
+                                                 module=sim.modules['Tb'])
+    screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
+
+    assert df.at[person_id, 'tb_diagnosed_mdr']
+
+    # schedule mdr treatment start
+    # this calls clinical_monitoring which should schedule all follow-up appts
+    tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
+                                        module=sim.modules['Tb'])
+    tx_start.apply(person_id=person_id, squeeze_factor=0.0)
+
+    assert df.at[person_id, 'tb_treated_mdr']
+
+    # clinical monitoring
+    # default clinical monitoring schedule for mdr-tb
+    follow_up_times = sim.modules['Tb'].parameters['followup_times']
+    clinical_fup = follow_up_times['mdr_clinical_monitor'].dropna()
+    number_fup_appts = len(clinical_fup)
+
+    # count events scheduled currently
+    t1 = len(sim.event_queue.queue)
+
+    # this will schedule future follow-up appts dependent on strain/retreatment status
+    sim.modules['Tb'].clinical_monitoring(person_id=person_id)
+    # check should be 24 more events now
+    t2 = len(sim.event_queue.queue)
+    assert t2 - t1 == number_fup_appts
+
+
+def test_cause_of_death():
+    """
+    schedule death for people with tb and tb-hiv
+    check causes of death are assigned correctly
+    """
+
+    popsize = 10
+
+    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+
+    # set mortality rates to 1
+    sim.modules['Tb'].parameters['monthly_prob_tb_mortality'] = 1.0
+    sim.modules['Tb'].parameters['monthly_prob_tb_mortality_hiv'] = 1.0
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+
+    # create person with tb
+    person_id0 = 0
+    df.at[person_id0, 'tb_inf'] = 'active'
+    df.at[person_id0, 'tb_strain'] = 'ds'
+    df.at[person_id0, 'tb_date_active'] = sim.date
+    df.at[person_id0, 'tb_smear'] = True
+    df.at[person_id0, 'hv_inf'] = False
+
+    # create person with tb-hiv
+    person_id1 = 1
+    df.at[person_id1, 'tb_inf'] = 'active'
+    df.at[person_id1, 'tb_strain'] = 'ds'
+    df.at[person_id1, 'tb_date_active'] = sim.date
+    df.at[person_id1, 'tb_smear'] = True
+    df.at[person_id1, 'hv_inf'] = True
+
+    # schedule death for both through TbDeathEvent
+    death_event = tb.TbDeathEvent(module=sim.modules['Tb'])
+    death_event.apply(population=sim.population)
+
+    assert df.at[person_id0, 'cause_of_death'] == "TB"
+    assert df.at[person_id1, 'cause_of_death'] == "AIDS_TB"

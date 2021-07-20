@@ -47,6 +47,7 @@ class Tb(Module):
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
         'TB': Cause(gbd_causes='Tuberculosis', label='non_AIDS_TB'),
+        'AIDS_TB': Cause(gbd_causes='HIV/AIDS', label='AIDS'),
     }
 
     CAUSES_OF_DISABILITY = {
@@ -1229,23 +1230,35 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # check across population on tb treatment
 
         # ---------------------- first case ds-tb (6 months) ---------------------- #
-        end_ds_idx = df.loc[df.is_alive & df.tb_on_treatment & ~df.tb_treated_mdr &
-                            (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
-                            ~df.tb_ever_treated].index
-
         # sample some to have treatment failure
-        ds_tx_failure = rng.random_sample(size=len(end_ds_idx)) < (1 - p['prob_tx_success_new'])
+        random_var = rng.random_sample(size=len(df))
+        ds_tx_failure_idx = df.loc[df.is_alive &
+                            df.tb_on_treatment &
+                            ~df.tb_treated_mdr &
+                            (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
+                            ~df.tb_ever_treated &
+                            (random_var < (1 - p['prob_tx_success_new']))].index
+
+        # all mdr cases on ds tx will fail
+        failure_due_to_mdr_idx = df.loc[df.is_alive &
+                                        df.tb_on_treatment &
+                                        ~df.tb_treated_mdr &
+                            (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
+                            ~df.tb_ever_treated &
+                                        (df.tb_strain == 'mdr')].index
+
+        # join two indices together
+        ds_tx_failure = list(ds_tx_failure_idx) + list(failure_due_to_mdr_idx)
 
         if ds_tx_failure.any():
-            idx_ds_tx_failure = end_ds_idx[ds_tx_failure]
-            df.loc[idx_ds_tx_failure, 'tb_treatment_failure'] = True
-            df.loc[idx_ds_tx_failure, 'tb_ever_treated'] = True  # ensure classed as retreatment case
+            df.loc[ds_tx_failure, 'tb_treatment_failure'] = True
+            df.loc[ds_tx_failure, 'tb_ever_treated'] = True  # ensure classed as retreatment case
 
             # remove treatment failure cases from those finishing treatment
             # refer for further testing and retreatment
-            end_ds_idx = end_ds_idx[~ds_tx_failure]
+            end_ds_idx = ds_tx_failure[~ds_tx_failure]
 
-            for person in idx_ds_tx_failure:
+            for person in ds_tx_failure:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Tb_ScreeningAndRefer(person_id=person, module=self.module),
                     topen=self.sim.date,
@@ -1594,6 +1607,10 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'tb_on_treatment'] = True
             df.at[person_id, 'tb_date_treated'] = now
 
+            if person['tb_diagnosed_mdr']:
+                df.at[person_id, 'tb_treated_mdr'] = True
+                df.at[person_id, 'tb_date_treated_mdr'] = now
+
             # schedule clinical monitoring
             self.module.clinical_monitoring(person_id)
 
@@ -1833,9 +1850,9 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
+
         p = self.module.parameters
         df = population.props
-        now = self.sim.date
         rng = self.module.rng
 
         # ---------------------------------- TB DEATHS - HIV-NEGATIVE ------------------------------------
@@ -1910,7 +1927,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
-        deaths = df.is_alive & (probs < mortality_rate)
+        deaths = df.is_alive & (probs < mort_hiv)
         will_die = (df[deaths]).index
 
         for person in will_die:
