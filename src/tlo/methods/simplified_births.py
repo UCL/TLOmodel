@@ -8,6 +8,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.methods.hiv import Hiv_DecisionToStartOrContinuePregnantWomenOnPrEP
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -195,6 +196,15 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
         df.loc[pregnant_women_ids, 'date_of_last_pregnancy'] = self.sim.date
         df.loc[pregnant_women_ids, 'si_date_of_last_delivery'] = \
             self.sim.date + pd.DateOffset(months=self.module.parameters['months_between_pregnancy_and_delivery'])
+
+        # for newly pregnant women, schedule decision to start / not start PrEP
+        # assume uniform distribution of prep start during 40 weeks of pregnancy
+        for person in pregnant_women_ids:
+            prep_start_date = self.sim.date + pd.DateOffset(
+                days=self.module.rng.randint(0, 280))
+
+            self.sim.schedule_event(Hiv_DecisionToStartOrContinuePregnantWomenOnPrEP(
+                self.sim.modules['Hiv'], person), prep_start_date)
 
     def do_deliveries(self):
         """Checks to see if the date-of-delivery for pregnant women has been reached and implement births where
