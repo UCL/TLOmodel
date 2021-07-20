@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -77,6 +78,7 @@ def test_integrity_of_linear_models(tmpdir):
     sim.make_initial_population(n=100)
     alri = sim.modules['Alri']
     df = sim.population.props
+    person_id = 0
 
     # make the models
     models = Models(alri)
@@ -107,11 +109,17 @@ def test_integrity_of_linear_models(tmpdir):
     for patho in alri.all_pathogens:
         for coinf in (alri.pathogens['bacterial'] + [np.nan]):
             for disease_type in alri.disease_types:
-                res = models.complications(person=pd.Series({
-                    'ri_primary_pathogen': patho,
-                    'ri_secondary_bacterial_pathogen': coinf,
-                    'ri_disease_type': disease_type})
+                df.loc[person_id, [
+                    'ri_primary_pathogen',
+                    'ri_secondary_bacterial_pathogen',
+                    'ri_disease_type']
+                ] = (
+                    patho,
+                    coinf,
+                    disease_type
                 )
+                res = models.complications(person_id)
+
                 assert isinstance(res, set)
                 assert all([c in alri.complications for c in res])
 
@@ -121,14 +129,20 @@ def test_integrity_of_linear_models(tmpdir):
             for ri_complication_respiratory_failure in [True, False]:
                 for ri_complication_lung_abscess in [True, False]:
                     for ri_complication_empyema in [True, False]:
-                        res = models.delayed_complications(person=pd.Series({
-                            'ri_complication_sepsis': ri_complication_sepsis,
-                            'ri_complication_pneumothorax': ri_complication_pneumothorax,
-                            'ri_complication_respiratory_failure': ri_complication_respiratory_failure,
-                            'ri_complication_lung_abscess': ri_complication_lung_abscess,
-                            'ri_complication_empyema': ri_complication_empyema
-                        })
+                        df.loc[person_id, [
+                            'ri_complication_sepsis',
+                            'ri_complication_pneumothorax',
+                            'ri_complication_respiratory_failure',
+                            'ri_complication_lung_abscess',
+                            'ri_complication_empyema']
+                        ] = (
+                            ri_complication_sepsis,
+                            ri_complication_pneumothorax,
+                            ri_complication_respiratory_failure,
+                            ri_complication_lung_abscess,
+                            ri_complication_empyema
                         )
+                        res = models.delayed_complications(person_id=person_id)
                         assert isinstance(res, set)
                         assert all([c in ['sepsis', 'respiratory_failure'] for c in res])
 
@@ -146,17 +160,26 @@ def test_integrity_of_linear_models(tmpdir):
 
     # death
     for disease_type in alri.disease_types:
-        res = models.death(person=pd.Series({
-            'ri_disease_type': disease_type,
-            'age_years': 0,
-            'ri_complication_sepsis': False,
-            'ri_complication_respiratory_failure': False,
-            'ri_complication_meningitis': True,
-            'hv_inf': False,
-            'un_clinical_acute_malnutrition': 'SAM',
-            'nb_low_birth_weight_status': 'low_birth_weight'
-        })
+        df.loc[person_id, [
+            'ri_disease_type',
+            'age_years',
+            'ri_complication_sepsis',
+            'ri_complication_respiratory_failure',
+            'ri_complication_meningitis',
+            'hv_inf',
+            'un_clinical_acute_malnutrition',
+            'nb_low_birth_weight_status']
+        ] = (
+            disease_type,
+            0,
+            False,
+            False,
+            False,
+            True,
+            'SAM',
+            'low_birth_weight'
         )
+        res = models.death(person_id)
         assert isinstance(res, bool)
 
 
@@ -734,3 +757,32 @@ def test_use_of_HSI(tmpdir):
     # Check that person is now on treatment:
     assert df.at[person_id, 'ri_on_treatment']
     assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
+
+
+def test_sample_outcome(tmpdir):
+    """Test helper function that determines outcoms"""
+    popsize = 100
+    sim = get_sim(tmpdir)
+    sim.make_initial_population(n=popsize)
+    poll = AlriPollingEvent(sim.modules['Alri'])
+    sample_outcome = poll.sample_outcome
+
+    df = pd.DataFrame({
+        'A': {0: 1.0, 1: 0.0, 2: 0.25},
+        'B': {0: 0.0, 1: 1.0, 2: 0.25},
+        'C': {0: 0.0, 1: 0.0, 2: 0.50}
+    })
+
+    res = list()
+    n = 1000
+    for i in range(n):
+        res.append(sample_outcome(df))
+    res = pd.DataFrame(res)
+
+    assert (res[0] == 'A').all()
+    assert (res[1] == 'B').all()
+    assert (res[2].isin(['A', 'B', 'C'])).all()
+
+    for op in ['A', 'B', 'C']:
+        prob = df.loc[2, op]
+        assert res[2].value_counts()[op] == pytest.approx(df.loc[2, op] * n, abs=np.sqrt(n * prob*(1-prob)))

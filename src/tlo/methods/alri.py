@@ -68,6 +68,9 @@ Outstanding issues
 # 6. The risk of death is not affected by delayed-onset complications: should it be?
 #
 # 7. Check that every parameter is used. I think that lots of not being -- perhaps left over from an earlier version?
+#
+# 8. Is it right that 'danger_signs' is an indepednet symptom? It seems like this is something that is determined in
+ the course of a diagnosis (like in diarrhoea module).
 """
 
 
@@ -297,7 +300,6 @@ class Alri(Module):
         #  'probability of progressing from non-severe to severe Alri by age category '
         #  'HIV negative, no SAM'
         #  ),
-
         # Probability of bacterial co- / secondary infection
         'prob_viral_pneumonia_bacterial_coinfection':
             Parameter(Types.REAL,
@@ -664,7 +666,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'effectiveness of antibiotic therapy on death from Alri with bacterial cause'
                       ),
-
     }
 
     PROPERTIES = {
@@ -764,9 +765,6 @@ class Alri(Module):
 
     def define_symptoms(self):
         """Define the symptoms that this module will use"""
-        # todo - @ines: is it right that 'danger_signs' is an indepednet symptom? It seems like this is something that
-        #  is determined in the course of a diagnosis (like in diarrhoea module).
-
         all_symptoms = {
             'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain', 'cyanosis',
             'respiratory_distress', 'danger_signs'
@@ -807,7 +805,6 @@ class Alri(Module):
         df.loc[df.is_alive, 'ri_scheduled_recovery_date'] = pd.NaT
         df.loc[df.is_alive, 'ri_scheduled_death_date'] = pd.NaT
         df.loc[df.is_alive, 'ri_end_of_current_episode'] = pd.NaT
-
         df.loc[df.is_alive, 'ri_on_treatment'] = False
         df.loc[df.is_alive, 'ri_ALRI_tx_start_date'] = pd.NaT
 
@@ -855,20 +852,19 @@ class Alri(Module):
 
         df = self.sim.population.props
 
-        # todo - vectorize this:
-
         # ---- Key Current Status Classification Properties ----
         df.at[child_id, 'ri_current_infection_status'] = False
-        df.at[child_id, 'ri_primary_pathogen'] = np.nan
-        df.at[child_id, 'ri_secondary_bacterial_pathogen'] = np.nan
-        df.at[child_id, 'ri_disease_type'] = np.nan
+        df.loc[child_id, ['ri_primary_pathogen',
+                          'ri_secondary_bacterial_pathogen',
+                          'ri_disease_type']] = np.nan
         df.at[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
 
         # ---- Internal values ----
-        df.at[child_id, 'ri_start_of_current_episode'] = pd.NaT
-        df.at[child_id, 'ri_scheduled_recovery_date'] = pd.NaT
-        df.at[child_id, 'ri_scheduled_death_date'] = pd.NaT
-        df.at[child_id, 'ri_end_of_current_episode'] = pd.NaT
+        df.loc[child_id, ['ri_start_of_current_episode',
+                          'ri_scheduled_recovery_date',
+                          'ri_scheduled_death_date',
+                          'ri_end_of_current_episode']] = pd.NaT
+
 
     def report_daly_values(self):
         """Report DALY incurred in the population in the last month due to ALRI"""
@@ -1163,11 +1159,10 @@ class Models:
             # If a bacterial infection, determine which one:
             return self.rng.choice(self.module.pathogens['bacterial'], p=p['proportion_bacterial_coinfection_pathogen'])
 
-    # todo make to use person_id
-    def complications(self, person):
+    def complications(self, person_id):
         """Determine the set of complication for this person"""
         p = self.p
-        # todo - this code could be shortened taking advantage of the repetition in names:
+        person = self.module.sim.population.props.loc[person_id]
 
         primary_path_is_bacterial = person['ri_primary_pathogen'] in self.module.pathogens['bacterial']
         primary_path_is_viral = person['ri_primary_pathogen'] in self.module.pathogens['viral']
@@ -1177,24 +1172,16 @@ class Models:
         probs = defaultdict(lambda: 0.0)
 
         if primary_path_is_bacterial or has_secondary_bacterial_inf:
-            probs['pneumothorax'] += p['prob_pneumothorax_by_bacterial_pneumonia']
-            probs['pleural_effusion'] += p['prob_pleural_effusion_by_bacterial_pneumonia']
-            probs['lung_abscess'] += p['prob_lung_abscess_by_bacterial_pneumonia']
-            probs['sepsis'] += p['prob_sepsis_by_bacterial_pneumonia']
-            probs['meningitis'] += p['prob_meningitis_by_bacterial_pneumonia']
-            probs['hypoxia'] += p['prob_hypoxia_by_bacterial_pneumonia']
+            for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'sepsis', 'meningitis', 'hypoxia']:
+                probs[c] += p[f"prob_{c}_by_bacterial_pneumonia"]
 
         if primary_path_is_viral and (disease_type == 'viral_pneumonia'):
-            probs['pneumothorax'] += p['prob_pneumothorax_by_viral_pneumonia']
-            probs['pleural_effusion'] += p['prob_pleural_effusion_by_viral_pneumonia']
-            probs['sepsis'] += p['prob_sepsis_by_viral_pneumonia']
-            probs['hypoxia'] += p['prob_hypoxia_by_viral_pneumonia']
+            for c in ['pneumothorax', 'pleural_effusion', 'sepsis', 'hypoxia']:
+                probs[c] += p[f"prob_{c}_by_viral_pneumonia"]
 
         if primary_path_is_viral and (disease_type == 'bronchiolitis'):
-            probs['pneumothorax'] += p['prob_pneumothorax_by_bronchiolitis']
-            probs['pleural_effusion'] += p['prob_pleural_effusion_by_bronchiolitis']
-            probs['sepsis'] += p['prob_sepsis_by_bronchiolitis']
-            probs['hypoxia'] += p['prob_hypoxia_by_bronchiolitis']
+            for c in ['pneumothorax', 'pleural_effusion', 'sepsis', 'hypoxia']:
+                probs[c] += p[f"prob_{c}_by_bronchiolitis"]
 
         # determine which complications are onset:
         complications = set()
@@ -1209,10 +1196,10 @@ class Models:
 
         return complications
 
-    # todo make to use person_id or explicit arguements
-    def delayed_complications(self, person):
+    def delayed_complications(self, person_id):
         """Determine the set of delayed complications"""
         p = self.p
+        person = self.module.sim.population.props.loc[person_id]
 
         complications = set()
 
@@ -1324,10 +1311,10 @@ class Models:
 
         return symptoms
 
-    # todo make to use person_id
-    def death(self, person):
+    def death(self, person_id):
         """Determine if person will die from Alri. Returns True/False"""
         p = self.p
+        person = self.module.sim.population.props.loc[person_id]
 
         disease_type = person['ri_disease_type']
 
@@ -1405,8 +1392,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
             ((df['ri_end_of_current_episode'] < self.sim.date) | pd.isnull(df['ri_end_of_current_episode']))
         )
 
-        # Compute the incidence rate for each person acquiring Alri (#todo - could avoid use of df)
-        # todo - move this to models?
+        # Compute the incidence rate for each person acquiring Alri
         inc_of_acquiring_alri = pd.DataFrame(index=df.loc[mask_could_get_new_alri_event].index)
         for pathogen in m.all_pathogens:
             inc_of_acquiring_alri[pathogen] = models.incidence_equations_by_pathogen[pathogen] \
@@ -1432,11 +1418,11 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
     def sample_outcome(self, df):
-        """Helper function to randoly sample outcomes from a set of probabilities.
-        Each row in the df is a person and each column is an event that may happen to the person.
+        """Helper function to randomly sample an outcome from a set of probabilities.
+        Each row in the df is a person and each column gives the probability that a particular event may happen to the
+         person.
         The probabilities of each event are assumed to be independent but mutually exlusive."""
 
-        # todo - this needs checking
         assert (df.sum(axis=1) <= 1.0).all(), "Probabilities across columns cannot sum to more than 1.0"
 
         # Compare uniform deviate to cumulative sum across columns, after including a "null" column (for no event).
@@ -1446,7 +1432,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         y = cumsum.gt(draws, axis=0)
         outcome = y.idxmax(axis=1)
 
-        # return as a dict only in those cases where the outcome is one of the events.
+        # return as a dict of form {person_id: outcome} only in those cases where the outcome is one of the events.
         return outcome.loc[~(outcome == '_')].to_dict()
 
 
@@ -1538,8 +1524,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         self.impose_complications(person_id=person_id, date_of_outcome=date_of_outcome)
 
         # Determine outcome: death or recovery
-        person = df.loc[person_id]
-        if models.death(person):
+        if models.death(person_id=person_id):
             self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_death_date', 'ri_scheduled_recovery_date']] = [date_of_outcome, pd.NaT]
         else:
@@ -1569,14 +1554,14 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         m = self.module
         models = m.models
 
-        complications = models.complications(person=df.loc[person_id])
+        complications = models.complications(person_id=person_id)
         for complication in complications:
             df.at[person_id, f"ri_complication_{complication}"] = True
             m.impose_symptoms_for_complication(person_id=person_id, complication=complication)
 
         # Consider delayed-onset of complications and schedule events accordingly
         date_of_onset_delayed_complications = m.random_date(self.sim.date, date_of_outcome)
-        delayed_complications = models.delayed_complications(person=df.loc[person_id])
+        delayed_complications = models.delayed_complications(person_id=person_id)
         for delayed_complication in delayed_complications:
             self.sim.schedule_event(
                 AlriDelayedOnsetComplication(person_id=person_id,
@@ -1726,7 +1711,7 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
 
 class HSI_Alri_GenericTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    # todo - @Ines -- here is a template for the HSI interaction events. It just shows the checks to use each time.
+    # This is a template for the HSI interaction events. It just shows the checks to use each time.
     """
 
     def __init__(self, module, person_id):
