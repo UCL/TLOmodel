@@ -23,7 +23,6 @@ from tlo.methods import (
     labour,
     pregnancy_supervisor,
     symptommanager,
-    ALRI
 )
 
 # %%

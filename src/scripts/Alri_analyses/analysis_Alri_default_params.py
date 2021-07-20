@@ -37,7 +37,7 @@ output_files = dict()
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2019, 12, 31)
 popsize = 5000
 
 log_config = {
@@ -50,7 +50,7 @@ log_config = {
     }
 }
 
-# Establish the simulation object and set the seed
+# Establish the simulation object
 sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
 
 # run the simulation
@@ -64,7 +64,7 @@ sim.register(
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
 
-    alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=22),
+    alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=22),  # choose to log an individual
     alri.PropertiesOfOtherModules()
 )
 
@@ -185,7 +185,7 @@ calibration_incidence_rate_2_to_4_year_olds = {
 }
 
 # Produce a set of line plot comparing to the calibration data
-fig, axes = plt.subplots(ncols=4, nrows=5, sharey=True, figsize=(10, 20))
+fig, axes = plt.subplots(ncols=4, nrows=5, sharey=True, sharex=True, figsize=(10, 20))
 for ax_num, pathogen in enumerate(sim.modules['Alri'].all_pathogens):
     ax = fig.axes[ax_num]
     inc_rate['0y'][pathogen].plot(ax=ax, label='Model output')
@@ -196,9 +196,7 @@ for ax_num, pathogen in enumerate(sim.modules['Alri'].all_pathogens):
               )
     ax.set_title(f'{pathogen}')
     ax.set_xlabel("Year")
-    ax.set_ylabel("Incidence Rate")
-    ax.legend()
-plt.title('Incidence Rate among <1 year old')
+    ax.set_ylabel("Incidence Rate <1 year-olds")
 plt.savefig(outputpath / ("ALRI_inc_rate_by_pathogen_and_time_0_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.show()
 

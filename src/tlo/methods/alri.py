@@ -3,28 +3,28 @@ Childhood Acute Lower Respiratory Infection Module
 
 Overview
 --------
-Individuals are exposed to the risk of onset of an acute lower respiratory infection (Alri).
-The disease is manifested as viral pneumonia, bacterial pneumonia or bronchiolitis
-caused by one primary agent at a time, which can also have a co-infection or secondary bacterial infection.
-During an episode (prior to recovery - either naturally or cured with treatment),
-the symptom of cough or difficult breathing is present in addition to other possible symptoms.
-Alri may cause associated complications, such as,
-local pulmonary complication: pleural effusuion, empyema, lung abscess, pneumothorax,
-and systemic complications: sepsis, meningitis, and respiratory failure, leading to multi-organ dysfunction and death.
-The individual may recover naturally or die.
+Individuals are exposed to the risk of infection by a pathogen (and potentially also with a secondary bacterial
+infection) that can cause one of several type of acute lower respiratory infection (Alri).
+The disease is manifested as either viral pneumonia, bacterial pneumonia or bronchiolitis.
 
-Health care seeking is prompted by the onset of the symptom cough or respiratory symptoms.
-The individual can be treated; if successful the risk of death is lowered
-and they are cured (symptom resolved) some days later.
+During an episode (prior to recovery - either naturally or cured with treatment), symptom are manifest and there may be
+complications (e.g. local pulmonary complication: pleural effusuion, empyema, lung abscess, pneumothorax; and/or
+systemic complications: sepsis, meningitis, and respiratory failure). There is a risk that additional complications
+are onset later.
+
+The individual may recover naturally or die. The risk of death depends on the type of disease and the presence of some
+of the complications.
+
+Health care seeking is prompted by the onset of the symptom. The individual can be treated; if successful the risk of
+death is lowered and they are cured (symptom resolved) some days later.
 
 Outstanding issues
 ------------------
 * All HSI events
 * Follow-up appointments for initial HSI events.
 * Double check parameters and consumables codes for the HSI events.
-"""
 
-# Outstanding Issue:
+#
 
 # 1:
 # 'daly_very_severe_ALRI' is never used: is that right?
@@ -64,6 +64,10 @@ Outstanding issues
 #  'probability of progressing from non-severe to severe Alri by age category '
 #  'HIV negative, no SAM'
 #  ),
+#
+# 6. The risk of death is not affected by delayed-onset complications: should it be?
+"""
+
 
 from collections import defaultdict
 from pathlib import Path

@@ -13,18 +13,12 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     alri,
-    antenatal_care,
-    contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
     symptommanager,
 )
 
@@ -44,8 +38,8 @@ output_files = dict()
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 2)
-popsize = 1000
+end_date = Date(2019, 12, 31)
+popsize = 5000
 
 for label, service_avail in scenarios.items():
 
@@ -54,28 +48,24 @@ for label, service_avail in scenarios.items():
         "directory": "./outputs",
         "custom_levels": {
             "*": logging.WARNING,
-            "tlo.methods.Alri": logging.INFO,
+            "tlo.methods.alri": logging.INFO,
             "tlo.methods.demography": logging.INFO,
         }
     }
-    sim = Simulation(start_date=start_date, log_config=log_config)
+    sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
 
-    # run the simulation
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_avail),
-        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-        contraception.Contraception(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-        alri.Alri(resourcefilepath=resourcefilepath)
+
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+
+        alri.Alri(resourcefilepath=resourcefilepath),
+        alri.PropertiesOfOtherModules()
     )
 
     sim.make_initial_population(n=popsize)
@@ -91,7 +81,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     output = parse_log_file(logfile)
 
     # Calculate the "incidence rate" from the output counts of incidence
-    counts = output['tlo.methods.Alri']['incidence_count_by_pathogen']
+    counts = output['tlo.methods.alri']['incidence_count_by_age_and_pathogen']
     counts['year'] = pd.to_datetime(counts['date']).dt.year
     counts.drop(columns='date', inplace=True)
     counts.set_index(
@@ -99,6 +89,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
         drop=True,
         inplace=True
     )
+    counts = counts.drop(columns='5+').rename(columns={'0': '0y', '1': '1y', '2-4': '2-4y'})  # for consistency
 
     # get person-years of 0 year-old, 1 year-olds and 2-4 year-old
     py_ = output['tlo.methods.demography']['person_years']
@@ -128,7 +119,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     # calculate death rate
     deaths_df = output['tlo.methods.demography']['death']
     deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
-    deaths = deaths_df.loc[deaths_df['cause'].str.startswith('Alri')].groupby('year').size()
+    deaths = deaths_df.loc[deaths_df['cause'].str.startswith('ALRI')].groupby('year').size()
 
     return inc_mean, deaths
 
@@ -147,6 +138,7 @@ def plot_for_column_of_interest(results, column_of_interest):
     data = 100 * pd.concat(summary_table, axis=1)
     data.plot.bar()
     plt.title(f'Incidence rate (/100 py): {column_of_interest}')
+    plt.tight_layout()
     plt.savefig(outputpath / ("ALRI_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
     plt.show()
 
