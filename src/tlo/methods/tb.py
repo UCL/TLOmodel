@@ -1060,12 +1060,10 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------- individual risk of acquisition -------------- #
 
         # adjust individual risk by bcg status
-        risk_tb = pd.Series(0, index=df.index)
-        risk_tb.loc[df.is_alive] = foi_for_individual  # individual risk
-        risk_tb.loc[df.is_alive] += foi_national  # add in background risk (national)
-        risk_tb.loc[df.is_alive & df.va_bcg & df.age_years < 10] *= p['rr_bcg_inf']
-
-        assert not risk_tb.loc[~df.is_alive].any() > 0
+        risk_tb = pd.Series(foi_for_individual.values, dtype=float, index=df.index)  # individual risk
+        risk_tb += foi_national  # add in background risk (national)
+        risk_tb.loc[df.va_bcg & df.age_years < 10] *= p['rr_bcg_inf']
+        risk_tb.loc[~df.is_alive] = 0
 
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = rng.random_sample(size=len(df))
@@ -1748,8 +1746,8 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
                 # if xpert test returns mdr-tb diagnosis
                 if test_result and (df.at[person_id, 'tb_strain'] == 'mdr'):
-                    person['tb_diagnosed_mdr'] = True
-                    person['tb_treatment_failure'] = True
+                    df.at[person_id, 'tb_diagnosed_mdr'] = True
+                    df.at[person_id, 'tb_treatment_failure'] = True
 
                     # restart treatment (new regimen) if newly diagnosed with mdr-tb
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1800,8 +1798,8 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         # NB. If materials not available, it is assumed that no IPT is given and no further referral is offered
         if self.get_all_consumables(footprint=self.module.footprints_for_consumables_required['tb_ipt']):
             # Update properties
-            person['tb_on_ipt'] = True
-            person['tb_date_ipt'] = self.sim.date
+            df.at[person_id, 'tb_on_ipt'] = True
+            df.at[person_id, 'tb_date_ipt'] = self.sim.date
 
             # schedule decision to continue or end IPT after 6 months
             self.sim.schedule_event(
@@ -1830,7 +1828,7 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
             return
 
         # default update properties for all
-        person['tb_on_ipt'] = False
+        df.at[person_id, 'tb_on_ipt'] = False
 
         # decide whether PLHIV will continue
         if (not person['tb_diagnosed']) and (
