@@ -16,18 +16,12 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     alri,
-    antenatal_care,
-    contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
     symptommanager,
 )
 
@@ -51,13 +45,13 @@ log_config = {
     "directory": "./outputs",
     "custom_levels": {
         "*": logging.WARNING,
-        "tlo.methods.Alri": logging.INFO,
+        "tlo.methods.alri": logging.INFO,
         "tlo.methods.demography": logging.INFO,
     }
 }
 
 # Establish the simulation object and set the seed
-sim = Simulation(start_date=start_date, log_config=log_config)
+sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
 
 # run the simulation
 sim.register(
@@ -65,16 +59,13 @@ sim.register(
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-    contraception.Contraception(resourcefilepath=resourcefilepath),
-    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-    antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-    labour.Labour(resourcefilepath=resourcefilepath),
-    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-    alri.Alri(resourcefilepath=resourcefilepath)
+
+    alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=True),
+    alri.PropertiesOfOtherModules()
 )
 
 # Run the simulation
@@ -84,19 +75,13 @@ sim.simulate(end_date=end_date)
 # Read the output:
 output = parse_log_file(sim.log_filepath)
 
-# Save the output to a csv (if needed)
-# # parse the simulation logfile to get the output dataframes
-# output = parse_log_file(sim.log_filepath)
-# one_person = output['tlo.methods.Alri']['person_one']
-#
-#
-# # save into an cvs file
-# one_person.to_csv(r'./outputs/one_person2.csv', index=False)
+# Save the output for a single individual to a csv (if needed)
+# one_person = output['tlo.methods.alri']['log_individual'].to_csv(r'./outputs/one_person2.csv', index=False)
 
 
 # %% ----------------------------  INCIDENCE RATE OF Alri BY PATHOGEN  ----------------------------
 # Calculate the "incidence rate" from the output counts of incidence
-counts = output['tlo.methods.Alri']['incidence_count_by_pathogen']
+counts = output['tlo.methods.alri']['incidence_count_by_age_and_pathogen']
 counts['year'] = pd.to_datetime(counts['date']).dt.year
 counts.drop(columns='date', inplace=True)
 counts.set_index(
@@ -118,7 +103,6 @@ for year in years:
     py.loc[year, '0y'] = tot_py.loc[0].values[0]
     py.loc[year, '1y'] = tot_py.loc[1].values[0]
     py.loc[year, '2-4y'] = tot_py.loc[2:4].sum().values[0]
-    # py.loc[year, '<5y'] = tot_py.loc[0:4].sum().values[0]
 
 # # get population size to make a comparison
 pop = output['tlo.methods.demography']['num_children']
@@ -131,7 +115,6 @@ pop.columns = pop.columns.astype(int)
 pop['0y'] = pop[0]
 pop['1y'] = pop[1]
 pop['2-4y'] = pop[2] + pop[3] + pop[4]
-# pop['<5y'] = pop[0] + pop[1] + pop[2] + pop[3] + pop[4]
 pop.drop(columns=[x for x in range(5)], inplace=True)
 
 # Incidence rate among 0, 1, 2-4 year-olds
@@ -261,7 +244,8 @@ plt.tight_layout()
 plt.show()
 
 # %% ----------------------------  MEAN DEATH RATE BY PATHOGEN  ----------------------------
-# # TODO: this set of graphs
+# # TODO: this set of graphs - using the helper function (may need a longer run)
+
 # Load the death data to which we calibrate:
 # IHME (www.healthdata.org) / GBD project --> total deaths due to Alri in Malawi,
 # per 100,000 child-years (under 5's) https://vizhub.healthdata.org/gbd-compare/

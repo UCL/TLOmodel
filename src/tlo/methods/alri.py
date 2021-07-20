@@ -48,7 +48,22 @@ Outstanding issues
 # being delayed onset (i.e. prob_pleural_effusion_to_empyema) and also the risk that "empyema" leads to sepsis
 # (prob_empyema_to_sepsis). However, for simplicity  we only have two phases of complication (initial and delayed), so
 # this is not represented at the moment. I am not sure if it should be or not.
-
+#
+# 5. The effect of the vaccine. These parameters are commented out and not being used:
+# 'rr_ALRI_pneumococcal_vaccine': Parameter
+# (Types.REAL, 'relative rate of acquiring Alri for pneumonococcal vaccine'
+#  ),
+# 'rr_ALRI_haemophilus_vaccine': Parameter
+# (Types.REAL, 'relative rate of acquiring Alri for haemophilus vaccine'
+#  ),
+# 'rr_ALRI_influenza_vaccine': Parameter
+# (Types.REAL, 'relative rate of acquiring Alri for influenza vaccine'
+#  ),
+# 'r_progress_to_severe_ALRI': Parameter
+# (Types.LIST,
+#  'probability of progressing from non-severe to severe Alri by age category '
+#  'HIV negative, no SAM'
+#  ),
 
 from collections import defaultdict
 from pathlib import Path
@@ -69,7 +84,7 @@ logger.setLevel(logging.INFO)
 
 
 # ---------------------------------------------------------------------------------------------------------
-#   MODULE DEFINITIONS
+#   MODULE DEFINITION
 # ---------------------------------------------------------------------------------------------------------
 
 class Alri(Module):
@@ -696,13 +711,15 @@ class Alri(Module):
                                           ' treatment has not begun)'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, log_indivdual=False, do_checks=False):
+    def __init__(self, name=None, resourcefilepath=None, log_indivdual=None, do_checks=False):
         super().__init__(name)
 
         # Store arguments provided
         self.resourcefilepath = resourcefilepath
-        self.log_individual = log_indivdual
         self.do_checks = do_checks
+
+        assert log_indivdual is None or isinstance(logging, bool)
+        self.log_individual = log_indivdual
 
         # Initialise the pointer to where the models will be stored:
         self.models = None
@@ -803,7 +820,7 @@ class Alri(Module):
         self.logging_event = AlriLoggingEvent(self)
         sim.schedule_event(self.logging_event, sim.date + DateOffset(years=1))
 
-        if self.log_individual:
+        if self.log_individual is not None:
             # Schedule the individual check logging event (to first occur immediately, and to occur every day)
             sim.schedule_event(AlriIndividualLoggingEvent(self), sim.date)
 
@@ -1029,7 +1046,7 @@ class Alri(Module):
 
 
 class Models:
-    """Class to store all the models that specify the natural history of the Alri disease"""
+    """Helper-class to store all the models that specify the natural history of the Alri disease"""
 
     def __init__(self, module):
         self.module = module
@@ -1697,9 +1714,9 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
             )
 
 
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# ---------------------------------------------------------------------------------------------------------
 # ==================================== HEALTH SYSTEM INTERACTION EVENTS ====================================
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# ---------------------------------------------------------------------------------------------------------
 
 class HSI_Alri_GenericTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1833,7 +1850,7 @@ class Tracker():
 
 
 # ---------------------------------------------------------------------------------------------------------
-#   DEBUGGING EVENTS
+#   DEBUGGING / TESTING EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
 class AlriCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1856,10 +1873,8 @@ class AlriIndividualLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # This logging event to occur every day
         super().__init__(module, frequency=DateOffset(days=1))
 
-        # Find the person to log: the first under-five-year-old in the dataframe
-        df = self.sim.population.props
-        under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-        self.person_id = under5s.index[0] if len(under5s) else None
+        self.person_id = self.module.log_individual
+        assert self.person_id in df.index, 'The person identified to be logged does not exist.'
 
     def apply(self, population):
         """Log all properties for this module"""

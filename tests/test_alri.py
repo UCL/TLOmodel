@@ -44,7 +44,8 @@ def get_sim(tmpdir):
         'filename': 'tmp',
         'directory': tmpdir,
         'custom_levels': {
-            "Alri": logging.INFO}
+            "*": logging.WARNING,
+            "tlo.methods.alri": logging.INFO}
     })
 
     sim.register(
@@ -56,7 +57,7 @@ def get_sim(tmpdir):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
         dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-        alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=True, do_checks=True),
+        alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=0, do_checks=True),
         PropertiesOfOtherModules()
     )
 

@@ -11,6 +11,7 @@ from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
     Metadata,
+    alri,
     bladder_cancer,
     breast_cancer,
     cardio_metabolic_disorders,
@@ -134,6 +135,7 @@ def test_cause_of_death_being_registered(tmpdir):
         bladder_cancer.BladderCancer(resourcefilepath=rfp),
         prostate_cancer.ProstateCancer(resourcefilepath=rfp),
         depression.Depression(resourcefilepath=rfp),
+        alri.Alri(resourcefilepath=rfp),
         diarrhoea.Diarrhoea(resourcefilepath=rfp),
         hiv.Hiv(resourcefilepath=rfp),
         malaria.Malaria(resourcefilepath=rfp),
