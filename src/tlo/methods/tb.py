@@ -382,7 +382,6 @@ class Tb(Module):
 
         self.district_list = self.sim.modules['Demography'].parameters['pop_2010']['District'].unique().tolist()
 
-
         # 2) Get the DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
             # HIV-negative
@@ -538,18 +537,18 @@ class Tb(Module):
 
         # ------------------ fast progressors ------------------ #
         eligible_for_fast_progression = df_tmp.loc[(df_tmp.tb_date_latent == now) &
-                                               df_tmp.is_alive &
-                                               (df_tmp.age_years >= 15) &
-                                               ~df_tmp.hv_inf].index
+                                                   df_tmp.is_alive &
+                                                   (df_tmp.age_years >= 15) &
+                                                   ~df_tmp.hv_inf].index
 
         will_progress = rng.random_sample(len(eligible_for_fast_progression)) < p['prop_fast_progressor']
         fast = eligible_for_fast_progression[will_progress]
 
         # hiv-positive
         eligible_for_fast_progression_hiv = df_tmp.loc[(df_tmp.tb_date_latent == now) &
-                                                   df_tmp.is_alive &
-                                                   (df_tmp.age_years >= 15) &
-                                                   df_tmp.hv_inf].index
+                                                       df_tmp.is_alive &
+                                                       (df_tmp.age_years >= 15) &
+                                                       df_tmp.hv_inf].index
 
         will_progress = rng.random_sample(len(eligible_for_fast_progression_hiv)) < p['prop_fast_progressor_hiv']
         fast_hiv = eligible_for_fast_progression_hiv[will_progress]
@@ -1231,18 +1230,18 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # sample some to have treatment failure
         random_var = rng.random_sample(size=len(df))
         ds_tx_failure_idx = df.loc[df.is_alive &
-                            df.tb_on_treatment &
-                            ~df.tb_treated_mdr &
-                            (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
-                            ~df.tb_ever_treated &
-                            (random_var < (1 - p['prob_tx_success_new']))].index
+                                   df.tb_on_treatment &
+                                   ~df.tb_treated_mdr &
+                                   (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
+                                   ~df.tb_ever_treated &
+                                   (random_var < (1 - p['prob_tx_success_new']))].index
 
         # all mdr cases on ds tx will fail
         failure_due_to_mdr_idx = df.loc[df.is_alive &
                                         df.tb_on_treatment &
                                         ~df.tb_treated_mdr &
-                            (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
-                            ~df.tb_ever_treated &
+                                        (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
+                                        ~df.tb_ever_treated &
                                         (df.tb_strain == 'mdr')].index
 
         # join two indices together
@@ -1266,8 +1265,8 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         end_ds_tx_idx = df.loc[df.is_alive &
                                df.tb_on_treatment &
                                ~df.tb_treated_mdr &
-                                 (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
-                                 ~df.tb_ever_treated].index
+                               (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
+                               ~df.tb_ever_treated].index
 
         # ---------------------- treatment end: retreatment ds-tb (7 months) ---------------------- #
         # end treatment for retreatment cases
@@ -1288,7 +1287,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         end_tx_idx = end_tx_idx.union(end_mdr_tx_idx)
 
         # remove any treatment failure indices from the treatment end indices
-        cure_idx = list(set(end_tx_idx)-set(ds_tx_failure))
+        cure_idx = list(set(end_tx_idx) - set(ds_tx_failure))
 
         # change individual properties to off treatment
         df.loc[cure_idx, 'tb_diagnosed'] = False
