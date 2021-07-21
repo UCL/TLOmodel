@@ -101,9 +101,6 @@ class Tb(Module):
     PARAMETERS = {
 
         # ------------------ workbooks ------------------ #
-        'prop_latent_2010': Parameter(
-            Types.REAL, 'Proportion of population with latent tb in 2010'
-        ),
         'prop_active_2010': Parameter(
             Types.REAL, 'Proportion of population with active tb in 2010'
         ),
