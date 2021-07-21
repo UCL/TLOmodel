@@ -27,10 +27,6 @@ Outstanding issues
 
 Questions
 ----------
-#0:
-Add comments describing what you mean by the pathogens
-Strep_pneumoniae_PCV13 and Strep_pneumoniae_non_PCV13. I presume the former is affected by the having of the
-pneumococcal vaccine.
 
 #1:
 'daly_very_severe_ALRI' is never used: is that right?
@@ -1078,6 +1074,23 @@ class Models:
         for patho in self.module.all_pathogens:
             self.incidence_equations_by_pathogen[patho] = make_scaled_linear_model_for_incidence(patho)
 
+    def compute_risk_of_aquisition(self, pathogen, df):
+        """Compute the risk of a pathogen, using the linear model created and the df provided"""
+        p = self.p
+        lm = self.incidence_equations_by_pathogen[pathogen]
+
+        # run linear model to get baseline risk
+        baseline = lm.predict(df)
+
+        # apply the reduced risk of acquisition for those vaccinated
+        if pathogen == "Strep_pneumoniae_PCV13":
+            baseline.loc[df['va_pneumo_all_doses']] *= p['rr_infection_strep_with_pneumococcal_vaccine']
+
+        if pathogen == "Hib":
+            baseline.loc[df['va_hib_all_doses']] *= p['rr_infection_hib_haemophilus_vaccine']
+
+        return baseline
+
     def determine_disease_type_and_secondary_bacterial_coinfection(self, pathogen, age, va_pneumo_all_doses):
         """Determine:
          * the disease that is caused by infection with this pathogen (from among self.disease_types)
@@ -1380,8 +1393,10 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Compute the incidence rate for each person acquiring Alri
         inc_of_acquiring_alri = pd.DataFrame(index=df.loc[mask_could_get_new_alri_event].index)
         for pathogen in m.all_pathogens:
-            inc_of_acquiring_alri[pathogen] = models.incidence_equations_by_pathogen[pathogen] \
-                .predict(df.loc[mask_could_get_new_alri_event])
+            inc_of_acquiring_alri[pathogen] = models.compute_risk_of_aquisition(
+                pathogen=pathogen,
+                df=df.loc[mask_could_get_new_alri_event]
+            )
 
         probs_of_acquiring_pathogen = 1 - np.exp(
             -inc_of_acquiring_alri * self.fraction_of_a_year_until_next_polling_event

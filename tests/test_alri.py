@@ -75,7 +75,7 @@ def check_dtypes(sim):
 def test_integrity_of_linear_models(tmpdir):
     """Run the models to make sure that is specified correctly and can run."""
     sim = get_sim(tmpdir)
-    sim.make_initial_population(n=100)
+    sim.make_initial_population(n=5000)
     alri = sim.modules['Alri']
     df = sim.population.props
     person_id = 0
@@ -83,11 +83,43 @@ def test_integrity_of_linear_models(tmpdir):
     # make the models
     models = Models(alri)
 
-    # --- incidence_equations_by_pathogen:
+    # --- compute_risk_of_aquisition & incidence_equations_by_pathogen:
+    # if no vaccine and very high risk:
+    # make risk of vaccine high:
     for patho in alri.all_pathogens:
-        res = models.incidence_equations_by_pathogen[patho].predict(df.loc[df.is_alive], alri.rng)
+        models.p[f'base_inc_rate_ALRI_by_{patho}'] = [0.5] * len(models.p[f'base_inc_rate_ALRI_by_{patho}'])
+    models.make_model_for_acquisition_risk()
+
+    # ensure no one has the relevant vaccines:
+    df['va_pneumo_all_doses'] = False
+    df['va_hib_all_doses'] = False
+
+    for pathogen in alri.all_pathogens:
+        res = models.compute_risk_of_aquisition(
+            pathogen=pathogen,
+            df=df.loc[df.is_alive & (df.age_years < 5)]
+        )
+        assert (res > 0).all() and (res <= 1.0).all()
         assert not res.isna().any()
-        assert 'bool' == res.dtype.name
+        assert 'float64' == res.dtype.name
+
+    # pneumococcal vaccine: if efficacy of vaccine is perfect, whomever has vaccine should have no risk of infection
+    # from Strep_pneumoniae_PCV13
+    models.p['rr_infection_strep_with_pneumococcal_vaccine'] = 0.0
+    df['va_pneumo_all_doses'] = True
+    assert (0.0 == models.compute_risk_of_aquisition(
+        pathogen='Strep_pneumoniae_PCV13',
+        df=df.loc[df.is_alive & (df.age_years < 5)])
+            ).all()
+
+    # pneumococcal vaccine: if efficacy of vaccine is perfect, whomever has vaccine should have no risk of infection
+    # from Strep_pneumoniae_PCV13
+    models.p['rr_infection_hib_haemophilus_vaccine'] = 0.0
+    df['va_hib_all_doses'] = True
+    assert (0.0 == models.compute_risk_of_aquisition(
+        pathogen='Hib',
+        df=df.loc[df.is_alive & (df.age_years < 5)])
+            ).all()
 
     # --- determine_disease_type
     # set efficacy of pneumococcal vaccine to be 100% (i.e. 0 relative risk of infection)
@@ -95,8 +127,12 @@ def test_integrity_of_linear_models(tmpdir):
     for patho in alri.all_pathogens:
         for age in range(0, 100):
             for va_pneumo_all_doses in [True, False]:
-                disease_type, bacterial_coinfection = models.determine_disease_type_and_secondary_bacterial_coinfection(
-                    age=age, pathogen=patho, va_pneumo_all_doses=va_pneumo_all_doses)
+                disease_type, bacterial_coinfection = \
+                    models.determine_disease_type_and_secondary_bacterial_coinfection(
+                        age=age,
+                        pathogen=patho,
+                        va_pneumo_all_doses=va_pneumo_all_doses
+                    )
 
                 assert disease_type in alri.disease_types
 
