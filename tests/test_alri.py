@@ -771,7 +771,7 @@ def test_use_of_HSI(tmpdir):
 
 
 def test_sample_outcome(tmpdir):
-    """Test helper function that determines outcoms"""
+    """Test helper function that determines outcomes"""
     popsize = 100
     sim = get_sim(tmpdir)
     sim.make_initial_population(n=popsize)

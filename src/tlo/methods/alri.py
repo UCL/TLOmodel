@@ -23,55 +23,42 @@ Outstanding issues
 * All HSI events
 * Follow-up appointments for initial HSI events.
 * Double check parameters and consumables codes for the HSI events.
+* Duration of Alri Event is not informed by data
 
-#
+Questions
+----------
+#0:
+Add comments describing what you mean by the pathogens
+Strep_pneumoniae_PCV13 and Strep_pneumoniae_non_PCV13. I presume the former is affected by the having of the
+pneumococcal vaccine.
 
-# 1:
-# 'daly_very_severe_ALRI' is never used: is that right?
+#1:
+'daly_very_severe_ALRI' is never used: is that right?
 
-# 2:
-# I couldn't work out what the intention is with the complication below:
-# It _might_ be that is delayed onset of empyema following pleural_effusion
-# 'empyema':
-# LinearModel(LinearModelType.MULTIPLICATIVE,
-#             1.0,
-#             # Predictor('ri_ALRI_complications').apply(
-#             #     lambda x: p['prob_pleural_effusion_to_empyema']
-#             #     if x & self.ALRI_complications.element_repr('pleural_effusion') else 0)
-#             ),
+#2:
+There are no probabilities describing the risk of onset of the complication "empyema". There is the risk of empyema
+being delayed onset (i.e. prob_pleural_effusion_to_empyema) and also the risk that "empyema" leads to sepsis
+(prob_empyema_to_sepsis). However, for simplicity  we only have two phases of complication (initial and delayed), so
+this is not represented at the moment. I am not sure if it should be or not.
 
-# 3:
-# Duration of Alri Event
+#3:
+The risk of death is not affected by delayed-onset complications: should it be?
 
-# 4:
-# There are no probabilities describing the risk of onset of the complication "empyema". There is the risk of empyema
-# being delayed onset (i.e. prob_pleural_effusion_to_empyema) and also the risk that "empyema" leads to sepsis
-# (prob_empyema_to_sepsis). However, for simplicity  we only have two phases of complication (initial and delayed), so
-# this is not represented at the moment. I am not sure if it should be or not.
-#
-# 5. The effect of the vaccine. These parameters are commented out and not being used:
-# 'rr_ALRI_pneumococcal_vaccine': Parameter
-# (Types.REAL, 'relative rate of acquiring Alri for pneumonococcal vaccine'
-#  ),
-# 'rr_ALRI_haemophilus_vaccine': Parameter
-# (Types.REAL, 'relative rate of acquiring Alri for haemophilus vaccine'
-#  ),
-# 'rr_ALRI_influenza_vaccine': Parameter
-# (Types.REAL, 'relative rate of acquiring Alri for influenza vaccine'
-#  ),
-# 'r_progress_to_severe_ALRI': Parameter
-# (Types.LIST,
-#  'probability of progressing from non-severe to severe Alri by age category '
-#  'HIV negative, no SAM'
-#  ),
-#
-# 6. The risk of death is not affected by delayed-onset complications: should it be?
-#
-# 7. Check that every parameter is used. I think that lots of not being -- perhaps left over from an earlier version?
-#
-# 8. Is it right that 'danger_signs' is an indepednet symptom? It seems like this is something that is determined in
- the course of a diagnosis (like in diarrhoea module).
+#4:
+Check that every parameter is used and remove those not used (from definition and from excel). I think that are several
+not being used (e.g prob_respiratory_failure_to_multiorgan_dysfunction and r_progress_to_severe_ALRI) -- perhaps left
+ over from an earlier version? Also, please could you tidy-up ResourceFile_Alri.xlsx? If there are sheets that need to
+  remain in there, it would be good if you can explain what each is for on the sheet (and delete anything that is not
+   needed).
+
+#5:
+Is it right that 'danger_signs' is an indepednet symptom? It seems like this is something that is determined in the
+ course of a diagnosis (like in diarrhoea module).
+
+#6:
+The effect of vaccines on disease are not reflected in this code or parameters at all.
 """
+
 
 
 from collections import defaultdict
@@ -120,8 +107,8 @@ class Alri(Module):
             # <-- Coronaviruses NL63, 229E OC43 and HKU1, Cytomegalovirus, Parechovirus/Enterovirus
         ],
         'bacterial': [
-            'Strep_pneumoniae_PCV13',
-            'Strep_pneumoniae_non_PCV13',
+            'Strep_pneumoniae_PCV13',      # <--  risk of acquisition is affected by the pneumococcal vaccine
+            'Strep_pneumoniae_non_PCV13',  # <--  risk of acquisition is not affected by the pneumococcal vaccine
             'Hib',
             'H.influenzae_non_type_b',
             'Staph_aureus',
@@ -286,21 +273,8 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for indoor air pollution'
                       ),
-        # 'rr_ALRI_pneumococcal_vaccine': Parameter
-        # (Types.REAL, 'relative rate of acquiring Alri for pneumonococcal vaccine'
-        #  ),
-        # 'rr_ALRI_haemophilus_vaccine': Parameter
-        # (Types.REAL, 'relative rate of acquiring Alri for haemophilus vaccine'
-        #  ),
-        # 'rr_ALRI_influenza_vaccine': Parameter
-        # (Types.REAL, 'relative rate of acquiring Alri for influenza vaccine'
-        #  ),
-        # 'r_progress_to_severe_ALRI': Parameter
-        # (Types.LIST,
-        #  'probability of progressing from non-severe to severe Alri by age category '
-        #  'HIV negative, no SAM'
-        #  ),
-        # Probability of bacterial co- / secondary infection
+
+        # Probability of bacterial co- / secondary infection -----
         'prob_viral_pneumonia_bacterial_coinfection':
             Parameter(Types.REAL,
                       'probability of primary viral pneumonia having a bacterial co-infection'
@@ -331,7 +305,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of respiratory failure when peripheral oxygen level is lower than 93%'
                       ),
-
         'prob_respiratory_failure_to_multiorgan_dysfunction':
             Parameter(Types.REAL,
                       'probability of respiratory failure causing multi-organ dysfunction'
@@ -401,7 +374,7 @@ class Alri(Module):
                       'probability of lung abscess causing sepsis'
                       ),
 
-        # death parameters -----
+        # Risk of death parameters -----
         'base_death_rate_ALRI_by_bacterial_pneumonia':
             Parameter(Types.REAL,
                       'baseline death rate from bacterial pneumonia, base age 0-11 months'
@@ -532,7 +505,8 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of severe respiratory distress from sepsis'
                       ),
-        # second round of signs/symptoms added from each complication
+
+        # Second round of signs/symptoms added from each complication
         # Pneumothorax ------------
         'prob_chest_pain_adding_from_pneumothorax':
             Parameter(Types.REAL,
@@ -546,7 +520,8 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of difficult breathing from pneumothorax'
                       ),
-        # pleural effusion -----------
+
+        # Pleural effusion -----------
         'prob_chest_pain_adding_from_pleural_effusion':
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of chest pain / pleurisy from pleural effusion'
@@ -572,6 +547,7 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of cough with sputum from respiratory distress'
                       ),
+
         # Lung abscess --------------
         'prob_chest_pain_adding_from_lung_abscess':
             Parameter(Types.REAL,
@@ -585,7 +561,8 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of fever from lung abscess'
                       ),
-        # Hypoxaemic Respiratory failure
+
+        # Hypoxaemic Respiratory failure --------------
         'prob_difficult_breathing_adding_from_respiratory_failure':
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of difficult breathing from respiratory failure'
@@ -602,7 +579,8 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of danger signs from respiratory failure'
                       ),
-        # meningitis ------------
+
+        # Meningitis ------------
         'prob_headache_adding_from_meningitis':
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of headache from meningitis'
@@ -615,6 +593,7 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of danger_signs from meningitis'
                       ),
+
         # Sepsis ----------------
         'prob_fast_breathing_adding_from_sepsis':
             Parameter(Types.REAL,
@@ -629,23 +608,22 @@ class Alri(Module):
                       'probability of additional signs/symptoms of fever from sepsis'
                       ),
 
-        # other parameters
+        # Parameters governing the effects of vaccine ----------------
+        'rr_infection_strep_with_pneumococcal_vaccine':
+            Parameter(Types.REAL,
+                      'relative risk of acquiring the pathogen=="Strep_pneumoniae_PCV13" if has had all doses of '
+                      'pneumonococcal vaccine (i.e., `va_pneumo_all_doses`==True)'
+                      ),
+        'rr_infection_hib_haemophilus_vaccine':
+            Parameter(Types.REAL,
+                      'relaitve risk of acquiring the pathogen=="Hib" if has had all doses of Haemophilus vaccine'
+                      ' (i.e., `va_hib_all_doses`==Tue)'
+                      ),
+
+        # Parameters governing treatment effectiveness and assoicated behaviours ----------------
         'days_between_treatment_and_cure':
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'
                       ),
-        'rr_ALRI_PCV13':
-            Parameter(Types.REAL,
-                      'relative rate of Alri with the PCV13'
-                      ),
-        'rr_ALRI_hib_vaccine':
-            Parameter(Types.REAL,
-                      'relative rate of Alri with the hib vaccination'
-                      ),
-        'rr_ALRI_RSV_vaccine':
-            Parameter(Types.REAL,
-                      'relative rate of Alri with the RSV vaccination'
-                      ),
-
         'prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment':
             Parameter(Types.REAL,
                       'probability of cure for uncomplicated pneumonia given IMCI pneumonia treatment'
