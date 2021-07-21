@@ -1063,11 +1063,6 @@ class Models:
                     Predictor('li_no_access_handwashing').when(False, p['rr_ALRI_HHhandwashing']),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor('hv_inf').when(True, p['rr_ALRI_HIV_untreated']),
-                    # Predictor().when(
-                    #     "(tmp_pneumococcal_vaccination == True) & "
-                    #     "((ri_primary_pathogen == 'streptococcus') | "
-                    #     "(ri_secondary_bacterial_pathogen == 'streptococcus'))",
-                    #     p['rr_ALRI_PCV13']), todo - this is the effect of vaccine: place elsewhere?
                     Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_ALRI_underweight']),
                     Predictor('nb_breastfeeding_status').when('exclusive', 1.0)
                                                         .otherwise(p['rr_ALRI_not_excl_breastfeeding'])
