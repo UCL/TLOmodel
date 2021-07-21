@@ -2,9 +2,12 @@
 This is the place for all the stuff to do with diagnosing a child that presents for care.
 It is expected that the pieces of logic and data that go here will be shared across multiple modules so they
 are put here rather than the individual disease modules.
+
 There should be a method here to respond to every symptom that a child could present with. Currently this module is
 served by the following disease modules:
 * Diarrhoea
+
+
 """
 
 from tlo import Module, logging
@@ -69,7 +72,9 @@ class DxAlgorithmChild(Module):
     def do_when_diarrhoea(self, person_id, hsi_event):
         """
         This routine is called when Diarrhoea is reported.
+
         It diagnoses the condition of the child and schedules HSI Events appropriate to the condition.
+
         See this report https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf
         (page 3).
         NB:
@@ -179,6 +184,7 @@ class DxAlgorithmChild(Module):
     def diagnose(self, person_id, hsi_event):
         """
         This will diagnose the condition of the person. It is being called from inside an HSI Event.
+
         :param person_id: The person is to be diagnosed
         :param hsi_event: The calling hsi_event.
         :return: a string representing the diagnosis
