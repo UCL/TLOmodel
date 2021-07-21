@@ -83,30 +83,35 @@ def test_integrity_of_linear_models(tmpdir):
     # make the models
     models = Models(alri)
 
-    # incidence_equations_by_pathogen:
+    # --- incidence_equations_by_pathogen:
     for patho in alri.all_pathogens:
         res = models.incidence_equations_by_pathogen[patho].predict(df.loc[df.is_alive], alri.rng)
         assert not res.isna().any()
         assert 'bool' == res.dtype.name
 
-    # determine_disease_type
+    # --- determine_disease_type
+    # set efficacy of pneumococcal vaccine to be 100% (i.e. 0 relative risk of infection)
+    models.p['rr_infection_strep_with_pneumococcal_vaccine'] = 0.0
     for patho in alri.all_pathogens:
         for age in range(0, 100):
+            for va_pneumo_all_doses in [True, False]:
+                disease_type, bacterial_coinfection = models.determine_disease_type_and_secondary_bacterial_coinfection(
+                    age=age, pathogen=patho, va_pneumo_all_doses=va_pneumo_all_doses)
 
-            disease_type, bacterial_coinfection = models.determine_disease_type_and_secondary_bacterial_coinfection(
-                age=age, pathogen=patho)
+                assert disease_type in alri.disease_types
 
-            assert disease_type in alri.disease_types
+                if patho in alri.pathogens['bacterial']:
+                    assert pd.isnull(bacterial_coinfection)
+                elif patho in alri.pathogens['fungal']:
+                    assert pd.isnull(bacterial_coinfection)
+                else:
+                    # viral primary infection- may have a bacterial coinfection or may not:
+                    assert pd.isnull(bacterial_coinfection) or bacterial_coinfection in alri.pathogens['bacterial']
+                    # check that if has had pneumococcal vaccine they are not coinfected with `Strep_pneumoniae_PCV13`
+                    if va_pneumo_all_doses:
+                        assert bacterial_coinfection != 'Strep_pneumoniae_PCV13'
 
-            if patho in alri.pathogens['bacterial']:
-                assert pd.isnull(bacterial_coinfection)
-            elif patho in alri.pathogens['fungal']:
-                assert pd.isnull(bacterial_coinfection)
-            else:
-                # viral primary infection
-                assert pd.isnull(bacterial_coinfection) or bacterial_coinfection in alri.pathogens['bacterial']
-
-    # complications
+    # --- complications
     for patho in alri.all_pathogens:
         for coinf in (alri.pathogens['bacterial'] + [np.nan]):
             for disease_type in alri.disease_types:
@@ -124,7 +129,7 @@ def test_integrity_of_linear_models(tmpdir):
                 assert isinstance(res, set)
                 assert all([c in alri.complications for c in res])
 
-    # delayed_complications
+    # --- delayed_complications
     for ri_complication_sepsis in [True, False]:
         for ri_complication_pneumothorax in [True, False]:
             for ri_complication_respiratory_failure in [True, False]:
@@ -147,19 +152,19 @@ def test_integrity_of_linear_models(tmpdir):
                         assert isinstance(res, set)
                         assert all([c in ['sepsis', 'respiratory_failure'] for c in res])
 
-    # symptoms_for_disease
+    # --- symptoms_for_disease
     for disease_type in alri.disease_types:
         res = models.symptoms_for_disease(disease_type)
         assert isinstance(res, set)
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
-    # symptoms_for_complication
+    # --- symptoms_for_complication
     for complication in alri.complications:
         res = models.symptoms_for_complication(complication)
         assert isinstance(res, set)
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
-    # death
+    # --- death
     for disease_type in alri.disease_types:
         df.loc[person_id, [
             'ri_disease_type',

@@ -54,11 +54,7 @@ not being used (e.g prob_respiratory_failure_to_multiorgan_dysfunction and r_pro
 #5:
 Is it right that 'danger_signs' is an indepednet symptom? It seems like this is something that is determined in the
  course of a diagnosis (like in diarrhoea module).
-
-#6:
-The effect of vaccines on disease are not reflected in this code or parameters at all.
 """
-
 
 
 from collections import defaultdict
@@ -612,7 +608,8 @@ class Alri(Module):
         'rr_infection_strep_with_pneumococcal_vaccine':
             Parameter(Types.REAL,
                       'relative risk of acquiring the pathogen=="Strep_pneumoniae_PCV13" if has had all doses of '
-                      'pneumonococcal vaccine (i.e., `va_pneumo_all_doses`==True)'
+                      'pneumonococcal vaccine (i.e., `va_pneumo_all_doses`==True), either as a primary pathogen or'
+                      'as a secondary bacterial coinfection.'
                       ),
         'rr_infection_hib_haemophilus_vaccine':
             Parameter(Types.REAL,
@@ -1081,7 +1078,7 @@ class Models:
         for patho in self.module.all_pathogens:
             self.incidence_equations_by_pathogen[patho] = make_scaled_linear_model_for_incidence(patho)
 
-    def determine_disease_type_and_secondary_bacterial_coinfection(self, pathogen, age):
+    def determine_disease_type_and_secondary_bacterial_coinfection(self, pathogen, age, va_pneumo_all_doses):
         """Determine:
          * the disease that is caused by infection with this pathogen (from among self.disease_types)
          * if there is a bacterial coinfection associated that will cause the dominant disease.
@@ -1103,20 +1100,19 @@ class Models:
             if (age >= 2) or (self.rng.rand() < p[f'proportion_viral_pneumonia_by_{pathogen}']):
                 # likely to be 'viral_pneumonia' (if there is not secondary bacterial infection)
                 if self.rng.rand() < p['prob_viral_pneumonia_bacterial_coinfection']:
-                    disease_type = 'bacterial_pneumonia'
-                    bacterial_coinfection = self.secondary_bacterial_infection()
+                    bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
+                    disease_type = 'bacterial_pneumonia' if ~pd.isnull(bacterial_coinfection) else 'viral_pneumonia'
                 else:
-                    disease_type = 'viral_pneumonia'
                     bacterial_coinfection = np.nan
-
+                    disease_type = 'viral_pneumonia'
             else:
                 # likely to be 'bronchiolitis' (if there is not secondary bacterial infection)
                 if self.rng.rand() < p['prob_secondary_bacterial_infection_in_bronchiolitis']:
-                    disease_type = 'bacterial_pneumonia'
-                    bacterial_coinfection = self.secondary_bacterial_infection()
+                    bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
+                    disease_type = 'bacterial_pneumonia' if ~pd.isnull(bacterial_coinfection) else 'bronchiolitis'
                 else:
-                    disease_type = 'bronchiolitis'
                     bacterial_coinfection = np.nan
+                    disease_type = 'bronchiolitis'
         else:
             raise ValueError('Pathogen is not recognised.')
 
@@ -1125,10 +1121,28 @@ class Models:
 
         return disease_type, bacterial_coinfection
 
-    def secondary_bacterial_infection(self):
-        "Determine which specific bacterial pathogen causes a secondary coinfection"
+    def secondary_bacterial_infection(self, va_pneumo_all_doses):
+        """Determine which specific bacterial pathogen causes a secondary coinfection, or if there is no secondary
+        bacterial infection (due to the effects of the pneumococcal vaccine).
+        """
         p = self.p
-        return self.rng.choice(self.module.pathogens['bacterial'], p=p['proportion_bacterial_coinfection_pathogen'])
+
+        # get probability of bacterial coinfection with each pathogen
+        probs = dict(zip(
+            self.module.pathogens['bacterial'],
+            p['proportion_bacterial_coinfection_pathogen']))
+
+        # Edit the probability that the coinfection will be of `Strep_pneumoniae_PCV13` if the person has had
+        #  the pneumococcal vaccine:
+        if va_pneumo_all_doses:
+            probs['Strep_pneumoniae_PCV13'] *= self.p['rr_infection_strep_with_pneumococcal_vaccine']
+
+        # Add in the probability that there is none (to ensure that all probabilities sum to 1.0)
+        probs['none'] = 1.0 - sum(probs.values())
+
+        # return the random selection of bacterial coinfection (including possibly np.nan for 'none')
+        outcome = self.rng.choice(list(probs.keys()), p=list(probs.values()))
+        return outcome if not 'none' else np.nan
 
     def complications(self, person_id):
         """Determine the set of complication for this person"""
@@ -1440,7 +1454,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # ----------------- Determine the Alri disease type and bacterial coinfection for this case -----------------
         disease_type, bacterial_coinfection = models.determine_disease_type_and_secondary_bacterial_coinfection(
-            age=person['age_years'], pathogen=self.pathogen)
+            age=person['age_years'], pathogen=self.pathogen, va_pneumo_all_doses=person['va_pneumo_all_doses'])
 
         # ----------------------- Duration of the Alri event -----------------------
         duration_in_days_of_alri = rng.randint(1, 8)  # assumes uniform interval around mean duration with range 4 days
