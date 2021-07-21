@@ -865,7 +865,6 @@ class Alri(Module):
                           'ri_scheduled_death_date',
                           'ri_end_of_current_episode']] = pd.NaT
 
-
     def report_daly_values(self):
         """Report DALY incurred in the population in the last month due to ALRI"""
         df = self.sim.population.props
@@ -1109,55 +1108,54 @@ class Models:
         for patho in self.module.all_pathogens:
             self.incidence_equations_by_pathogen[patho] = make_scaled_linear_model_for_incidence(patho)
 
-    def determine_disease_type(self, pathogen, age):
-        """Determine the disease that is caused by infection with this pathogen for a particular person from among
-        self.disease_types"""
+    def determine_disease_type_and_secondary_bacterial_coinfection(self, pathogen, age):
+        """Determine:
+         * the disease that is caused by infection with this pathogen (from among self.disease_types)
+         * if there is a bacterial coinfection associated that will cause the dominant disease.
+
+         Note that the disease_type is 'bacterial_pneumonia' if primary pathogen is viral and there is a secondary
+         bacterial coinfection.
+         """
         p = self.p
 
         if pathogen in self.module.pathogens['bacterial']:
             disease_type = 'bacterial_pneumonia'
-
-        elif pathogen in self.module.pathogens['viral']:
-            if age < 2:
-                disease_type = 'viral_pneumonia' if (
-                    self.rng.rand() < p[f'proportion_viral_pneumonia_by_{pathogen}']
-                ) else 'bronchiolitis'
-            else:
-                disease_type = 'viral_pneumonia'
+            bacterial_coinfection = np.nan
 
         elif pathogen in self.module.pathogens['fungal']:
             disease_type = 'fungal_pneumonia'
+            bacterial_coinfection = np.nan
 
+        elif pathogen in self.module.pathogens['viral']:
+            if (age >= 2) or (self.rng.rand() < p[f'proportion_viral_pneumonia_by_{pathogen}']):
+                # likely to be 'viral_pneumonia' (if there is not secondary bacterial infection)
+                if self.rng.rand() < p['prob_viral_pneumonia_bacterial_coinfection']:
+                    disease_type = 'bacterial_pneumonia'
+                    bacterial_coinfection = self.secondary_bacterial_infection()
+                else:
+                    disease_type = 'viral_pneumonia'
+                    bacterial_coinfection = np.nan
+
+            else:
+                # likely to be 'bronchiolitis' (if there is not secondary bacterial infection)
+                if self.rng.rand() < p['prob_secondary_bacterial_infection_in_bronchiolitis']:
+                    disease_type = 'bacterial_pneumonia'
+                    bacterial_coinfection = self.secondary_bacterial_infection()
+                else:
+                    disease_type = 'bronchiolitis'
+                    bacterial_coinfection = np.nan
         else:
-            raise ValueError
+            raise ValueError('Pathogen is not recognised.')
 
         assert disease_type in self.module.disease_types
-        return disease_type
+        assert bacterial_coinfection in (self.module.pathogens['bacterial'] + [np.nan])
 
-    def secondary_bacterial_infection(self, pathogen, disease_type):
-        "Determine if there is a secondary bacterial infection, and if so the specific bacterial pathogen"
+        return disease_type, bacterial_coinfection
+
+    def secondary_bacterial_infection(self):
+        "Determine which specific bacterial pathogen causes a secondary coinfection"
         p = self.p
-
-        if pathogen in self.module.pathogens['viral']:
-            # Determine risk of any bacterial pathogen:
-            if (disease_type == 'viral_pneumonia'):
-                risk = p['prob_viral_pneumonia_bacterial_coinfection']
-            elif (disease_type == 'bronchiolitis'):
-                risk = p['prob_secondary_bacterial_infection_in_bronchiolitis']
-            else:
-                risk = 0.0
-        else:
-            risk = 0.0
-
-        bacterial_infection = risk > self.rng.rand()
-
-        if not bacterial_infection:
-            # If no bacterial infection, return np.nan
-            return np.nan
-
-        else:
-            # If a bacterial infection, determine which one:
-            return self.rng.choice(self.module.pathogens['bacterial'], p=p['proportion_bacterial_coinfection_pathogen'])
+        return self.rng.choice(self.module.pathogens['bacterial'], p=p['proportion_bacterial_coinfection_pathogen'])
 
     def complications(self, person_id):
         """Determine the set of complication for this person"""
@@ -1464,21 +1462,12 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         if not person['is_alive']:
             return
 
-        # 0) Add this case to the counter:
+        # Add this case to the counter:
         self.module.logging_event.new_case(age=person['age_years'], pathogen=self.pathogen)
 
-        # 1) Determines the disease and complications associated with this case
-        # todo - logic could be improved here:
-
-        # ----------------- Determine the Alri disease type for this case -----------------
-        disease_type = models.determine_disease_type(age=person['age_years'], pathogen=self.pathogen)
-
-        # ----------------- Determine if there is a secondary bacterial infection  -----------------
-        bacterial_coinfection = models.secondary_bacterial_infection(self.pathogen, disease_type)
-
-        # If there is a secondary bacterial infection, update the designation of the disesse
-        if not pd.isnull(bacterial_coinfection):
-            disease_type = 'bacterial_pneumonia'
+        # ----------------- Determine the Alri disease type and bacterial coinfection for this case -----------------
+        disease_type, bacterial_coinfection = models.determine_disease_type_and_secondary_bacterial_coinfection(
+            age=person['age_years'], pathogen=self.pathogen)
 
         # ----------------------- Duration of the Alri event -----------------------
         duration_in_days_of_alri = rng.randint(1, 8)  # assumes uniform interval around mean duration with range 4 days
@@ -1490,7 +1479,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         # could affect this episode.
         episode_end = date_of_outcome + m.max_duration_of_epsiode
 
-        # 2) Update the properties in the dataframe:
+        # Update the properties in the dataframe:
         df.loc[person_id,
                (
                    'ri_current_infection_status',
@@ -1516,13 +1505,14 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             pd.NaT
         )
 
-        # ----------------------------------- clinical symptoms -----------------------------------
+        # ----------------------------------- Clinical Symptoms -----------------------------------
         # impose clinical symptoms for new uncomplicated Alri
         self.impose_symptoms_for_uncomplicated_disease(person_id=person_id, disease_type=disease_type)
 
-        # COMPLICATIONS -----------------------------------------------------------------------------------------
+        # ----------------------------------- Complications  -----------------------------------
         self.impose_complications(person_id=person_id, date_of_outcome=date_of_outcome)
 
+        # ----------------------------------- Outcome  -----------------------------------
         # Determine outcome: death or recovery
         if models.death(person_id=person_id):
             self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
@@ -1547,16 +1537,15 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             )
 
     def impose_complications(self, person_id, date_of_outcome):
-        """Impose the set of complications for this person, and onset these all instantanesouly."""
-        # todo - make this go faster by doing one .loc and passing it all updates to the df at the same time.
+        """Choose a set of complications for this person and onset these all instantanesouly."""
 
         df = self.sim.population.props
         m = self.module
         models = m.models
 
         complications = models.complications(person_id=person_id)
+        df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]] = True
         for complication in complications:
-            df.at[person_id, f"ri_complication_{complication}"] = True
             m.impose_symptoms_for_complication(person_id=person_id, complication=complication)
 
         # Consider delayed-onset of complications and schedule events accordingly

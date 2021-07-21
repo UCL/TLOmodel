@@ -91,19 +91,20 @@ def test_integrity_of_linear_models(tmpdir):
 
     # determine_disease_type
     for patho in alri.all_pathogens:
-       for age in range(0, 100):
-           res = models.determine_disease_type(patho, int(age))
-           assert res in alri.disease_types
+        for age in range(0, 100):
 
-    # secondary_bacterial_infection
-    for patho in alri.all_pathogens:
-        for disease_type in alri.disease_types:
-            res = models.secondary_bacterial_infection(patho, disease_type)
+            disease_type, bacterial_coinfection = models.determine_disease_type_and_secondary_bacterial_coinfection(
+                age=age, pathogen=patho)
+
+            assert disease_type in alri.disease_types
 
             if patho in alri.pathogens['bacterial']:
-                assert np.isnan(res)
+                assert pd.isnull(bacterial_coinfection)
+            elif patho in alri.pathogens['fungal']:
+                assert pd.isnull(bacterial_coinfection)
             else:
-                assert pd.isnull(res) or res in alri.pathogens['bacterial']
+                # viral primary infection
+                assert pd.isnull(bacterial_coinfection) or bacterial_coinfection in alri.pathogens['bacterial']
 
     # complications
     for patho in alri.all_pathogens:
@@ -249,8 +250,10 @@ def test_nat_hist_recovery(tmpdir):
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
 
-    # make probability of death 0%
-    sim.modules['Alri'].models.death = lambda x: False
+    # make probability of death 0% (not using a lambda function because code uses the keyword argument for clarity)
+    def death(person_id):
+        return False
+    sim.modules['Alri'].models.death = death
 
     # make probability of symptoms very high
     params = sim.modules['Alri'].parameters
@@ -327,8 +330,10 @@ def test_nat_hist_death(tmpdir):
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
 
-    # make probability of death 100%
-    sim.modules['Alri'].models.death = lambda x: True
+    # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
+    def death(person_id):
+        return True
+    sim.modules['Alri'].models.death = death
 
     # Get person to use:
     df = sim.population.props
@@ -384,8 +389,10 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
 
-    # make probability of death 0%
-    sim.modules['Alri'].models.death = lambda x: False
+    # make probability of death 0% (not using a lambda function because code uses the keyword argument for clarity)
+    def death(person_id):
+        return False
+    sim.modules['Alri'].models.death = death
 
     # Get person to use:
     df = sim.population.props
@@ -458,8 +465,10 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
 
-    # make probability of death 100%
-    sim.modules['Alri'].models.death = lambda x: True
+    # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
+    def death(person_id):
+        return True
+    sim.modules['Alri'].models.death = death
 
     # Get person to use:
     df = sim.population.props
@@ -659,8 +668,10 @@ def test_treatment(tmpdir):
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
 
-    # make probability of death 100%
-    sim.modules['Alri'].models.death = lambda x: True
+    # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
+    def death(person_id):
+        return True
+    sim.modules['Alri'].models.death = death
 
     # Get person to use:
     df = sim.population.props
@@ -785,4 +796,4 @@ def test_sample_outcome(tmpdir):
 
     for op in ['A', 'B', 'C']:
         prob = df.loc[2, op]
-        assert res[2].value_counts()[op] == pytest.approx(df.loc[2, op] * n, abs=np.sqrt(n * prob*(1-prob)))
+        assert res[2].value_counts()[op] == pytest.approx(df.loc[2, op] * n, abs=np.sqrt(n * prob * (1 - prob)))
