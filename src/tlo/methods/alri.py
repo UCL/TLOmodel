@@ -9,8 +9,8 @@ The disease is manifested as either viral pneumonia, bacterial pneumonia or bron
 
 During an episode (prior to recovery - either naturally or cured with treatment), symptom are manifest and there may be
 complications (e.g. local pulmonary complication: pleural effusuion, empyema, lung abscess, pneumothorax; and/or
-systemic complications: sepsis, meningitis, and respiratory failure). There is a risk that additional complications
-are onset later.
+systemic complications: sepsis, meningitis, and respiratory failure). There is a risk that some of these complications
+are onset after a delay.
 
 The individual may recover naturally or die. The risk of death depends on the type of disease and the presence of some
 of the complications.
@@ -240,7 +240,7 @@ class Alri(Module):
                       'per child per year'
                       ),
 
-        # Risk factors parameters -----
+        # Risk factors for incidence infection -----
         'rr_ALRI_HHhandwashing':
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for children with household handwashing with soap '
@@ -526,6 +526,7 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of dyspnoea/ difficult breathing from pleural effusion'
                       ),
+
         # Empyema ------------
         'prob_chest_pain_adding_from_empyema':
             Parameter(Types.REAL,
@@ -745,7 +746,7 @@ class Alri(Module):
             if symptom_name not in self.sim.modules['SymptomManager'].generic_symptoms:
                 self.sim.modules['SymptomManager'].register_symptom(
                     Symptom(name=symptom_name)
-                    # (give non-generic symptom 'average' healthcare seeking)
+                    # (associates the symptom with the 'average' healthcare seeking)
                 )
 
     def pre_initialise_population(self):
@@ -883,9 +884,8 @@ class Alri(Module):
             pd.NaT,
             pd.NaT,
         ]
-        #  NB> 'ri_end_of_current_episode is not reset: this is used to control behaviour of event (incl. HSI) that
-        #  may still be scheduled to occur and to prevent new infections from occuring whilst HSI from a previous
-        #  episode occur.
+        #  NB. 'ri_end_of_current_episode is not reset: this is used to prevent new infections from occuring whilst
+        #  HSI from a previous episode may still be scheduled to occur.
 
         # Remove all existing complications
         df.loc[person_id, [f"ri_complication_{c}" for c in self.complications]] = False
@@ -895,9 +895,8 @@ class Alri(Module):
 
     def do_treatment(self, person_id, prob_of_cure):
         """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
-        It will only do something if the Alri is caused by a pathogen (this module). It will not allow any effect
-         if the respiratory infection is caused by another module.
-        * Log the treatment date
+        It will only do something if the Alri is caused by a pathogen (this module).
+        * Log the treatment
         * Prevent any death event that may be scheduled from occuring (prior to the cure event)
         * Schedules the cure event, at which the episode is ended
         """
@@ -926,8 +925,7 @@ class Alri(Module):
             self.sim.schedule_event(AlriCureEvent(self, person_id), cure_date)
 
     def cancel_death_date(self, person_id):
-        """
-        Cancels a scheduled date of death due to Alri for a person. This is called within do_treatment_alri function,
+        """Cancels a scheduled date of death due to Alri for a person. This is called within do_treatment_alri function,
         and prior to the scheduling the CureEvent to prevent deaths happening in the time between
         a treatment being given and the cure event occurring.
         :param person_id:
@@ -1004,9 +1002,7 @@ class Alri(Module):
         return start + DateOffset(days=self.rng.randint(0, (end - start).days))
 
     def impose_symptoms_for_complication(self, complication, person_id):
-        """
-        Assign clinical symptoms in respect of a complication.
-        """
+        """Impose symptoms for a complication."""
         symptoms = self.models.symptoms_for_complication(complication=complication)
         for symptom in symptoms:
             self.sim.modules['SymptomManager'].change_symptom(
@@ -1092,7 +1088,7 @@ class Models:
         return baseline
 
     def determine_disease_type_and_secondary_bacterial_coinfection(self, pathogen, age, va_pneumo_all_doses):
-        """Determine:
+        """Determines:
          * the disease that is caused by infection with this pathogen (from among self.disease_types)
          * if there is a bacterial coinfection associated that will cause the dominant disease.
 
@@ -1110,17 +1106,17 @@ class Models:
             bacterial_coinfection = np.nan
 
         elif pathogen in self.module.pathogens['viral']:
-            if (age >= 2) or (self.rng.rand() < p[f'proportion_viral_pneumonia_by_{pathogen}']):
-                # likely to be 'viral_pneumonia' (if there is not secondary bacterial infection)
-                if self.rng.rand() < p['prob_viral_pneumonia_bacterial_coinfection']:
+            if (age >= 2) or (p[f'proportion_viral_pneumonia_by_{pathogen}'] > self.rng.rand()):
+                # likely to be 'viral_pneumonia' (if there is no secondary bacterial infection)
+                if p['prob_viral_pneumonia_bacterial_coinfection'] > self.rng.rand():
                     bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
                     disease_type = 'bacterial_pneumonia' if ~pd.isnull(bacterial_coinfection) else 'viral_pneumonia'
                 else:
                     bacterial_coinfection = np.nan
                     disease_type = 'viral_pneumonia'
             else:
-                # likely to be 'bronchiolitis' (if there is not secondary bacterial infection)
-                if self.rng.rand() < p['prob_secondary_bacterial_infection_in_bronchiolitis']:
+                # likely to be 'bronchiolitis' (if there is no secondary bacterial infection)
+                if p['prob_secondary_bacterial_infection_in_bronchiolitis'] > self.rng.rand():
                     bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
                     disease_type = 'bacterial_pneumonia' if ~pd.isnull(bacterial_coinfection) else 'bronchiolitis'
                 else:
@@ -1232,12 +1228,9 @@ class Models:
         }[disease_type]
 
         probs = {
-            'fever': p['prob_fever_uncomplicated_ALRI_by_disease_type'][index],
-            'cough': p['prob_cough_uncomplicated_ALRI_by_disease_type'][index],
-            'difficult_breathing': p['prob_difficult_breathing_uncomplicated_ALRI_by_disease_type'][index],
-            'fast_breathing': p['prob_fast_breathing_uncomplicated_ALRI_by_disease_type'][index],
-            'chest_indrawing': p['prob_chest_indrawing_uncomplicated_ALRI_by_disease_type'][index],
-            'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][index],
+            symptom: p[f'prob_{symptom}_uncomplicated_ALRI_by_disease_type'][index]
+            for symptom in [
+                'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'danger_signs']
         }
 
         # determine which symptoms are onset:
@@ -1357,13 +1350,12 @@ class Models:
 
 class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the main event that runs the acquisition of pathogens that cause Alri.
-        It determines who is infected and when and schedules individual IncidentCase events to represent onset.
+    It determines who is infected and when and schedules individual IncidentCase events to represent onset.
 
-        A known issue is that Alri events are scheduled based on the risk of current age but occur a short time
-        later when the children will be slightly older. This means that when comparing the model output with data, the
-        model slightly under-represents incidence among younger age-groups and over-represents incidence among older
-        age-groups. This is a small effect when the frequency of the polling event is high.
-    """
+    A known issue is that Alri events are scheduled based on the risk of current age but occur a short time
+    later when the children will be slightly older. This means that when comparing the model output with data, the
+    model slightly under-represents incidence among younger age-groups and over-represents incidence among older
+    age-groups. This is a small effect when the frequency of the polling event is high."""
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=2))
@@ -1420,8 +1412,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def sample_outcome(self, df):
         """Helper function to randomly sample an outcome from a set of probabilities.
         Each row in the df is a person and each column gives the probability that a particular event may happen to the
-         person.
-        The probabilities of each event are assumed to be independent but mutually exlusive."""
+        person. The probabilities of each event are assumed to be independent but mutually exlusive."""
 
         assert (df.sum(axis=1) <= 1.0).all(), "Probabilities across columns cannot sum to more than 1.0"
 
@@ -1628,10 +1619,8 @@ class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
 
 
 class AlriCureEvent(Event, IndividualScopeEventMixin):
-    """
-       This is the cure event. It is scheduled by an HSI treatment event.
-       It enacts the actual "cure" of the person that is caused (after some delay) by the treatment administered.
-       """
+    """This is the cure event. It is scheduled by an HSI treatment event. It enacts the actual "cure" of the person
+    that is caused (after some delay) by the treatment administered."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1702,7 +1691,7 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
 
 class HSI_Alri_GenericTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    # This is a template for the HSI interaction events. It just shows the checks to use each time.
+    This is a template for the HSI interaction events. It just shows the checks to use each time.
     """
 
     def __init__(self, module, person_id):

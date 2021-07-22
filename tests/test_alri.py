@@ -83,7 +83,7 @@ def test_integrity_of_linear_models(tmpdir):
     # make the models
     models = Models(alri)
 
-    # --- compute_risk_of_aquisition & incidence_equations_by_pathogen:
+    # --- compute_risk_of_acquisition & incidence_equations_by_pathogen:
     # if no vaccine and very high risk:
     # make risk of vaccine high:
     for patho in alri.all_pathogens:
@@ -259,7 +259,7 @@ def test_basic_run_lasting_two_years(tmpdir):
 
 
 def test_alri_polling(tmpdir):
-    """Cause infection --> ALRI onset --> complication --> death and check it is logged correctly"""
+    """Check polling events leads to incident cases"""
     # get simulation object:
     dur = pd.DateOffset(days=0)
     popsize = 100
@@ -495,8 +495,7 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
 
 def test_nat_hist_cure_if_death_scheduled(tmpdir):
     """Show that if a cure event is run before when a person was going to die, it cause the episode to end without
-    the person dying.
-    """
+    the person dying."""
 
     dur = pd.DateOffset(days=0)
     popsize = 100
