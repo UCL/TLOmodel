@@ -22,7 +22,6 @@ popsize = 200
 
 
 def test_beddays_in_isolation(tmpdir):
-
     sim = Simulation(start_date=start_date)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -477,44 +476,86 @@ def test_bed_days_released_on_death(tmpdir):
     assert beds_occupied.astype(int).equals(expected_beds_occupied.astype(int))
 
 
-def test_bed_days_basics_with_healthsystem_disabled(tmpdir):
+def test_bed_days_basics_with_healthsystem_disabled():
     """Check basic functionality of bed-days class when the health-system has been disabled"""
 
+    class DummyModule(Module):
+        METADATA = {Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # Schedule person_id=0 to attend care on 3rd January
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy(self, person_id=0),
+                topen=Date(2010, 1, 3),
+                tclose=None,
+                priority=0)
+
+            # Schedule person_id=0 to die on 6th January
+            self.sim.schedule_event(
+                demography.InstantaneousDeath(self.sim.modules['Demography'], 0, 'Other'),
+                Date(2010, 1, 6)
+            )
+
+    # Create a dummy HSI with two types of Bed Day specified
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.this_ran = False
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ALERT_OTHER_DISEASES = []
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
+                'high_dependency_bed': 10,
+                'general_bed': 5
+            })
+
+        def apply(self, person_id, squeeze_factor):
+            self.this_ran = True
+            print(f'squeeze-factor is {squeeze_factor}')
+            print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
+
     # Create simulation:
-    sim = Simulation(start_date=start_date, seed=0, log_config={
-        'filename': 'bed_days',
-        'directory': tmpdir,
-        'custom_levels': {
-            "BedDays": logging.INFO}
-    })
+    sim = Simulation(start_date=start_date, seed=0)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                   disable=True),
+        DummyModule(),
     )
-    sim.make_initial_population(n=100)
-    sim.simulate(end_date=start_date + pd.DateOffset(days=100))
+
     hs = sim.modules['HealthSystem']
 
-    # get the number of tracked days from beddays class
-    tracker_days = hs.bed_days.days_until_last_day_of_bed_tracker
+    # Update BedCapacity data with a simple table:
+    default_facility_id = 0
+    cap_bedtype1 = 0
+    cap_bedtype2 = 0
 
-    # create a datetime series from start date to a days until last day of bed tracker
-    date_s = pd.date_range(start_date, start_date + pd.DateOffset(days=tracker_days))
+    # create a simple bed capacity dataframe
+    hs.parameters['BedCapacity'] = pd.DataFrame(
+        index=[0],
+        data={
+            'Facility_ID': default_facility_id,
+            'high_dependency_bed': cap_bedtype1,
+            'general_bed': cap_bedtype2
+        }
+    )
 
-    """ since health system is disabled, tracker index will not shift. This implies that tracker index will be equal to
-     date_s variable. check that this is true """
-    for bed_type in hs.bed_days.bed_types:
-        assert (hs.bed_days.bed_tracker[bed_type].index == date_s).all()
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=100))
 
-    """disabling health system will also cause only start_date to be logged as a result of calling on_simulation_end
-    method of the health system."""
+    person_id = 0
 
-    # Check that structure of the log is as expected
-    log = parse_log_file(sim.log_filepath)['tlo.methods.bed_days']
-    assert set([f"bed_tracker_{bed}" for bed in hs.bed_days.bed_types]) == set(log.keys())
+    # ensure we can run an hsi event without errors
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    assert hsi_bd.this_ran
 
-    # check that only one day has been logged and that that day(date_of_bed_occupancy) is start_date.
-    for bed_type in set(log.keys()):
-        assert log[bed_type].index.size == 1
-        assert log[bed_type].loc[log[bed_type].index[0], "date_of_bed_occupancy"] == start_date
+    assert not sim.population.props.at[0, 'is_alive']  # person 0 has died
