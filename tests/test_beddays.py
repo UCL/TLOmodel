@@ -518,7 +518,7 @@ def test_bed_days_basics_with_healthsystem_disabled():
             })
 
         def apply(self, person_id, squeeze_factor):
-            self.this_ran = True
+            self.this_ran = (self.bed_days_allocated_to_this_event == self.BEDDAYS_FOOTPRINT)
             print(f'squeeze-factor is {squeeze_factor}')
             print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
 
