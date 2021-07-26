@@ -53,18 +53,22 @@ data_tb_who = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_nam
 data_tb_who.index = pd.to_datetime(data_tb_who['year'], format='%Y')
 data_tb_who = data_tb_who.drop(columns=['year'])
 
+
+# HIV resourcefile
+xls = pd.ExcelFile(resourcefilepath / 'ResourceFile_HIV.xlsx')
+xls.sheet_names
+
 # HIV UNAIDS data
-data_hiv_unaids = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name='unaids_infections_art2021')
+data_hiv_unaids = pd.read_excel(xls, sheet_name='unaids_infections_art2021')
 data_hiv_unaids.index = pd.to_datetime(data_hiv_unaids['year'], format='%Y')
 data_hiv_unaids = data_hiv_unaids.drop(columns=['year'])
 
-# MPHIA HIV data
-data_hiv_mphia_inc = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name='MPHIA_incidence2015')
-
-data_hiv_mphia_prev = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name='MPHIA_prevalence_art2015')
+# MPHIA HIV data - age-structured
+data_hiv_mphia_inc = pd.read_excel(xls, sheet_name='MPHIA_incidence2015')
+data_hiv_mphia_prev = pd.read_excel(xls, sheet_name='MPHIA_prevalence_art2015')
 
 # DHS HIV data
-data_hiv_dhs_prev = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name='DHS_prevalence')
+data_hiv_dhs_prev = pd.read_excel(xls, sheet_name='DHS_prevalence')
 
 
 # ---------------------------------------------------------------------- #
@@ -116,6 +120,11 @@ make_plot(
 # proportion TB cases that are MDR
 mdr = output['tlo.methods.tb']['tb_mdr']
 mdr = mdr.set_index('date')
+
+make_plot(
+    title_str="Proportion of active cases that are MDR",
+    model=mdr['tbPropActiveCasesMdr'],
+)
 
 # HIV - prevalence among 15-49 year-olds
 prev_and_inc_over_time = output['tlo.methods.hiv'][
