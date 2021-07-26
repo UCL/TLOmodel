@@ -366,18 +366,36 @@ def _format_appt_footprint(appt_footprint, inline_code_formatter):
     return ', '.join(f'{inline_code_formatter(a)}' for a in appt_footprint)
 
 
+def _format_treatment_id(treatment_id, module_name, inline_code_formatter):
+    prefixes = [
+        f"{module_name}_",
+        f"HSI_{module_name}_",
+        f"{module_name[0].lower()}{module_name[1:]}_"
+    ]
+    for prefix in prefixes:
+        if treatment_id.startswith(prefix):
+            treatment_id = treatment_id[len(prefix):]
+            break
+    return inline_code_formatter(treatment_id)
+
+
 def format_hsi_event_details_as_table(hsi_event_details, text_format='rst'):
     """Format HSI event details into a table."""
     formatters = _formatters[text_format]
     table_string = formatters['table_header'](
-        ['Module', 'Treatment ID', 'Facility level', 'Appointment footprint'],
+        ['Module', 'Event', 'Treatment', 'Facility level', 'Appointment footprint'],
         'Health system interaction events'
     )
     for event_details in hsi_event_details:
         table_string += formatters['table_row'](
             [
                 formatters['inline_code'](event_details.module_name),
-                formatters['inline_code'](event_details.treatment_id),
+                formatters['inline_code'](event_details.event_name),
+                _format_treatment_id(
+                    event_details.treatment_id,
+                    event_details.module_name,
+                    formatters['inline_code']
+                ),
                 _format_facility_level(event_details.facility_level),
                 _format_appt_footprint(
                     event_details.appt_footprint, formatters['inline_code']
@@ -402,10 +420,15 @@ def format_hsi_event_details_as_list(hsi_event_details, text_format='rst'):
             appt_footprint_string = _format_appt_footprint(
                 event_details.appt_footprint, formatters['inline_code']
             )
+            treatment_id_string = _format_treatment_id(
+                event_details.treatment_id,
+                event_details.module_name,
+                formatters['inline_code']
+            )
             list_string += formatters['list_item'](
-                f'{formatters["inline_code"](event_details.treatment_id)}: '
+                f'{treatment_id_string} at '
                 f'facility level {_format_facility_level(event_details.facility_level)}'
-                f' with appointment footprint {appt_footprint_string}.'
+                f' with appointment footprint: {appt_footprint_string}.'
             )
         list_string += '\n'
     return list_string
