@@ -123,7 +123,10 @@ class DxAlgorithmChild(Module):
             blood_in_stool = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'
 
             # 3) Get status of dehydration
-            dehydration = 'dehydration' in symptoms
+            # dehydration = 'dehydration' in symptoms
+            no_dehydration = df.at[person_id, 'gi_last_diarrhoea_dehydration'] == 'none'
+            some_dehydration = df.at[person_id, 'gi_last_diarrhoea_dehydration'] == 'some'
+            severe_dehydration = df.at[person_id, 'gi_last_diarrhoea_dehydration'] == 'severe'
 
             # Gather information that cannot be reported:
             # 1) Assessment of danger signs
@@ -132,7 +135,7 @@ class DxAlgorithmChild(Module):
             # --------------------------------------------------
             # Get the classification of uncomplicated diarrhoea:
             # acute diarrhoea with some or no dehydration without general danger signs
-            uncomplicated_diarrhoea = not danger_signs
+            uncomplicated_diarrhoea = not severe_dehydration
 
             # antibiotics to be given for dysentery
             antibiotics_for_dysentery = p['prob_antibiotic_given_for_dysentery_by_hw'] > self.rng.rand()
@@ -153,7 +156,7 @@ class DxAlgorithmChild(Module):
                     intervention_given = 'none'
 
                 # # # # # NO DEHYDRATION # # # # #
-                if not dehydration and intervention_given != 'none':
+                if no_dehydration and (intervention_given != 'none'):
                     # Treatment Plan A for uncomplicated diarrhoea (no dehydration and no danger signs)
                     schedule_hsi(
                         HSI_Diarrhoea_Treatment_PlanA(
@@ -182,7 +185,7 @@ class DxAlgorithmChild(Module):
                             tclose=None)
 
                 # # # # # SOME DEHYDRATION # # # # #
-                elif dehydration and intervention_given != 'none':
+                elif some_dehydration and (intervention_given != 'none'):
                     # Treatment Plan B for some dehydration diarrhoea but not danger signs
                     if not danger_signs:
                         # TODO:add "...and not other severe classification from other disease modules
@@ -214,7 +217,7 @@ class DxAlgorithmChild(Module):
                                 tclose=None)
 
             # # # # # SEVERE DEHYDRATION # # # # #
-            if danger_signs:
+            if severe_dehydration and danger_signs:
                 # Danger sign for 'Severe_Dehydration'
                 schedule_hsi(
                     HSI_Diarrhoea_Treatment_PlanC(

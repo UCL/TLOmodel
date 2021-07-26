@@ -409,7 +409,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
 
     # run without spurious symptoms
-    # run(spurious_symptoms=False)
+    run(spurious_symptoms=False)
 
     # # run with spurious symptoms
     run(spurious_symptoms=True)

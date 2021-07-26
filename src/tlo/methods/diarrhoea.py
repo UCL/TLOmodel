@@ -32,7 +32,6 @@ from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from scipy.stats import truncnorm
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -757,18 +756,6 @@ class Diarrhoea(Module):
         )
 
         # --------------------------------------------------------------------------------------------
-        # Linear model for the probability of recovery based on interventions
-        # self.diarrhoea_recovery_based_on_interventions.update({
-        #     'acute_diarrhoea':
-        #         LinearModel(LinearModelType.MULTIPLICATIVE,
-        #                     1.0,
-        #                     Predictor('gi_treatment_type').when('ORS', p['ors_effectiveness_on_diarrhoea_mortality'])
-        #                     .when('antibiotics_for_dysentery', p['antibiotic_effectiveness_for_dysentery'])
-        #                     .otherwise(0.0),
-        #                     )}
-        # )
-
-        # --------------------------------------------------------------------------------------------
         # Look-up and store the consumables that are required for each HSI
         self.look_up_consumables()
 
@@ -854,19 +841,6 @@ class Diarrhoea(Module):
         cipro_code = get_code(item='Ciprofloxacin 250mg_100_CMST')
 
         # -- Assemble the footprints for each diarrhoea-related condition or plan:
-        # add_consumable('AcuteDiarrhoea_PlanA', {ors_code: 1}, {})
-        # add_consumable('AcuteDiarrhoea_PlanB', {ors_code: 1}, {})
-        # add_consumable('AcuteDiarrhoea_PlanC', {severe_diarrhoea_code: 1}, {})
-        # add_consumable('PersistentDiarrhoea_PlanA', {zinc_under_6m_code: 1}, {zinc_tablet_code: 5})
-        # add_consumable('PersistentDiarrhoea_PlanB', {ors_code: 1}, {})
-        # add_consumable('PersistentDiarrhoea_PlanC', {severe_diarrhoea_code: 1}, {})
-        # add_consumable('AcuteDiarrhoea_Dysentery_PlanA', {ors_code: 1, antibiotics_code: 1}, {})
-        # add_consumable('AcuteDiarrhoea_Dysentery_PlanB', {ors_code: 1}, {})
-        # add_consumable('AcuteDiarrhoea_Dysentery_PlanC', {ors_code: 1}, {})
-        # add_consumable('PersistentDiarrhoea_Dysentery_PlanA', {ors_code: 1}, {})
-        # add_consumable('PersistentDiarrhoea_Dysentery_PlanB', {ors_code: 1}, {})
-        # add_consumable('PersistentDiarrhoea_Dysentery_PlanC', {severe_diarrhoea_code: 1}, {})
-
         add_consumable('Dehydration_Plan_A', {ors_code: 1}, {})
         add_consumable('Dehydration_Plan_B', {ors_code: 1}, {})
         add_consumable('Dehydration_Plan_C', {severe_diarrhoea_code: 1}, {})
@@ -1089,22 +1063,6 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         # Update the entry in the population dataframe
         df.loc[person_id, props_new.keys()] = props_new.values()
 
-        # # ----------------------- Determine duration for this episode ----------------------
-        # mean_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][0]
-        # std_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][1]
-        # min_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][2]
-        # max_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen][3]
-        #
-        # #TODOD: do mean days for suration of acute, proD and PERSISTENT
-        #
-        # duration_in_days_of_episode = \
-        #     m.truncated_normal(left_bound=min_duration, right_bound=max_duration,
-        #                        normal_mean=mean_duration, normal_std=std_duration).rvs(random_state=rng)
-        #
-        # date_of_outcome = self.sim.date + DateOffset(days=duration_in_days_of_episode)
-        #
-        # props_new['gi_last_diarrhoea_duration'] = duration_in_days_of_episode
-
         # Determine if the episode will be Acute (<7 days) or ProD (7-13 days) ----------------------------
         duration = int()
 
@@ -1207,39 +1165,6 @@ class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'none'
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['Diarrhoea'])
-
-
-# class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
-#     """
-#     #This is the Severe Dehydration. It is part of the natural history and represents a change in the status of the
-#     person's level of dehydration.
-#     It does the following:
-#         * changes the property 'gi_last_diarrhoea_dehydration' to severe
-#     """
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#
-#     def apply(self, person_id):
-#         df = self.sim.population.props
-#
-#         # The event should not run if the person is not currently alive
-#         if not df.at[person_id, 'is_alive']:
-#             return
-#
-#         # Confirm that this is event is occurring during a current episode of diarrhoea
-#         assert (
-#             (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
-#             self.sim.date <=
-#             (df.at[person_id, 'gi_end_of_last_episode'])
-#         )
-#
-#         # Do nothing if the person has recovered already (after having been cured)
-#         if df.at[person_id, 'gi_last_diarrhoea_recovered_date'] <= self.sim.date:
-#             return
-#
-#         # Change the status:
-#         df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'severe'
 
 
 class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
