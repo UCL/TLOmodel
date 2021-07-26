@@ -64,6 +64,7 @@ if no_existing_logfile:
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                 diarrhoea.PropertiesOfOtherModules()
                  )
 
     sim.make_initial_population(n=popsize)
