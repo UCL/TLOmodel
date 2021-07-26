@@ -642,10 +642,10 @@ class Diarrhoea(Module):
                     Predictor('li_no_access_handwashing').when(False, p['rr_diarrhoea_HHhandwashing']),
                     Predictor('li_no_clean_drinking_water').when(False, p['rr_diarrhoea_clean_water']),
                     Predictor('li_unimproved_sanitation').when(False, p['rr_diarrhoea_improved_sanitation']),
-                    # Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarrhoea_untreated_HIV']),
+                    Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarrhoea_untreated_HIV']),
                     Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM']),
-                    # Predictor('nb_breastfeeding_status').when('non_exclusive | none',
-                    #                                           p['rr_diarrhoea_excl_breastfeeding'])
+                    Predictor('nb_breastfeeding_status').when('non_exclusive | none',
+                                                              p['rr_diarrhoea_excl_breastfeeding'])
                 )
 
             df = self.sim.population.props
@@ -703,8 +703,8 @@ class Diarrhoea(Module):
                                         .when('.between(0,0.9999)', 1).otherwise(0.0),
             Predictor('gi_last_diarrhoea_pathogen').when('cryptosporidium', p['rr_diarr_death_cryptosporidium'])
                                                    .when('shigella', p['rr_diarr_death_shigella']),
-            # Predictor('ri_current_ALRI_status').when(True, p['rr_diarr_death_alri']),
-            # Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarr_death_untreated_HIV']),
+            Predictor('ri_current_ALRI_status').when(True, p['rr_diarr_death_alri']),
+            Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarr_death_untreated_HIV']),
             Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM'])
         )
 
@@ -748,10 +748,10 @@ class Diarrhoea(Module):
                                                         .otherwise(0.0),  # or use odds = 0.4017
             Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_bec_persistent_age12to23'])
                                         .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo']),
-            # Predictor('un_HAZ_category').when('!=HAZ>=-2', p['rr_bec_persistent_stunted'])
-            # Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_bec_persistent_SAM'])
-            #                                            .when('MAM', p['rr_bec_persistent_SAM']),
-            # Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_bec_persistent_HIV']),
+            Predictor('un_HAZ_category').when('!=HAZ>=-2', p['rr_bec_persistent_stunted']),
+            Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_bec_persistent_SAM'])
+                                                       .when('MAM', p['rr_bec_persistent_SAM']),
+            Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_bec_persistent_HIV']),
             # todo: add exclusive breastfeeding
         )
 
@@ -1409,7 +1409,6 @@ class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
             self.module.do_treatment(
                 person_id=person_id,
                 interventions_given=['Dehydration_Plan_B']
-                # prob_of_cure=self.module.parameters['ors_effectiveness_on_diarrhoea_mortality']
             )
 
         # Following recommended amount of ORS in the clinic over 4h, proceed to plan A
@@ -1468,7 +1467,6 @@ class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
             self.module.do_treatment(
                 person_id=person_id,
                 interventions_given=['Dehydration_Plan_C']
-                # prob_of_cure=self.module.parameters['prob_of_cure_given_WHO_PlanC']
             )
 
             # 2) continue treatment plan B or A
@@ -1538,7 +1536,6 @@ class HSI_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
             self.module.do_treatment(
                 person_id=person_id,
                 interventions_given=['Persistent_Diarrhoea']
-                # prob_of_cure=self.module.parameters['number_of_days_reduced_duration_with_zinc']
             )
 
 
@@ -1585,5 +1582,58 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
             self.module.do_treatment(
                 person_id=person_id,
                 interventions_given=['Antibiotics_for_Dysentery']
-                # prob_of_cure=p['antibiotic_effectiveness_for_dysentery']
             )
+
+
+class PropertiesOfOtherModules(Module):
+    """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
+
+    PROPERTIES = {
+        'hv_inf': Property(Types.BOOL, 'temporary property'),
+        'hv_art': Property(Types.CATEGORICAL, 'temporary property',
+                           categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
+        'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',
+                                               categories=['extremely_low_birth_weight', 'very_low_birth_weight',
+                                                           'low_birth_weight', 'normal_birth_weight']),
+
+        'nb_breastfeeding_status': Property(Types.CATEGORICAL, 'temporary property',
+                                            categories=['none', 'non_exclusive', 'exclusive']),
+        'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
+                                                   categories=['MAM', 'SAM', 'well']),
+        'un_HAZ_category': Property(Types.CATEGORICAL, 'temporary property',
+                                    categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
+
+    }
+
+    def __init__(self, name=None):
+        super().__init__(name)
+
+    def read_parameters(self, data_folder):
+        pass
+
+    def initialise_population(self, population):
+        df = population.props
+        df.loc[df.is_alive, 'hv_inf'] = False
+        df.loc[df.is_alive, 'hv_art'] = 'not'
+        df.loc[df.is_alive, 'ri_current_ALRI_status'] = False
+        df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
+        df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
+        df.loc[df.is_alive, 'va_pneumo_all_doses'] = False
+        df.loc[df.is_alive, 'va_hib_all_doses'] = False
+        df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
+        df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'
+
+    def initialise_simulation(self, sim):
+        pass
+
+    def on_birth(self, mother, child):
+        df = self.sim.population.props
+        df.at[child, 'hv_inf'] = False
+        df.at[child, 'hv_art'] = 'not'
+        df.at[child, 'ri_current_ALRI_status'] = False
+        df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
+        df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
+        df.at[child, 'va_pneumo_all_doses'] = False
+        df.at[child, 'va_hib_all_doses'] = False
+        df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
+        df.at[child, 'un_HAZ_category'] = 'HAZ>=-2'
