@@ -543,7 +543,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanB)
 
-    # %% ---- PERSON WITH SEVERE DEHYRATION and BLOODY DIARRHOEA: --> PLAN C PLUS DYSSENTRY HSI ----
+    # %% ---- PERSON WITH SEVERE DEHYRATION and NON-BLOODY DIARRHOEA: --> PLAN C ----
 
     # Set up the simulation:
     sim, hsi_event = make_blank_simulation()
@@ -553,7 +553,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     duration = 5
     df.at[0, 'gi_ever_had_diarrhoea'] = True
     df.at[0, 'gi_last_diarrhoea_pathogen'] = 'shigella'
-    df.at[0, 'gi_last_diarrhoea_type'] = 'bloody'
+    df.at[0, 'gi_last_diarrhoea_type'] = 'watery'
     df.at[0, 'gi_last_diarrhoea_dehydration'] = 'severe'
     df.at[0, 'gi_last_diarrhoea_date_of_onset'] = sim.date - pd.DateOffset(days=duration)
     df.at[0, 'gi_last_diarrhoea_duration'] = duration
@@ -591,7 +591,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanC)
 
-    # %% ---- PERSON WITH NO DEHYDRATION and NON-BLOODY DIARRHOEA BUT LONG-LASTING : --> PLAN A PLUS NON-SEVERE ----
+    # %% ---- PERSON WITH NO DEHYDRATION and NON-BLOODY DIARRHOEA BUT LONG-LASTING : --> PLAN A ----
 
     # Set up the simulation:
     sim, hsi_event = make_blank_simulation()
@@ -632,7 +632,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanA)
 
-    # %% ---- PERSON WITH SOME DEHYDRATION and NON-BLOODY DIARRHOEA BUT LONG-LASTING : --> PLAN B PLUS SEVERE ----
+    # %% ---- PERSON WITH SOME DEHYDRATION and NON-BLOODY DIARRHOEA BUT LONG-LASTING : --> PLAN B ----
 
     # Set up the simulation:
     sim, hsi_event = make_blank_simulation()
@@ -712,14 +712,13 @@ def test_run_each_of_the_HSI():
         'HSI_Diarrhoea_Treatment_PlanA',
         'HSI_Diarrhoea_Treatment_PlanB',
         'HSI_Diarrhoea_Treatment_PlanC',
-        'HSI_Persistent_Diarrhoea',
-        'HSI_Diarrhoea_Dysentery',
     ]
 
     for name_of_hsi in list_of_hsi:
         hsi_event = eval(name_of_hsi +
                          "(person_id=0, "
-                         "module=sim.modules['Diarrhoea'],"
+                         "module=sim.modules['Diarrhoea'], "
+                         "interventions=[], "
                          ""
                          ")"
                          )

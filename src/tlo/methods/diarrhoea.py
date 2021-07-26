@@ -1332,15 +1332,15 @@ class HSI_Diarrhoea_Treatment_PlanA(HSI_Event, IndividualScopeEventMixin):
         # Get consumables required
 
         # 1) give the mother 2 packets of ORS
-        ors_available = self.get_all_consumables(self.module.consumables_used_in_hsi['Dehydration_Plan_A'])
+        ors_available = self.get_all_consumables(footprint=self.module.consumables_used_in_hsi['Dehydration_Plan_A'])
 
         # 2) give zinc (2 mo - 5 years) - <6 mo 1/2 tablet (10mg) for 14 days, >6 mo 1 tab (20mg) for 14 days
         if person.age_exact_years < 0.5:
-            zinc_available = self.get_all_consumables(
-                self.module.consumables_used_in_hsi['Zinc_Under6mo'])
+            zinc_available = self.get_all_consumables(footprint=
+                                                      self.module.consumables_used_in_hsi['Zinc_Under6mo'])
         else:
-            zinc_available = self.get_all_consumables(
-                self.module.consumables_used_in_hsi['Zinc_Under6mo'])
+            zinc_available = self.get_all_consumables(footprint=
+                                                      self.module.consumables_used_in_hsi['Zinc_Under6mo'])
 
         if ors_available:
             if self.interventions=='ors_only':
@@ -1406,16 +1406,16 @@ class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
         # Get consumables required
 
         # 1) give the mother 2 packets of ORS
-        ors_available = self.get_all_consumables(self.module.consumables_used_in_hsi['Dehydration_Plan_B'])
+        ors_available = self.get_all_consumables(footprint=self.module.consumables_used_in_hsi['Dehydration_Plan_B'])
         # Give ORS for the first 4 hours and reassess. todo - this is not happening curently
 
         # 2) give zinc (2 mo - 5 years) - <6 mo 1/2 tablet (10mg) for 14 days, >6 mo 1 tab (20mg) for 14 days
         if person.age_exact_years < 0.5:
-            zinc_available = self.get_all_consumables(
-                self.module.consumables_used_in_hsi['Zinc_Under6mo'])
+            zinc_available = self.get_all_consumables(footprint=
+                                                      self.module.consumables_used_in_hsi['Zinc_Under6mo'])
         else:
-            zinc_available = self.get_all_consumables(
-                self.module.consumables_used_in_hsi['Zinc_Under6mo'])
+            zinc_available = self.get_all_consumables(footprint=
+                                                      self.module.consumables_used_in_hsi['Zinc_Under6mo'])
 
         if ors_available:
             if self.interventions=='ors_only':
@@ -1427,12 +1427,12 @@ class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
 
         # Give antibiotic for those with dysentery (or over-prescription of antibiotic)
         if 'antibiotics' in self.interventions:
-            if self.get_all_consumables(self.module.consumables_used_in_hsi['Antibiotics_for_Dysentery']):
+            if self.get_all_consumables(footprint=self.module.consumables_used_in_hsi['Antibiotics_for_Dysentery']):
                 interventions_given.append('Antibiotics_for_Dysentery')
 
         # Give multivitamins for those with persistent diarrhoea
         if 'multivitamins' in self.interventions:
-            if self.get_all_consumables(self.module.consumables_used_in_hsi['Multivitamins_for_Persistent']):
+            if self.get_all_consumables(footprint=self.module.consumables_used_in_hsi['Multivitamins_for_Persistent']):
                 interventions_given.append('Multivitamins')   #TODO: multivitamins consumables in diarrhoea
 
         # ------------------------------------------------------
@@ -1475,7 +1475,8 @@ class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
 
         # Get consumables required
 
-        iv_rehydration_available = self.get_all_consumables(self.module.consumables_used_in_hsi['Dehydration_Plan_C'])
+        iv_rehydration_available = self.get_all_consumables(footprint=
+                                                            self.module.consumables_used_in_hsi['Dehydration_Plan_C'])
 
         # 1) start IV
         if iv_rehydration_available:
@@ -1498,7 +1499,7 @@ class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Diarrhoea_Treatment_PlanC(
                     person_id=person_id,
-                    module=self.sim.modules['Diarrhoea']),
+                    module=self.sim.modules['Diarrhoea'], interventions=self.interventions),
                 priority=0,
                 topen=self.sim.date,
                 tclose=None)
