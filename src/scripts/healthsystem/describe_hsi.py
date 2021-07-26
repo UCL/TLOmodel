@@ -436,10 +436,24 @@ if __name__ == '__main__':
         '--json-file',
         type=Path,
         help=(
-            "JSON file containing event details recorded in simulation run. If omitted "
-            "then a list of all HSI events defined in `tlo.methods` is used instead."
+            "JSON file containing previously saved event details (e.g. recorded in "
+            "a simulation run). If omitted then a set of HSI events is extracted by "
+            "inspecting `tlo.methods`. If `--merge-json-details` flag is set then "
+            "the set of details in JSON file and from inspecting `tlo.methods` are "
+            "merged to produce the formatted output."
         ),
         default=None
+    )
+    parser.add_argument(
+        '--merge-json-details',
+        action='store_true',
+        help=(
+            "If set then the event details in the JSON file specified by `--json-file` "
+            "(which must be specified if this flag is set) are merged with the event "
+            "details extracted by inspecting `tlo.methods`. Otherwise only the event "
+            "details in the JSON file are used to generate the formatted output."
+        )
+
     )
     parser.add_argument(
         '--output-file',
@@ -457,18 +471,30 @@ if __name__ == '__main__':
         default='rst-list'
     )
     args = parser.parse_args()
+    if args.json_file is None and args.merge_json_details:
+        parser.error("--json-file must be specified if --merge-json-files used.")
     warnings.simplefilter('ignore')
     if args.json_file is not None:
         with open(args.json_file, 'r') as f:
             hsi_event_details = json.load(f)
-        hsi_event_details = [
-            HSIEventDetails(*event_details) for event_details in hsi_event_details
-        ]
+        json_hsi_event_details = set(
+            # JSON serializes tuples to lists therefore need to reformat
+            HSIEventDetails(*event_details[:-1], tuple(event_details[-1]))
+            for event_details in hsi_event_details
+        )
         print(f'HSI events loaded from JSON file {args.json_file}.')
-    else:
-        print('Getting details of all defined HSI events...')
-        hsi_event_details = get_details_of_defined_hsi_events()
+    if args.json_file is None or args.merge_json_details:
+        print('Getting details of defined HSI events by inspecting tlo.methods...')
+        inspect_hsi_event_details = get_details_of_defined_hsi_events()
         print('...done.\n')
+    if args.merge_json_details:
+        hsi_event_details = merge_hsi_event_details(
+            inspect_hsi_event_details, json_hsi_event_details
+        )
+    elif args.json_file is not None:
+        hsi_event_details = json_hsi_event_details
+    else:
+        hsi_event_details = inspect_hsi_event_details
     sorted_hsi_event_details = sort_hsi_event_details(hsi_event_details)
     formatters = {
         'rst-list': lambda details: format_hsi_event_details_as_list(details, 'rst'),
