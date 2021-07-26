@@ -142,14 +142,20 @@ class Diarrhoea(Module):
         'rr_diarrhoea_SAM':
             Parameter(Types.REAL, 'relative rate of diarrhoea for severe malnutrition'
                       ),
-        'rr_diarrhoea_excl_breastfeeding':
-            Parameter(Types.REAL, 'relative rate of diarrhoea for exclusive breastfeeding in <6 months old'
+        'rr_diarrhoea_exclusive_vs_no_breastfeeding_<6mo':
+            Parameter(Types.REAL, 'relative rate of diarrhoea for no breastfeeding in <6 months old, '
+                                  'compared to exclusive breastfeeding'
                       ),
-        'rr_diarrhoea_cont_breastfeeding':
-            Parameter(Types.REAL, 'relative rate of diarrhoea for continued breastfeeding in 6 months old to 2 years'
+        'rr_diarrhoea_exclusive_vs_partial_breastfeeding_<6mo':
+            Parameter(Types.REAL, 'relative rate of diarrhoea for partial breastfeeding in <6 months old, '
+                                  'compared to exclusive breastfeeding'
                       ),
-        'rr_diarrhoea_rotavirus_vaccination':
-            Parameter(Types.REAL, 'relative rate of diarrhoea for rotavirus vaccine'
+        'rr_diarrhoea_any_vs_no_breastfeeding_6_11mo':
+            Parameter(Types.REAL, 'relative rate of diarrhoea for no breastfeeding in 6 months old to 1 years old, '
+                                  'compared to any breastfeeding at this age group'
+                      ),
+        'rr_severe_diarrhoea_RV1':
+            Parameter(Types.REAL, 'relative rate of severe diarrhoea for rotavirus vaccine'
                       ),
         'proportion_AWD_in_rotavirus':
             Parameter(Types.REAL, 'acute diarrhoea type caused in rotavirus-attributed diarrhoea'
@@ -327,6 +333,10 @@ class Diarrhoea(Module):
             Parameter(Types.REAL,
                       'relative rate of acute diarrhoea becoming persistent diarrhoea for severely acute malnutrition'
                       ),
+        'rr_bec_persistent_stunted':
+            Parameter(Types.REAL,
+                      'relative rate of acute diarrhoea becoming persistent diarrhoea for stunted children'
+                      ),
         'rr_bec_persistent_excl_breast':
             Parameter(Types.REAL,
                       'relative rate of acute diarrhoea becoming persistent diarrhoea for exclusive breastfeeding'
@@ -407,7 +417,7 @@ class Diarrhoea(Module):
 
         # TODO check the below parmaeters for those HSI are relevant
         'ors_effectiveness_against_severe_dehydration':
-            Parameter(Types.INT, 'effectiveness of ORS in treating severe dehydration'),
+            Parameter(Types.REAL, 'effectiveness of ORS in treating severe dehydration'),
         'number_of_days_reduced_duration_with_zinc':
             Parameter(Types.INT, 'number of days reduced duration with zinc'),
         'days_between_treatment_and_cure':
@@ -497,9 +507,6 @@ class Diarrhoea(Module):
                                            'allowing for the possibility that a cure is scheduled following onset). '
                                            'This is used to determine when a new episode can begin. '
                                            'This stops successive episodes interfering with one another.'),
-
-        # ---- Temporary Variables: To be replaced with the properties of other modules ----
-        'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -596,9 +603,6 @@ class Diarrhoea(Module):
         df.loc[df.is_alive, 'gi_last_diarrhoea_treatment_date'] = pd.NaT
         df.loc[df.is_alive, 'gi_end_of_last_episode'] = pd.NaT
 
-        # ---- Temporary values ----
-        df.loc[df.is_alive, 'tmp_malnutrition'] = False
-
     def initialise_simulation(self, sim):
         """Prepares for simulation:
         * Schedules the main polling event
@@ -643,9 +647,14 @@ class Diarrhoea(Module):
                     Predictor('li_no_clean_drinking_water').when(False, p['rr_diarrhoea_clean_water']),
                     Predictor('li_unimproved_sanitation').when(False, p['rr_diarrhoea_improved_sanitation']),
                     Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarrhoea_untreated_HIV']),
-                    Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM']),
-                    Predictor('nb_breastfeeding_status').when('non_exclusive | none',
-                                                              p['rr_diarrhoea_excl_breastfeeding'])
+                    Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_diarrhoea_SAM']),
+                    Predictor().when('(nb_breastfeeding_status == "none") & (age_exact_years < 0.5)',
+                                     p['rr_diarrhoea_exclusive_vs_no_breastfeeding_<6mo']),
+                    Predictor().when('(nb_breastfeeding_status == "non_exclusive") & (age_exact_years < 0.5)',
+                                     p['rr_diarrhoea_exclusive_vs_partial_breastfeeding_<6mo']),
+                    Predictor().when('(nb_breastfeeding_status == "none") & (0.5 < age_exact_years < 1)',
+                                     p['rr_diarrhoea_any_vs_no_breastfeeding_6_11mo']),
+
                 )
 
             df = self.sim.population.props
@@ -705,7 +714,7 @@ class Diarrhoea(Module):
                                                    .when('shigella', p['rr_diarr_death_shigella']),
             Predictor('ri_current_ALRI_status').when(True, p['rr_diarr_death_alri']),
             Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarr_death_untreated_HIV']),
-            Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM'])
+            Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_diarrhoea_SAM'])
         )
 
         # --------------------------------------------------------------------------------------------
@@ -748,7 +757,7 @@ class Diarrhoea(Module):
                                                         .otherwise(0.0),  # or use odds = 0.4017
             Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_bec_persistent_age12to23'])
                                         .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo']),
-            Predictor('un_HAZ_category').when('!=HAZ>=-2', p['rr_bec_persistent_stunted']),
+            Predictor('un_HAZ_category').when('HAZ<-3', p['rr_bec_persistent_stunted']),
             Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_bec_persistent_SAM'])
                                                        .when('MAM', p['rr_bec_persistent_SAM']),
             Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_bec_persistent_HIV']),
@@ -777,9 +786,6 @@ class Diarrhoea(Module):
         df.at[child_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
         df.at[child_id, 'gi_last_diarrhoea_treatment_date'] = pd.NaT
         df.at[child_id, 'gi_end_of_last_episode'] = pd.NaT
-
-        # ---- Temporary values ----
-        df.at[child_id, 'tmp_malnutrition'] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -1592,6 +1598,7 @@ class PropertiesOfOtherModules(Module):
         'hv_inf': Property(Types.BOOL, 'temporary property'),
         'hv_art': Property(Types.CATEGORICAL, 'temporary property',
                            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
+        'ri_current_ALRI_status': Property(Types.BOOL, 'temporary property'),
         'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',
                                                categories=['extremely_low_birth_weight', 'very_low_birth_weight',
                                                            'low_birth_weight', 'normal_birth_weight']),
@@ -1618,8 +1625,6 @@ class PropertiesOfOtherModules(Module):
         df.loc[df.is_alive, 'ri_current_ALRI_status'] = False
         df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
-        df.loc[df.is_alive, 'va_pneumo_all_doses'] = False
-        df.loc[df.is_alive, 'va_hib_all_doses'] = False
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
         df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'
 
@@ -1633,7 +1638,5 @@ class PropertiesOfOtherModules(Module):
         df.at[child, 'ri_current_ALRI_status'] = False
         df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
-        df.at[child, 'va_pneumo_all_doses'] = False
-        df.at[child, 'va_hib_all_doses'] = False
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
         df.at[child, 'un_HAZ_category'] = 'HAZ>=-2'

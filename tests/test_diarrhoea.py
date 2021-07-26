@@ -60,6 +60,7 @@ def check_configuration_of_properties(sim):
     assert pd.isnull(df.loc[~df.date_of_birth.isna() & ~df['gi_ever_had_diarrhoea'], [
         'gi_last_diarrhoea_date_of_onset',
         'gi_last_diarrhoea_duration',
+        'gi_last_diarrhoea_duration_type',
         'gi_last_diarrhoea_recovered_date',
         'gi_last_diarrhoea_death_date',
         'gi_last_diarrhoea_treatment_date']
