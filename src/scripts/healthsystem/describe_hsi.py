@@ -8,6 +8,7 @@ import os.path
 import pkgutil
 import warnings
 from pathlib import Path
+from typing import Set
 
 import tlo.methods
 from tlo import Date, Module, Simulation
@@ -395,6 +396,36 @@ def format_hsi_event_details_as_list(hsi_event_details, text_format='rst'):
             )
         list_string += '\n'
     return list_string
+
+
+def merge_hsi_event_details(inspect_hsi_event_details, run_hsi_event_details):
+    """Merge HSI event details collected using `inspect` and from simulation run."""
+    # Create set of event details from simulation run, excluding facility level from
+    # entries to allow matching event details from inspect of `tlo.methods` for which
+    # facility level is not known (indicated by value of None) to be matched
+    def without_facility_level(event_details):
+        return (
+            event_details.event_name,
+            event_details.module_name,
+            event_details.treatment_id,
+            event_details.appt_footprint
+        )
+    run_hsi_event_details_without_facility_level = {
+        without_facility_level(event_details) for event_details in run_hsi_event_details
+    }
+    # Create merged set of HSI event details by forming union of run_hsi_event_details
+    # and inspect_hsi_event_details minus those details in inspect_hsi_event_details
+    # with facility level unknown (set to None) for which there is a corresponding
+    # entry in run_hsi_event_details with known facility level
+    merged_hsi_event_details = set(run_hsi_event_details)
+    for event_details in inspect_hsi_event_details:
+        if not (
+            event_details.facility_level is None
+            and without_facility_level(event_details)
+            in run_hsi_event_details_without_facility_level
+        ):
+            merged_hsi_event_details.add(event_details)
+    return merged_hsi_event_details
 
 
 if __name__ == '__main__':
