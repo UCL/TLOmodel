@@ -25,8 +25,6 @@ from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_PlanA,
     HSI_Diarrhoea_Treatment_PlanB,
     HSI_Diarrhoea_Treatment_PlanC,
-    HSI_Persistent_Diarrhoea,
-    HSI_Diarrhoea_Dysentery,
     PropertiesOfOtherModules
 )
 from tlo.methods.healthsystem import HSI_Event
@@ -590,9 +588,8 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
         hsi_event=hsi_event
     )
 
-    assert 2 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+    assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanC)
-    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_Diarrhoea_Dysentery)
 
     # %% ---- PERSON WITH NO DEHYDRATION and NON-BLOODY DIARRHOEA BUT LONG-LASTING : --> PLAN A PLUS NON-SEVERE ----
 
@@ -632,9 +629,8 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
         hsi_event=hsi_event
     )
 
-    assert 2 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+    assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanA)
-    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_Persistent_Diarrhoea)
 
     # %% ---- PERSON WITH SOME DEHYDRATION and NON-BLOODY DIARRHOEA BUT LONG-LASTING : --> PLAN B PLUS SEVERE ----
 
@@ -675,9 +671,8 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
         hsi_event=hsi_event
     )
 
-    assert 2 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+    assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanB)
-    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_Persistent_Diarrhoea)
 
 
 def test_run_each_of_the_HSI():
