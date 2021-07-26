@@ -262,7 +262,7 @@ def get_details_of_defined_hsi_events():
                 # If target person_id set to 0 as should always be present in population
                 else 0 if param_name == 'person_id'
                 # Otherwise use None value to indicate only known at runtime
-                # We could replace this with a unittest.Mock instance the constructor
+                # We could replace this with a unittest.Mock instance if the constructor
                 # raises an exception on trying to use a None value for the argument
                 else None
                 for param_name, param in signature.parameters.items()
