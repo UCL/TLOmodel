@@ -22,6 +22,7 @@ from tlo.methods import (
     healthsystem,
     simplified_births,
     symptommanager,
+    hiv
 )
 
 # %%
@@ -64,7 +65,8 @@ if no_existing_logfile:
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-                 diarrhoea.PropertiesOfOtherModules()
+                 diarrhoea.PropertiesOfOtherModules(),
+                 hiv.DummyHivModule(),
                  )
 
     sim.make_initial_population(n=popsize)
@@ -291,7 +293,7 @@ plt.show()
 
 # %% Look at Case Fatality Rate
 cfr = dict()
-for age_grp in ['1y', '2-4y']:
+for age_grp in ['0y', '1y', '2-4y']:
     cfr[age_grp] = deaths[age_grp] / counts[age_grp].apply(pd.Series).sum(axis=1)
 cfr = pd.DataFrame(cfr).drop(index=2015).mean() * 100_000
 

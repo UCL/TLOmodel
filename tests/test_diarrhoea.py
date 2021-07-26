@@ -19,7 +19,7 @@ from tlo.methods import (
     healthsystem,
     simplified_births,
     symptommanager,
-    hiv
+hiv
 )
 from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_PlanA,
@@ -147,7 +147,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.PropertiesOfOtherModules(),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 hiv.DummyHivModule(),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
 
@@ -178,7 +178,7 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.PropertiesOfOtherModules(),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 hiv.DummyHivModule(),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
 
@@ -244,7 +244,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.PropertiesOfOtherModules(),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 hiv.DummyHivModule(),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
 
@@ -330,7 +330,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                      diarrhoea.PropertiesOfOtherModules(),
-                     hiv.Hiv(resourcefilepath=resourcefilepath),
+                     hiv.DummyHivModule(),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                      )
 
@@ -447,7 +447,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                      diarrhoea.PropertiesOfOtherModules(),
-                     hiv.Hiv(resourcefilepath=resourcefilepath),
+                     hiv.DummyHivModule(),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                      )
 
@@ -702,7 +702,7 @@ def test_run_each_of_the_HSI():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.PropertiesOfOtherModules(),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 hiv.DummyHivModule(),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
 

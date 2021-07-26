@@ -1595,7 +1595,6 @@ class PropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
 
     PROPERTIES = {
-        'hv_inf': Property(Types.BOOL, 'temporary property'),
         'hv_art': Property(Types.CATEGORICAL, 'temporary property',
                            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
         'ri_current_ALRI_status': Property(Types.BOOL, 'temporary property'),
@@ -1620,7 +1619,6 @@ class PropertiesOfOtherModules(Module):
 
     def initialise_population(self, population):
         df = population.props
-        df.loc[df.is_alive, 'hv_inf'] = False
         df.loc[df.is_alive, 'hv_art'] = 'not'
         df.loc[df.is_alive, 'ri_current_ALRI_status'] = False
         df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
@@ -1633,7 +1631,6 @@ class PropertiesOfOtherModules(Module):
 
     def on_birth(self, mother, child):
         df = self.sim.population.props
-        df.at[child, 'hv_inf'] = False
         df.at[child, 'hv_art'] = 'not'
         df.at[child, 'ri_current_ALRI_status'] = False
         df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
