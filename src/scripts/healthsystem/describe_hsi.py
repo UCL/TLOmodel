@@ -8,7 +8,6 @@ import os.path
 import pkgutil
 import warnings
 from pathlib import Path
-from typing import Set
 
 import tlo.methods
 from tlo import Date, Module, Simulation
@@ -64,15 +63,11 @@ module_dependencies = {
     ),
     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy: (
         demography.Demography,
-        enhanced_lifestyle.Lifestyle,
         healthsystem.HealthSystem,
-        contraception.Contraception,
-        labour.Labour,
         pregnancy_supervisor.PregnancySupervisor,
     ),
     contraception.Contraception: (
         demography.Demography,
-        labour.Labour,
     ),
     demography.Demography: (),
     depression.Depression: (
@@ -88,14 +83,8 @@ module_dependencies = {
         healthsystem.HealthSystem,
         symptommanager.SymptomManager,
     ),
-    dx_algorithm_adult.DxAlgorithmAdult: (
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    dx_algorithm_child.DxAlgorithmChild: (
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
+    dx_algorithm_adult.DxAlgorithmAdult: (),
+    dx_algorithm_child.DxAlgorithmChild: (),
     enhanced_lifestyle.Lifestyle: {
         demography.Demography,
     },
@@ -106,7 +95,6 @@ module_dependencies = {
     epilepsy.Epilepsy: (
         demography.Demography,
         healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
     ),
     healthburden.HealthBurden: (
         demography.Demography,
@@ -116,7 +104,6 @@ module_dependencies = {
     ),
     healthseekingbehaviour.HealthSeekingBehaviour: (
         demography.Demography,
-        enhanced_lifestyle.Lifestyle,
         healthsystem.HealthSystem,
         symptommanager.SymptomManager,
     ),
@@ -130,10 +117,6 @@ module_dependencies = {
         demography.Demography,
         enhanced_lifestyle.Lifestyle,
         healthsystem.HealthSystem,
-        contraception.Contraception,
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy,
-        pregnancy_supervisor.PregnancySupervisor,
-        postnatal_supervisor.PostnatalSupervisor,
     ),
     malaria.Malaria: (
         demography.Demography,
@@ -148,11 +131,8 @@ module_dependencies = {
     ),
     newborn_outcomes.NewbornOutcomes: (
         demography.Demography,
-        enhanced_lifestyle.Lifestyle,
         healthsystem.HealthSystem,
         symptommanager.SymptomManager,
-        labour.Labour,
-        pregnancy_supervisor.PregnancySupervisor,
     ),
     oesophagealcancer.OesophagealCancer: (
         demography.Demography,
@@ -167,17 +147,10 @@ module_dependencies = {
     ),
     pregnancy_supervisor.PregnancySupervisor: (
         demography.Demography,
-        enhanced_lifestyle.Lifestyle,
-        contraception.Contraception,
-        labour.Labour,
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy,
     ),
     postnatal_supervisor.PostnatalSupervisor: (
         demography.Demography,
-        enhanced_lifestyle.Lifestyle,
         healthsystem.HealthSystem,
-        labour.Labour,
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy,
     ),
     prostate_cancer.ProstateCancer: (
         demography.Demography,
@@ -190,21 +163,50 @@ module_dependencies = {
 }
 
 
-def init_simulation_and_module(module_class, resourcefilepath='resources'):
-    """Register module and dependences in simulation and initialise population."""
+def topological_sort(initial_nodes, dependencies):
+    """Generator which yields topological sorting of a dependency graph.
+
+    A topological sort is ordered such that any dependencies of a node are guaranteed
+    to be yielded before the node itself. This implementation uses a depth-first search
+    algorithm (https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search).
+
+    :param initial_nodes: The set of nodes to seed topological sort with. The yielded
+        nodes will consist fo all nodes in this set and their (recursive) dependencies.
+    :param dependencies: Dictionary defining dependency graph. Keys are nodes of graph
+        and corresponding values the nodes which are its dependencies. The dependencies
+        of a node are guaranteed to be yielded before the node itself.
+    """
+    visited, currently_processing = set(), set()
+
+    def depth_first_search(node):
+        if node not in visited:
+            if node in currently_processing:
+                raise RuntimeError('Dependency graph has a cycle.')
+            currently_processing.add(node)
+            for dependency in dependencies[node]:
+                yield from depth_first_search(dependency)
+            currently_processing.remove(node)
+            visited.add(node)
+            yield node
+
+    for node in initial_nodes:
+        yield from depth_first_search(node)
+
+
+def init_simulation(module_classes, init_population=10, resourcefilepath='resources'):
+    """Register modules and dependencies in simulation and initialise population."""
     # Setting show_progress_bar=True hacky way to disable all log output to stdout
     sim = Simulation(start_date=Date(2010, 1, 1), seed=1, show_progress_bar=True)
-    module = module_class(resourcefilepath=resourcefilepath)
+    # Register modules in by order corresponding to topological sort of dependency graph
     sim.register(
         *(
-            dependency_class(resourcefilepath=resourcefilepath)
-            for dependency_class in module_dependencies[module_class]
+            module_class(resourcefilepath=resourcefilepath)
+            for module_class in topological_sort(module_classes, module_dependencies)
         ),
-        module
     )
     # Initialise a small population for events that access population dataframe
-    sim.make_initial_population(n=1000)
-    return sim, module
+    sim.make_initial_population(n=init_population)
+    return sim
 
 
 def is_valid_tlo_module_class(obj):
@@ -217,11 +219,10 @@ def is_valid_hsi_event_class(obj):
     return inspect.isclass(obj) and issubclass(obj, HSI_Event) and obj is not HSI_Event
 
 
-def get_details_of_defined_hsi_events():
-    """Get details of all HSI events defined in `tlo.methods`."""
+def get_hsi_event_classes_per_module(excluded_modules):
+    """Get details of HSI event classes for each (non-excluded) module in tlo.methods"""
     methods_package_path = os.path.dirname(inspect.getfile(tlo.methods))
-    excluded_modules = {'mockitis', 'chronicsyndrome', 'skeleton'}
-    details_of_defined_hsi_events = set()
+    hsi_event_classes_per_module = {}
     for _, module_name, _ in pkgutil.iter_modules([methods_package_path]):
         if module_name in excluded_modules:
             # Module does not need processing therefore skip
@@ -254,6 +255,18 @@ def get_details_of_defined_hsi_events():
                 f'{len(tlo_module_classes)} TLO Module classes and no specific '
                 f'exception rule has been defined.'
             )
+        hsi_event_classes_per_module[tlo_module_class] = hsi_event_classes
+    return hsi_event_classes_per_module
+
+
+def get_details_of_defined_hsi_events():
+    """Get details of all HSI events defined in `tlo.methods`."""
+    excluded_modules = {'mockitis', 'chronicsyndrome', 'skeleton'}
+    hsi_event_classes_per_module = get_hsi_event_classes_per_module(excluded_modules)
+    sim = init_simulation(hsi_event_classes_per_module.keys())
+    details_of_defined_hsi_events = set()
+    for tlo_module_class, hsi_event_classes in hsi_event_classes_per_module.items():
+        module = sim.modules[tlo_module_class.__name__]
         for hsi_event_class in hsi_event_classes:
             signature = inspect.signature(hsi_event_class)
             dummy_kwargs = {
@@ -269,10 +282,14 @@ def get_details_of_defined_hsi_events():
                 for param_name, param in signature.parameters.items()
                 if param_name != 'module'
             }
-            sim, module = init_simulation_and_module(tlo_module_class)
             arguments = signature.bind(module=module, **dummy_kwargs)
             try:
                 hsi_event = hsi_event_class(*arguments.args, **arguments.kwargs)
+            except NotImplementedError:
+                # If method called in HSI event constructor is not implemented assume
+                # this is an abstract base class and so does not need documenting
+                pass
+            else:
                 details_of_defined_hsi_events.add(
                     HSIEventDetails(
                         event_name=type(hsi_event).__name__,
@@ -282,10 +299,6 @@ def get_details_of_defined_hsi_events():
                         appt_footprint=tuple(hsi_event.EXPECTED_APPT_FOOTPRINT)
                     )
                 )
-            except NotImplementedError:
-                # If method called in HSI event constructor is not implemented assume
-                # this is an abstract base class and so does not need documenting
-                pass
     return details_of_defined_hsi_events
 
 
