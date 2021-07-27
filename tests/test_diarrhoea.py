@@ -353,11 +353,19 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         sim.modules['Diarrhoea'].parameters['case_fatality_rate_dysentery'] = 0.5
 
         # Apply perfect efficacy for treatments:
-        # sim.modules['Diarrhoea'].parameters['days_onset_severe_dehydration_before_death'] = 1.0
         sim.modules['Diarrhoea'].parameters['ors_effectiveness_on_diarrhoea_mortality'] = 1.0
         sim.modules['Diarrhoea'].parameters['prob_of_cure_given_WHO_PlanC'] = 1.0
         sim.modules['Diarrhoea'].parameters['ors_effectiveness_against_severe_dehydration'] = 1.0
         sim.modules['Diarrhoea'].parameters['antibiotic_effectiveness_for_dysentery'] = 1.0
+
+        # Apply perfect assessment and classification by the health care worker
+        sim.modules['DxAlgorithmChild'].parameters['prob_at_least_ors_given_by_hw'] = 1.0
+        sim.modules['DxAlgorithmChild'].parameters['prob_recommended_treatment_given_by_hw'] = 1.0
+        sim.modules['DxAlgorithmChild'].parameters['prob_antibiotic_given_for_dysentery_by_hw'] = 1.0
+        sim.modules['DxAlgorithmChild'].parameters['prob_multivitamins_given_for_persistent_diarrhoea_by_hw'] = 1.0
+        sim.modules['DxAlgorithmChild'].parameters['prob_hospitalization_referral_for_severe_diarrhoea'] = 1.0
+        sim.modules['DxAlgorithmChild'].parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
+        sim.modules['DxAlgorithmChild'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
 
         # Make long duration so as to allow time for healthcare seeking
         sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_rotavirus'] = 1.0
@@ -408,6 +416,8 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                    'gi_last_diarrhoea_recovered_date']
         )
         assert (got_treatment | recovered_naturally).all()
+
+        print(had_diarrhoea.count())
 
         # check that there have not been any deaths caused by Diarrhoea
         assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
@@ -506,7 +516,7 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     # Set up the simulation:
     sim, hsi_event = make_blank_simulation()
 
-    # Set up the person - severe dehydration:
+    # Set up the person - some dehydration:
     df = sim.population.props
     duration = 5
     df.at[0, 'gi_ever_had_diarrhoea'] = True

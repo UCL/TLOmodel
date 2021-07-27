@@ -853,6 +853,8 @@ class Diarrhoea(Module):
         add_consumable('Zinc_Under6mo', {zinc_under_6m_code: 1}, {zinc_tablet_code: 5})
         add_consumable('Zinc_Over6mo', {zinc_over_6m_code: 1}, {zinc_tablet_code: 5})
         add_consumable('Antibiotics_for_Dysentery', {antibiotics_code: 1}, {cipro_code: 6})
+        add_consumable('Multivitamins_for_Persistent', {zinc_under_6m_code: 1}, {zinc_tablet_code: 5})
+        # TODO: multivitamins consumables
 
     def do_treatment(self, person_id, interventions_given):
         """Helper function that enacts the effects of a treatment to diarrhoea caused by a pathogen.
@@ -901,7 +903,7 @@ class Diarrhoea(Module):
                 total_duration_in_days - self.parameters['number_of_days_reduced_duration_with_zinc']
 
         # Plan A or B for no dehydration
-        if dehydration_level != 'severe' and (
+        if (dehydration_level != 'severe') and (
             ('Dehydration_Plan_A' in interventions_given) | ('Dehydration_Plan_B' in interventions_given)
         ):
             prob_cure = self.parameters['ors_effectiveness_on_diarrhoea_mortality']
@@ -1169,6 +1171,7 @@ class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
 
         # Resolve all the symptoms immediately
         df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'none'
+        df.at[person_id, 'gi_last_diarrhoea_type'] = 'not_applicable'
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['Diarrhoea'])
 
@@ -1352,12 +1355,12 @@ class HSI_Diarrhoea_Treatment_PlanA(HSI_Event, IndividualScopeEventMixin):
 
         # Give antibiotic for those with dysentery (or over-prescription of antibiotic)
         if 'antibiotics' in self.interventions:
-            if self.get_all_consumables(self.module.consumables_used_in_hsi['Antibiotics_for_Dysentery']):
+            if self.get_all_consumables(footprint=self.module.consumables_used_in_hsi['Antibiotics_for_Dysentery']):
                 interventions_given.append('Antibiotics_for_Dysentery')
 
         # Give multivitamins for those with persistent diarrhoea
         if 'multivitamins' in self.interventions:
-            if self.get_all_consumables(self.module.consumables_used_in_hsi['Multivitamins_for_Persistent']):
+            if self.get_all_consumables(footprint=self.module.consumables_used_in_hsi['Multivitamins_for_Persistent']):
                 interventions_given.append('Multivitamins')   #TODO: multivitamins consumables in diarrhoea
 
         # ------------------------------------------------------

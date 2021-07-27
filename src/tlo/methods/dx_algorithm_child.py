@@ -57,6 +57,14 @@ class DxAlgorithmChild(Module):
             Parameter(Types.REAL,
                       'probability of hospitalisation of severe diarrhoea'
                       ),
+        'sensitivity_danger_signs_visual_inspection':
+            Parameter(Types.REAL,
+                      'sensitivity of health care workers visual inspection of danger signs'
+                      ),
+        'specificity_danger_signs_visual_inspection':
+            Parameter(Types.REAL,
+                      'specificity of health care workers visual inspection of danger signs'
+                      ),
     }
     PROPERTIES = {}
 
@@ -71,6 +79,8 @@ class DxAlgorithmChild(Module):
         self.parameters['prob_recommended_treatment_given_by_hw'] = 0.423  # for all with uncomplicated diarrhoea
         self.parameters['prob_antibiotic_given_for_dysentery_by_hw'] = 0.8  # dummy
         self.parameters['prob_multivitamins_given_for_persistent_diarrhoea_by_hw'] = 0.7  # dummy
+        self.parameters['sensitivity_danger_signs_visual_inspection'] = 0.9  # dummy
+        self.parameters['specificity_danger_signs_visual_inspection'] = 0.8  # dummy
 
     def initialise_population(self, population):
         pass
@@ -88,8 +98,8 @@ class DxAlgorithmChild(Module):
                 danger_signs_visual_inspection=DxTest(
                     property='gi_last_diarrhoea_dehydration',
                     target_categories=['severe'],
-                    sensitivity=0.90,
-                    specificity=0.80
+                    sensitivity=self.parameters['sensitivity_danger_signs_visual_inspection'],
+                    specificity=self.parameters['specificity_danger_signs_visual_inspection']
                 )
             )
 
@@ -201,8 +211,9 @@ class DxAlgorithmChild(Module):
                 # ------------------------------------------------------------------------------------
 
             # # # # # SEVERE DEHYDRATION # # # # #
-            else:
-                # if danger signs were assessed health worker will hospitalise or refer to hospital
+            diarrhoea_with_severe_dehydration = 'diarrhoea' in symptoms and severe_dehydration
+            if diarrhoea_with_severe_dehydration:
+                # if danger signs were assessed, health worker will hospitalise or refer to hospital
                 if danger_signs:
                     interventions_list.append('hospitalization')
                     schedule_hsi(
@@ -212,6 +223,17 @@ class DxAlgorithmChild(Module):
                         priority=0,
                         topen=self.sim.date,
                         tclose=None)
+                else:
+                    # assume those not hospitalised have been treated with Plan B
+                    interventions_list.append('ors_and_zinc')
+                    schedule_hsi(
+                        HSI_Diarrhoea_Treatment_PlanB(
+                            person_id=person_id,
+                            module=self.sim.modules['Diarrhoea'], interventions=interventions_list),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None)
+
                 # ------------------------------------------------------------------------------------
 
     def diagnose(self, person_id, hsi_event):
