@@ -1368,10 +1368,10 @@ class Hiv_DecisionToStartOrContinuePregnantWomenOnPrEP(Event, IndividualScopeEve
         m = self.module
         p = m.parameters
 
-        # If the person is no longer alive, no longer pregnant or is diagnosed with HIV they will not
+        # If the person is no longer alive, no longer pregnant/breastfeeding or is diagnosed with HIV they will not
         # continue on PrEP
         if (~person["is_alive"] or
-            (~person["is_pregnant"] and (person["nb_breastfeeding_status"] == "none")) or
+            (~person["is_pregnant"] and person["si_date_of_last_delivery"] < self.sim.date - pd.DateOffset(months=18)) or
             person["hv_diagnosed"] or
             (self.sim.date.year < p["prep_start_year_preg"])):
             return
@@ -1401,7 +1401,7 @@ class Hiv_DecisionToStartOrContinuePregnantWomenOnPrEP(Event, IndividualScopeEve
         # if currently on PrEP, random draw to continue or default
         # conditions: must be either pregnant or breastfeeding
         if person["hv_is_on_prep_preg"] and \
-            (person["is_pregnant"] or (person["nb_breastfeeding_status"] != "none")):
+            (person["is_pregnant"] or person["si_date_of_last_delivery"] > self.sim.date - pd.DateOffset(months=18)):
 
             if (m.rng.random_sample() < p['probability_of_pregnant_woman_being_retained_on_prep_every_3_months']):
 
@@ -1712,7 +1712,7 @@ class HSI_Hiv_StartOrContinuePregnantWomenOnPrep(HSI_Event, IndividualScopeEvent
         # - has previously defaulted from PrEP
 
         if (~person["is_alive"] or
-            (~person["is_pregnant"] and person["nb_breastfeeding_status"] != "none") or
+            (~person["is_pregnant"] and person["si_date_of_last_delivery"] < self.sim.date - pd.DateOffset(months=18)) or
             person["hv_diagnosed"] or
             person["hv_defaulted_on_prep_preg"] or
             (now.year < p["prep_start_year_preg"])):

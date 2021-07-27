@@ -201,7 +201,7 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
         # assume uniform distribution of prep start during 40 weeks of pregnancy
         for person in pregnant_women_ids:
             prep_start_date = self.sim.date + pd.DateOffset(
-                days=self.module.rng.randint(0, 280))
+                days=self.module.rng.randint(30, 280))
 
             self.sim.schedule_event(Hiv_DecisionToStartOrContinuePregnantWomenOnPrEP(
                 self.sim.modules['Hiv'], person), prep_start_date)
