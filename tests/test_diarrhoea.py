@@ -417,8 +417,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         )
         assert (got_treatment | recovered_naturally).all()
 
-        print(had_diarrhoea.count())
-
         # check that there have not been any deaths caused by Diarrhoea
         assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
 

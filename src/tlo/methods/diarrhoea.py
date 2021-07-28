@@ -758,8 +758,7 @@ class Diarrhoea(Module):
             Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_bec_persistent_age12to23'])
                                         .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo']),
             Predictor('un_HAZ_category').when('HAZ<-3', p['rr_bec_persistent_stunted']),
-            Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_bec_persistent_SAM'])
-                                                       .when('MAM', p['rr_bec_persistent_SAM']),
+            Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_bec_persistent_SAM']),
             Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_bec_persistent_HIV']),
             # todo: add exclusive breastfeeding
         )
