@@ -1076,19 +1076,17 @@ class HealthSystem(Module):
         total_calls = total_calls_per_officer.sum()
 
         assert len(comparison) == len(current_capabilities)
-        assert (
-            abs(comparison['Minutes_Used'].sum() - total_calls) <= 0.0001 * total_calls
-        )
+        assert np.isclose(comparison['Minutes_Used'].sum(), total_calls)
 
         # Sum within each Facility_ID using groupby (Index of 'summary' is Facility_ID)
         summary = comparison.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
 
         # Compute Fraction of Time Used Across All Facilities
-        fraction_time_used_across_all_facilities = 0.0  # no capabilities or nan arising
-        if summary['Total_Minutes_Per_Day'].sum() > 0:
-            fraction_time_used_across_all_facilities = (
-                summary['Minutes_Used'].sum() / summary['Total_Minutes_Per_Day'].sum()
-            )
+        total_available = summary['Total_Minutes_Per_Day'].sum()
+        fraction_time_used_across_all_facilities = (
+            total_calls / total_available if total_available > 0
+            else 0  # no capabilities or nan arising
+        )
 
         # Compute Fraction of Time Used In Each Facility
         summary['Fraction_Time_Used'] = summary['Minutes_Used'] / summary['Total_Minutes_Per_Day']
