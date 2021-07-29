@@ -12,6 +12,8 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.util import BitsetHandler
+from tlo.methods.postnatal_supervisor import PostnatalWeekOneNeonatalEvent
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -64,7 +66,6 @@ class NewbornOutcomes(Module):
         'digestive_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'other_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'intrapartum stillbirth': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
-        # todo: shouldnt add to neonatal deaths
 
     }
 
@@ -615,7 +616,6 @@ class NewbornOutcomes(Module):
         during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant dependent on delivery setting.
         :param child_id: child_id
         """
-        params = self.current_parameters
         df = self.sim.population.props
 
         # We assume all newborns with encephalopathy and respiratory distress syndrome will require some form of
@@ -633,6 +633,29 @@ class NewbornOutcomes(Module):
 
             logger.info(key='newborn_complication', data={'newborn': child_id,
                                                           'type': 'not_breathing_at_birth'})
+
+    def scheduled_week_one_postnatal_event(self, individual_id):
+        nci = self.newborn_care_info
+        df = self.sim.population.props
+
+        if nci[individual_id]['passed_through_week_one']:
+            return
+
+        days_post_birth_td = self.sim.date - df.at[individual_id, 'date_of_birth']
+        days_post_birth_int = int(days_post_birth_td / np.timedelta64(1, 'D'))
+
+        assert days_post_birth_int < 6
+
+        # todo: change to parameter
+        day_for_event = int(self.rng.choice([2, 3, 4, 5, 6], p=[0.4, 0.3, 0.2, 0.05, 0.05]))
+
+        # Ensure no newborns go to this event after week 1
+        if day_for_event + days_post_birth_int > 6:
+            day_for_event = 1
+
+        self.sim.schedule_event(
+            PostnatalWeekOneNeonatalEvent(self.sim.modules['PostnatalSupervisor'], individual_id),
+            self.sim.date + DateOffset(days=day_for_event))
 
     def set_death_status(self, individual_id):
         """
@@ -704,6 +727,8 @@ class NewbornOutcomes(Module):
 
             # If random draw is less that the total risk of death, she will die and the primary cause is then determined
             if self.rng.random_sample() < (1 - result):
+                logger.debug(key='msg', data=f'Newborns {individual_id} has died following birth ')
+
                 df.at[individual_id, 'nb_death_after_birth'] = True
 
                 denominator = sum(risks.values())
@@ -729,7 +754,7 @@ class NewbornOutcomes(Module):
                 else:
                     death_date = self.sim.date
 
-                del nci[individual_id]
+                del nci[individual_id]  # todo could this not crash if they get something postnatally
                 self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
                                                                       cause=f'{cause_of_death}'), death_date)
 
@@ -739,15 +764,19 @@ class NewbornOutcomes(Module):
                 df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
                 df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
 
-            # We now delete the MNI dictionary for mothers who have died in labour but their children have survived,
-            # this is done here as we use variables from the mni as predictors in some of the above equations
-            mother_id = df.loc[individual_id, 'mother_id']
-            if not df.at[mother_id, 'is_alive']:
-                if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
-                                                                  (mni[mother_id]['twin_count'] == 2)):
-                    if mother_id in mni:
-                        del mni[mother_id]
+        # Finally we schedule the postnatal week one event
+        if individual_id in nci:
+            if not nci[individual_id]['passed_through_week_one']:
+                self.scheduled_week_one_postnatal_event(individual_id)
 
+        # We now delete the MNI dictionary for mothers who have died in labour but their children have survived,
+        # this is done here as we use variables from the mni as predictors in some of the above equations
+        mother_id = df.loc[individual_id, 'mother_id']
+        if not df.at[mother_id, 'is_alive']:
+            if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
+                                                                  (mni[mother_id]['twin_count'] == 2)):
+                if mother_id in mni:
+                    del mni[mother_id]
 
     def set_disability_status(self, individual_id):
         """
@@ -1030,8 +1059,6 @@ class NewbornOutcomes(Module):
                 pkg_codes=[pkg_code_sep])
 
             # Use the dx_manager to determine if staff will correctly identify this neonate will treatment for sepsis
-            print('id', person_id, 'type_id', type(person_id), 'type_target', type(hsi_event.target))
-
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                  dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event) or \
                 df.at[person_id, 'pn_sepsis_late_neonatal'] or df.at[person_id, 'pn_sepsis_early_neonatal']:
@@ -1161,8 +1188,6 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_death_after_birth'] = False
         df.at[child_id, 'nb_pnc_check'] = 0
 
-        child = df.loc[child_id]
-
         # 'Category' of prematurity (early/late) is stored as a temporary property of the mother via the MNI dictionary
         # generated in labour (this is because some interventions delivered to the mother are based on prematurity)
 
@@ -1276,6 +1301,9 @@ class NewbornOutcomes(Module):
 
                 else:
                     nci[child_id]['will_receive_pnc'] = 'late'
+                    if nci[child_id]['delivery_setting'] == 'home_birth':
+                        self.scheduled_week_one_postnatal_event(child_id)
+
                     if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
                         m['pnc_twin_one'] = 'late'
 
@@ -1432,7 +1460,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             return
         # todo: what about 'none' checks
         if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
-            assert self.sim.date == df.at[person_id, 'date_of_birth']
+            assert self.sim.date <= (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=1))
             assert df.at[person_id, 'nb_pnc_check'] == 0
 
         elif nci[person_id]['will_receive_pnc'] == 'late' and not nci[person_id]['passed_through_week_one']:

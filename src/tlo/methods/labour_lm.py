@@ -344,8 +344,6 @@ def predict_intrapartum_still_birth(self, df, rng=None, **externals):
         result *= params['rr_still_birth_sepsis']
     if person['ps_multiple_pregnancy']:
         result *= params['rr_still_birth_multiple_pregnancy']
-    if person['ps_gestational_age_in_weeks'] < 37:
-        result *= params['rr_still_birth_preterm_labour']
 
     if externals['mode_of_delivery'] == 'caesarean_section':
         result *= params['treatment_effect_cs_still_birth']

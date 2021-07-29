@@ -12,7 +12,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
-from tlo.methods.postnatal_supervisor import PostnatalWeekOneEvent
+from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -100,8 +100,10 @@ class Labour(Module):
             Types.LIST, 'effect of an increase in education level in the linear regression equation predicating womans '
                         'parity at 2010 base line'),
         'effect_rural_parity_lr2010': Parameter(
-            Types.LIST, 'effect of rural living in the linear regression equation predicating womans parity at 2010 base line'),
-
+            Types.LIST, 'effect of rural living in the linear regression equation predicating womans parity at 2010 '
+                        'base line'),
+        'prob_previous_caesarean_at_baseline': Parameter(
+            Types.LIST, 'probability of previously having delivered via caesarean section at baseline'),
 
         # POSTTERM RATE
         'risk_post_term_labour': Parameter(
@@ -223,13 +225,9 @@ class Labour(Module):
             Types.LIST, 'relative risk of still birth in mothers experiencing intrapartum sepsis'),
         'rr_still_birth_multiple_pregnancy': Parameter(
             Types.LIST, 'relative risk of still birth in mothers pregnant with twins'),
-        'rr_still_birth_preterm_labour': Parameter(
-            Types.LIST, 'relative risk of still birth in mothers in preterm labour'),
         'prob_both_twins_ip_still_birth': Parameter(
             Types.LIST, 'probability that if this mother will experience still birth, and she is pregnant with twins, '
                         'that neither baby will survive'),
-
-        # todo: shouldnt other RFs from antenatal SB also have effect here
 
         # POSTPARTUM HAEMORRHAGE...
         'prob_pph_uterine_atony': Parameter(
@@ -243,7 +241,7 @@ class Labour(Module):
         'rr_pph_ua_macrosomia': Parameter(
             Types.LIST, 'relative risk risk of pph after secondary to uterine atony in women with macrosomic foetus'),
         'rr_pph_ua_diabetes': Parameter(
-             Types.LIST, 'risk of pph after experiencing uterine atony'), # TODO: double counting with macrosomia?
+             Types.LIST, 'risk of pph after experiencing uterine atony'),
         'prob_pph_retained_placenta': Parameter(
             Types.LIST, 'risk of pph after experiencing retained placenta'),
         'prob_pph_other_causes': Parameter(
@@ -252,7 +250,6 @@ class Labour(Module):
             Types.LIST, 'case fatality rate for postpartum haemorrhage'),
         'rr_pph_death_anaemia': Parameter(
             Types.LIST, 'relative risk increase of death in women who are anaemic at time of PPH'),
-
 
         # CARE SEEKING FOR HEALTH CENTRE DELIVERY...
         'odds_deliver_in_health_centre': Parameter(
@@ -512,7 +509,6 @@ class Labour(Module):
             Types.LIST, ''),
         'prob_intervention_delivered_anaemia_assessment_pnc': Parameter(
             Types.LIST, ''),
-
     }
 
     PROPERTIES = {
@@ -544,7 +540,7 @@ class Labour(Module):
         'la_maternal_hypertension_treatment': Property(Types.BOOL, 'whether this woman has been treated for maternal '
                                                                    'hypertension'),
         'la_gest_htn_on_treatment': Property(Types.BOOL, 'whether this woman has is receiving regular '
-                                                         'antihypertensives'), # todo rename
+                                                         'antihypertensives'),
         'la_postpartum_haem': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this'
                                                    'delivery'),
         'la_postpartum_haem_cause': Property(Types.INT, 'bitset column holding causes of postpartum haemorrhage'),
@@ -616,6 +612,16 @@ class Labour(Module):
 
         assert (df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] >= 0).all().all()
 
+        #  ----------------------- ASSIGNING PREVIOUS CS DELIVERY AT BASELINE -----------------------------------------
+        # This equation determines the proportion of women at baseline who have previously delivered via caesarean
+        # section
+        reproductive_age_women = df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
+        previous_cs = pd.Series(
+            self.rng.random_sample(len(reproductive_age_women.loc[reproductive_age_women])) <
+            self.current_parameters['prob_previous_caesarean_at_baseline'],
+            index=reproductive_age_women.loc[reproductive_age_women].index)
+
+        df.loc[previous_cs.loc[previous_cs].index, 'la_previous_cs_delivery'] = True
 
     def initialise_simulation(self, sim):
 
@@ -757,7 +763,6 @@ class Labour(Module):
         # ======================================= LINEAR MODEL EQUATIONS ==============================================
         # Here we define the equations that will be used throughout this module using the linear
         # model and stored them as a parameter
-
         params = self.current_parameters
         self.la_linear_models = {
 
@@ -790,7 +795,6 @@ class Labour(Module):
 
             # This equation is used to calculate a womans risk of death following sepsis during labour and is mitigated
             # by treatment
-            # todo: this is messy
             'intrapartum_sepsis_death': LinearModel.custom(labour_lm.predict_sepsis_death, parameters=params),
             'postpartum_sepsis_death': LinearModel.custom(labour_lm.predict_sepsis_death, parameters=params),
 
@@ -1416,6 +1420,23 @@ class Labour(Module):
             mni[individual_id]['death_in_labour'] = True
             return True
 
+    def schedule_week_one_postnatal_event(self, individual_id):
+        df = self.sim.population.props
+
+        days_post_birth_td = self.sim.date - df.at[individual_id, 'la_date_most_recent_delivery']
+        days_post_birth_int = int(days_post_birth_td / np.timedelta64(1, 'D'))
+
+        assert days_post_birth_int < 6
+
+        # change to parameter
+        day_for_event = int(self.rng.choice([2, 3, 4, 5, 6], p=[0.4, 0.3, 0.2, 0.05, 0.05]))
+
+        # Ensure no women go to this event after week 1
+        if day_for_event + days_post_birth_int > 6:
+            day_for_event = 1
+        self.sim.schedule_event(PostnatalWeekOneMaternalEvent(self.sim.modules['PostnatalSupervisor'], individual_id),
+                                self.sim.date + DateOffset(days=day_for_event))
+
     def apply_risk_of_early_postpartum_death(self, individual_id):
         """
         This function is called for all women who have survived labour. This function is called at various points in
@@ -1484,11 +1505,6 @@ class Labour(Module):
                     self.pph_treatment.unset(
                         [individual_id], 'uterotonics', 'manual_removal_placenta', 'surgery', 'hysterectomy')
 
-            # todo: This event looks at the mother and child  pair an applies risk of complications- therefore I cant
-            #  condition on the mother being alive for the event to be schedule (otherwise newborns of mothers who
-            #  died in labour or after labour dont get risk applied) - should be fine as event wont run on mothers
-            #  who arent alive
-
         # ================================ SCHEDULE POSTNATAL WEEK ONE EVENT =====================================
         # For women who have survived first 24 hours after birth we scheduled them to attend the first event in the
         # PostnatalSupervisorModule - PostnatalWeekOne Event
@@ -1502,19 +1518,16 @@ class Labour(Module):
 
             assert days_post_birth_int < 6
 
-            # change to parameter
+            # todo change to parameter
             day_for_event = int(self.rng.choice([2, 3, 4, 5, 6], p=[0.4, 0.3, 0.2, 0.05, 0.05]))
 
             # Ensure no women go to this event after week 1
             if day_for_event + days_post_birth_int > 6:
                 day_for_event = 1
 
-            self.sim.schedule_event(PostnatalWeekOneEvent(self.sim.modules['PostnatalSupervisor'], individual_id),
-                                    self.sim.date + DateOffset(days=day_for_event))
-
-            # Here we remove all women (dead and alive) who have passed through the labour events from the checker
-            # list
-            self.women_in_labour.remove(individual_id)
+            self.sim.schedule_event(
+                PostnatalWeekOneMaternalEvent(self.sim.modules['PostnatalSupervisor'], individual_id),
+                self.sim.date + DateOffset(days=day_for_event))
 
         if mni[individual_id]['passed_through_week_one']:
             assert individual_id not in self.women_in_labour
@@ -1795,11 +1808,13 @@ class Labour(Module):
                 # women with severe pre-eclampsia and eclampsia
                 if outcome_of_request_for_consumables['Item_Code'][item_code_hydralazine]:
                     df.at[person_id, 'la_maternal_hypertension_treatment'] = True
+                    df.at[person_id, 'la_gest_htn_on_treatment'] = True
+
                     logger.debug(key='message', data=f'mother {person_id} has has their hypertension identified during '
                                                      f'delivery. As consumables are available they will receive'
                                                      f' treatment')
 
-            # TODO: ASSUME ORALS ARE STARTED pn_gest_htn_on_treatment
+            # TODO: add consumables for orals
 
             elif df.at[person_id, f'{prefix}_htn_disorders'] != 'none':
                 logger.debug(key='message', data=f'mother {person_id} has not had their hypertension identified during '
@@ -2208,7 +2223,7 @@ class Labour(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         if df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['uterine_atony'] \
-            and not self.pph_treatment.has_all(person_id, 'uterotonics'): # todo: why condition on not receiving uterotonics?
+           and not self.pph_treatment.has_all(person_id, 'uterotonics'):
 
             # We apply a probability that surgical techniques will be effective
             treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
@@ -2229,7 +2244,7 @@ class Labour(Module):
 
         # Next we apply the effect of surgical treatment for women with retained placenta
         if df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['retained_placenta'] \
-            and not self.pph_treatment.has_all(person_id, 'manual_removal_placenta'):
+           and not self.pph_treatment.has_all(person_id, 'manual_removal_placenta'):
 
             self.pph_treatment.set(person_id, 'surgery')
             logger.debug(key='msg',
@@ -2280,6 +2295,9 @@ class Labour(Module):
 
     def assessment_and_treatment_of_anaemia(self, hsi_event):
         """
+        This function represents the management of postnatal anaemia including iron and folic acid administration and
+        blood testing. Women with severe anaemia are scheduled to receive blood
+        :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
         person_id = hsi_event.target
@@ -2347,9 +2365,12 @@ class Labour(Module):
                         mni[person_id]['referred_for_blood'] = True
 
     def assessment_for_depression(self, hsi_event):
+        """
+        This function schedules depression screening for women who attend postnatal care via the Depression module
+        :param hsi_event: HSI event in which the function has been called
+        """
         df = self.sim.population.props
         person_id = hsi_event.target
-        params = self.current_parameters
 
         if 'Depression' in self.sim.modules.keys():
             logger.debug(key='msg', data=f'Mother {person_id} will now be receive screening for depression'
@@ -2685,7 +2706,6 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        params = self.module.current_parameters
 
         if not df.at[individual_id, 'is_alive']:
             return
@@ -3170,8 +3190,6 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.current_parameters
 
-        print(person_id, 'at pnc')
-
         if not df.at[person_id, 'is_alive']:
             return
 
@@ -3229,8 +3247,6 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
 
         # ====================================== APPLY RISK OF DEATH===================================================
         if not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_blood']:
-
-            # TODO: EDIT THIS EVENT AS IT WILL SCHEDULE PNC WEEK 1 FOR EVERYONE WHO PASSES THROUGH
             self.module.apply_risk_of_early_postpartum_death(person_id)
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT

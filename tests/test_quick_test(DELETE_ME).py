@@ -22,10 +22,10 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
-     joes_fake_props_module
+     joes_fake_props_module, cardio_metabolic_disorders
 )
 
-seed = 854
+seed = 111
 
 # The resource files
 try:
@@ -111,20 +111,20 @@ def register_all_modules():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*']),
-                 #ncds.Ncds(resourcefilepath=resourcefilepath),
-                 joes_fake_props_module.JoesFakePropsModule(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 #cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  #healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  #malaria.Malaria(resourcefilepath=resourcefilepath),
                  #hiv.Hiv(resourcefilepath=resourcefilepath),
                  #dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
                  #dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  #depression.Depression(resourcefilepath=resourcefilepath),
+                 joes_fake_props_module.JoesFakePropsModule(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  )
 
     return sim
@@ -135,7 +135,7 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=500)
+    sim.make_initial_population(n=50000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
@@ -146,10 +146,10 @@ def test_run_all_labour():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=500)
+    sim.make_initial_population(n=5000)
     set_all_women_to_go_into_labour(sim)
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=Date(2010, 4, 1))
     check_dtypes(sim)
 
-test_run_core_modules_normal_allocation_of_pregnancy()
-#test_run_all_labour()
+#test_run_core_modules_normal_allocation_of_pregnancy()
+test_run_all_labour()

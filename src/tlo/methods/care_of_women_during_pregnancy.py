@@ -197,7 +197,6 @@ class CareOfWomenDuringPregnancy(Module):
             self.current_parameters[key] = self.parameters[key][0]
 
     def initialise_population(self, population):
-
         df = population.props
 
         df.loc[df.is_alive, 'ac_total_anc_visits_current_pregnancy'] = 0
@@ -958,8 +957,8 @@ class CareOfWomenDuringPregnancy(Module):
                 hsi_event=hsi_event,
                 cons_req_as_footprint=consumables_hep_b_test)
 
-            # We log all the consumables required above but we only condition the event test happening on the availability
-            # of the test itself
+            # We log all the consumables required above but we only condition the event test happening on the
+            # availability of the test itself
             if outcome_of_request_for_consumables['Item_Code'][item_code_hep_test]:
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hep_b'})
 
@@ -1094,8 +1093,6 @@ class CareOfWomenDuringPregnancy(Module):
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        # todo: it might actually be more realistic to test urine before doing fasting OGGT, cant see if they use finger
-        #  prick
         if 'gdm_screen' in mni[person_id]['anc_ints']:
             return
         else:
@@ -1913,7 +1910,6 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)

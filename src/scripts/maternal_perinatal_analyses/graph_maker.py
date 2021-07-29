@@ -77,14 +77,31 @@ def get_pregnancies_in_a_year(logs_dict_file, year):
     preg_poll['year'] = preg_poll['date'].dt.year
     pp_pregs = len(preg_poll.loc[preg_poll['year'] == year])
 
-    failed_contraception = logs_dict_file['tlo.methods.contraception']['fail_contraception']
-    failed_contraception['date'] = pd.to_datetime(failed_contraception['date'])
-    failed_contraception['year'] = failed_contraception['date'].dt.year
-    fc_pregs = len(failed_contraception.loc[failed_contraception['year'] == year])
+    if 'failed_contraception' in logs_dict_file['tlo.methods.contraception']:
+        failed_contraception = logs_dict_file['tlo.methods.contraception']['fail_contraception']
+        failed_contraception['date'] = pd.to_datetime(failed_contraception['date'])
+        failed_contraception['year'] = failed_contraception['date'].dt.year
+        fc_pregs = len(failed_contraception.loc[failed_contraception['year'] == year])
+    else:
+        fc_pregs = 0
 
     total_pregnancies = pp_pregs + fc_pregs
 
     return total_pregnancies
+
+def get_completed_pregnancies_in_a_year(logs_dict_file, master_dict):
+    sum_ended_pregs_from_dict = master_dict['spontaneous_abortion'] + master_dict['induced_abortion'] + \
+                                master_dict['ectopic_unruptured']
+
+    births = logs_dict_file['tlo.methods.demography']['on_birth']
+    all_births = len(births)
+
+    an_stillbirths = logs_dict_file['tlo.methods.pregnancy_supervisor']['antenatal_stillbirth']
+    all_stillbirths = len(an_stillbirths)
+
+    total_ended_pregnancies = sum_ended_pregs_from_dict + all_births + all_stillbirths
+
+    return total_ended_pregnancies
 
 
 def get_parity_graphs(log_file):
@@ -226,6 +243,52 @@ def get_htn_disorders_graph(master_dict_an, master_dict_la, master_dict_pn, deno
     ax.set_title('Hypertensive disorders of pregnancy')
     ax.legend()
     plt.show() """
+
+
+def get_single_year_twins_graph(log_dict, total_births, target, colours):
+
+    if 'twin_birth' in log_dict['tlo.methods.newborn_outcomes']:
+        twin_births = len(log_dict['tlo.methods.newborn_outcomes']['twin_birth'])
+    total_births_corr = total_births - twin_births
+
+    rate = (twin_births/ total_births_corr) * 100
+
+    print(f'twins rate', rate, 'per 100 births')
+    model_rates = [rate]
+    target_rates = [target]
+
+    barWidth = 0.35
+    r1 = np.arange(len(model_rates))
+    r2 = [x + barWidth for x in r1]
+
+    plt.bar(r1, model_rates, width=barWidth, color=colours[0], capsize=7, label='model')
+    plt.bar(r2, target_rates, width=barWidth, color=colours[1], capsize=7, label='target')
+
+    plt.title(f'Modelled incidence of twin birth')
+    plt.xticks([r + barWidth for r in range(len(model_rates))], ['twins'])
+    plt.ylabel('proportion of all births')
+    plt.legend()
+    plt.show()
+
+
+def get_single_year_generic_incidence_graph(complication, dict, denominator, target, colours):
+    rate = (dict[complication] / denominator) * 1000
+    print(f'{complication} rate', rate)
+    model_rates = [rate]
+    target_rates = [target]
+
+    barWidth = 0.35
+    r1 = np.arange(len(model_rates))
+    r2 = [x + barWidth for x in r1]
+
+    plt.bar(r1, model_rates, width=barWidth, color=colours[0], capsize=7, label='model')
+    plt.bar(r2, target_rates, width=barWidth, color=colours[1], capsize=7, label='target')
+
+    plt.title(f'Modelled incidence of {complication}')
+    plt.xticks([r + barWidth for r in range(len(model_rates))], [f'{complication}'])
+    plt.ylabel('rate per 1000')
+    plt.legend()
+    plt.show()
 
 
 def get_generic_incidence_graph(complication, dict_2010, dict_2015, denominator_2010, denominator_2015, target_2010,

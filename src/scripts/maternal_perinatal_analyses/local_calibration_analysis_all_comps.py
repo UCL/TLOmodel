@@ -34,7 +34,7 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 logs_dict = dict()
 
 new_parse_log_2010 = {2010: parse_log_file(
-    filepath=f"./outputs/calibration_files/2010-2016_all_modules_run__2021-07-19T092859.log")}
+    filepath=f"./outputs/calibration_files/ANC_check_calibration_222__2021-07-27T115247.log")}
 new_parse_log_2015 = {2015: parse_log_file(
     filepath=f"./outputs/calibration_files/interventions_2015_updated_calibration_161__2021-07-13T180046.log")}
 logs_dict.update(new_parse_log_2010)
@@ -68,30 +68,21 @@ total_births_2015 = graph_maker.get_total_births(logs_dict[2015])
 pregnancies_2011 = graph_maker.get_pregnancies_in_a_year(logs_dict[2010], 2010)
 pregnancies_2016 = graph_maker.get_pregnancies_in_a_year(logs_dict[2015], 2015)
 
+total_ended_pregnancies = graph_maker.get_completed_pregnancies_in_a_year(logs_dict[2010], master_dict_an_2010)
 # SPONTANEOUS/INDUCED ABORTION...
-graph_maker.get_generic_incidence_graph('PROM', master_dict_an_2010, master_dict_an_2015,
-                                         10000, 10000, 27, 27, ['firebrick', 'lightcoral'])
+graph_maker.get_single_year_generic_incidence_graph('ectopic_unruptured', master_dict_an_2010, total_ended_pregnancies,
+                                                    4.9, ['firebrick', 'lightcoral'])
 
-#graph_maker.get_abortion_complication_graphs(master_dict_an_2010, master_dict_an_2015, pregnancies_2011,
- #                                            pregnancies_2016, ['firebrick', 'lightcoral'])
+graph_maker.get_single_year_generic_incidence_graph('spontaneous_abortion', master_dict_an_2010,
+                                         total_ended_pregnancies, 189, ['firebrick', 'lightcoral'])
+graph_maker.get_single_year_generic_incidence_graph('induced_abortion', master_dict_an_2010,
+                                         total_ended_pregnancies, 86, ['firebrick', 'lightcoral'])
 
-#graph_maker.get_anc_coverage_graph(logs_dict[2010], 2010)
-#graph_maker.get_anc_coverage_graph(logs_dict[2015], 2015)
-#graph_maker.get_facility_delivery_graph(logs_dict[2010], total_births_2010, 2010)
-#graph_maker.get_facility_delivery_graph(logs_dict[2015], total_births_2015, 2015)
-#graph_maker.get_pnc_coverage(logs_dict[2010], total_births_2010, 2010)
-#graph_maker.get_pnc_coverage(logs_dict[2015], total_births_2015, 2015)
+# nb. for twins you want total twin births/total births not total twin pregnancies
+graph_maker.get_single_year_twins_graph(logs_dict[2010], total_births_2010, 3.9, ['firebrick', 'lightcoral'])
 
+graph_maker.get_total_anaemia_graph(logs_dict[2010], logs_dict[2015], ['red', 'pink'])
 
-
-#graph_maker.get_total_anaemia_graph(logs_dict[2010], logs_dict[2015], ['red', 'pink'])
-
-#graph_maker.get_generic_incidence_graph('mild_anaemia', master_dict_an_2010, master_dict_an_2015,
-#                                        1000, 1000, 195, 225, ['firebrick', 'lightcoral'])
-#graph_maker.get_generic_incidence_graph('moderate_anaemia', master_dict_an_2010, master_dict_an_2015,
-#                                        1000, 1000, 178, 219, ['firebrick', 'lightcoral'])
-#graph_maker.get_generic_incidence_graph('severe_anaemia', master_dict_an_2010, master_dict_an_2015,
-#                                        1000, 1000, 15, 2, ['firebrick', 'lightcoral'])
 
 #graph_maker.get_preterm_birth_graph(master_dict_la_2010, master_dict_la_2015, total_births_2010, total_births_2015,
 #                                    ['plum', 'thistle'])
