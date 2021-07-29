@@ -179,7 +179,7 @@ class PregnancySupervisor(Module):
         'probs_for_ec_matrix': Parameter(
             Types.LIST, 'probability of eclampsia moving between states: gestational hypertension,'
                         ' severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia'),
-        'prob_severe_pre_eclamp_death': Parameter(
+        'prob_severe_pre_eclampsia_death': Parameter(
             Types.LIST, 'probability of death for a woman experiencing acute severe pre-eclampsia'),
         'prob_eclampsia_death': Parameter(
             Types.LIST, 'probability of death for a woman experiencing eclampsia'),
