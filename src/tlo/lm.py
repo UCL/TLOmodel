@@ -340,7 +340,7 @@ class LinearModel(object):
         self,
         df: pd.DataFrame,
         rng: Optional[np.random.RandomState] = None,
-        squeeze_single_row_output=False,
+        squeeze_single_row_output=True,
         **kwargs
     ) -> pd.Series:
         """Evaluate linear model output for a given set of input data.
