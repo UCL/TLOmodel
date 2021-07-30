@@ -700,22 +700,65 @@ class Diarrhoea(Module):
 
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the risk of dying due to diarrhoea
-        self.risk_of_death_diarrhoea = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1.0,
-            Predictor('gi_last_diarrhoea_type').when('watery', p['case_fatality_rate_AWD'])
-                                               .when('bloody', p['case_fatality_rate_dysentery']),
-            Predictor('gi_last_diarrhoea_duration').when('>13', p['rr_diarr_death_if_duration_longer_than_13_days']),
-            Predictor('gi_last_diarrhoea_dehydration').when('some', p['rr_diarr_death_dehydration']),
-            Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_diarr_death_age12to23mo'])
-                                        .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo'])
-                                        .when('.between(0,0.9999)', 1).otherwise(0.0),
-            Predictor('gi_last_diarrhoea_pathogen').when('cryptosporidium', p['rr_diarr_death_cryptosporidium'])
-                                                   .when('shigella', p['rr_diarr_death_shigella']),
-            Predictor('ri_current_ALRI_status').when(True, p['rr_diarr_death_alri']),
-            Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarr_death_untreated_HIV']),
-            Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_diarrhoea_SAM'])
-        )
+        # self.risk_of_death_diarrhoea = LinearModel(
+        #     LinearModelType.MULTIPLICATIVE,
+        #     1.0,
+        #     # Predictor().when('(gi_last_diarrhoea_dehydration == "none") & '
+        #     #                  '(gi_last_diarrhoea_type != "bloody") & '
+        #     #                  '(gi_last_diarrhoea_duration_type != "persistent")', 0.0),
+        #     Predictor('gi_last_diarrhoea_type').when('watery', p['case_fatality_rate_AWD'])
+        #                                        .when('bloody', p['case_fatality_rate_dysentery']),
+        #     Predictor('gi_last_diarrhoea_duration').when('>13', p['rr_diarr_death_if_duration_longer_than_13_days']),
+        #     Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_diarr_death_age12to23mo'])
+        #                                 .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo'])
+        #                                 .when('.between(0,0.9999)', 1.0).otherwise(0.0),
+        #     Predictor('gi_last_diarrhoea_pathogen').when('cryptosporidium', p['rr_diarr_death_cryptosporidium'])
+        #                                            .when('shigella', p['rr_diarr_death_shigella']),
+        #     Predictor('ri_current_ALRI_status').when(True, p['rr_diarr_death_alri']),
+        #     Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarr_death_untreated_HIV']),
+        #     Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_diarrhoea_SAM'])
+        # )
+        # death risk to be applied for those with dehydration, blood, or persistent cases,
+        # uncomplicated diarrhoea with no dehydration are not applied death risk
+
+        # --------------------------------------------------------------------------------------------
+        # Make a dict to hold the equations that govern the probability that a person dies from diarrhoea
+
+        def make_scaled_lm_death():
+            """Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
+            0-year-olds and then creates a new linear model with adjusted intercept so incidents in 0-year-olds
+            matches the specified value in the model when averaged across the population
+            """
+            def make_lm_death(intercept=1.0):
+                return LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    intercept,
+                    Predictor('gi_last_diarrhoea_type').when('watery', p['case_fatality_rate_AWD'])
+                        .when('bloody', p['case_fatality_rate_dysentery']),
+                    Predictor('gi_last_diarrhoea_duration').when('>13',
+                                                                 p['rr_diarr_death_if_duration_longer_than_13_days']),
+                    Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_diarr_death_age12to23mo'])
+                        .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo'])
+                        .when('.between(0,0.9999)', 1.0).otherwise(0.0),
+                    Predictor('gi_last_diarrhoea_pathogen').when('cryptosporidium', p['rr_diarr_death_cryptosporidium'])
+                        .when('shigella', p['rr_diarr_death_shigella']),
+                    Predictor('ri_current_ALRI_status').when(True, p['rr_diarr_death_alri']),
+                    Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarr_death_untreated_HIV']),
+                    Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_diarrhoea_SAM'])
+                )
+
+            df = self.sim.population.props
+            unscaled_lm = make_lm_death()
+            target_mean = 5.306/10000  # calculated with no. death / no. episodes GBD 2016 diarrhoea paper
+            actual_mean = unscaled_lm.predict(df.loc[df.is_alive &
+                                                     (df.gi_last_diarrhoea_pathogen == any(list(self.pathogens))) &
+                                                     (df.age_years < 5)]).mean()
+            scaled_intercept = 1.0 * (target_mean / actual_mean) \
+                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
+            scaled_lm = make_lm_death(intercept=scaled_intercept)
+            return scaled_lm
+
+        self.risk_of_death_diarrhoea = make_scaled_lm_death()
 
         # --------------------------------------------------------------------------------------------
         # Dict storing the duration of the episode of diarrhoea (mean, sd, min, max)
@@ -1115,6 +1158,11 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
 
         # ----------------------- Determine outcome (recovery or death) of this episode ----------------------
         # Determine if episode will result in death
+        # only cases with dehydration, blood or persistent are applied a death risk
+        # if ((df.at[person_id, 'gi_last_diarrhoea_dehydration'] != 'none') | (df.at[
+        #     person_id, 'gi_last_diarrhoea_type'] == 'bloody') | (df.at[
+        #     person_id, 'gi_last_diarrhoea_duration_type'] == 'persistent')):
+
         will_die = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
 
         if rng.random_sample() < will_die:

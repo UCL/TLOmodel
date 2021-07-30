@@ -40,8 +40,8 @@ if no_existing_logfile:
 
     # Do not run this cell if you already have a  logfile from a simulation:
     start_date = Date(2010, 1, 1)
-    end_date = Date(2016, 1, 1)
-    popsize = 50000
+    end_date = Date(2020, 1, 1)
+    popsize = 20000
 
     log_config = {
         'filename': 'LogFile',
@@ -234,7 +234,7 @@ plt.show()
 
 
 # %% ----------------------------  MEAN DEATH RATE BY PATHOGEN  ----------------------------
-# # TODO: this set of graphs
+
 # Load the death data to which we calibrate:
 # IHME (www.healthdata.org) / GBD project --> total deaths due to diarrhoea in Malawi,
 # per 100,000 child-years (under 5's) https://vizhub.healthdata.org/gbd-compare/
