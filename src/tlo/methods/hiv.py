@@ -1369,9 +1369,9 @@ class Hiv_DecisionToStartOrContinuePregnantWomenOnPrEP(Event, IndividualScopeEve
         p = m.parameters
 
         # If the person is no longer alive, no longer pregnant/breastfeeding or is diagnosed with HIV they will not
-        # continue on PrEP
+        # start or continue on PrEP
         if (~person["is_alive"] or
-            (~person["is_pregnant"] and person["si_date_of_last_delivery"] < self.sim.date - pd.DateOffset(months=18)) or
+            (~person["is_pregnant"] or person["si_date_of_last_delivery"] < self.sim.date - pd.DateOffset(months=18)) or
             person["hv_diagnosed"] or
             (self.sim.date.year < p["prep_start_year_preg"])):
             return
@@ -1712,7 +1712,7 @@ class HSI_Hiv_StartOrContinuePregnantWomenOnPrep(HSI_Event, IndividualScopeEvent
         # - has previously defaulted from PrEP
 
         if (~person["is_alive"] or
-            (~person["is_pregnant"] and person["si_date_of_last_delivery"] < self.sim.date - pd.DateOffset(months=18)) or
+            (~person["is_pregnant"] or person["si_date_of_last_delivery"] < self.sim.date - pd.DateOffset(months=18)) or
             person["hv_diagnosed"] or
             person["hv_defaulted_on_prep_preg"] or
             (now.year < p["prep_start_year_preg"])):
@@ -2039,27 +2039,49 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     df.age_years.between(15, 49)
                     ]) / n_fsw
 
-        # hiv prev among pregnant women
-        n_preg = len(df.loc[df.is_alive & df.is_pregnant])
+        # hiv prev among pregnant and breastfeeding women
+        n_preg_and_bf = len(df.loc[df.is_alive & (df.is_pregnant | (df.si_date_of_last_delivery > (now - DateOffset(months=18))))])
 
-        prev_hiv_preg = 0 if n_preg == 0 else \
+        prev_hiv_preg_and_bf = 0 if n_preg_and_bf == 0 else \
             len(df.loc[
                 df.is_alive &
                 df.hv_inf &
-                df.is_pregnant
-                ]) / n_preg
+                (df.is_pregnant | (df.si_date_of_last_delivery > (now - DateOffset(months=18))))
+                ]) / n_preg_and_bf
 
-        # incidence in the period since the last log for pregnant  women
-        #n_new_infections_preg = len(
-        #    df.loc[
-        #        (df.is_alive
-        #         & df.is_pregnant
-        #         & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
-        #         )]
+        # incidence in the period since the last log for pregnant and breastfeeding women
+        n_new_infections_preg = len(
+            df.loc[
+                (df.is_alive
+                 & df.is_pregnant
+                 & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
+                 )])
 
-        #denom_preg = len(df[df.is_alive & ~df.hv_inf & df.is_pregnant])
+        denom_preg = len(df[df.is_alive & ~df.hv_inf & df.is_pregnant])
         #preg_inc = (n_new_infections_preg / denom_preg)
 
+        n_new_infections_bf = len(
+            df.loc[
+                (df.is_alive
+                 & (df.si_date_of_last_delivery > (now - DateOffset(months=18)))
+                 & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
+                 )])
+
+        denom_bf = len(df[df.is_alive & ~df.hv_inf & (df.si_date_of_last_delivery > (now - DateOffset(months=18)))])
+        #bf_inc = (n_new_infections_bf / denom_bf)
+
+        #n_new_infections_preg_and_bf = len(
+        #    df.loc[
+        #        (df.is_alive
+        #         & (df.is_pregnant ^ (df.si_date_of_last_delivery < (now - DateOffset(months=18))))
+        #         & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
+        #         )])
+
+        #denom_preg_and_bf = len(df[df.is_alive & ~df.hv_inf & (df.is_pregnant ^ (df.si_date_of_last_delivery < (now - DateOffset(months=18))))])
+
+        n_new_infections_preg_and_bf = n_new_infections_preg + n_new_infections_bf
+        denom_preg_and_bf = denom_preg + denom_bf
+        preg_and_bf_inc = (n_new_infections_preg_and_bf / denom_preg_and_bf)
 
         logger.info(key='summary_inc_and_prev_for_adults_and_children_and_fsw',
                     description='Summary of HIV among adult (15+ and 15-49) and children (0-14s) and female sex workers'
@@ -2072,9 +2094,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         "hiv_adult_inc_1549": adult_inc_1549,
                         "hiv_child_inc": child_inc,
                         "hiv_prev_fsw": prev_hiv_fsw,
-                        "number_of_pregnant_women": n_preg,
-                        "hiv_prev_preg": prev_hiv_preg,
-                        #"hiv_preg_inc": preg_inc,
+                        "hiv_prev_preg_and_bf": prev_hiv_preg_and_bf,
+                        "hiv_preg_and_bf_inc": preg_and_bf_inc,
                     }
                     )
 
@@ -2140,11 +2161,11 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15) & df.hv_is_on_prep]
         ) / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
 
-        # -------------------------- PREP AMONG PREGNANT WOMEN ---------------
+        # -------------------------- PREP AMONG PREGNANT AND BREASTFEEDING WOMEN ---------------
 
-        prop_preg_on_prep = 0 if n_preg == 0 else len(
-            df[df.is_alive & df.is_pregnant & df.hv_is_on_prep_preg]
-        ) / len(df[df.is_alive & df.is_pregnant])
+        prop_preg_and_bf_on_prep = 0 if n_preg_and_bf == 0 else len(
+            df.loc[df.is_alive & (df.is_pregnant ^ (df.si_date_of_last_delivery > (now - DateOffset(months=18))))
+               & df.hv_is_on_prep_preg]) / len(df.loc[df.is_alive & (df.is_pregnant ^ (df.si_date_of_last_delivery > (now - DateOffset(months=18))))])
 
         # ------------------------------------ MALE CIRCUMCISION ------------------------------------
         # NB. Among adult men
@@ -2167,7 +2188,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         "art_coverage_child_VL_suppression": art_cov_vs_children,
                         "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
                         "prop_fsw_on_prep": prop_fsw_on_prep,
-                        "prop_preg_on_prep": prop_preg_on_prep,
+                        "prop_preg_and_bf_on_prep": prop_preg_and_bf_on_prep,
                         "prop_men_circ": prop_men_circ
                     }
                     )
