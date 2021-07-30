@@ -222,6 +222,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
     @staticmethod
     def _select_persons_with_any_symptoms(persons, symptoms):
         """Select rows of `persons` dataframe with any symptoms columns non-zero."""
+        if len(symptoms) == 0:
+            raise ValueError('At least one symptom must be specified')
         return persons.query(
             # `sy_{symptom}` column being non-zero indicates symptom present and we
             # perform logical-or of this condition across all symptoms
@@ -265,15 +267,19 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             ),
             (module.hsb_linear_models['children'], module.hsb_linear_models['adults'])
         ):
-            # Generate an emergency HSI event, if any of the symptoms is an emergency
-            emergency_care_seeking_subgroup = self._select_persons_with_any_symptoms(
-                subgroup, emergency_symptoms
-            )
-            for person_id in emergency_care_seeking_subgroup.index:
-                hsi_event = emergency_hsi_event_class(module, person_id=person_id)
-                health_system.schedule_hsi_event(
-                    hsi_event, priority=0, topen=self.sim.date, tclose=None
+            if len(emergency_symptoms) > 0:
+                # Generate an emergency HSI event if any of the symptoms is an emergency
+                emergency_care_seeking_subgroup = self._select_persons_with_any_symptoms(
+                    subgroup, emergency_symptoms
                 )
+                for person_id in emergency_care_seeking_subgroup.index:
+                    hsi_event = emergency_hsi_event_class(module, person_id=person_id)
+                    health_system.schedule_hsi_event(
+                        hsi_event, priority=0, topen=self.sim.date, tclose=None
+                    )
+            # Check if no symptoms initiating (non-emergency) care seeking specified
+            if len(care_seeking_symptoms) == 0:
+                continue
             # Symptoms in non-emergengency care seeking set may or may not generate an
             # associated HSI event, we first select all persons in subgroup who have
             # any symptoms which may lead to a HSI event being generated.
