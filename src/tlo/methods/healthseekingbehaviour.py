@@ -307,7 +307,11 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                     ~possibly_care_seeking_subgroup.hs_is_inpatient
                 ]
                 care_seeking_non_inpatients = possibly_care_seeking_non_inpatients[
-                    hsb_model.predict(possibly_care_seeking_non_inpatients, module.rng)
+                    hsb_model.predict(
+                        possibly_care_seeking_non_inpatients,
+                        module.rng,
+                        squeeze_single_row_output=False,
+                    )
                 ]
                 for care_seeking_ids in (
                     care_seeking_inpatients.index, care_seeking_non_inpatients.index
