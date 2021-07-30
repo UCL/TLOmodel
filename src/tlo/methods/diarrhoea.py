@@ -734,12 +734,12 @@ class Diarrhoea(Module):
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
                     Predictor('gi_last_diarrhoea_type').when('watery', p['case_fatality_rate_AWD'])
-                        .when('bloody', p['case_fatality_rate_dysentery']),
+                                                       .when('bloody', p['case_fatality_rate_dysentery']),
                     Predictor('gi_last_diarrhoea_duration').when('>13',
                                                                  p['rr_diarr_death_if_duration_longer_than_13_days']),
                     Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_diarr_death_age12to23mo'])
-                        .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo'])
-                        .when('.between(0,0.9999)', 1.0).otherwise(0.0),
+                                                .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo'])
+                                                .when('.between(0,0.9999)', 1.0).otherwise(0.0),
                     Predictor('gi_last_diarrhoea_pathogen').when('cryptosporidium', p['rr_diarr_death_cryptosporidium'])
                         .when('shigella', p['rr_diarr_death_shigella']),
                     Predictor('ri_current_ALRI_status').when(True, p['rr_diarr_death_alri']),
