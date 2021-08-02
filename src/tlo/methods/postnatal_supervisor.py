@@ -403,7 +403,7 @@ class PostnatalSupervisor(Module):
                 # Store the onset weight for daly calculations
                 store_dalys_in_mni(mother_id, f'{fistula_type}_fistula_onset')
 
-                logger.info(key='maternal_complication', data={'mother': mother_id,
+                logger.info(key='maternal_complication', data={'person': mother_id,
                                                                'type': f'{fistula_type}_fistula',
                                                                'timing': 'postnatal'})
 
@@ -555,7 +555,7 @@ class PostnatalSupervisor(Module):
         # Log the complication for analysis
         for person in new_sepsis.loc[new_sepsis].index:
             store_dalys_in_mni(person, 'sepsis_onset')
-            logger.info(key='maternal_complication', data={'mother': person,
+            logger.info(key='maternal_complication', data={'person': person,
                                                            'type': 'sepsis',
                                                            'timing': 'postnatal'})
 
@@ -569,7 +569,7 @@ class PostnatalSupervisor(Module):
 
         for person in onset_pph.loc[onset_pph].index:
             store_dalys_in_mni(person, 'secondary_pph_onset')
-            logger.info(key='maternal_complication', data={'mother': person,
+            logger.info(key='maternal_complication', data={'person': person,
                                                            'type': 'secondary_postpartum_haemorrhage',
                                                            'timing': 'postnatal'})
 
@@ -597,7 +597,7 @@ class PostnatalSupervisor(Module):
             # And change their property accordingly
             self.deficiencies_following_pregnancy.set(new_def.loc[new_def].index, deficiency)
             for person in new_def.loc[new_def].index:
-                logger.info(key='maternal_complication', data={'mother': person,
+                logger.info(key='maternal_complication', data={'person': person,
                                                                'type': f'{deficiency}_deficiency',
                                                                'timing': 'postnatal'})
             if deficiency == 'b12':
@@ -615,7 +615,7 @@ class PostnatalSupervisor(Module):
                 self.deficiencies_following_pregnancy.set(new_def.loc[new_def].index, deficiency)
 
                 for person in new_def.loc[new_def].index:
-                    logger.info(key='maternal_complication', data={'mother': person,
+                    logger.info(key='maternal_complication', data={'person': person,
                                                                    'type': f'{deficiency}_deficiency',
                                                                    'timing': 'postnatal'})
 
@@ -635,7 +635,7 @@ class PostnatalSupervisor(Module):
 
         for person in onset_anaemia.loc[onset_anaemia].index:
             store_dalys_in_mni(person, f'{df.at[person, "pn_anaemia_following_pregnancy"]}_anaemia_pp_onset')
-            logger.info(key='maternal_complication', data={'mother': person,
+            logger.info(key='maternal_complication', data={'person': person,
                                                            'type': f'{df.at[person, "pn_anaemia_following_pregnancy"]}'
                                                                    f'_anaemia',
                                                            'timing': 'postnatal'})
@@ -693,7 +693,7 @@ class PostnatalSupervisor(Module):
             if not new_onset_severe_pre_eclampsia.empty:
                 for person in new_onset_severe_pre_eclampsia.index:
                     df.at[person, 'pn_emergency_event_mother'] = True
-                    logger.info(key='maternal_complication', data={'mother': person,
+                    logger.info(key='maternal_complication', data={'person': person,
                                                                    'type': 'severe_pre_eclamp',
                                                                    'timing': 'postnatal'})
 
@@ -704,7 +704,7 @@ class PostnatalSupervisor(Module):
             if not new_onset_eclampsia.empty:
                 for person in new_onset_eclampsia.index:
                     df.at[person, 'pn_emergency_event_mother'] = True
-                    logger.info(key='maternal_complication', data={'mother': person,
+                    logger.info(key='maternal_complication', data={'person': person,
                                                                    'type': 'eclampsia',
                                                                    'timing': 'postnatal'})
 
@@ -1159,7 +1159,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             df.at[individual_id, 'pn_postpartum_haem_secondary'] = True
             store_dalys_in_mni(individual_id, 'secondary_pph_onset')
 
-            logger.info(key='maternal_complication', data={'mother': individual_id,
+            logger.info(key='maternal_complication', data={'person': individual_id,
                                                             'type': 'secondary_postpartum_haemorrhage',
                                                             'timing': 'postnatal'})
 

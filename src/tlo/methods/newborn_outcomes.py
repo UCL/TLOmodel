@@ -521,18 +521,28 @@ class NewbornOutcomes(Module):
 
         if self.rng.random_sample() < params['prob_congenital_heart_anomaly']:
             self.congeintal_anomalies.set(child_id, 'heart')
+            logger.info(key='newborn_complication', data={'newborn': child_id,
+                                                          'type': 'congenital_heart_anomaly'})
 
         if self.rng.random_sample() < params['prob_limb_musc_skeletal_anomaly']:
             self.congeintal_anomalies.set(child_id, 'limb_musc_skeletal')
+            logger.info(key='newborn_complication', data={'newborn': child_id,
+                                                          'type': 'limb_or_musculoskeletal_anomaly'})
 
         if self.rng.random_sample() < params['prob_urogenital_anomaly']:
             self.congeintal_anomalies.set(child_id, 'urogenital')
+            logger.info(key='newborn_complication', data={'newborn': child_id,
+                                                          'type': 'urogenital_anomaly'})
 
         if self.rng.random_sample() < params['prob_digestive_anomaly']:
             self.congeintal_anomalies.set(child_id, 'digestive')
+            logger.info(key='newborn_complication', data={'newborn': child_id,
+                                                          'type': 'digestive_anomaly'})
 
         if self.rng.random_sample() < params['prob_other_anomaly']:
             self.congeintal_anomalies.set(child_id, 'other')
+            logger.info(key='newborn_complication', data={'newborn': child_id,
+                                                          'type': 'other_anomaly'})
 
     def apply_risk_of_neonatal_infection_and_sepsis(self, child_id):
         """
@@ -606,8 +616,8 @@ class NewbornOutcomes(Module):
         if self.eval(self.nb_linear_models['rds_preterm'], child_id):
             df.at[child_id, 'nb_preterm_respiratory_distress'] = True
 
-        logger.info(key='newborn_complication', data={'newborn': child_id,
-                                                      'type': 'respiratory_distress_syndrome'})
+            logger.info(key='newborn_complication', data={'newborn': child_id,
+                                                          'type': 'respiratory_distress_syndrome'})
 
     def apply_risk_of_not_breathing_at_birth(self, child_id):
         """

@@ -349,16 +349,17 @@ class CareOfWomenDuringPregnancy(Module):
         assert df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] < 9
 
         # We log the total number of ANC contacts a woman has undergone at the time of birth via this data frame
+        if 'ga_anc_one' in mni[mother_id].keys():
+            ga_anc_one = mni[mother_id]['ga_anc_one']
+        else:
+            ga_anc_one = 0
 
         total_anc_visit_count = {'person_id': mother_id,
-                                 'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy']}
+                                 'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'],
+                                 'ga_anc_one': ga_anc_one}
 
         logger.info(key='anc_count_on_birth', data=total_anc_visit_count,
                     description='A dictionary containing the number of ANC visits each woman has on birth')
-
-        if 'ga_anc_one' in mni[mother_id].keys():
-            logger.info(key='anc_ga_first_visit', data={'mother': mother_id,
-                                                        'ga_anc_one': mni[mother_id]['ga_anc_one']})
 
         # We then reset all relevant variables pertaining to care received during the antenatal period to avoid
         # treatments remaining in place for future pregnancies

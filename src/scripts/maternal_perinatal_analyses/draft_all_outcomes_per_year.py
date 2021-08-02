@@ -10,7 +10,7 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'multi_run_calibration.py'  # <-- update this to look at other results
+scenario_filename = 'long_run_all_modules.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
@@ -21,159 +21,27 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 #create_pickles_locally(results_folder)  # if not created via batch
 
 # Enter the years the simulation has ran for here?
-sim_years = [2010, 2011]
+sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016]
 # todo: replace with something more clever at some point
 
+# ============================================HELPER FUNCTIONS... =====================================================
 
-# ========================================== INTERVENTION COVERAGE... =================================================
-
-# 1.) Antenatal Care...
-# Mean proportion of women (across draws) who have given birth that have attended ANC1, ANC4+ and ANC8+ per year...
-results = extract_results(
-    results_folder,
-    module="tlo.methods.care_of_women_during_pregnancy",
-    key="anc_count_on_birth",
-    custom_generate_series=(
-        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'total_anc'])['person_id'].count()),
-    do_scaling=False
-)
-results.columns = results.columns.get_level_values(0)
-anc_count_df = pd.DataFrame(columns=sim_years, index=[0, 1, 2, 3, 4, 5, 6, 7, 8])
-
-# get yearly outputs
-for year in sim_years:
-    for row in anc_count_df.index:
-        x = results.loc[year, row]
-        mean = x.mean()
-        anc_count_df.at[row, year] = mean
-
-yearly_anc1_rates = list()
-yearly_anc4_rates = list()
-yearly_anc8_rates = list()
-
-for year in sim_years:
-    yearly_anc1_rates.append(100 - ((anc_count_df.at[0, year] / anc_count_df[year].sum()) * 100))
-
-    four_or_more_visits = anc_count_df.loc[anc_count_df.index > 3]
-    yearly_anc4_rates.append((four_or_more_visits[year].sum() / anc_count_df[year].sum()) * 100)
-
-    eight_or_more_visits = anc_count_df.loc[anc_count_df.index > 7]
-    yearly_anc8_rates.append((eight_or_more_visits[year].sum() / anc_count_df[year].sum()) * 100)
-
-
-plt.plot(sim_years, yearly_anc1_rates)
-plt.title('Proportion of women attending > 1 ANC contact per year')
-plt.xlabel('Year')
-plt.ylabel('% attended > ANC1')
-#plt.show()
-
-plt.plot(sim_years, yearly_anc1_rates, label="anc1")
-plt.plot(sim_years, yearly_anc4_rates, label="anc4+")
-plt.plot(sim_years, yearly_anc8_rates, label="anc8+")
-
-plt.xlabel('Year')
-plt.ylabel('Proportion of women attending ANC1, AN4, ANC8')
-plt.title('Two or more lines on same plot with suitable legends ')
-plt.legend()
-#plt.show()
-# todo: credible intervals
-
-# Mean proportion of women who attended at least one ANC visit that attended at < 4, 4-5, 6-7 and > 8 months
-# gestation...
-
-anc_ga_first_visit = extract_results(
-    results_folder,
-    module="tlo.methods.care_of_women_during_pregnancy",
-    key="anc_ga_first_visit",
-    custom_generate_series=(
-        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'ga_anc_one'])['mother'].count()),
-    do_scaling=False
-)
-anc_ga_first_visit.columns = anc_ga_first_visit.columns.get_level_values(0)
-
-anc_before_four_months = list()
-anc_before_four_five_months = list()
-anc_before_six_seven_months = list()
-anc_before_eight_plus_months = list()
-
-total_women = dict()
-
-for year in sim_years:
-    year_df = anc_ga_first_visit.loc[year]
-    total_women_that_year = 0
-    for index in year_df.index:
-        total_women_that_year += year_df.loc[index].mean()
-
-    total_women.update({year: total_women_that_year})
-
-# get yearly outputs
-
-def get_means(df):
-    mean_list = 0
-    for index in df.index:
-        mean_list += df.loc[index].mean()
-    return mean_list
-
-for year in sim_years:
-    year_series = anc_ga_first_visit.loc[year]
-
-    early_anc = year_series.loc[year_series.index <= 13]
-    four_to_five = year_series.loc[(year_series.index > 13) & (year_series.index <= 22)]
-    six_to_seven = year_series.loc[(year_series.index > 22) & (year_series.index <= 32)]
-    eight_plus = year_series.loc[(year_series.index > 31)]
-
-    sum_means_early = get_means(early_anc)
-    sum_four = get_means(four_to_five)
-    sum_six = get_means(six_to_seven)
-    sum_eight = get_means(eight_plus)
-
-    anc_before_four_months.append((sum_means_early/total_women[year]) * 100)
-    anc_before_four_five_months.append((sum_four/total_women[year]) * 100)
-    anc_before_six_seven_months.append((sum_six/total_women[year]) * 100)
-    anc_before_eight_plus_months.append((sum_eight/total_women[year]) * 100)
-
-plt.plot(sim_years, anc_before_four_months, label="<4")
-plt.plot(sim_years, anc_before_four_five_months, label="4-5+")
-plt.plot(sim_years, anc_before_six_seven_months, label="6-7+")
-plt.plot(sim_years, anc_before_eight_plus_months, label="8+")
-
-plt.xlabel('Year')
-plt.ylabel('Gestational Age at Presentation to ANC1 per year')
-plt.title('s ')
-plt.legend()
-#plt.show()
-
-
-# TODO: quartiles, median month ANC1, total visits at pregnancy end
-
-# 2.) Facility delivery
-# Total FDR per year (denominator - total births)
-
-# % home births per year (denominator - total births)
-# % hospital deliveries per year (denominator - total births)
-# % health centre deliveries per year (denominator - total births)
-
-# 3.) Postnatal Care
-# PNC mothers (denominator - total births)
-# % PNC early mothers (denominator - total mothers PNC > 0 )
-# PNC newborns (denominator - total (live?) births)
-# % PNC early newborns (denominator - total newborns PNC > 0 )
-
-# ========================================== COMPLICATION/DISEASE RATES.... ===========================================
-
-# HELPER FUNCTIONS...
-def get_modules_maternal_complication_dataframes(module, id_name):
+def get_modules_maternal_complication_dataframes(module):
     complications_df = extract_results(
         results_folder,
         module=f"tlo.methods.{module}",
         key="maternal_complication",
         custom_generate_series=(
-            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])[f'{id_name}'].count()),
+            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['person'].count()),
         do_scaling=False
     )
 
     return complications_df
 
+#  COMPLICATION DATA FRAMES....
+an_comps = get_modules_maternal_complication_dataframes('pregnancy_supervisor')
+la_comps = get_modules_maternal_complication_dataframes('labour')
+#pn_comps = get_modules_maternal_complication_dataframes('postnatal_supervisor')
 
 def get_mean(df):
     year_means = list()
@@ -196,17 +64,11 @@ def get_mean_number_of_some_complication(df, complication):
     return yearly_mean_number
 
 
-def get_comp_mean_and_rate(complication, denominators, df, rate):
-    yearly_comp_rate = list()
-    for year, denominator in zip(sim_years, denominators):
-        if complication in df.loc[year].index:
-            mean_over_draws = df.loc[year, complication].mean()
-            rate = (mean_over_draws / denominator) * rate
-            yearly_comp_rate.append(rate)
-        else:
-            yearly_comp_rate.append(0)
+def get_comp_mean_and_rate(complication, denominator_list, df, rate):
+    yearly_means = get_mean_number_of_some_complication(df, complication)
+    final_rate = [(x / y) * rate for x, y in zip(yearly_means, denominator_list)]
 
-    return yearly_comp_rate
+    return final_rate
 
 
 def get_comp_mean_and_rate_across_multiple_dataframes(complication, denominators, rate, dataframes):
@@ -240,15 +102,30 @@ def get_comp_mean_and_rate_across_multiple_dataframes(complication, denominators
 
     return total_rates
 
-# ---------------------------------------------- DENOMINATORS... -----------------------------------------------------
 
-# ________________________________________ COMPLICATION DATA FRAMES....  _____________________________________________
-an_comps = get_modules_maternal_complication_dataframes('pregnancy_supervisor', 'person')
-an_comps.columns = an_comps.columns.get_level_values(0)
-la_comps = get_modules_maternal_complication_dataframes('labour', 'person')
-pn_comps = get_modules_maternal_complication_dataframes('postnatal_supervisor', 'mother')
+def simple_line_chart(model_rate, target_rate, x_title, y_title, title):
+    plt.plot(sim_years, model_rate, 'o-g', label="Model rate", color='steelblue')
+    plt.plot(sim_years, target_rate, 'o-g', label="Target rate", color='darkseagreen')
+    plt.xlabel(x_title)
+    plt.ylabel(y_title)
+    plt.title(title)
+    plt.legend()
+    plt.show()
 
-# -------------------------Total_pregnancies...--------------------
+
+def simple_bar_chart(model_rates, x_title, y_title, title):
+    bars = sim_years
+    x_pos = np.arange(len(bars))
+    plt.bar(x_pos, model_rates)
+    plt.xticks(x_pos, bars)
+    plt.xlabel(x_title)
+    plt.ylabel(y_title)
+    plt.title(title)
+    plt.show()
+
+
+# ============================================  DENOMINATORS... ======================================================
+# ---------------------------------------------Total_pregnancies...---------------------------------------------------
 pregnancy_poll_results = extract_results(
     results_folder,
     module="tlo.methods.contraception",
@@ -271,7 +148,7 @@ mean_pp_pregs = get_mean(pregnancy_poll_results)
 mean_cf_pregs = get_mean(contraception_failure)
 total_pregnancies_per_year = [x + y for x, y in zip(mean_pp_pregs, mean_cf_pregs)]
 
-# ---------------------Total births...----------------------------
+# -----------------------------------------------------Total births...------------------------------------------------
 births_results = extract_results(
     results_folder,
     module="tlo.methods.demography",
@@ -283,8 +160,9 @@ births_results = extract_results(
 )
 
 total_births_per_year = get_mean(births_results)
+# todo: some testing looking at live births vs total births...
 
-# ------------------Completed pregnancies...-----------------------
+# -------------------------------------------------Completed pregnancies...-------------------------------------------
 ectopic_mean_numbers_per_year = get_mean_number_of_some_complication(an_comps, 'ectopic_unruptured')
 ia_mean_numbers_per_year = get_mean_number_of_some_complication(an_comps, 'induced_abortion')
 sa_mean_numbers_per_year = get_mean_number_of_some_complication(an_comps, 'spontaneous_abortion')
@@ -306,63 +184,434 @@ total_completed_pregnancies_per_year = [a + b + c + d + e for a, b, c, d, e in z
                                                                                    sa_mean_numbers_per_year,
                                                                                    total_an_stillbirths_per_year)]
 
+# ========================================== INTERVENTION COVERAGE... =================================================
+# 1.) Antenatal Care...
+# Mean proportion of women (across draws) who have given birth that have attended ANC1, ANC4+ and ANC8+ per year...
+results = extract_results(
+    results_folder,
+    module="tlo.methods.care_of_women_during_pregnancy",
+    key="anc_count_on_birth",
+    custom_generate_series=(
+        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'total_anc'])['person_id'].count()),
+    do_scaling=False
+)
+
+anc_count_df = pd.DataFrame(columns=sim_years, index=[0, 1, 2, 3, 4, 5, 6, 7, 8])
+
+# get yearly outputs
+for year in sim_years:
+    for row in anc_count_df.index:
+        x = results.loc[year, row]
+        mean = x.mean()
+        anc_count_df.at[row, year] = mean
+
+yearly_anc1_rates = list()
+yearly_anc4_rates = list()
+yearly_anc8_rates = list()
+
+for year in sim_years:
+    yearly_anc1_rates.append(100 - ((anc_count_df.at[0, year] / anc_count_df[year].sum()) * 100))
+
+    four_or_more_visits = anc_count_df.loc[anc_count_df.index > 3]
+    yearly_anc4_rates.append((four_or_more_visits[year].sum() / anc_count_df[year].sum()) * 100)
+
+    eight_or_more_visits = anc_count_df.loc[anc_count_df.index > 7]
+    yearly_anc8_rates.append((eight_or_more_visits[year].sum() / anc_count_df[year].sum()) * 100)
+
+target_rate_an = list()
+for year in sim_years:
+    target_rate_an.append(95)
+
+target_rate_anc4 = list()
+for year in sim_years:
+    if year < 2015:
+        target_rate_anc4.append(46)
+    else:
+        target_rate_anc4.append(51)
+
+simple_line_chart(yearly_anc1_rates, target_rate_an, 'Year', '% of total births',
+                  'Proportion of women attending > 1 ANC contact per year')
+simple_line_chart(yearly_anc4_rates, target_rate_anc4, 'Year', '% total births',
+                  'Proportion of women attending >= 4 ANC contact per year')
+
+plt.plot(sim_years, yearly_anc1_rates, 'o-g', label="anc1", color='palevioletred')
+plt.plot(sim_years, yearly_anc4_rates, 'o-g',  label="anc4+", color='crimson')
+plt.plot(sim_years, yearly_anc8_rates, 'o-g', label="anc8+", color='pink')
+plt.xlabel('Year')
+plt.ylabel('% total births')
+plt.title('Proportion of women attending ANC1, AN4, ANC8 ')
+plt.legend()
+plt.show()
+
+for year in sim_years:
+    total = sum(anc_count_df[year])
+    for index in anc_count_df.index:
+        anc_count_df.at[index, year] = (anc_count_df.at[index, year]/total) * 100
+
+# todo: simplify with function
+labels = sim_years
+width = 0.35       # the width of the bars: can also be len(x) sequence
+fig, ax = plt.subplots()
+ax.bar(labels, anc_count_df.loc[8], width, label=8, bottom=anc_count_df.loc[0] + anc_count_df.loc[1] +
+                                                           anc_count_df.loc[2] + anc_count_df.loc[3] +
+                                                           anc_count_df.loc[4] + anc_count_df.loc[5] +
+                                                           anc_count_df.loc[6] + anc_count_df.loc[7])
+ax.bar(labels, anc_count_df.loc[7], width, label=7, bottom=anc_count_df.loc[0] + anc_count_df.loc[1] +
+                                                           anc_count_df.loc[2] + anc_count_df.loc[3] +
+                                                           anc_count_df.loc[4] + anc_count_df.loc[5] +
+                                                           anc_count_df.loc[6])
+ax.bar(labels, anc_count_df.loc[6], width, label=6, bottom=anc_count_df.loc[0] + anc_count_df.loc[1] +
+                                                           anc_count_df.loc[2] + anc_count_df.loc[3] +
+                                                           anc_count_df.loc[4] + anc_count_df.loc[5])
+ax.bar(labels, anc_count_df.loc[5], width, label=5, bottom=anc_count_df.loc[0] + anc_count_df.loc[1] +
+                                                           anc_count_df.loc[2] + anc_count_df.loc[3] +
+                                                           anc_count_df.loc[4] )
+ax.bar(labels, anc_count_df.loc[4], width, label=4, bottom=anc_count_df.loc[0] + anc_count_df.loc[1] +
+                                                           anc_count_df.loc[2] + anc_count_df.loc[3])
+ax.bar(labels, anc_count_df.loc[3], width, label=3, bottom=anc_count_df.loc[0] + anc_count_df.loc[1] +
+                                                           anc_count_df.loc[2])
+ax.bar(labels, anc_count_df.loc[2], width, label=2, bottom=anc_count_df.loc[0] + anc_count_df.loc[1])
+ax.bar(labels, anc_count_df.loc[1], width, label=1, bottom=anc_count_df.loc[0])
+
+ax.bar(labels, anc_count_df.loc[0], width, label=0)
+ax.set_ylabel('% of total yearly visits')
+ax.set_title('Number of ANC visits at birth per year')
+ax.legend()
+plt.show()
+
+# Mean proportion of women who attended at least one ANC visit that attended at < 4, 4-5, 6-7 and > 8 months
+# gestation...
+
+# TODO: this df doesnt exsist anymore, combined with anc_count_on_birth to capture early ANC4+
+# todo: look at early ANC4+ so we can calibrate whole ANC appropriately....
+anc_ga_first_visit = extract_results(
+    results_folder,
+    module="tlo.methods.care_of_women_during_pregnancy",
+    key="anc_ga_first_visit",
+    custom_generate_series=(
+        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'ga_anc_one'])['mother'].count()),
+    do_scaling=False
+)
+anc_ga_first_visit.columns = anc_ga_first_visit.columns.get_level_values(0)
+
+anc_before_four_months = list()
+anc_before_four_five_months = list()
+anc_before_six_seven_months = list()
+anc_before_eight_plus_months = list()
+
+total_women = dict()
+
+for year in sim_years:
+    year_df = anc_ga_first_visit.loc[year]
+    total_women_that_year = 0
+    for index in year_df.index:
+        total_women_that_year += year_df.loc[index].mean()
+
+    total_women.update({year: total_women_that_year})
+
+
+def get_means(df):
+    mean_list = 0
+    for index in df.index:
+        mean_list += df.loc[index].mean()
+    return mean_list
+
+for year in sim_years:
+    year_series = anc_ga_first_visit.loc[year]
+
+    early_anc = year_series.loc[year_series.index <= 13]
+    four_to_five = year_series.loc[(year_series.index > 13) & (year_series.index <= 22)]
+    six_to_seven = year_series.loc[(year_series.index > 22) & (year_series.index <= 32)]
+    eight_plus = year_series.loc[(year_series.index > 31)]
+
+    sum_means_early = get_means(early_anc)
+    sum_four = get_means(four_to_five)
+    sum_six = get_means(six_to_seven)
+    sum_eight = get_means(eight_plus)
+
+    anc_before_four_months.append((sum_means_early/total_women[year]) * 100)
+    anc_before_four_five_months.append((sum_four/total_women[year]) * 100)
+    anc_before_six_seven_months.append((sum_six/total_women[year]) * 100)
+    anc_before_eight_plus_months.append((sum_eight/total_women[year]) * 100)
+
+labels = sim_years
+width = 0.35       # the width of the bars: can also be len(x) sequence
+fig, ax = plt.subplots()
+ax.bar(labels, anc_before_eight_plus_months, width, label='>8m',
+       bottom=[x + y + z for x, y, z in zip(anc_before_four_months, anc_before_four_five_months,
+                                            anc_before_six_seven_months)])
+ax.bar(labels, anc_before_six_seven_months, width, label='6-7m',
+       bottom=[x + y for x, y in zip(anc_before_four_months, anc_before_four_five_months)])
+ax.bar(labels, anc_before_four_five_months, width, label='4-5m',
+       bottom=anc_before_four_months)
+ax.bar(labels, anc_before_four_months, width, label='<4m')
+ax.set_ylabel('% of ANC1 visits by gestational age')
+ax.set_title('Gestational age at first ANC visit by Year')
+ax.legend()
+plt.show()
+
+# TODO: quartiles, median month ANC1
+# todo: target rates
+
+# 2.) Facility delivery
+# Total FDR per year (denominator - total births)
+deliver_setting_results = extract_results(
+        results_folder,
+        module="tlo.methods.labour",
+        key="delivery_setting",
+        custom_generate_series=(
+            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'facility_type'])['mother'].count()),
+        do_scaling=False
+    )
+
+hb_mean = get_mean_number_of_some_complication(deliver_setting_results, 'home_birth')
+home_birth_rate = [(x / y) * 100 for x, y in zip(hb_mean, total_births_per_year)]
+
+hc_mean = get_mean_number_of_some_complication(deliver_setting_results, 'hospital')
+health_centre_rate = [(x / y) * 100 for x, y in zip(hc_mean, total_births_per_year)]
+
+hp_mean = get_mean_number_of_some_complication(deliver_setting_results, 'health_centre')
+hospital_rate = [(x / y) * 100 for x, y in zip(hp_mean, total_births_per_year)]
+
+total_fd_rate = [x + y for x, y in zip(health_centre_rate, hospital_rate)]
+
+target_rate_fd = list()
+for year in sim_years:
+    if year < 2015:
+        target_rate_fd.append(73)
+    else:
+        target_rate_fd.append(91)
+simple_line_chart(total_fd_rate, target_rate_fd, 'Year', '% of total births',
+                  'Proportion of Women Delivering in a Health Facility per Year')
+
+labels = sim_years
+width = 0.35       # the width of the bars: can also be len(x) sequence
+fig, ax = plt.subplots()
+
+ax.bar(labels, hospital_rate, width, label='Hospital Birth',
+       bottom=[x + y for x, y in zip(home_birth_rate, health_centre_rate)])
+ax.bar(labels, health_centre_rate, width, label='Health Centre Birth',
+       bottom=home_birth_rate)
+ax.bar(labels, home_birth_rate, width, label='Home Birth')
+ax.set_ylabel('% of Births by Location')
+ax.set_title('Proportion of Total Births by Location of Delivery')
+ax.legend()
+plt.show()
+
+# 3.) Postnatal Care
+pnc_results_maternal = extract_results(
+    results_folder,
+    module="tlo.methods.postnatal_supervisor",
+    key="total_mat_pnc_visits",
+    custom_generate_series=(
+        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'visits'])['mother'].count()),
+    do_scaling=False
+)
+
+pnc_results_newborn = extract_results(
+    results_folder,
+    module="tlo.methods.postnatal_supervisor",
+    key="total_neo_pnc_visits",
+    custom_generate_series=(
+        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'visits'])['child'].count()),
+    do_scaling=False
+)
+
+pnc_0_means = list()
+pnc_0_means_neo = list()
+
+for year in sim_years:
+    mean_no_pnc_mat = pnc_results_maternal.loc[year, 0].mean()
+    mean_no_pnc_neo = pnc_results_newborn.loc[year, 0].mean()
+    pnc_0_means.append(mean_no_pnc_mat)
+    pnc_0_means_neo.append(mean_no_pnc_neo)
+
+pnc_1_plus_rate_mat = [100 - ((x / y) * 100) for x, y in zip(pnc_0_means, total_births_per_year)]
+pnc1_plus_rate_neo = [100 - ((x / y) * 100) for x, y in zip(pnc_0_means_neo, total_births_per_year)]
+
+plt.plot(sim_years, pnc_1_plus_rate_mat, 'o-g', label="Maternal Model", color='darkturquoise')
+plt.plot(sim_years, pnc1_plus_rate_neo, 'o-g', label="Neonatal Model", color='olivedrab')
+
+maternal_target = list()
+for year in sim_years:
+    if year < 2015:
+        maternal_target.append(50)
+    else:
+        maternal_target.append(48)
+newborn_target = list()
+for year in sim_years:
+    newborn_target.append(60)
+
+plt.plot(sim_years, maternal_target, 'o-g', label="Maternal Target", color='powderblue')
+plt.plot(sim_years, newborn_target, 'o-g', label="Neonatal Target", color='palegreen')
+plt.xlabel('Year')
+plt.ylabel('Proportion of total births')
+plt.title('Yearly trends for PNC1 attendance')
+plt.legend()
+plt.show()
+
+def get_early_late_pnc_split(module, target):
+    pnc = extract_results(
+        results_folder,
+        module=f"tlo.methods.{module}",
+        key="postnatal_check",
+        custom_generate_series=(
+            lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'timing',
+                                                                   'visit_number'])['person_id'].count()
+        ),
+        do_scaling=True
+    )
+    early_rate = list()
+    late_rate = list()
+
+    for year in sim_years:
+        total = pnc.loc[year, 'early', 0].mean() + pnc.loc[year, 'late', 0].mean() + pnc.loc[year, 'none', 0].mean()
+        early = (pnc.loc[year, 'early', 0].mean() / total) * 100
+        late = ((pnc.loc[year, 'late', 0].mean() + pnc.loc[year, 'none', 0].mean()) / total) * 100
+        early_rate.append(early)
+        late_rate.append(late)
+
+    labels = sim_years
+    width = 0.35       # the width of the bars: can also be len(x) sequence
+    fig, ax = plt.subplots()
+    ax.bar(labels, early_rate, width, label='< 48hrs')
+    ax.bar(labels, late_rate, width, bottom=early_rate, label='>48hrs')
+    ax.set_ylabel('% of PNC 1 visits')
+    ax.set_title(f'Proportion of {target} PNC1 Visits Occuring pre/post 48hrs Postnatal')
+    ax.legend()
+    plt.show()
+
+get_early_late_pnc_split('labour', 'Maternal')
+get_early_late_pnc_split('newborn_outcomes', 'Neonatal')
+
+# ========================================== COMPLICATION/DISEASE RATES.... ===========================================
 # ---------------------------------------- Twinning Rate... -----------------------------------------------------------
 # % Twin births/Total Births per year
-#twins_results = extract_results(
-#    results_folder,
-#    module="tlo.methods.newborn_outcomes",
-#    key="twin_birth",
-#    custom_generate_series=(
-#        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-#    ),
-#    do_scaling=True
-#)
-# todo: possibility for /0 crash
+twins_results = extract_results(
+    results_folder,
+    module="tlo.methods.newborn_outcomes",
+    key="twin_birth",
+    custom_generate_series=(
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
+    ),
+    do_scaling=True
+)
+
+mean_twin_births = get_mean(twins_results)
+total_deliveries = [x - y for x, y in zip(total_births_per_year, mean_twin_births)]
+final_twining_rate = [(x / y) * 100 for x, y in zip(mean_twin_births, total_deliveries)]
+
+target_rate_twins = list()
+for year in sim_years:
+    target_rate_twins.append(4)
+
+simple_line_chart(final_twining_rate, final_twining_rate, 'Year', 'Rate per 100 pregnancies',
+                  'Yearly trends for Twin Births')
+
 
 # ---------------------------------------- Early Pregnancy Loss... ----------------------------------------------------
 # Ectopic pregnancies/Total pregnancies
 rate_of_ectopic_pregnancy_per_year = get_comp_mean_and_rate('ectopic_unruptured', total_pregnancies_per_year, an_comps,
                                                             1000)
+target_rate = list()
+for year in sim_years:
+    if year < 2015:
+        target_rate.append(4.9)
+    else:
+        target_rate.append(3.6)
+
+simple_line_chart(rate_of_ectopic_pregnancy_per_year, target_rate, 'Year', 'Rate per 1000 pregnancies',
+                  'Yearly trends for Ectopic Pregnancy')
 
 # Ruptured ectopic pregnancies / Total Pregnancies
 mean_unrup_ectopics = get_mean_number_of_some_complication(an_comps, 'ectopic_unruptured')
 proportion_of_ectopics_that_rupture_per_year = get_comp_mean_and_rate('ectopic_ruptured', mean_unrup_ectopics, an_comps,
                                                                       100)
+proportion_of_ectopics_that_rupture_per_year = [100 if i > 100 else i for i in
+                                                proportion_of_ectopics_that_rupture_per_year]
 
-# todo: plot...
+target_rate_rup = list()
+for year in sim_years:
+    target_rate_rup.append(92)
+
+simple_line_chart(proportion_of_ectopics_that_rupture_per_year, target_rate_rup, 'Year',
+                  'Proportion of all Ectopic Cases',
+                  'Proportion of Ectopic Pregnancies Leading to Rupture per year')
 
 # Spontaneous Abortions....
 rate_of_spontaneous_abortion_per_year = get_comp_mean_and_rate('spontaneous_abortion',
                                                                total_completed_pregnancies_per_year, an_comps, 1000)
 
-# todo: plot...
+target_rate_sa = list()
+for year in sim_years:
+    target_rate_sa.append(189)
+
+simple_line_chart(rate_of_spontaneous_abortion_per_year, target_rate_sa, 'Year',
+                  'Rate per 1000 completed pregnancies',
+                  'Yearly rate of Miscarriage')
+
 # Complicated SA / Total SA
 mean_complicated_sa = get_mean_number_of_some_complication(an_comps, 'spontaneous_abortion')
 proportion_of_complicated_sa_per_year = get_comp_mean_and_rate('complicated_spontaneous_abortion',
                                                                mean_complicated_sa, an_comps, 100)
 
+simple_bar_chart(proportion_of_complicated_sa_per_year, 'Year', '% of Total Miscarriages',
+                 'Proportion of miscarriages leading to complications')
+
 # Induced Abortions...
 rate_of_induced_abortion_per_year = get_comp_mean_and_rate('induced_abortion',
                                                            total_completed_pregnancies_per_year, an_comps, 1000)
+target_rate_ia = list()
+for year in sim_years:
+    if year < 2015:
+        target_rate_ia.append(86)
+    else:
+        target_rate_ia.append(159)
 
-# todo: plot...
+simple_line_chart(rate_of_induced_abortion_per_year, target_rate_ia, 'Year',
+                  'Rate per 1000 completed pregnancies',
+                  'Yearly rate of Abortion')
+
 
 # Complicated IA / Total IA
 mean_complicated_ia = get_mean_number_of_some_complication(an_comps, 'induced_abortion')
 proportion_of_complicated_ia_per_year = get_comp_mean_and_rate('complicated_induced_abortion',
                                                                mean_complicated_ia, an_comps, 100)
+simple_bar_chart(proportion_of_complicated_ia_per_year, 'Year', '% of Total Abortions',
+                 'Proportion of Abortions leading to complications')
 
 # --------------------------------------------------- Syphilis Rate... ------------------------------------------------
 rate_of_syphilis_per_year = get_comp_mean_and_rate('syphilis', total_completed_pregnancies_per_year, an_comps,
                                                    1000)
-# todo: plot...
+target_rate_syph = list()
+for year in sim_years:
+    target_rate_syph.append(20)
+
+simple_line_chart(rate_of_syphilis_per_year, target_rate_syph, 'Year', 'Rate per 1000 completed pregnancies',
+                  'Yearly rate of Syphilis in Pregnancy')
 
 # ------------------------------------------------ Gestational Diabetes... -------------------------------------------
 rate_of_gdm_per_year = get_comp_mean_and_rate('gest_diab', total_completed_pregnancies_per_year, an_comps,
                                               1000)
 
+target_rate_gdm = list()
+for year in sim_years:
+    target_rate_gdm.append(16)
+
+simple_line_chart(rate_of_syphilis_per_year, target_rate_gdm, 'Year', 'Rate per 1000 completed pregnancies',
+                  'Yearly rate of Gestational Diabetes')
+
 # ------------------------------------------------ PROM... -----------------------------------------------------------
 rate_of_prom_per_year = get_comp_mean_and_rate('PROM', total_births_per_year, an_comps, 1000)
+target_rate_prom = list()
+for year in sim_years:
+    target_rate_prom.append(27)
+
+plt.plot(sim_years, rate_of_prom_per_year, label="Model rate")
+plt.plot(sim_years, target_rate_prom, label="Target rate")
+
+simple_line_chart(rate_of_prom_per_year, target_rate_prom, 'Year', 'Rate per 1000 births',
+                  'Yearly rate of Premature Rupture of Membranes')
 
 
 # ---------------------------------------------- Anaemia... ----------------------------------------------------------
@@ -379,8 +628,16 @@ anaemia_results = extract_results(
 
 no_anaemia = get_mean_number_of_some_complication(anaemia_results, 'none')
 prevalence_of_anaemia_per_year = [100 - ((x/y) * 100) for x, y in zip(no_anaemia, total_births_per_year)]
+target_rate_an = list()
+for year in sim_years:
+    if year < 2015:
+        target_rate_an.append(37.5)
+    else:
+        target_rate_an.append(45.1)
 
-# todo: plot
+simple_line_chart(prevalence_of_anaemia_per_year, target_rate_an, 'Year', 'Prevalence at birth',
+                  'Yearly prevalence of Anaemia (all severity) at delivery')
+
 
 # Prevalence of Anaemia at the end of the postnatal period (total cases of anaemia at 6 weeks PN/ total women at 6 weeks
 # PN?) and by severity
@@ -394,32 +651,49 @@ prevalence_of_mod_anaemia_per_year = [(x/y) * 100 for x, y in zip(moderate_anaem
 severe_anaemia_at_birth = get_mean_number_of_some_complication(anaemia_results, 'severe')
 prevalence_of_sev_anaemia_per_year = [(x/y) * 100 for x, y in zip(severe_anaemia_at_birth, total_births_per_year)]
 
+plt.plot(sim_years, prevalence_of_mild_anaemia_per_year, label="mild")
+plt.plot(sim_years, prevalence_of_mod_anaemia_per_year, label="moderate")
+plt.plot(sim_years, prevalence_of_sev_anaemia_per_year, label="severe")
+plt.xlabel('Year')
+plt.ylabel('Prevalence at delivery')
+plt.title('Yearly trends for prevalence of anaemia by severity')
+plt.legend()
+plt.show()
 
 # todo: log anaemia status at end of PN...??
-# todo: plot
+# todo: add targets...
 
 # ------------------------------------------- Hypertensive disorders -------------------------------------------------
-rate_of_gh_per_year = get_comp_mean_and_rate_across_multiple_dataframes('mild_gest_htn', total_births_per_year, 1000,
-                                                                        [an_comps, pn_comps])
-rate_of_sgh_per_year = get_comp_mean_and_rate_across_multiple_dataframes('severe_gest_htn', total_births_per_year, 1000,
-                                                                         [an_comps, la_comps, pn_comps])
-rate_of_mpe_per_year = get_comp_mean_and_rate_across_multiple_dataframes('mild_pre_eclamp', total_births_per_year, 1000,
-                                                                         [an_comps, pn_comps])
-rate_of_spe_per_year = get_comp_mean_and_rate_across_multiple_dataframes('severe_pre_eclamp', total_births_per_year,
-                                                                         1000, [an_comps, la_comps, pn_comps])
-rate_of_ec_per_year = get_comp_mean_and_rate_across_multiple_dataframes('eclampsia', total_births_per_year, 1000,
-                                                                        [an_comps, la_comps, pn_comps])
+#rate_of_gh_per_year = get_comp_mean_and_rate_across_multiple_dataframes('mild_gest_htn', total_births_per_year, 1000,
+#                                                                        [an_comps, pn_comps])
+#rate_of_sgh_per_year = get_comp_mean_and_rate_across_multiple_dataframes('severe_gest_htn', total_births_per_year, 1000,
+#                                                                         [an_comps, la_comps, pn_comps])
+#rate_of_mpe_per_year = get_comp_mean_and_rate_across_multiple_dataframes('mild_pre_eclamp', total_births_per_year, 1000,
+#                                                                         [an_comps, pn_comps])
+#rate_of_spe_per_year = get_comp_mean_and_rate_across_multiple_dataframes('severe_pre_eclamp', total_births_per_year,
+#                                                                         1000, [an_comps, la_comps, pn_comps])
+#rate_of_ec_per_year = get_comp_mean_and_rate_across_multiple_dataframes('eclampsia', total_births_per_year, 1000,
+#                                                                        [an_comps, la_comps, pn_comps])
 # todo: plot
 
 #  ---------------------------------------------Placenta praevia... -------------------------------------------------
 rate_of_praevia_per_year = get_comp_mean_and_rate('placenta_praevia', total_pregnancies_per_year, an_comps, 1000)
-# todo: plot
+target_rate_pp = list()
+for year in sim_years:
+    target_rate_pp.append(5.67)
+simple_line_chart(rate_of_praevia_per_year, target_rate_pp, 'Year', 'Rate per 1000 pregnancies',
+                  'Rate of Placenta Praevia per Year')
 
 #  ---------------------------------------------Placental abruption... -------------------------------------------------
 rate_of_abruption_per_year = get_comp_mean_and_rate_across_multiple_dataframes('placental_abruption',
                                                                                total_births_per_year, 1000,
                                                                                [an_comps, la_comps])
-# todo: plot
+target_rate_pa = list()
+for year in sim_years:
+    target_rate_pa.append(3)
+
+simple_line_chart(rate_of_abruption_per_year, target_rate_pa, 'Year', 'Rate per 1000 births',
+                  'Rate of Placental Abruption per Year')
 
 # --------------------------------------------- Antepartum Haemorrhage... ---------------------------------------------
 # Rate of APH/total births (antenatal and labour)
@@ -432,50 +706,325 @@ rate_of_s_aph_per_year = get_comp_mean_and_rate_across_multiple_dataframes('seve
                                                                            [an_comps, la_comps])
 
 total_aph_rates = [x + y for x, y in zip(rate_of_mm_aph_per_year, rate_of_s_aph_per_year)]
-# todo: plot
 
-# --------------------------------------------- Preterm birth ... ---------------------------------------------
+target_rate_aph = list()
+for year in sim_years:
+    target_rate_aph.append(6.4)
 
-# 11.) Preterm birth...
-# Rate of preterm birth/total births
-# (separated by early and late)
+simple_line_chart(total_aph_rates, target_rate_aph, 'Year', 'Rate per 1000 births',
+                  'Rate of Antepartum Haemorrhage per Year')
 
-# 12.) Post term birth...
-# Rate of post term birth/ total births
-# (Separated by early and late)
 
-# 13.) Antenatal Stillbirth...
-# Total antenatal stillbirths / total births
+# --------------------------------------------- Preterm birth ... ------------------------------------------------
+rate_of_early_ptl = get_comp_mean_and_rate('early_preterm_labour', total_births_per_year, la_comps, 100)
+rate_of_late_ptl = get_comp_mean_and_rate('late_preterm_labour', total_births_per_year, la_comps, 100)
 
-# 14) Birth weight...
+target_rate_ptl = list()
+for year in sim_years:
+    target_rate_ptl.append(20)
+
+total_ptl_rates = [x + y for x, y in zip(rate_of_early_ptl, rate_of_late_ptl)]
+
+simple_line_chart(total_ptl_rates, target_rate_ptl, 'Year', 'Proportion of total births',
+                  'Preterm birth rate')
+
+# todo plot early and late seperated
+
+# --------------------------------------------- Post term birth ... -----------------------------------------------
+rate_of_early_potl = get_comp_mean_and_rate('post_term_labour', total_births_per_year, la_comps, 100)
+target_rate_potl = list()
+for year in sim_years:
+    target_rate_potl.append(3.2)
+simple_line_chart(rate_of_early_potl, target_rate_potl, 'Year', 'Proportion of total births',
+                  'Post term birth rate')
+
+
+# ------------------------------------------- Antenatal Stillbirth ... -----------------------------------------------
+an_sbr_per_year = [(x/y) * 1000 for x, y in zip(total_an_stillbirths_per_year, total_births_per_year)]
+target_rate_an_sb = list()
+for year in sim_years:
+    target_rate_an_sb.append(10)
+simple_line_chart(an_sbr_per_year, target_rate_an_sb, 'Year', 'Rate per 1000 births',
+                  'Antenatal Stillbirth Rate per Year')
+
+# ------------------------------------------------- Birth weight... --------------------------------------------------
+
+# TODO: BIRTH WEIGHT NOT CURRENTLY LOGGED!!!
 # Prevalence of low birth weight/ total births
 # Prevalence of macrosomia/ total births
 # todo: check with Ines r.e. SGA and the impact on her modules
 
-"""Mothers…
-18.) Obstructed Labour
-19.) Uterine rupture
-20.) Caesarean section rate
-21.) Assisted Vaginal Delivery rate
-22.) Sepsis (labour & postnatal)
-23.) Postpartum haemorrhage (labour & postnatal)
-24.) Intrapartum stillbirth
-26.) Fistula
-27.) Maternal Death
 
-Newborns…
-1.) Neonatal sepsis (labour & postnatal)
-	1.) Early onset (pre & post discharge)
-	2.) Late onset
-2.) Neonatal Encephalopathy
-3.) Preterm RDS
-4.) Neonatal respiratory depression
-5.) Congenital anomalies
-	1.) Heart
-	2.) Limb
-	3.) Urogenital
-	5.) Digestive
-	6.) Other
-5.) Breastfeeding
-6.) Neonatal Death
-"""
+# --------------------------------------------- Obstructed Labour... --------------------------------------------------
+rate_of_ol = get_comp_mean_and_rate('obstructed_labour', total_births_per_year, la_comps, 1000)
+target_rate_ol = list()
+for year in sim_years:
+    if year < 2015:
+        target_rate_ol.append(17)
+    else:
+        target_rate_ol.append(31)
+
+simple_line_chart(rate_of_ol, target_rate_ol, 'Year', 'Rate per 1000 births', 'Obstructed Labour Rate per Year')
+
+# --------------------------------------------- Uterine rupture... ---------------------------------------------------
+rate_of_ur = get_comp_mean_and_rate('uterine_rupture', total_births_per_year, la_comps, 1000)
+target_rate_ur = list()
+for year in sim_years:
+    target_rate_ur.append(1.15)
+simple_line_chart(rate_of_ur, target_rate_ur, 'Year', 'Rate per 1000 births', 'Rate of Obstructed Labour per Year')
+
+# ------------------------------------------ Caesarean Section Rate... -----------------------------------------------
+# TODO: to do
+
+# ------------------------------------ Assisted Vaginal Delivery Rate... ---------------------------------------------
+# TODO: to do
+
+# ------------------------------------------ Maternal Sepsis Rate... --------------------------------------------------
+# TODO: to do
+
+# ----------------------------------------- Postpartum Haemorrhage... -------------------------------------------------
+# TODO: to do
+
+# ------------------------------------------- Intrapartum Stillbirth ... -----------------------------------------------
+ip_stillbirth_results = extract_results(
+    results_folder,
+    module="tlo.methods.labour",
+    key="intrapartum_stillbirth",
+    custom_generate_series=(
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
+    ),
+    do_scaling=True
+)
+
+total_ip_stillbirths_per_year = get_mean(ip_stillbirth_results)
+ip_sbr_per_year = [(x/y) * 1000 for x, y in zip(total_ip_stillbirths_per_year, total_births_per_year)]
+
+target_rate_ip_sb = list()
+for year in sim_years:
+    target_rate_ip_sb.append(10)
+simple_line_chart(ip_sbr_per_year, target_rate_ip_sb, 'Year', 'Rate per 1000 births',
+                  'Intrapartum Stillbirth Rate per Year')
+
+# ----------------------------------------- Fistula... -------------------------------------------------
+# TODO: to do
+
+# ----------------------------------------- Direct Maternal Death... -------------------------------------------------
+
+death_results = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="death",
+    custom_generate_series=(
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'cause'])['year'].count()
+    ),
+    do_scaling=True
+)
+
+direct_causes = ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion',
+                 'severe_gestational_hypertension', 'severe_pre_eclampsia', 'eclampsia', 'antenatal_sepsis',
+                 'uterine_rupture', 'intrapartum_sepsis', 'postpartum_sepsis', 'postpartum_haemorrhage',
+                 'secondary_postpartum_haemorrhage', 'antepartum_haemorrhage']
+
+
+list_of_proportions_dicts = list()
+total_deaths_per_year = list()
+
+for year in sim_years:
+    yearly_mean_number = list()
+    causes = dict()
+
+    for complication in direct_causes:
+        if complication in death_results.loc[year].index:
+            mean = death_results.loc[year, complication].mean()
+            yearly_mean_number.append(mean)
+            causes.update({f'{complication}_{year}': mean})
+        else:
+            yearly_mean_number.append(0)
+
+    total_deaths_this_year = sum(yearly_mean_number)
+    total_deaths_per_year.append(total_deaths_this_year)
+
+    for complication in causes:
+        causes[complication] = (causes[complication] / total_deaths_this_year) * 100
+
+    list_of_proportions_dicts.append(causes)
+
+
+direct_mmr_per_year = [(x/y) * 100000 for x, y in zip(total_deaths_per_year, total_births_per_year)]
+target_rate_mmr = list()
+for year in sim_years:
+    if year < 2015:
+        target_rate_mmr.append(675)
+    else:
+        target_rate_mmr.append(439)
+
+simple_line_chart(direct_mmr_per_year, target_rate_mmr, 'Year', 'Rate per 100,000 births',
+                  'Maternal Mortality Rate per Year')
+
+# todo: force colours for each complication in each year to be the same
+for year, dictionary in zip(sim_years, list_of_proportions_dicts):
+    labels = list(dictionary.keys())
+    sizes = list(dictionary.values())
+    fig1, ax1 = plt.subplots()
+    ax1.pie(sizes, labels=labels, autopct='%1.1f%%',
+            shadow=True, startangle=90)
+    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.title(f'Proportion of total maternal deaths by cause in {year} ')
+    plt.show()
+
+
+# ==================================================== NEWBORN OUTCOMES ===============================================
+nb_outcomes_df = extract_results(
+        results_folder,
+        module="tlo.methods.newborn_outcomes",
+        key="newborn_complication",
+        custom_generate_series=(
+            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
+        do_scaling=False
+    )
+
+nb_outcomes_pn_df = extract_results(
+        results_folder,
+        module="tlo.methods.postnatal_supervisor",
+        key="newborn_complication",
+        custom_generate_series=(
+            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
+        do_scaling=False
+    )
+
+
+#  ------------------------------------------- Neonatal sepsis (labour & postnatal) -----------------------------------
+rate_of_early_ns = get_comp_mean_and_rate('early_onset_sepsis', total_births_per_year, nb_outcomes_df, 1000)
+rate_of_late_ns = get_comp_mean_and_rate('late_onset_sepsis', total_births_per_year, nb_outcomes_pn_df, 1000)
+
+target_rate_ns = list()
+for year in sim_years:
+    if year < 2015:
+        target_rate_ns.append(53)
+    else:
+        target_rate_ns.append(48)
+
+total_ns_rates = [x + y for x, y in zip(rate_of_early_ns, rate_of_late_ns)]
+
+simple_line_chart(total_ns_rates, target_rate_ns, 'Year', 'Rate per 1000 births',
+                  'Rate of Neonatal Sepsis per year')
+
+# TODO: more analysis on rate by timing?
+
+#  ------------------------------------------- Neonatal encephalopathy -----------------------------------------------
+rate_of_mild_enceph = get_comp_mean_and_rate('mild_enceph', total_births_per_year, nb_outcomes_df, 1000)
+rate_of_mod_enceph = get_comp_mean_and_rate('mod_enceph', total_births_per_year, nb_outcomes_df, 1000)
+# todo: no one getting moderate?
+rate_of_sev_enceph = get_comp_mean_and_rate('severe_enceph', total_births_per_year, nb_outcomes_df, 1000)
+
+total_enceph_rates = [x + y + z for x, y, z in zip(rate_of_mild_enceph, rate_of_mod_enceph, rate_of_sev_enceph)]
+
+target_rate_enceph = list() # todo: replace
+for year in sim_years:
+    target_rate_enceph.append(0)
+
+simple_line_chart(total_enceph_rates, target_rate_enceph, 'Year', 'Rate per 1000 births',
+                  'Rate of Neonatal Encephalopathy per year')
+
+
+# ----------------------------------------- Respiratory Depression ---------------------------------------------------
+rate_of_rd = get_comp_mean_and_rate('not_breathing_at_birth', total_births_per_year, nb_outcomes_df, 1000)
+
+target_rate_rd = list() # todo: replace
+for year in sim_years:
+    target_rate_rd.append(0)
+
+simple_line_chart(rate_of_rd, target_rate_rd, 'Year', 'Rate per 1000 births',
+                  'Rate of Neonatal Respiratory Depression per year')
+
+# ----------------------------------------- Respiratory Distress Syndrome --------------------------------------------
+ept = get_mean_number_of_some_complication(la_comps, 'early_preterm_labour')
+lpt = get_mean_number_of_some_complication(la_comps, 'late_preterm_labour')
+total_ptbs = [x + y for x, y in zip(ept, lpt)]
+
+rate_of_rds = get_comp_mean_and_rate('respiratory_distress_syndrome', total_ptbs, nb_outcomes_df, 1000)
+
+target_rate_rds = list()  # todo: replace
+for year in sim_years:
+    target_rate_rds.append(0)
+
+simple_line_chart(rate_of_rds, target_rate_rds, 'Year', 'Rate per 1000 preterm births',
+                  'Rate of Preterm Respiratory Distress Syndrome per year')
+
+
+# ----------------------------------------- Congenital Anomalies ------------------------------------------------------
+rate_of_ca = get_comp_mean_and_rate('congenital_heart_anomaly', total_births_per_year, nb_outcomes_df, 1000)
+rate_of_laa = get_comp_mean_and_rate('limb_or_musculoskeletal_anomaly', total_births_per_year, nb_outcomes_df, 1000)
+rate_of_ua = get_comp_mean_and_rate('urogenital_anomaly', total_births_per_year, nb_outcomes_df, 1000)
+rate_of_da = get_comp_mean_and_rate('digestive_anomaly', total_births_per_year, nb_outcomes_df, 1000)
+rate_of_oa = get_comp_mean_and_rate('other_anomaly', total_births_per_year, nb_outcomes_df, 1000)
+
+plt.plot(sim_years, rate_of_ca, label="heart")
+plt.plot(sim_years, rate_of_laa, label="limb/musc.")
+plt.plot(sim_years, rate_of_ua, label="urogenital")
+plt.plot(sim_years, rate_of_da, label="digestive")
+plt.plot(sim_years, rate_of_oa, label="other")
+
+plt.xlabel('Year')
+plt.ylabel('Rate per 1000 births')
+plt.title('Yearly trends for Congenital Birth Anomalies')
+plt.legend()
+plt.show()
+
+# Breastfeeding
+# todo
+
+# =================================================== Neonatal Death ==================================================
+
+direct_neonatal_causes = ['early_onset_neonatal_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
+                          'respiratory_distress_syndrome', 'neonatal_respiratory_depression',
+                          'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
+                          'digestive_anomaly', 'other_anomaly']
+
+list_of_proportions_dicts_nb = list()
+total_deaths_per_year_nb = list()
+
+for year in sim_years:
+    yearly_mean_number = list()
+    causes = dict()
+
+    for complication in direct_neonatal_causes:
+        if complication in death_results.loc[year].index:
+            mean = death_results.loc[year, complication].mean()
+            yearly_mean_number.append(mean)
+            causes.update({f'{complication}_{year}': mean})
+        else:
+            yearly_mean_number.append(0)
+
+    total_deaths_this_year = sum(yearly_mean_number)
+    total_deaths_per_year_nb.append(total_deaths_this_year)
+
+    for complication in causes:
+        causes[complication] = (causes[complication] / total_deaths_this_year) * 100
+
+    list_of_proportions_dicts_nb.append(causes)
+
+
+direct_nmr_per_year = [(x/y) * 1000 for x, y in zip(total_deaths_per_year_nb, total_births_per_year)]
+target_rate_nmr = list()
+for year in sim_years:
+    if year < 2015:
+        target_rate_nmr.append(25)
+    else:
+        target_rate_nmr.append(22)
+
+simple_line_chart(direct_nmr_per_year, target_rate_nmr, 'Year', 'Rate per 10000 births',
+                  'Neonatal Mortality Rate per Year')
+
+# todo: force colours for each complication in each year to be the same
+for year, dictionary in zip(sim_years, list_of_proportions_dicts_nb):
+    labels = list(dictionary.keys())
+    sizes = list(dictionary.values())
+    fig1, ax1 = plt.subplots()
+    ax1.pie(sizes, labels=labels, autopct='%1.1f%%',
+            shadow=True, startangle=90)
+    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.title(f'Proportion of total neonatal deaths by cause in {year} ')
+    plt.show()
+
+
