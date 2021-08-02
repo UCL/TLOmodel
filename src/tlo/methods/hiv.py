@@ -2164,8 +2164,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------------- PREP AMONG PREGNANT AND BREASTFEEDING WOMEN ---------------
 
         prop_preg_and_bf_on_prep = 0 if n_preg_and_bf == 0 else len(
-            df.loc[df.is_alive & (df.is_pregnant ^ (df.si_date_of_last_delivery > (now - DateOffset(months=18))))
-               & df.hv_is_on_prep_preg]) / len(df.loc[df.is_alive & (df.is_pregnant ^ (df.si_date_of_last_delivery > (now - DateOffset(months=18))))])
+            df.loc[df.is_alive & (df.is_pregnant | (df.si_date_of_last_delivery > (now - DateOffset(months=18))))
+               & df.hv_is_on_prep_preg]) / len(df.loc[df.is_alive & (df.is_pregnant | (df.si_date_of_last_delivery > (now - DateOffset(months=18))))])
 
         # ------------------------------------ MALE CIRCUMCISION ------------------------------------
         # NB. Among adult men

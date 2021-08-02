@@ -31,7 +31,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
+end_date = Date(2030, 1, 1)
 popsize = 1000
 
 # set up the logging file
@@ -137,15 +137,15 @@ prev_and_inc_over_time = output['tlo.methods.hiv'][
 prev_and_inc_over_time = prev_and_inc_over_time.set_index('date')
 
 # Prevalence 15-49
-#make_plot(
-#    title_str="HIV Prevalence in Adults (15-49) (%)",
-#    model=prev_and_inc_over_time['hiv_prev_adult_1549'] * 100,
-#    x_label = "Year",
-#    y_label = "HIV Prevalence (%)",
-#    data_mid=data['prev_15_49'],
-#    data_low=data['prev_15_49_lower'],
-#    data_high=data['prev_15_49_upper']
-#)
+make_plot(
+    title_str="HIV Prevalence in Adults (15-49) (%)",
+    model=prev_and_inc_over_time['hiv_prev_adult_1549'] * 100,
+    x_label = "Year",
+    y_label = "HIV Prevalence (%)",
+    data_mid=data['prev_15_49'],
+    data_low=data['prev_15_49_lower'],
+    data_high=data['prev_15_49_upper']
+)
 
 # Prevalence Children
 make_plot(
@@ -153,6 +153,7 @@ make_plot(
     x_label = "Year",
     y_label = "HIV Prevalence (%)",
     model=prev_and_inc_over_time['hiv_prev_child'] * 100,
+    data_mid=data['prev_0_14'],
 )
 
 
@@ -164,27 +165,30 @@ make_plot(
 
 # Prevalence among pregnant and breastfeeding women:
 make_plot(
-    title_str="HIV Prevalence among Pregnant and Breastfeeding Women (%)",
+    title_str="HIV Prevalence in Pregnant and Breastfeeding Women (%)",
     model=prev_and_inc_over_time['hiv_prev_preg_and_bf'] * 100,
     x_label="Year",
     y_label="HIV Prevalence (%)",
 )
 
 # Incidence 15-49
-#make_plot(
-#    title_str="HIV Incidence in Adults (15-49) (per 100 pyar)",
-#    model=prev_and_inc_over_time['hiv_adult_inc_1549'] * 100,
-#    data_mid=data['inc_15_49_per1000'] / 10,
-#    data_low=data['inc_15_49_per1000lower'] / 10,
-#    data_high=data['inc_15_49_per1000upper'] / 10
-#)
+make_plot(
+    title_str="HIV Incidence in Adults (15-49) (per 100 pyar)",
+    model=prev_and_inc_over_time['hiv_adult_inc_1549'] * 100,
+    x_label="Year",
+    y_label="HIV Incidence (per 100 pyar)",
+    data_mid=data['inc_15_49_per1000'] / 10,
+    data_low=data['inc_15_49_per1000lower'] / 10,
+    data_high=data['inc_15_49_per1000upper'] / 10
+)
 
 # Incidence Children
 make_plot(
-    title_str="HIV Prevalence in Children (0-14) (per 100 pyar)",
+    title_str="HIV Incidence in Children (0-14) (per 100 pyar)",
     x_label="Year",
     y_label="HIV Incidence (per 100 pyar)",
     model=prev_and_inc_over_time['hiv_child_inc'] * 100,
+    data_mid=data['inc_0_14_per1000'] / 10,
 )
 
 # Incidence Pregnant and Breastfeeding Women
