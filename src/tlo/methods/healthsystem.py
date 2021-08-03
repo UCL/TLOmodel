@@ -660,28 +660,27 @@ class HealthSystem(Module):
         assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Minutes_Per_Day'].sum()) < 1e-7
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
+        # Apply the capabilities coefficient
+        capabilities_ex['Total_Minutes_Per_Day'] *= self.capabilities_coefficient
+
         # Updates the capabilities table with the reformatted version
         self.parameters['Daily_Capabilities'] = capabilities_ex
 
     def get_capabilities_today(self):
         """
-        Get the capabilities of the health system today
+        Get the capabilities of the health system today.
         returns: DataFrame giving minutes available for each officer type in each facility type
 
-        Functions can go in here in the future that could expand the time available, simulating increasing efficiency.
-        (The concept of a productivitiy ratio raised by Martin Chalkley). For now just have a single scaling value,
-        named capabilities_coefficient.
+        Functions can go in here in the future that could expand the time available,
+        simulating increasing efficiency (the concept of a productivitiy ratio raised
+        by Martin Chalkley).
+
+        For now this method does nothing.
+
+        Note that the scaling by `capabilities_coefficient` is applied on the initial
+        processing of the `Daily_Capabilities` data in `reformat_daily_capabilities`.
         """
-
-        # Get the capabilities data as they are imported
-        capabilities_today = self.parameters['Daily_Capabilities']
-
-        # apply the capabilities_coefficient
-        capabilities_today['Total_Minutes_Per_Day'] = (
-            capabilities_today['Total_Minutes_Per_Day'] * self.capabilities_coefficient
-        )
-
-        return capabilities_today
+        return self.parameters['Daily_Capabilities']
 
     def get_blank_appt_footprint(self):
         """
@@ -819,7 +818,8 @@ class HealthSystem(Module):
             (position in array matches that in the all_call_today list).
         """
 
-        # 1) Compute the load factors for each officer type at each facility that is called-upon in this list of HSIs
+        # 1) Compute the load factors for each officer type at each facility that is
+        # called-upon in this list of HSIs
         total_available = current_capabilities['Total_Minutes_Per_Day']
         load_factor = {}
         for officer, call in total_footprint.items():
@@ -831,10 +831,11 @@ class HealthSystem(Module):
             else:
                 load_factor[officer] = max(call / availability - 1, 0)
 
-        # 5) Convert these load-factors into an overall 'squeeze' signal for eachHSI, based on the highest load-factor
-        # of any officer required
+        # 5) Convert these load-factors into an overall 'squeeze' signal for each HSI,
+        # based on the highest load-factor of any officer required (or zero if event
+        # has an empty footprint)
         squeeze_factor_per_hsi_event = np.array([
-            max(load_factor[officer] for officer in footprint)
+            max((load_factor[officer] for officer in footprint), default=0)
             for footprint in footprints_per_event
         ])
 
