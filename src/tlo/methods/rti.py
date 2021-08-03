@@ -2051,7 +2051,8 @@ class RTI(Module):
         # Check everyone here has at least one injury to be given a daly weight to
         assert sum(df.loc[injured_index, 'rt_injury_1'] != "none") == len(injured_index)
         # Check everyone here is alive and hasn't died due to rti
-        rti_deaths = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death']
+        rti_deaths = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death',
+                      'RTI_death_shock']
         assert (sum(~df.loc[injured_index, 'cause_of_death'].isin(rti_deaths)) == len(injured_index)) & \
                (sum(df.loc[injured_index, 'rt_imm_death']) == 0)
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
@@ -3933,10 +3934,8 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[selected_to_die, 'rt_imm_death'] = True
         # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
         for individual_id in selected_to_die:
-            self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, individual_id, cause="RTI_imm_death"),
-                self.sim.date
-            )
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
+                                                    originating_module=self.module)
         # ============= Take those remaining people involved in a RTI and assign injuries to them ==================
         # Drop those who have died immediately
         selected_for_rti_inj_idx = selected_for_rti.drop(selected_to_die)
@@ -4177,8 +4176,8 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                 if died:
                     # If determined to die, schedule a death without med
                     df.loc[person, 'rt_no_med_death'] = True
-                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, person,
-                                                                          cause='RTI_death_without_med'), self.sim.date)
+                    self.sim.modules['Demography'].do_death(individual_id=person, cause="RTI_death_without_med",
+                                                            originating_module=self.module)
                 else:
                     # If the people do not die from their injuries despite not getting care, we have to decide when and
                     # to what degree their injuries will heal.
@@ -5630,8 +5629,8 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         # Schedule the death
         df = self.sim.population.props
         df.at[person_id, 'rt_death_from_shock'] = True
-        self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
-                                                              cause='RTI_death_shock'), self.sim.date)
+        self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_shock",
+                                                originating_module=self.module)
         # Log the death
         logger.debug('This is RTI_Shock_Treatment scheduling a death for person %d who did not recieve treatment'
                      'for shock',
@@ -7208,8 +7207,8 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
                             description='The injury profile of those who have died due to rtis despite medical care'
                             )
                 # Schedule the death
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
-                                                                      cause='RTI_death_with_med'), self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
+                                                        originating_module=self.module)
                 # Log the death
                 logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d who was '
                              'treated for their injuries but still died on date %s',
@@ -7234,8 +7233,8 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
                             description='The injury profile of those who have died due to rtis despite medical care'
                             )
                 # Schedule the death
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
-                                                                      cause='RTI_death_with_med'), self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
+                                                        originating_module=self.module)
                 # Log the death
                 logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d who was '
                              'treated for their injuries but still died on date %s',
@@ -7260,8 +7259,8 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
                             description='The injury profile of those who have died due to rtis despite medical care'
                             )
                 # Schedule the death
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
-                                                                      cause='RTI_death_with_med'), self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
+                                                        originating_module=self.module)
                 # Log the death
                 logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d who was '
                              'treated for their injuries but still died on date %s',
@@ -7286,8 +7285,8 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
                             description='The injury profile of those who have died due to rtis despite medical care'
                             )
                 # Schedule the death
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
-                                                                      cause='RTI_death_with_med'), self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
+                                                        originating_module=self.module)
                 # Log the death
                 logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d who was '
                              'treated for their injuries but still died on date %s',
@@ -7312,8 +7311,8 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
                             description='The injury profile of those who have died due to rtis despite medical care'
                             )
                 # Schedule the death
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
-                                                                      cause='RTI_death_with_med'), self.sim.date)
+                self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
+                                                        originating_module=self.module)
                 # Log the death
                 logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d who was '
                              'treated for their injuries but still died on date %s',
@@ -7389,8 +7388,8 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         randfordeath = self.module.rng.random_sample(size=1)
         if randfordeath < prob_death:
             df.loc[person_id, 'rt_unavailable_med_death'] = True
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
-                                                                  cause='RTI_unavailable_med'), self.sim.date)
+            self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_unavailable_med",
+                                                    originating_module=self.module)
             # Log the death
             logger.debug(
                 'This is RTINoMedicalInterventionDeathEvent scheduling a death for person %d on date %s',

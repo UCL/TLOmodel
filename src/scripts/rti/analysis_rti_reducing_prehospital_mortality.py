@@ -102,13 +102,14 @@ for i in range(0, nsim):
         scaling_df['pred_pop_size'] = Data_Pop
         scaling_df['scale_for_each_year'] = scaling_df['pred_pop_size'] / scaling_df['total']
         rti_deaths = log_df['tlo.methods.demography']['death']
-        rti_causes_of_deaths = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death']
+        rti_causes_of_deaths = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death',
+                                'RTI_death_shock']
         # calculate the total number of rti related deaths
         # find deaths caused by RTI
         rti_deaths = rti_deaths.loc[rti_deaths['cause'].isin(rti_causes_of_deaths)]
         # create a column to show the year deaths occurred in
         rti_deaths['year'] = rti_deaths['date'].dt.year.to_list()
-        # group by the year and count how many deaths ocurred
+        # group by the year and count how many deaths occurred
         rti_deaths = rti_deaths.groupby('year').count()
         # calculate extrapolated number of deaths
         rti_deaths['estimated_n_deaths'] = rti_deaths['cause'] * scaling_df['scale_for_each_year']
