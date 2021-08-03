@@ -1045,7 +1045,8 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         for person in week_8_postnatal_women.loc[week_8_postnatal_women].index:
             mni[person]['delete_mni'] = True
             logger.info(key='total_mat_pnc_visits', data={'mother': person,
-                                                          'visits': df.at[person, 'la_pn_checks_maternal']})
+                                                          'visits': df.at[person, 'la_pn_checks_maternal'],
+                                                          'anaemia': df.at[person, 'pn_anaemia_following_pregnancy']})
 
         df.loc[week_8_postnatal_women, 'pn_postnatal_period_in_weeks'] = 0
         df.loc[week_8_postnatal_women, 'la_is_postpartum'] = False

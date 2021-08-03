@@ -146,10 +146,10 @@ def test_run_all_labour():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=5000)
+    sim.make_initial_population(n=10000)
     set_all_women_to_go_into_labour(sim)
     sim.simulate(end_date=Date(2010, 4, 1))
     check_dtypes(sim)
 
-test_run_core_modules_normal_allocation_of_pregnancy()
-#test_run_all_labour()
+#test_run_core_modules_normal_allocation_of_pregnancy()
+test_run_all_labour()

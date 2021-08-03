@@ -1188,8 +1188,20 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_encephalopathy'] = 'none'
         df.at[child_id, 'nb_encephalopathy_disab'] = 'none'
         df.at[child_id, 'nb_retinopathy_prem'] = 'none'
+
         df.at[child_id, 'nb_low_birth_weight_status'] = mni[mother_id]['birth_weight']
+
+        if df.at[child_id, 'nb_low_birth_weight_status'] != 'normal_birth_weight':
+            if df.at[child_id, 'nb_low_birth_weight_status'] == 'macrosomia':
+                logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'macrosomia'})
+            else:
+                logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'low_birth_weight'})
+
         df.at[child_id, 'nb_size_for_gestational_age'] = mni[mother_id]['birth_size']
+
+        if df.at[child_id, 'nb_size_for_gestational_age'] == 'small_for_gestational_age':
+            logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'small_for_gestational_age'})
+
         df.at[child_id, 'nb_early_init_breastfeeding'] = False
         df.at[child_id, 'nb_breastfeeding_status'] = 'none'
         df.at[child_id, 'nb_kangaroo_mother_care'] = False
