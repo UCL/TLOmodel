@@ -368,6 +368,8 @@ class PregnancySupervisor(Module):
                                             categories=['none', 'mild', 'moderate', 'severe']),
         'ps_will_initiate_anc4_early': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more '
                                                             'antenatal care visits during her pregnancy'),
+        'ps_anc4': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more '
+                                                            'antenatal care visits during her pregnancy'),
         'ps_abortion_complications': Property(Types.INT, 'Bitset column holding types of abortion complication'),
         'ps_prev_spont_abortion': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
                                                        'spontaneous abortion'),
@@ -451,7 +453,8 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_syphilis'] = False
         df.loc[df.is_alive, 'ps_deficiencies_in_pregnancy'] = 0
         df.loc[df.is_alive, 'ps_anaemia_in_pregnancy'] = 'none'
-        df.loc[df.is_alive, 'ps_will_initiate_anc4_early'] = False
+        # df.loc[df.is_alive, 'ps_will_initiate_anc4_early'] = False
+        df.loc[df.is_alive, 'ps_anc4'] = False
         df.loc[df.is_alive, 'ps_abortion_complications'] = 0
         df.loc[df.is_alive, 'ps_prev_spont_abortion'] = False
         df.loc[df.is_alive, 'ps_prev_stillbirth'] = False
@@ -790,7 +793,8 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_syphilis'] = False
         df.at[child_id, 'ps_deficiencies_in_pregnancy'] = 0
         df.at[child_id, 'ps_anaemia_in_pregnancy'] = 'none'
-        df.at[child_id, 'ps_will_initiate_anc4_early'] = False
+        #df.at[child_id, 'ps_will_initiate_anc4_early'] = False
+        df.at[child_id, 'ps_anc4'] = False
         df.at[child_id, 'ps_abortion_complications'] = 0
         df.at[child_id, 'ps_prev_spont_abortion'] = False
         df.at[child_id, 'ps_prev_stillbirth'] = False
@@ -1003,7 +1007,8 @@ class PregnancySupervisor(Module):
         set[id_or_index, 'ps_placenta_praevia'] = False
         set[id_or_index, 'ps_syphilis'] = False
         set[id_or_index, 'ps_anaemia_in_pregnancy'] = 'none'
-        set[id_or_index, 'ps_will_initiate_anc4_early'] = False
+        #set[id_or_index, 'ps_will_initiate_anc4_early'] = False
+        set[id_or_index, 'ps_anc4'] = False
         set[id_or_index, 'ps_htn_disorders'] = 'none'
         set[id_or_index, 'ps_gest_diab'] = 'none'
         set[id_or_index, 'ps_placental_abruption'] = False
@@ -2022,6 +2027,49 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Finally for these women we determine care seeking for the first antenatal care contact of their
         # pregnancy. We use a linear model to predict if these women will attend early ANC and at least 4 visits
 
+        # First we identify all the women predicted to attend ANC, with the first visit occuring before 4 months
+        early_initiation_anc4 = self.module.apply_linear_model(
+            self.module.ps_linear_models['early_initiation_anc4'],
+            df.loc[new_pregnancy & (df['ps_ectopic_pregnancy'] == 'none')])
+
+        # Of the women who will not attend ANC4 early, we determe who will attend ANC4
+        late_initation_anc4 = pd.Series(self.module.rng.random_sample(
+            len(early_initiation_anc4.loc[~early_initiation_anc4])) < 0.21,
+                                        index=early_initiation_anc4.loc[~early_initiation_anc4].index)
+
+        df.loc[early_initiation_anc4.loc[early_initiation_anc4].index, 'ps_anc4'] = True
+        df.loc[late_initation_anc4.loc[late_initation_anc4].index, 'ps_anc4'] = True
+
+        anc_below_4 = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == 3) & \
+                      (df.ps_ectopic_pregnancy == 'none') & ~df.ps_anc4
+
+        early_initiation_anc_below_4 = pd.Series(self.module.rng.random_sample(len(anc_below_4.loc[anc_below_4]))
+                                                 < 0.13, index=anc_below_4.loc[anc_below_4].index)
+
+        def schedulde_early_visit(df_slice):
+            for person in df_slice.index:
+                random_draw_gest_at_anc = self.module.rng.choice([1, 2, 3, 4],
+                                                                 p=params['prob_anc1_months_1_to_4'])
+                self.module.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
+
+        for slice in [early_initiation_anc4.loc[early_initiation_anc4],
+                          early_initiation_anc_below_4.loc[early_initiation_anc_below_4]]:
+            schedulde_early_visit(slice)
+
+        def schedulde_late_visit(df_slice):
+            for person in df_slice.index:
+                random_draw_gest_at_anc = self.module.rng.choice([5, 6, 7, 8, 9, 10],
+                                                                 p=params['prob_anc1_months_5_to_9'])
+
+                # We use month ten to capture women who will never attend ANC during their pregnancy
+                if random_draw_gest_at_anc != 10:
+                    self.module.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
+
+        for slice in [late_initation_anc4.loc[late_initation_anc4],
+                      early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
+            schedulde_late_visit(slice)
+
+        """
         anc_attendance = self.module.apply_linear_model(
             self.module.ps_linear_models['early_initiation_anc4'],
             df.loc[new_pregnancy & (df['ps_ectopic_pregnancy'] == 'none')])
@@ -2043,7 +2091,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
             # We use month ten to capture women who will never attend ANC during their pregnancy
             if random_draw_gest_at_anc != 10:
-                self.module.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
+                self.module.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc) """
 
         # ------------------------ APPLY RISK OF ADDITIONAL PREGNANCY COMPLICATIONS -----------------------------------
         # The following functions apply risk of key complications/outcomes of pregnancy as specific time points of a

@@ -14,7 +14,7 @@ scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_03_08_21_35k_10y10r'
+graph_location = 'output_graphs_04_08_21_50k_10y10r'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -229,9 +229,9 @@ for year in sim_years:
         target_rate_anc4.append(51)
 
 simple_line_chart(yearly_anc1_rates, target_rate_an, 'Year', '% of total births',
-                  'Proportion of women attending > 1 ANC contact per year', 'prop_anc1')
+                  'Proportion of women attending > 1 ANC contact per year', 'anc_prop_anc1')
 simple_line_chart(yearly_anc4_rates, target_rate_anc4, 'Year', '% total births',
-                  'Proportion of women attending >= 4 ANC contact per year', 'prop_anc_4')
+                  'Proportion of women attending >= 4 ANC contact per year', 'anc_prop_anc4')
 
 plt.plot(sim_years, yearly_anc1_rates, 'o-g', label="anc1", color='palevioletred')
 plt.plot(sim_years, yearly_anc4_rates, 'o-g',  label="anc4+", color='crimson')
@@ -358,7 +358,7 @@ for year in sim_years:
         target_rate_eanc4.append(36.7)
 
 simple_line_chart(early_anc_4, target_rate_eanc4, 'Year', '% total deliveries',
-                  'Proportion of women attending attending ANC4+ with first visit early', 'prop_early_anc_4_update_2')
+                  'Proportion of women attending attending ANC4+ with first visit early', 'anc_prop_early_anc4')
 
 
 # TODO: quartiles, median month ANC1
@@ -392,8 +392,9 @@ for year in sim_years:
         target_rate_fd.append(73)
     else:
         target_rate_fd.append(91)
-#simple_line_chart(total_fd_rate, target_rate_fd, 'Year', '% of total births',
-#                  'Proportion of Women Delivering in a Health Facility per Year', 'prop_facility_deliv')
+
+simple_line_chart(total_fd_rate, target_rate_fd, 'Year', '% of total births',
+                  'Proportion of Women Delivering in a Health Facility per Year', 'sba_prop_facility_deliv')
 
 labels = sim_years
 width = 0.35       # the width of the bars: can also be len(x) sequence
@@ -460,7 +461,7 @@ plt.xlabel('Year')
 plt.ylabel('Proportion of total births')
 plt.title('Yearly trends for PNC1 attendance')
 plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pnc1_attendance.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pnc_pnc1.png')
 plt.show()
 
 def get_early_late_pnc_split(module, target, file_name):
@@ -494,8 +495,8 @@ def get_early_late_pnc_split(module, target, file_name):
     plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
-get_early_late_pnc_split('labour', 'Maternal', 'maternal_early_pnc')
-get_early_late_pnc_split('newborn_outcomes', 'Neonatal', 'neonatal_early_pnc')
+get_early_late_pnc_split('labour', 'Maternal', 'pnc_maternal_early')
+get_early_late_pnc_split('newborn_outcomes', 'Neonatal', 'pnc_neonatal_early')
 
 # ========================================== COMPLICATION/DISEASE RATES.... ===========================================
 # ---------------------------------------- Twinning Rate... -----------------------------------------------------------
@@ -518,7 +519,7 @@ for year in sim_years:
     target_rate_twins.append(4)
 
 simple_line_chart(final_twining_rate, target_rate_twins, 'Year', 'Rate per 100 pregnancies',
-                  'Yearly trends for Twin Births', 'twin_rate_updated')
+                  'Yearly trends for Twin Births', 'twin_rate')
 
 
 # ---------------------------------------- Early Pregnancy Loss... ----------------------------------------------------
@@ -551,7 +552,7 @@ simple_line_chart(proportion_of_ectopics_that_rupture_per_year, target_rate_rup,
                   'Proportion of Ectopic Pregnancies Leading to Rupture per year', 'ectopic_rupture_prop')
 
 # Spontaneous Abortions....
-rate_of_spontaneous_abortion_per_year = get_comp_mean_and_rate('spontaneous_abortion',
+rate_of_spontaneous_abortion_per_year = get_comp_mean_and_rate('spontaneous_abortion_rate',
                                                                total_completed_pregnancies_per_year, an_comps, 1000)
 
 target_rate_sa = list()
@@ -568,7 +569,7 @@ proportion_of_complicated_sa_per_year = get_comp_mean_and_rate('complicated_spon
                                                                mean_complicated_sa, an_comps, 100)
 
 simple_bar_chart(proportion_of_complicated_sa_per_year, 'Year', '% of Total Miscarriages',
-                 'Proportion of miscarriages leading to complications', 'prop_comp_miscarriage')
+                 'Proportion of miscarriages leading to complications', 'miscarriage_prop_complicated')
 
 # Induced Abortions...
 rate_of_induced_abortion_per_year = get_comp_mean_and_rate('induced_abortion',
@@ -590,7 +591,7 @@ mean_complicated_ia = get_mean_number_of_some_complication(an_comps, 'induced_ab
 proportion_of_complicated_ia_per_year = get_comp_mean_and_rate('complicated_induced_abortion',
                                                                mean_complicated_ia, an_comps, 100)
 simple_bar_chart(proportion_of_complicated_ia_per_year, 'Year', '% of Total Abortions',
-                 'Proportion of Abortions leading to complications', 'prop_comp_abortion')
+                 'Proportion of Abortions leading to complications', 'abortion_prop_complicated')
 
 # --------------------------------------------------- Syphilis Rate... ------------------------------------------------
 rate_of_syphilis_per_year = get_comp_mean_and_rate('syphilis', total_completed_pregnancies_per_year, an_comps,
@@ -637,43 +638,50 @@ anaemia_results = extract_results(
     ),
 )
 
-no_anaemia = get_mean_number_of_some_complication(anaemia_results, 'none')
-prevalence_of_anaemia_per_year = [100 - ((x/y) * 100) for x, y in zip(no_anaemia, total_births_per_year)]
-target_rate_an = list()
-for year in sim_years:
-    if year < 2015:
-        target_rate_an.append(37.5)
-    else:
-        target_rate_an.append(45.1)
+pnc_anaemia = extract_results(
+    results_folder,
+    module="tlo.methods.postnatal_supervisor",
+    key="total_mat_pnc_visits",
+    custom_generate_series=(
+        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'anaemia'])['mother'].count()),
+    do_scaling=False
+)
 
-simple_line_chart(prevalence_of_anaemia_per_year, target_rate_an, 'Year', 'Prevalence at birth',
-                  'Yearly prevalence of Anaemia (all severity) at delivery', 'anaemia_prev')
+def get_anaemia_graphs(df, timing):
+    no_anaemia = get_mean_number_of_some_complication(df, 'none')
+    prevalence_of_anaemia_per_year = [100 - ((x/y) * 100) for x, y in zip(no_anaemia, total_births_per_year)]
+    target_rate_an = list()
+    for year in sim_years:
+        if year < 2015:
+            target_rate_an.append(37.5)
+        else:
+            target_rate_an.append(45.1)
 
+    simple_line_chart(prevalence_of_anaemia_per_year, target_rate_an, 'Year', 'Prevalence at birth',
+                      f'Yearly prevalence of Anaemia (all severity) at {timing}', f'anaemia_prev_{timing}')
 
-# Prevalence of Anaemia at the end of the postnatal period (total cases of anaemia at 6 weeks PN/ total women at 6 weeks
-# PN?) and by severity
+    # todo: should maybe be total postnatal women still alive as opposed to births as will inflate
+    mild_anaemia_at_birth = get_mean_number_of_some_complication(anaemia_results, 'mild')
+    prevalence_of_mild_anaemia_per_year = [(x/y) * 100 for x, y in zip(mild_anaemia_at_birth, total_births_per_year)]
 
-mild_anaemia_at_birth = get_mean_number_of_some_complication(anaemia_results, 'mild')
-prevalence_of_mild_anaemia_per_year = [(x/y) * 100 for x, y in zip(mild_anaemia_at_birth, total_births_per_year)]
+    moderate_anaemia_at_birth = get_mean_number_of_some_complication(anaemia_results, 'moderate')
+    prevalence_of_mod_anaemia_per_year = [(x/y) * 100 for x, y in zip(moderate_anaemia_at_birth, total_births_per_year)]
 
-moderate_anaemia_at_birth = get_mean_number_of_some_complication(anaemia_results, 'moderate')
-prevalence_of_mod_anaemia_per_year = [(x/y) * 100 for x, y in zip(moderate_anaemia_at_birth, total_births_per_year)]
+    severe_anaemia_at_birth = get_mean_number_of_some_complication(anaemia_results, 'severe')
+    prevalence_of_sev_anaemia_per_year = [(x/y) * 100 for x, y in zip(severe_anaemia_at_birth, total_births_per_year)]
 
-severe_anaemia_at_birth = get_mean_number_of_some_complication(anaemia_results, 'severe')
-prevalence_of_sev_anaemia_per_year = [(x/y) * 100 for x, y in zip(severe_anaemia_at_birth, total_births_per_year)]
+    plt.plot(sim_years, prevalence_of_mild_anaemia_per_year, label="mild")
+    plt.plot(sim_years, prevalence_of_mod_anaemia_per_year, label="moderate")
+    plt.plot(sim_years, prevalence_of_sev_anaemia_per_year, label="severe")
+    plt.xlabel('Year')
+    plt.ylabel(f'Prevalence at {timing}')
+    plt.title(f'Yearly trends for prevalence of anaemia by severity at {timing}')
+    plt.legend()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anaemia_by_severity_{timing}.png')
+    plt.show()
 
-plt.plot(sim_years, prevalence_of_mild_anaemia_per_year, label="mild")
-plt.plot(sim_years, prevalence_of_mod_anaemia_per_year, label="moderate")
-plt.plot(sim_years, prevalence_of_sev_anaemia_per_year, label="severe")
-plt.xlabel('Year')
-plt.ylabel('Prevalence at delivery')
-plt.title('Yearly trends for prevalence of anaemia by severity')
-plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anaemia_by_severity.png')
-plt.show()
-
-# todo: graph for pn anaemia stored in total_mat_pnc_visits
-# todo: add targets...
+get_anaemia_graphs(anaemia_results, 'delivery')
+get_anaemia_graphs(pnc_anaemia, 'postnatal')
 
 # ------------------------------------------- Hypertensive disorders -------------------------------------------------
 rate_of_gh_per_year = get_comp_mean_and_rate_across_multiple_dataframes('mild_gest_htn', total_births_per_year, 1000,
@@ -781,15 +789,45 @@ target_rate_an_sb = list()
 for year in sim_years:
     target_rate_an_sb.append(10)
 simple_line_chart(an_sbr_per_year, target_rate_an_sb, 'Year', 'Rate per 1000 births',
-                  'Antenatal Stillbirth Rate per Year', 'an_sbr')
+                  'Antenatal Stillbirth Rate per Year', 'sbr_an')
 
 # ------------------------------------------------- Birth weight... --------------------------------------------------
+nb_outcomes_df = extract_results(
+        results_folder,
+        module="tlo.methods.newborn_outcomes",
+        key="newborn_complication",
+        custom_generate_series=(
+            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
+        do_scaling=False
+    )
 
-# TODO: BIRTH WEIGHT NOT CURRENTLY LOGGED!!!
-# Prevalence of low birth weight/ total births
-# Prevalence of macrosomia/ total births
+nb_outcomes_pn_df = extract_results(
+        results_folder,
+        module="tlo.methods.postnatal_supervisor",
+        key="newborn_complication",
+        custom_generate_series=(
+            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
+        do_scaling=False
+    )
+
+rate_of_lbw = get_comp_mean_and_rate('low_birth_weight', total_births_per_year, nb_outcomes_df, 100)
+rate_of_macro = get_comp_mean_and_rate('macrosomia', total_births_per_year, nb_outcomes_df, 100)
+rate_of_sga = get_comp_mean_and_rate('small_for_gestational_age', total_births_per_year, nb_outcomes_df, 100)
+
+dummy_tr = list()
+for year in sim_years:
+    dummy_tr.append(0)
+
+simple_line_chart(rate_of_lbw, dummy_tr, 'Year', 'Proportion of total births', 'Yearly Prevalence of Low Birth Weight',
+                  'neo_lbw_prev')
+simple_line_chart(rate_of_macro, dummy_tr, 'Year', 'Proportion of total births', 'Yearly Prevalence of Macrosomia',
+                  'neo_macrosomia_prev')
+simple_line_chart(rate_of_sga, dummy_tr, 'Year', 'Proportion of total births', 'Yearly Prevalence of Small for '
+                                                                                 'Gestational Age',
+                  'neo_sga_prev')
+
 # todo: check with Ines r.e. SGA and the impact on her modules
-
+# todo: check rates/denominators
 
 # --------------------------------------------- Obstructed Labour... --------------------------------------------------
 rate_of_ol = get_comp_mean_and_rate('obstructed_labour', total_births_per_year, la_comps, 1000)
@@ -811,11 +849,30 @@ for year in sim_years:
 simple_line_chart(rate_of_ur, target_rate_ur, 'Year', 'Rate per 1000 births', 'Rate of Uterine Rupture per Year',
                   'ur_rate')
 
-# ------------------------------------------ Caesarean Section Rate... -----------------------------------------------
-# TODO: to do
+# ---------------------------Caesarean Section Rate & Assisted Vaginal Delivery Rate... ------------------------------
+delivery_mode = extract_results(
+    results_folder,
+    module="tlo.methods.labour",
+    key="delivery_setting_and_mode",
+    custom_generate_series=(
+        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'mode'])['mother'].count()),
+    do_scaling=False
+)
 
-# ------------------------------------ Assisted Vaginal Delivery Rate... ---------------------------------------------
-# TODO: to do
+rate_of_cs_per_year = get_comp_mean_and_rate('caesarean_section', total_births_per_year, delivery_mode, 100)
+rate_of_avd_per_year = get_comp_mean_and_rate('instrumental', total_births_per_year, delivery_mode, 100)
+
+target_rate_cs = list()
+target_rate_avd = list()
+for year in sim_years:
+    target_rate_cs.append(6.2)
+    target_rate_avd.append(1)
+
+simple_line_chart(rate_of_cs_per_year, target_rate_cs, 'Year', 'Proportion of total births',
+                  'Caesarean Section Rate per Year', 'caesarean_section_rate')
+simple_line_chart(rate_of_avd_per_year, target_rate_avd, 'Year', 'Proportion of total birthss',
+                  'Assisted Vaginal Delivery Rate per Year', 'avd_rate')
+
 
 # ------------------------------------------ Maternal Sepsis Rate... --------------------------------------------------
 rate_of_an_sep = get_comp_mean_and_rate('clinical_chorioamnionitis', total_births_per_year, an_comps, 1000)
@@ -862,7 +919,18 @@ target_rate_ip_sb = list()
 for year in sim_years:
     target_rate_ip_sb.append(10)
 simple_line_chart(ip_sbr_per_year, target_rate_ip_sb, 'Year', 'Rate per 1000 births',
-                  'Intrapartum Stillbirth Rate per Year', 'ip_sbr')
+                  'Intrapartum Stillbirth Rate per Year', 'sbr_ip')
+
+total_sbr = [x + y for x, y in zip(an_sbr_per_year, total_ip_stillbirths_per_year)]
+target_rate_sbr = list()
+for year in sim_years:
+    if year < 2015:
+        target_rate_sbr.append(20)
+    else:
+        target_rate_sbr.append(16.3)
+simple_line_chart(total_sbr, target_rate_sbr, 'Year', 'Rate per 1000 births',
+                  'Total Stillbirth Rate per Year', 'sbr_total')
+
 
 # ----------------------------------------- Fistula... -------------------------------------------------
 rate_of_vv_fis = get_comp_mean_and_rate('vesicovaginal_fistula', total_births_per_year, pn_comps, 1000)
@@ -941,25 +1009,6 @@ for year, dictionary in zip(sim_years, list_of_proportions_dicts):
 
 
 # ==================================================== NEWBORN OUTCOMES ===============================================
-nb_outcomes_df = extract_results(
-        results_folder,
-        module="tlo.methods.newborn_outcomes",
-        key="newborn_complication",
-        custom_generate_series=(
-            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
-        do_scaling=False
-    )
-
-nb_outcomes_pn_df = extract_results(
-        results_folder,
-        module="tlo.methods.postnatal_supervisor",
-        key="newborn_complication",
-        custom_generate_series=(
-            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
-        do_scaling=False
-    )
-
-
 #  ------------------------------------------- Neonatal sepsis (labour & postnatal) -----------------------------------
 rate_of_early_ns = get_comp_mean_and_rate('early_onset_sepsis', total_births_per_year, nb_outcomes_df, 1000)
 rate_of_late_ns = get_comp_mean_and_rate('late_onset_sepsis', total_births_per_year, nb_outcomes_pn_df, 1000)
@@ -1016,7 +1065,7 @@ for year in sim_years:
     target_rate_rds.append(0)
 
 simple_line_chart(rate_of_rds, target_rate_rds, 'Year', 'Rate per 1000 preterm births',
-                  'Rate of Preterm Respiratory Distress Syndrome per year', 'rds_rate')
+                  'Rate of Preterm Respiratory Distress Syndrome per year', 'neo_rds_rate')
 
 
 # ----------------------------------------- Congenital Anomalies ------------------------------------------------------
@@ -1036,7 +1085,7 @@ plt.xlabel('Year')
 plt.ylabel('Rate per 1000 births')
 plt.title('Yearly trends for Congenital Birth Anomalies')
 plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/rate_of_cong_anom.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_rate_of_cong_anom.png')
 plt.show()
 
 # Breastfeeding

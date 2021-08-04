@@ -478,7 +478,8 @@ class CareOfWomenDuringPregnancy(Module):
             # PregnancySupervisor module when ANC1 is scheduled) her subsequent ANC appointment is automatically
             # scheduled
             if visit_to_be_scheduled <= 4:
-                if df.at[individual_id, 'ps_will_initiate_anc4_early']:
+                if df.at[individual_id, 'ps_anc4']:
+                # if df.at[individual_id, 'ps_will_initiate_anc4_early']:
 
                     # We subtract this womans current gestational age from the recommended gestational age for the next
                     # contact
