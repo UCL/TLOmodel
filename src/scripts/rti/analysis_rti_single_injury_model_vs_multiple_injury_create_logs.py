@@ -3,7 +3,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import PIL
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
@@ -46,7 +45,7 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 20000
+pop_size = 10000
 nsim = 2
 # Iterate over the number of simulations nsim
 log_file_location = './outputs/single_injury_model_vs_multiple_injury/'
@@ -484,9 +483,13 @@ plt.ylabel('Number')
 plt.title("The breakdown of the GBD estimated DALYs into \nyears living with disease and years of life lost.")
 plt.savefig(save_file_path + "GBD dalys breakdown", bbox_inches='tight')
 plt.clf()
-plt.bar([0], sing_list_extrapolated_dalys, color='lightsteelblue', label='DALYs')
-plt.bar([1], sing_list_extrapolated_yld, color='lightsalmon', label='YLD')
-plt.bar([1], sing_list_extrapolated_yll, color='lemonchiffon', bottom=sing_list_extrapolated_yld, label='YLL')
+# breakdown DALYs into yll yld components using the proportion of dalys being yll to guide, model outputted dalys
+# != YLD + YLL for some reason
+sing_prop_yll = sing_model_yll / (sing_model_yll + sing_model_yld)
+plt.bar([0], sing_mean_est_dalys, color='lightsteelblue', label='DALYs')
+plt.bar([1], sing_mean_est_dalys * (1 - sing_prop_yll), color='gold', label='YLD')
+plt.bar([1], sing_mean_est_dalys * sing_prop_yll, color='lemonchiffon',
+        bottom=sing_mean_est_dalys * (1 - sing_prop_yll), label='YLL')
 plt.legend()
 plt.xticks([0, 1], ['DALYs', 'YLD & YLL'])
 plt.ylabel('Number')
@@ -496,9 +499,11 @@ plt.title(f"The breakdown of DALYs estimated in the single injury model into"
           f"years ran: {yearsrun}")
 plt.savefig(save_file_path + "sing dalys breakdown", bbox_inches='tight')
 plt.clf()
-plt.bar([0], mult_list_extrapolated_dalys, color='lightsteelblue', label='DALYs')
-plt.bar([1], mult_list_extrapolated_yld, color='lightsalmon', label='YLD')
-plt.bar([1], mult_list_extrapolated_yll, color='lemonchiffon', bottom=mult_list_extrapolated_yld, label='YLL')
+mult_prop_yll = mult_model_yll / (mult_model_yll + mult_model_yld)
+plt.bar([0], mult_mean_est_dalys, color='lightsteelblue', label='DALYs')
+plt.bar([1], mult_mean_est_dalys * (1 - mult_prop_yll), color='gold', label='YLD')
+plt.bar([1], mult_mean_est_dalys * mult_prop_yll, color='lemonchiffon',
+        bottom=mult_mean_est_dalys * (1 - mult_prop_yll), label='YLL')
 plt.legend()
 plt.xticks([0, 1], ['DALYs', 'YLD & YLL'])
 plt.ylabel('Number')
@@ -510,10 +515,12 @@ plt.savefig(save_file_path + "mult dalys breakdown", bbox_inches='tight')
 plt.clf()
 plt.bar([0], gbd_yld, color='forestgreen', label='GBD YLD')
 plt.bar([0], gbd_yll, color='limegreen', bottom=gbd_yld, label='GBD YLL')
-plt.bar([1], sing_list_extrapolated_yld, color='sandybrown', label='Sing. YLD')
-plt.bar([1], sing_list_extrapolated_yll, color='peru', bottom=sing_list_extrapolated_yld, label='Sing. YLL')
-plt.bar([2], mult_list_extrapolated_yld, color='tan', label='Mult. YLD')
-plt.bar([2], mult_list_extrapolated_yll, color='navajowhite', bottom=mult_list_extrapolated_yld, label='Mult. YLL')
+plt.bar([1], sing_mean_est_dalys * (1 - sing_prop_yll), color='sandybrown', label='Sing. YLD')
+plt.bar([1], sing_mean_est_dalys * sing_prop_yll, color='peru',
+        bottom=sing_mean_est_dalys * (1 - sing_prop_yll), label='Sing. YLL')
+plt.bar([2], mult_mean_est_dalys * (1 - mult_prop_yll), color='tan', label='Mult. YLD')
+plt.bar([2], mult_mean_est_dalys * mult_prop_yll, color='navajowhite',
+        bottom=mult_mean_est_dalys * (1 - mult_prop_yll), label='Mult. YLL')
 plt.legend()
 plt.xticks([0, 1, 2], ['GBD \nmodel', 'Single \ninjury', 'Multiple \ninjury'])
 plt.ylabel('Number')
@@ -525,8 +532,9 @@ plt.savefig(save_file_path + f" DALYs breakdown comparison {imm_death}.png", bbo
 plt.clf()
 plt.bar([0], gbd_yld, color='forestgreen', label='GBD YLD')
 plt.bar([0], gbd_yll, color='limegreen', bottom=gbd_yld, label='GBD YLL')
-plt.bar([1], mult_list_extrapolated_yld, color='tan', label='Mult. YLD')
-plt.bar([1], mult_list_extrapolated_yll, color='navajowhite', bottom=mult_list_extrapolated_yld, label='Mult. YLL')
+plt.bar([1], mult_mean_est_dalys * (1 - mult_prop_yll), color='tan', label='Mult. YLD')
+plt.bar([1], mult_mean_est_dalys * mult_prop_yll, color='navajowhite',
+        bottom=mult_mean_est_dalys * (1 - mult_prop_yll), label='Mult. YLL')
 plt.legend()
 plt.xticks([0, 1], ['GBD \nmodel', 'Multiple \ninjury'])
 plt.ylabel('Number')
@@ -826,6 +834,7 @@ plt.title(f"The effect of allowing multiple injuries\n in the model on populatio
 plt.savefig(save_file_path + f"Single_vs_multiple_injury_model_comp_DALYs_imm_death_{imm_death}.png",
             bbox_inches='tight')
 plt.clf()
+
 # plot the number of dalys predicted by the model extrapolated to match the level expected at population level
 
 deaths_data = [np.mean(sing_number_of_deaths), np.mean(mult_number_of_deaths)]
@@ -871,7 +880,6 @@ for i in range(0, len(data)):
     if i + 1 > 4:
         plt.xticks(np.arange(len(data[i])), ['Single\ninjury', 'Multiple\ninjury'])
     plt.title(titles[i] + ", " + str(percent_increase) + "%", fontdict={'fontsize': 10})
-plt.su
 plt.tight_layout()
 plt.savefig(save_file_path + f"Single_vs_multiple_injury_model_comp_all_{imm_death}.png",
             bbox_inches='tight')
