@@ -844,7 +844,7 @@ perecnt_increase_in_deaths = (deaths_data[1] / deaths_data[0]) * 100 - 100
 plt.bar([1, 2], deaths_data)
 plt.xticks([1, 2], ['Single injury \nmodel', 'Multiple injury \nmodel'])
 plt.ylabel('Deaths')
-plt.title(f"The effect of allowing multiple injuries\n in the model on number of deaths.\n"#
+plt.title(f"The effect of allowing multiple injuries\n in the model on number of deaths.\n"
           f"Multiple injuries resulted in a {np.round(perecnt_increase_in_deaths, 2)}% increase in deaths.\n"
           f"Number of simulations: {nsim}, population size: {pop_size}, years run: {yearsrun}")
 plt.savefig(save_file_path + f"Single_vs_multiple_injury_model_comp_n_deaths_imm_death_{imm_death}.png",
