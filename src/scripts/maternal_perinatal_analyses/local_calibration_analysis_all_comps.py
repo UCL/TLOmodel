@@ -23,6 +23,12 @@ postnatal_comps = ['vesicovaginal_fistula', 'rectovaginal_fistula', 'sepsis', 's
                    'severe_anaemia',  'mild_pre_eclamp', 'mild_gest_htn', 'severe_pre_eclamp', 'eclampsia',
                    'severe_gest_htn']
 
+neonatal_comps = ['congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
+                  'digestive_anomaly', 'other_anomaly', 'early_onset_sepsis', 'mild_enceph', 'moderate_enceph',
+                  'severe_enceph', 'respiratory_distress_syndrome', 'not_breathing_at_birth', 'macrosomia',
+                  'low_birth_weight', 'small_for_gestational_age']
+
+
 direct_causes = ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion',
                  'severe_gestational_hypertension', 'severe_pre_eclampsia', 'eclampsia', 'antenatal_sepsis',
                  'uterine_rupture', 'intrapartum_sepsis', 'postpartum_sepsis', 'postpartum_haemorrhage',
@@ -34,7 +40,7 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 logs_dict = dict()
 
 new_parse_log_2010 = {2010: parse_log_file(
-    filepath=f"./outputs/calibration_files/ANC_check_calibration_222__2021-07-27T115247.log")}
+    filepath=f"./outputs/calibration_files/ol_ur_check_calibration_993__2021-08-05T114226.log")}
 new_parse_log_2015 = {2015: parse_log_file(
     filepath=f"./outputs/calibration_files/interventions_2015_updated_calibration_161__2021-07-13T180046.log")}
 logs_dict.update(new_parse_log_2010)
@@ -46,19 +52,24 @@ master_dict_la_2010 = dict()
 master_dict_la_2015 = dict()
 master_dict_pn_2010 = dict()
 master_dict_pn_2015 = dict()
+master_dict_nb_2010 = dict()
+master_dict_nb_2015 = dict()
 
-def update_dicts(comps, dict_2010, dict_2015, module):
+def update_dicts(comps, dict_2010, dict_2015, module, age_group):
     for complication in comps:
         new_row = {complication: 0}
         dict_2010.update(new_row)
-        graph_maker.get_incidence(logs_dict[2010], module, complication, dict_2010, specific_year=False, year=2010
-                                  )
+        graph_maker.get_incidence(logs_dict[2010], module, complication, dict_2010, specific_year=False, year=2010,
+                                  age_group=age_group)
         dict_2015.update(new_row)
-        graph_maker.get_incidence(logs_dict[2015], module, complication, dict_2015, specific_year=False, year=2015)
+        graph_maker.get_incidence(logs_dict[2015], module, complication, dict_2015, specific_year=False, year=2015,
+                                  age_group=age_group)
 
-update_dicts(antenatal_comps, master_dict_an_2010, master_dict_an_2015, 'pregnancy_supervisor')
-update_dicts(intrapartum_comps, master_dict_la_2010, master_dict_la_2015, 'labour')
-update_dicts(postnatal_comps, master_dict_pn_2010, master_dict_pn_2015, 'postnatal_supervisor')
+update_dicts(antenatal_comps, master_dict_an_2010, master_dict_an_2015, 'pregnancy_supervisor', 'maternal')
+update_dicts(intrapartum_comps, master_dict_la_2010, master_dict_la_2015, 'labour', 'maternal')
+update_dicts(postnatal_comps, master_dict_pn_2010, master_dict_pn_2015, 'postnatal_supervisor', 'maternal')
+update_dicts(neonatal_comps, master_dict_nb_2010, master_dict_nb_2015, 'newborn_outcomes', 'newborn')
+
 
 #graph_maker.get_parity_graphs(logs_dict[2010])
 

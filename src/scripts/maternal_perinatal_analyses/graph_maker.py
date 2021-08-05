@@ -9,11 +9,11 @@ import statistics as st
 import pandas as pd
 
 
-def get_incidence(logs_dict_file, module, complication, dictionary, specific_year, year):
+def get_incidence(logs_dict_file, module, complication, dictionary, specific_year, year, age_group):
     if specific_year:
         if f'tlo.methods.{module}' in logs_dict_file:
-            if 'maternal_complication' in logs_dict_file[f'tlo.methods.{module}']:
-                comps = logs_dict_file[f'tlo.methods.{module}']['maternal_complication']
+            if f'{age_group}_complication' in logs_dict_file[f'tlo.methods.{module}']:
+                comps = logs_dict_file[f'tlo.methods.{module}'][f'{age_group}_complication']
                 comps['date'] = pd.to_datetime(comps['date'])
                 comps['year'] = comps['date'].dt.year
                 dictionary[complication] = len(comps.loc[(comps['type'] == f'{complication}') &
@@ -21,8 +21,8 @@ def get_incidence(logs_dict_file, module, complication, dictionary, specific_yea
 
     else:
         if f'tlo.methods.{module}' in logs_dict_file:
-            if 'maternal_complication' in logs_dict_file[f'tlo.methods.{module}']:
-                comps = logs_dict_file[f'tlo.methods.{module}']['maternal_complication']
+            if f'{age_group}_complication' in logs_dict_file[f'tlo.methods.{module}']:
+                comps = logs_dict_file[f'tlo.methods.{module}'][f'{age_group}_complication']
                 dictionary[complication] = len(comps.loc[(comps['type'] == f'{complication}')])
 
 def get_prop_unintended_preg(logs_dict, dict):

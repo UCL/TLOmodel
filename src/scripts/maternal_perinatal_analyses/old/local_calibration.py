@@ -181,7 +181,8 @@ def do_labour_run_only(config_name, start_date, end_date, seed, population, para
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
     register_modules(sim)
     sim.make_initial_population(n=population)
-    set_labour_pop_age_correct(sim)
+    # set_labour_pop_age_correct(sim)
+    set_labour_pop(sim, start_date)
 
     if parameters == 2015:
         def switch_parameters(master_params, current_params):
@@ -288,6 +289,5 @@ def age_corrected_run_with_all_women_pregnant_at_baseline(config_name, start_dat
 #do_run_pregnancy_only(config_name='scaled_lms_2010_2015_6k_pop', start_date=Date(2010, 1, 1), end_date=Date(2016, 1, 1),
 #                      seed=2003, population=10000, parameters=2010, age_correct=True)
 
-age_corrected_run_with_all_women_pregnant_at_baseline(config_name='ANC_check',
-                                                      start_date=Date(2010, 1, 1),
-                      end_date=Date(2011, 1, 1), seed=222, population=5000, parameters=2010)
+do_labour_run_only(config_name='ol_ur_check', start_date=Date(2010, 1, 1),
+                   end_date=Date(2010, 2, 1), seed=993, population=2000, parameters=2010)

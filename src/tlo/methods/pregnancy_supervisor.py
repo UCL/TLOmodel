@@ -2422,14 +2422,18 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                (df.age_years < 50) & df.ps_prev_spont_abortion)])
         women_with_previous_pe = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
                                                (df.age_years < 50) & df.ps_prev_pre_eclamp)])
+        women_with_hysterectomy = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
+                                               (df.age_years < 50) & df.la_has_had_hysterectomy)])
         yearly_prev_sa = (women_with_previous_sa / women_reproductive_age) * 100
         yearly_prev_pe = (women_with_previous_pe / women_reproductive_age) * 100
+        yearly_prev_hysterectomy = (women_with_hysterectomy/women_reproductive_age) * 100
 
         logger.info(key='preg_info',
                     data={'women_repro_age': women_reproductive_age,
                           'women_pregnant': pregnant_at_year_end,
                           'prev_sa': yearly_prev_sa,
-                          'prev_pe': yearly_prev_pe})
+                          'prev_pe': yearly_prev_pe,
+                          'hysterectomy': yearly_prev_hysterectomy})
 
 
 
