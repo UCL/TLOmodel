@@ -48,7 +48,7 @@ class LongRun(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2029, 12, 31)
-        self.pop_size = 20_000  # <- recommened population size for the runs
+        self.pop_size = 20_000  # <- recommend population size for the runs
         self.number_of_draws = 1  # <- one scenario
         self.runs_per_draw = 10  # <- repeated this many times
 

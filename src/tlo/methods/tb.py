@@ -79,7 +79,6 @@ class Tb(Module):
         ),
         'tb_date_active': Property(Types.DATE, 'Date active tb started'),
         'tb_smear': Property(Types.BOOL, 'smear positivity with active infection: False=negative, True=positive'),
-        'tb_date_death': Property(Types.DATE, 'date of scheduled tb death'),
 
         # ------------------ testing status ------------------ #
         'tb_ever_tested': Property(Types.BOOL, 'ever had a tb test'),
@@ -109,9 +108,9 @@ class Tb(Module):
             Types.DATA_FRAME, 'times(weeks) tb treatment monitoring required after tx start'
         ),
         'tb_high_risk_distr': Parameter(Types.LIST, 'list of ten high-risk districts'),
-        'ipt_contact_cov': Parameter(
+        'ipt_coverage': Parameter(
             Types.DATA_FRAME,
-            'coverage of IPT among contacts of TB cases in high-risk districts',
+            'national estimates of coverage of IPT in PLHIV and paediatric contacts',
         ),
 
         # ------------------ baseline population ------------------ #
@@ -187,8 +186,8 @@ class Tb(Module):
             Types.REAL,
             'proportion children aged 10-15 years progressing to active disease',
         ),
-        'annual_prob_self_cure': Parameter(
-            Types.REAL, 'annual probability of self-cure in HIV- or HIV+ and virally suppressed'
+        'duration_active_disease_years': Parameter(
+            Types.REAL, 'duration of active disease from onset to cure or death'
         ),
 
         # ------------------ clinical features ------------------ #
@@ -200,17 +199,23 @@ class Tb(Module):
         ),
 
         # ------------------ mortality ------------------ #
-        'monthly_prob_tb_mortality': Parameter(
-            Types.REAL, 'mortality rate with active tb'
+        # untreated
+        'death_rate_smear_pos_untreated': Parameter(
+            Types.REAL, 'probability of death in smear-positive tb cases with untreated tb'
         ),
-        'monthly_prob_tb_mortality_hiv': Parameter(
-            Types.REAL, 'mortality from tb with concurrent HIV'
+        'death_rate_smear_neg_untreated': Parameter(
+            Types.REAL, 'probability of death in smear-negative tb cases with untreated tb'
         ),
-        'mort_cotrim': Parameter(
-            Types.REAL, 'reduction in mortality rates due to cotrimoxazole prophylaxis'
+
+        # treated
+        'death_rate_child0_4_treated': Parameter(
+            Types.REAL, 'probability of death in child aged 0-4 years with treated tb'
         ),
-        'mort_tx': Parameter(
-            Types.REAL, 'reduction in mortality rates due to effective tb treatment'
+        'death_rate_child5_14_treated': Parameter(
+            Types.REAL, 'probability of death in child aged 5-14 years with treated tb'
+        ),
+        'death_rate_adult_treated': Parameter(
+            Types.REAL, 'probability of death in adult aged >=15 years with treated tb'
         ),
 
         # ------------------ progression to active disease ------------------ #
@@ -375,7 +380,7 @@ class Tb(Module):
         p['pulm_tb'] = workbook['pulm_tb']
         p['followup_times'] = workbook['followup']
         p['tb_high_risk_distr'] = workbook['IPTdistricts']
-        p['ipt_contact_cov'] = workbook['ipt_coverage']
+        p['ipt_coverage'] = workbook['ipt_coverage']
 
         self.district_list = self.sim.modules['Demography'].parameters['pop_2010']['District'].unique().tolist()
 
@@ -486,6 +491,17 @@ class Tb(Module):
                 'tb_ever_treated',
                 p['monthly_prob_relapse_2yrs']),  # ever treated,
             Predictor('hv_inf').when(True, p["rr_relapse_hiv"]),
+        )
+
+        # probability of death
+        self.lm['death_rate'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1,
+            Predictor().when('(tb_on_treatment == True) & (age_years <=4)', p['death_rate_child0_4_treated']),
+            Predictor().when('(tb_on_treatment == True) & (age_years <=14)', p['death_rate_child5_14_treated']),
+            Predictor().when('(tb_on_treatment == True) & (age_years >=15)', p['death_rate_adult_treated']),
+            Predictor().when('(tb_on_treatment == False) & (tb_smear == True)', p['death_rate_smear_pos_untreated']),
+            Predictor().when('(tb_on_treatment == False) & (tb_smear == False)', p['death_rate_smear_neg_untreated']),
         )
 
     def baseline_latent(self, population):
@@ -665,7 +681,6 @@ class Tb(Module):
         df['tb_date_latent'] = pd.NaT
         df['tb_date_active'] = pd.NaT
         df['tb_smear'] = False
-        df['tb_date_death'] = pd.NaT
 
         # ------------------ testing status ------------------ #
         df['tb_ever_tested'] = False
@@ -850,7 +865,6 @@ class Tb(Module):
         df.at[child_id, 'tb_date_latent'] = pd.NaT
         df.at[child_id, 'tb_date_active'] = pd.NaT
         df.at[child_id, 'tb_smear'] = False
-        df.at[child_id, 'tb_date_death'] = pd.NaT
 
         # ------------------ testing status ------------------ #
         df.at[child_id, 'tb_ever_tested'] = False
@@ -923,15 +937,19 @@ class Tb(Module):
         checks whether person is eligible for IPT
         """
         df = self.sim.population.props
-
         high_risk_districts = self.parameters["tb_high_risk_distr"]
         district = df.at[person_id, "district_of_residence"]
         eligible = df.at[person_id, "tb_inf"] != "active"
 
+        # select coverage rate by year:
+        ipt = self.parameters["ipt_coverage"]
+        ipt_year = ipt.loc[ipt.year == self.sim.date.year]
+        ipt_coverage_plhiv = ipt_year.coverage_plhiv
+
         if (
-            (district in high_risk_districts.values)
-            & (self.sim.date.year > 2017)
+            (district in high_risk_districts.district_name.values)
             & eligible
+            & (self.rng.rand() < ipt_coverage_plhiv)
         ):
             # Schedule the TB treatment event:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1150,6 +1168,7 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
     2. assign smear status
     3. assign symptoms
     4. if HIV+, schedule AIDS onset and resample smear status (higher probability)
+    5. schedule death
     """
 
     def __init__(self, module, person_id):
@@ -1170,13 +1189,16 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
         ):
             return
 
+        logger.debug(key='message',
+                     data=f'TbActiveEvent: assigning active tb for person {person_id}')
+
         # -------- 1) change individual properties for active disease --------
 
         df.at[person_id, 'tb_inf'] = 'active'
         df.at[person_id, 'tb_date_active'] = now
 
         # -------- 2) assign smear status --------
-        # hiv-negative
+        # hiv-negative assumed as default
         if rng.rand() < p['prop_smear_positive']:
             df.at[person_id, 'tb_smear'] = True
 
@@ -1202,7 +1224,16 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
                     self.sim.modules['Hiv'], person_id, cause=self.module), now
                 )
 
-        # todo add tb_stage == active_extra with prob based on HIV status
+        # -------- 5) schedule TB death --------
+        # only for non-HIV cases, PLHIV have deaths scheduled by hiv module
+        # schedule for all TB cases, prob of death occurring determined by tbDeathEvent
+        # select a random death date using duration of disease +/- 6 months
+        else:
+            d_active_mths = p['duration_active_disease_years'] * 12
+            date_of_tb_death = self.sim.date + pd.DateOffset(
+                months=int(rng.uniform(low=(d_active_mths - 6), high=(d_active_mths + 6))))
+            self.sim.schedule_event(event=TbDeathEvent(person_id=person_id, module=self.module, cause='TB'),
+                                    date=date_of_tb_death)
 
 
 class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1310,11 +1341,13 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=12))
 
     def apply(self, population):
-        params = self.module.parameters
+        p = self.module.parameters
         now = self.sim.date
         rng = self.module.rng
 
         df = population.props
+
+        prob_self_cure = 1/p['duration_active_disease_years']
 
         # self-cure - move from active to latent, excludes cases that just became active
         random_draw = rng.random_sample(size=len(df))
@@ -1325,7 +1358,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & df.is_alive
             & ~df.hv_inf
             & (df.tb_date_active < now)
-            & (random_draw < params['annual_prob_self_cure'])
+            & (random_draw < prob_self_cure)
             ].index
 
         # hiv-positive, on art and virally suppressed
@@ -1335,7 +1368,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & df.hv_inf
             & (df.hv_art == 'on_VL_suppressed')
             & (df.tb_date_active < now)
-            & (random_draw < params['annual_prob_self_cure'])
+            & (random_draw < prob_self_cure)
             ].index
 
         # resolve symptoms and change properties
@@ -1346,7 +1379,6 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[all_self_cure, 'tb_strain'] = 'none'
         df.loc[all_self_cure, 'tb_smear'] = False
 
-        # todo check this returns a series of indices
         for person_id in all_self_cure:
             # this will clear all tb symptoms
             self.sim.modules['SymptomManager'].clear_symptoms(
@@ -1482,45 +1514,42 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             # if diagnosed, trigger ipt outreach event for up to 5 paediatric contacts of case
             # only high-risk districts are eligible
 
-            # todo check these coverage levels relate to paed contacts not HIV cases
-            if now.year >= p['ipt_start_date']:
-                district = person['district_of_residence']
-                ipt_cov = p['ipt_contact_cov']
-                ipt_cov_year = ipt_cov.loc[
-                    ipt_cov.year == now.year
-                    ].coverage.values
+            district = person['district_of_residence']
+            ipt = self.module.parameters["ipt_coverage"]
+            ipt_year = ipt.loc[ipt.year == self.sim.date.year]
+            ipt_coverage_paed = ipt_year.coverage_paediatric
 
-                if (district in p['tb_high_risk_distr'].values) & (
-                    self.module.rng.rand() < ipt_cov_year
-                ):
-                    # randomly sample from <5 yr olds within district
-                    ipt_eligible = df.loc[
-                        (df.age_years <= 5)
-                        & ~df.tb_diagnosed
-                        & df.is_alive
-                        & (df.district_of_residence == district)
-                        ].index
+            if (district in p['tb_high_risk_distr'].district_name.values) & (
+                self.module.rng.rand() < ipt_coverage_paed
+            ):
+                # randomly sample from <5 yr olds within district
+                ipt_eligible = df.loc[
+                    (df.age_years <= 5)
+                    & ~df.tb_diagnosed
+                    & df.is_alive
+                    & (df.district_of_residence == district)
+                    ].index
 
-                    if ipt_eligible.any():
-                        # sample with replacement in case eligible population n<5
-                        ipt_sample = rng.choice(ipt_eligible, size=5, replace=True)
-                        # retain unique indices only
-                        # fine to have variability in number sampled (between 0-5)
-                        ipt_sample = list(set(ipt_sample))
+                if ipt_eligible.any():
+                    # sample with replacement in case eligible population n<5
+                    ipt_sample = rng.choice(ipt_eligible, size=5, replace=True)
+                    # retain unique indices only
+                    # fine to have variability in number sampled (between 0-5)
+                    ipt_sample = list(set(ipt_sample))
 
-                        for person_id in ipt_sample:
-                            logger.debug(
-                                'HSI_Tb_ScreeningAndRefer: scheduling IPT for person %d',
-                                person_id,
-                            )
+                    for person_id in ipt_sample:
+                        logger.debug(
+                            'HSI_Tb_ScreeningAndRefer: scheduling IPT for person %d',
+                            person_id,
+                        )
 
-                            ipt_event = HSI_Tb_Start_or_Continue_Ipt(self.module, person_id=person_id)
-                            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                ipt_event,
-                                priority=1,
-                                topen=now,
-                                tclose=None,
-                            )
+                        ipt_event = HSI_Tb_Start_or_Continue_Ipt(self.module, person_id=person_id)
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            ipt_event,
+                            priority=1,
+                            topen=now,
+                            tclose=None,
+                        )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
@@ -1842,105 +1871,39 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
 #   Deaths
 # ---------------------------------------------------------------------------
 
-
-class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
+class TbDeathEvent(Event, IndividualScopeEventMixin):
     """
-    The regular event that kills people with active tb
-    HIV-positive deaths due to TB counted have cause of death = AIDS
-    assume same death rates for ds- and mdr-tb
+    The scheduled death for a tb case
+    check whether this death should occur using a linear model
+    will depend on treatment status, smear status and age
     """
 
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+    def __init__(self, module, person_id, cause):
+        super().__init__(module, person_id=person_id)
+        self.cause = cause
 
-    def apply(self, population):
+    def apply(self, person_id):
+        df = self.sim.population.props
 
-        p = self.module.parameters
-        df = population.props
-        rng = self.module.rng
+        if not df.at[person_id, "is_alive"]:
+            return
 
-        # ---------------------------------- TB DEATHS - HIV-NEGATIVE ------------------------------------
-        # only active infections result in death
-        mortality_rate = pd.Series(0, index=df.index)
+        logger.debug(key='message',
+                     data=f'TbDeathEvent: checking whether death should occur for person {person_id}')
 
-        # hiv-negative, tb untreated
-        mortality_rate.loc[
-            (df.tb_inf == 'active')
-            & ~df.hv_inf
-            & ~df.tb_on_treatment
-            ] = p['monthly_prob_tb_mortality']
+        # use linear model to determine whether this person will die:
+        rng = self.module.rng.rand()
+        result = self.module.lm['death_rate'].predict(df.loc[[person_id]], rng=rng).values[0]
 
-        # hiv-negative, tb treated
-        mortality_rate.loc[
-            (df.tb_inf == 'active')
-            & ~df.hv_inf
-            & df.tb_on_treatment
-            ] = p['monthly_prob_tb_mortality'] * p['mort_tx']
-
-        # Generate a series of random numbers, one per individual
-        probs = rng.rand(len(df))
-        deaths = df.is_alive & (probs < mortality_rate)
-        will_die = (df[deaths]).index
-
-        for person in will_die:
-            if df.at[person, 'is_alive']:
-                self.sim.modules['Demography'].do_death(
-                    individual_id=person,
-                    cause="TB",
-                    originating_module=self.module
-                )
-
-        # ---------------------------------- HIV-TB DEATHS ------------------------------------
-        # only active infections result in death
-        # if HIV+ and virally suppressed, monthly death rates same as HIV-
-        # assume all on ART will also receive cotrimoxazole
-
-        mort_hiv = pd.Series(0, index=df.index)
-
-        # hiv-positive, on ART and virally suppressed, no TB treatment
-        mort_hiv.loc[
-            (df.tb_inf == 'active')
-            & df.hv_inf
-            & (df.hv_art == 'on_VL_suppressed')
-            & ~df.tb_on_treatment
-            ] = p['monthly_prob_tb_mortality'] * p['mort_cotrim']
-
-        # hiv-positive, on ART and virally suppressed, on TB treatment
-        mort_hiv.loc[
-            (df.tb_inf == 'active')
-            & df.hv_inf
-            & (df.hv_art == 'on_VL_suppressed')
-            & df.tb_on_treatment
-            ] = p['monthly_prob_tb_mortality'] * p['mort_cotrim'] * p['mort_tx']
-
-        # hiv-positive, not virally suppressed, no TB treatment
-        mort_hiv.loc[
-            (df.tb_inf == 'active')
-            & df.hv_inf
-            & (df.hv_art != 'on_VL_suppressed')
-            & ~df.tb_on_treatment
-            ] = p['monthly_prob_tb_mortality_hiv']
-
-        # hiv-positive, not virally suppressed, on TB treatment
-        mort_hiv.loc[
-            (df.tb_inf == 'active')
-            & df.hv_inf
-            & (df.hv_art != 'on_VL_suppressed')
-            & df.tb_on_treatment
-            ] = p['monthly_prob_tb_mortality_hiv'] * p['mort_tx']
-
-        # Generate a series of random numbers, one per individual
-        probs = rng.rand(len(df))
-        deaths = df.is_alive & (probs < mort_hiv)
-        will_die = (df[deaths]).index
-
-        for person in will_die:
-            if df.at[person, 'is_alive']:
-                self.sim.modules['Demography'].do_death(
-                    individual_id=person,
-                    cause="AIDS_TB",
-                    originating_module=self.module
-                )
+        if result:
+            logger.debug(key='message',
+                         data=f'TbDeathEvent: scheduling death for person {person_id}')
+            self.sim.schedule_event(
+                demography.InstantaneousDeath(
+                    self.module, person_id, cause=self.cause
+                ),
+                self.sim.date,
+            )
 
 
 # ---------------------------------------------------------------------------

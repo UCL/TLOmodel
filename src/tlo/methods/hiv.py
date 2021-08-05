@@ -1311,7 +1311,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
-        # Check that there are on Treatment currently:
+        # Check that they are on Treatment currently:
         if not (person["hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]):
             logger.warning('This event should not be running')
 
