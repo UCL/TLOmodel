@@ -1959,7 +1959,6 @@ def unpack_raw_output_dict(raw_dict):
     x['age_group'] = set_age_group(x['age_group'])
     return x
 
-
 # ---------------------------------------------------------------------------
 #   Dummy Version of the Module
 # ---------------------------------------------------------------------------
@@ -1970,8 +1969,12 @@ class DummyHivModule(Module):
      This can be used in test files."""
     PROPERTIES = {'hv_inf': Property(Types.BOOL, "DUMMY version of the property for hv_inf")}
 
+    def __init__(self, name=None, hiv_prev=0.1):
+        super().__init__(name)
+        self.hiv_prev = hiv_prev
+
     def read_parameters(self, data_folder):
-        self.hiv_prev = 0.1
+        pass
 
     def initialise_population(self, population):
         df = population.props
