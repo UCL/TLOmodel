@@ -54,6 +54,12 @@ class Tb(Module):
         'TB': Cause(gbd_causes='Tuberculosis', label='non_AIDS_TB'),
     }
 
+    # Declaration of the specific symptoms that this module will use
+    SYMPTOMS = {
+        'fatigue',
+        'night_sweats'
+    }
+
     PROPERTIES = {
         # ------------------ natural history ------------------ #
         'tb_inf': Property(
@@ -347,9 +353,6 @@ class Tb(Module):
             Types.INT, 'year from which IPT is available for paediatric contacts of diagnosed active TB cases'
         ),
     }
-
-    # cough and fever are part of generic symptoms
-    SYMPTOMS = {'fatigue', 'night_sweats'}
 
     def read_parameters(self, data_folder):
         """
@@ -928,6 +931,10 @@ class Tb(Module):
         checks whether person is eligible for IPT
         """
         df = self.sim.population.props
+
+        if df.loc[person_id, 'tb_diagnosed'] or df.loc[person_id, 'tb_diagnosed_mdr']:
+            pass
+
         high_risk_districts = self.parameters["tb_high_risk_distr"]
         district = df.at[person_id, "district_of_residence"]
         eligible = df.at[person_id, "tb_inf"] != "active"
@@ -1258,13 +1265,16 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # end treatment for retreatment cases
         # defined as a current ds-tb cases with property tb_ever_treated as true
         # has completed full tb treatment course previously
-        end_ds_retx_idx = df.loc[df.is_alive & df.tb_on_treatment & ~df.tb_treated_mdr &
+        end_ds_retx_idx = df.loc[df.is_alive &
+                                 df.tb_on_treatment &
+                                 ~df.tb_treated_mdr &
                                  (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_retreatment_length']))) &
                                  df.tb_ever_treated].index
 
         # ---------------------- treatment end: mdr-tb (24 months) ---------------------- #
         # end treatment for mdr-tb cases
-        end_mdr_tx_idx = df.loc[df.is_alive & df.tb_treated_mdr &
+        end_mdr_tx_idx = df.loc[df.is_alive &
+                                df.tb_treated_mdr &
                                 (df.tb_date_treated < (
                                     now - pd.DateOffset(days=p['mdr_treatment_length'])))].index
 
@@ -1275,6 +1285,8 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # ---------------------- treatment failure ---------------------- #
         # sample some to have treatment failure
         random_var = rng.random_sample(size=len(df))
+
+        # children aged 0-4 ds-tb
         ds_tx_failure0_4_idx = df.loc[df.is_alive &
                                    df.tb_on_treatment &
                                    ~df.tb_treated_mdr &
@@ -1283,6 +1295,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
                                     (df.age_years < 5) &
                                    (random_var < (1 - p['prob_tx_success_0_4']))].index
 
+        # children aged 5-14 ds-tb
         ds_tx_failure5_14_idx = df.loc[df.is_alive &
                                    df.tb_on_treatment &
                                    ~df.tb_treated_mdr &
@@ -1291,6 +1304,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
                                     (df.age_years.between(5,14)) &
                                    (random_var < (1 - p['prob_tx_success_5_14']))].index
 
+        # adults ds-tb
         ds_tx_failure_adult_idx = df.loc[df.is_alive &
                                    df.tb_on_treatment &
                                    ~df.tb_treated_mdr &

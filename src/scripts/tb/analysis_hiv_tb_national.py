@@ -77,6 +77,10 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
 all_districts = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_name='all_districts')
 sim.modules['Tb'].parameters['tb_high_risk_distr'] = all_districts.district_name.values
 
+# change tb mixing parameter to allow more between-district transmission
+sim.modules['Tb'].parameters['mixing_parameter'] = 0.5
+
+
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)

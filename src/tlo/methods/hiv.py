@@ -1408,6 +1408,15 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     df.at[person_id, 'hv_diagnosed'] = True
                     self.module.do_when_hiv_diagnosed(person_id=person_id)
 
+                    # also screen for tb
+                    if 'Tb' in self.sim.modules:
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            self.sim.modules['Tb'].HSI_Tb_ScreeningAndRefer(person_id=person_id, module='Tb'),
+                            topen=self.sim.date,
+                            tclose=None,
+                            priority=0
+                        )
+
             else:
                 # The test_result is HIV negative
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'VCTNegative': 1})
@@ -1616,6 +1625,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     priority=1
                 )
 
+        # also screen for tb
+        if 'Tb' in self.sim.modules:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                self.sim.modules['Tb'].HSI_Tb_ScreeningAndRefer(person_id=person_id, module='Tb'),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
+
     def do_at_initiation(self, person_id):
         """Things to do when this the first appointment ART"""
         df = self.sim.population.props
@@ -1697,10 +1715,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
     def consider_tb(self, person_id):
         """
+        screen for tb
         Consider whether IPT is needed at this time. This is run only when treatment is initiated.
         """
 
         if 'Tb' in self.sim.modules:
+
             self.sim.modules['Tb'].consider_ipt_for_those_initiating_art(person_id=person_id)
 
     def never_ran(self):
